@@ -110,6 +110,8 @@ typedef struct
 	Boolean kiddieMode;
 	Boolean dontUseHID;
 
+	Byte	antialiasingLevel;
+
 	int		reserved[8];
 }PrefsType;
 

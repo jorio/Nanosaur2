@@ -68,8 +68,6 @@ OGLSetupOutputType		*gGameViewInfoPtr = nil;
 
 PrefsType			gGamePrefs;
 
-FSSpec				gDataSpec;
-
 Boolean				gTimeDemo = false;
 u_long			gTimeDemoStartTime, gTimeDemoEndTime;
 
@@ -159,6 +157,7 @@ long		createdDirID;
 
 			/* MAKE FSSPEC FOR DATA FOLDER */
 
+#if 0
 	SetDefaultDirectory();							// be sure to get the default directory
 
 	iErr = FSMakeFSSpec(0, 0, "::Resources:Data:Images", &gDataSpec);
@@ -167,6 +166,7 @@ long		createdDirID;
 		DoAlert("The game's data appears to be missing.  You should reinstall the game.");
 		ExitToShell();
 	}
+#endif
 
 
 			/* DETERMINE IF SHAREWARE OR BOXED/OEM VERSION */
@@ -1237,7 +1237,7 @@ ObjNode	*player = gPlayerInfo[0].objNode;
 /************************************************************/
 
 
-int main(void)
+int GameMain(void)
 {
 unsigned long	someLong;
 

@@ -55,8 +55,6 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-SDL_Window*		gSDLWindow;
-
 u_long			gDisplayVRAM = 0;
 u_long			gVRAMAfterBuffers = 0;
 

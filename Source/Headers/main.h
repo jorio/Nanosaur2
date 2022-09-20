@@ -81,7 +81,7 @@ extern  u_long			gSharewareMode;
 //=================================================
 
 
-extern	int main(void);
+int GameMain(void);
 extern	void ToolBoxInit(void);
 void MoveEverything(void);
 void InitDefaultPrefs(void);

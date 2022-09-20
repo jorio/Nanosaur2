@@ -183,7 +183,7 @@ static EffectType	gEffectsTable[] =
 
 void InitSoundTools(void)
 {
-	IMPME;
+	SOFTIMPME;
 #if 0
 OSErr			iErr;
 short			i;

@@ -88,7 +88,7 @@ typedef struct
 	double	hz;
 	Boolean	lowRenderQuality;
 	Byte	language;
-	DateTimeRec	lastVersCheckDate;
+//	DateTimeRec	lastVersCheckDate;
 	Byte	didThisNote[MAX_HTTP_NOTES];
 	Boolean	hasConfiguredISpControls;
 

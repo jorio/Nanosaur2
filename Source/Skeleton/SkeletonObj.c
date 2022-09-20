@@ -9,9 +9,8 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
-extern	EventRecord			gTheEvent;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 
@@ -337,7 +336,10 @@ int					i, numDecomp;
 
 	if (gUsingVertexArrayRange)
 	{
+		IMPME;
+#if 0
 		glGenFencesAPPLE(1, &skeletonData->oglFence);
+#endif
 		skeletonData->oglFenceIsActive = false;
 	}
 
@@ -362,11 +364,19 @@ short	numDecomp, i;
 	if (gUsingVertexArrayRange)
 	{
 		if (skeletonData->oglFenceIsActive)
+		{
+			IMPME;
+#if 0
 			glFinishFenceAPPLE(skeletonData->oglFence);
+#endif
+		}
 
 			/* DISPOSE OF THE OPENGL "FENCE" */
 
+		IMPME;
+#if 0
 		glDeleteFencesAPPLE(1, &skeletonData->oglFence);
+#endif
 		skeletonData->oglFence = nil;
 		skeletonData->oglFenceIsActive = false;
 	}
@@ -436,7 +446,10 @@ Byte				buffNum;
 
 	if (gCurrentSplitScreenPane == (gNumPlayers-1))				// only submit the fence on the last pane to be drawn
 	{
+		IMPME;
+#if 0
 		glSetFenceAPPLE(skeleton->oglFence);
+#endif
 		skeleton->oglFenceIsActive = true;						// it's ok to call glTestFenceAPPLE or glFinishFenceAPPLE now that we've set it
 	}
 

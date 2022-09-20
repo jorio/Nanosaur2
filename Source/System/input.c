@@ -4,11 +4,11 @@
 /* By Brian Greenstone      */
 /****************************/
 
-#include <mach/mach_port.h>
-
 /***************/
 /* EXTERNALS   */
 /***************/
+
+#include "game.h"
 
 extern	AGLContext		gAGLContext;
 extern	float			gFramesPerSecondFrac,gFramesPerSecond,gScratchF;
@@ -20,11 +20,12 @@ extern	Boolean				gPanther;
 /*     PROTOTYPES     */
 /**********************/
 
-static pascal OSStatus MyMouseEventHandler(EventHandlerCallRef eventhandler, EventRef pEventRef, void *userdata);
+//static pascal OSStatus MyMouseEventHandler(EventHandlerCallRef eventhandler, EventRef pEventRef, void *userdata);
 static void Install_MouseEventHandler(void);
 static void UpdateMouseDeltas(void);
 
 static void MyInitHID(void);
+#if 0
 static void FindHIDDevices(mach_port_t masterPort, io_iterator_t *hidObjectIterator);
 static void ParseAllHIDDevices(io_iterator_t hidObjectIterator);
 static const char *GetCFStringFromObject(CFStringRef object);
@@ -48,6 +49,7 @@ static pascal void IdleTimerCallback (EventLoopTimerRef inTimer, void* userData)
 static void DeviceMenuWasSelected(int deviceNum);
 static void NeedsMenuWasSelected(int	needNum);
 static void ElementMenuWasSelected(int elementNum);
+#endif
 static void HideCalibrationControls(void);
 static void ShowCalibrationControls(void);
 static void ResetAllDefaultControls(void);
@@ -56,10 +58,12 @@ static void ResetElementCalibration(short deviceNum, short elementNum);
 static long CalibrateElementValue(long inValue, short deviceNum, short elementNum, long elementType);
 static void PollAllHIDInputNeeds(void);
 
+#if 0
 static short FindMatchingDevice(long vendorID, long productID, Boolean hasDuplicate, long locationID);
 
 static void DoHIDSucksDialog(void);
 static pascal OSStatus HIDSucksEventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
+#endif
 
 
 /****************************/
@@ -95,7 +99,7 @@ enum { // control enums from nib
 
 typedef struct
 {
-	IOHIDElementCookie	cookie;
+//	IOHIDElementCookie	cookie;
 	long				elementType;
 	long				usagePage, usage;
 	long				min,max,scaledMin,scaledMax;
@@ -110,7 +114,7 @@ typedef struct
 {
 	Boolean			isActive;
 
-	IOHIDDeviceInterface 	**hidDeviceInterface;
+//	IOHIDDeviceInterface 	**hidDeviceInterface;
 
 	char			deviceName[DEVICE_NAME_MAX_LENGTH];
 	long			usagePage, usage;
@@ -130,13 +134,13 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-static EventHandlerUPP gConfigWinEvtHandler;		
+//static EventHandlerUPP gConfigWinEvtHandler;
 
 
 Boolean	gHIDInitialized = false;
 
-static	EventHandlerUPP			gMouseEventHandlerUPP = nil;
-static	EventHandlerRef			gMouseEventHandlerRef = 0;
+//static	EventHandlerUPP			gMouseEventHandlerUPP = nil;
+//static	EventHandlerRef			gMouseEventHandlerRef = 0;
 
 static	long					gMouseDeltaX = 0;
 static	long					gMouseDeltaY = 0;
@@ -155,6 +159,7 @@ KeyMapByteArray gKeyMap,gNewKeys,gOldKeys;
 
 InputNeedType	gControlNeeds[NUM_CONTROL_NEEDS] =
 {
+#if 0
 			/* PLAYER 1 CONTROLS */			
 	{										// kNeed_P1_TurnLeft_Key		
 		"Player 1:  Turn Left (Key)",
@@ -268,12 +273,12 @@ InputNeedType	gControlNeeds[NUM_CONTROL_NEEDS] =
 		"Player 2:  Camera Mode",
 		0,
 	},
-	
-
+#endif
 };
 
 
 
+#if 0
 		/* HID */
 		
 static mach_port_t 	gHID_MasterPort 			= nil;
@@ -296,6 +301,7 @@ static	Boolean	gShowCalibration;
 static 	long	gCurrentCalibrationValue;
 
 static	EventLoopTimerRef gTimer = NULL;
+#endif
 
 
 /************************* INIT INPUT *********************************/
@@ -306,11 +312,12 @@ short	i;
 
 	for (i = 0; i < NUM_CONTROL_NEEDS; i++)							// init current control values
 		gControlNeeds[i].oldValue = gControlNeeds[i].value = 0;
-	
-	Install_MouseEventHandler();									// install our carbon even mouse handler		
+
+
+#if 0
+	Install_MouseEventHandler();									// install our carbon even mouse handler
 	MyInitHID();
-	
-	
+#endif
 }
 
 
@@ -331,7 +338,7 @@ float	analog, mouseDX, mouseDY;
 			/* UPDATE ALL THE NEEDS CONTROLS VALUES */		
 			/****************************************/
 
-	PollAllHIDInputNeeds();
+	SOFTIMPME; //	PollAllHIDInputNeeds();
 
 
 
@@ -464,13 +471,14 @@ float	analog, mouseDX, mouseDY;
 
 static void MyInitHID(void)
 {
-io_iterator_t 	hidObjectIterator 	= nil;
-IOReturn 		ioReturnValue 		= kIOReturnSuccess;
+//io_iterator_t 	hidObjectIterator 	= nil;
+//IOReturn 		ioReturnValue 		= kIOReturnSuccess;
 
 	if (gHIDInitialized)
 		DoFatalAlert("MyInitHID: HID already initialized!");
 
 
+#if 0
 	gNumHIDDevices = 0;											// nothing in our device list yet
 
 		/* GET A PORT TO INIT COMMUNICATION WITH I/O KIT */
@@ -501,14 +509,15 @@ IOReturn 		ioReturnValue 		= kIOReturnSuccess;
 			/* DISPOSE OF THE ITERATION LIST */
 			
 	IOObjectRelease(hidObjectIterator);
-	
+
+#endif
 	
 	gHIDInitialized = true;
 	
 
 			/* SET THE DEFAULT CONTROL SETTINGS */
 				
-	ResetAllDefaultControls();
+	SOFTIMPME; //ResetAllDefaultControls();
 	
 }
 
@@ -526,6 +535,7 @@ short	i;
 	if (!gHIDInitialized)
 		return;
 
+#if 0
 			/* DISPOSE OF ALL THE OPEN INTERFACES */
 			
 	for (i = 0; i < gNumHIDDevices; i++)
@@ -542,6 +552,7 @@ short	i;
 			
 	if (gHID_MasterPort)
 		mach_port_deallocate(mach_task_self(), gHID_MasterPort);
+#endif
 		
 		
 	gHIDInitialized = false;
@@ -549,6 +560,7 @@ short	i;
 }
 
 
+#if 0
 /******************* FIND HID DEVICES ************************/
 //
 // Creates an iterator list object which contains all of the HID devices
@@ -2767,6 +2779,7 @@ float	scale;
 
 
 
+
 #pragma mark -
 #pragma mark ========== HID SETTINGS ===========
 
@@ -2856,6 +2869,7 @@ long	d, e, n;
 		}
 	}
 }
+#endif
 
 
 /********************* RESTORE HID CONTROL SETTINGS ***************************/
@@ -2869,13 +2883,15 @@ long	matchingDevice;
 		DoFatalAlert("RestoreHIDControlSettings: HID isn't initialized!");
 
 			/* VERIFY THAT WE'VE STILL GOT THE SAME CONSTANTS */
-			
+
 	if ((settings->maxNeeds != NUM_CONTROL_NEEDS) ||
 		(settings->maxDevices != MAX_HID_DEVICES) ||
 		(settings->maxElement != MAX_HID_ELEMENTS))
 		return;															// bail out - this will leave the default settings in place
-			
-			
+
+
+	SOFTIMPME;
+#if 0
 			/***************************/
 			/* RESTORE DEVICE SETTINGS */
 			/***************************/
@@ -2925,9 +2941,11 @@ long	matchingDevice;
 			gControlNeeds[n].elementInfo[matchingDevice].elementNum = e;	// set it in the matching device's field
 		}	
 	}
+#endif
 }
 
 
+#if 0
 
 /********************* FIND MATCHING DEVICE *********************************/
 //
@@ -2960,6 +2978,7 @@ short	d;
 	return(-1);													// if it gets here then no match was found
 }
 
+#endif
 
 
 #pragma mark -
@@ -3062,6 +3081,8 @@ int		i;
 
 static void UpdateMouseDeltas(void)
 {
+	SOFTIMPME;
+#if 0
 EventRecord   theEvent;
 			
 				/* UPDATE DELTAS */
@@ -3091,7 +3112,8 @@ EventRecord   theEvent;
 	{
 		gMouseButtonState = gMouseNewButtonState = false;	
 	}
-	
+
+#endif
 }
 
 
@@ -3099,6 +3121,8 @@ EventRecord   theEvent;
 //
 // Every time WaitNextEvent() is called this callback will be invoked.
 //
+
+#if 0
 
 static pascal OSStatus MyMouseEventHandler(EventHandlerCallRef eventhandler, EventRef pEventRef, void *userdata)
 {
@@ -3148,6 +3172,7 @@ EventTypeSpec			mouseEvents[] = {{kEventClassMouse, kEventMouseMoved},	{kEventCl
 		InstallEventHandler(GetApplicationEventTarget(), gMouseEventHandlerUPP,	2, mouseEvents, nil, &gMouseEventHandlerRef);			
 	}
 }
+#endif
 
 #if 0
 /******************* REMOVE MOUSE EVENT HANDLER *************************/
@@ -3170,6 +3195,7 @@ static void Remove_MouseEventHandlers(void)
 
 #pragma mark -
 
+#if 0
 
 /*********************** DO HID SUCKS DIALOG ********************************/
 
@@ -3252,3 +3278,5 @@ HICommand 			command;
 
 
 
+
+#endif

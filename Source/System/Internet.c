@@ -1,3 +1,4 @@
+#if 0
 /****************************/
 /*      INTERNET ROUTINES   */
 /* (c)2003 Pangea Software  */
@@ -571,3 +572,5 @@ long endSel;
 }
 
 
+
+#endif

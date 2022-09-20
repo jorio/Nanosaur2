@@ -10,7 +10,7 @@
 /****************************/
 
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	float				gFramesPerSecondFrac,gFramesPerSecond,gTerrainPolygonSize;
 extern	OGLPoint3D			gCoord;

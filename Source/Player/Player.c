@@ -9,7 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	OGLPoint3D				gCoord;
 extern	OGLVector3D				gDelta;
@@ -63,7 +63,6 @@ Boolean	gPlayerIsDead[MAX_PLAYERS] = {false, false};
 #define	TextureTransformV2	SpecialF[1]
 
 
-#include "serialVerify.h"
 
 
 /******************** INIT PLAYER INFO ***************************/

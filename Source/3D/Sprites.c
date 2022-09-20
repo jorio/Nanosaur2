@@ -9,8 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
-#include <AGL/aglmacro.h>
+#include "game.h"
 
 
 extern	float	gGlobalTransparency;
@@ -165,6 +164,8 @@ MOMaterialData	matData;
 				/* READ COMPRESSED JPEG TEXTURE */
 				/********************************/
 
+		IMPME;
+#if 0
 		{
 			Ptr			jpegBuffer;
 			long		dataSize, descSize;
@@ -252,6 +253,7 @@ MOMaterialData	matData;
 			SafeDisposePtr(jpegBuffer);											// free the jpeg data
 			DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
 		}
+#endif
 
 				/*****************************/
 				/* CREATE NEW TEXTURE OBJECT */

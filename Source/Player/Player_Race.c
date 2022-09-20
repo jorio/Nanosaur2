@@ -2,7 +2,7 @@
 /*   	PLAYER_RACE.C      */
 /***************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 
 /***************/

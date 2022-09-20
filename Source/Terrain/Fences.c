@@ -2,9 +2,8 @@
 /*   	FENCES.C      */
 /**********************/
 
-#include <AGL/aglmacro.h>
 
-#include "3DMath.h"
+#include "game.h"
 
 /***************/
 /* EXTERNALS   */

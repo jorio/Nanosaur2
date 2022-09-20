@@ -10,7 +10,7 @@
 /****************************/
 
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	int					gNumWorldCalcsThisFrame;
 extern	ObjNode				*gFirstNodePtr;

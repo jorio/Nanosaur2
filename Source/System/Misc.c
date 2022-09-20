@@ -9,8 +9,10 @@
 /* EXTERNALS   */
 /***************/
 
-
-#include "internet.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include "game.h"
 
 
 extern	Boolean		gHIDInitialized;
@@ -21,8 +23,6 @@ extern	float			gDemoVersionTimer;
 extern	short	gPrefsFolderVRefNum;
 extern	long		gPrefsFolderDirID;
 extern	PrefsType			gGamePrefs;
-extern	IBNibRef 			gNibs;
-extern	CFBundleRef 		gBundle;
 extern	CGGammaValue gOriginalRedTable[256], gOriginalGreenTable[256], gOriginalBlueTable[256];
 extern	Boolean				gPlayFullScreen;
 
@@ -56,10 +56,6 @@ Boolean	gGameIsRegistered = false;
 unsigned char	gRegInfo[64];
 
 
-WindowRef 		gDialogWindow = nil;
-EventHandlerUPP gWinEvtHandler;
-
-
 u_long			gSerialWasVerifiedMode = 0;
 
 Boolean			gPanther = false;
@@ -75,74 +71,43 @@ Boolean			gLowRAM = false;
 /**********************/
 
 
-#include "serialVerify.h"
-
-
-/****************** DO SYSTEM ERROR ***************/
-
-void ShowSystemErr(long err)
-{
-Str255		numStr;
-SInt16      alertItemHit;
-
-	Enter2D();
-	NumToString(err, numStr);
-
-	StandardAlert(kAlertStopAlert, numStr, NULL, NULL, &alertItemHit);
-
-	Exit2D();
-
-	CleanQuit();
-}
-
-/****************** DO SYSTEM ERROR : NONFATAL ***************/
-//
-// nonfatal
-//
-void ShowSystemErr_NonFatal(long err)
-{
-Str255		numStr;
-SInt16      alertItemHit;
-
-	Enter2D();
-	NumToString(err, numStr);
-
-	StandardAlert(kAlertStopAlert, numStr, NULL, NULL, &alertItemHit);
-
-	Exit2D();
-}
-
-
 /*********************** DO ALERT *******************/
 
-void DoAlert(Str255 s)
+void DoAlert(const char* format, ...)
 {
-SInt16      alertItemHit;
-
 	Enter2D();
 
-	StandardAlert(kAlertStopAlert, s, NULL, NULL, &alertItemHit);
+	char message[1024];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(message, sizeof(message), format, args);
+	va_end(args);
+
+	printf("Nanosaur 2 Alert: %s\n", message);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
 
 	Exit2D();
 }
-
-
 
 
 /*********************** DO FATAL ALERT *******************/
 
-void DoFatalAlert(Str255 s)
+void DoFatalAlert(const char* format, ...)
 {
-SInt16      alertItemHit;
-
 	Enter2D();
 
-	StandardAlert(kAlertNoteAlert, s, NULL, NULL, &alertItemHit);
+	char message[1024];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(message, sizeof(message), format, args);
+	va_end(args);
+
+	printf("Nanosaur 2 Fatal Alert: %s\n", message);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
 
 	Exit2D();
 	CleanQuit();
 }
-
 
 
 /************ CLEAN QUIT ***************/
@@ -166,12 +131,6 @@ static Boolean	beenHere = false;
 		if (gGameViewInfoPtr)							// see if need to dispose this
 			OGL_DisposeWindowSetup(&gGameViewInfoPtr);
 
-		if (!gGameIsRegistered)
-		{
-			GammaFadeOut();
-			ShowDemoQuitScreen();
-		}
-
 		ShutdownSound();								// cleanup sound stuff
 	}
 
@@ -185,17 +144,12 @@ static Boolean	beenHere = false;
 	InitCursor();
 	MyFlushEvents();
 
-	if (gNibs != NULL)
-		DisposeNibReference(gNibs);
-
-	if (gBundle != NULL)
-		CFRelease(gBundle);
-
-
+#if 0
 			/* RESTORE ORIGINAL GAMMA */
 
 	if (gPlayFullScreen)
 		CGSetDisplayTransferByTable(0, 256, gOriginalRedTable, gOriginalGreenTable, gOriginalBlueTable);
+#endif
 
 
 	ExitToShell();
@@ -529,48 +483,12 @@ Ptr		p = ptr;
 
 #pragma mark -
 
-/******************* COPY P STRING ********************/
-
-void CopyPString(Str255 from, Str255 to)
-{
-short	i,n;
-
-	n = from[0];			// get length
-
-	for (i = 0; i <= n; i++)
-		to[i] = from[i];
-
-}
-
-
-/***************** P STRING TO C ************************/
-
-void PStringToC(char *pString, char *cString)
-{
-Byte	pLength,i;
-
-	pLength = pString[0];
-
-	for (i=0; i < pLength; i++)					// copy string
-		cString[i] = pString[i+1];
-
-	cString[pLength] = 0x00;					// add null character to end of c string
-}
-
-
-/***************** DRAW C STRING ********************/
-
-void DrawCString(char *string)
-{
-	while(*string != 0x00)
-		DrawChar(*string++);
-}
-
 
 /******************* VERIFY SYSTEM ******************/
 
 void VerifySystem(void)
 {
+#if 0
 OSErr	iErr;
 NumVersion	vers;
 u_long  flags;
@@ -733,6 +651,7 @@ next_process2:;
 		}
 	}
 #endif
+#endif
 
 }
 
@@ -777,7 +696,7 @@ void CalcFramesPerSecond(void)
 {
 AbsoluteTime currTime,deltaTime;
 static AbsoluteTime time = {0,0};
-Nanoseconds	nano;
+//Nanoseconds	nano;
 float		fps;
 
 int				i;
@@ -791,12 +710,16 @@ wait:
 	}
 	else
 	{
+		SOFTIMPME;
+
+#if 0
 		currTime = UpTime();
 
 		deltaTime = SubAbsoluteFromAbsolute(currTime, time);
 		nano = AbsoluteToNanoseconds(deltaTime);
 
 		fps = (float)kSecondScale / (float)nano.lo;
+#endif
 
 		if (fps > MAX_FPS)				// limit to avoid issues
 			goto wait;
@@ -853,6 +776,7 @@ int		i;
 
 void MyFlushEvents(void)
 {
+#if 0
 #if 1
 	while (1)
 	{
@@ -880,6 +804,7 @@ void MyFlushEvents(void)
 
 	FlushEvents (everyEvent, REMOVE_ALL_EVENTS);
 	FlushEventQueue(GetMainEventQueue());
+#endif
 #endif
 }
 
@@ -916,6 +841,9 @@ StringPtr PStrCopy(StringPtr dst, ConstStr255Param   src)
 
 Boolean WeAreFrontProcess(void)
 {
+	SOFTIMPME;
+	return true;
+#if 0
 ProcessSerialNumber	frontProcess, myProcess;
 Boolean				same;
 
@@ -925,6 +853,7 @@ Boolean				same;
 	SameProcess(&frontProcess, &myProcess, &same);		// if they're the same then we're in front
 
 	return(same);
+#endif
 }
 
 

@@ -9,6 +9,8 @@
 /* EXTERNALS   */
 /***************/
 
+#include "game.h"
+
 extern	short			gCurrentSong;
 extern	short			gPrefsFolderVRefNum;
 extern	long			gPrefsFolderDirID;
@@ -28,7 +30,6 @@ extern	WaterDefType	**gWaterListHandle, *gWaterList;
 extern	Boolean			gPlayingFromSavedGame;
 extern	LineMarkerDefType		gLineMarkerList[];
 extern	Boolean					gDisableHiccupTimer;
-extern	Movie				gSongMovie;
 
 /****************************/
 /*    PROTOTYPES            */
@@ -36,9 +37,6 @@ extern	Movie				gSongMovie;
 
 static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType, OGLSetupOutputType *setupInfo);
 static void ReadDataFromPlayfieldFile(FSSpec *specPtr, OGLSetupOutputType *setupInfo);
-
-static OSErr GetFileWithNavServices(FSSpec *documentFSSpec);
-static OSErr PutFileWithNavServices(NavReplyRecord *reply, FSSpec *outSpec);
 
 /****************************/
 /*    CONSTANTS             */
@@ -129,11 +127,12 @@ static	Boolean		gTerrainIs32Bit = false;
 
 void SetDefaultDirectory(void)
 {
+OSErr	iErr;
+#if 0
 ProcessSerialNumber serial;
 ProcessInfoRec info;
 FSSpec	app_spec;
 static WDPBRec wpb;
-OSErr	iErr;
 
 	serial.highLongOfPSN = 0;
 	serial.lowLongOfPSN = kCurrentProcess;
@@ -150,13 +149,14 @@ OSErr	iErr;
 	wpb.ioNamePtr = NULL;
 
 	iErr = PBHSetVolSync(&wpb);
+#endif
 
 
 		/* ALSO SET SAVED GAME SPEC TO DESKTOP */
 
 	iErr = FindFolder(kOnSystemDisk,kDesktopFolderType,kDontCreateFolder,			// locate the desktop folder
 					&gSavedGameSpec.vRefNum,&gSavedGameSpec.parID);
-	gSavedGameSpec.name[0] = 0;
+	gSavedGameSpec.cName[0] = 0;
 
 }
 
@@ -570,7 +570,8 @@ long				count;
 	if (!gHIDInitialized)								// can't save prefs unless HID is initialized!
 		return;
 
-	BuildHIDControlSettings(&gGamePrefs.controlSettings);
+	SOFTIMPME;
+//	BuildHIDControlSettings(&gGamePrefs.controlSettings);
 
 
 				/* CREATE BLANK FILE */
@@ -617,6 +618,9 @@ long				count;
 
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth)
 {
+	SOFTIMPME;
+	return unimpErr;
+#if 0
 OSErr						iErr;
 GraphicsImportComponent		gi;
 Rect						r;
@@ -673,6 +677,7 @@ ComponentResult				result;
 		return(result);
 	}
 	return(noErr);
+#endif
 }
 
 
@@ -684,6 +689,9 @@ ComponentResult				result;
 
 void GetDemoTimer(void)
 {
+	SOFTIMPME;
+	gDemoVersionTimer = 0;
+#if 0
 	OSErr				iErr;
 	short				refNum;
 	FSSpec				file;
@@ -724,6 +732,7 @@ void GetDemoTimer(void)
 	{
 		DoDemoExpiredScreen();
 	}
+#endif
 }
 
 
@@ -1205,10 +1214,14 @@ Rect					toRect, srcRect;
 	toRect.right = toRect.bottom = texSize;
 
 
+#if 0
 	if (gTerrainIs32Bit)
 		iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &toRect, nil, nil, 0, textureBuffer32, texSize * 4);
 	else
 		iErr = QTNewGWorldFromPtr(&buffGWorld, k16BE555PixelFormat, &toRect, nil, nil, 0, textureBuffer16, texSize * 2);
+#endif
+	iErr = unimpErr;
+	IMPME;
 
 	if (iErr || (buffGWorld == nil))
 		DoFatalAlert("ReadDataFromPlayfieldFile: QTNewGWorldFromPtr failed.");
@@ -1233,8 +1246,8 @@ Rect					toRect, srcRect;
 		long					dataSize, descSize;
 		MOMaterialData			matData;
 		Ptr						tempBuff, imageDataPtr;
-		ImageDescriptionHandle	imageDescHandle;
-		ImageDescriptionPtr		imageDescPtr;
+//		ImageDescriptionHandle	imageDescHandle;
+//		ImageDescriptionPtr		imageDescPtr;
 
 
 				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
@@ -1259,6 +1272,8 @@ Rect					toRect, srcRect;
 
 				/* EXTRACT THE IMAGE DESC */
 
+		IMPME;
+#if 0
 		imageDescPtr = (ImageDescriptionPtr)tempBuff;								// create ptr into buffer to fake the imagedesc
 		descSize = imageDescPtr->idSize;											// get size of the imagedesc data
 		descSize = SwizzleLong(&descSize);
@@ -1277,6 +1292,7 @@ Rect					toRect, srcRect;
 		DisposeHandle((Handle)imageDescHandle);										// free our image desc handle
 		SafeDisposePtr(tempBuff);													// free the temp buff
 		tempBuff = nil;
+#endif
 
 
 		if (gTerrainIs32Bit)
@@ -1373,6 +1389,8 @@ Rect					toRect, srcRect;
 
 void DecompressJPEGToGWorld(ImageDescriptionHandle imageDesc, Ptr compressedData, GWorldPtr gworld, Rect *srcRect)
 {
+	SOFTIMPME;
+#if 0
 OSErr				err;
 Rect				bounds, bounds2;
 PixMapHandle 		myPixMap;
@@ -1422,6 +1440,7 @@ ImageDescriptionPtr imageDescPtr = *imageDesc;
 		DoFatalAlert("DecompressJPEGToGWorld: DecompressImage failed!");
 
 	SetGWorld (oldGW,oldGD);
+#endif
 }
 
 
@@ -1431,6 +1450,7 @@ ImageDescriptionPtr imageDescPtr = *imageDesc;
 #pragma mark -
 
 
+#if 0
 /******************** NAV SERVICES: GET DOCUMENT ***********************/
 
 static OSErr GetFileWithNavServices(FSSpec *documentFSSpec)
@@ -1558,6 +1578,7 @@ AEDesc 				defaultLocation;
 
 	return anErr;
 }
+#endif
 
 
 #pragma mark -
@@ -1573,7 +1594,6 @@ Boolean SaveGame(void)
 SaveGameType	saveData;
 short			fRefNum;
 FSSpec			*specPtr;
-NavReplyRecord	navReply;
 long			count, i;
 Boolean			success = false;
 
@@ -1602,6 +1622,8 @@ Boolean			success = false;
 		/* DO NAV SERVICES */
 		/*******************/
 
+	IMPME;
+#if 0
 	if (PutFileWithNavServices(&navReply, &gSavedGameSpec))
 		goto bail;
 	specPtr = &gSavedGameSpec;
@@ -1650,6 +1672,7 @@ bail:
 	NavDisposeReply(&navReply);
 	HideCursor();
 	Exit2D();
+#endif
 	return(success);
 }
 
@@ -1673,8 +1696,9 @@ Boolean			success = false;
 
 				/* GET FILE WITH NAVIGATION SERVICES */
 
-	if (GetFileWithNavServices(&gSavedGameSpec) != noErr)
-		goto bail;
+	IMPME;
+//	if (GetFileWithNavServices(&gSavedGameSpec) != noErr)
+//		goto bail;
 
 
 				/* OPEN THE REZ-FORK */

@@ -9,6 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
+#include "game.h"
 extern	PrefsType			gGamePrefs;
 
 
@@ -455,8 +456,8 @@ long					count,i, w, h, descSize;
 u_long 					*texturePixels;
 Ptr	 					jpegBuffer;
 MOMaterialData			*data;
-ImageDescriptionHandle	imageDescHandle;
-ImageDescriptionPtr		imageDescPtr;
+//ImageDescriptionHandle	imageDescHandle;
+//ImageDescriptionPtr		imageDescPtr;
 Ptr						imageDataPtr;
 Rect					r;
 OSErr					iErr;
@@ -526,6 +527,8 @@ Boolean					hasAlpha;
 	r.right = w;
 	r.bottom = h;
 
+	IMPME;
+#if 0
 	iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &r, nil, nil, 0, texturePixels, w * 4);
 	if (iErr || (buffGWorld == nil))
 		DoFatalAlert("ReadMaterialJPEGTextureMap: QTNewGWorldFromPtr failed.");
@@ -600,6 +603,7 @@ Boolean					hasAlpha;
 	DisposeHandle((Handle)imageDescHandle);								// free our image desc handle
 	SafeDisposePtr(jpegBuffer);											// free the jpeg data
 	DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
+#endif
 }
 
 

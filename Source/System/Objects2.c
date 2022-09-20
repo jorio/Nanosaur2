@@ -9,8 +9,7 @@
 /* EXTERNALS   */
 /***************/
 
-#include "3DMath.h"
-#include <AGL/aglmacro.h>
+#include "game.h"
 
 extern	OGLBoundingBox	gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];

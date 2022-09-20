@@ -10,7 +10,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	BG3DFileContainer		*gBG3DContainerList[];
 

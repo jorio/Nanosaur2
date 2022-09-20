@@ -1,3 +1,4 @@
+#if 0 // TODO: check whether we need this -IJ
 /****************************/
 /*   ENEMY: STEGO.C		*/
 /* (c)2003 Pangea Software  */
@@ -9,7 +10,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3dmath.h"
+#include "game.h"
 
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	SplineDefType			**gSplineList;
@@ -526,3 +527,5 @@ static void KillStego(ObjNode *enemy)
 
 
 
+
+#endif

@@ -2,9 +2,8 @@
 /*   	WATER.C      */
 /**********************/
 
-#include <AGL/aglmacro.h>
 
-#include "3DMath.h"
+#include "game.h"
 #include "infobar.h"
 
 /***************/

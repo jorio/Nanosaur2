@@ -9,6 +9,8 @@
 /* EXTERNALS   */
 /***************/
 
+#include "game.h"
+
 extern	short			gCurrentSong;
 extern	short			gPrefsFolderVRefNum;
 extern	long			gPrefsFolderDirID;

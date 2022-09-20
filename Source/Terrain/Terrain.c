@@ -9,9 +9,8 @@
 /***************/
 
 
-#include "3DMath.h"
+#include "game.h"
 #include	"infobar.h"
-#include <AGL/aglmacro.h>
 
 extern	OGLMatrix4x4			gViewToFrustumMatrix,gWorldToViewMatrix;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
@@ -458,7 +457,10 @@ AGLContext 	agl_ctx = setupInfo->drawContext;
 
 	if (gUsingVertexArrayRange)
 	{
+		IMPME;
+#if 0
 		glGenFencesAPPLE(1, &gTerrainOpenGLFence);
+#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
 }
@@ -514,7 +516,10 @@ AGLContext agl_ctx = gAGLContext;
 
 	if (gUsingVertexArrayRange)
 	{
+		IMPME;
+#if 0
 		glDeleteFencesAPPLE(1, &gTerrainOpenGLFence);
+#endif
 		gTerrainOpenGLFence = nil;
 		gTerrainOpenGLFenceIsActive = false;
 	}
@@ -587,9 +592,12 @@ OGLVector3D			*vertexNormals;
 
 	if (gUsingVertexArrayRange && gTerrainOpenGLFenceIsActive)
 	{
+		IMPME;
+#if 0
 		AGLContext agl_ctx = gAGLContext;
 
 		glFinishFenceAPPLE(gTerrainOpenGLFence);			// wait until the GPU is done using the previous frame's data
+#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
 
@@ -956,7 +964,10 @@ static inline void ReleaseSuperTileObject(short superTileNum)
 	if (gUsingVertexArrayRange && gTerrainOpenGLFenceIsActive)
 	{
 		AGLContext agl_ctx = gAGLContext;
+		IMPME;
+#if 0
 		glFinishFenceAPPLE(gTerrainOpenGLFence);			// wait until the GPU is done using this
+#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
 
@@ -1103,7 +1114,10 @@ dont_prep_grid:;
 
 	if (gCurrentSplitScreenPane == (gNumPlayers-1))				// only submit the fence on the last pane to be drawn
 	{
+		IMPME;
+#if 0
 		glSetFenceAPPLE(gTerrainOpenGLFence);
+#endif
 		gTerrainOpenGLFenceIsActive = true;						// it's ok to call glTestFenceAPPLE or glFinishFenceAPPLE now that we've set it
 	}
 

@@ -9,7 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	float				gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
 extern	FSSpec		gDataSpec;
@@ -855,19 +855,25 @@ static void DoMenuControls(void)
 								break;
 
 						case	2:
-								if (LaunchURL("http://www.pangeasoft.net/nano2") == noErr)	// PANGEA WEB SITE
+								SOFTIMPME;
+#if 0
+							if (LaunchURL("http://www.pangeasoft.net/nano2") == noErr)	// PANGEA WEB SITE
 								{
 									if (gPlayFullScreen)
 					                   ExitToShell();
 				             	}
+#endif
 								break;
 
 						case	3:
+								SOFTIMPME;
+#if 0
 								if (LaunchURL("http://www.pangeasoft.net/nano2/3dglasses.html") == noErr)	// 3D GLASSES
 								{
 									if (gPlayFullScreen)
 					                   ExitToShell();
 				             	}
+#endif
 								break;
 
 						case	4:							// BACK
@@ -1099,17 +1105,17 @@ float	bottom = 640.0f * viewAspectRatio;
 				/************************/
 	else
 	{
-		GrafPtr	oldPort;
+//		GrafPtr	oldPort;
 		Boolean	cursorOut;
 
 			/* CALC WINDOW'S GLOBAL SCREEN COORD */
 
-		GetPort(&oldPort);
-		SetPort(gGameWindowGrafPtr);
+//		GetPort(&oldPort);
+//		SetPort(gGameWindowGrafPtr);
 
 		GetMouse(&mousePt);
 
-		SetPort(oldPort);
+//		SetPort(oldPort);
 
 				/* CALC CURSOR COORD IN THE WINDOW */
 

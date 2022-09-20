@@ -9,7 +9,7 @@
 /* EXTERNALS   */
 /***************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	Byte					gDebugMode, gCurrentSplitScreenPane;
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
@@ -35,7 +35,7 @@ static void FlushObjectDeleteQueue(void);
 static void DrawCollisionBoxes(ObjNode *theNode, Boolean old);
 static void DrawBoundingBoxes(ObjNode *theNode);
 static void DrawBoundingSpheres(ObjNode *theNode);
-inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry);
+static inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry);
 static void CreateDummyInitObject(void);
 
 
@@ -387,7 +387,7 @@ short	i;
 // called which made the group & transforms.
 //
 
-inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry)
+static inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry)
 {
 	MO_AppendToGroup(theNode->BaseGroup, geometry);
 }
@@ -829,7 +829,12 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 			/***********************/
 
 		if (gUsingVertexArrayRange)
+		{
+			IMPME;
+#if 0
 			glBindVertexArrayAPPLE(gVertexArrayRangeObjects[theNode->VertexArrayMode]);		// bind to the correct vertex array range
+#endif
+		}
 
  		if (noLighting || (theNode->Scale.y == 1.0f))				// if scale == 1 or no lighting, then dont need to normalize vectors
  			glDisable(GL_NORMALIZE);

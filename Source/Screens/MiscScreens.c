@@ -9,7 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	float				gFramesPerSecondFrac,gFramesPerSecond;
 extern	FSSpec		gDataSpec;
@@ -20,10 +20,6 @@ extern	PrefsType	gGamePrefs;
 extern	OGLPoint3D	gCoord;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLVector3D	gDelta;
-extern	CFBundleRef 		gBundle;
-extern	IBNibRef 			gNibs;
-extern	WindowRef 		gDialogWindow;
-extern	EventHandlerUPP gWinEvtHandler;
 
 
 /****************************/
@@ -31,11 +27,7 @@ extern	EventHandlerUPP gWinEvtHandler;
 /****************************/
 
 static void DisplayPicture_Draw(OGLSetupOutputType *info);
-static pascal OSStatus DoGameSettingsDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
-
 static void DrawLoading_Callback(OGLSetupOutputType *info);
-
-static pascal OSStatus DoCheatDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
 
 
 /****************************/
@@ -171,63 +163,12 @@ FSSpec	spec;
 #pragma mark -
 
 
-/****************** DO DEMO EXPIRED SCREEN **************************/
-
-void DoDemoExpiredScreen(void)
-{
-FSSpec	spec;
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoExpired", &spec);
-	DisplayPicture(&spec);
-
-#if ALLOW_2P_INDEMO
-	LaunchURL("http://www.pangeasoft.net/nano2/buydotmac.html");
-#else
-	LaunchURL("http://www.pangeasoft.net/nano2/buy.html");
-#endif
-
-	gDontShowDemoQuit = true;					// make sure we don't also get the Demo Quit screen
-
-	CleanQuit();
-}
-
-
-/*************** SHOW DEMO QUIT SCREEN **********************/
-
-void ShowDemoQuitScreen(void)
-{
-FSSpec	spec;
-
-	SaveDemoTimer();						// make sure to save this before we bail
-
-
-	if (gDontShowDemoQuit)
-		return;
-
-#if DEMO
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoQuitSmall", &spec);
-#else
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoQuitFull", &spec);
-#endif
-	DisplayPicture(&spec);
-
-	if (IsInternetAvailable())				// if we've got TCP connection then launch URL
-	{
-		CleanupDisplay();								// unloads Draw Sprocket
-#if ALLOW_2P_INDEMO
-		LaunchURL("http://www.pangeasoft.net/nano2/buydotmac.html");
-#else
-		LaunchURL("http://www.pangeasoft.net/nano2/buy.html");
-#endif
-	}
-}
-
-#pragma mark -
-
 /********************* DO LEVEL CHEAT DIALOG **********************/
 
 Boolean DoLevelCheatDialog(void)
 {
+	IMPME;
+#if 0
 OSErr			err;
 EventHandlerRef	ref;
 EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
@@ -263,12 +204,13 @@ EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
 	DisposeWindow (gDialogWindow);
 
 	Exit2D();
-
+#endif
 
 	return(false);
 }
 
 
+#if 0
 /****************** DO CHEAT DIALOG EVENT HANDLER *************************/
 
 static pascal OSStatus DoCheatDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData)
@@ -309,6 +251,7 @@ HICommand 			command;
     return (result);
 }
 
+#endif
 
 
 #pragma mark -
@@ -317,6 +260,8 @@ HICommand 			command;
 
 void DoGameOptionsDialog(void)
 {
+	IMPME;
+#if 0
 OSErr			err;
 EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
 WindowRef 		dialogWindow = nil;
@@ -495,9 +440,11 @@ do_again:
 	CalcFramesPerSecond();				// reset this so things dont go crazy when we return
 	CalcFramesPerSecond();
 
+#endif
 }
 
 
+#if 0
 /****************** DO GAME SETTINGS DIALOG EVENT HANDLER *************************/
 
 static pascal OSStatus DoGameSettingsDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData)
@@ -544,6 +491,7 @@ HICommand 			command;
 
     return (result);
 }
+#endif
 
 
 #if 0

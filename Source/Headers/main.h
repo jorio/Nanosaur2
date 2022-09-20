@@ -75,7 +75,6 @@ extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	short			gPrefsFolderVRefNum;
 extern	long			gPrefsFolderDirID;
 extern	FSSpec				gDataSpec;
-extern	IBNibRef 			gNibs;
 extern  u_long			gSharewareMode;
 
 

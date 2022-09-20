@@ -9,7 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	float		gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
 extern	FSSpec		gDataSpec;
@@ -48,7 +48,6 @@ static void InitPausedObjects(void);
 /*********************/
 
 
-#include "serialVerify.h"
 
 
 /********************** DO PAUSED **************************/

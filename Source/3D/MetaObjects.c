@@ -9,9 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include <AGL/aglmacro.h>
-
-#include "3DMath.h"
+#include "game.h"
 
 extern	Boolean			gMuteMusicFlag;
 extern	SpriteType		*gSpriteGroupList[];
@@ -357,6 +355,8 @@ static void SetMetaObjectToMatrix(MOMatrixObject *matObj, OGLMatrix4x4 *inData)
 
 static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, FSSpec *inData)
 {
+	IMPME;
+#if 0
 GWorldPtr	gworld;
 int			width,height,depth,cellNum,numCells;
 int			horizCellSize, vertCellSize,segRow,segCol;
@@ -594,6 +594,7 @@ Rect		r;
 
 	DisposeGWorld (gworld);
 	SafeDisposePtr(buffer);
+#endif
 
 }
 
@@ -2081,6 +2082,9 @@ float				d;
 
 MOMaterialObject *MO_GetTextureFromFile(FSSpec *spec, OGLSetupOutputType *setupInfo, int destPixelFormat)
 {
+	IMPME;
+	return NULL;
+#if 0
 MetaObjectPtr	obj;
 MOMaterialData	matData;
 long			width,height,depth,destDepth,y,x;
@@ -2272,6 +2276,7 @@ MOVertexArrayObject	*mo;
 	{
 		MO_VertexArray_OffsetUVs(mo, du, dv);
 	}
+#endif
 }
 
 
@@ -2386,6 +2391,9 @@ short				varType;
 
 MOMaterialObject *MO_LoadTextureObjectFromFile(OGLSetupOutputType *setupInfo, FSSpec *spec, Boolean useAlpha, Boolean textureInRAM)
 {
+	IMPME;
+	return NULL;
+#if 0
 GWorldPtr		gworld = nil;
 OSErr			iErr;
 Rect			r;
@@ -2468,6 +2476,7 @@ MOMaterialObject	*obj;
 	DisposeGWorld(gworld);
 
 	return(obj);
+#endif
 }
 
 

@@ -161,7 +161,6 @@ enum
 			/* EXTERNS */
 
 extern	ChannelInfoType				gChannelInfo[];
-extern	Movie							gSongMovie;
 
 //===================== PROTOTYPES ===================================
 

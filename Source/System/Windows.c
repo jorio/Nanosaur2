@@ -9,7 +9,7 @@
 /* EXTERNALS   */
 /***************/
 
-#include	"windows.h"
+#include	"game.h"
 
 
 extern	NewObjectDefinitionType	gNewObjectDefinition;
@@ -21,10 +21,6 @@ extern	Boolean				gMuteMusicFlag;
 extern	PrefsType			gGamePrefs;
 extern	Boolean			gSongPlayingFlag;
 extern	AGLContext		gAGLContext;
-extern	CFBundleRef 		gBundle;
-extern	IBNibRef 			gNibs;
-extern	WindowRef 		gDialogWindow;
-extern	EventHandlerUPP gWinEvtHandler;
 extern	int				gScratch;
 
 /****************************/
@@ -36,12 +32,6 @@ static void MoveFadeEvent(ObjNode *theNode);
 static void CreateDisplayModeList(void);
 static void GetDisplayVRAM(void);
 static void CalcVRAMAfterBuffers(void);
-
-static pascal OSStatus DoScreenModeDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
-static void BuildResolutionMenu(void);
-
-static pascal OSStatus DoAnaglyphCalibrationDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
-static pascal void DrawCalibrationImageProc(ControlRef control, SInt16 id);
 
 
 /****************************/
@@ -65,6 +55,8 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
+SDL_Window*		gSDLWindow;
+
 u_long			gDisplayVRAM = 0;
 u_long			gVRAMAfterBuffers = 0;
 
@@ -77,8 +69,6 @@ float			gGammaFadePercent = 1.0;
 int				gGameWindowWidth, gGameWindowHeight;
 
 short			g2DStackDepth = 0;
-
-static	CGDirectDisplayID	gCGDisplayID;
 
 Boolean			gPlayFullScreen;
 
@@ -97,17 +87,13 @@ static CGGammaValue gGammaGreenTable[256];
 static CGGammaValue gGammaBlueTable[256];
 
 static	short					gCurrentCalibrationImage = 0;
-static	WindowRef				gCalibrationWindow;
-static	EventHandlerUPP			gCalibrationEvtHandler;
-static	ControlUserPaneDrawUPP	gCalibrationUserPaneDrawUPP;
-static	GWorldPtr				gCalibrationImage_Original[NUM_CALIBRATION_IMAGES], gCalibrationImage_Modified[NUM_CALIBRATION_IMAGES];
-static	ControlRef				gCalibrationUserItemControl;
 
 
 /****************  INIT WINDOW STUFF *******************/
 
 void InitWindowStuff(void)
 {
+#if 0
 Rect				r;
 float				w,h;
 CFDictionaryRef 	refDisplayMode = 0;
@@ -203,6 +189,7 @@ CGTableCount 		sampleCount;
 	gGameWindowWidth = r.right - r.left;
 	gGameWindowHeight = r.bottom - r.top;
 
+#endif
 
 }
 
@@ -237,7 +224,8 @@ int			i;
 
 		Wait(1);
 
-		CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
+		SOFTIMPME;
+//		CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
 	}
 }
 
@@ -267,7 +255,8 @@ int			i;
 
 		Wait(1);
 
-		CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
+		SOFTIMPME;
+		//CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
 
 	}
 }
@@ -285,7 +274,8 @@ void GammaOn(void)
 	{
 		gGammaFadePercent = 1.0f;
 
-	 	CGSetDisplayTransferByTable(0, 256, gOriginalRedTable, gOriginalGreenTable, gOriginalBlueTable);
+		SOFTIMPME;
+	 	//CGSetDisplayTransferByTable(0, 256, gOriginalRedTable, gOriginalGreenTable, gOriginalBlueTable);
 	}
 }
 
@@ -314,7 +304,8 @@ void GammaOff(void)
 	        gGammaBlueTable[i] 	= gOriginalBlueTable[i] * gGammaFadePercent * gGammaTweak;
 	    }
 
-		CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
+		SOFTIMPME;
+		//CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
 	}
 }
 
@@ -325,7 +316,7 @@ void GammaOff(void)
 void CleanupDisplay(void)
 {
 
-	CGReleaseAllDisplays();
+//	CGReleaseAllDisplays();
 
 
 	gGameWindowGrafPtr = nil;
@@ -413,7 +404,7 @@ float	speed = theNode->Speed * fps;
 	        gGammaBlueTable[i] 	= gOriginalBlueTable[i] * gGammaFadePercent * gGammaTweak;
 	    }
 
-		CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
+		SOFTIMPME;//CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
 	}
 
 }
@@ -445,14 +436,14 @@ void Enter2D(void)
 			glFlush();
 			glFinish();
 
-			aglSetDrawable(gAGLContext, nil);		// diable GL so our dialogs will show up
+//			aglSetDrawable(gAGLContext, nil);		// diable GL so our dialogs will show up
 			glFlush();
 			glFinish();
 		}
 
 			/* NEED TO UN-CAPTURE THE CG DISPLAY */
 
-		CGDisplayRelease(gCGDisplayID);
+//		CGDisplayRelease(gCGDisplayID);
 	}
 
 	GammaOn();
@@ -475,12 +466,15 @@ void Exit2D(void)
 
 	if (gPlayFullScreen)
 	{
+		SOFTIMPME;
+#if 0
 //		if (gAGLContext)
 		{
 			CGDisplayCapture(gCGDisplayID);
 			if (gAGLContext)
 				aglSetFullScreen(gAGLContext, 0, 0, 0, 0);		//re-enable GL
 		}
+#endif
 	}
 
 
@@ -499,91 +493,14 @@ void Exit2D(void)
 
 #pragma mark -
 
-/*********************** DUMP GWORLD 2 **********************/
-//
-//    copies to a destination RECT
-//
-
-void DumpGWorld2(GWorldPtr thisWorld, WindowPtr thisWindow,Rect *destRect)
-{
-PixMapHandle pm;
-GDHandle		oldGD;
-GWorldPtr		oldGW;
-Rect			r;
-
-	DoLockPixels(thisWorld);
-
-	GetGWorld (&oldGW,&oldGD);
-	pm = GetGWorldPixMap(thisWorld);
-	if ((pm == nil) | (*pm == nil) )
-		DoAlert("PixMap Handle or Ptr = Null?!");
-
-	SetPort(GetWindowPort(thisWindow));
-
-	ForeColor(blackColor);
-	BackColor(whiteColor);
-
-	GetPortBounds(thisWorld, &r);
-
-	CopyBits((BitMap *)*pm, GetPortBitMapForCopyBits(GetWindowPort(thisWindow)),
-			 &r,
-			 destRect,
-			 srcCopy, 0);
-
-	SetGWorld(oldGW,oldGD);								// restore gworld
-}
-
-
-/*********************** DUMP GWORLD TO GWORLD **********************/
-//
-//
-
-void DumpGWorldToGWorld(GWorldPtr thisWorld, GWorldPtr destWorld)
-{
-GDHandle	oldGD;
-GWorldPtr	oldGW;
-Rect		r1,r2;
-
-	GetGWorld (&oldGW,&oldGD);
-
-	SetGWorld(thisWorld,nil);
-	ForeColor(blackColor);
-	BackColor(whiteColor);
-
-	SetGWorld(destWorld,nil);
-	ForeColor(blackColor);
-	BackColor(whiteColor);
-
-	DoLockPixels(destWorld);
-	DoLockPixels(thisWorld);
-
-	GetPortBounds(thisWorld, &r1);
-	GetPortBounds(destWorld, &r2);
-
-	CopyBits(GetPortBitMapForCopyBits(thisWorld),GetPortBitMapForCopyBits(destWorld),&r1,&r2,srcCopy|ditherCopy,0);
-
-	SetGWorld(oldGW,oldGD);								// restore gworld
-}
-
-
-
-/******************* DO LOCK PIXELS **************/
-
-void DoLockPixels(GWorldPtr world)
-{
-PixMapHandle pm;
-
-	pm = GetGWorldPixMap(world);
-	if (LockPixels(pm) == false)
-		DoFatalAlert("PixMap Went Bye,Bye?!");
-}
-
 
 /********************** WAIT **********************/
 
 void Wait(u_long ticks)
 {
 u_long	start;
+
+	puts("rewrite this spinwait!!!");
 
 	start = TickCount();
 
@@ -599,6 +516,7 @@ u_long	start;
 
 void DoScreenModeDialog(void)
 {
+#if 0
 Byte			oldStereo = gGamePrefs.stereoGlassesMode;
 OSErr			err;
 EventHandlerRef	ref;
@@ -835,9 +753,11 @@ do_it:
 
 	CalcVRAMAfterBuffers();
 	SavePrefs();
+#endif
 }
 
 
+#if 0
 /****************** DO SCREEN MODE DIALOG EVENT HANDLER *************************/
 //
 // main window event handling
@@ -1157,6 +1077,7 @@ int	bufferSpace;
 
 	gVRAMAfterBuffers = gDisplayVRAM - bufferSpace;
 }
+#endif
 
 
 #pragma mark -
@@ -1165,6 +1086,8 @@ int	bufferSpace;
 
 void DoAnaglyphCalibrationDialog(void)
 {
+	IMPME;
+#if 0
 OSErr			err;
 EventHandlerRef	ref;
 EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
@@ -1277,11 +1200,13 @@ const unsigned char	*names[NUM_CALIBRATION_IMAGES] =
 		DisposeGWorld(gCalibrationImage_Modified[i]);
 	}
 	SavePrefs();
+#endif
 }
 
 
 /***************** DRAW CALIBRATION IMAGE PROC ********************/
 
+#if 0
 static pascal void DrawCalibrationImageProc(ControlRef control, SInt16 id)
 {
 Rect			bounds, r;
@@ -1475,4 +1400,7 @@ Boolean			oldDoCa;
 }
 
 
+
+
+#endif
 

@@ -17,8 +17,6 @@
 #define	IS_ZERO(_x)  (fabs(_x) < EPS)
 
 
-#define	MOVE_TO_FRONT		(WindowPtr)-1L
-#define REMOVE_ALL_EVENTS	 0
 
 
 

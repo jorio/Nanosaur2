@@ -9,7 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
+#include "game.h"
 
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLPoint3D				gCoord;
@@ -841,7 +841,7 @@ OGLPoint3D		hitPt;
 Boolean			killed;
 
 	if (gGamePrefs.kiddieMode)							// don't hurt in kiddie mode
-		return;
+		return false;									// TODO: I assume we should return false here -IJ
 
 	for (p = 0; p < gNumPlayers; p++)
 	{

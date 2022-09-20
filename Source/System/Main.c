@@ -9,12 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "windows.h"
-#include "3DMath.h"
-#include "mainmenu.h"
-#include "infobar.h"
-#include "dialog.h"
-#include "internet.h"
+#include "game.h"
 
 extern	Boolean			gDrawLensFlare,gDisableHiccupTimer, gPlayerIsDead[], gAnaglyph;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
@@ -42,7 +37,6 @@ static void PlayLevel(void);
 static void DrawLevelCallback(OGLSetupOutputType *setupInfo);
 static void MoveTimeDemoOnSpline(ObjNode *theNode);
 static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFPS);
-static pascal OSStatus ShowTimeDemoResults_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
 
 
 /****************************/
@@ -106,9 +100,6 @@ float				gBestCheckpointAim[MAX_PLAYERS];
 int					gScratch = 0;
 float				gScratchF = 0;
 
-CFBundleRef 		gBundle = nil;
-IBNibRef 			gNibs = nil;
-
 
 			/* LEVEL SONGS */
 
@@ -127,9 +118,6 @@ const short gLevelSongs[] =
 };
 
 
-
-
-#include "serialVerify.h"
 
 
 //======================================================================================
@@ -152,8 +140,10 @@ long		createdDirID;
 			/* INIT NIB INFO */
 			/*****************/
 
+#if 0
 	gBundle = CFBundleGetMainBundle();
 	CreateNibReferenceWithCFBundle(gBundle, CFSTR(kDefaultNibFileName), &gNibs);
+#endif
 
 
 
@@ -221,7 +211,9 @@ long		createdDirID;
 
 			/* START QUICKTIME */
 
+#if 0
 	EnterMovies();
+#endif
 
 
 
@@ -243,6 +235,7 @@ long		createdDirID;
 		/* SEE IF SHOULD DO VERSION CHECK */
 		/**********************************/
 
+#if 0
 	if (gGameIsRegistered)								// only do HTTP if registered
 	{
 		DateTimeRec	dateTime;
@@ -262,6 +255,7 @@ long		createdDirID;
 			ReadHTTPData_VersionInfo();					// do version check (also checks serial #'s)
 		}
 	}
+#endif
 
 			/*********************************/
 			/* DO BOOT CHECK FOR SCREEN MODE */
@@ -284,8 +278,12 @@ long 		keyboardScript, languageCode;
 
 		/* DETERMINE WHAT LANGUAGE IS ON THIS MACHINE */
 
+#if 0
 	keyboardScript = GetScriptManagerVariable(smKeyScript);
 	languageCode = GetScriptVariable(keyboardScript, smScriptLang);
+#endif
+	SOFTIMPME;
+	languageCode = LANGUAGE_ENGLISH;
 
 	switch(languageCode)
 	{
@@ -323,7 +321,7 @@ long 		keyboardScript, languageCode;
 	gGamePrefs.screenWidth			= 1024;
 	gGamePrefs.screenHeight			= 768;
 	gGamePrefs.lowRenderQuality		= false;
-	gGamePrefs.lastVersCheckDate.year = 0;
+//	gGamePrefs.lastVersCheckDate.year = 0;
 	gGamePrefs.hasConfiguredISpControls = false;
 	gGamePrefs.splitScreenMode		= SPLITSCREEN_MODE_VERT;
 	gGamePrefs.stereoGlassesMode	= STEREO_GLASSES_MODE_OFF;
@@ -835,6 +833,7 @@ float	fps;
 		if (GetNewKeyState(KEY_ESC))								// do regular pause mode
 			DoPaused();
 
+#if 0
 		if (GetNewKeyState(KEY_F15))								// do screen-saver-safe paused mode
 		{
 			glFinish();
@@ -848,6 +847,7 @@ float	fps;
 
 			CalcFramesPerSecond();
 		}
+#endif
 
 				/* LEVEL CHEAT */
 
@@ -896,6 +896,8 @@ float	fps;
 
 static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFPS)
 {
+	IMPME;
+#if 0
 ControlID 	idControl;
 ControlRef 	control;
 OSStatus		err;
@@ -958,9 +960,11 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
 			/* START THE EVENT LOOP */
 
     RunAppModalLoopForWindow(gDialogWindow);
+#endif
 }
 
 
+#if 0
 static pascal OSStatus ShowTimeDemoResults_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData)
 {
 #pragma unused (myHandler, userData)
@@ -989,6 +993,7 @@ HICommand 		command;
 
     return (result);
 }
+#endif
 
 
 
@@ -1301,13 +1306,3 @@ unsigned long	someLong;
 	}
 
 }
-
-
-
-
-
-
-
-
-
-

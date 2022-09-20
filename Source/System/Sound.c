@@ -9,9 +9,7 @@
 /* EXTERNALS   */
 /***************/
 
-#include <pthread.h>
-
-#include "3DMath.h"
+#include "game.h"
 
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	FSSpec				gDataSpec;
@@ -20,7 +18,7 @@ extern	PrefsType			gGamePrefs;
 extern	Boolean				gHIDInitialized;
 extern	Byte		gNumPlayers;
 extern  int			gScratch;
-extern void  dtox80(const double *x, extended80 *x80);
+//extern void  dtox80(const double *x, extended80 *x80);
 
 
 /****************************/
@@ -30,7 +28,7 @@ extern void  dtox80(const double *x, extended80 *x80);
 static short FindSilentChannel(void);
 static void Calc3DEffectVolume(short effectNum, OGLPoint3D *where, float volAdjust, u_long *leftVolOut, u_long *rightVolOut);
 static void UpdateGlobalVolume(void);
-static pascal void CallBackFn (SndChannelPtr chan, SndCommand *cmd);
+//static pascal void CallBackFn (SndChannelPtr chan, SndCommand *cmd);
 static void *MySongThreadEntry(void *in);
 
 
@@ -69,7 +67,7 @@ static volatile  Boolean gInQuicktimeFunction = false, gInMoviesTask = false;
 			/* SONG RELATED */
 
 static CGrafPtr		gQTDummyPort = nil;
-Movie				gSongMovie = nil;
+/*Movie*/ void*		gSongMovie = nil;
 
 const float	gSongVolumeTweaks[]=
 {
@@ -98,7 +96,7 @@ const Str32	gSongNames[] =
 			/* STREAMING FILES */
 
 short				gNumStreamingAudioFiles = 0;
-Movie				gStreamingAudioMovie[MAX_AUDIO_STREAMS];
+void* /*Movie*/		gStreamingAudioMovie[MAX_AUDIO_STREAMS];
 float				gStreamingAudioTaskTimer[MAX_AUDIO_STREAMS];
 float				gStreamingAudioVolume[MAX_AUDIO_STREAMS];
 Boolean				gStreamingFileFlag[MAX_AUDIO_STREAMS];
@@ -185,6 +183,8 @@ static EffectType	gEffectsTable[] =
 
 void InitSoundTools(void)
 {
+	IMPME;
+#if 0
 OSErr			iErr;
 short			i;
 ExtSoundHeader	sndHdr;
@@ -306,9 +306,11 @@ FSSpec			spec;
 		pthread_create(&myThread, NULL, MySongThreadEntry, nil);
 
 	}
+#endif
 }
 
 
+#if 0
 /****************** MY SONG THREAD ENTRY *********************/
 //
 // There was a problem with the songs stuttering during heavy VRAM loading periods.
@@ -343,6 +345,7 @@ static void *MySongThreadEntry(void *in)
 
     return 0;
 }
+#endif
 
 
 /******************** SHUTDOWN SOUND ***************************/
@@ -602,6 +605,8 @@ GrafPtr	oldPort;
 	gCurrentSong = songNum;
 
 
+	SOFTIMPME;
+#if 0
 				/*****************/
 				/* START PLAYING */
 				/*****************/
@@ -662,6 +667,7 @@ GrafPtr	oldPort;
 			StopMovie(gSongMovie);
 
 	}
+#endif
 }
 
 
@@ -680,8 +686,11 @@ void KillSong(void)
 
 	gSongPlayingFlag = false;											// tell callback to do nothing
 
+	SOFTIMPME;
+#if 0
 	StopMovie(gSongMovie);
 	DisposeMovie(gSongMovie);
+#endif
 
 	gSongMovie = nil;
 
@@ -697,6 +706,8 @@ void ToggleMusic(void)
 
 	gMuteMusicFlag = !gMuteMusicFlag;
 
+	SOFTIMPME;
+#if 0
 	if (gSongMovie)
 	{
 		gInQuicktimeFunction = true;				// dont allow song task to start anything new
@@ -709,6 +720,7 @@ void ToggleMusic(void)
 
 		gInQuicktimeFunction = false;
 	}
+#endif
 }
 
 
@@ -999,6 +1011,7 @@ short PlayEffect(short effectNum)
 
 }
 
+#if 0
 /***************************** CALLBACKFN ***************************/
 //
 // Called by the Sound Manager at interrupt time to let us know that
@@ -1019,6 +1032,7 @@ SndCommand      theCmd;
     // Just reuse the callBackCmd that got us here in the first place
     SndDoCommand (chan, cmd, true);
 }
+#endif
 
 /***************************** PLAY EFFECT PARMS ***************************/
 //
@@ -1036,7 +1050,9 @@ Byte			bankNum,soundNum;
 OSErr			myErr;
 u_long			lv2,rv2;
 static UInt32          loopStart, loopEnd;
+#if 0 //TODO: Missing in Pomme?
 SoundHeaderPtr   sndPtr;
+#endif
 
 
 
@@ -1103,6 +1119,8 @@ SoundHeaderPtr   sndPtr;
 
     		/* SEE IF THIS IS A LOOPING EFFECT */
 
+	SOFTIMPME;
+#if 0
     sndPtr = (SoundHeaderPtr)(((long)*gSndHandles[bankNum][soundNum])+gSndOffsets[bankNum][soundNum]);
     loopStart = sndPtr->loopStart;
     loopEnd = sndPtr->loopEnd;
@@ -1118,6 +1136,7 @@ SoundHeaderPtr   sndPtr;
 	}
 	else
 		gChannelInfo[theChan].isLooping = false;
+#endif
 
 
 			/* SET MY INFO */
@@ -1149,6 +1168,8 @@ int		c;
 		ChangeChannelVolume(c, gChannelInfo[c].leftVolume, gChannelInfo[c].rightVolume);
 	}
 
+	SOFTIMPME;
+#if 0
 			/* UPDATE SONG VOLUME */
 
 	if (gSongPlayingFlag)
@@ -1170,6 +1191,7 @@ int		c;
 			SetMovieVolume(gStreamingAudioMovie[c], FloatToFixed16(gGlobalVolume) * gStreamingAudioVolume[c]);
 		}
 	}
+#endif
 
 }
 
@@ -1277,6 +1299,8 @@ short	i;
 
 	if (gSongPlayingFlag)
 	{
+		SOFTIMPME;
+#if 0
 		gInQuicktimeFunction = true;				// dont allow song task to start anything new
 		while(gInMoviesTask);			// DONT DO ANYTHING WHILE IN THE SONG TASK!!
 
@@ -1290,6 +1314,7 @@ short	i;
 			else									// otherwise kill the song
 				KillSong();
 		}
+#endif
 
 		gInQuicktimeFunction = false;
 	}
@@ -1305,6 +1330,8 @@ short	i;
 		{
 			if (gStreamingFileFlag[i])
 			{
+				SOFTIMPME;
+#if 0
 				if (IsMovieDone(gStreamingAudioMovie[i]))				// see if the song has completed
 				{
 					KillAudioStream(i);
@@ -1323,6 +1350,7 @@ short	i;
 						gInQuicktimeFunction = false;
 					}
 				}
+#endif
 			}
 		}
 	}
@@ -1420,6 +1448,8 @@ FSSpec spec;
 				/* START PLAYING */
 				/*****************/
 
+	SOFTIMPME;
+#if 0
 			/* GOT TO SET A DUMMY PORT OR QT MAY FREAK */
 
 	if (gQTDummyPort == nil)						// create a blank graf port
@@ -1450,6 +1480,7 @@ FSSpec spec;
 	}
 
 	SetPort(oldPort);
+#endif
 
 	gStreamingAudioVolume[streamNum] = volumeTweak;
 
@@ -1462,8 +1493,11 @@ FSSpec spec;
 
 void StartAudioStream(short streamNum)
 {
+	SOFTIMPME;
+#if 0
 	if (gStreamingFileFlag[streamNum])
 		StartMovie(gStreamingAudioMovie[streamNum]);
+#endif
 }
 
 
@@ -1471,6 +1505,8 @@ void StartAudioStream(short streamNum)
 
 void KillAudioStream(short streamNum)
 {
+	SOFTIMPME;
+#if 0
 		/* KILL ALL AUDIO STREAMS */
 
 	if (streamNum == -1)
@@ -1507,20 +1543,6 @@ void KillAudioStream(short streamNum)
 
 		gNumStreamingAudioFiles--;
 	}
+#endif
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

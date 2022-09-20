@@ -9,8 +9,8 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include "3DMath.h"
-#include <Accelerate/Accelerate.h>
+#include "game.h"
+#include <math.h>
 
 extern	float				gFramesPerSecondFrac,gFramesPerSecond;
 extern	OGLMatrix4x4		gWorldToFrustumMatrix;

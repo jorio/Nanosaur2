@@ -9,10 +9,7 @@
 /*    EXTERNALS             */
 /****************************/
 
-#include <AGL/aglmacro.h>
-
-#include "3DMath.h"
-#include "atigl.h"
+#include "game.h"
 
 extern int				gNumObjectNodes,gNumPointers;
 extern	MOMaterialObject	*gMostRecentMaterial;
@@ -25,7 +22,6 @@ extern	PrefsType			gGamePrefs;
 extern	int				gGameWindowWidth,gGameWindowHeight,gScratch,gNumSparkles,gNumLoopingEffects;
 extern	CGrafPtr				gGameWindowGrafPtr;
 extern	GDHandle 		gGDevice;
-extern	Movie				gSongMovie;
 extern  long			gRAMAlloced;
 
 /****************************/
@@ -138,8 +134,6 @@ GLuint							gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
 Boolean					gHardwareSupportsVertexArrayRange = false;
 Boolean					gUsingVertexArrayRange = false;
 Boolean					gVARMemoryAllocated = false;
-
-#include "serialVerify.h"
 
 
 /******************** OGL BOOT *****************/
@@ -268,7 +262,10 @@ short	i;
 	OGL_CreateDrawContext(setupDefPtr);
 	OGL_SetStyles(setupDefPtr);
 	OGL_CreateLights(&setupDefPtr->lights);
+	SOFTIMPME;
+#if 0
 	OGL_LoadAllShaderPrograms();
+#endif
 	OGL_InitVertexArrayMemory();
 
 
@@ -334,16 +331,18 @@ OGLSetupOutputType	*data;
 	OGL_DisableVertexArrayRanges();
 
 
+	SOFTIMPME;
+#if 0
 			/* UNLOAD VERTEX PROGRAMS */
 
 	OGL_UnloadAllShaderPrograms();
+#endif
 
 
 			/* NUKE THE CONTEXT */
 
-  	aglSetCurrentContext(nil);								// make context not current
-   	aglSetDrawable(data->drawContext, nil);
-	aglDestroyContext(data->drawContext);					// nuke the AGL context
+	SDL_GL_MakeCurrent(gSDLWindow, nil);					// make context not current
+	SDL_GL_DeleteContext(data->drawContext);				// nuke the AGL context
 
 
 		/* FREE MEMORY & NIL POINTER */
@@ -362,6 +361,8 @@ OGLSetupOutputType	*data;
 
 static void OGL_CreateDrawContext(OGLSetupInputType *def)
 {
+	IMPME;
+#if 0
 AGLPixelFormat 	fmt;
 GLboolean      mkc, ok;
 GLint          attribWindow[]	= {AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
@@ -554,6 +555,7 @@ OGLViewDefType *viewDefPtr = &def->view;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
 	if (maxTexSize < 1024)
 		DoFatalAlert("Your video card cannot do 1024x1024 textures, so it is below the game's minimum system requirements.");
+#endif
 }
 
 
@@ -750,6 +752,7 @@ AGLContext agl_ctx = setupInfo->drawContext;
 
 
 
+#if 0
 			/* WHILE WE'RE HERE MAKE SURE OS X DOESNT GO TO SLEEP */
 
 	{
@@ -762,6 +765,7 @@ AGLContext agl_ctx = setupInfo->drawContext;
 			UpdateSystemActivity(UsrActivity);
 		}
 	}
+#endif
 
 	if (!setupInfo->isActive)
 		DoFatalAlert("OGL_DrawScene isActive == false");
@@ -1765,6 +1769,9 @@ AGLContext agl_ctx = gAGLContext;
 
 GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel)
 {
+	IMPME;
+	return NULL;
+#if 0
 Rect			r;
 GWorldPtr		gworld;
 PixMapHandle	gworldPixmap;
@@ -1844,6 +1851,7 @@ long			pixelSize;
 	}
 
 	return(gworld);
+#endif
 }
 
 
@@ -2365,7 +2373,10 @@ short	i;
 
 		/* GENERATE VERTEX ARRAY OBJECTS */
 
+	IMPME;
+#if 0
 	glGenVertexArraysAPPLE(NUM_VERTEX_ARRAY_RANGES, &gVertexArrayRangeObjects[0]);
+#endif
 
 
 			/* INIT EACH */
@@ -2414,6 +2425,8 @@ AGLContext agl_ctx = gAGLContext;
 
 			/* TELL OPENGL WE ARE NOT USING VERTEX ARRAY RANGES ANYMORE */
 
+	SOFTIMPME;
+#if 0
 	for (i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)
 	{
 		glBindVertexArrayAPPLE(gVertexArrayRangeObjects[i]);
@@ -2422,6 +2435,7 @@ AGLContext agl_ctx = gAGLContext;
 	}
 
 	glDeleteVertexArraysAPPLE(NUM_VERTEX_ARRAY_RANGES, gVertexArrayRangeObjects);
+#endif
 
 
 				/* FREE UP THE MEMORY */
@@ -2704,7 +2718,10 @@ Boolean	cached;
 
 update_it:
 
+		IMPME;
+#if 0
 		glBindVertexArrayAPPLE(gVertexArrayRangeObjects[i]);
+#endif
 
 
 				/* IS THIS TYPE CACHED? */
@@ -2734,6 +2751,8 @@ update_it:
 
 		if (!gVertexArrayRangeActivated[i])
 		{
+			SOFTIMPME;
+#if 0
 			glVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);
 
 			if (cached)
@@ -2742,6 +2761,7 @@ update_it:
 				glVertexArrayParameteriAPPLE(GL_VERTEX_ARRAY_STORAGE_HINT_APPLE, GL_STORAGE_SHARED_APPLE);
 
 			glFlushVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);				// this isn't documented, but you MUST call this flush to get the data uploaded to VRAM!!
+#endif
 
 			glEnableClientState(GL_VERTEX_ARRAY_RANGE_APPLE);
 
@@ -2756,12 +2776,15 @@ update_it:
 
 		else
 		{
+			SOFTIMPME;
+#if 0
 			if (cached)														// cached data seems to need a complete reset
 			{
 				glVertexArrayRangeAPPLE(0, nil);
 				glVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);
 			}
 			glFlushVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);	// force an update of the existing memory
+#endif
 		}
 
 

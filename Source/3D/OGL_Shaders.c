@@ -1,3 +1,5 @@
+#if 0	//check whether we need this -IJ
+
 /****************************/
 /*   OPENGL SHADERS.C	    */
 /* (c)2003 Pangea Software  */
@@ -211,3 +213,5 @@ void OGL_SetActiveVertexShaderProgram(GLuint programID)
 
 
 
+
+#endif

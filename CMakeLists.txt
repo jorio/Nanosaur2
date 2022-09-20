@@ -50,7 +50,7 @@ elseif(APPLE)
 endif()
 
 set(POMME_NO_VIDEO true)
-set(POMME_NO_INPUT true)
+#set(POMME_NO_INPUT true)
 set(POMME_NO_GRAPHICS true)
 set(POMME_NO_QD3D true)
 
@@ -92,6 +92,7 @@ set(GAME_LIBRARIES
 	Pomme
 	${SDL2_LIBRARIES}
 	OpenGL::GL
+	OpenGL::GLU #--------------------------TEMP
 )
 
 if(WIN32)
@@ -147,6 +148,22 @@ if(NOT MSVC)
 		$<$<CXX_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>
 		-Werror=return-type
 		-Wno-unused-function
+		#-----------------------------------
+		-Wno-absolute-value
+		-Wno-char-subscripts
+		-Wno-implicit-function-declaration
+		-Wno-incompatible-pointer-types
+		-Wno-int-conversion
+		-Wno-maybe-uninitialized
+		-Wno-missing-braces
+		-Wno-old-style-declaration
+		-Wno-pointer-sign
+		-Wno-pointer-to-int-cast
+		-Wno-shadow
+		-Wno-stringop-overflow
+		-Wno-unused-label
+		-Wno-unused-parameter
+		-Wno-unused-variable
 	)
 
 	# Sanitizers in debug mode (Linux only)

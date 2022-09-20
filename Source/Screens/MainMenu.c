@@ -369,7 +369,7 @@ int			language;
 
 						{									// FRENCH
 							"NOUVELLE PARTIE",
-							"PR\x83F\x83RENCES",
+							"PR\203F\203RENCES",
 							"INFOS",
 							"QUITTER",
 						},
@@ -397,7 +397,7 @@ int			language;
 
 						{									// SWEDISH
 							"SPELA",
-							"INST\x80LLNINGAR",
+							"INST\200LLNINGAR",
 							"INFORMATION",
 							"AVSLUTA",
 						},
@@ -454,7 +454,7 @@ int			language;
 						{												// FRENCH
 							"AVENTURE",
 							"NANO CONTRE NANO",
-							"PARTIES ENREGISTR\x83ES",
+							"PARTIES ENREGISTR\203ES",
 							"~",
 						},
 
@@ -534,7 +534,7 @@ int			language;
 
 						{														// FRENCH
 							"L'UNIVERS",
-							"CR\x83DITS",
+							"CR\203DITS",
 							"SITE WEB PANGEA",
 							"LUNETTES 3D",
 							"~",
@@ -550,7 +550,7 @@ int			language;
 
 						{														// SPANISH
 							"HISTORIA",
-							"CR\x83DITOS",
+							"CR\203DITOS",
 							"PAGINA WEB DE PANGEA",
 							"GAFAS 3D",
 							"~",
@@ -566,9 +566,9 @@ int			language;
 
 						{														// SWEDISH
 							"STORY",
-							"VI SOM G\x85R NANOSAUR",
+							"VI SOM G\205R NANOSAUR",
 							"PANGEAS HEMSIDA",
-							"3D-GLAS\x85GON",
+							"3D-GLAS\205GON",
 							"~",
 						},
 
@@ -663,12 +663,12 @@ int			language;
 						},
 
 						{											// SWEDISH
-							"T\x80VLING 1",
-							"T\x80VLING 2",
+							"T\200VLING 1",
+							"T\200VLING 2",
 							"TVEKAMP 1",
 							"TVEKAMP 2",
-							"F\x81NGA \x80GGEN 1",
-							"F\x81NGA \x80GGEN 2",
+							"F\201NGA \200GGEN 1",
+							"F\201NGA \200GGEN 2",
 							"~",
 						},
 

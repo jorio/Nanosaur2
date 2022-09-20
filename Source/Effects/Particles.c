@@ -21,7 +21,7 @@ extern	SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
 extern	OGLVector3D		gRecentTerrainNormal;
 extern	OGLPoint3D		gEarCoords;
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	u_long				gAutoFadeStatusBits;
+extern	uint32_t				gAutoFadeStatusBits;
 extern	Boolean				gGameOver;
 extern	Byte				gCurrentSplitScreenPane;
 
@@ -390,7 +390,7 @@ got_it:
 
 static void MoveParticleGroups(ObjNode *theNode)
 {
-u_long		flags;
+uint32_t		flags;
 long		i,n,p,j;
 float		fps = gFramesPerSecondFrac;
 float		y,baseScale,oneOverBaseScaleSquared,gravity;
@@ -664,7 +664,7 @@ short				paneNum;
 		{
 			float	minX,minY,minZ,maxX,maxY,maxZ;
 			int		temp;
-			u_long	allAim;
+			uint32_t	allAim;
 
 			if (gParticleGroups[g])
 			{
@@ -865,7 +865,7 @@ Boolean				isVisible;
 
 /**************** VERIFY PARTICLE GROUP MAGIC NUM ******************/
 
-Boolean VerifyParticleGroupMagicNum(short group, u_long magicNum)
+Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum)
 {
 	if (gParticleGroups[group] == nil)
 		return(false);
@@ -885,7 +885,7 @@ Boolean VerifyParticleGroupMagicNum(short group, u_long magicNum)
 Boolean ParticleHitObject(ObjNode *theNode, u_short inFlags)
 {
 int		i,p;
-u_long	flags;
+uint32_t	flags;
 OGLPoint3D	*coord;
 
 	for (i = 0; i < MAX_PARTICLE_GROUPS; i++)
@@ -1341,7 +1341,7 @@ short	i;
 /****************** BURN FIRE ************************/
 
 void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke,
-			short particleType, float scale, u_long moreFlags)
+			short particleType, float scale, uint32_t moreFlags)
 {
 int		i;
 float	fps = gFramesPerSecondFrac;

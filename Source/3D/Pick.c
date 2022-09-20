@@ -104,7 +104,7 @@ Boolean		gPickAllTrianglesAsDoubleSided = false;						// set to true if we want 
 //			ray->distance = distance from ray origin to the intersection point
 //
 
-ObjNode *OGL_DoRayCollision_ObjNodes(OGLRay *ray, u_long statusFilter, u_long cTypes, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal)
+ObjNode *OGL_DoRayCollision_ObjNodes(OGLRay *ray, uint32_t statusFilter, uint32_t cTypes, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal)
 {
 ObjNode		*thisNodePtr;
 ObjNode		*bestObj = nil;
@@ -783,7 +783,7 @@ float 	xComp, yComp, zComp;
 //			ray->distance = distance from ray origin to the intersection point
 //
 
-ObjNode *OGL_DoLineSegmentCollision_ObjNodes(const OGLLineSegment *lineSeg, u_long statusFilter, u_long cTypes,
+ObjNode *OGL_DoLineSegmentCollision_ObjNodes(const OGLLineSegment *lineSeg, uint32_t statusFilter, uint32_t cTypes,
 											 OGLPoint3D *worldHitCoord, OGLVector3D *worldHitFaceNormal, float *distToHit,
 											 Boolean allowBBoxTests)
 {
@@ -1805,7 +1805,7 @@ Byte		buffNum;
 // Checks to see if the input bounding sphere hits any eligible objNodes in the scene.
 //
 
-ObjNode *OGL_DoSphereCollision_ObjNodes(const OGLBoundingSphere *sphere, u_long statusFilter, u_long cTypes)
+ObjNode *OGL_DoSphereCollision_ObjNodes(const OGLBoundingSphere *sphere, uint32_t statusFilter, uint32_t cTypes)
 {
 ObjNode		*thisNodePtr;
 long		gridX, gridY, gridZ;

@@ -18,7 +18,7 @@ extern	int						gNumObjectsInBG3DGroupList[MAX_BG3D_GROUPS];
 extern	float					gFramesPerSecondFrac,gGlobalTransparency;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLColorRGB				gGlobalColorFilter;
-extern	u_long					gGlobalMaterialFlags;
+extern	uint32_t					gGlobalMaterialFlags;
 extern	OGLBoundingBox			gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	GLuint					gVertexShaderID[];
 extern	GLuint					gVertexArrayRangeObjects[];
@@ -1658,7 +1658,7 @@ void UpdateObjectTransforms(ObjNode *theNode)
 {
 OGLMatrix4x4	m,m2;
 OGLMatrix4x4	mx,my,mz,mxz;
-u_long			bits;
+uint32_t			bits;
 
 	if (theNode->CType == INVALID_NODE_FLAG)		// see if already deleted
 		return;

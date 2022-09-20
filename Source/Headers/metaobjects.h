@@ -38,10 +38,10 @@ enum
 
 struct MetaObjectHeader
 {
-	u_long		cookie;						// this value should always == MO_COOKIE
+	uint32_t		cookie;						// this value should always == MO_COOKIE
 	long		refCount;					// # times this is referenced
-	u_long		type;						// object type
-	u_long		subType;					// object sub-type
+	uint32_t		type;						// object type
+	uint32_t		subType;					// object sub-type
 	void		*data;						// pointer to meta object's specific data
 
 	struct MetaObjectHeader *parentGroup;			// illegal reference to parent group, or nil if no parent
@@ -81,14 +81,14 @@ typedef struct
 {
 	OGLSetupOutputType *setupInfo;					// materials are draw context relative, so remember which context we're using now
 
-	u_long			flags;
+	uint32_t			flags;
 	OGLColorRGBA	diffuseColor;					// rgba diffuse color
 	u_short			multiTextureMode;				// sphere map, etc.
 	u_short			multiTextureCombine;			// blend, replace, etc.
 	u_short			envMapNum;						// texture # in env map list to use
 
-	u_long			numMipmaps;						// # texture mipmaps to use
-	u_long			width,height;					// dimensions of texture
+	uint32_t			numMipmaps;						// # texture mipmaps to use
+	uint32_t			width,height;					// dimensions of texture
 	GLint			pixelSrcFormat;					// OGL format (GL_RGBA, etc.) for src pixels
 	GLint			pixelDstFormat;					// OGL format (GL_RGBA, etc.) for VRAM
 	void			*texturePixels[MO_MAX_MIPMAPS]; // ptr to texture pixels for each mipmap
@@ -226,13 +226,13 @@ typedef struct
 
 extern	OGLColorRGB			gGlobalColorFilter;
 extern	float				gGlobalTransparency;
-extern	u_long				gGlobalMaterialFlags;
+extern	uint32_t				gGlobalMaterialFlags;
 
 
 //-----------------------------
 
 void MO_InitHandler(void);
-MetaObjectPtr MO_CreateNewObjectOfType(u_long type, u_long subType, void *data);
+MetaObjectPtr MO_CreateNewObjectOfType(uint32_t type, void* subType, void *data);
 MetaObjectPtr MO_GetNewReference(MetaObjectPtr mo);
 void MO_AppendToGroup(MOGroupObject *group, MetaObjectPtr newObject);
 void MO_AttachToGroupStart(MOGroupObject *group, MetaObjectPtr newObject);

@@ -18,7 +18,7 @@ extern	OGLVector3D			gDelta;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLBoundingBox 		gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	OGLSetupOutputType	*gGameViewInfoPtr;
-extern	u_long				gAutoFadeStatusBits,gGlobalMaterialFlags;
+extern	uint32_t				gAutoFadeStatusBits,gGlobalMaterialFlags;
 extern	short				gNumEnemies;
 extern	SpriteType	*gSpriteGroupList[];
 extern	AGLContext		gAGLContext;
@@ -285,7 +285,7 @@ static void MoveEgg_NotCarried(ObjNode *egg)
 short					i;
 OGLPoint3D				footCoord;
 float					fps = gFramesPerSecondFrac;
-u_long					onGround = egg->StatusBits & STATUS_BIT_ONGROUND;
+uint32_t					onGround = egg->StatusBits & STATUS_BIT_ONGROUND;
 ObjNode *nest;
 
 	nest = egg->ChainHead;

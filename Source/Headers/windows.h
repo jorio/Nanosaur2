@@ -12,7 +12,7 @@
 extern	int				gGameWindowWidth, gGameWindowHeight;
 extern	Boolean			gPlayFullScreen;
 extern	float			gGammaTweak;
-extern	u_long			gDisplayVRAM, gVRAMAfterBuffers;
+extern	uint32_t			gDisplayVRAM, gVRAMAfterBuffers;
 
 extern	SDL_Window*		gSDLWindow;
 
@@ -28,7 +28,7 @@ void GammaFadeIn(void);
 void GammaOn(void);
 void GammaOff(void);
 
-void Wait(u_long ticks);
+void Wait(uint32_t ticks);
 void DoScreenModeDialog(void);
 
 void Enter2D(void);

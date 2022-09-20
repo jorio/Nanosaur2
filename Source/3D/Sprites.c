@@ -10,12 +10,13 @@
 /****************************/
 
 #include "game.h"
+#include "stb_image.h"
 
 
 extern	float	gGlobalTransparency;
 extern	int		gPolysThisFrame;
 extern	Boolean			gSongPlayingFlag,gMuteMusicFlag;
-extern	u_long			gGlobalMaterialFlags;
+extern	uint32_t			gGlobalMaterialFlags;
 
 /****************************/
 /*    PROTOTYPES            */
@@ -34,7 +35,7 @@ extern	u_long			gGlobalMaterialFlags;
 /*********************/
 
 SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
-long		gNumSpritesInGroupList[MAX_SPRITE_GROUPS];		// note:  this must be long's since that's what we read from the sprite file!
+int32_t		gNumSpritesInGroupList[MAX_SPRITE_GROUPS];		// note:  this must be int32_t's since that's what we read from the sprite file!
 
 
 
@@ -113,7 +114,7 @@ MOMaterialData	matData;
 
 		/* READ # SPRITES IN THIS FILE */
 
-	count = sizeof(long);
+	count = sizeof(int32_t);
 	FSRead(refNum, &count, &gNumSpritesInGroupList[groupNum]);
 
 	gNumSpritesInGroupList[groupNum] = SwizzleLong(&gNumSpritesInGroupList[groupNum]);
@@ -132,16 +133,16 @@ MOMaterialData	matData;
 
 	for (i = 0; i < gNumSpritesInGroupList[groupNum]; i++)
 	{
-		u_long *buffer;
-		u_long	hasAlpha;
+		uint32_t *buffer;
+		uint32_t	hasAlpha;
 
 			/* READ WIDTH/HEIGHT, ASPECT RATIO */
 
-		count = sizeof(long);
+		count = sizeof(int32_t);
 		FSRead(refNum, &count, &gSpriteGroupList[groupNum][i].width);
 		gSpriteGroupList[groupNum][i].width = SwizzleLong(&gSpriteGroupList[groupNum][i].width);
 
-		count = sizeof(long);
+		count = sizeof(int32_t);
 		FSRead(refNum, &count, &gSpriteGroupList[groupNum][i].height);
 		gSpriteGroupList[groupNum][i].height = SwizzleLong(&gSpriteGroupList[groupNum][i].height);
 
@@ -164,17 +165,16 @@ MOMaterialData	matData;
 				/* READ COMPRESSED JPEG TEXTURE */
 				/********************************/
 
-		IMPME;
-#if 0
 		{
 			Ptr			jpegBuffer;
-			long		dataSize, descSize;
-			GWorldPtr	buffGWorld;
-			ImageDescriptionHandle	imageDescHandle;
-			ImageDescriptionPtr		imageDescPtr;
-			Ptr						imageDataPtr;
-			Rect		r;
-			OSErr		iErr;
+			int32_t		dataSize;
+//			int32_t		descSize;
+//			GWorldPtr	buffGWorld;
+//			ImageDescriptionHandle	imageDescHandle;
+//			ImageDescriptionPtr		imageDescPtr;
+//			Ptr						imageDataPtr;
+//			Rect		r;
+//			OSErr		iErr;
 
 
 				/* READ JPEG DATA SIZE */
@@ -182,6 +182,7 @@ MOMaterialData	matData;
 			count = sizeof(dataSize);
 			FSRead(refNum, &count, &dataSize);
 			dataSize = SwizzleLong(&dataSize);			// swizzle
+			printf("%d\n", dataSize);
 
 				/* READ JPEG DATA */
 
@@ -190,10 +191,40 @@ MOMaterialData	matData;
 			FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
 
 
-				/* ALLOCATE PIXEL BUFFER & GWORLD */
+			int32_t offset = SwizzleLong((int32_t*) jpegBuffer);
+			printf("Offset may be %d\n", offset);
+
+#if _DEBUG
+			{
+				char dumppath[256];
+				snprintf(dumppath, sizeof(dumppath), "sprite%d.jpg", i);
+				FILE* dump = fopen(dumppath, "wb");
+				fwrite(jpegBuffer+offset, dataSize-offset, 1, dump);
+				fclose(dump);
+				puts(dumppath);
+			}
+#endif
+
+
+					/* ALLOCATE PIXEL BUFFER & GWORLD */
 
 			buffer = AllocPtr(w * h * 4);
 
+
+
+			int bogusW, bogusH;
+			uint8_t* pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) jpegBuffer+offset, dataSize-offset, &bogusW, &bogusH, NULL, 4);
+			GAME_ASSERT(pixelData);
+			GAME_ASSERT(bogusW == w);
+			GAME_ASSERT(bogusH == h);
+			BlockMove(pixelData, buffer, w * h * 4);
+			free(pixelData);
+			pixelData = NULL;
+
+			SafeDisposePtr(jpegBuffer);
+			jpegBuffer = NULL;
+
+#if 0
 			r.left = r.top = 0;	r.right = w; r.bottom = h;
 
 			iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &r, nil, nil, 0, buffer, w * 4);
@@ -214,8 +245,8 @@ MOMaterialData	matData;
 
 			imageDataPtr = jpegBuffer + descSize;								// compressed image data is after the imagedesc data
 			DecompressJPEGToGWorld(imageDescHandle, imageDataPtr, buffGWorld, nil);
+#endif
 
-//			SwizzleARGBtoRGBA(w, h, buffer);
 			SwizzleARGBtoBGRA(w,h, buffer);
 
 
@@ -225,7 +256,7 @@ MOMaterialData	matData;
 
 			if (hasAlpha)
 			{
-				u_char *alphaBuffer;
+				uint8_t *alphaBuffer;
 
 				count = w * h;
 
@@ -235,10 +266,10 @@ MOMaterialData	matData;
 
 				for (j = 0; j < count; j++)
 				{
-					u_long	pixel = buffer[j];
+					uint32_t	pixel = buffer[j];
 
 					pixel  &= 0x00ffffff;						// mask out alpha
-					pixel |= (u_long)alphaBuffer[j] << 24;
+					pixel |= (uint32_t)alphaBuffer[j] << 24;
 					buffer[j] =pixel;							// insert alpha
 				}
 
@@ -249,11 +280,10 @@ MOMaterialData	matData;
 				SetAlphaInARGBBuffer(w,h,buffer);				// no alpha channel so set all aphas to $ff
 
 
-			DisposeHandle((Handle)imageDescHandle);								// free our image desc handle
-			SafeDisposePtr(jpegBuffer);											// free the jpeg data
-			DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
+//			DisposeHandle((Handle)imageDescHandle);								// free our image desc handle
+//			SafeDisposePtr(jpegBuffer);											// free the jpeg data
+//			DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
 		}
-#endif
 
 				/*****************************/
 				/* CREATE NEW TEXTURE OBJECT */
@@ -304,7 +334,7 @@ MOMaterialData	matData;
 
 /**************** SWIZZLE AGB TO RGBA *************************/
 
-void SwizzleARGBtoRGBA(long w, long h, u_long *pixels)
+void SwizzleARGBtoRGBA(long w, long h, uint32_t *pixels)
 {
 long	count, i;
 
@@ -312,7 +342,7 @@ long	count, i;
 
 	for (i = 0; i < count; i++)
 	{
-		u_long	pixel32;
+		uint32_t	pixel32;
 
 		pixel32 = pixels[i] << 8;				// get 32-bit ARGB pixel and shift up a byte to make RGBA
 		pixel32 |= 0xff;						// set alpha to 0xff
@@ -324,7 +354,7 @@ long	count, i;
 
 /**************** SWIZZLE ARGB TO BGRA *************************/
 
-void SwizzleARGBtoBGRA(long w, long h, u_long *pixels)
+void SwizzleARGBtoBGRA(long w, long h, uint32_t *pixels)
 {
 long	count, i;
 
@@ -339,7 +369,7 @@ long	count, i;
 
 /**************** SET ALPHA IN ARGB BUFFER *************************/
 
-void SetAlphaInARGBBuffer(long w, long h, u_long *pixels)
+void SetAlphaInARGBBuffer(long w, long h, uint32_t *pixels)
 {
 long	count, i;
 unsigned char *a = (unsigned char *)pixels;
@@ -408,7 +438,7 @@ MOSpriteSetupData	spriteData;
 	spriteData.type 		= newObjDef->type;								// set group subtype
 	spriteData.drawCentered = drawCentered;
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (u_long)setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("MakeSpriteObject: MO_CreateNewObjectOfType failed!");
 
@@ -450,7 +480,7 @@ MOSpriteObject		*spriteMO;
 	spriteData.group	= theNode->Group;							// set group
 	spriteData.type 	= type;										// set group subtype
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (u_long)setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("ModifySpriteObjectFrame: MO_CreateNewObjectOfType failed!");
 
@@ -524,7 +554,7 @@ MOMaterialObject	*m;
 
 /************************** DRAW SPRITE ************************/
 
-void DrawSprite(int	group, int type, float x, float y, float scale, float rot, u_long flags, const OGLSetupOutputType *setupInfo)
+void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags, const OGLSetupOutputType *setupInfo)
 {
 AGLContext agl_ctx = setupInfo->drawContext;
 
@@ -636,7 +666,7 @@ float				scale,x;
 
 		spriteData.drawCentered = center;
 
-		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (u_long)setupInfo, &spriteData);
+		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
 		if (!spriteMO)
 			DoFatalAlert("MakeFontStringObject: MO_CreateNewObjectOfType failed!");
 

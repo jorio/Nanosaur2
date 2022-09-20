@@ -18,7 +18,7 @@ extern	OGLVector3D			gDelta;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLBoundingBox 		gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	OGLSetupOutputType	*gGameViewInfoPtr;
-extern	u_long				gAutoFadeStatusBits,gGlobalMaterialFlags;
+extern	uint32_t				gAutoFadeStatusBits,gGlobalMaterialFlags;
 extern	SparkleType	gSparkles[MAX_SPARKLES];
 extern	short				gNumEnemies;
 extern	SpriteType	*gSpriteGroupList[];

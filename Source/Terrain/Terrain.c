@@ -51,7 +51,7 @@ static void ReleaseAllSuperTiles(void);
 /**********************/
 
 float			gTerrainPolygonSize,gTerrainPolygonSizeFrac;
-u_long			gTerrainPolygonSizeInt;
+uint32_t			gTerrainPolygonSizeInt;
 float			gTerrainSuperTileUnitSize, gTerrainSuperTileUnitSizeFrac;
 float			gMapToUnitValue, gMapToUnitValueFrac;
 int				gSuperTileActiveRange = 4;

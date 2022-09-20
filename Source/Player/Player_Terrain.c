@@ -1621,7 +1621,7 @@ float		distToFloor, terrainY, fps = gFramesPerSecondFrac;
 float		bottomOff;
 Boolean		killed = false;
 short		playerNum = theNode->PlayerNum;
-u_long		ctype;
+uint32_t		ctype;
 
 			/***************************************/
 			/* AUTOMATICALLY HANDLE THE GOOD STUFF */

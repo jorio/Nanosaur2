@@ -17,7 +17,7 @@ extern	int						gNumEnemies;
 extern	float					gFramesPerSecondFrac,gGlobalTransparency;
 extern	OGLVector3D			gDelta;
 extern	signed char			gNumEnemyOfKind[];
-extern	u_long		gAutoFadeStatusBits;
+extern	uint32_t		gAutoFadeStatusBits;
 extern	SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
 extern	int						gMaxEnemies;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;

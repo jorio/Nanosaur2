@@ -21,7 +21,7 @@ extern	SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
 extern	OGLVector3D		gRecentTerrainNormal;
 extern	OGLPoint3D		gEarCoords;
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	u_long				gAutoFadeStatusBits;
+extern	uint32_t				gAutoFadeStatusBits;
 extern	Boolean				gGameOver;
 
 
@@ -291,7 +291,7 @@ got_it:
 
 static void MoveConfettiGroups(ObjNode *theNode)
 {
-u_long		flags;
+uint32_t		flags;
 long		i,n,p;
 float		fps = gFramesPerSecondFrac;
 float		y,baseScale,oneOverBaseScaleSquared,gravity;
@@ -568,7 +568,7 @@ drawme:
 
 /**************** VERIFY CONFETTI GROUP MAGIC NUM ******************/
 
-Boolean VerifyConfettiGroupMagicNum(short group, u_long magicNum)
+Boolean VerifyConfettiGroupMagicNum(short group, uint32_t magicNum)
 {
 	if (gConfettiGroups[group] == nil)
 		return(false);

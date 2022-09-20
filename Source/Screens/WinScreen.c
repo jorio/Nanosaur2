@@ -21,10 +21,10 @@ extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	SparkleType	gSparkles[MAX_SPARKLES];
 extern	OGLPoint3D	gCoord;
 extern	OGLVector3D	gDelta;
-extern	u_long			gGlobalMaterialFlags;
+extern	uint32_t			gGlobalMaterialFlags;
 extern	float			gGammaFadePercent, gTerrainPolygonSize;
 extern	OGLBoundingBox			gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	u_long				gAutoFadeStatusBits;
+extern	uint32_t				gAutoFadeStatusBits;
 extern	float		gAutoFadeStartDist,gAutoFadeEndDist,gAutoFadeRange_Frac;
 
 /****************************/

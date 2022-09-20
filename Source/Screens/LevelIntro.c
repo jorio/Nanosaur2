@@ -22,9 +22,9 @@ extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	SparkleType	gSparkles[MAX_SPARKLES];
 extern	OGLPoint3D	gCoord;
 extern	OGLVector3D	gDelta;
-extern	u_long			gGlobalMaterialFlags;
+extern	uint32_t			gGlobalMaterialFlags;
 extern	float			gGammaFadePercent;
-extern  u_long			gSharewareMode;
+extern  uint32_t			gSharewareMode;
 
 
 /****************************/

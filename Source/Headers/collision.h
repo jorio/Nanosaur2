@@ -36,14 +36,14 @@ extern   Byte			gTotalSides;
 
 //=================================
 
-void CollisionDetect(ObjNode *baseNode, u_long CType, short startNumCollisions);
+void CollisionDetect(ObjNode *baseNode, uint32_t CType, short startNumCollisions);
 
-Byte HandleCollisions(ObjNode *theNode, u_long cType, float deltaBounce);
+Byte HandleCollisions(ObjNode *theNode, uint32_t cType, float deltaBounce);
 extern	Boolean IsPointInPoly2D( float,  float ,  Byte ,  OGLPoint2D *);
 extern	Boolean IsPointInTriangle(float pt_x, float pt_y, float x0, float y0, float x1, float y1, float x2, float y2);
-short DoSimplePointCollision(OGLPoint3D *thePoint, u_long cType, ObjNode *except);
+short DoSimplePointCollision(OGLPoint3D *thePoint, uint32_t cType, ObjNode *except);
 short DoSimpleBoxCollision(float top, float bottom, float left, float right,
-						float front, float back, u_long cType);
+						float front, float back, uint32_t cType);
 
 
 
@@ -52,14 +52,14 @@ Boolean DoSimpleBoxCollisionAgainstPlayer(short playerNum, float top, float bott
 										float front, float back);
 Boolean DoSimpleBoxCollisionAgainstObject(float top, float bottom, float left, float right,
 										float front, float back, ObjNode *targetNode);
-float FindHighestCollisionAtXZ(float x, float z, u_long cType);
+float FindHighestCollisionAtXZ(float x, float z, uint32_t cType);
 
 
 
 Boolean	HandleLineSegmentCollision(const OGLLineSegment *lineSeg, ObjNode **hitObj, OGLPoint3D *hitPt,
-									OGLVector3D *hitNormal, u_long *cTypes, Boolean	allowBBoxTests);
+									OGLVector3D *hitNormal, uint32_t *cTypes, Boolean	allowBBoxTests);
 
-Boolean	HandleRayCollision(OGLRay *ray, ObjNode **hitObj, OGLPoint3D *hitPt,OGLVector3D *hitNormal, u_long *cTypes);
+Boolean	HandleRayCollision(OGLRay *ray, ObjNode **hitObj, OGLPoint3D *hitPt,OGLVector3D *hitNormal, uint32_t *cTypes);
 
 #endif
 

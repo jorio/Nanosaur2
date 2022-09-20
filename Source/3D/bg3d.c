@@ -201,7 +201,7 @@ long			count;
 
 static void ParseBG3DFile(short refNum)
 {
-u_long			tag;
+uint32_t			tag;
 long			count;
 Boolean			done = false;
 MetaObjectPtr 	newObj;
@@ -298,7 +298,7 @@ static void ReadMaterialFlags(short refNum)
 {
 long				count,i;
 MOMaterialData		data;
-u_long				flags;
+uint32_t				flags;
 
 			/* READ FLAGS */
 
@@ -437,7 +437,7 @@ MOMaterialData	*data;
 	i = data->numMipmaps++;						// increment the mipmap count
 	data->texturePixels[i] = texturePixels;		// set ptr to pixelmap
 
-//	SwizzleARGBtoBGRA(data->width,data->height, (u_long *)texturePixels);
+//	SwizzleARGBtoBGRA(data->width,data->height, (uint32_t *)texturePixels);
 
 }
 
@@ -453,7 +453,7 @@ static void ReadMaterialJPEGTextureMap(short refNum)
 {
 BG3DJPEGTextureHeader	textureHeader;
 long					count,i, w, h, descSize;
-u_long 					*texturePixels;
+uint32_t 					*texturePixels;
 Ptr	 					jpegBuffer;
 MOMaterialData			*data;
 //ImageDescriptionHandle	imageDescHandle;
@@ -574,7 +574,7 @@ Boolean					hasAlpha;
 
 		for (i = 0; i < count; i++)
 		{
-			u_long	pixel32 = SwizzleULong(&texturePixels[i]);
+			uint32_t	pixel32 = SwizzleULong(&texturePixels[i]);
 			pixel32 &= 0x00ffffff;								// get RGBx and mask out alpha
 			pixel32 |= alphaBuffer[i] << 24;					// insert alpha
 			texturePixels[i] = pixel32; 						// save new RGBA
@@ -585,7 +585,7 @@ Boolean					hasAlpha;
 	else
 	{
 		SetAlphaInARGBBuffer(w,h, texturePixels);				// no alpha channel, so be sure the alpha is set to $ff
-		SwizzleARGBtoBGRA(w, h, (u_long *)texturePixels);
+		SwizzleARGBtoBGRA(w, h, (uint32_t *)texturePixels);
 	}
 
 
@@ -1151,7 +1151,7 @@ int					i;
 // geometryNum, -1 == all
 //
 
-void BG3D_SetContainerMaterialFlags(short group, short type, short geometryNum, u_long flags)
+void BG3D_SetContainerMaterialFlags(short group, short type, short geometryNum, uint32_t flags)
 {
 MOVertexArrayObject	*mo;
 MOVertexArrayData	*va;

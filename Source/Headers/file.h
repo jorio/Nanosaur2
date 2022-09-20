@@ -31,7 +31,7 @@ typedef struct
 	OGLPoint3D			coord;						// absolute coord (not relative to parent!)
 	u_short				numPointsAttachedToBone;	// # vertices/points that this bone has
 	u_short				numNormalsAttachedToBone;	// # vertex normals this bone has
-	u_long				reserved[8];				// reserved for future use
+	uint32_t				reserved[8];				// reserved for future use
 }File_BoneDefinitionType;
 
 
@@ -42,7 +42,7 @@ typedef struct
 
 typedef struct
 {
-	u_long							x,y;
+	uint32_t							x,y;
 	u_short							type;
 	Byte							parm[4];
 	u_short							flags;
@@ -105,7 +105,7 @@ typedef struct
 
 	Boolean	showTargetingCrosshairs;
 
-	u_long	version;
+	uint32_t	version;
 
 	Boolean kiddieMode;
 	Boolean dontUseHID;

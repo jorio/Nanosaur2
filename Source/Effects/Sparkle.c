@@ -17,7 +17,7 @@ extern	OGLVector3D		gDelta;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLVector3D		gRecentTerrainNormal;
-extern	u_long			gAutoFadeStatusBits;
+extern	uint32_t			gAutoFadeStatusBits;
 extern	PrefsType			gGamePrefs;
 extern	SpriteType	*gSpriteGroupList[];
 extern	Byte				gCurrentSplitScreenPane;
@@ -113,7 +113,7 @@ void DeleteSparkle(short i)
 
 void DrawSparkles(const OGLSetupOutputType *setupInfo)
 {
-u_long			flags;
+uint32_t			flags;
 int				i;
 float			dot,separation;
 OGLMatrix4x4	m;

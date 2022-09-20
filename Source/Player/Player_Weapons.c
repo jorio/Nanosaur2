@@ -17,7 +17,7 @@ extern	OGLVector3D		gDelta;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLVector3D		gRecentTerrainNormal;
-extern	u_long			gAutoFadeStatusBits;
+extern	uint32_t			gAutoFadeStatusBits;
 extern	NewParticleGroupDefType	gNewParticleGroupDef;
 extern	SparkleType	gSparkles[];
 extern	CollisionRec	gCollisionList[];
@@ -96,7 +96,7 @@ enum
 #define	SonicHeadScale		SpecialF[0]
 
 #define	BulletTargetLocked	Flag[0]
-#define	BulletTargetObj		Special[0]
+#define	BulletTargetObj		SpecialPtr[0]
 #define	BulletTargetCookie	Special[1]
 
 const OGLVector3D	gPlayerMuzzleTipAim = {0,0,-1};				// aim vector of root body matrix (not the gun joint!)
@@ -114,7 +114,7 @@ float				f;
 OGLPoint3D			coord;
 OGLRay				ray;
 ObjNode				*hitNode;
-u_long				ctype;
+uint32_t				ctype;
 
 		/*********************************************************************/
 		/* DO RAY COLLISION AGAINST THE SCENE TO SEE WHAT THE CROSSHAIRS HIT */
@@ -541,7 +541,7 @@ OGLPoint3D		hitPt;
 OGLVector3D		hitNormal;
 ObjNode			*hitObj;
 OGLLineSegment	lineSegment;
-u_long			cType;
+uint32_t			cType;
 
 			/*****************************************/
 			/* SEE IF LINE SEGMENT HITS ANY GEOMETRY */
@@ -1033,7 +1033,7 @@ float		speed;
 		else
 		{
 			newObj->BulletTargetLocked = true;
-			newObj->BulletTargetObj 	= (u_long)targetObj;
+			newObj->BulletTargetObj 	= targetObj;
 			newObj->BulletTargetCookie 	= targetObj->Cookie;
 		}
 	}
@@ -1118,7 +1118,7 @@ OGLPoint3D		targetPt;
 	{
 		ObjNode	*target = (ObjNode *)theNode->BulletTargetObj;				// get target objNode
 
-		if ((u_long)theNode->BulletTargetCookie != (u_long)target->Cookie)					// verify that it's the same object
+		if ((uint32_t)theNode->BulletTargetCookie != (uint32_t)target->Cookie)					// verify that it's the same object
 		{
 			theNode->BulletTargetLocked = false;
 		}
@@ -1266,7 +1266,7 @@ ObjNode		*thisNodePtr,*best = nil;
 float	d,minDist = 10000000;
 float	angle;
 OGLVector3D	v;
-u_long	ctype;
+uint32_t	ctype;
 short	playerNum = bullet->PlayerNum;				// who shot this?
 
 
@@ -1309,7 +1309,7 @@ short	playerNum = bullet->PlayerNum;				// who shot this?
 	if (best)
 	{
 		bullet->BulletTargetLocked 	= true;
-		bullet->BulletTargetObj 	= (u_long)best;
+		bullet->BulletTargetObj 	= best;
 		bullet->BulletTargetCookie 	= best->Cookie;
 	}
 	else
@@ -1329,7 +1329,7 @@ OGLPoint3D		hitPt;
 OGLVector3D		hitNormal, d;
 ObjNode			*hitObj;
 OGLLineSegment	lineSegment;
-u_long			cType;
+uint32_t			cType;
 
 			/*****************************************/
 			/* SEE IF LINE SEGMENT HITS ANY GEOMETRY */
@@ -1670,7 +1670,7 @@ float	fps = gFramesPerSecondFrac;
 static Boolean DoSonicScreamCollisionDetection(ObjNode *bullet)
 {
 short	numHits, i;
-u_long	ctype;
+uint32_t	ctype;
 ObjNode	*hitObj;
 
 			/***************************/
@@ -1930,7 +1930,7 @@ OGLPoint3D		hitPt;
 OGLVector3D		hitNormal, d;
 ObjNode			*hitObj;
 OGLLineSegment	lineSegment;
-u_long			cType;
+uint32_t			cType;
 
 			/*****************************************/
 			/* SEE IF LINE SEGMENT HITS ANY GEOMETRY */
@@ -2143,7 +2143,7 @@ float fps = gFramesPerSecondFrac;
 
 /********************* CAUSE BOMB SHOCKWAVE DAMAGE ******************/
 
-void CauseBombShockwaveDamage(ObjNode *wave, u_long ctype)
+void CauseBombShockwaveDamage(ObjNode *wave, uint32_t ctype)
 {
 ObjNode	*thisNodePtr 	= gFirstNodePtr;
 float	radius 			= wave->Scale.x * 10.0f;		// calc radius of sphere

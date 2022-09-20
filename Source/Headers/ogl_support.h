@@ -308,7 +308,7 @@ void OGL_Texture_SetOpenGLTexture(GLuint textureName);
 GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat,
 							GLint srcFormat, GLint dataType, Boolean textureInRAM);
 GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight);
-void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, u_long *pixels);
+void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels);
 GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel);
 GLenum OGL_CheckError_Impl(const char* file, int line);
 #define OGL_CheckError() OGL_CheckError_Impl(__FILE__, __LINE__)
@@ -323,7 +323,7 @@ void OGL_EnableBlend(void);
 void OGL_DisableBlend(void);
 void OGL_EnableTexture2D(void);
 void OGL_DisableTexture2D(void);
-void OGL_ActiveTextureUnit(u_long texUnit);
+void OGL_ActiveTextureUnit(uint32_t texUnit);
 void OGL_SetColor4fv(OGLColorRGBA *color);
 void OGL_SetColor4f(float r, float g, float b, float a);
 void OGL_EnableCullFace(void);
@@ -343,7 +343,7 @@ void AssignVertexArrayRangeMemory(long size, void *pointer, Byte type);
 void ReleaseVertexArrayRangeMemory(Byte type);
 
 
-void ColorBalanceRGBForAnaglyph(u_long *rr, u_long *gg, u_long *bb, Boolean doChannelBalancing);
+void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean doChannelBalancing);
 
 
 

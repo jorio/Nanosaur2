@@ -18,7 +18,7 @@ extern	float					gFramesPerSecondFrac,gBestCheckpointAim[];
 extern	short					gNumCollisions;
 extern	CollisionRec			gCollisionList[];
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	u_long 					gAutoFadeStatusBits,gScores[];
+extern	uint32_t 					gAutoFadeStatusBits,gScores[];
 extern	int						gScratch;
 extern	Boolean				gGameOver, gUsingVertexArrayRange;
 extern	float				gGlobalTransparency;

@@ -35,11 +35,11 @@ Boolean WeAreFrontProcess(void);
 OSErr LoadOurPrefs(void);
 void SaveOurPrefs(void);
 
-short SwizzleShort(short *shortPtr);
-long SwizzleLong(long *longPtr);
-float SwizzleFloat(float *floatPtr);
-u_long SwizzleULong(u_long *longPtr);
-u_short SwizzleUShort(u_short *shortPtr);
+int16_t SwizzleShort(const int16_t *shortPtr);
+int32_t SwizzleLong(const int32_t *longPtr);
+float SwizzleFloat(const float *floatPtr);
+uint32_t SwizzleULong(const uint32_t *longPtr);
+uint16_t SwizzleUShort(const uint16_t *shortPtr);
 
 
 /***********************************/
@@ -48,4 +48,4 @@ u_short SwizzleUShort(u_short *shortPtr);
 extern	float		gFramesPerSecondFrac;
 extern	Boolean		gGameIsRegistered, gAltivec, gLittleSnitch, gLowRAM;
 extern	Str255  	gSerialFileName;
-extern  u_long		gSerialWasVerifiedMode;
+extern  uint32_t		gSerialWasVerifiedMode;

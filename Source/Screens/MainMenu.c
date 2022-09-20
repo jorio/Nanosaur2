@@ -22,7 +22,7 @@ extern	SparkleType	gSparkles[MAX_SPARKLES];
 extern	OGLPoint3D	gCoord;
 extern	OGLPoint2D	gCursorCoord;
 extern	OGLVector3D	gDelta;
-extern	u_long			gGlobalMaterialFlags;
+extern	uint32_t			gGlobalMaterialFlags;
 extern	float			gGammaFadePercent;
 extern	OGLColorRGB			gGlobalColorFilter;
 extern	MOPictureObject 	*gBackgoundPicture;
@@ -284,7 +284,7 @@ int					i;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, ":images:menuback.jpg");
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, gGameViewInfoPtr, ":images:menuback.jpg");
 
 
 

@@ -70,12 +70,12 @@ extern	Boolean			gLevelCompleted, gTimeDemo;
 extern  OGLPoint3D		gBestCheckpointCoord[];
 extern	short			gBestCheckpointNum[];
 extern	float			gBestCheckpointAim[];
-extern	u_long			gAutoFadeStatusBits, gGameFrameNum;
+extern	uint32_t			gAutoFadeStatusBits, gGameFrameNum;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	short			gPrefsFolderVRefNum;
 extern	long			gPrefsFolderDirID;
 extern	FSSpec				gDataSpec;
-extern  u_long			gSharewareMode;
+extern  uint32_t			gSharewareMode;
 
 
 //=================================================

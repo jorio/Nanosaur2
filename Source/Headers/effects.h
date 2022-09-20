@@ -30,7 +30,7 @@ typedef struct
 
 	Byte			isUsed[MAX_PARTICLES];
 
-	u_long			magicNum;
+	uint32_t			magicNum;
 	u_short			flags;
 	float			gravity;
 	float			magnetism;
@@ -61,9 +61,9 @@ typedef struct
 
 typedef struct
 {
-	u_long			magicNum;
+	uint32_t			magicNum;
 	Byte			isUsed[MAX_CONFETTIS];
-	u_long			flags;
+	uint32_t			flags;
 	Byte			confettiTextureNum;
 	float			gravity;
 	float			baseScale;
@@ -108,9 +108,9 @@ enum
 
 typedef struct
 {
-	u_long 	magicNum;
+	uint32_t 	magicNum;
 	Byte 	type;
-	u_long  flags;
+	uint32_t  flags;
 	float 	gravity;
 	float 	magnetism;
 	float 	baseScale;
@@ -137,8 +137,8 @@ typedef struct
 
 typedef struct
 {
-	u_long 	magicNum;
-	u_long  flags;
+	uint32_t 	magicNum;
+	uint32_t  flags;
 	float 	gravity;
 	float 	baseScale;
 	float 	decayRate;
@@ -187,7 +187,7 @@ void InitParticleSystem(OGLSetupOutputType *setupInfo);
 void DeleteAllParticleGroups(void);
 short NewParticleGroup(NewParticleGroupDefType *def);
 Boolean AddParticleToGroup(const NewParticleDefType *def);
-Boolean VerifyParticleGroupMagicNum(short group, u_long magicNum);
+Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum);
 Boolean ParticleHitObject(ObjNode *theNode, u_short inFlags);
 void DisposeParticleSystem(void);
 
@@ -198,7 +198,7 @@ void MakeBombExplosion(float x, float z, OGLVector3D *delta);
 void MakeSplash(OGLPoint3D *where, float scale);
 
 void SprayWater(ObjNode *theNode, float x, float y, float z);
-void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke, short particleType, float scale, u_long moreFlags);
+void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke, short particleType, float scale, uint32_t moreFlags);
 
 
 void MakeFireExplosion(OGLPoint3D *where);
@@ -221,7 +221,7 @@ void InitConfettiManager(void);
 void DeleteAllConfettiGroups(void);
 short NewConfettiGroup(NewConfettiGroupDefType *def);
 Boolean AddConfettiToGroup(NewConfettiDefType *def);
-Boolean VerifyConfettiGroupMagicNum(short group, u_long magicNum);
+Boolean VerifyConfettiGroupMagicNum(short group, uint32_t magicNum);
 void MakeConfettiExplosion(float x, float y, float z, float force, float scale, short texture, short quantityLimit);
 void DoPlayerGroundScrape(ObjNode *player, short playerNum);
 

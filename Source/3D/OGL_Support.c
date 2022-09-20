@@ -19,7 +19,7 @@ extern	short			gNumSuperTilesDrawn,gNumActiveParticleGroups,gNumFencesDrawn,gNum
 extern	float			gFramesPerSecond,gCameraStartupTimer,gScratchF,gGlobalTransparency;
 extern	Byte			gDebugMode, gNumPlayers;
 extern	Boolean			gPlayFullScreen;
-extern	u_long			gGlobalMaterialFlags, gAutoFadeStatusBits;
+extern	uint32_t			gGlobalMaterialFlags, gAutoFadeStatusBits;
 extern	PrefsType			gGamePrefs;
 extern	int				gGameWindowWidth,gGameWindowHeight,gScratch,gNumSparkles,gNumLoopingEffects;
 extern	CGrafPtr				gGameWindowGrafPtr;
@@ -113,7 +113,7 @@ Boolean			gMyState_Blend;
 Boolean			gMyState_Fog;
 Boolean			gMyState_Texture2D;
 Boolean			gMyState_CullFace;
-u_long			gMyState_TextureUnit;
+uint32_t			gMyState_TextureUnit;
 OGLColorRGBA	gMyState_Color;
 GLenum			gMyState_BlendFuncS, gMyState_BlendFuncD;
 
@@ -423,7 +423,7 @@ OGLViewDefType *viewDefPtr = &def->view;
 	{
 		if (gGamePrefs.anaglyphColor)
 		{
-			u_long	r,g,b;
+			uint32_t	r,g,b;
 
 			r = viewDefPtr->clearColor.r * 255.0f;
 			g = viewDefPtr->clearColor.g * 255.0f;
@@ -1391,19 +1391,19 @@ static void	ConvertTextureToGrey(void *imageMemory, short width, short height, G
 {
 long	x,y;
 float	r,g,b;
-u_long	a,q,rq,bq;
-u_long   redCal = gGamePrefs.anaglyphCalibrationRed;
-u_long   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
+uint32_t	a,q,rq,bq;
+uint32_t   redCal = gGamePrefs.anaglyphCalibrationRed;
+uint32_t   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
 
 
 	if (dataType == GL_UNSIGNED_INT_8_8_8_8_REV)
 	{
-		u_long	*pix32 = (u_long *)imageMemory;
+		uint32_t	*pix32 = (uint32_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_long	pix = pix32[x];
+				uint32_t	pix = pix32[x];
 
 				r = (float)((pix >> 16) & 0xff) / 255.0f * .299f;
 				g = (float)((pix >> 8) & 0xff) / 255.0f * .586f;
@@ -1429,12 +1429,12 @@ u_long   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
 	else
 	if ((dataType == GL_UNSIGNED_BYTE) && (srcFormat == GL_RGBA))
 	{
-		u_long	*pix32 = (u_long *)imageMemory;
+		uint32_t	*pix32 = (uint32_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_long	pix = SwizzleULong(&pix32[x]);
+				uint32_t	pix = SwizzleULong(&pix32[x]);
 
 				r = (float)((pix >> 24) & 0xff) / 255.0f * .299f;
 				g = (float)((pix >> 16) & 0xff) / 255.0f * .586f;
@@ -1504,7 +1504,7 @@ u_long   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
 
 /******************* COLOR BALANCE RGB FOR ANAGLYPH *********************/
 
-void ColorBalanceRGBForAnaglyph(u_long *rr, u_long *gg, u_long *bb, Boolean allowChannelBalancing)
+void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean allowChannelBalancing)
 {
 long	r,g,b;
 float	d;
@@ -1591,17 +1591,17 @@ float   lumR, lumGB, ratio;
 static void	ConvertTextureToColorAnaglyph(void *imageMemory, short width, short height, GLint srcFormat, GLint dataType)
 {
 long	x,y;
-u_long	r,g,b;
-u_long	a;
+uint32_t	r,g,b;
+uint32_t	a;
 
 	if (dataType == GL_UNSIGNED_INT_8_8_8_8_REV)
 	{
-		u_long	*pix32 = (u_long *)imageMemory;
+		uint32_t	*pix32 = (uint32_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_long	pix = pix32[x]; //SwizzleULong(&pix32[x]);
+				uint32_t	pix = pix32[x]; //SwizzleULong(&pix32[x]);
 
 				a = ((pix >> 24) & 0xff);
 				r = ((pix >> 16) & 0xff);
@@ -1619,12 +1619,12 @@ u_long	a;
 	else
 	if ((dataType == GL_UNSIGNED_BYTE) && (srcFormat == GL_RGBA))
 	{
-		u_long	*pix32 = (u_long *)imageMemory;
+		uint32_t	*pix32 = (uint32_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_long	pix = SwizzleULong(&pix32[x]);
+				uint32_t	pix = SwizzleULong(&pix32[x]);
 
 				a = ((pix >> 0) & 0xff);
 				r = ((pix >> 24) & 0xff);
@@ -1674,7 +1674,7 @@ u_long	a;
 
 /************************ OGL:  RAM TEXTURE HAS CHANGED ***********************/
 
-void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, u_long *pixels)
+void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels)
 {
 AGLContext agl_ctx = gAGLContext;
 
@@ -2219,7 +2219,7 @@ AGLContext agl_ctx = gAGLContext;
 // Sets the currently active texture unit for GL_TEXTURE0...n
 //
 
-void OGL_ActiveTextureUnit(u_long texUnit)
+void OGL_ActiveTextureUnit(uint32_t texUnit)
 {
 AGLContext agl_ctx = gAGLContext;
 

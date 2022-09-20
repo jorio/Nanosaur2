@@ -229,7 +229,7 @@ typedef struct
 
 typedef struct
 {
-	u_long							x,y;
+	uint32_t							x,y;
 	u_short							type;
 	Byte							parm[4];
 	u_short							flags;
@@ -249,7 +249,7 @@ struct ObjNode
 	Boolean			isUsed;				// true if ObjNode in gObjectList is used
 	short			objectNum;			// index into gObjectList, or if (-1) then was malloced in an emergency situation
 
-	u_long			Cookie;				// random number to identify the objnode (used for weapon targeting)
+	uint32_t		Cookie;				// random number to identify the objnode (used for weapon targeting)
 
 	struct ObjNode	*PrevNode;			// address of previous node in linked list
 	struct ObjNode	*NextNode;			// address of next node in linked list
@@ -265,7 +265,7 @@ struct ObjNode
 	int				Kind;				// kind
 	int				Mode;				// mode
 	int				What;				// what
-	u_long			StatusBits;			// various status bits
+	uint32_t		StatusBits;			// various status bits
 	Byte			PlayerNum;			// player # 0..n for player objects
 
 			/* MOVE/DRAW CALLBACKS */
@@ -298,8 +298,8 @@ struct ObjNode
 
 			/* COLLISION INFO */
 
-	u_long				CType;													// collision type bits
-	u_long				CBits;													// collision attribute bits
+	uint32_t				CType;													// collision type bits
+	uint32_t				CBits;													// collision attribute bits
 	Byte				NumCollisionBoxes;
 	CollisionBoxType	CollisionBoxes[MAX_COLLISION_BOXES];					// Array of collision rectangles
 	float				LeftOff,RightOff,FrontOff,BackOff,TopOff,BottomOff;		// box offsets (only used by simple objects with 1 collision box)
@@ -321,6 +321,7 @@ struct ObjNode
 	signed char		Flag[6];
 	long			Special[6];
 	float			SpecialF[6];
+	void*			SpecialPtr[6];
 	OGLVector3D		SpecialV[3];
 	float			Timer;				// misc use timer
 
@@ -363,7 +364,7 @@ struct ObjNode
 
 	short				EffectChannel;					// effect sound channel index (-1 = none)
 	short				ParticleGroup;
-	u_long				ParticleMagicNum;
+	uint32_t				ParticleMagicNum;
 	float				ParticleTimer;
 
 	short				Sparkles[MAX_NODE_SPARKLES];	// indecies into sparkles list

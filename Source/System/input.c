@@ -2553,7 +2553,7 @@ HRESULT 				result;
 	{
 		for (n = 0; n < NUM_CONTROL_NEEDS; n++)
 		{
-			u_long value;
+			uint32_t value;
 			
 			gControlNeeds[n].oldValue = gControlNeeds[n].value;				// remember what the old value was before we update it
 		

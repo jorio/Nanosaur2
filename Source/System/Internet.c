@@ -144,13 +144,13 @@ const char urlString[256] = "http://www.pangeasoft.net/nano2/files/updatedata";
 
 static Boolean InterpretTag(void)
 {
-u_long	name, *np;
+uint32_t	name, *np;
 char	*c;
 
 	SkipToPound();													// skip to next tag
 
 	c = *gHTTPDataHandle;											// point to buffer
-	np = (u_long *)(c + gHTTPDataIndex);							// point to tag name
+	np = (uint32_t *)(c + gHTTPDataIndex);							// point to tag name
 	name = *np;														// get tag name
 	gHTTPDataIndex += 4;											// skip over it
 

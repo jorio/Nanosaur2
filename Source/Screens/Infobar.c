@@ -18,7 +18,7 @@ extern	OGLColorRGB				gGlobalColorFilter;
 extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	PrefsType				gGamePrefs;
-extern	u_long					gGlobalMaterialFlags;
+extern	uint32_t					gGlobalMaterialFlags;
 extern	SpriteType				*gSpriteGroupList[];
 extern	AGLContext				gAGLContext;
 extern	OGLMatrix4x4			gWorldToWindowMatrix[];

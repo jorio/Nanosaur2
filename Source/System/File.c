@@ -55,7 +55,7 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr, OGLSetupOutputType *setup
 
 typedef struct
 {
-	u_long		version;
+	uint32_t		version;
 	short		level;
 	short		numLives;
 	float		health;
@@ -1298,8 +1298,8 @@ Rect					toRect, srcRect;
 
 		if (gTerrainIs32Bit)
 		{
-			SetAlphaInARGBBuffer(texSize, texSize, (u_long *)textureBuffer32);
-			SwizzleARGBtoBGRA(texSize,texSize, (u_long *)textureBuffer32);
+			SetAlphaInARGBBuffer(texSize, texSize, (uint32_t *)textureBuffer32);
+			SwizzleARGBtoBGRA(texSize,texSize, (uint32_t *)textureBuffer32);
 		}
 		else
 		{
@@ -1413,8 +1413,8 @@ ImageDescriptionPtr imageDescPtr = *imageDesc;
 	imageDescPtr->spatialQuality = SwizzleULong(&imageDescPtr->spatialQuality);			// spatialQuality
 	imageDescPtr->width		= SwizzleShort(&imageDescPtr->width);			// width
 	imageDescPtr->height	= SwizzleShort(&imageDescPtr->height);			// height
-	imageDescPtr->hRes		= (Fixed)SwizzleULong((u_long *)&imageDescPtr->hRes);			// hRes
-	imageDescPtr->vRes		= (Fixed)SwizzleULong((u_long *)&imageDescPtr->vRes);			// vRes
+	imageDescPtr->hRes		= (Fixed)SwizzleULong((uint32_t *)&imageDescPtr->hRes);			// hRes
+	imageDescPtr->vRes		= (Fixed)SwizzleULong((uint32_t *)&imageDescPtr->vRes);			// vRes
 	imageDescPtr->dataSize	= SwizzleLong(&imageDescPtr->dataSize);			// dataSize
 	imageDescPtr->frameCount = SwizzleShort(&imageDescPtr->frameCount);			// frameCount
 	imageDescPtr->depth		= SwizzleShort(&imageDescPtr->depth);			// depth

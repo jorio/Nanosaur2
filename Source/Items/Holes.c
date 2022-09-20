@@ -43,8 +43,8 @@ enum
 /*    VARIABLES      */
 /*********************/
 
-#define SrcHole		Special[0]
-#define DestHole	Special[1]
+#define SrcHole		SpecialPtr[0]
+#define DestHole	SpecialPtr[1]
 #define DirtTimer   SpecialF[0]
 #define DidDirt		Flag[0]
 
@@ -245,8 +245,8 @@ OGLPoint3D  nubs[5];
 	worm->SplineNum = splineNum;
 	worm->SplinePlacement = .04;
 
-	worm->SrcHole = (u_long)hole;
-	worm->DestHole = (u_long)theTarget;
+	worm->SrcHole = hole;
+	worm->DestHole = theTarget;
 
 			/* SET COLLISION STUFF */
 

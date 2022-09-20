@@ -55,8 +55,8 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-u_long			gDisplayVRAM = 0;
-u_long			gVRAMAfterBuffers = 0;
+uint32_t			gDisplayVRAM = 0;
+uint32_t			gVRAMAfterBuffers = 0;
 
 static short				gNumVideoModes = 0;
 static VideoModeType		gVideoModeList[MAX_VIDEO_MODES];
@@ -494,9 +494,9 @@ void Exit2D(void)
 
 /********************** WAIT **********************/
 
-void Wait(u_long ticks)
+void Wait(uint32_t ticks)
 {
-u_long	start;
+uint32_t	start;
 
 	puts("rewrite this spinwait!!!");
 
@@ -1209,10 +1209,10 @@ static pascal void DrawCalibrationImageProc(ControlRef control, SInt16 id)
 {
 Rect			bounds, r;
 Ptr				pictMapAddr;
-u_long			pictRowBytes;
+uint32_t			pictRowBytes;
 PixMapHandle 	hPixMap;
 int				width, height, x, y;
-u_long			*pixels;
+uint32_t			*pixels;
 short			i = gCurrentCalibrationImage;
 
 #pragma unused (id)
@@ -1235,18 +1235,18 @@ short			i = gCurrentCalibrationImage;
 	height = r.bottom - r.top;
 	hPixMap = GetGWorldPixMap(gCalibrationImage_Modified[i]);		// get gworld's pixmap
 	pictMapAddr = GetPixBaseAddr(hPixMap);
-	pictRowBytes = (u_long)(**hPixMap).rowBytes & 0x3fff;
+	pictRowBytes = (uint32_t)(**hPixMap).rowBytes & 0x3fff;
 
-	pixels = (u_long *)pictMapAddr;
+	pixels = (uint32_t *)pictMapAddr;
 
 	for (y = 0; y < height; y++)
 	{
 		for (x = 0; x < width; x++)
 		{
-			u_long	pixel 	= SwizzleULong(&pixels[x]);
-			u_long	red 	= (pixel & 0x00ff0000) >> 16;
-			u_long	green 	= (pixel & 0x0000ff00) >> 8;
-			u_long	blue 	= (pixel & 0x000000ff) >> 0;
+			uint32_t	pixel 	= SwizzleULong(&pixels[x]);
+			uint32_t	red 	= (pixel & 0x00ff0000) >> 16;
+			uint32_t	green 	= (pixel & 0x0000ff00) >> 8;
+			uint32_t	blue 	= (pixel & 0x000000ff) >> 0;
 
 			ColorBalanceRGBForAnaglyph(&red, &green, &blue, false);
 

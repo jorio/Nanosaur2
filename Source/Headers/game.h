@@ -7,6 +7,10 @@
 #define DEMO			0
 #define ALLOW_2P_INDEMO 0			// special build for Apple's .Mac promotion
 
+#if !defined(__LITTLE_ENDIAN__) && !(__BIG_ENDIAN__)
+#define __LITTLE_ENDIAN__ 1
+#endif
+
 		/* HEADERS */
 
 #include <Pomme.h>

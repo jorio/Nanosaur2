@@ -56,27 +56,27 @@ static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFP
 short	gPrefsFolderVRefNum;
 long	gPrefsFolderDirID;
 
-u_long				gSharewareMode = SHAREWARE_MODE_NO;
+uint32_t				gSharewareMode = SHAREWARE_MODE_NO;
 
 float				gDemoVersionTimer = 0;
 
 Byte				gDebugMode = 0;				// 0 == none, 1 = fps, 2 = all
 
-u_long				gAutoFadeStatusBits;
+uint32_t				gAutoFadeStatusBits;
 
 OGLSetupOutputType		*gGameViewInfoPtr = nil;
 
 PrefsType			gGamePrefs;
 
 Boolean				gTimeDemo = false;
-u_long			gTimeDemoStartTime, gTimeDemoEndTime;
+uint32_t			gTimeDemoStartTime, gTimeDemoEndTime;
 
 
 
 OGLVector3D			gWorldSunDirection;		// also serves as lense flare vector
 OGLColorRGBA		gFillColor1 = { .8, .8, .7, 1};
 
-u_long				gGameFrameNum = 0;
+uint32_t				gGameFrameNum = 0;
 float				gGameLevelTimer = 0;
 
 Boolean				gPlayingFromSavedGame 	= false;
@@ -239,7 +239,7 @@ long		createdDirID;
 	if (gGameIsRegistered)								// only do HTTP if registered
 	{
 		DateTimeRec	dateTime;
-		u_long		seconds, seconds2;
+		uint32_t		seconds, seconds2;
 
 		GetTime(&dateTime);								// get date time
 		DateToSeconds(&dateTime, &seconds);
@@ -874,7 +874,7 @@ float	fps;
 
 	if (gTimeDemo)
 	{
-		u_long	ticks;
+		uint32_t	ticks;
 		float	seconds;
 
 		gTimeDemoEndTime = TickCount();

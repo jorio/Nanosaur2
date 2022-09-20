@@ -157,7 +157,7 @@ typedef struct
 
 	OGLPoint3D			crosshairCoord[NUM_CROSSHAIR_LEVELS];
 	ObjNode				*crosshairTargetObj;
-	u_long				crosshairTargetCookie;
+	uint32_t				crosshairTargetCookie;
 
 
 			/* RACE INFO */
@@ -175,7 +175,7 @@ typedef struct
 
 	float				dirtParticleTimer;						// particle info for dirt scrap when player brushes ground
 	short				dirtParticleGroup;
-	u_long				dirtParticleMagicNum;
+	uint32_t				dirtParticleMagicNum;
 
 
 			/* DUST DEVIL */
@@ -245,7 +245,7 @@ void PlayerFireButtonPressed(ObjNode *player, Boolean newFireButton);
 void PlayerFireButtonReleased(ObjNode *player);
 void SelectNextWeapon(short playerNum, Boolean allowSonicScream);
 Boolean AddWeaponPOW(TerrainItemEntryType *itemPtr, float  x, float z);
-void CauseBombShockwaveDamage(ObjNode *wave, u_long ctype);
+void CauseBombShockwaveDamage(ObjNode *wave, uint32_t ctype);
 
 			/* RACE */
 

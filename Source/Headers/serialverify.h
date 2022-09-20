@@ -1,6 +1,6 @@
 
 
-static Boolean Load3DEffects(unsigned char *regInfo, u_long sharewareMode);
+static Boolean Load3DEffects(unsigned char *regInfo, uint32_t sharewareMode);
 static pascal OSStatus GamepadInit_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData);
 static Boolean PolygonAveraging(unsigned char *regInfo);
 static void FlightPhysicsCalibration(Boolean onlyVerify);
@@ -240,18 +240,18 @@ Size				actualSize;
 
 		/* RENAME FUNCTION TO CONFUSE PIRATES! */
 
-//static Boolean ValidateSerialNumber(unsigned char *regInfo, u_long sharewareMode)
+//static Boolean ValidateSerialNumber(unsigned char *regInfo, uint32_t sharewareMode)
 
-static Boolean Load3DEffects(unsigned char *regInfo, u_long sharewareMode)
+static Boolean Load3DEffects(unsigned char *regInfo, uint32_t sharewareMode)
 {
 #define NUM_PIRATE_SERIALS		21
 FSSpec	spec;
-u_long	customerID, i;
-u_long	seed0,seed1,seed2, validSerial, enteredSerial;
+uint32_t	customerID, i;
+uint32_t	seed0,seed1,seed2, validSerial, enteredSerial;
 u_char	shift;
 long	j,c;
 Handle	hand;
-u_long  checksum;
+uint32_t  checksum;
 const unsigned char pirateNumbers[NUM_PIRATE_SERIALS][SERIAL_LENGTH*2] =
 {
 	"EZMZQZQZLZQZTZGZKZMZPZSZ",		// put "Z" in there to confuse pirates scanning for this data
@@ -325,7 +325,7 @@ const unsigned char pirateNumbers[NUM_PIRATE_SERIALS][SERIAL_LENGTH*2] =
 		enteredSerial = 0;
 		for (i = SERIAL_LENGTH-1; i >= 4; i--)						// start @ last digit
 		{
-			u_long 	digit = regInfo[i] - 'E';					// convert E,F,G,H, I,J,K,L, M,N,O,P, Q,R,S,T to 0x0..0xf
+			uint32_t 	digit = regInfo[i] - 'E';					// convert E,F,G,H, I,J,K,L, M,N,O,P, Q,R,S,T to 0x0..0xf
 			enteredSerial += digit << shift;					// shift digit into posiion
 			shift += 4;											// set to insert next nibble
 		}
@@ -380,7 +380,7 @@ corrupt:
 		for (i = 0; i < NUM_PIRATE_SERIALS; i++)
 		{
 			for (j = 0; j < (SERIAL_LENGTH*2); j++)
-				checksum += (u_long)pirateNumbers[i][j];
+				checksum += (uint32_t)pirateNumbers[i][j];
 		}
 
 #if 0

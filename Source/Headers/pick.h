@@ -21,7 +21,7 @@ Boolean OGLPoint3D_InsideTriangle3D(const OGLPoint3D *point3D, const OGLPoint3D 
 Boolean OGL_DoesLineSegmentIntersectSphere(const OGLLineSegment *lineSeg, const OGLVector3D *segVector,
 											 OGLPoint3D *sphereCenter, float sphereRadius, OGLPoint3D *intersectPt);
 
-ObjNode *OGL_DoRayCollision_ObjNodes(OGLRay *ray, u_long statusFilter, u_long cTypes, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal);
+ObjNode *OGL_DoRayCollision_ObjNodes(OGLRay *ray, uint32_t statusFilter, uint32_t cTypes, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal);
 
 Boolean OGL_RayGetHitInfo_DisplayGroup(OGLRay *ray, ObjNode *theNode, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal);
 Boolean OGL_IsObjectInFrontOfRay(ObjNode *theNode, OGLRay *ray);
@@ -29,7 +29,7 @@ Boolean OGL_IsObjectInFrontOfRay(ObjNode *theNode, OGLRay *ray);
 void OGL_GetWorldRayAtScreenPoint(OGLPoint2D *screenCoord, OGLRay *ray, const OGLSetupOutputType *setupInfo);
 Boolean	OGL_RayIntersectsTriangle(OGLPoint3D *trianglePoints, OGLRay *ray, OGLPoint3D *intersectPt, OGLVector3D *triangleNormal);
 
-ObjNode *OGL_DoLineSegmentCollision_ObjNodes(const OGLLineSegment *lineSeg, u_long statusFilter, u_long cTypes,
+ObjNode *OGL_DoLineSegmentCollision_ObjNodes(const OGLLineSegment *lineSeg, uint32_t statusFilter, uint32_t cTypes,
 											 OGLPoint3D *worldHitCoord, OGLVector3D *worldHitFaceNormal, float *distToHit,
 											 Boolean allowBBoxTests);
 
@@ -41,6 +41,6 @@ Boolean OGL_LineSegmentCollision_Fence(const OGLLineSegment *lineSeg, OGLPoint3D
 Boolean OGL_LineSegmentCollision_Water(const OGLLineSegment *lineSeg, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal, float *distToHit);
 
 
-ObjNode *OGL_DoSphereCollision_ObjNodes(const OGLBoundingSphere *sphere, u_long statusFilter, u_long cTypes);
+ObjNode *OGL_DoSphereCollision_ObjNodes(const OGLBoundingSphere *sphere, uint32_t statusFilter, uint32_t cTypes);
 
 #endif

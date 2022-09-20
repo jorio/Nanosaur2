@@ -43,7 +43,7 @@ extern	Boolean				gPlayFullScreen;
 
 long	gRAMAlloced = 0;
 
-u_long 	gSeed0 = 0, gSeed1 = 0, gSeed2 = 0;
+uint32_t 	gSeed0 = 0, gSeed1 = 0, gSeed2 = 0;
 
 float	gFramesPerSecond, gFramesPerSecondFrac;
 
@@ -56,7 +56,7 @@ Boolean	gGameIsRegistered = false;
 unsigned char	gRegInfo[64];
 
 
-u_long			gSerialWasVerifiedMode = 0;
+uint32_t			gSerialWasVerifiedMode = 0;
 
 Boolean			gPanther = false;
 
@@ -184,7 +184,7 @@ unsigned long MyRandomLong(void)
 u_short	RandomRange(unsigned short min, unsigned short max)
 {
 u_short		qdRdm;											// treat return value as 0-65536
-u_long		range, t;
+uint32_t		range, t;
 
 	qdRdm = MyRandomLong();
 	range = max+1 - min;
@@ -397,7 +397,7 @@ OSErr	err;
 void *AllocPtr(long size)
 {
 Ptr	pr;
-u_long	*cookiePtr;
+uint32_t	*cookiePtr;
 
 	size += 16;								// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
@@ -405,7 +405,7 @@ u_long	*cookiePtr;
 	if (pr == nil)
 		DoFatalAlert("AllocPtr: NewPtr failed");
 
-	cookiePtr = (u_long *)pr;
+	cookiePtr = (uint32_t *)pr;
 
 	*cookiePtr++ = 'FACE';
 	*cookiePtr++ = size;
@@ -428,7 +428,7 @@ u_long	*cookiePtr;
 void *AllocPtrClear(long size)
 {
 Ptr	pr;
-u_long	*cookiePtr;
+uint32_t	*cookiePtr;
 
 	size += 16;								// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
@@ -437,7 +437,7 @@ u_long	*cookiePtr;
 	if (pr == nil)
 		DoFatalAlert("AllocPtr: NewPtr failed");
 
-	cookiePtr = (u_long *)pr;
+	cookiePtr = (uint32_t *)pr;
 
 	*cookiePtr++ = 'FACE';
 	*cookiePtr++ = size;
@@ -459,12 +459,12 @@ u_long	*cookiePtr;
 
 void SafeDisposePtr(void *ptr)
 {
-u_long	*cookiePtr;
+uint32_t	*cookiePtr;
 Ptr		p = ptr;
 
 	p -= 16;					// back up to pt to cookie
 
-	cookiePtr = (u_long *)p;
+	cookiePtr = (uint32_t *)p;
 
 	if (*cookiePtr != 'FACE')
 		DoFatalAlert("SafeSafeDisposePtr: invalid cookie!");
@@ -491,7 +491,7 @@ void VerifySystem(void)
 #if 0
 OSErr	iErr;
 NumVersion	vers;
-u_long  flags;
+uint32_t  flags;
 long	response;
 
 
@@ -501,7 +501,7 @@ long	response;
 
 
 	{
-		u_long	mem;
+		uint32_t	mem;
 		iErr = Gestalt(gestaltPhysicalRAMSize,(long *)&mem);
 		if (iErr == noErr)
 		{
@@ -660,8 +660,8 @@ next_process2:;
 
 void RegulateSpeed(short fps)
 {
-u_long	n;
-static u_long oldTick = 0;
+uint32_t	n;
+static uint32_t oldTick = 0;
 
 	n = 60 / fps;
 	while ((TickCount() - oldTick) < n) {}			// wait for n ticks
@@ -883,9 +883,9 @@ Boolean				same;
 
 /********************* SWIZZLE SHORT **************************/
 
-short SwizzleShort(short *shortPtr)
+int16_t SwizzleShort(const int16_t *shortPtr)
 {
-short	theShort = *shortPtr;
+int16_t	theShort = *shortPtr;
 
 #if __LITTLE_ENDIAN__
 
@@ -901,9 +901,9 @@ short	theShort = *shortPtr;
 
 /********************* SWIZZLE USHORT **************************/
 
-u_short SwizzleUShort(u_short *shortPtr)
+uint16_t SwizzleUShort(const uint16_t *shortPtr)
 {
-u_short	theShort = *shortPtr;
+uint16_t	theShort = *shortPtr;
 
 #if __LITTLE_ENDIAN__
 
@@ -920,9 +920,9 @@ u_short	theShort = *shortPtr;
 
 /********************* SWIZZLE LONG **************************/
 
-long SwizzleLong(long *longPtr)
+int32_t SwizzleLong(const int32_t *longPtr)
 {
-long	theLong = *longPtr;
+int32_t	theLong = *longPtr;
 
 #if __LITTLE_ENDIAN__
 
@@ -941,9 +941,9 @@ long	theLong = *longPtr;
 
 /********************* SWIZZLE U LONG **************************/
 
-u_long SwizzleULong(u_long *longPtr)
+uint32_t SwizzleULong(const uint32_t *longPtr)
 {
-u_long	theLong = *longPtr;
+uint32_t	theLong = *longPtr;
 
 #if __LITTLE_ENDIAN__
 
@@ -963,10 +963,10 @@ u_long	theLong = *longPtr;
 
 /********************* SWIZZLE FLOAT **************************/
 
-float SwizzleFloat(float *floatPtr)
+float SwizzleFloat(const float *floatPtr)
 {
 float	*theFloat;
-u_long	bytes = SwizzleULong((u_long *)floatPtr);
+uint32_t	bytes = SwizzleULong((uint32_t *)floatPtr);
 
 	theFloat = (float *)&bytes;
 

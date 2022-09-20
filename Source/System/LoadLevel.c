@@ -17,7 +17,7 @@ extern	long			gPrefsFolderDirID;
 extern	long			gNumUniqueSuperTiles;
 extern	long			gNumSuperTilesDeep,gNumSuperTilesWide;
 extern	FSSpec			gDataSpec;
-extern	u_long			gScores[],gLoadedScore;
+extern	uint32_t			gScores[],gLoadedScore;
 extern	SpriteType		*gSpriteGroupList[];
 extern	float			**gMapYCoords,**gMapYCoordsOriginal, gLoadingThermoPercent;
 extern	Byte			**gMapSplitMode;

@@ -139,7 +139,7 @@ extern	int						gNumLineMarkers;
 extern	LineMarkerDefType		gLineMarkerList[MAX_LINEMARKERS];
 extern	TerrainItemEntryType 	*gMasterItemList;
 extern	int						gNumTerrainItems;
-extern  u_long			gTerrainPolygonSizeInt;
+extern  uint32_t			gTerrainPolygonSizeInt;
 extern  long			gTerrainTileWidth,gTerrainTileDepth;
 extern  long			gTerrainUnitWidth,gTerrainUnitDepth;
 extern  long			gNumSuperTilesDeep,gNumSuperTilesWide, gNumUniqueSuperTiles;

@@ -710,59 +710,59 @@ int CharToSprite(char c)
 					s = FONT_SObjType_ExclamationMark;
 					break;
 
-			case	'Ü':
+			case	'\x86': //Uuml
 					s = FONT_SObjType_UU;
 					break;
 
-			case	'Ö':
+			case	'\x85': //Ouml
 					s = FONT_SObjType_OO;
 					break;
 
-			case	'Ä':
+			case	'\x80': //Auml
 					s = FONT_SObjType_AA;
 					break;
 
-			case	'Å':
+			case	'\x81': //Aring
 					s = FONT_SObjType_AO;
 					break;
 
-			case	'Ñ':
+			case	'\x84': //Ntilde
 					s = FONT_SObjType_NN;
 					break;
 
-			case	'É':
+			case	'\x83': //Eacute
 					s = FONT_SObjType_EE;
 					break;
 
-			case	'È':
+			case	'\xE9': //Egrave
 					s = FONT_SObjType_EE;
 					break;
 
-			case	'Ê':
+			case	'\xE6': //Ecirc
 					s = FONT_SObjType_E;
 					break;
 
-			case	'À':
+			case	'\xCB': //Agrave
 					s = FONT_SObjType_Ax;
 					break;
 
-			case	'Ô':
+			case	'\xEF': //Ocirc
 					s = FONT_SObjType_Ox;
 					break;
 
-			case	'Ó':
+			case	'\xEE': //Oacute
 					s = FONT_SObjType_Oa;
 					break;
 
-			case	'ß':
+			case	'\xA7': //szlig
 					s = FONT_SObjType_beta;
 					break;
 
-			case	'Ç':
+			case	'\x82': //Ccedil
 					s = FONT_SObjType_C;
 					break;
 
-			case	CHAR_APOSTROPHE:
+			case	'\'':
 					s = FONT_SObjType_Apostrophe;
 					break;
 
@@ -815,7 +815,7 @@ float	s;
 				break;
 
 		case	' ':
-		case	CHAR_APOSTROPHE:
+		case	'\'':
 				s = .4;
 				break;
 
@@ -824,7 +824,7 @@ float	s;
 		case	'J':
 		case	'L':
 		case	'E':
-		case	'É':
+		case	'\x83': //Eacute
 		case	'F':
 		case	'0':
 		case	'1':
@@ -852,10 +852,10 @@ float	s;
 				break;
 
 		case	'A':
-		case	'Ä':
+		case	'\x80': //Auml
 		case	'N':
 		case	'U':
-		case	'Ü':
+		case	'\x86': //Uuml
 		case	'V':
 		case	'O':
 		case	'Q':

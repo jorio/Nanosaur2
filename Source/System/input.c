@@ -69,16 +69,16 @@ static pascal OSStatus HIDSucksEventHandler(EventHandlerCallRef myHandler, Event
 #define	DEVICE_NAME_MAX_LENGTH		256
 #define	ELEMENT_NAME_MAX_LENGTH		128
 
-enum { // control enums from nib
+enum { // control enums from nib 
 	kCntlOkElement 		= 1,
     kCntlPopUpDevice	= 2,
     kCntlPopUpNeeds		= 3,
     kCntlPopUpElement	= 4,
-
+    
     kCntlActiveCheckBox	= 13,
 
     kCntlCalibrationBox= 15,
-
+    
     kCntlTextRawValueElement 		= 27,
     kCntlRawValueScale 				= 28,
     kCntlCalibratedValueScale 		= 29,
@@ -87,8 +87,8 @@ enum { // control enums from nib
 
     kCntlTextScaleValueElement			= 33,
     kCntlUserScaleValueGraphicElement 	= 34
-
-
+    
+    
 };
 
 
@@ -100,7 +100,7 @@ typedef struct
 	long				usagePage, usage;
 	long				min,max,scaledMin,scaledMax;
 	char				name[ELEMENT_NAME_MAX_LENGTH];
-
+	
 	Boolean				reverseAxis;
 	long				calibrationMin, calibrationMax, calibrationCenter;
 }HIDElementType;
@@ -130,7 +130,7 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-static EventHandlerUPP gConfigWinEvtHandler;
+static EventHandlerUPP gConfigWinEvtHandler;		
 
 
 Boolean	gHIDInitialized = false;
@@ -155,8 +155,8 @@ KeyMapByteArray gKeyMap,gNewKeys,gOldKeys;
 
 InputNeedType	gControlNeeds[NUM_CONTROL_NEEDS] =
 {
-			/* PLAYER 1 CONTROLS */
-	{										// kNeed_P1_TurnLeft_Key
+			/* PLAYER 1 CONTROLS */			
+	{										// kNeed_P1_TurnLeft_Key		
 		"Player 1:  Turn Left (Key)",
 		kHIDUsage_KeyboardLeftArrow,
 	},
@@ -166,55 +166,55 @@ InputNeedType	gControlNeeds[NUM_CONTROL_NEEDS] =
 		kHIDUsage_KeyboardRightArrow,
 	},
 
-	{										// kNeed_P1_PitchUp_Key
+	{										// kNeed_P1_PitchUp_Key		
 		"Player 1:  Pitch Up (Key)",
 		kHIDUsage_KeyboardUpArrow,
 	},
 
-	{										// kNeed_P1_PitchDown_Key
+	{										// kNeed_P1_PitchDown_Key		
 		"Player 1:  Pitch Down (Key)",
 		kHIDUsage_KeyboardDownArrow,
 	},
 
-	{										// kNeed_P1_XAxis
+	{										// kNeed_P1_XAxis		
 		"Player 1:  X-Axis",
 		0,
 	},
 
-	{										// kNeed_P1_YAxis
+	{										// kNeed_P1_YAxis		
 		"Player 1:  Y-Axis",
 		0,
 	},
 
-	{										// kNeed_P1_Fire
+	{										// kNeed_P1_Fire		
 		"Player 1:  Fire",
 		kHIDUsage_KeyboardSpacebar,
 	},
 
-	{										// kNeed_P1_Drop
+	{										// kNeed_P1_Drop		
 		"Player 1:  Drop",
 		kHIDUsage_KeyboardLeftAlt,
 	},
 
-	{										// kNeed_P1_NextWeapon
+	{										// kNeed_P1_NextWeapon		
 		"Player 1:  Change Weapon",
 		kHIDUsage_KeyboardLeftGUI,
 	},
 
-	{										// kNeed_P1_Jetpack
+	{										// kNeed_P1_Jetpack		
 		"Player 1:  Jetpack",
 		kHIDUsage_KeyboardLeftShift,
 	},
 
-	{										// kNeed_P1_CameraMode
+	{										// kNeed_P1_CameraMode		
 		"Player 1:  Camera Mode",
 		kHIDUsage_KeyboardTab,
 	},
 
 
-			/* PLAYER 2 CONTROLS */
+			/* PLAYER 2 CONTROLS */			
 
-	{										// kNeed_P2_TurnLeft_Key
+	{										// kNeed_P2_TurnLeft_Key		
 		"Player 2:  Turn Left (Key)",
 		kHIDUsage_KeyboardA,
 	},
@@ -224,61 +224,61 @@ InputNeedType	gControlNeeds[NUM_CONTROL_NEEDS] =
 		kHIDUsage_KeyboardD,
 	},
 
-	{										// kNeed_P2_PitchUp_Key
+	{										// kNeed_P2_PitchUp_Key		
 		"Player 2:  Pitch Up (Key)",
 		kHIDUsage_KeyboardW,
 	},
 
-	{										// kNeed_P2_PitchDown_Key
+	{										// kNeed_P2_PitchDown_Key		
 		"Player 2:  Pitch Down (Key)",
 		kHIDUsage_KeyboardS,
 	},
 
-	{										// kNeed_P2_XAxis
+	{										// kNeed_P2_XAxis		
 		"Player 2:  X-Axis",
 		0,
 	},
 
-	{										// kNeed_P2_YAxis
+	{										// kNeed_P2_YAxis		
 		"Player 2:  Y-Axis",
 		0,
 	},
 
-	{										// kNeed_P2_Fire
+	{										// kNeed_P2_Fire		
 		"Player 2:  Fire",
 		0,
 	},
 
-	{										// kNeed_P2_Drop
+	{										// kNeed_P2_Drop		
 		"Player 2:  Drop",
 		0,
 	},
-
-	{										// kNeed_P2_NextWeapon
+	
+	{										// kNeed_P2_NextWeapon		
 		"Player 2:  Change Weapon",
 		0,
 	},
-
-	{										// kNeed_P2_Jetpack
+	
+	{										// kNeed_P2_Jetpack		
 		"Player 2:  Jetpack",
 		0,
 	},
 
-	{										// kNeed_P2_Jetpack
+	{										// kNeed_P2_Jetpack		
 		"Player 2:  Camera Mode",
 		0,
 	},
-
+	
 
 };
 
 
 
 		/* HID */
-
+		
 static mach_port_t 	gHID_MasterPort 			= nil;
-
-static char *gStringBuffer = nil;
+		
+static char *gStringBuffer = nil;		
 
 
 static	short			gNumHIDDevices = 0;
@@ -306,11 +306,11 @@ short	i;
 
 	for (i = 0; i < NUM_CONTROL_NEEDS; i++)							// init current control values
 		gControlNeeds[i].oldValue = gControlNeeds[i].value = 0;
-
-	Install_MouseEventHandler();									// install our carbon even mouse handler
+	
+	Install_MouseEventHandler();									// install our carbon even mouse handler		
 	MyInitHID();
-
-
+	
+	
 }
 
 
@@ -328,7 +328,7 @@ float	analog, mouseDX, mouseDY;
 
 
 			/****************************************/
-			/* UPDATE ALL THE NEEDS CONTROLS VALUES */
+			/* UPDATE ALL THE NEEDS CONTROLS VALUES */		
 			/****************************************/
 
 	PollAllHIDInputNeeds();
@@ -338,16 +338,16 @@ float	analog, mouseDX, mouseDY;
 			/****************************/
 			/* SET PLAYER AXIS CONTROLS */
 			/****************************/
-
+			
 	gPlayerInfo[0].analogControlX = 											// assume no control input
-	gPlayerInfo[1].analogControlX =
-	gPlayerInfo[0].analogControlZ =
+	gPlayerInfo[1].analogControlX = 							
+	gPlayerInfo[0].analogControlZ = 						
 	gPlayerInfo[1].analogControlZ = 0.0f;
-
+			
 			/* FIRST CHECK ANALOG AXES */
-
-					/* PLAYER 1 */
-
+			
+					/* PLAYER 1 */					
+		
 	analog = gControlNeeds[kNeed_P1_XAxis].value;
 	if (analog != 0.0f)														// is X-Axis being used?
 	{
@@ -361,10 +361,10 @@ float	analog, mouseDX, mouseDY;
 		analog *= 1.0f / AXIS_RANGE;										// convert to  -1.0 to 1.0 range
 		gPlayerInfo[0].analogControlZ = analog;
 	}
+	
 
-
-					/* PLAYER 2 */
-
+					/* PLAYER 2 */					
+		
 	analog = gControlNeeds[kNeed_P2_XAxis].value;
 	if (analog != 0.0f)														// is X-Axis being used?
 	{
@@ -378,14 +378,14 @@ float	analog, mouseDX, mouseDY;
 		analog *= 1.0f / AXIS_RANGE;										// convert to  -1.0 to 1.0 range
 		gPlayerInfo[1].analogControlZ = analog;
 	}
+	
 
 
-
-
+			
 			/* NEXT CHECK THE DIGITAL KEYS */
-
-					/* PLAYER 1 */
-
+			
+					/* PLAYER 1 */					
+			
 	if (gControlNeeds[kNeed_P1_TurnLeft_Key].value)							// is Left Key pressed?
 		gPlayerInfo[0].analogControlX = -1.0f;
 	else
@@ -400,8 +400,8 @@ float	analog, mouseDX, mouseDY;
 		gPlayerInfo[0].analogControlZ = 1.0f;
 
 
-					/* PLAYER 2 */
-
+					/* PLAYER 2 */					
+			
 	if (gControlNeeds[kNeed_P2_TurnLeft_Key].value)							// is Left Key pressed?
 		gPlayerInfo[1].analogControlX = -1.0f;
 	else
@@ -416,15 +416,15 @@ float	analog, mouseDX, mouseDY;
 		gPlayerInfo[1].analogControlZ = 1.0f;
 
 
-
+		
 		/* AND FINALLY SEE IF MOUSE DELTAS ARE BEST */
 		//
 		// The mouse is only used for Player 1
 		//
-
+		
 	mouseDX = gMouseDeltaX * 0.015f;											// scale down deltas for our use
-	mouseDY = gMouseDeltaY * 0.015f;
-
+	mouseDY = gMouseDeltaY * 0.015f;	
+		
 	if (mouseDX > 1.0f)											// keep x values pinned
 		mouseDX = 1.0f;
 	else
@@ -433,7 +433,7 @@ float	analog, mouseDX, mouseDY;
 
 	if (fabs(mouseDX) > fabs(gPlayerInfo[0].analogControlX))		// is the mouse delta better than what we've got from the other devices?
 		gPlayerInfo[0].analogControlX = mouseDX;
-
+		
 
 	if (mouseDY > 1.0f)											// keep y values pinned
 		mouseDY = 1.0f;
@@ -442,7 +442,7 @@ float	analog, mouseDX, mouseDY;
 		mouseDY = -1.0f;
 
 	if (fabs(mouseDY) > fabs(gPlayerInfo[0].analogControlZ))		// is the mouse delta better than what we've got from the other devices?
-		gPlayerInfo[0].analogControlZ = mouseDY;
+		gPlayerInfo[0].analogControlZ = mouseDY;	
 
 }
 
@@ -474,19 +474,19 @@ IOReturn 		ioReturnValue 		= kIOReturnSuccess;
 	gNumHIDDevices = 0;											// nothing in our device list yet
 
 		/* GET A PORT TO INIT COMMUNICATION WITH I/O KIT */
-
+			
 	ioReturnValue = IOMasterPort(bootstrap_port, &gHID_MasterPort);
 	if (ioReturnValue != kIOReturnSuccess)
 		DoFatalAlert("\pMyInitHID: IOMasterPort failed!");
 
 
 			/* CREATE AN ITERATION LIST OF HID DEVICES */
-
+				
 	FindHIDDevices(gHID_MasterPort, &hidObjectIterator);
 	if (hidObjectIterator == nil)
 		DoFatalAlert("\pMyInitHID:  no HID Devices found!");
 
-
+		
 			/***************************************************/
 			/* PARSE ALL THE HID DEVICES IN THE ITERATION LIST */
 			/***************************************************/
@@ -494,22 +494,22 @@ IOReturn 		ioReturnValue 		= kIOReturnSuccess;
 			// This builds our master list of desired HID devices and
 			// all associated elements.
 			//
-
+							
 	ParseAllHIDDevices(hidObjectIterator);
 
-
+	
 			/* DISPOSE OF THE ITERATION LIST */
-
+			
 	IOObjectRelease(hidObjectIterator);
-
-
+	
+	
 	gHIDInitialized = true;
-
+	
 
 			/* SET THE DEFAULT CONTROL SETTINGS */
-
+				
 	ResetAllDefaultControls();
-
+	
 }
 
 
@@ -527,23 +527,23 @@ short	i;
 		return;
 
 			/* DISPOSE OF ALL THE OPEN INTERFACES */
-
+			
 	for (i = 0; i < gNumHIDDevices; i++)
 	{
 		IOHIDDeviceInterface **interface = gHIDDeviceList[i].hidDeviceInterface;	// get interface reference from our list
-
+		
 		(*interface)->close(interface);												// close & release interface
 		(*interface)->Release(interface);
 	}
-
+			
 
 
 			/* FREE MASTER PORT */
-
+			
 	if (gHID_MasterPort)
 		mach_port_deallocate(mach_task_self(), gHID_MasterPort);
-
-
+		
+		
 	gHIDInitialized = false;
 
 }
@@ -561,21 +561,21 @@ IOReturn 				ioReturnValue = kIOReturnSuccess;
 
 
 		/* CREATE A DICTIONARY FOR HID DEVICES */
-
+	
 	hidMatchDictionary = IOServiceMatching(kIOHIDDeviceKey);			// "kIOHIDDeviceKey" tells it to look for HID devices
-
-
+	
+	
 		/* FILL THE DICTIONARY WITH THE HID DEVICES */
 		//
 		// NOTE: IOServiceGetMatchingServices consumes a reference to the dictionary,
 		// so we don't need to release the dictionary ref.
 		//
-
+	
 	ioReturnValue = IOServiceGetMatchingServices(masterPort, hidMatchDictionary, hidObjectIterator);
-
-
+	
+	
 				/* VERIFY THAT WE FOUND ANYTHING */
-
+				
 	if ((ioReturnValue != kIOReturnSuccess) || (*hidObjectIterator == nil))
 	{
 		DoAlert("\pFindHIDDevices: No matching HID class devices found!");
@@ -608,7 +608,7 @@ Boolean					allowThisDevice;
 		//		It often gets these on the keyboard device, so to try and recover from this,
 		//		we're going to assume that a device is the keyboard if running 10.2
 		//
-
+				
 	while ((hidDevice = IOIteratorNext(hidObjectIterator)))					// get the HID device
 	{
 			/* CONVERT THE HID'S PROPERTIES INTO A CORE-FOUNDATION DICTIONARY */
@@ -623,10 +623,10 @@ Boolean					allowThisDevice;
 //			DoAlert("\pParseAllHIDDevices: IORegistryEntryCreateCFProperties failed!");
 //			DoHIDSucksDialog();
 //			ExitToShell();
-//		}
-
-				/* GET THE USAGE PAGE & USAGE VALUES OF THIS HID DEVICE */
-
+//		}	
+				
+				/* GET THE USAGE PAGE & USAGE VALUES OF THIS HID DEVICE */					
+				
 		object = CFDictionaryGetValue(properties, CFSTR(kIOHIDPrimaryUsagePageKey));		// get the Usage Page object
 		if (!object)
 		{
@@ -661,22 +661,22 @@ Boolean					allowThisDevice;
 			}
 		}
 
-
+	
 		object = CFDictionaryGetValue(properties, CFSTR(kIOHIDLocationIDKey));				// get the Location ID object
 		if (!object)
-			locationID = 0xdeadbeef;
+			locationID = 0xdeadbeef;		
 		else
 		{
 			if (!CFNumberGetValue(object, kCFNumberLongType, &locationID))						// extract the LocationID value
 				locationID = 0xdeadbeef;
 		}
-
+	
 				/***********************************************/
 				/* SEE IF THIS IS A DEVICE WE'RE INTERESTED IN */
 				/***********************************************/
 
 		allowThisDevice = false;										// assume we don't want this HID device
-
+		
 		switch(usagePage)
 		{
 			case	kHIDPage_GenericDesktop:
@@ -690,12 +690,12 @@ Boolean					allowThisDevice;
 								break;
 					}
 					break;
-
+					
 			case	kHIDPage_KeyboardOrKeypad:
 					allowThisDevice = true;
 					break;
-
-
+		
+		
 		}
 
 
@@ -705,18 +705,18 @@ Boolean					allowThisDevice;
 				//
 				// ADD DEVICE & ELEMENTS TO LIST & OPEN INTERFACE TO IT
 				//
-
+				
 		if (allowThisDevice)
 		{
 			AddHIDDeviceToList(hidDevice, properties, usagePage, usage, locationID);
-		}
-
-
-
+		}	
+	
+	
+		
 			/* RELEASE THE HID OBJECT */
-error:
+error:				
 		CFRelease(properties);											// free the CF dictionary we created
-
+				
 		ioReturnValue = IOObjectRelease(hidDevice);
 		if (ioReturnValue != kIOReturnSuccess)
 			DoFatalAlert("\pParseAllHIDDevices: IOObjectRelease failed!");
@@ -740,50 +740,50 @@ const char hidSucks[] = "Unnamed Device";
 short		d, i;
 Boolean		duplicates;
 long		vendorID, productID;
-
+		
 	if (gNumHIDDevices >= MAX_HID_DEVICES)									// see if the list is alredy full
 		return;
-
+		
 	d = gNumHIDDevices;
-
-
+		
+		
 		/*********************************/
 		/* GATHER SOME INFO THAT WE NEED */
 		/*********************************/
-
+			
 			/* GET PRODUCT NAME */
-
+			
 	object = CFDictionaryGetValue(properties, CFSTR(kIOHIDProductKey));		// get the Product object
 	if (!object)
 	{
 //		CFShow(properties);		//---------
-//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDProductKey) This is a known bug in OS X, but ** Rebooting your computer should fix this. **");
+//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDProductKey) This is a known bug in OS X, but ** Rebooting your computer should fix this. **");	
 //		DoHIDSucksDialog();
 //		ExitToShell();
-
+	
 		deviceName = hidSucks;
 
 	}
 	else
 		deviceName = GetCFStringFromObject(object);								// get ptr to name C string
-
-
+	
+	
 			/* GET VENDOR & PRODUCT ID'S */
 			//
 			// For unknown reasons the product and vendor ID keys will fail
 			// randomly on Powerbook keyboards.
-			//
+			//	
 
 	object = CFDictionaryGetValue(properties, CFSTR(kIOHIDVendorIDKey));	// get the Vendor ID object
 	if (!object)
 	{
 		vendorID = usagePage;												// set some bogus vendorID
-//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDVendorIDKey)");
+//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDVendorIDKey)");	
 	}
 	else
 	if (!CFNumberGetValue(object, kCFNumberLongType, &vendorID))			// extract the Vendor ID value
 	{
-		DoAlert("\pAddHIDDeviceToList: CFNumberGetValue failed!");
+		DoAlert("\pAddHIDDeviceToList: CFNumberGetValue failed!");	
 		DoHIDSucksDialog();
 		ExitToShell();
 	}
@@ -792,16 +792,16 @@ long		vendorID, productID;
 	if (!object)
 	{
 		productID = usage;
-//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDProductIDKey)");
+//		DoAlert("\pAddHIDDeviceToList: CFDictionaryGetValue failed! (kIOHIDProductIDKey)");	
 	}
 	else
 	if (!CFNumberGetValue(object, kCFNumberLongType, &productID))			// extract the Product ID value
 	{
-		DoAlert("\pAddHIDDeviceToList: CFNumberGetValue failed!");
+		DoAlert("\pAddHIDDeviceToList: CFNumberGetValue failed!");	
 		DoHIDSucksDialog();
 		ExitToShell();
 	}
-
+	
 		/* SCAN THE EXISTING DEVICE LIST TO SEE IF THERE ARE OTHER IDENTICAL DEVICES */
 
 	duplicates = false;
@@ -810,15 +810,15 @@ long		vendorID, productID;
 		if ((gHIDDeviceList[i].vendorID == vendorID) && (gHIDDeviceList[i].productID == productID))	// is this a match?
 		{
 			gHIDDeviceList[i].hasDuplicate = true;
-			duplicates = true;
+			duplicates = true;	
 		}
 	}
 
-
+	
 			/***********************/
 			/* SAVE INFO INTO LIST */
 			/***********************/
-
+				
 	gHIDDeviceList[d].usagePage 	= usagePage;							// keep usage Page
 	gHIDDeviceList[d].usage 		= usage;								// keep usage
 	gHIDDeviceList[d].vendorID 		= vendorID;								// keep vendor ID
@@ -826,33 +826,33 @@ long		vendorID, productID;
 	gHIDDeviceList[d].locationID	= locationID;							// keep location ID
 	gHIDDeviceList[d].hasDuplicate 	= duplicates;							// there are more than 1 of this device
 	gHIDDeviceList[d].numElements	 = 0;									// no elements added yet
-
+		
 	strncpy(gHIDDeviceList[d].deviceName, deviceName, DEVICE_NAME_MAX_LENGTH);	// copy device name string
-
-
+	
+	
 			/* ONLY KEYBOARDS ARE ACTIVE BY DEFAULT */
-
+			
 	if ((usagePage == kHIDPage_KeyboardOrKeypad) ||
 		((usagePage == kHIDPage_GenericDesktop) && (usage == kHIDUsage_GD_Keyboard)))
 		gHIDDeviceList[d].isActive = true;
 	else
 		gHIDDeviceList[d].isActive = false;
-
-
+	
+	
 			/****************************/
 			/* RECURSIVELY ADD ELEMENTS */
 			/****************************/
-
+			
 	RecurseDictionaryElement(properties, CFSTR(kIOHIDElementKey));
-
-
-
+	
+	
+			
 				/* OPEN AN INTERFACE TO THIS DEVICE */
-
+			
 	CreateHIDDeviceInterface(hidDevice, &gHIDDeviceList[d].hidDeviceInterface);
-
-
-	gNumHIDDevices++;
+		
+	
+	gNumHIDDevices++;	
 }
 
 
@@ -878,28 +878,28 @@ IOReturn 				ioReturnValue;
 		DoHIDSucksDialog();
 		ExitToShell();
 	}
-
-
-
+	
+	
+	
 	// Call a method of the intermediate plug-in to create the device interface
-
+	
 	plugInResult = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOHIDDeviceInterfaceID), (LPVOID)hidDeviceInterface);
 	if (plugInResult != S_OK)
 	{
-		DoAlert("\pCreateHIDDeviceInterface: CouldnÕt create HID class device interface");
+		DoAlert("\pCreateHIDDeviceInterface: Couldn't create HID class device interface");
 		DoHIDSucksDialog();
 		ExitToShell();
 	}
 
 	(*plugInInterface)->Release(plugInInterface);
-
+	
 
 			/* OPEN THE INTERFACE */
-
+				
 	ioReturnValue = (**hidDeviceInterface)->open(*hidDeviceInterface, 0);
 	if (ioReturnValue != kIOReturnSuccess)
 	{
-		DoAlert("\pCreateHIDDeviceInterface: CouldnÕt open device interface");
+		DoAlert("\pCreateHIDDeviceInterface: Couldn't open device interface");		
 		DoHIDSucksDialog();
 		ExitToShell();
 	}
@@ -915,28 +915,28 @@ const char	*c;
 char	dummyString[] = "Unknown Name Device";
 
 			/* ATTEMPT TO GET THE STRING FROM THE POINTER */
-
+			
 	c = CFStringGetCStringPtr(object, CFStringGetSystemEncoding());
 
 
 			/* IF THAT FAILES THEN EXTRACT IT INTO A BUFFER */
-
+			
 	if (c == nil)
 	{
 		CFIndex bufferSize = CFStringGetLength(object) + 1;					// get size of string
-
+		
 		if (gStringBuffer)													// if there was an existing string buffer, nuke it.
 			SafeDisposePtr(gStringBuffer);
-
+		
 		gStringBuffer = AllocPtr(bufferSize);
 
 		if (CFStringGetCString(object, gStringBuffer, bufferSize, CFStringGetSystemEncoding()))
 		{
 			c = gStringBuffer;
 		}
-
+		
 				/* IF THAT FAILS TOO THEN JUST POINT TO A DUMMY STRING */
-
+				
 		else
 		{
 			c = dummyString;
@@ -972,7 +972,7 @@ CFTypeID 	type;
 			GetCFNumberFromObject(object);
 		else
 		if (type == CFStringGetTypeID())
-			MyCFStringShow(object);
+			MyCFStringShow(object);		
 	}
 }
 
@@ -986,7 +986,7 @@ const char * c = CFStringGetCStringPtr(object, CFStringGetSystemEncoding());
 
 	if (c)
 	{
-//		printf(Ò%sÓ, c);
+//		printf("%s", c);
 	}
 	else
 	{
@@ -996,7 +996,7 @@ const char * c = CFStringGetCStringPtr(object, CFStringGetSystemEncoding());
 		{
 			if (CFStringGetCString(object,	buffer,	bufferSize,	CFStringGetSystemEncoding()))
 			{
-//				printf(Ò%sÓ, buffer);
+//				printf("%s", buffer);
 			}
 			free(buffer);
 		}
@@ -1016,7 +1016,7 @@ CFRange range;
 		/* SCAN EACH ELEMENT OF THE ARRAY */
 		//
 		// Calling this will cause the callback function to be called once
-		// for each element of the array.
+		// for each element of the array. 
 		//
 
 	CFArrayApplyFunction(object, range, CFArrayCallback, 0);
@@ -1032,13 +1032,13 @@ CFRange range;
 static void CFArrayCallback(const void * object, void * parameter)
 {
 #pragma unused	(parameter)
-
+	
 	if (CFGetTypeID(object) != CFDictionaryGetTypeID())		// we're only looking for dictionary types in the array.  Skip anything else
 		return;
 
 			/* TRY TO ADD THIS ELEMENT TO THE HID DEVICE */
-
-	AddHIDElement(object);
+			
+	AddHIDElement(object);							
 }
 
 
@@ -1062,13 +1062,13 @@ short				d, e;
 
 		/*******************************************************/
 		/* FIRST DETERMINE IF THIS IS AN ELEMENT WE CARE ABOUT */
-		/*******************************************************/
-
-
+		/*******************************************************/			
+			
+			
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementTypeKey));	// lookup the Type of this element
 	if (!object)
 		goto skip_element;
-
+	
 	elementType = GetCFNumberFromObject(object);						// get Type value
 
 	switch(elementType)
@@ -1077,7 +1077,7 @@ short				d, e;
 		case	kIOHIDElementTypeInput_Button:							// buttons are good
 		case	kIOHIDElementTypeInput_Axis:							// axes are good
 				break;
-
+	
 		default:														// anything else we don't care about
 				goto skip_element;
 	}
@@ -1089,14 +1089,14 @@ short				d, e;
 
 
 			/* GET THE ELEMENT'S COOKIE */
-
-	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementCookieKey));		// lookup the Cookie
+						
+	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementCookieKey));		// lookup the Cookie	
 	cookie = (IOHIDElementCookie)GetCFNumberFromObject(object);						// get Cookie value
 
 
 			/* GET USAGE */
 
-	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementUsagePageKey));	// lookup the Usage Page
+	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementUsagePageKey));	// lookup the Usage Page	
 	usagePage = GetCFNumberFromObject(object);										// get Usage Page value
 
 	if (usagePage == kHIDPage_PID)  // don't do PID elements
@@ -1104,17 +1104,17 @@ short				d, e;
 	if (usagePage == kHIDPage_LEDs)  // don't do LED elements (These SHOULD be output only but aren't always)
 		goto skip_element;
 
-	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementUsageKey));		// lookup the Usage
+	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementUsageKey));		// lookup the Usage	
 	usage = GetCFNumberFromObject(object);											// get Usage value
 
-
+					
 			/* GET MIN/MAX */
-
+			
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementMinKey));
 	min = GetCFNumberFromObject(object);
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementMaxKey));
 	max = GetCFNumberFromObject(object);
-
+		
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementScaledMinKey));
 	scaledMin = GetCFNumberFromObject(object);
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementScaledMaxKey));
@@ -1122,33 +1122,33 @@ short				d, e;
 
 
 			/* GET NAME STRING */
-
+			
 	object = CFDictionaryGetValue(dictionary, CFSTR(kIOHIDElementNameKey));			// try to get the element name, but most devices return NIL
 	if (object)
 		elementName = GetCFStringFromObject(object);								// get ptr to the built-in name string
-
+		
 	if ((object == nil) || (elementName == nil))
 	{
 		elementName = CreateElementNameString(usagePage, usage);
 		if (elementName == nil)														// if we get nil then skip it (keyboards return some bogus info)
 			goto skip_element;
 	}
-
-
-
+		
+		
+		
 		/*********************/
 		/* SAVE ELEMENT INFO */
 		/*********************/
 
 	d = gNumHIDDevices;
 	e = gHIDDeviceList[d].numElements;
-
+	
 	if (e >= MAX_HID_ELEMENTS)					// see if we're already full
 	{
 		goto skip_element;
 	}
-
-
+		
+		
 	gHIDDeviceList[d].elements[e].elementType =	elementType;
 	gHIDDeviceList[d].elements[e].cookie	=	cookie;
 	gHIDDeviceList[d].elements[e].usagePage	=	usagePage;
@@ -1161,16 +1161,16 @@ short				d, e;
 	strncpy(gHIDDeviceList[d].elements[e].name, elementName, ELEMENT_NAME_MAX_LENGTH);	// copy device name string
 
 	ResetElementCalibration(d, e);
+	
 
-
-
+		
 	gHIDDeviceList[d].numElements++;
 
 
 			/**********************/
 			/* SEE IF SUB-RECURSE */
 			/**********************/
-
+			
 skip_element:
 	RecurseDictionaryElement(dictionary, CFSTR(kIOHIDElementKey));
 }
@@ -1185,7 +1185,7 @@ skip_element:
 static const char *CreateElementNameString(long usagePage, long usage)
 {
 const char *c = "Unnamed Element";
-const char *buttonNames[30] =
+const char *buttonNames[30] = 
 {
 	"Button 1",	"Button 2",	"Button 3",	"Button 4",	"Button 5",	"Button 6",	"Button 7",	"Button 8",	"Button 9",	"Button 10",
 	"Button 11","Button 12","Button 13","Button 14","Button 15","Button 16","Button 17","Button 18","Button 19","Button 20",
@@ -1197,14 +1197,14 @@ const char *buttonNames[30] =
 			/**************************/
 			/* GENERIC DESKTOP DEVICE */
 			/**************************/
-
+			
 		case	kHIDPage_GenericDesktop:
 				switch(usage)
 				{
 					case	kHIDUsage_GD_X:
 							c = "X-Axis";
 							break;
-
+							
 					case	kHIDUsage_GD_Y:
 							c = "Y-Axis";
 							break;
@@ -1272,7 +1272,7 @@ const char *buttonNames[30] =
 			/***********/
 			/* BUTTONS */
 			/***********/
-
+			
 		case	kHIDPage_Button:
 				if (usage < 30)
 					c = buttonNames[usage-1];
@@ -1366,7 +1366,7 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeyboardZ:
 							c = "Z";
 							break;
-
+							
 					case	kHIDUsage_Keyboard1:
 							c = "1";
 							break;
@@ -1532,18 +1532,18 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeyboardDownArrow:
 							c = "Down Arrow";
 							break;
-
+							
 					case	kHIDUsage_KeyboardRightControl:		// ** for some reason kHIDUsage_KeyboardRightControl appears to really be the down arrow, but only on 10.2.6, not 10.3
 							if (gPanther)
 								c = nil;
 							else
 								c = "Right CTRL";
 							break;
-
+														
 					case	kHIDUsage_KeyboardUpArrow:
 							c = "Up Arrow";
 							break;
-
+							
 					case	kHIDUsage_KeypadNumLock:
 							c = "Num Lock / Clear";
 							break;
@@ -1600,7 +1600,7 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeyboardNonUSBackslash:
 							c = "Keypad Backslash";
 							break;
-
+			
 					case	kHIDUsage_KeypadEqualSign:
 							c = "Keypad Equal =";
 							break;
@@ -1610,11 +1610,11 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeypadComma:
 							c = "Keypad Comma ,";
 							break;
-
+							
 					case	kHIDUsage_KeyboardReturn:
 							c = "Return";
 							break;
-
+							
 					case	kHIDUsage_KeyboardLeftControl:
 							c = "CTRL";
 							break;
@@ -1627,7 +1627,7 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeyboardLeftGUI:
 							c = "Apple/Command";
 							break;
-
+							
 #if 0											// NOTE:  HID returns these "right" keys twice even though they don't exist at all!  HID sucks....
 					case	kHIDUsage_KeyboardRightControl:
 							c = "Right CTRL";
@@ -1641,15 +1641,15 @@ const char *buttonNames[30] =
 					case	kHIDUsage_KeyboardRightGUI:
 							c = "Right Apple/Command";
 							break;
-#endif
-
+#endif							
+				
 					default:
-							c = nil;									// key not supported so pass back nil so that we skip the element
+							c = nil;									// key not supported so pass back nil so that we skip the element			
 				}
 				break;
 
 	}
-
+	
 	return(c);
 }
 
@@ -1672,7 +1672,7 @@ long number;
 	{
 		return(number);
 	}
-
+	
 	return(0);
 }
 
@@ -1704,28 +1704,28 @@ const char		*rezNames[MAX_LANGUAGES] =
 	"HIDConfigWindow_Swedish",
 	"HIDConfigWindow_Dutch",
 };
-
-
+    
+    
     		/* DON'T DO DIALOG IF THERE ARE NO DEVICES */
-
+    		
 	if (gNumHIDDevices == 0)
 	{
 		DoAlert("\pOS X says you don't have any input devices.  If this is not true, try rebooting.");
 		DoHIDSucksDialog();
 		return;
 	}
-
-
+    
+    
     Enter2D();
 
 
     		/***************/
     		/* INIT DIALOG */
     		/***************/
-
-
+        
+    
 				/* CREATE WINDOW FROM THE NIB */
-
+				
     err = CreateWindowFromNib(gNibs, CFStringCreateWithCString(nil, rezNames[gGamePrefs.language],
     						kCFStringEncodingMacRoman), &gHIDConfigWindow);
 	if (err)
@@ -1733,7 +1733,7 @@ const char		*rezNames[MAX_LANGUAGES] =
 
 
 			/* SET DIALOG MENUS */
-
+			
 	gRestoreMenu = nil;
 	BuildNeedsMenu(gHIDConfigWindow);
 	BuildHIDDeviceMenu(gHIDConfigWindow);
@@ -1742,14 +1742,14 @@ const char		*rezNames[MAX_LANGUAGES] =
 	DeviceMenuWasSelected(gSelectedDeviceNum);		// call this to prime all the menu selections
 
 
-
+				
 
 			/*****************/
 			/* HANDLE EVENTS */
 			/*****************/
-
+			
 			/* CREATE NEW WINDOW EVENT HANDLER */
-
+				
     gConfigWinEvtHandler = NewEventHandlerUPP(MyHIDWindowEventHandler);
     InstallWindowEventHandler(gHIDConfigWindow, gConfigWinEvtHandler, GetEventTypeCount (list), list, 0, &ref);
 
@@ -1760,24 +1760,24 @@ const char		*rezNames[MAX_LANGUAGES] =
 			/* SET DONT-USE-HID CHECKBOX */
 
     idControl.signature = 'nhid';
-    idControl.id 		= 0;
+    idControl.id 		= 0; 
     GetControlByID(gHIDConfigWindow, &idControl, &control);
 	SetControlValue(control, gGamePrefs.dontUseHID);
 
 			/* INSTALL A TIMER EVENT */
-
+			
 	InstallEventLoopTimer(GetCurrentEventLoop(), 0, 0.1, InstallTimerEvent(), nil, &gTimer);
 
 
 			/* START THE EVENT LOOP */
-
+			
     RunAppModalLoopForWindow(gHIDConfigWindow);
 
 
 			/***********/
 			/* CLEANUP */
 			/***********/
-
+			
     if (gTimer)												// uninstall the event timer
     {
         RemoveEventLoopTimer(gTimer);
@@ -1790,11 +1790,11 @@ const char		*rezNames[MAX_LANGUAGES] =
 
 
 	Exit2D();
-
-
+		
+	
 				/* SAVE SETTINGS */
 
-	SavePrefs();
+	SavePrefs();	
 }
 
 
@@ -1808,7 +1808,7 @@ static void BuildNeedsMenu (WindowRef window)
 {
 int		j;
 char 	*menuStrings[NUM_CONTROL_NEEDS];
-
+		
 	for (j = 0; j < NUM_CONTROL_NEEDS; j++)									// iterate through all of the needs
 		menuStrings[j] = &gControlNeeds[j].name[0];							// point to this string
 
@@ -1823,12 +1823,12 @@ short	i;
 char 	*menuStrings[MAX_HID_DEVICES];
 
 			/* BUILD A LIST OF PTRS TO THE DEVICE NAMES */
-
+			
 	for (i = 0; i < gNumHIDDevices; i++)
 		menuStrings[i] = &gHIDDeviceList[i].deviceName[0];							// point to this string
 
 	BuildMenuFromCStrings(window, 'hidm', kCntlPopUpDevice, menuStrings, gNumHIDDevices, 0);
-
+	
 }
 
 
@@ -1841,14 +1841,14 @@ static void BuildHIDElementMenu (WindowRef window)
 {
 short	i, numElements;
 char 	*menuStrings[MAX_HID_ELEMENTS];
-
+		
 	menuStrings[0] = "< NOT USED >";												// the first menu item is the blank "unassigned" item
-
+	
 	numElements = gHIDDeviceList[gSelectedDeviceNum].numElements;					// get # elements in this device
 	for (i = 0; i < numElements; i++)												// then add on the real element items
 		menuStrings[i+1] = &gHIDDeviceList[gSelectedDeviceNum].elements[i].name[0];	// point to this string
-
-	BuildMenuFromCStrings(window, 'hidm', kCntlPopUpElement, menuStrings, numElements+1, 0);
+	
+	BuildMenuFromCStrings(window, 'hidm', kCntlPopUpElement, menuStrings, numElements+1, 0);	
 }
 
 
@@ -1863,48 +1863,48 @@ ControlRef 	control;
 short 		i;
 OSStatus 	err = noErr;
 MenuItemIndex	menuItemIndex;
-
+    
     		/* GET MENU DATA */
-
+    		
     idControl.signature = controlSig;
-    idControl.id 		= id;
+    idControl.id 		= id; 
     err = GetControlByID(window, &idControl, &control);
 	if (err)
 		DoFatalAlert("\pBuildMenuFromCStrings: GetControlByID failed!");
-
+    
     GetControlData(control, kControlMenuPart, kControlPopupButtonMenuHandleTag, sizeof (MenuHandle), &hMenu, &tempSize);
-
+    
     	/* REMOVE ALL ITEMS FROM EXISTING MENU */
-
+    		
     err = DeleteMenuItems(hMenu, 1, CountMenuItems (hMenu));
 	if (err)
 		DoFatalAlert("\pBuildMenuFromCStrings: DeleteMenuItems failed!");
 
 
 			/* ADD NEW ITEMS TO THE MENU */
-
+			
     for (i = 0; i < numItems; i++)
     {
 		CFStringRef cfString;
-
+		
 		cfString = CFStringCreateWithCString (nil, textList[i], kCFStringEncodingMacRoman);     	// convert our C string into a CF String
-
+		
 		err = AppendMenuItemTextWithCFString(hMenu, cfString, 0, 0, &menuItemIndex);			// append to menu
 		if (err)
 			DoFatalAlert("\pBuildMenuFromCStrings: AppendMenuItemTextWithCFString failed!");
-
+			
 		CFRelease(cfString);																	// dispose of the ref to the CF String
 	}
 
 
 			/* FORCE UPDATE OF MENU EXTENTS */
-
+			
     SetControlMaximum(control, numItems);
 
 	if (defaultSelection >= numItems)					// make sure default isn't over
 		defaultSelection = 0;
-
-	SetControlValue(control, defaultSelection+1);
+		
+	SetControlValue(control, defaultSelection+1);               
 
 }
 
@@ -1925,81 +1925,81 @@ HICommand 			command;
 
 
 	switch(GetEventKind(event))
-	{
+	{				
 				/* PROCESS COMMAND */
-
+				
 		case	kEventProcessCommand:
 				GetEventParameter (event, kEventParamDirectObject, kEventParamHICommand, NULL, sizeof(command), NULL, &command);
 				switch(command.commandID)
-				{
+				{							
 							/* HIT OK BUTTON */
-
+							
 					case	kHICommandOK:
 							QuitAppModalLoopForWindow(gHIDConfigWindow);
 							break;
-
+							
 							/* HIT RESET BUTTON */
-
+							
 					case	'rest':
 							ResetAllDefaultControls();
 							DeviceMenuWasSelected(gSelectedDeviceNum);		// call this to cause all menus to update with the resetted info
-							break;
+							break;	
 
 							/* CALIBRATION MIN BUTTON */
-
+							
 					case	'smin':
 							gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].calibrationMin = gCurrentCalibrationValue;
 							break;
 
 							/* CALIBRATION CENTER BUTTON */
-
+							
 					case	'setc':
 							gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].calibrationCenter = gCurrentCalibrationValue;
 							break;
 
 							/* CALIBRATION MAX BUTTON */
-
+							
 					case	'smax':
 							gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].calibrationMax = gCurrentCalibrationValue;
 							break;
-
+							
 							/* CALIBRATION REVERSE AXIS */
-
+							
 					case	'flip':
 						    idControl.signature = 'hidm';
-						    idControl.id 		= kCntlReverse;
+						    idControl.id 		= kCntlReverse; 
 						    GetControlByID(gHIDConfigWindow, &idControl, &control);
 							gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].reverseAxis = GetControlValue(control);
 							break;
-
-
+					
+																				
 							/* TOGGLE ISACTIVE */
-
+							
 					case	'IsAc':
 						    idControl.signature = 'hidm';
-						    idControl.id 		= kCntlActiveCheckBox;
+						    idControl.id 		= kCntlActiveCheckBox; 
 						    GetControlByID(gHIDConfigWindow, &idControl, &control);
 							gHIDDeviceList[gSelectedDeviceNum].isActive = GetControlValue(control);
 							break;
 
 							/* TOGGLE DONT USE HID */
-
+							
 					case	'nhid':
 						    idControl.signature = 'nhid';
-						    idControl.id 		= 0;
+						    idControl.id 		= 0; 
 						    GetControlByID(gHIDConfigWindow, &idControl, &control);
 							gGamePrefs.dontUseHID = GetControlValue(control);
 							break;
-
+							
 
 							/* HELP / HID SUCKS */
-
+							
 					case	'hidx':
 							DoHIDSucksDialog();
 							break;
 
 							/* HELP / DONT USE HIT ? */
-
+							
 					case	'nhlp':
 							DoAlert("\pOnly check the Don't use HID for Input checkbox if your keyboard is not working with it unchecked.  In this mode your custom control configuration is ignored and you cannot use input devices.  Only the default keyboard setup works.");
 							break;
@@ -2008,42 +2008,42 @@ HICommand 			command;
 							/************************/
 							/* SELECTED A MENU ITEM */
 							/************************/
-
-					default:
-
+							
+					default:					
+					
 							if (command.attributes & kHICommandFromMenu)			// see if this command is from a menu
 							{
 								MenuRef	hMenu;
 								Size	tempSize;
-
+								
 										/* SELECTED ITEM IN NEEDS MENU */
-
+										
 							    idControl.signature = 'hidm';
-							    idControl.id 		= kCntlPopUpNeeds;
+							    idControl.id 		= kCntlPopUpNeeds; 
 							    GetControlByID(gHIDConfigWindow, &idControl, &control);
 							    GetControlData(control, kControlMenuPart, kControlPopupButtonMenuRefTag, sizeof (MenuRef), &hMenu, &tempSize);
-
+					
 								if (hMenu == command.menu.menuRef)
 								{
 									NeedsMenuWasSelected(command.menu.menuItemIndex - 1);
 									break;
 								}
 
-
+							
 									/* SELECTED ITEM IN DEVICES MENU */
-
-							    idControl.id = kCntlPopUpDevice;
+									
+							    idControl.id = kCntlPopUpDevice; 
 							    GetControlByID(gHIDConfigWindow, &idControl, &control);
 							    GetControlData(control, kControlMenuPart, kControlPopupButtonMenuRefTag, sizeof (MenuRef), &hMenu, &tempSize);
-
+														
 								if (hMenu == command.menu.menuRef)
 								{
 									DeviceMenuWasSelected(command.menu.menuItemIndex - 1);
 									break;
 								}
-
+									
 									/* SELECTED ITEM IN ELEMENTS MENU */
-
+							
 								ElementMenuWasSelected(command.menu.menuItemIndex - 2);
 							}
 				}
@@ -2069,21 +2069,21 @@ ControlRef 	control;
 
 
 				/* UPDATE ELEMENT MENUS */
-
+				
 	if (gHIDConfigWindow)
 	{
 		BuildHIDElementMenu(gHIDConfigWindow);
 
 		/* RE-SELECT THE SELECTED NEED TO CAUSE ELEMENTS MENU TO SHOW THE RIGHT ITEM */
-
+			
 		NeedsMenuWasSelected(gSelectedNeed);
-	}
-
+	}		
+				
 			/* SET ACTIVE CHECKBOX */
 
 
     idControl.signature = 'hidm';
-    idControl.id 		= kCntlActiveCheckBox;
+    idControl.id 		= kCntlActiveCheckBox; 
     GetControlByID(gHIDConfigWindow, &idControl, &control);
 	SetControlValue(control, gHIDDeviceList[deviceNum].isActive);
 }
@@ -2101,22 +2101,22 @@ ControlID 	idControl;
 ControlRef 	control;
 
 	gSelectedNeed = needNum;
-
+	
 
 			/* GET THE ELEMENT INDEX FOR THIS NEED WITH THE CURRENTLY SELECTED DEVICE */
-
+				
 	elementNum = gControlNeeds[needNum].elementInfo[gSelectedDeviceNum].elementNum;
 
 
 					/* UPDATE THE ELEMENTS MENU TO SHOW OUR SELECTION */
-
+					
 	ElementMenuWasSelected(elementNum);
-
+					
 	idControl.signature = 'hidm';
-	idControl.id 		= kCntlPopUpElement;
+	idControl.id 		= kCntlPopUpElement; 
 	GetControlByID(gHIDConfigWindow, &idControl, &control);
 
-	SetControlValue(control, elementNum+2);
+	SetControlValue(control, elementNum+2);               
 }
 
 
@@ -2132,15 +2132,15 @@ static void ElementMenuWasSelected(int elementNum)
 long	elementType;
 
 		/* MAKE CURRENTLY SELECTED & ASSIGN TO THE NEED */
-
-	gSelectedElement = elementNum;
+		
+	gSelectedElement = elementNum;	
 	gControlNeeds[gSelectedNeed].elementInfo[gSelectedDeviceNum].elementNum = elementNum;
-
+	
 		/* SEE IF HIDE/SHOW THE CALIBRATION CONTROLS */
-
+			
 	if (elementNum == -1)																// if not assigned then hide calibration
 		goto hide_calibration;
-
+				
 	elementType = gHIDDeviceList[gSelectedDeviceNum].elements[elementNum].elementType;	// get type
 	switch (elementType)
 	{
@@ -2148,12 +2148,12 @@ long	elementType;
 		case	kIOHIDElementTypeInput_Misc:
 				ShowCalibrationControls();
 				break;
-
+		
 		default:
 hide_calibration:
-				HideCalibrationControls();
+				HideCalibrationControls();	
 	}
-
+			
 }
 
 
@@ -2169,12 +2169,12 @@ ControlID 	idControl;
 ControlRef 	control;
 
 	idControl.signature = 'hidm';
-	idControl.id 		= kCntlCalibrationBox;
+	idControl.id 		= kCntlCalibrationBox; 
 	GetControlByID(gHIDConfigWindow, &idControl, &control);
 
-	HideControl(control);
-
-
+	HideControl(control);               
+	
+	
 	gShowCalibration = false;
 }
 
@@ -2196,12 +2196,12 @@ long	min,max;
 			/*************************************************/
 
 					/* RAW */
-
+								
 	min = gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].min;
 	max = gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].max;
 
 	idControl.signature = 'hidm';
-	idControl.id 		= kCntlRawValueScale;
+	idControl.id 		= kCntlRawValueScale; 
 	GetControlByID(gHIDConfigWindow, &idControl, &control);				// get the thermometer control
 
 	SetControlMinimum(control, min);
@@ -2209,12 +2209,12 @@ long	min,max;
 
 
 					/* CALIBRATED */
-
+					
 	min = -AXIS_RANGE;
 	max = AXIS_RANGE;
 
 	idControl.signature = 'hidm';
-	idControl.id 		= kCntlCalibratedValueScale;
+	idControl.id 		= kCntlCalibratedValueScale; 
 	GetControlByID(gHIDConfigWindow, &idControl, &control);				// get the thermometer control
 
 	SetControlMinimum(control, min);
@@ -2225,22 +2225,22 @@ long	min,max;
 
 
 
-			/* UPDATE THE REVERSE CHECKBOX */
+			/* UPDATE THE REVERSE CHECKBOX */			
 
     idControl.signature = 'hidm';
-    idControl.id 		= kCntlReverse;
+    idControl.id 		= kCntlReverse; 
     GetControlByID(gHIDConfigWindow, &idControl, &control);
 	SetControlValue(control, gHIDDeviceList[gSelectedDeviceNum].elements[gSelectedElement].reverseAxis);
 
 
 			/* MAKE THE CALIBRATION GROUP BOX VISIBLE */
-
+			
 	idControl.signature = 'hidm';
-	idControl.id 		= kCntlCalibrationBox;
+	idControl.id 		= kCntlCalibrationBox; 
 	GetControlByID(gHIDConfigWindow, &idControl, &control);
 
-	ShowControl(control);
-
+	ShowControl(control);               
+	
 	gShowCalibration = true;
 }
 
@@ -2257,10 +2257,10 @@ long	min,max;
 static EventLoopTimerUPP InstallTimerEvent(void)
 {
 static EventLoopTimerUPP	sTimerUPP = NULL;
-
+	
 	if (sTimerUPP == NULL)
 		sTimerUPP = NewEventLoopTimerUPP (IdleTimerCallback);
-
+	
 	return sTimerUPP;
 }
 
@@ -2291,18 +2291,18 @@ ControlRef 				control;
 			/***************************************************/
 			/* SCAN THE CURRENT DEVICE FOR ANY PRESSED BUTTONS */
 			/***************************************************/
-
+			
 	numElements = gHIDDeviceList[d].numElements;									// get # elements in this device
 
 	for (e = 0; e < numElements; e++)												// test each element
 	{
 				/* ONLY LOOK FOR BUTTONS */
-
+								
 		elementType = gHIDDeviceList[d].elements[e].elementType;					// get type
 		if (elementType == kIOHIDElementTypeInput_Button)
 		{
 			cookie = gHIDDeviceList[d].elements[e].cookie;							// get cookie
-
+		
 					/* READ THE VALUE FROM THE ELEMENT */
 					//
 					// Note:  	I've found that if any device is plugged in after a reboot, yet
@@ -2310,90 +2310,90 @@ ControlRef 				control;
 					//			an error the first time.  Therefore, we need to handle errors
 					//			gracefully by just setting the value to 0.
 					//
-
+					
 			result = (*hidDeviceInterface)->getElementValue(hidDeviceInterface,	cookie, &hidEvent);		// poll this element
 			if (result)
 				hidEvent.value = 0;
 
 					/* SEE IF THIS IS PRESSED */
-			else
+			else					
 			if (hidEvent.value > 0)													// is the button pressed?
 			{
 				ElementMenuWasSelected(e);											// select this Element
-
+									
 				idControl.signature = 'hidm';										// update the pop-up menu
-				idControl.id 		= kCntlPopUpElement;
+				idControl.id 		= kCntlPopUpElement; 
 				GetControlByID(gHIDConfigWindow, &idControl, &control);
-				SetControlValue(control, e+2);
+				SetControlValue(control, e+2);               				
 				break;
 			}
 		}
 	}
-
-
-
+	
+	
+	
 			/**********************************/
 			/* UPDATE CALIBRATION INFORMATION */
 			/**********************************/
-
+			
 	if (gShowCalibration)
 	{
         char 		text[256];
         long		calibratedValue;
-
+	
 		cookie = gHIDDeviceList[d].elements[gSelectedElement].cookie;							// get cookie
 
 				/* GET THE CURRENT VALUE OF THE AXIS */
-
+					
 		result = (*hidDeviceInterface)->getElementValue(hidDeviceInterface,	cookie, &hidEvent);		// poll this element
 		if (result)
 		{
-			DoAlert("\pIdleTimerCallback: getElementValue failed!");
+			DoAlert("\pIdleTimerCallback: getElementValue failed!");	
 			DoHIDSucksDialog();
 			ExitToShell();
 		}
-
+	
 		gCurrentCalibrationValue = hidEvent.value;							// extract its value
-
-
+	
+	
 				/* UPDATE THE RAW THERMOMETER */
-
+					
 		idControl.signature = 'hidm';
-		idControl.id 		= kCntlRawValueScale;
+		idControl.id 		= kCntlRawValueScale; 
 		GetControlByID(gHIDConfigWindow, &idControl, &control);				// get the thermometer control
 
 		SetControlValue(control, gCurrentCalibrationValue);
-		Draw1Control (control);
+		Draw1Control (control);	
 
 
 			/* UPDATE THE CALIBRATED THERMOMETER */
 
 		idControl.signature = 'hidm';
-		idControl.id 		= kCntlCalibratedValueScale;
+		idControl.id 		= kCntlCalibratedValueScale; 
 		GetControlByID(gHIDConfigWindow, &idControl, &control);				// get the thermometer control
 
 		calibratedValue = CalibrateElementValue(gCurrentCalibrationValue, d, gSelectedElement,
 												gHIDDeviceList[d].elements[gSelectedElement].elementType);
 
 		SetControlValue(control, calibratedValue);
-		Draw1Control (control);
+		Draw1Control (control);	
 
 
-
+	
 			/* UPDATE THE RAW VALUE DISPLAY */
-
+				
 		idControl.signature = 'hidm';
-		idControl.id 		= kCntlTextRawValueElement;
+		idControl.id 		= kCntlTextRawValueElement; 
 		GetControlByID(gHIDConfigWindow, &idControl, &control);				// get the thermometer control
-
+        
         sprintf (text, "%3ld", gCurrentCalibrationValue);
         SetControlData (control, kControlNoPart, kControlStaticTextTextTag, strlen(text), text);
-		Draw1Control (control);
+		Draw1Control (control);	
 	}
 }
 
 #pragma mark -
-
+	
 /****************** RESET ELEMENT CALIBRATION ***********************/
 
 static void ResetElementCalibration(short deviceNum, short elementNum)
@@ -2438,24 +2438,24 @@ short	n, d, keyboardDevice, e;
 								gHIDDeviceList[d].isActive = true;
 								keyboardDevice = d;
 								break;
-
+								
 						default:
 								gHIDDeviceList[d].isActive = false;
-
+						
 					}
 					break;
-
+					
 			case	kHIDPage_KeyboardOrKeypad:
 					gHIDDeviceList[d].isActive = true;
 					keyboardDevice = d;
 					break;
-
+					
 			default:
 					gHIDDeviceList[d].isActive = false;
 		}
 	}
-
-
+	
+	
 			/*********************************************/
 			/* NEXT RESET ALL THE INFO IN THE NEEDS LIST */
 			/*********************************************/
@@ -2465,7 +2465,7 @@ short	n, d, keyboardDevice, e;
     	for (d = 0; d < MAX_HID_DEVICES; d++)
     	{
     		gControlNeeds[n].elementInfo[d].elementNum 			= -1;			// set as UNASSIGNED
-    		gControlNeeds[n].elementInfo[d].elementCurrentValue	= 0;
+    		gControlNeeds[n].elementInfo[d].elementCurrentValue	= 0;    		
     	}
 	}
 
@@ -2480,22 +2480,22 @@ short	n, d, keyboardDevice, e;
 		DoHIDSucksDialog();
 		return;
 	}
-
-
+	
+	
 			/* SCAN NEEDS LIST AND SET KEY ELEMENTS */
-
+			
 	for (n = 0; n < NUM_CONTROL_NEEDS; n++)
 	{
 		long	defaultKey = gControlNeeds[n].defaultKeyboardKey;	// get the default keyboard key (usage) value for this need
-
+		
 		if (defaultKey == kHIDUsage_KeyboardDownArrow)				// NOTE:  On OS 10.2.x the down arrow is broken so reassign to the Right CTRL key
 		{
 			if (!gPanther)
 				defaultKey = kHIDUsage_KeyboardRightControl;
 		}
-
+		
 			/* SEARCH FOR THIS KEY IN THE KEYBOARD ELEMENT LIST */
-
+			
 		for (e = 0; e < gHIDDeviceList[keyboardDevice].numElements; e++)
 		{
 			if (gHIDDeviceList[keyboardDevice].elements[e].usage == defaultKey)	// is this the key element we're looking for?
@@ -2530,21 +2530,21 @@ HRESULT 				result;
 
 	if (!gHIDInitialized)
 		return;
-
+		
 
 			/* SEE IF USER HAS HID DISABLED FOR MANUAL GETKEYS() KEYBOARD READS */
 			//
 			// This is a hack I had to put in so that people who couldn't get the game to work with HID could still use GetKeys() to do it
 			//
-
+			
 	if (gGamePrefs.dontUseHID)
 	{
 		for (n = 0; n < NUM_CONTROL_NEEDS; n++)
 		{
 			u_long value;
-
+			
 			gControlNeeds[n].oldValue = gControlNeeds[n].value;				// remember what the old value was before we update it
-
+		
 			switch(n)
 			{
 				case	0:												// kNeed_P1_TurnLeft_Key
@@ -2583,19 +2583,19 @@ HRESULT 				result;
 				case	10:								// kNeed_P1_CameraMode
 						gControlNeeds[n].value = value = GetKeyState(KEY_TAB);
 						break;
-
-
+				
+				
 				default:
 						value = 0;
-
-
+			
+	
 			}
-
+			
 			if (value && (gControlNeeds[n].oldValue == 0))			// is this a new button press?
 				gControlNeeds[n].newButtonPress	= true;
 			else
 				gControlNeeds[n].newButtonPress	= false;
-
+			
 		}
 		return;
 	}
@@ -2605,16 +2605,16 @@ HRESULT 				result;
 			/******************************************/
 			/* SCAN THRU ALL OF THE NEEDS IN OUR LIST */
 			/******************************************/
-
+			
 	for (n = 0; n < NUM_CONTROL_NEEDS; n++)
-	{
+	{		
 		gControlNeeds[n].oldValue = gControlNeeds[n].value;				// remember what the old value was before we update it
+	
+		bestValue = 0;													// init the best value 
 
-		bestValue = 0;													// init the best value
-
-
+		
 				/* SCAN THRU ALL OF THE DEVICES */
-
+				
 		for (d = 0; d < gNumHIDDevices; d++)
 		{
 			if (gHIDDeviceList[d].isActive == false)					// skip any inactive devices
@@ -2629,14 +2629,14 @@ HRESULT 				result;
 			e					= gControlNeeds[n].elementInfo[d].elementNum;			// get the index into the device's Element list
 			if (e == -1)																// if it's UNDEFINED then skip it
 				continue;
-
+				
 			elementType 		= gHIDDeviceList[d].elements[e].elementType;			// get element type
 			hidDeviceInterface 	= gHIDDeviceList[d].hidDeviceInterface;					// get hid interface for this device
 			cookie				= gHIDDeviceList[d].elements[e].cookie;					// get cookie
 
 
 						/* GET ELEMENT'S VALUE */
-
+						
 			result = (*hidDeviceInterface)->getElementValue(hidDeviceInterface,	cookie, &hidEvent);		// poll this element
 			if (result != noErr)
 				value = hidEvent.value = 0;						// NOTE:  HID is buggy as hell!  Sometimes devices return errors until a button has been pressed
@@ -2644,37 +2644,37 @@ HRESULT 				result;
 				value = hidEvent.value;
 
 						/* CALIBRATE THE VALUE */
-
+						
 			value = CalibrateElementValue(value, d, e, elementType);
-
-
+			
+						
 						/* SEE IF IT'S THE BEST VALUE SO FAR */
 
 			if (abs(value) > abs(bestValue))
 				bestValue = value;
 		}
-
-
+		
+		
 				/* SPECIAL CHECK FOR MOUSE BUTTON FIRE */
-
+				
 		if (n == kNeed_P1_Fire)
 		{
 			if (gMouseButtonState)
-				bestValue = 1;
+				bestValue = 1;		
 		}
-
+		
 				/*************************************/
 				/* SAVE THE BEST VALUE AS THE RESULT */
 				/*************************************/
-
-		gControlNeeds[n].value = bestValue;
-
+				
+		gControlNeeds[n].value = bestValue;		
+		
 		if ((bestValue != 0) && (gControlNeeds[n].oldValue == 0))			// is this a new button press?
 			gControlNeeds[n].newButtonPress	= true;
 		else
 			gControlNeeds[n].newButtonPress	= false;
 	}
-
+		
 }
 
 
@@ -2688,40 +2688,40 @@ long	tolerance, range;
 float	scale;
 
 				/* BUTTONS DON'T NEED CALIBRATION */
-
+				
 	if (elementType == kIOHIDElementTypeInput_Button)
 		return(inValue);
-
-
+			
+			
 				/* GET OUR CALIBRATION VALUES FOR THIS ELEMENT */
-
+				
 	calMin = gHIDDeviceList[deviceNum].elements[elementNum].calibrationMin;
 	calMax = gHIDDeviceList[deviceNum].elements[elementNum].calibrationMax;
 	calCenter = gHIDDeviceList[deviceNum].elements[elementNum].calibrationCenter;
-
-
+			
+			
 				/* CALC DIST FROM CENTER & CHECK "NULL" ZONE */
 				//
 				// Most joysticks/thumbsticks have horrible accuracy, and "center" can vary wildly from jiggle to jiggle.
 				// So, for our application we're going to just snap any values that are "close" to center all the way to center.
 				//
-
-
+			
+			
 	dist = inValue - calCenter;											// this makes the center == 0 with left < 0 and right > 0
-
+			
 	tolerance = ((calMax-calCenter) / 10);								// tolerance == 1/nth of dist between center and max
 	if (abs(dist) < tolerance)											// if within tolerance then just snap value to center, 0
 		dist = 0;
-
-
+			
+	
 					/* CALIBRATE FOR LEFT OF CENTER */
-
+					
 	if (dist < 0)
 	{
 		range = calCenter - calMin;										// calc calibrated range on left of zero
 		if (range < 1)													// avoid any accidental divides by zero
 			range = 1;
-
+	
 		scale = (float)dist / (float)range;								// calc scale factor
 		if (scale < -1.0f)												// make sure -1 to 0 (can go outside this if inValue is outside of calibrated range)
 			scale = -1.0f;
@@ -2729,7 +2729,7 @@ float	scale;
 		if (scale > 0.0f)
 			scale = 0.0f;
 	}
-
+	
 					/* CALIBRATE FOR RIGHT OF CENTER */
 	else
 	if (dist > 0)
@@ -2737,19 +2737,19 @@ float	scale;
 		range = calMax - calCenter;										// calc calibrated range on left of zero
 		if (range < 1)													// avoid any accidental divides by zero
 			range = 1;
-
+	
 		scale = (float)dist / (float)range;								// calc scale factor
 		if (scale < 0.0f)												// make sure 0 to +1 (can go outside this if inValue is outside of calibrated range)
 			scale = 0.0f;
 		else
 		if (scale > 1.0f)
 			scale = 1.0f;
-	}
+	}	
 				/* CALIBRATE EXACTLY TO CENTER */
 	else
 		return(0);
-
-
+					
+	
 				/* SCALE TO -AXIS_RANGE TO +AXIS_RANGE */
 				//
 				// Different devices will have different min/max axis values.
@@ -2792,19 +2792,19 @@ long	d, e, n;
 
 			/* SAVE SOME CONSTANTS SO WE DONT SCREW UP LATER IF WE CHANGE THEM */
 			//
-			// If we save a certain amount of data, but change any of the constants later then
+			// If we save a certain amount of data, but change any of the constants later then 
 			// when we try to read the data we're not going to be able to decypher it because
-			// the arrays won't match up.  So, when reading this data back later, we need to
+			// the arrays won't match up.  So, when reading this data back later, we need to 
 			// compare these saved constants with their current values.  If they don't match
 			// then we cannot read in this data and we must just toss it out and make the user
 			// reset their settings.
 			//
-
-
-	settings->maxNeeds 		= NUM_CONTROL_NEEDS;
-	settings->maxDevices 	= MAX_HID_DEVICES;
-	settings->maxElement 	= MAX_HID_ELEMENTS;
-
+			
+				
+	settings->maxNeeds 		= NUM_CONTROL_NEEDS;			
+	settings->maxDevices 	= MAX_HID_DEVICES;			
+	settings->maxElement 	= MAX_HID_ELEMENTS;			
+	
 
 		/* REMEMBER WHICH DEVICES ARE SET TO ACTIVE */
 
@@ -2815,7 +2815,7 @@ long	d, e, n;
 
 
 		/* REMEMBER VENDOR & PRODUCT ID'S & TWIN COUNT FOR THE DEVICES */
-
+		
 	for (d = 0; d < MAX_HID_DEVICES; d++)
 	{
 		settings->vendorID[d]		= gHIDDeviceList[d].vendorID;
@@ -2823,8 +2823,8 @@ long	d, e, n;
 		settings->hasDuplicate[d] 	= gHIDDeviceList[d].hasDuplicate;
 		settings->locationID[d] 	= gHIDDeviceList[d].locationID;
 	}
-
-
+	
+	
 			/* REMEMBER CALIBRATION INFORMATION */
 
 	for (d = 0; d < MAX_HID_DEVICES; d++)
@@ -2836,8 +2836,8 @@ long	d, e, n;
 			settings->calibrationCenter[d][e] 	= gHIDDeviceList[d].elements[e].calibrationCenter;
 			settings->reverseAxis[d][e] 		= gHIDDeviceList[d].elements[e].reverseAxis;
 		}
-	}
-
+	}			
+	
 
 
 				/**************************/
@@ -2850,7 +2850,7 @@ long	d, e, n;
 		for (d = 0; d < MAX_HID_DEVICES; d++)							// save information for each device
 		{
 				/* GET ELEMENT # THAT THIS NEED USES & SAVE IT */
-
+				
 			e = gControlNeeds[n].elementInfo[d].elementNum;				// which element # does this Need use in this Device?
 			settings->needsElementNum[n][d] = e;
 		}
@@ -2869,13 +2869,13 @@ long	matchingDevice;
 		DoFatalAlert("\pRestoreHIDControlSettings: HID isn't initialized!");
 
 			/* VERIFY THAT WE'VE STILL GOT THE SAME CONSTANTS */
-
+			
 	if ((settings->maxNeeds != NUM_CONTROL_NEEDS) ||
 		(settings->maxDevices != MAX_HID_DEVICES) ||
 		(settings->maxElement != MAX_HID_ELEMENTS))
 		return;															// bail out - this will leave the default settings in place
-
-
+			
+			
 			/***************************/
 			/* RESTORE DEVICE SETTINGS */
 			/***************************/
@@ -2889,10 +2889,10 @@ long	matchingDevice;
 					/* RESTORE "ISACTIVE" INFO */
 
 		gHIDDeviceList[matchingDevice].isActive = settings->isActive[d];
-
+		
 
 				/* RESTORE CALIBRATION INFO FOR EACH ELEMENT IN THIS DEVICE */
-
+		
 		for (e = 0; e < gHIDDeviceList[matchingDevice].numElements; e++)
 		{
 			gHIDDeviceList[matchingDevice].elements[e].calibrationMin = settings->calibrationMin[d][e];
@@ -2900,7 +2900,7 @@ long	matchingDevice;
 			gHIDDeviceList[matchingDevice].elements[e].calibrationCenter = settings->calibrationCenter[d][e];
 			gHIDDeviceList[matchingDevice].elements[e].reverseAxis = settings->reverseAxis[d][e];;
 		}
-
+		
 	}
 
 
@@ -2913,17 +2913,17 @@ long	matchingDevice;
 		for (d = 0; d < MAX_HID_DEVICES; d++)							// save information for each device
 		{
 					/* DOES THIS DEVICE STILL EXIST? */
-
+					
 			matchingDevice = FindMatchingDevice(settings->vendorID[d], settings->productID[d], settings->hasDuplicate[d], settings->locationID[d]);
 			if (matchingDevice == -1)
 				continue;
-
+	
 					/* YEP, IT EXISTS, SO LETS SET OUR STUFF */
-
+					
 			e = settings->needsElementNum[n][d];							// get the element # we want to set it to
-
+					
 			gControlNeeds[n].elementInfo[matchingDevice].elementNum = e;	// set it in the matching device's field
-		}
+		}	
 	}
 }
 
@@ -2951,9 +2951,9 @@ short	d;
 		if (hasDuplicate)												// only care about location ID's if there's more than 1 of this same device
 		{
 			if (locationID != gHIDDeviceList[d].locationID)					// does location ID match?
-				continue;
+				continue;	
 		}
-
+	
 		return(d);
 	}
 
@@ -2974,10 +2974,10 @@ void UpdateKeyMap(void)
 {
 int		i;
 
-	GetKeys((void *)gKeyMap);
+	GetKeys((void *)gKeyMap);										
 
 			/* CALC WHICH KEYS ARE NEW THIS TIME */
-
+		
 	for (i = 0; i <  16; i++)
 		gNewKeys[i] = (gOldKeys[i] ^ gKeyMap[i]) & gKeyMap[i];
 
@@ -2986,19 +2986,19 @@ int		i;
 
 	for (i = 0; i <  16; i++)
 		gOldKeys[i] = gKeyMap[i];
-
-
-
+	
+	
+	
 		/*****************************************************/
 		/* WHILE WE'RE HERE LET'S DO SOME SPECIAL KEY CHECKS */
 		/*****************************************************/
-
+	
 				/* SEE IF QUIT GAME */
-
+				
 	if (GetKeyState(KEY_Q) && GetKeyState(KEY_APPLE))			// see if real key quit
-		CleanQuit();
+		CleanQuit();	
 
-
+	
 }
 
 
@@ -3063,9 +3063,9 @@ int		i;
 static void UpdateMouseDeltas(void)
 {
 EventRecord   theEvent;
-
+			
 				/* UPDATE DELTAS */
-
+				
 	gReadMouseDeltasTimer -= gFramesPerSecondFrac;			// regulate the rate that we read mouse deltas so we don't go too fast and get just 0's
 	if (gReadMouseDeltasTimer <= 0.0f)
 	{
@@ -3075,23 +3075,23 @@ EventRecord   theEvent;
 
 		GetNextEvent(kEventMouseMoved, &theEvent);			// getting a Mouse Moved event should trigger the Mouse Event Handler below
 
-		FlushEvents(everyEvent, 0);							// keep the event queue flushed of other key events and stuff
+		FlushEvents(everyEvent, 0);							// keep the event queue flushed of other key events and stuff		
 	}
-
+	
 		/* WHILE WE'RE HERE UPDATE THE MOUSE BUTTON STATE */
-
+	
 	if (Button())											// is mouse button down?
 	{
 		if (!gMouseButtonState)								// is this a new click?
-			gMouseNewButtonState = gMouseButtonState = true;
+			gMouseNewButtonState = gMouseButtonState = true;	
 		else
-			gMouseNewButtonState = false;
+			gMouseNewButtonState = false;	
 	}
 	else
 	{
-		gMouseButtonState = gMouseNewButtonState = false;
+		gMouseButtonState = gMouseNewButtonState = false;	
 	}
-
+	
 }
 
 
@@ -3108,19 +3108,19 @@ Point				qdPoint;
 #pragma unused (eventhandler, userdata)
 
 	switch (GetEventKind(pEventRef))
-	{
+	{	 
 		case	kEventMouseMoved:
 		case	kEventMouseDragged:
 				theErr = GetEventParameter(pEventRef, kEventParamMouseDelta, typeQDPoint,
 										nil, sizeof(Point), nil, &qdPoint);
-
+			
 				gMouseDeltaX = qdPoint.h;
 				gMouseDeltaY = qdPoint.v;
 
 				result = noErr;
-				break;
-
-	}
+				break;	
+				
+	}	 
      return(result);
 }
 
@@ -3137,15 +3137,15 @@ EventTypeSpec			mouseEvents[] = {{kEventClassMouse, kEventMouseMoved},	{kEventCl
 		gMouseEventHandlerUPP = NewEventHandlerUPP(MyMouseEventHandler);
 
 	if (gMouseEventHandlerRef == 0)
-	{
+	{	
 		//	make sure we start the deltas at 0 when we setup the handler
-
+			
 		gMouseDeltaX = 0;
 		gMouseDeltaY = 0;
-
+		
 		//	install the handler
 
-		InstallEventHandler(GetApplicationEventTarget(), gMouseEventHandlerUPP,	2, mouseEvents, nil, &gMouseEventHandlerRef);
+		InstallEventHandler(GetApplicationEventTarget(), gMouseEventHandlerUPP,	2, mouseEvents, nil, &gMouseEventHandlerRef);			
 	}
 }
 
@@ -3160,11 +3160,11 @@ static void Remove_MouseEventHandlers(void)
 	if (gMouseEventHandlerRef != 0) {
 		RemoveEventHandler(gMouseEventHandlerRef);
 		gMouseEventHandlerRef = 0;
-
+		
 		DisposeEventHandlerUPP(gMouseEventHandlerUPP);
 		gMouseEventHandlerUPP = nil;
 	}
-
+	
 }
 #endif
 
@@ -3176,7 +3176,7 @@ static void Remove_MouseEventHandlers(void)
 static void DoHIDSucksDialog(void)
 {
 static WindowRef 		sucksDialogWindow = nil;
-static EventHandlerUPP 	sucksWinEvtHandler;
+static EventHandlerUPP 	sucksWinEvtHandler;		
 
 OSStatus		err;
 EventHandlerRef	ref;
@@ -3184,18 +3184,18 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
                              { kEventClassWindow, kEventWindowDrawContent },
                              { kEventClassControl, kEventControlClick },
                              { kEventClassCommand,  kEventProcessCommand } };
-
+    
     Enter2D();
 
 				/* CREATE WINDOW FROM THE NIB */
-
+				
     err = CreateWindowFromNib(gNibs, CFSTR ("HIDSucks"), &sucksDialogWindow);
 	if (err)
 		DoFatalAlert("\pDoHIDSucksDialog: CreateWindowFromNib failed!");
 
-
+			
 			/* CREATE NEW WINDOW EVENT HANDLER */
-
+				
     sucksWinEvtHandler = NewEventHandlerUPP(HIDSucksEventHandler);
     InstallWindowEventHandler(sucksDialogWindow, sucksWinEvtHandler, GetEventTypeCount (list), list, sucksDialogWindow, &ref);
 
@@ -3204,7 +3204,7 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
 	SelectWindow(sucksDialogWindow);
 
 			/* START THE EVENT LOOP */
-
+			
     RunAppModalLoopForWindow(sucksDialogWindow);
 
 
@@ -3214,7 +3214,7 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
 
 
 	Exit2D();
-
+		
 }
 
 /********************** HID SUCKS EVENT HANDLER ************************/
@@ -3230,19 +3230,19 @@ HICommand 			command;
 
 
 	switch(GetEventKind(event))
-	{
+	{				
 				/* PROCESS COMMAND */
-
+				
 		case	kEventProcessCommand:
 				GetEventParameter (event, kEventParamDirectObject, kEventParamHICommand, NULL, sizeof(command), NULL, &command);
 				switch(command.commandID)
-				{
+				{							
 							/* HIT OK BUTTON */
-
+							
 					case	kHICommandOK:
 							QuitAppModalLoopForWindow((WindowRef) userData);
 							break;
-
+							
 				}
 				break;
     }

@@ -2,12 +2,7 @@
 // main.h
 //
 
-#ifndef __MAIN
-#define __MAIN
-
-
-
-
+#pragma once
 
 enum
 {
@@ -62,21 +57,6 @@ enum
 };
 
 
-  	/* EXTERNS */
-
-extern 	short			gVSMode, gLevelNum;
-extern	float			gRaceReadySetGoTimer, gWormholeTimer, gScratchF;
-extern	Boolean			gLevelCompleted, gTimeDemo;
-extern  OGLPoint3D		gBestCheckpointCoord[];
-extern	short			gBestCheckpointNum[];
-extern	float			gBestCheckpointAim[];
-extern	uint32_t			gAutoFadeStatusBits, gGameFrameNum;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	short			gPrefsFolderVRefNum;
-extern	long			gPrefsFolderDirID;
-extern	FSSpec				gDataSpec;
-extern  uint32_t			gSharewareMode;
-
 
 //=================================================
 
@@ -87,10 +67,3 @@ void MoveEverything(void);
 void InitDefaultPrefs(void);
 void StartLevelCompletion(float coolDownTimer);
 Boolean PrimeTimeDemoSpline(long splineNum, SplineItemType *itemPtr);
-
-
-#endif
-
-
-
-

@@ -12,21 +12,6 @@
 
 #include "game.h"
 
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	float					gFramesPerSecond,gFramesPerSecondFrac,gCurrentPaneAspectRatio;
-extern	OGLVector3D				gWorldSunDirection;
-extern	CollisionRec			gCollisionList[];
-extern	FSSpec					gDataSpec;
-extern	OGLMatrix4x4			gWorldToWindowMatrix[];
-extern	float					gGlobalTransparency,gTerrainPolygonSize;
-extern	SpriteType				*gSpriteGroupList[];
-extern	OGLColorRGB			gGlobalColorFilter;
-extern	float					gScratchF,gTerrainSuperTileUnitSize;
-extern	PrefsType			gGamePrefs;
-extern	int				gGameWindowWidth, gGameWindowHeight,gScratch;
-extern	Byte				gCurrentSplitScreenPane, gNumPlayers;
-
 
 /****************************/
 /*    PROTOTYPES            */

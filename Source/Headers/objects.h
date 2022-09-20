@@ -2,6 +2,8 @@
 // Object.h
 //
 
+#pragma once
+
 #define INVALID_NODE_FLAG	0xdeadbeef			// put into CType when node is deleted
 
 #define	TERRAIN_SLOT	1
@@ -47,21 +49,9 @@ enum
 };
 
 
-#define	DEFAULT_GRAVITY		5000.0f
-
-
 #define	ShadowScaleX	SpecialF[0]
 #define	ShadowScaleZ	SpecialF[1]
 #define	CheckForBlockers	Flag[0]
-
-
-		/* EXTERNS */
-
-extern	ObjNode		*gFirstNodePtr;
-
-extern	OGLPoint3D	gCoord;
-extern	OGLVector3D	gDelta;
-extern  NewObjectDefinitionType	gNewObjectDefinition;
 
 
 //========================================================
@@ -117,10 +107,3 @@ void CalcDisplayGroupWorldPoints(ObjNode *theNode);
 
 void HideObjectChain(ObjNode *theNode);
 void ShowObjectChain(ObjNode *theNode);
-
-
-
-
-
-
-

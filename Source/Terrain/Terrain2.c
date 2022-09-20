@@ -9,16 +9,6 @@
 /* EXTERNALS   */
 /***************/
 
-extern	OGLPoint3D	gCoord;
-extern	OGLVector3D				gRecentTerrainNormal;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	SuperTileStatus			**gSuperTileStatusGrid;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	float					gFramesPerSecondFrac,gTerrainSuperTileUnitSize,gMapToUnitValue;
-extern	SuperTileMemoryType	gSuperTileMemoryList[];
-extern	float					gTerrainSuperTileUnitSizeFrac,gTerrainPolygonSize;
-extern	float			**gVertexShading;
-
 
 /****************************/
 /*    PROTOTYPES            */

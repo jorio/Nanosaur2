@@ -12,9 +12,6 @@
 #include "game.h"
 #include <math.h>
 
-extern	float				gFramesPerSecondFrac,gFramesPerSecond;
-extern	OGLMatrix4x4		gWorldToFrustumMatrix;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

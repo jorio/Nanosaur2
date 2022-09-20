@@ -11,20 +11,6 @@
 
 #include "game.h"
 
-extern	Boolean			gDrawLensFlare,gDisableHiccupTimer, gPlayerIsDead[], gAnaglyph;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	float			gFramesPerSecond,gFramesPerSecondFrac,gAutoFadeStartDist,gAutoFadeEndDist,gAutoFadeRange_Frac;
-extern	float			gTerrainPolygonSize, gDeathTimer[], gGammaFadePercent;
-extern	OGLPoint3D	gCoord;
-extern	ObjNode				*gFirstNodePtr;
-extern	short		gNumSuperTilesDrawn;
-extern	float		gGlobalTransparency;
-extern	int			gNumObjectNodes,gSuperTileActiveRange;
-extern	PrefsType	gGamePrefs;
-extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	Boolean		gGameIsRegistered;
-extern	Byte		gNumPlayers;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

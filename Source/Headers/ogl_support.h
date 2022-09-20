@@ -2,13 +2,11 @@
 // ogl_support.h
 //
 
-#ifndef OGL_SUP
-#define OGL_SUP
+#pragma once
 
 #define	MAX_SPLITSCREENS	2
 
 #define	MAX_FILL_LIGHTS		4
-#define	MAX_TEXTURES		300
 
 enum
 {
@@ -280,18 +278,6 @@ enum
 };
 
 
-		/* EXTERNS */
-
-
-extern	AGLContext				gAGLContext;
-extern	Byte					gCurrentSplitScreenPane, gActiveSplitScreenMode, gAnaglyphPass;
-extern	Boolean					gForceVertexArrayUpdate[];
-extern	Boolean					gUsingVertexArrayRange;
-extern	float					gCurrentPaneAspectRatio, gAnaglyphEyeSeparation, gAnaglyphFocallength;
-extern	OGLMatrix4x4			gViewToFrustumMatrix,gWorldToViewMatrix,gWorldToFrustumMatrix, gLocalToViewMatrix, gLocalToFrustumMatrix;
-extern  OGLColorRGBA			gMyState_Color;
-
-
 //=====================================================================
 
 void OGL_Boot(void);
@@ -344,7 +330,3 @@ void ReleaseVertexArrayRangeMemory(Byte type);
 
 
 void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean doChannelBalancing);
-
-
-
-#endif

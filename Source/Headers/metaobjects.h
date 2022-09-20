@@ -2,9 +2,7 @@
 // metaobjects.h
 //
 
-#ifndef __METAOBJECTS_H_
-#define __METAOBJECTS_H_
-
+#pragma once
 
 #define	MO_COOKIE				0xfeedface		// set at head of every object for validation
 #define	MAX_MATERIAL_LAYERS		2				// max multitexture layers
@@ -221,14 +219,6 @@ typedef struct
 }MOSpriteSetupData;
 
 
-
-	/* EXTERNS */
-
-extern	OGLColorRGB			gGlobalColorFilter;
-extern	float				gGlobalTransparency;
-extern	uint32_t				gGlobalMaterialFlags;
-
-
 //-----------------------------
 
 void MO_InitHandler(void);
@@ -255,6 +245,3 @@ void MO_Object_OffsetUVs(MetaObjectPtr object, float du, float dv);
 void MO_Geometry_OffserUVs(short group, short type, short geometryNum, float du, float dv);
 MOMaterialObject *MO_LoadTextureObjectFromFile(OGLSetupOutputType *setupInfo, FSSpec *spec, Boolean useAlpha, Boolean textureInRAM);
 MOMaterialObject *MO_CreateTextureObjectFromARGBBuffer(OGLSetupOutputType *setupInfo, int width, int height, Ptr buffer, Boolean textureInRAM1);
-
-
-#endif

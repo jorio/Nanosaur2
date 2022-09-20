@@ -10,21 +10,6 @@
 /****************************/
 
 #include "game.h"
-#include "infobar.h"
-
-extern	float				gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
-extern	FSSpec		gDataSpec;
-extern	Boolean		gGameOver;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	Boolean		gSongPlayingFlag,gDisableAnimSounds;
-extern	PrefsType	gGamePrefs;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	SparkleType	gSparkles[MAX_SPARKLES];
-extern	OGLPoint3D	gCoord;
-extern	OGLVector3D	gDelta;
-extern	uint32_t			gGlobalMaterialFlags;
-extern	float			gGammaFadePercent;
-extern  uint32_t			gSharewareMode;
 
 
 /****************************/

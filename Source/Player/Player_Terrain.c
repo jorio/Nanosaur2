@@ -12,30 +12,6 @@
 
 #include "game.h"
 
-extern	OGLBoundingBox			gWaterBBox[];
-extern	ObjNode					*gFirstNodePtr;
-extern	float					gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
-extern	OGLPoint3D				gCoord;
-extern	OGLVector3D				gDelta;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	short					gNumCollisions;
-extern	CollisionRec			gCollisionList[];
-extern	PrefsType				gGamePrefs;
-extern	OGLBoundingBox			gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	OGLVector3D				gRecentTerrainNormal;
-extern	OGLMatrix4x4			gWorldToWindowMatrix[];
-extern	int						gScratch;
-extern	ParticleGroupType		*gParticleGroups[];
-extern	SpriteType			*gSpriteGroupList[MAX_SPRITE_GROUPS];
-extern	float				gDeathTimer[],gMinHeightOffGround,gCameraDistFromMe;
-extern	WaterDefType			*gWaterList;
-extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	OGLColorRGB				gGlobalColorFilter;
-extern	float					gGammaFadePercent;
-extern	InputNeedType			gControlNeeds[];
-extern	SparkleType				gSparkles[];
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

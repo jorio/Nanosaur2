@@ -13,19 +13,6 @@
 #include "game.h"
 #include "stb_image.h"
 
-extern int				gNumObjectNodes,gNumPointers;
-extern	MOMaterialObject	*gMostRecentMaterial;
-extern	short			gNumSuperTilesDrawn,gNumActiveParticleGroups,gNumFencesDrawn,gNumWaterDrawn;
-extern	float			gFramesPerSecond,gCameraStartupTimer,gScratchF,gGlobalTransparency;
-extern	Byte			gDebugMode, gNumPlayers;
-extern	Boolean			gPlayFullScreen;
-extern	uint32_t			gGlobalMaterialFlags, gAutoFadeStatusBits;
-extern	PrefsType			gGamePrefs;
-extern	int				gGameWindowWidth,gGameWindowHeight,gScratch,gNumSparkles,gNumLoopingEffects;
-extern	CGrafPtr				gGameWindowGrafPtr;
-extern	GDHandle 		gGDevice;
-extern  long			gRAMAlloced;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

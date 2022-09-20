@@ -11,21 +11,6 @@
 
 #include "game.h"
 
-extern	float			gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
-extern	OGLPoint3D		gCoord;
-extern	OGLVector3D		gDelta;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	OGLVector3D		gRecentTerrainNormal;
-extern	uint32_t			gAutoFadeStatusBits;
-extern	NewParticleGroupDefType	gNewParticleGroupDef;
-extern	SparkleType	gSparkles[];
-extern	CollisionRec	gCollisionList[];
-extern	short			gNumCollisions;
-extern	ObjNode			*gFirstNodePtr;
-extern	SpriteType		*gSpriteGroupList[];
-extern	OGLBoundingBox			gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-
 
 /****************************/
 /*    PROTOTYPES            */

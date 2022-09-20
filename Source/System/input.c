@@ -10,11 +10,6 @@
 
 #include "game.h"
 
-extern	AGLContext		gAGLContext;
-extern	float			gFramesPerSecondFrac,gFramesPerSecond,gScratchF;
-extern	PrefsType			gGamePrefs;
-extern	Boolean				gPanther;
-
 
 /**********************/
 /*     PROTOTYPES     */

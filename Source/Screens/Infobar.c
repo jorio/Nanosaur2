@@ -11,20 +11,6 @@
 
 #include	"game.h"
 
-
-extern	float					gCurrentPaneAspectRatio,gGlobalTransparency,gFramesPerSecondFrac;
-extern	FSSpec					gDataSpec;
-extern	OGLColorRGB				gGlobalColorFilter;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	PrefsType				gGamePrefs;
-extern	uint32_t					gGlobalMaterialFlags;
-extern	SpriteType				*gSpriteGroupList[];
-extern	AGLContext				gAGLContext;
-extern	OGLMatrix4x4			gWorldToWindowMatrix[];
-extern	float					gMapToUnitValueFrac;
-
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

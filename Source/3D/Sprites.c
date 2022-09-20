@@ -13,11 +13,6 @@
 #include "stb_image.h"
 
 
-extern	float	gGlobalTransparency;
-extern	int		gPolysThisFrame;
-extern	Boolean			gSongPlayingFlag,gMuteMusicFlag;
-extern	uint32_t			gGlobalMaterialFlags;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/
@@ -26,8 +21,6 @@ extern	uint32_t			gGlobalMaterialFlags;
 /****************************/
 /*    CONSTANTS             */
 /****************************/
-
-#define	FONT_WIDTH	.51f
 
 
 /*********************/

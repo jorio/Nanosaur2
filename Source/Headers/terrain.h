@@ -2,8 +2,7 @@
 // Terrain.h
 //
 
-#ifndef TERRAIN_H
-#define TERRAIN_H
+#pragma once
 
 #include "main.h"
 
@@ -132,18 +131,6 @@ typedef struct
 
 
 
-		/* EXTERNS */
-
-extern	float gTerrainSuperTileUnitSize;
-extern	int						gNumLineMarkers;
-extern	LineMarkerDefType		gLineMarkerList[MAX_LINEMARKERS];
-extern	TerrainItemEntryType 	*gMasterItemList;
-extern	int						gNumTerrainItems;
-extern  uint32_t			gTerrainPolygonSizeInt;
-extern  long			gTerrainTileWidth,gTerrainTileDepth;
-extern  long			gTerrainUnitWidth,gTerrainUnitDepth;
-extern  long			gNumSuperTilesDeep,gNumSuperTilesWide, gNumUniqueSuperTiles;
-
 //=====================================================================
 
 
@@ -174,12 +161,3 @@ void CalculateSupertileVertexNormals(MOVertexArrayData	*meshData, long	startRow,
 
 void DoItemShadowCasting(OGLSetupOutputType *setupInfo);
 Boolean SeeIfCrossedLineMarker(ObjNode *theNode, long *whichLine);
-
-
-#endif
-
-
-
-
-
-

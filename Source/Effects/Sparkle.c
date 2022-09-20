@@ -11,17 +11,6 @@
 
 #include "game.h"
 
-extern	float			gFramesPerSecondFrac,gFramesPerSecond;
-extern	OGLPoint3D		gCoord;
-extern	OGLVector3D		gDelta;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	OGLVector3D		gRecentTerrainNormal;
-extern	uint32_t			gAutoFadeStatusBits;
-extern	PrefsType			gGamePrefs;
-extern	SpriteType	*gSpriteGroupList[];
-extern	Byte				gCurrentSplitScreenPane;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

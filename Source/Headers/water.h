@@ -2,8 +2,7 @@
 // water.h
 //
 
-#ifndef WATER_H
-#define WATER_H
+#pragma once
 
 #define	MAX_WATER_POINTS	100			// note:  cannot change this without breaking data files!!
 
@@ -44,13 +43,6 @@ typedef struct		// NOTE: MUST MATCH OREOTERRAIN DATA!!!
 }WaterDefType;
 
 
-		/* EXTERN */
-
-extern	long				gNumWaterPatches;
-extern	WaterDefType		*gWaterList;
-extern	MOVertexArrayData	gWaterTriMeshData[];
-extern	OGLBoundingBox		gWaterBBox[];
-
 //============================================
 
 void PrimeTerrainWater(void);
@@ -63,7 +55,3 @@ Boolean GetWaterY(float x, float z, float *y);
 
 void CreateNewRipple(const OGLPoint3D *where, float baseScale, float scaleSpeed, float fadeRate);
 void CreateMultipleNewRipples(float x, float z, float baseScale, float scaleSpeed, float fadeRate, short numRipples);
-
-#endif
-
-

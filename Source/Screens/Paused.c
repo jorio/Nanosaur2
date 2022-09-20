@@ -11,17 +11,6 @@
 
 #include "game.h"
 
-extern	float		gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
-extern	FSSpec		gDataSpec;
-extern	Boolean		gGameOver,gMuteMusicFlag;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	Boolean		gDisableAnimSounds;
-extern	PrefsType	gGamePrefs;
-extern	OGLPoint3D	gCoord;
-extern	MOPictureObject 	*gBackgoundPicture;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	OGLColorRGB			gGlobalColorFilter;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

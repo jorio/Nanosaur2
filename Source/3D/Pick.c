@@ -12,12 +12,6 @@
 
 #include "game.h"
 
-extern	int					gNumWorldCalcsThisFrame;
-extern	ObjNode				*gFirstNodePtr;
-extern	long				gNumSuperTilesDeep,gNumSuperTilesWide;
-extern	SuperTileStatus		**gSuperTileStatusGrid;
-extern	SuperTileMemoryType	gSuperTileMemoryList[MAX_SUPERTILES];
-
 
 /****************************/
 /*    PROTOTYPES            */

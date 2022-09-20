@@ -40,12 +40,3 @@ int32_t SwizzleLong(const int32_t *longPtr);
 float SwizzleFloat(const float *floatPtr);
 uint32_t SwizzleULong(const uint32_t *longPtr);
 uint16_t SwizzleUShort(const uint16_t *shortPtr);
-
-
-/***********************************/
-
-
-extern	float		gFramesPerSecondFrac;
-extern	Boolean		gGameIsRegistered, gAltivec, gLittleSnitch, gLowRAM;
-extern	Str255  	gSerialFileName;
-extern  uint32_t		gSerialWasVerifiedMode;

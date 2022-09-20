@@ -11,18 +11,6 @@
 
 #include "game.h"
 
-extern	Boolean			gMuteMusicFlag;
-extern	SpriteType		*gSpriteGroupList[];
-extern	int32_t			gNumSpritesInGroupList[];
-extern	int				gPolysThisFrame;
-extern	Boolean			gMyState_Lighting;
-extern	AGLContext		gAGLContext;
-extern	Byte			gDebugMode, gCurrentSplitScreenPane;
-extern	PrefsType			gGamePrefs;
-extern	OGLMatrix4x4	gWorldToFrustumMatrix,gWorldToViewMatrix,gViewToFrustumMatrix;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

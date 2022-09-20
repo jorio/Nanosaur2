@@ -15,18 +15,6 @@
 #include "game.h"
 
 
-extern	Boolean		gHIDInitialized;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	int			gPolysThisFrame;
-extern	AGLContext		gAGLContext;
-extern	float			gDemoVersionTimer;
-extern	short	gPrefsFolderVRefNum;
-extern	long		gPrefsFolderDirID;
-extern	PrefsType			gGamePrefs;
-extern	CGGammaValue gOriginalRedTable[256], gOriginalGreenTable[256], gOriginalBlueTable[256];
-extern	Boolean				gPlayFullScreen;
-
-
 /****************************/
 /*    CONSTANTS             */
 /****************************/

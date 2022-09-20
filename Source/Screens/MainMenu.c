@@ -11,27 +11,6 @@
 
 #include "game.h"
 
-extern	float				gFramesPerSecondFrac,gFramesPerSecond,gGlobalTransparency;
-extern	FSSpec		gDataSpec;
-extern	Boolean		gGameOver;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	Boolean		gSongPlayingFlag, gPlayingFromSavedGame;
-extern	PrefsType	gGamePrefs;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	SparkleType	gSparkles[MAX_SPARKLES];
-extern	OGLPoint3D	gCoord;
-extern	OGLPoint2D	gCursorCoord;
-extern	OGLVector3D	gDelta;
-extern	uint32_t			gGlobalMaterialFlags;
-extern	float			gGammaFadePercent;
-extern	OGLColorRGB			gGlobalColorFilter;
-extern	MOPictureObject 	*gBackgoundPicture;
-extern	int					gGameWindowWidth, gGameWindowHeight;
-extern	Boolean				gGameIsRegistered, gPlayFullScreen, gMouseNewButtonState;
-extern	short			gCurrentSong;
-extern	WindowPtr		gGameWindow;
-extern	GrafPtr			gGameWindowGrafPtr;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

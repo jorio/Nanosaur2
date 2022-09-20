@@ -2,10 +2,7 @@
 // player.h
 //
 
-#ifndef __PLAYER_H__
-#define __PLAYER_H__
-
-
+#pragma once
 
 #define	MAX_PLAYERS		2
 
@@ -191,13 +188,6 @@ typedef struct
 
 
 
-		/* EXTERNS */
-
-extern	PlayerInfoType		gPlayerInfo[];
-extern	Byte				gNumPlayers;
-extern	float				gAutoFireDelay[], gCurrentMaxSpeed[], gTargetMaxSpeed[];
-extern	Boolean				gPlayerIsDead[];
-
 
 //=======================================================
 
@@ -251,9 +241,4 @@ void CauseBombShockwaveDamage(ObjNode *wave, uint32_t ctype);
 
 void UpdatePlayerRaceMarkers(ObjNode *player);
 void CalcPlayerPlaces(void);
-
-
-#endif
-
-
 

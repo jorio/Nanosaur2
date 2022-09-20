@@ -11,15 +11,6 @@
 
 #include "game.h"
 
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	FSSpec				gDataSpec;
-extern	float		gFramesPerSecondFrac;
-extern	PrefsType			gGamePrefs;
-extern	Boolean				gHIDInitialized;
-extern	Byte		gNumPlayers;
-extern  int			gScratch;
-//extern void  dtox80(const double *x, extended80 *x80);
-
 
 /****************************/
 /*    PROTOTYPES            */

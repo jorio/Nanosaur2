@@ -11,26 +11,6 @@
 
 #include "game.h"
 
-extern	short			gCurrentSong;
-extern	short			gPrefsFolderVRefNum;
-extern	long			gPrefsFolderDirID;
-extern	long			gNumUniqueSuperTiles;
-extern	long			gNumSuperTilesDeep,gNumSuperTilesWide;
-extern	FSSpec			gDataSpec;
-extern	uint32_t			gScores[],gLoadedScore;
-extern	SpriteType		*gSpriteGroupList[];
-extern	float			**gMapYCoords,**gMapYCoordsOriginal, gLoadingThermoPercent;
-extern	Byte			**gMapSplitMode;
-extern	short			**gSuperTileTextureGrid;
-extern	FenceDefType	*gFenceList;
-extern	long			gNumFences,gNumSplines,gNumWaterPatches;
-extern	MOMaterialObject	*gSuperTileTextureObjects[MAX_SUPERTILE_TEXTURES];
-extern	PrefsType			gGamePrefs;
-extern	AGLContext		gAGLContext;
-extern	Boolean			gMuteMusicFlag,gMuteMusicFlag;
-extern	WaterDefType	**gWaterListHandle, *gWaterList;
-extern	Boolean			gPlayingFromSavedGame;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

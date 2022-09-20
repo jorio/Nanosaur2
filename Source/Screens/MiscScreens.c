@@ -11,16 +11,6 @@
 
 #include "game.h"
 
-extern	float				gFramesPerSecondFrac,gFramesPerSecond;
-extern	FSSpec		gDataSpec;
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	Boolean		gDisableAnimSounds;
-extern	Boolean		gHIDInitialized;
-extern	PrefsType	gGamePrefs;
-extern	OGLPoint3D	gCoord;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	OGLVector3D	gDelta;
-
 
 /****************************/
 /*    PROTOTYPES            */

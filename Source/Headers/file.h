@@ -2,6 +2,8 @@
 // file.h
 //
 
+#pragma once
+
 #include "input.h"
 
 		/***********************/
@@ -114,22 +116,6 @@ typedef struct
 
 	int		reserved[8];
 }PrefsType;
-
-
-
-		/* SAVE PLAYER */
-
-typedef struct
-{
-	Byte		numAgesCompleted;		// encode # ages in lower 4 bits, and stage in upper 4 bits
-	Str255		playerName;
-}SavePlayerType;
-
-
-
-		/* EXTERNS */
-
-extern	PrefsType			gGamePrefs;
 
 
 

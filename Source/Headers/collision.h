@@ -2,13 +2,11 @@
 // collision.h
 //
 
-#ifndef COLL_H
-#define COLL_H
+#pragma once
 
 enum
 {
 	COLLISION_TYPE_OBJ,						// box
-	COLLISION_TYPE_TILE
 };
 
 
@@ -26,12 +24,6 @@ struct CollisionRec
 typedef struct CollisionRec CollisionRec;
 
 
-
-				/* EXTERNS */
-
-extern	short			gNumCollisions;
-extern	CollisionRec	gCollisionList[];
-extern   Byte			gTotalSides;
 
 
 //=================================
@@ -60,8 +52,3 @@ Boolean	HandleLineSegmentCollision(const OGLLineSegment *lineSeg, ObjNode **hitO
 									OGLVector3D *hitNormal, uint32_t *cTypes, Boolean	allowBBoxTests);
 
 Boolean	HandleRayCollision(OGLRay *ray, ObjNode **hitObj, OGLPoint3D *hitPt,OGLVector3D *hitNormal, uint32_t *cTypes);
-
-#endif
-
-
-

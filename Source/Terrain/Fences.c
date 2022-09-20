@@ -9,19 +9,6 @@
 /* EXTERNALS   */
 /***************/
 
-extern	OGLPoint3D	gCoord;
-extern	OGLVector3D	gDelta;
-extern	float		gAutoFadeStartDist,gAutoFadeRange_Frac,gAutoFadeEndDist,gFramesPerSecondFrac;
-extern	FSSpec		gDataSpec;
-extern	SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
-extern	int32_t		gNumSpritesInGroupList[MAX_SPRITE_GROUPS];
-extern	NewObjectDefinitionType	gNewObjectDefinition;
-extern	uint32_t		gGlobalMaterialFlags,gAutoFadeStatusBits;
-extern	Byte		gDebugMode;
-extern	float		gMapToUnitValue;
-extern	Byte		gCurrentSplitScreenPane;
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-
 /****************************/
 /*    PROTOTYPES            */
 /****************************/

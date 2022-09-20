@@ -889,7 +889,7 @@ MOVertexArrayObject	*vObj;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_CalcWorldPoints_Object: cookie is invalid!");
+		DoFatalAlert("MO_CalcWorldPoints_Object: cookie is invalid!");
 
 
 			/* HANDLE TYPE */
@@ -974,7 +974,7 @@ MOTriangleIndecies	*tris;
 	meshNum = gMeshNum;
 
 	if (meshNum >= MAX_MESHES_IN_MODEL)
-		DoFatalAlert("\pMO_CalcWorldPoints_VertexArray: meshNum >= MAX_MESHES_IN_MODEL");
+		DoFatalAlert("MO_CalcWorldPoints_VertexArray: meshNum >= MAX_MESHES_IN_MODEL");
 
 
 			/*  SEE IF NEED TO INIT THIS MESH COPY */

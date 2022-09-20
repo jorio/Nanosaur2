@@ -364,7 +364,7 @@ AGLContext 	agl_ctx = setupInfo->drawContext;
 
 	gSuperTileMeshData = AllocPtr(sizeof(MOVertexArrayData) * MAX_SUPERTILES);
 	if (gSuperTileMeshData == nil)
-		DoFatalAlert("\pCreateSuperTileMemoryList: AllocPtr failed - gSuperTileMeshData");
+		DoFatalAlert("CreateSuperTileMemoryList: AllocPtr failed - gSuperTileMeshData");
 
 			/* ALLOC TRIANGLE ARRAYS ALL SUPERTILES */
 
@@ -546,7 +546,7 @@ int	i;
 		}
 	}
 
-	DoFatalAlert("\pNo Free Supertiles!");
+	DoFatalAlert("No Free Supertiles!");
 	return(-1);											// ERROR, NO FREE BLOCKS!!!! SHOULD NEVER GET HERE!
 }
 

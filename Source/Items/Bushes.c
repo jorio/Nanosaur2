@@ -235,7 +235,7 @@ Boolean AddDesertBush(TerrainItemEntryType *itemPtr, float  x, float z)
 ObjNode	*newObj;
 
 	if (itemPtr->parm[0] > 3)
-		DoFatalAlert("\pAddDesertBush: illegal subtype");
+		DoFatalAlert("AddDesertBush: illegal subtype");
 
 	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
 	gNewObjectDefinition.type 		= LEVEL2_ObjType_Bush1 + itemPtr->parm[0];
@@ -306,7 +306,7 @@ Boolean AddCactus(TerrainItemEntryType *itemPtr, float  x, float z)
 ObjNode	*newObj;
 
 	if (itemPtr->parm[0] > 2)
-		DoFatalAlert("\pAddCactus: illegal subtype");
+		DoFatalAlert("AddCactus: illegal subtype");
 
 	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
 	gNewObjectDefinition.type 		= LEVEL2_ObjType_Cactus_Low + itemPtr->parm[0];
@@ -349,7 +349,7 @@ Boolean AddPalmBush(TerrainItemEntryType *itemPtr, float  x, float z)
 ObjNode	*newObj;
 
 	if (itemPtr->parm[0] > 2)
-		DoFatalAlert("\pAddPalmBush: illegal subtype");
+		DoFatalAlert("AddPalmBush: illegal subtype");
 
 	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
 	gNewObjectDefinition.type 		= LEVEL2_ObjType_PalmBush1 + itemPtr->parm[0];
@@ -389,7 +389,7 @@ Boolean AddGeckoPlant(TerrainItemEntryType *itemPtr, float  x, float z)
 ObjNode	*newObj;
 
 	if (itemPtr->parm[0] > 2)
-		DoFatalAlert("\pAddGeckoPlant: illegal subtype");
+		DoFatalAlert("AddGeckoPlant: illegal subtype");
 
 	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
 	gNewObjectDefinition.type 		= LEVEL3_ObjType_GeckoPlant_Small + itemPtr->parm[0];

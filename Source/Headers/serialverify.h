@@ -84,7 +84,7 @@ const char		*retailRezNames[MAX_LANGUAGES] =
 								kCFStringEncodingMacRoman), &gDialogWindow);
 	}
 	if (err)
-		DoFatalAlert("\pGamepadInit: CreateWindowFromNib failed!");
+		DoFatalAlert("GamepadInit: CreateWindowFromNib failed!");
 
 
 			/* CREATE NEW WINDOW EVENT HANDLER */
@@ -166,7 +166,7 @@ Size				actualSize;
 						    err = GetControlByID(gDialogWindow, &idControl, &control);
 							err |= GetControlData(control, 0, kControlEditTextTextTag, 64, gRegInfo, &actualSize);
 							if (err)
-						    	DoFatalAlert("\pGamepadInit_EventHandler: GetControlData failed!");
+						    	DoFatalAlert("GamepadInit_EventHandler: GetControlData failed!");
 
 
 									/* VALIDATE THE NUMBER */
@@ -178,7 +178,7 @@ Size				actualSize;
 		             		}
 		                    else
 		                    {
-		                        DoAlert("\pSorry, that serial number is not valid.  Please try again.");
+		                        DoAlert("Sorry, that serial number is not valid.  Please try again.");
 								InitCursor();
 		                    }
 		                    break;
@@ -209,9 +209,9 @@ Size				actualSize;
 
 					case	'url ':
 #if ALLOW_2P_INDEMO
-							if (LaunchURL("\phttp://www.pangeasoft.net/nano2/serialsdotmac.html") == noErr)
+							if (LaunchURL("http://www.pangeasoft.net/nano2/serialsdotmac.html") == noErr)
 #else
-							if (LaunchURL("\phttp://www.pangeasoft.net/nano2/serials.html") == noErr)
+							if (LaunchURL("http://www.pangeasoft.net/nano2/serials.html") == noErr)
 #endif
 			                    ExitToShell();
 			              	break;
@@ -370,7 +370,7 @@ const unsigned char pirateNumbers[NUM_PIRATE_SERIALS][SERIAL_LENGTH*2] =
 			(pirateNumbers[4][8] != 'Q'))
 		{
 corrupt:
-			DoFatalAlert("\pThis application is corrupt.  You should reinstall a fresh copy of the game.");
+			DoFatalAlert("This application is corrupt.  You should reinstall a fresh copy of the game.");
 			return(false);
 		}
 
@@ -418,7 +418,7 @@ corrupt:
 				// The serials are stored in the Level 1 terrain file
 				//
 
-		if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:Audio:Main.sounds", &spec) == noErr)		// open rez fork
+		if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Audio:Main.sounds", &spec) == noErr)		// open rez fork
 		{
 			short fRefNum = FSpOpenResFile(&spec,fsRdPerm);
 

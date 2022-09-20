@@ -91,7 +91,7 @@ short			type;
 				break;
 
 		default:
-				DoFatalAlert("\pAddForestDoor: no door here yet, call Brian!");
+				DoFatalAlert("AddForestDoor: no door here yet, call Brian!");
 				return(false);
 	}
 

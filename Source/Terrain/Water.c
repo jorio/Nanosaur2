@@ -190,7 +190,7 @@ float					y,centerX,centerZ;
 	InitRipples();
 
 	if (gNumWaterPatches > MAX_WATER)
-		DoFatalAlert("\pPrimeTerrainWater: gNumWaterPatches > MAX_WATER");
+		DoFatalAlert("PrimeTerrainWater: gNumWaterPatches > MAX_WATER");
 
 			/* INIT UVS */
 
@@ -210,10 +210,10 @@ float					y,centerX,centerZ;
 		numNubs 			= gWaterList[f].numNubs;					// get # nubs in water
 
 		if (numNubs == 1)
-			DoFatalAlert("\pPrimeTerrainWater: numNubs == 1");
+			DoFatalAlert("PrimeTerrainWater: numNubs == 1");
 
 		if (numNubs > MAX_NUBS_IN_WATER)
-			DoFatalAlert("\pPrimeTerrainWater: numNubs > MAX_NUBS_IN_WATER");
+			DoFatalAlert("PrimeTerrainWater: numNubs > MAX_NUBS_IN_WATER");
 
 
 				/* IF FIRST AND LAST NUBS ARE SAME, THEN ELIMINATE LAST */
@@ -344,7 +344,7 @@ MOMaterialObject	*mat;
 		water = &gWaterList[f];								// point to this water
 		numNubs = water->numNubs;							// get # nubs in water (note:  this is the # from the file, not including the extra center point we added earlier!)
 		if (numNubs < 3)
-			DoFatalAlert("\pMakeWaterGeometry: numNubs < 3");
+			DoFatalAlert("MakeWaterGeometry: numNubs < 3");
 		type = water->type;									// get water type
 
 

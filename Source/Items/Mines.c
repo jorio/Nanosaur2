@@ -104,7 +104,7 @@ long	h = itemPtr->parm[0];
 				break;
 
 		default:
-				DoFatalAlert("\pAddAirMine: no mines here yet, call Brian!");
+				DoFatalAlert("AddAirMine: no mines here yet, call Brian!");
 				return(false);
 	}
 

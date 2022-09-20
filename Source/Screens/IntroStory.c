@@ -103,7 +103,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		.03,								// drot
 		.5,									// delay to play effect
-		"\p:audio:intro:story1.m4a",		// narration pathname
+		":audio:intro:story1.m4a",		// narration pathname
 	},
 
 
@@ -120,7 +120,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		35,-12,								// dx / dy
 		-.02,								// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story2.m4a",		// narration pathname
+		":audio:intro:story2.m4a",		// narration pathname
 	},
 
 		/* THE MISSION WAS A SUCCESS */
@@ -136,7 +136,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-40,0,								// dx / dy
 		.05,								// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story3.m4a",		// narration pathname
+		":audio:intro:story3.m4a",		// narration pathname
 	},
 
 			/* BUT BEFORE... */
@@ -152,7 +152,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		0,									// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story4.m4a",		// narration pathname
+		":audio:intro:story4.m4a",		// narration pathname
 	},
 
 		/* THE EGGS WERE TAKEN TO... */
@@ -168,7 +168,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-40,0,								// dx / dy
 		.02,								// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story5.m4a",		// narration pathname
+		":audio:intro:story5.m4a",		// narration pathname
 	},
 
 		/* BUT THE REBELS LEFT... */
@@ -184,7 +184,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		-.02,								// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story6.m4a",		// narration pathname
+		":audio:intro:story6.m4a",		// narration pathname
 	},
 
 
@@ -201,7 +201,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,20,								// dx / dy
 		-.05,								// drot
 		1.0,								// delay to play effect
-		"\p:audio:intro:story7.m4a",		// narration pathname
+		":audio:intro:story7.m4a",		// narration pathname
 	},
 
 
@@ -307,7 +307,7 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:IntroStory.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:IntroStory.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
 
 

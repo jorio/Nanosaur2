@@ -31,7 +31,7 @@ static void OGL_UnloadVertexShaderProgram(GLuint programID);
 
 static const Str63 gVertexShaderFiles[NUM_VERTEX_SHADERS] =
 {
-	"\p:Shaders:VertexShader_Test.shdr"
+	":Shaders:VertexShader_Test.shdr"
 };
 
 
@@ -74,23 +74,23 @@ GLuint		programID;
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, gVertexShaderFiles[i], &spec);
 		iErr = FSpOpenDF(&spec, fsCurPerm, &fRefNum);
 		if (iErr)
-			DoFatalAlert("\pOGL_LoadAllShaderPrograms: FSpOpenDF failed!");
+			DoFatalAlert("OGL_LoadAllShaderPrograms: FSpOpenDF failed!");
 
 				/* HOW BIG IS THE DATA */
 
 		iErr = GetEOF(fRefNum, &fileSize);
 		if (iErr)
-			DoFatalAlert("\pOGL_LoadAllShaderPrograms: GetEOF failed!");
+			DoFatalAlert("OGL_LoadAllShaderPrograms: GetEOF failed!");
 
 				/* READ THE DATA */
 
 		buffer = AllocPtr(fileSize+1);									// alloc the buffer with extra byte for the C string 0
 		if (buffer == nil)
-			DoFatalAlert("\pOGL_LoadAllShaderPrograms: AllocPtr failed!");
+			DoFatalAlert("OGL_LoadAllShaderPrograms: AllocPtr failed!");
 
 		iErr = FSRead(fRefNum, &fileSize, buffer);
 		if (iErr)
-			DoFatalAlert("\pOGL_LoadAllShaderPrograms: FSRead failed!");
+			DoFatalAlert("OGL_LoadAllShaderPrograms: FSRead failed!");
 
 		FSClose(fRefNum);
 
@@ -131,18 +131,18 @@ GLuint	programName;
 
 	glGenProgramsARB(1, &programName);
 	if (OGL_CheckError())
-		DoFatalAlert("\pOGL_VertexShader_Load: glGenProgramsARB failed!");
+		DoFatalAlert("OGL_VertexShader_Load: glGenProgramsARB failed!");
 
 	glBindProgramARB(GL_VERTEX_PROGRAM_ARB, programName);							// this makes it the currently active program
 	if (OGL_CheckError())
-		DoFatalAlert("\pOGL_VertexShader_Load: glBindProgramARB failed!");
+		DoFatalAlert("OGL_VertexShader_Load: glBindProgramARB failed!");
 
 
 				/* LOAD SHADER PROGRAM */
 
 	glProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen(theProgramText), theProgramText);
 	if (OGL_CheckError())
-		DoFatalAlert("\pOGL_VertexShader_Load: glProgramStringARB failed! - probably a bad vertex program");
+		DoFatalAlert("OGL_VertexShader_Load: glProgramStringARB failed! - probably a bad vertex program");
 
 
 	return(programName);
@@ -196,7 +196,7 @@ void OGL_SetActiveVertexShaderProgram(GLuint programID)
 
 	glBindProgramARB(GL_VERTEX_PROGRAM_ARB, programID);							// this makes it the currently active program
 	if (OGL_CheckError())
-		DoFatalAlert("\pOGL_Texture_SetOpenGLTexture: glBindProgramARB failed!");
+		DoFatalAlert("OGL_Texture_SetOpenGLTexture: glBindProgramARB failed!");
 
    glEnable(GL_VERTEX_PROGRAM_ARB);												// turn the Vertex Programs on
 }

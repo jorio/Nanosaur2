@@ -84,12 +84,12 @@ const float	gSongVolumeTweaks[]=
 
 const Str32	gSongNames[] =
 {
-	"\p:audio:theme.m4a",
-	"\p:audio:introsong.m4a",
-	"\p:audio:level1song.m4a",
-	"\p:audio:level2song.m4a",
-	"\p:audio:level3song.m4a",
-	"\p:audio:winsong.m4a",
+	":audio:theme.m4a",
+	":audio:introsong.m4a",
+	":audio:level1song.m4a",
+	":audio:level2song.m4a",
+	":audio:level3song.m4a",
+	":audio:winsong.m4a",
 };
 
 
@@ -248,7 +248,7 @@ FSSpec			spec;
 		mySndCmd.param2 = (long)&sndHdr;
 		if ((iErr = SndDoImmediate(gSndChannel[gMaxChannels], &mySndCmd)) != noErr)
 		{
-			DoAlert("\pInitSoundTools: SndDoImmediate failed!");
+			DoAlert("InitSoundTools: SndDoImmediate failed!");
 			ShowSystemErr_NonFatal(iErr);
 		}
 
@@ -258,7 +258,7 @@ FSSpec			spec;
 		mySndCmd.param2 = initNoInterp|initStereo;
 		if ((iErr = SndDoImmediate(gSndChannel[gMaxChannels], &mySndCmd)) != noErr)
 		{
-			DoAlert("\pInitSoundTools: SndDoImmediate failed 2!");
+			DoAlert("InitSoundTools: SndDoImmediate failed 2!");
 			ShowSystemErr_NonFatal(iErr);
 		}
 	}
@@ -284,9 +284,9 @@ FSSpec			spec;
 		/* LOAD DEFAULT SOUNDS */
 		/***********************/
 
-	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:Audio:Main.sounds", &spec);
+	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Audio:Main.sounds", &spec);
 	if (iErr)
-		DoFatalAlert("\pInitSoundTools: FSMakeFSSpec failed");
+		DoFatalAlert("InitSoundTools: FSMakeFSSpec failed");
 
 	LoadSoundBank(&spec, SOUND_BANK_MAIN);
 
@@ -381,7 +381,7 @@ OSErr			iErr;
 	StopAllEffectChannels();
 
 	if (bankNum >= MAX_SOUND_BANKS)
-		DoFatalAlert("\pLoadSoundBank: bankNum >= MAX_SOUND_BANKS");
+		DoFatalAlert("LoadSoundBank: bankNum >= MAX_SOUND_BANKS");
 
 			/* DISPOSE OF EXISTING BANK */
 
@@ -393,7 +393,7 @@ OSErr			iErr;
 	srcFile1 = FSpOpenResFile(spec, fsCurPerm);
 	if (srcFile1 == -1)
 	{
-		DoAlert("\pLoadSoundBank: OpenResFile failed!");
+		DoAlert("LoadSoundBank: OpenResFile failed!");
 		ShowSystemErr(ResError());
 	}
 
@@ -404,7 +404,7 @@ OSErr			iErr;
 	UseResFile( srcFile1 );												// open sound resource fork
 	numSoundsInBank = Count1Resources('snd ');							// count # snd's in this bank
 	if (numSoundsInBank > MAX_EFFECTS)
-		DoFatalAlert("\pLoadSoundBank: numSoundsInBank > MAX_EFFECTS");
+		DoFatalAlert("LoadSoundBank: numSoundsInBank > MAX_EFFECTS");
 
 	for (i=0; i < numSoundsInBank; i++)
 	{
@@ -414,9 +414,9 @@ OSErr			iErr;
 		if (gSndHandles[bankNum][i] == nil)
 		{
 			iErr = ResError();
-			DoAlert("\pLoadSoundBank: GetResource failed!");
+			DoAlert("LoadSoundBank: GetResource failed!");
 			if (iErr == memFullErr)
-				DoFatalAlert("\pLoadSoundBank: Out of Memory");
+				DoFatalAlert("LoadSoundBank: Out of Memory");
 			else
 				ShowSystemErr(iErr);
 		}
@@ -597,7 +597,7 @@ GrafPtr	oldPort;
 
 	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, gSongNames[songNum], &spec);
 	if (iErr)
-		DoFatalAlert("\pPlaySong: song file not found");
+		DoFatalAlert("PlaySong: song file not found");
 
 	gCurrentSong = songNum;
 
@@ -737,7 +737,7 @@ u_long					leftVol, rightVol;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("\pIllegal sound number!");
+		DoAlert("Illegal sound number!");
 		ShowSystemErr(effectNum);
 	}
 
@@ -778,7 +778,7 @@ u_long			leftVol, rightVol;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("\pIllegal sound number!");
+		DoAlert("Illegal sound number!");
 		ShowSystemErr(effectNum);
 	}
 
@@ -1047,7 +1047,7 @@ SoundHeaderPtr   sndPtr;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("\pIllegal sound number!");
+		DoAlert("Illegal sound number!");
 		ShowSystemErr(effectNum);
 	}
 
@@ -1404,7 +1404,7 @@ GrafPtr	oldPort;
 FSSpec spec;
 
 	if (streamNum >= MAX_AUDIO_STREAMS)
-		DoFatalAlert("\pStreamAudioFile: streamNum >= MAX_AUDIO_STREAMS");
+		DoFatalAlert("StreamAudioFile: streamNum >= MAX_AUDIO_STREAMS");
 
 		/* ZAP ANY EXISTING STREAM */
 
@@ -1413,7 +1413,7 @@ FSSpec spec;
 
 
 	if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, filename, &spec) != noErr)
-		DoFatalAlert("\pStreamAudioFile: file not found");
+		DoFatalAlert("StreamAudioFile: file not found");
 
 
 				/*****************/

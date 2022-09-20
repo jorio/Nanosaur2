@@ -91,7 +91,7 @@ short					eggColor;
 		{
 			eggColor = itemPtr[i].parm[0];							// egg color # is in parm 0
 			if (eggColor >= NUM_EGG_TYPES)
-				DoFatalAlert("\pFindAllEggItems: bad egg color!");
+				DoFatalAlert("FindAllEggItems: bad egg color!");
 
 			gNumEggsToSave[eggColor]++;								// inc counter
 		}

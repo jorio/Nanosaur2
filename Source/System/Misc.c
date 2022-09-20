@@ -49,7 +49,7 @@ float	gFramesPerSecond, gFramesPerSecondFrac;
 
 int		gNumPointers = 0;
 
-Str255  gSerialFileName = "\p:Nanosaur2:Info";
+Str255  gSerialFileName = ":Nanosaur2:Info";
 
 Boolean	gGameIsRegistered = false;
 
@@ -422,11 +422,11 @@ OSErr	err;
 	hand = NewHandle(size);							// alloc in APPL
 	if (hand == nil)
 	{
-		DoAlert("\pAllocHandle: using temp mem");
+		DoAlert("AllocHandle: using temp mem");
 		hand = TempNewHandle(size,&err);			// try TEMP mem
 		if (hand == nil)
 		{
-			DoAlert("\pAllocHandle: failed!");
+			DoAlert("AllocHandle: failed!");
 			return(nil);
 		}
 		else
@@ -449,7 +449,7 @@ u_long	*cookiePtr;
 
 	pr = malloc(size);
 	if (pr == nil)
-		DoFatalAlert("\pAllocPtr: NewPtr failed");
+		DoFatalAlert("AllocPtr: NewPtr failed");
 
 	cookiePtr = (u_long *)pr;
 
@@ -481,7 +481,7 @@ u_long	*cookiePtr;
 	pr = calloc(1, size);
 
 	if (pr == nil)
-		DoFatalAlert("\pAllocPtr: NewPtr failed");
+		DoFatalAlert("AllocPtr: NewPtr failed");
 
 	cookiePtr = (u_long *)pr;
 
@@ -513,7 +513,7 @@ Ptr		p = ptr;
 	cookiePtr = (u_long *)p;
 
 	if (*cookiePtr != 'FACE')
-		DoFatalAlert("\pSafeSafeDisposePtr: invalid cookie!");
+		DoFatalAlert("SafeSafeDisposePtr: invalid cookie!");
 
 	gRAMAlloced -= cookiePtr[1];
 
@@ -604,12 +604,12 @@ long	response;
 
 	iErr = Gestalt(gestaltSystemVersion,(long *)&vers);
 	if (iErr != noErr)
-		DoFatalAlert("\pVerifySystem: gestaltSystemVersion failed!");
+		DoFatalAlert("VerifySystem: gestaltSystemVersion failed!");
 
 	if (vers.stage >= 0x10)													// see if at least OS 10
 	{
 		if ((vers.stage == 0x10) && (vers.nonRelRev < 0x20))				// must be at least OS 10.2 !!!
-			DoFatalAlert("\pThis game requires at least MacOS 10.2.6.");
+			DoFatalAlert("This game requires at least MacOS 10.2.6.");
 
 		if ((vers.stage == 0x10) && (vers.nonRelRev >= 0x30))				// see if 10.3 or higher
 			gPanther = true;
@@ -617,7 +617,7 @@ long	response;
 			gPanther = false;
 	}
 	else
-		DoFatalAlert("\pThis game requires at least MacOS 10.2.6.");
+		DoFatalAlert("This game requires at least MacOS 10.2.6.");
 
 
 		/**********************/
@@ -634,7 +634,7 @@ long	response;
 		{
 			iErr = Gestalt(gestaltPowerPCProcessorFeatures,(long *)&flags);		// see if AltiVec available
 			if (iErr != noErr)
-				DoFatalAlert("\pVerifySystem: gestaltPowerPCProcessorFeatures failed!");
+				DoFatalAlert("VerifySystem: gestaltPowerPCProcessorFeatures failed!");
 			gAltivec = ((flags & (1<<gestaltPowerPCHasVectorInstructions)) != 0);
 		}
 	}
@@ -687,7 +687,7 @@ long	response;
 		ProcessInfoRec	info;
 		short			i;
 		Str255		s;
-		const char snitch[] = "\pQuicken Scheduler";
+		const char snitch[] = "Quicken Scheduler";
 
 		info.processName = s;
 		info.processInfoLength = sizeof(ProcessInfoRec);
@@ -708,7 +708,7 @@ long	response;
 					goto next_process2;
 			}
 
-			DoAlert("\pIMPORTANT:  Quicken Scheduler is known to cause certain keyboard access functions in OS X to malfunction.  If the keyboard does not appear to be working in this game, quit Quicken Scheduler to fix it.");
+			DoAlert("IMPORTANT:  Quicken Scheduler is known to cause certain keyboard access functions in OS X to malfunction.  If the keyboard does not appear to be working in this game, quit Quicken Scheduler to fix it.");
 
 next_process2:;
 		}
@@ -729,7 +729,7 @@ next_process2:;
 		if ((d.year > 2004) ||
 			((d.year == 2004) && (d.month > 2)))
 		{
-			DoFatalAlert("\pSorry, but this beta has expired");
+			DoFatalAlert("Sorry, but this beta has expired");
 		}
 	}
 #endif

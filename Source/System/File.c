@@ -180,20 +180,20 @@ FSSpec		fsSpec;
 SkeletonDefType	*skeleton;
 const Str63	fileNames[MAX_SKELETON_TYPES] =
 {
-	"\p:Skeletons:nano.skeleton",
-	"\p:Skeletons:wormhole.skeleton",
-	"\p:Skeletons:raptor.skeleton",
-	"\p:Skeletons:bonusworm.skeleton",
-	"\p:Skeletons:brach.skeleton",
-	"\p:Skeletons:worm.skeleton",
-	"\p:Skeletons:ramphor.skeleton",
+	":Skeletons:nano.skeleton",
+	":Skeletons:wormhole.skeleton",
+	":Skeletons:raptor.skeleton",
+	":Skeletons:bonusworm.skeleton",
+	":Skeletons:brach.skeleton",
+	":Skeletons:worm.skeleton",
+	":Skeletons:ramphor.skeleton",
 };
 
 
 	if (skeletonType < MAX_SKELETON_TYPES)
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, fileNames[skeletonType], &fsSpec);
 	else
-		DoFatalAlert("\pLoadSkeleton: Unknown skeletonType!");
+		DoFatalAlert("LoadSkeleton: Unknown skeletonType!");
 
 
 			/* OPEN THE FILE'S REZ FORK */
@@ -202,20 +202,20 @@ const Str63	fileNames[MAX_SKELETON_TYPES] =
 	if (fRefNum == -1)
 	{
 		iErr = ResError();
-		DoAlert("\pError opening Skel Rez file");
+		DoAlert("Error opening Skel Rez file");
 		ShowSystemErr(iErr);
 	}
 
 	UseResFile(fRefNum);
 	if (ResError())
-		DoFatalAlert("\pError using Rez file!");
+		DoFatalAlert("Error using Rez file!");
 
 
 			/* ALLOC MEMORY FOR SKELETON INFO STRUCTURE */
 
 	skeleton = (SkeletonDefType *)AllocPtr(sizeof(SkeletonDefType));
 	if (skeleton == nil)
-		DoFatalAlert("\pCannot alloc SkeletonInfoType");
+		DoFatalAlert("Cannot alloc SkeletonInfoType");
 
 
 			/* READ SKELETON RESOURCES */
@@ -256,18 +256,18 @@ OGLPoint3D				*pointPtr;
 
 	hand = GetResource('Hedr',1000);
 	if (hand == nil)
-		DoFatalAlert("\pReadDataFromSkeletonFile: Error reading header resource!");
+		DoFatalAlert("ReadDataFromSkeletonFile: Error reading header resource!");
 	headerPtr = (SkeletonFile_Header_Type *)*hand;
 	version = SwizzleShort(&headerPtr->version);
 	if (version != SKELETON_FILE_VERS_NUM)
-		DoFatalAlert("\pSkeleton file has wrong version #");
+		DoFatalAlert("Skeleton file has wrong version #");
 
 	numAnims = skeleton->NumAnims = SwizzleShort(&headerPtr->numAnims);			// get # anims in skeleton
 	numJoints = skeleton->NumBones = SwizzleShort(&headerPtr->numJoints);		// get # joints in skeleton
 	ReleaseResource(hand);
 
 	if (numJoints > MAX_JOINTS)										// check for overload
-		DoFatalAlert("\pReadDataFromSkeletonFile: numJoints > MAX_JOINTS");
+		DoFatalAlert("ReadDataFromSkeletonFile: numJoints > MAX_JOINTS");
 
 
 				/* ALLOCATE MEMORY FOR SKELETON DATA */
@@ -287,11 +287,11 @@ OGLPoint3D				*pointPtr;
 		if (!iErr)
 			LoadBonesReferenceModel(&target,skeleton, skeletonType, setupInfo);
 		else
-			DoFatalAlert("\pReadDataFromSkeletonFile: Cannot find Skeleton's BG3D file!");
+			DoFatalAlert("ReadDataFromSkeletonFile: Cannot find Skeleton's BG3D file!");
  		ReleaseResource((Handle)alias);
 	}
 	else
-		DoFatalAlert("\pReadDataFromSkeletonFile: file is missing the Alias resource");
+		DoFatalAlert("ReadDataFromSkeletonFile: file is missing the Alias resource");
 
 
 
@@ -308,7 +308,7 @@ OGLPoint3D				*pointPtr;
 
 		hand = GetResource('Bone',1000+i);
 		if (hand == nil)
-			DoFatalAlert("\pError reading Bone resource!");
+			DoFatalAlert("Error reading Bone resource!");
 		HLock(hand);
 		bonePtr = (File_BoneDefinitionType *)*hand;
 
@@ -326,17 +326,17 @@ OGLPoint3D				*pointPtr;
 
 		skeleton->Bones[i].pointList = (u_short *)AllocPtr(sizeof(u_short) * (int)skeleton->Bones[i].numPointsAttachedToBone);
 		if (skeleton->Bones[i].pointList == nil)
-			DoFatalAlert("\pReadDataFromSkeletonFile: AllocPtr/pointList failed!");
+			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/pointList failed!");
 
 		skeleton->Bones[i].normalList = (u_short *)AllocPtr(sizeof(u_short) * (int)skeleton->Bones[i].numNormalsAttachedToBone);
 		if (skeleton->Bones[i].normalList == nil)
-			DoFatalAlert("\pReadDataFromSkeletonFile: AllocPtr/normalList failed!");
+			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/normalList failed!");
 
 			/* READ POINT INDEX ARRAY */
 
 		hand = GetResource('BonP',1000+i);
 		if (hand == nil)
-			DoFatalAlert("\pError reading BonP resource!");
+			DoFatalAlert("Error reading BonP resource!");
 		HLock(hand);
 		indexPtr = (u_short *)(*hand);
 
@@ -351,7 +351,7 @@ OGLPoint3D				*pointPtr;
 
 		hand = GetResource('BonN',1000+i);
 		if (hand == nil)
-			DoFatalAlert("\pError reading BonN resource!");
+			DoFatalAlert("Error reading BonN resource!");
 		HLock(hand);
 		indexPtr = (u_short *)(*hand);
 
@@ -374,13 +374,13 @@ OGLPoint3D				*pointPtr;
 
 	hand = GetResource('RelP', 1000);
 	if (hand == nil)
-		DoFatalAlert("\pError reading RelP resource!");
+		DoFatalAlert("Error reading RelP resource!");
 	HLock(hand);
 	pointPtr = (OGLPoint3D *)*hand;
 
 	i = GetHandleSize(hand) / sizeof(OGLPoint3D);
 	if (i != skeleton->numDecomposedPoints)
-		DoFatalAlert("\p# of points in Reference Model has changed!");
+		DoFatalAlert("# of points in Reference Model has changed!");
 	else
 	{
 		for (i = 0; i < skeleton->numDecomposedPoints; i++)
@@ -406,7 +406,7 @@ OGLPoint3D				*pointPtr;
 
 		hand = GetResource('AnHd',1000+i);
 		if (hand == nil)
-			DoFatalAlert("\pError getting anim header resource");
+			DoFatalAlert("Error getting anim header resource");
 		HLock(hand);
 		animHeaderPtr = (SkeletonFile_AnimHeader_Type *)*hand;
 
@@ -417,7 +417,7 @@ OGLPoint3D				*pointPtr;
 
 		hand = GetResource('Evnt',1000+i);
 		if (hand == nil)
-			DoFatalAlert("\pError reading anim-event data resource!");
+			DoFatalAlert("Error reading anim-event data resource!");
 		animEventPtr = (AnimEventType *)*hand;
 		for (j=0;  j < skeleton->NumAnimEvents[i]; j++)
 		{
@@ -431,7 +431,7 @@ OGLPoint3D				*pointPtr;
 
 		hand = GetResource('NumK',1000+i);									// read array of #'s for this anim
 		if (hand == nil)
-			DoFatalAlert("\pError reading # keyframes/joint resource!");
+			DoFatalAlert("Error reading # keyframes/joint resource!");
 		for (j=0; j < numJoints; j++)
 			skeleton->JointKeyframes[j].numKeyFrames[i] = (*hand)[j];
 		ReleaseResource(hand);
@@ -447,7 +447,7 @@ OGLPoint3D				*pointPtr;
 		Alloc_2d_array(JointKeyframeType,skeleton->JointKeyframes[j].keyFrames,	numAnims,MAX_KEYFRAMES);
 
 		if ((skeleton->JointKeyframes[j].keyFrames == nil) || (skeleton->JointKeyframes[j].keyFrames[0] == nil))
-			DoFatalAlert("\pReadDataFromSkeletonFile: Error allocating Keyframe Array.");
+			DoFatalAlert("ReadDataFromSkeletonFile: Error allocating Keyframe Array.");
 
 					/* READ THIS JOINT'S KF'S FOR EACH ANIM */
 
@@ -455,13 +455,13 @@ OGLPoint3D				*pointPtr;
 		{
 			numKeyframes = skeleton->JointKeyframes[j].numKeyFrames[i];					// get actual # of keyframes for this joint
 			if (numKeyframes > MAX_KEYFRAMES)
-				DoFatalAlert("\pError: numKeyframes > MAX_KEYFRAMES");
+				DoFatalAlert("Error: numKeyframes > MAX_KEYFRAMES");
 
 					/* READ A JOINT KEYFRAME */
 
 			hand = GetResource('KeyF',1000+(i*100)+j);
 			if (hand == nil)
-				DoFatalAlert("\pError reading joint keyframes resource!");
+				DoFatalAlert("Error reading joint keyframes resource!");
 			keyFramePtr = (JointKeyframeType *)*hand;
 			for (k = 0; k < numKeyframes; k++)												// copy this joint's keyframes for this anim
 			{
@@ -510,7 +510,7 @@ try_again:
 
 	retry = false;
 
-	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "\p:Nanosaur2:Preferences", &file);
+	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, ":Nanosaur2:Preferences", &file);
 	iErr = FSpOpenDF(&file, fsRdPerm, &refNum);
 	if (iErr)
 		return(iErr);
@@ -575,7 +575,7 @@ long				count;
 
 				/* CREATE BLANK FILE */
 
-	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "\p:Nanosaur2:Preferences", &file);
+	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, ":Nanosaur2:Preferences", &file);
 	FSpDelete(&file);															// delete any existing file
 	iErr = FSpCreate(&file, kGameID, 'Pref', smSystemScript);					// create blank file
 	if (iErr)
@@ -628,11 +628,11 @@ ComponentResult				result;
 	result = GetGraphicsImporterForFile(myFSSpec, &gi);		// load importer for this image file
 	if (result != noErr)
 	{
-		DoAlert("\pDrawPictureIntoGWorld: GetGraphicsImporterForFile failed!  One of Quicktime's importer components is missing.  You should reinstall OS X to fix this.");
+		DoAlert("DrawPictureIntoGWorld: GetGraphicsImporterForFile failed!  One of Quicktime's importer components is missing.  You should reinstall OS X to fix this.");
 		return(result);
 	}
 	if (GraphicsImportGetBoundsRect(gi, &r) != noErr)		// get dimensions of image
-		DoFatalAlert("\pDrawPictureIntoGWorld: GraphicsImportGetBoundsRect failed!");
+		DoFatalAlert("DrawPictureIntoGWorld: GraphicsImportGetBoundsRect failed!");
 
 
 			/* MAKE GWORLD */
@@ -640,11 +640,11 @@ ComponentResult				result;
 	iErr = NewGWorld(theGWorld, depth, &r, nil, nil, 0);					// try app mem
 	if (iErr)
 	{
-		DoAlert("\pDrawPictureIntoGWorld: using temp mem");
+		DoAlert("DrawPictureIntoGWorld: using temp mem");
 		iErr = NewGWorld(theGWorld, depth, &r, nil, nil, useTempMem);		// try sys mem
 		if (iErr)
 		{
-			DoAlert("\pDrawPictureIntoGWorld: MakeMyGWorld failed");
+			DoAlert("DrawPictureIntoGWorld: MakeMyGWorld failed");
 			return(1);
 		}
 	}
@@ -666,7 +666,7 @@ ComponentResult				result;
 	CloseComponent(gi);										// cleanup
 	if (result != noErr)
 	{
-		DoAlert("\pDrawPictureIntoGWorld: GraphicsImportDraw failed!");
+		DoAlert("DrawPictureIntoGWorld: GraphicsImportDraw failed!");
 		ShowSystemErr(result);
 		DisposeGWorld (*theGWorld);
 		*theGWorld= nil;
@@ -691,7 +691,7 @@ void GetDemoTimer(void)
 
 				/* READ TIMER FROM FILE */
 
-	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "\pxFac00", &file);
+	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "xFac00", &file);
 	iErr = FSpOpenDF(&file, fsRdPerm, &refNum);
 	if (iErr)
 	{
@@ -738,7 +738,7 @@ long				count;
 
 				/* CREATE BLANK FILE */
 
-	if (FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "\pxFac00", &file) == noErr)
+	if (FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, "xFac00", &file) == noErr)
 		FSpDelete(&file);														// delete any existing file
 	iErr = FSpCreate(&file, '    ', 'xxxx', smSystemScript);					// create blank file
 	if (iErr)
@@ -816,7 +816,7 @@ Rect					toRect, srcRect;
 
 	fRefNum = FSpOpenResFile(specPtr,fsCurPerm);
 	if (fRefNum == -1)
-		DoFatalAlert("\pLoadPlayfield: FSpOpenResFile failed.  You seem to have a corrupt or missing file.  Please reinstall the game.");
+		DoFatalAlert("LoadPlayfield: FSpOpenResFile failed.  You seem to have a corrupt or missing file.  Please reinstall the game.");
 	UseResFile(fRefNum);
 
 
@@ -827,7 +827,7 @@ Rect					toRect, srcRect;
 	hand = GetResource('Hedr',1000);
 	if (hand == nil)
 	{
-		DoAlert("\pReadDataFromPlayfieldFile: Error reading header resource!");
+		DoAlert("ReadDataFromPlayfieldFile: Error reading header resource!");
 		return;
 	}
 
@@ -847,9 +847,9 @@ Rect					toRect, srcRect;
 	ReleaseResource(hand);
 
 	if ((gTerrainTileWidth % SUPERTILE_SIZE) != 0)		// terrain must be non-fractional number of supertiles in w/h
-		DoFatalAlert("\pReadDataFromPlayfieldFile: terrain width not a supertile multiple");
+		DoFatalAlert("ReadDataFromPlayfieldFile: terrain width not a supertile multiple");
 	if ((gTerrainTileDepth % SUPERTILE_SIZE) != 0)
-		DoFatalAlert("\pReadDataFromPlayfieldFile: terrain depth not a supertile multiple");
+		DoFatalAlert("ReadDataFromPlayfieldFile: terrain depth not a supertile multiple");
 
 
 				/* CALC SOME GLOBALS HERE */
@@ -874,7 +874,7 @@ Rect					toRect, srcRect;
 
 	hand = GetResource('STgd',1000);												// load grid from rez
 	if (hand == nil)
-		DoFatalAlert("\pReadDataFromPlayfieldFile: Error reading supertile rez resource!");
+		DoFatalAlert("ReadDataFromPlayfieldFile: Error reading supertile rez resource!");
 	else																			// copy rez into 2D array
 	{
 		short *src = (short *)*hand;
@@ -897,7 +897,7 @@ Rect					toRect, srcRect;
 
 	hand = GetResource('YCrd',1000);
 	if (hand == nil)
-		DoAlert("\pReadDataFromPlayfieldFile: Error reading height data resource!");
+		DoAlert("ReadDataFromPlayfieldFile: Error reading height data resource!");
 	else
 	{
 		src = (float *)*hand;
@@ -917,7 +917,7 @@ Rect					toRect, srcRect;
 
 	hand = GetResource('Itms',1000);
 	if (hand == nil)
-		DoFatalAlert("\pReadDataFromPlayfieldFile: Error reading itemlist resource!");
+		DoFatalAlert("ReadDataFromPlayfieldFile: Error reading itemlist resource!");
 	else
 	{
 		File_TerrainItemEntryType   *rezItems;
@@ -1004,7 +1004,7 @@ Rect					toRect, srcRect;
 			ReleaseResource(hand);																// nuke the rez
 		}
 		else
-			DoFatalAlert("\pReadDataFromPlayfieldFile: cant get spline points rez");
+			DoFatalAlert("ReadDataFromPlayfieldFile: cant get spline points rez");
 	}
 
 
@@ -1030,7 +1030,7 @@ Rect					toRect, srcRect;
 			ReleaseResource(hand);																// nuke the rez
 		}
 		else
-			DoFatalAlert("\pReadDataFromPlayfieldFile: cant get spline items rez");
+			DoFatalAlert("ReadDataFromPlayfieldFile: cant get spline items rez");
 	}
 
 			/****************************/
@@ -1046,7 +1046,7 @@ Rect					toRect, srcRect;
 
 		gFenceList = (FenceDefType *)AllocPtr(sizeof(FenceDefType) * gNumFences);	// alloc new ptr for fence data
 		if (gFenceList == nil)
-			DoFatalAlert("\pReadDataFromPlayfieldFile: AllocPtr failed");
+			DoFatalAlert("ReadDataFromPlayfieldFile: AllocPtr failed");
 
 		inData = (FileFenceDefType *)*hand;								// get ptr to input fence list
 
@@ -1075,7 +1075,7 @@ Rect					toRect, srcRect;
 
 			gFenceList[i].nubList = (OGLPoint3D *)AllocPtr(sizeof(FenceDefType) * gFenceList[i].numNubs);	// alloc new ptr for nub array
 			if (gFenceList[i].nubList == nil)
-				DoFatalAlert("\pReadDataFromPlayfieldFile: AllocPtr failed");
+				DoFatalAlert("ReadDataFromPlayfieldFile: AllocPtr failed");
 
 
 
@@ -1088,7 +1088,7 @@ Rect					toRect, srcRect;
 			ReleaseResource(hand);
 		}
 		else
-			DoFatalAlert("\pReadDataFromPlayfieldFile: cant get fence nub rez");
+			DoFatalAlert("ReadDataFromPlayfieldFile: cant get fence nub rez");
 	}
 
 
@@ -1140,7 +1140,7 @@ Rect					toRect, srcRect;
 	if (gNumLineMarkers > 0)
 	{
 		if (gNumLineMarkers > MAX_LINEMARKERS)
-			DoFatalAlert("\pReadDataFromPlayfieldFile: gNumLineMarkers > MAX_LINEMARKERS");
+			DoFatalAlert("ReadDataFromPlayfieldFile: gNumLineMarkers > MAX_LINEMARKERS");
 
 				/* READ CHECKPOINT LIST */
 
@@ -1211,7 +1211,7 @@ Rect					toRect, srcRect;
 		iErr = QTNewGWorldFromPtr(&buffGWorld, k16BE555PixelFormat, &toRect, nil, nil, 0, textureBuffer16, texSize * 2);
 
 	if (iErr || (buffGWorld == nil))
-		DoFatalAlert("\pReadDataFromPlayfieldFile: QTNewGWorldFromPtr failed.");
+		DoFatalAlert("ReadDataFromPlayfieldFile: QTNewGWorldFromPtr failed.");
 
 
 	srcRect.left = srcRect.top = 0;
@@ -1225,7 +1225,7 @@ Rect					toRect, srcRect;
 
 	iErr = FSpOpenDF(specPtr, fsCurPerm, &fRefNum);
 	if (iErr)
-		DoFatalAlert("\pReadDataFromPlayfieldFile: FSpOpenDF failed!");
+		DoFatalAlert("ReadDataFromPlayfieldFile: FSpOpenDF failed!");
 
 
 	for (i = 0; i < gNumUniqueSuperTiles; i++)
@@ -1242,7 +1242,7 @@ Rect					toRect, srcRect;
 		size = sizeof(long);
 		iErr = FSRead(fRefNum, &size, &dataSize);
 		if (iErr)
-			DoFatalAlert("\pReadDataFromPlayfieldFile: FSRead failed!");
+			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
 
 		dataSize = SwizzleLong(&dataSize);
 
@@ -1254,7 +1254,7 @@ Rect					toRect, srcRect;
 		size = dataSize;
 		iErr = FSRead(fRefNum, &size, tempBuff);
 		if (iErr)
-			DoFatalAlert("\pReadDataFromPlayfieldFile: FSRead failed!");
+			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
 
 
 				/* EXTRACT THE IMAGE DESC */
@@ -1419,7 +1419,7 @@ ImageDescriptionPtr imageDescPtr = *imageDesc;
 
 	err = DecompressImage(compressedData, imageDesc, myPixMap, &bounds, &bounds2, srcCopy , nil);
 	if (err)
-		DoFatalAlert("\pDecompressJPEGToGWorld: DecompressImage failed!");
+		DoFatalAlert("DecompressJPEGToGWorld: DecompressImage failed!");
 
 	SetGWorld (oldGW,oldGD);
 }
@@ -1452,7 +1452,7 @@ OSErr 				anErr 		= noErr;
 		dialogOptions.dialogOptionFlags ^= kNavAllowMultipleFiles;		// Clear multiple files option
 
 		dialogOptions.location.h = dialogOptions.location.v = -1;		// use default position
-		CopyPStr("\pSelect A Saved Game File", dialogOptions.windowTitle);
+		CopyPStr("Select A Saved Game File", dialogOptions.windowTitle);
 
 				/* make descriptor for default location */
 
@@ -1528,7 +1528,7 @@ OSErr 				anErr 			= noErr;
 NavDialogOptions 	dialogOptions;
 OSType 				fileTypeToSave 	='PSav';
 OSType 				creatorType 	= kGameID;
-const Str255		name = "\pNanosaur 2 Saved Game";
+const Str255		name = "Nanosaur 2 Saved Game";
 AEDesc 				defaultLocation;
 
 	anErr = NavGetDefaultDialogOptions(&dialogOptions);
@@ -1613,14 +1613,14 @@ Boolean			success = false;
 
 	if (FSpCreate(specPtr, kGameID,'N2sv',nil) != noErr)
 	{
-		DoAlert("\pError creating Save file");
+		DoAlert("Error creating Save file");
 		goto bail;
 	}
 
 	FSpOpenDF(specPtr,fsRdWrPerm, &fRefNum);
 	if (fRefNum == -1)
 	{
-		DoAlert("\pError opening Save file");
+		DoAlert("Error opening Save file");
 		goto bail;
 	}
 
@@ -1630,7 +1630,7 @@ Boolean			success = false;
 	count = sizeof(SaveGameType);
 	if (FSWrite(fRefNum, &count, (Ptr)&saveData) != noErr)
 	{
-		DoAlert("\pError writing Save file");
+		DoAlert("Error writing Save file");
 		FSClose(fRefNum);
 		goto bail;
 	}
@@ -1682,7 +1682,7 @@ Boolean			success = false;
 	FSpOpenDF(&gSavedGameSpec,fsRdPerm, &fRefNum);
 	if (fRefNum == -1)
 	{
-		DoAlert("\pError opening Save file");
+		DoAlert("Error opening Save file");
 		goto bail;
 	}
 
@@ -1691,7 +1691,7 @@ Boolean			success = false;
 	count = sizeof(SaveGameType);
 	if (FSRead(fRefNum, &count, &saveData) != noErr)
 	{
-		DoAlert("\pError reading Save file");
+		DoAlert("Error reading Save file");
 		FSClose(fRefNum);
 		goto bail;
 	}

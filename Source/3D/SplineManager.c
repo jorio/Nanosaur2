@@ -232,7 +232,7 @@ got_slot:
 		for (t = 0; t < (1.0f - EPS); t += dt)
 		{
 			if (numPoints >= maxPoints)				// see if overflow
-				DoFatalAlert("\pGenerateCustomSpline: numPoints >= maxPoints");
+				DoFatalAlert("GenerateCustomSpline: numPoints >= maxPoints");
 
  			splinePoints[numPoints].x = ((a->x * t + b->x) * t + c->x) * t + d->x;		// save point
  			splinePoints[numPoints].y = ((a->y * t + b->y) * t + c->y) * t + d->y;

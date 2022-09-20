@@ -593,7 +593,7 @@ short	type = itemPtr->parm[0];
 long	rot = itemPtr->parm[1];
 
 	if (itemPtr->parm[0] > 4)
-		DoFatalAlert("\pAddDesertTree: illegal subtype");
+		DoFatalAlert("AddDesertTree: illegal subtype");
 
 				/********************/
 				/* MAKE SOLID TRUNK */

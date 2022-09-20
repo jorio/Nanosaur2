@@ -238,7 +238,7 @@ long	rot = itemPtr->parm[1];
 				break;
 
 		default:
-				DoFatalAlert("\pAddRock: brian needs to assign rocks to this level");
+				DoFatalAlert("AddRock: brian needs to assign rocks to this level");
 				return(false);
 	}
 

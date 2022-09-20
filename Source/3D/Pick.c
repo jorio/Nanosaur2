@@ -172,7 +172,7 @@ OGLVector3D	normal;
 							break;
 
 					default:
-							DoFatalAlert("\pOGL_DoRayCollision: unsupported genre");
+							DoFatalAlert("OGL_DoRayCollision: unsupported genre");
 				}
 			}
 		}
@@ -913,7 +913,7 @@ Boolean		hit;
 						break;
 
 				default:
-						DoFatalAlert("\pOGL_DoLineSegmentCollision: unsupported genre");
+						DoFatalAlert("OGL_DoLineSegmentCollision: unsupported genre");
 			}
 		}
 
@@ -1878,7 +1878,7 @@ OGLBoundingSphere	sphere2;
 							break;
 
 					default:
-							DoFatalAlert("\pOGL_DoSphereCollision_ObjNodes: unsupported genre");
+							DoFatalAlert("OGL_DoSphereCollision_ObjNodes: unsupported genre");
 				}
 			}
 		}

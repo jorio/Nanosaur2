@@ -93,7 +93,7 @@ MOMaterialObject	*mat;
 	mo = gBG3DGroupList[MODEL_GROUP_GLOBAL][GLOBAL_ObjType_EntryWormhole];					// point to this object
 
 	if (mo->objectHeader.type == MO_TYPE_GROUP)										// see if need to go into group
-		DoFatalAlert("\pModifyWormholeTextures: object is group");
+		DoFatalAlert("ModifyWormholeTextures: object is group");
 
 
 			/* ASSUME MO IS A VERTEX ARRAY OBJECT */
@@ -113,7 +113,7 @@ MOMaterialObject	*mat;
 	mo = gBG3DGroupList[MODEL_GROUP_SKELETONBASE + SKELETON_TYPE_WORMHOLE][0];					// point to this object
 
 	if (mo->objectHeader.type == MO_TYPE_GROUP)										// see if need to go into group
-		DoFatalAlert("\pModifyWormholeTextures: object is group");
+		DoFatalAlert("ModifyWormholeTextures: object is group");
 
 
 			/* ASSUME MO IS A VERTEX ARRAY OBJECT */

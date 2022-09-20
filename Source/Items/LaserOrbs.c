@@ -304,7 +304,7 @@ update_collision:
 update:
 
 	if (theNode->CType == INVALID_NODE_FLAG)		// see if already deleted
-		DoFatalAlert("\pMoveLaserOrb: orb got nixed mid-stream!");
+		DoFatalAlert("MoveLaserOrb: orb got nixed mid-stream!");
 
 	theNode->Rot.y -= fps * 1.8f;
 	UpdateObjectTransforms(theNode);

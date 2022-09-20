@@ -193,7 +193,7 @@ again:
 	if (gDoCredits)
 	{
 		FSSpec	spec;
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:Credits", &spec);
+		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:Credits", &spec);
 		DisplayPicture(&spec);
 		goto again;
 	}
@@ -277,16 +277,16 @@ int					i;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:mainmenu.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:mainmenu.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_MAINMENU, gGameViewInfoPtr);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:font.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:font.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_FONT, gGameViewInfoPtr);
 
 
 			/* CREATE BACKGROUND OBJECT */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:menuback.jpg", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:menuback.jpg", &spec);
 	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, &spec);
 
 
@@ -361,52 +361,52 @@ int			language;
 					static const Str31 names[MAX_LANGUAGES][4] =
 					{
 						{									// ENGLISH
-							"\pPLAY GAME",
-							"\pSETTINGS",
-							"\pINFO",
-							"\pQUIT",
+							"PLAY GAME",
+							"SETTINGS",
+							"INFO",
+							"QUIT",
 						},
 
 						{									// FRENCH
-							"\pNOUVELLE PARTIE",
-							"\pPR\x83F\x83RENCES",
-							"\pINFOS",
-							"\pQUITTER",
+							"NOUVELLE PARTIE",
+							"PR\x83F\x83RENCES",
+							"INFOS",
+							"QUITTER",
 						},
 
 						{									// GERMAN
-							"\pSPIELEN",
-							"\pEINSTELLUNGEN",
-							"\pINFO",
-							"\pBEENDEN",
+							"SPIELEN",
+							"EINSTELLUNGEN",
+							"INFO",
+							"BEENDEN",
 						},
 
 						{									// SPANISH
-							"\pJUGAR",
-							"\pPREFERENCIAS",
-							"\pINFO",
-							"\pSALIR",
+							"JUGAR",
+							"PREFERENCIAS",
+							"INFO",
+							"SALIR",
 						},
 
 						{									// ITALIAN
-							"\pGIOCA",
-							"\pIMPOSTAZIONI",
-							"\pINFO",
-							"\pESCI",
+							"GIOCA",
+							"IMPOSTAZIONI",
+							"INFO",
+							"ESCI",
 						},
 
 						{									// SWEDISH
-							"\pSPELA",
-							"\pINST\x80LLNINGAR",
-							"\pINFORMATION",
-							"\pAVSLUTA",
+							"SPELA",
+							"INST\x80LLNINGAR",
+							"INFORMATION",
+							"AVSLUTA",
 						},
 
 						{									// DUTCH
-							"\pSPEL SPELEN",
-							"\pINSTELLINGEN",
-							"\pINFO",
-							"\pAFSLUITEN",
+							"SPEL SPELEN",
+							"INSTELLINGEN",
+							"INFO",
+							"AFSLUITEN",
 						},
 
 
@@ -445,52 +445,52 @@ int			language;
 					static const Str31 names[MAX_LANGUAGES][4] =
 					{
 						{												// ENGLISH
-							"\pADVENTURE",
-							"\pNANO VS. NANO",
-							"\pSAVED GAMES",
-							"\p~",
+							"ADVENTURE",
+							"NANO VS. NANO",
+							"SAVED GAMES",
+							"~",
 						},
 
 						{												// FRENCH
-							"\pAVENTURE",
-							"\pNANO CONTRE NANO",
-							"\pPARTIES ENREGISTR\x83ES",
-							"\p~",
+							"AVENTURE",
+							"NANO CONTRE NANO",
+							"PARTIES ENREGISTR\x83ES",
+							"~",
 						},
 
 						{												// GERMAN
-							"\pADVENTURE",
-							"\pNANO VS. NANO",
-							"\pSPIEL FORTSETZEN",
-							"\p~",
+							"ADVENTURE",
+							"NANO VS. NANO",
+							"SPIEL FORTSETZEN",
+							"~",
 						},
 
 						{												// SPANISH
-							"\pAVENTURA",
-							"\pNANO CONTRA NANO",
-							"\pCONTINUAR PARTIDA GUARDADA",
-							"\p~",
+							"AVENTURA",
+							"NANO CONTRA NANO",
+							"CONTINUAR PARTIDA GUARDADA",
+							"~",
 						},
 
 						{												// ITALIAN
-							"\pAVVENTURA",
-							"\pNANO VS. NANO",
-							"\pPARTITE SALVATE",
-							"\p~",
+							"AVVENTURA",
+							"NANO VS. NANO",
+							"PARTITE SALVATE",
+							"~",
 						},
 
 						{												// SWEDISH
-							"\pADVENTURE",
-							"\pNANO VS. NANO",
-							"\pLADDA SPARAT SPEL",
-							"\p~",
+							"ADVENTURE",
+							"NANO VS. NANO",
+							"LADDA SPARAT SPEL",
+							"~",
 						},
 
 						{												// DUTCH
-							"\pAVONTUUR",
-							"\pNANO TEGEN NANO",
-							"\pOPGESLAGEN SPELEN",
-							"\p~",
+							"AVONTUUR",
+							"NANO TEGEN NANO",
+							"OPGESLAGEN SPELEN",
+							"~",
 						},
 					};
 
@@ -525,59 +525,59 @@ int			language;
 					static const Str31 names[MAX_LANGUAGES][5] =
 					{
 						{														// ENGLISH
-							"\pSTORY",
-							"\pCREDITS",
-							"\pPANGEA WEB SITE",
-							"\p3D GLASSES",
-							"\p~",
+							"STORY",
+							"CREDITS",
+							"PANGEA WEB SITE",
+							"3D GLASSES",
+							"~",
 						},
 
 						{														// FRENCH
-							"\pL'UNIVERS",
-							"\pCR\x83DITS",
-							"\pSITE WEB PANGEA",
-							"\pLUNETTES 3D",
-							"\p~",
+							"L'UNIVERS",
+							"CR\x83DITS",
+							"SITE WEB PANGEA",
+							"LUNETTES 3D",
+							"~",
 						},
 
 						{														// GERMAN
-							"\pGESCHICHTE",
-							"\pCREDITS",
-							"\pPANGEA-WEBSEITE",
-							"\p3D-BRILLE",
-							"\p~",
+							"GESCHICHTE",
+							"CREDITS",
+							"PANGEA-WEBSEITE",
+							"3D-BRILLE",
+							"~",
 						},
 
 						{														// SPANISH
-							"\pHISTORIA",
-							"\pCR\x83DITOS",
-							"\pPAGINA WEB DE PANGEA",
-							"\pGAFAS 3D",
-							"\p~",
+							"HISTORIA",
+							"CR\x83DITOS",
+							"PAGINA WEB DE PANGEA",
+							"GAFAS 3D",
+							"~",
 						},
 
 						{														// ITALIAN
-							"\pBAKGRUNDSHISTORIA",
-							"\pTITOLI",
-							"\pSITO DI PANGEA",
-							"\pOCCHIALI 3D",
-							"\p~",
+							"BAKGRUNDSHISTORIA",
+							"TITOLI",
+							"SITO DI PANGEA",
+							"OCCHIALI 3D",
+							"~",
 						},
 
 						{														// SWEDISH
-							"\pSTORY",
-							"\pVI SOM G\x85R NANOSAUR",
-							"\pPANGEAS HEMSIDA",
-							"\p3D-GLAS\x85GON",
-							"\p~",
+							"STORY",
+							"VI SOM G\x85R NANOSAUR",
+							"PANGEAS HEMSIDA",
+							"3D-GLAS\x85GON",
+							"~",
 						},
 
 						{														// DUTCH
-							"\pGESCHIEDENIS",
-							"\pCREDITS",
-							"\pPANGEA-WEBSITE",
-							"\p3D-BRIL",
-							"\p~",
+							"GESCHIEDENIS",
+							"CREDITS",
+							"PANGEA-WEBSITE",
+							"3D-BRIL",
+							"~",
 						},
 
 					};
@@ -613,73 +613,73 @@ int			language;
 					static const Str31 names[MAX_LANGUAGES][7] =
 					{
 						{											// ENGLISH
-							"\pRACE 1",
-							"\pRACE 2",
-							"\pBATTLE 1",
-							"\pBATTLE 2",
-							"\pCAPTURE THE EGGS 1",
-							"\pCAPTURE THE EGGS 2",
-							"\p~",
+							"RACE 1",
+							"RACE 2",
+							"BATTLE 1",
+							"BATTLE 2",
+							"CAPTURE THE EGGS 1",
+							"CAPTURE THE EGGS 2",
+							"~",
 						},
 
 						{											// FRENCH
-							"\pCOURSE 1",
-							"\pCOURSE 2",
-							"\pCOMBAT 1",
-							"\pCOMBAT 2",
-							"\pPRISE DES OEUFS 1",
-							"\pPRISE DES OEUFS 2",
-							"\p~",
+							"COURSE 1",
+							"COURSE 2",
+							"COMBAT 1",
+							"COMBAT 2",
+							"PRISE DES OEUFS 1",
+							"PRISE DES OEUFS 2",
+							"~",
 						},
 
 						{											// GERMAN
-							"\pRENNEN 1",
-							"\pRENNEN 2",
-							"\pKAMPF 1",
-							"\pKAMPF 2",
-							"\pEIER EROBERN 1",
-							"\pEIER EROBERN 2",
-							"\p~",
+							"RENNEN 1",
+							"RENNEN 2",
+							"KAMPF 1",
+							"KAMPF 2",
+							"EIER EROBERN 1",
+							"EIER EROBERN 2",
+							"~",
 						},
 
 						{											// SPANISH
-							"\pCARRERA 1",
-							"\pCARRERA 2",
-							"\pBATALLA 1",
-							"\pBATALLA 2",
-							"\pCAPTURAR LOS HUEVOS 1",
-							"\pCAPTURAR LOS HUEVOS 2",
-							"\p~",
+							"CARRERA 1",
+							"CARRERA 2",
+							"BATALLA 1",
+							"BATALLA 2",
+							"CAPTURAR LOS HUEVOS 1",
+							"CAPTURAR LOS HUEVOS 2",
+							"~",
 						},
 
 						{											// ITALIAN
-							"\pGARA 1",
-							"\pGARA 2",
-							"\pBATTAGLIA 1",
-							"\pBATTAGLIA 2",
-							"\pAFFERRA LE UOVA 1",
-							"\pAFFERRA LE UOVA 2",
-							"\p~",
+							"GARA 1",
+							"GARA 2",
+							"BATTAGLIA 1",
+							"BATTAGLIA 2",
+							"AFFERRA LE UOVA 1",
+							"AFFERRA LE UOVA 2",
+							"~",
 						},
 
 						{											// SWEDISH
-							"\pT\x80VLING 1",
-							"\pT\x80VLING 2",
-							"\pTVEKAMP 1",
-							"\pTVEKAMP 2",
-							"\pF\x81NGA \x80GGEN 1",
-							"\pF\x81NGA \x80GGEN 2",
-							"\p~",
+							"T\x80VLING 1",
+							"T\x80VLING 2",
+							"TVEKAMP 1",
+							"TVEKAMP 2",
+							"F\x81NGA \x80GGEN 1",
+							"F\x81NGA \x80GGEN 2",
+							"~",
 						},
 
 						{											// DUTCH
-							"\pRACE 1",
-							"\pRACE 2",
-							"\pSTRIJD 1",
-							"\pSTRIJD 2",
-							"\pDE EIEREN BEMACHTIGEN 1",
-							"\pDE EIEREN BEMACHTIGEN 2",
-							"\p~",
+							"RACE 1",
+							"RACE 2",
+							"STRIJD 1",
+							"STRIJD 2",
+							"DE EIEREN BEMACHTIGEN 1",
+							"DE EIEREN BEMACHTIGEN 2",
+							"~",
 						},
 
 					};
@@ -855,7 +855,7 @@ static void DoMenuControls(void)
 								break;
 
 						case	2:
-								if (LaunchURL("\phttp://www.pangeasoft.net/nano2") == noErr)	// PANGEA WEB SITE
+								if (LaunchURL("http://www.pangeasoft.net/nano2") == noErr)	// PANGEA WEB SITE
 								{
 									if (gPlayFullScreen)
 					                   ExitToShell();
@@ -863,7 +863,7 @@ static void DoMenuControls(void)
 								break;
 
 						case	3:
-								if (LaunchURL("\phttp://www.pangeasoft.net/nano2/3dglasses.html") == noErr)	// 3D GLASSES
+								if (LaunchURL("http://www.pangeasoft.net/nano2/3dglasses.html") == noErr)	// 3D GLASSES
 								{
 									if (gPlayFullScreen)
 					                   ExitToShell();
@@ -881,12 +881,12 @@ static void DoMenuControls(void)
 #if !ALLOW_2P_INDEMO
 					if ((!gGameIsRegistered) && (gCurrentMenuItem != 6))								// no multi-player in demo mode
 					{
-						DoAlert("\pNano vs. Nano games are not available in Demo mode.  You must purchase a Nanosaur 2 serial number to play these games.");
+						DoAlert("Nano vs. Nano games are not available in Demo mode.  You must purchase a Nanosaur 2 serial number to play these games.");
 					}
 #else
 					if ((!gGameIsRegistered) && (gCurrentMenuItem != 1) && (gCurrentMenuItem != 3) && (gCurrentMenuItem != 6))			// allow race 2 and battle 2 in Apple's .Mac mode
 					{
-						DoAlert("\pOnly Race 2 and Battle 2 are available in demo mode.  You must purchase a Nanosaur 2 serial number to play all the games.");
+						DoAlert("Only Race 2 and Battle 2 are available in demo mode.  You must purchase a Nanosaur 2 serial number to play all the games.");
 					}
 #endif
 					else

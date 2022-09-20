@@ -92,7 +92,7 @@ float	timeout = 40.0f;
 
 	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, spec);
 	if (!gBackgoundPicture)
-		DoFatalAlert("\pDisplayPicture: MO_CreateNewObjectOfType failed");
+		DoFatalAlert("DisplayPicture: MO_CreateNewObjectOfType failed");
 
 
 
@@ -160,7 +160,7 @@ FSSpec	spec;
 
 	GammaFadeOut();
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:legal.gif", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:legal.gif", &spec);
 
 	DisplayPicture(&spec);
 
@@ -177,13 +177,13 @@ void DoDemoExpiredScreen(void)
 {
 FSSpec	spec;
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:DemoExpired", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoExpired", &spec);
 	DisplayPicture(&spec);
 
 #if ALLOW_2P_INDEMO
-	LaunchURL("\phttp://www.pangeasoft.net/nano2/buydotmac.html");
+	LaunchURL("http://www.pangeasoft.net/nano2/buydotmac.html");
 #else
-	LaunchURL("\phttp://www.pangeasoft.net/nano2/buy.html");
+	LaunchURL("http://www.pangeasoft.net/nano2/buy.html");
 #endif
 
 	gDontShowDemoQuit = true;					// make sure we don't also get the Demo Quit screen
@@ -205,9 +205,9 @@ FSSpec	spec;
 		return;
 
 #if DEMO
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:DemoQuitSmall", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoQuitSmall", &spec);
 #else
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:images:DemoQuitFull", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:DemoQuitFull", &spec);
 #endif
 	DisplayPicture(&spec);
 
@@ -215,9 +215,9 @@ FSSpec	spec;
 	{
 		CleanupDisplay();								// unloads Draw Sprocket
 #if ALLOW_2P_INDEMO
-		LaunchURL("\phttp://www.pangeasoft.net/nano2/buydotmac.html");
+		LaunchURL("http://www.pangeasoft.net/nano2/buydotmac.html");
 #else
-		LaunchURL("\phttp://www.pangeasoft.net/nano2/buy.html");
+		LaunchURL("http://www.pangeasoft.net/nano2/buy.html");
 #endif
 	}
 }
@@ -242,7 +242,7 @@ EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
 
     err = CreateWindowFromNib(gNibs, CFSTR ("Cheat"), &gDialogWindow);
 	if (err)
-		DoFatalAlert("\pDoLevelCheatDialog: CreateWindowFromNib failed!");
+		DoFatalAlert("DoLevelCheatDialog: CreateWindowFromNib failed!");
 
 
 			/* CREATE NEW WINDOW EVENT HANDLER */
@@ -358,7 +358,7 @@ do_again:
     err = CreateWindowFromNib(gNibs,CFStringCreateWithCString(nil, rezNames[gGamePrefs.language],
     						kCFStringEncodingMacRoman), &dialogWindow);
 	if (err)
-		DoFatalAlert("\pDoGameOptionsDialog: CreateWindowFromNib failed!");
+		DoFatalAlert("DoGameOptionsDialog: CreateWindowFromNib failed!");
 
 			/* CREATE NEW WINDOW EVENT HANDLER */
 
@@ -575,7 +575,7 @@ do_again:
 	myDialog = GetNewDialog(1000 + gGamePrefs.language,nil,MOVE_TO_FRONT);
 	if (myDialog == nil)
 	{
-		DoAlert("\pDoGameOptionsDialog: GetNewDialog failed!");
+		DoAlert("DoGameOptionsDialog: GetNewDialog failed!");
 		ShowSystemErr(gGamePrefs.language);
 	}
 

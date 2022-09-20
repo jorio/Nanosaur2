@@ -427,7 +427,7 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 
 		skeleton = playerObj->Skeleton;
 		if (!skeleton)
-			DoFatalAlert("\pMoveCameras: player has no skeleton!");
+			DoFatalAlert("MoveCameras: player has no skeleton!");
 
 
 					/* SPECIAL FOR DUST DEVIL */

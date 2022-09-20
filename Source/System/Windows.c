@@ -132,7 +132,7 @@ CGTableCount 		sampleCount;
 																	gGamePrefs.hz,
 																	NULL);
 		if (refDisplayMode == nil)
-			DoFatalAlert("\pInitWindowStuff: CGDisplayBestModeForParameters failed!");
+			DoFatalAlert("InitWindowStuff: CGDisplayBestModeForParameters failed!");
 
 
 				/* SWITCH TO IT */
@@ -187,7 +187,7 @@ CGTableCount 		sampleCount;
 			r.bottom = 480;
 		}
 
-		gGameWindow = NewCWindow(nil, &r, "\p", false, plainDBox, (WindowPtr)-1L, false, 0);
+		gGameWindow = NewCWindow(nil, &r, "", false, plainDBox, (WindowPtr)-1L, false, 0);
 
 
 		gGameWindowGrafPtr = GetWindowPort(gGameWindow);
@@ -516,7 +516,7 @@ Rect			r;
 	GetGWorld (&oldGW,&oldGD);
 	pm = GetGWorldPixMap(thisWorld);
 	if ((pm == nil) | (*pm == nil) )
-		DoAlert("\pPixMap Handle or Ptr = Null?!");
+		DoAlert("PixMap Handle or Ptr = Null?!");
 
 	SetPort(GetWindowPort(thisWindow));
 
@@ -575,7 +575,7 @@ PixMapHandle pm;
 
 	pm = GetGWorldPixMap(world);
 	if (LockPixels(pm) == false)
-		DoFatalAlert("\pPixMap Went Bye,Bye?!");
+		DoFatalAlert("PixMap Went Bye,Bye?!");
 }
 
 
@@ -668,7 +668,7 @@ do_it:
     err = CreateWindowFromNib(gNibs, CFStringCreateWithCString(nil, rezNames[gGamePrefs.language],
     						kCFStringEncodingMacRoman), &gDialogWindow);
 	if (err)
-		DoFatalAlert("\pDoScreenModeDialog: CreateWindowFromNib failed!");
+		DoFatalAlert("DoScreenModeDialog: CreateWindowFromNib failed!");
 
 
 			/* CREATE NEW WINDOW EVENT HANDLER */
@@ -824,7 +824,7 @@ do_it:
 	{
 		if (gDisplayVRAM < 0x4000000)				// if < 64MB VRAM...
 		{
-			DoAlert("\pSorry, but to use shutter glasses you need at least 64MB of VRAM");
+			DoAlert("Sorry, but to use shutter glasses you need at least 64MB of VRAM");
 			gGamePrefs.stereoGlassesMode = STEREO_GLASSES_MODE_OFF;
 			goto do_it;
 		}
@@ -1010,7 +1010,7 @@ double				hz;
 
 	modeList = CGDisplayAvailableModes(gCGDisplayID);
 	if (modeList == nil)
-		DoFatalAlert("\pCreateDisplayModeList: CGDisplayAvailableModes failed!");
+		DoFatalAlert("CreateDisplayModeList: CGDisplayAvailableModes failed!");
 
 	numDeviceModes = CFArrayGetCount(modeList);
 
@@ -1026,7 +1026,7 @@ double				hz;
 
         mode = CFArrayGetValueAtIndex( modeList, i );				  	// Pull the mode dictionary out of the CFArray
 		if (mode == nil)
-			DoFatalAlert("\pCreateDisplayModeList: CFArrayGetValueAtIndex failed!");
+			DoFatalAlert("CreateDisplayModeList: CFArrayGetValueAtIndex failed!");
 
 		number = CFDictionaryGetValue(mode, kCGDisplayWidth);			// get width
 		CFNumberGetValue(number, kCFNumberLongType, &width) ;
@@ -1132,7 +1132,7 @@ CFTypeRef		classCode;
 
 	if (gDisplayVRAM < 0x1000000)				// if < 16MB VRAM...
 	{
-		DoFatalAlert("\pThis game requires at least 32MB of VRAM, and you appear to have much less than that.  You will need to install a newer video card with more VRAM to play this game.");
+		DoFatalAlert("This game requires at least 32MB of VRAM, and you appear to have much less than that.  You will need to install a newer video card with more VRAM to play this game.");
 	}
 
 
@@ -1174,10 +1174,10 @@ FSSpec			spec;
 short			i;
 const unsigned char	*names[NUM_CALIBRATION_IMAGES] =
 {
-	"\p:images:calibration1.tif",
-	"\p:images:calibration2.jpg",
-	"\p:images:calibration3.jpg",
-	"\p:images:calibration4.jpg",
+	":images:calibration1.tif",
+	":images:calibration2.jpg",
+	":images:calibration3.jpg",
+	":images:calibration4.jpg",
 };
 
 	InitCursor();
@@ -1202,7 +1202,7 @@ const unsigned char	*names[NUM_CALIBRATION_IMAGES] =
     err = CreateWindowFromNib(gNibs, CFStringCreateWithCString(nil, "AnaglyphCalibration",
     						kCFStringEncodingMacRoman), &gCalibrationWindow);
 	if (err)
-		DoFatalAlert("\pDoAnaglyphCalibrationDialog: CreateWindowFromNib failed!");
+		DoFatalAlert("DoAnaglyphCalibrationDialog: CreateWindowFromNib failed!");
 
 
 			/* CREATE NEW WINDOW EVENT HANDLER */
@@ -1252,7 +1252,7 @@ const unsigned char	*names[NUM_CALIBRATION_IMAGES] =
 						sizeof(gCalibrationUserPaneDrawUPP), &gCalibrationUserPaneDrawUPP);
 
 	if (err)
-		DoFatalAlert("\pDoAnaglyphCalibrationDialog: SetControlData failed!");
+		DoFatalAlert("DoAnaglyphCalibrationDialog: SetControlData failed!");
 
 
 

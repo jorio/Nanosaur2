@@ -283,7 +283,7 @@ next:
 	}while(thisNode != nil);
 
 	if (gNumCollisions > MAX_COLLISIONS)											// see if overflowed (memory corruption ensued)
-		DoFatalAlert("\pCollisionDetect: gNumCollisions > MAX_COLLISIONS");
+		DoFatalAlert("CollisionDetect: gNumCollisions > MAX_COLLISIONS");
 }
 
 

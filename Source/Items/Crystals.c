@@ -54,7 +54,7 @@ Boolean AddCrystal(TerrainItemEntryType *itemPtr, float  x, float z)
 ObjNode	*base, *crystal;
 
 	if (itemPtr->parm[0] > 2)
-		DoFatalAlert("\pAddCrystal: illegal subtype");
+		DoFatalAlert("AddCrystal: illegal subtype");
 
 
 			/*************/

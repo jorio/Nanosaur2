@@ -143,45 +143,45 @@ int		px,py,pw,ph;
 static const Str31 names[MAX_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 {
 	{												// ENGLISH
-		"\pRESUME",
-		"\pEND",
-		"\pQUIT",
+		"RESUME",
+		"END",
+		"QUIT",
 	},
 
 	{												// FRENCH
-	"\pRETOUR AU JEU",
-	"\pFIN",
-	"\pQUITTER",
+	"RETOUR AU JEU",
+	"FIN",
+	"QUITTER",
 	},
 
 	{												// GERMAN
-	"\pFORTFAHREN",
-	"\pMISSION BEENDEN",
-	"\pSPIEL BEENDEN",
+	"FORTFAHREN",
+	"MISSION BEENDEN",
+	"SPIEL BEENDEN",
 	},
 
 	{												// SPANISH
-	"\pCONTINUAR",
-	"\pTERMINAR",
-	"\pSALIR",
+	"CONTINUAR",
+	"TERMINAR",
+	"SALIR",
 	},
 
 	{												// ITALIAN
-	"\pRIPRENDI",
-	"\pTERMINA",
-	"\pESCI",
+	"RIPRENDI",
+	"TERMINA",
+	"ESCI",
 	},
 
 	{												// SWEDISH
-	"\pRESUME",
-	"\pEND",
-	"\pQUIT",
+	"RESUME",
+	"END",
+	"QUIT",
 	},
 
 	{												// DUTCH
-	"\pDOORGAAN",
-	"\pEINDE",
-	"\pAFSLUITEN",
+	"DOORGAAN",
+	"EINDE",
+	"AFSLUITEN",
 	},
 
 

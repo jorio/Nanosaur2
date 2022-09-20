@@ -77,7 +77,7 @@ static SlideType 	gSlides[NUM_SLIDES] =
 		-23,0,								// dx / dy
 		.01,									// drot
 		.5,									// delay to play effect
-		nil, //"\p:audio:intro:story1.m4a",		// narration pathname
+		nil, //":audio:intro:story1.m4a",		// narration pathname
 	},
 
 
@@ -167,7 +167,7 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:Win.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:Win.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
 
 

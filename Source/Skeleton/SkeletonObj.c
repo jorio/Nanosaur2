@@ -57,10 +57,10 @@ short	i;
 void LoadASkeleton(Byte num, OGLSetupOutputType *setupInfo)
 {
 	if (num >= MAX_SKELETON_TYPES)
-		DoFatalAlert("\pLoadASkeleton: MAX_SKELETON_TYPES exceeded!");
+		DoFatalAlert("LoadASkeleton: MAX_SKELETON_TYPES exceeded!");
 
 	if (gLoadedSkeletonsList[num] != nil)								// check if already loaded
-		DoFatalAlert("\pLoadASkeleton:  skeleton already loaded!");
+		DoFatalAlert("LoadASkeleton:  skeleton already loaded!");
 
 
 				/* LOAD THE SKELETON FILE */
@@ -143,7 +143,7 @@ float	scale;
 
 	newNode->Skeleton = MakeNewSkeletonBaseData(type); 			// alloc & set skeleton data
 	if (newNode->Skeleton == nil)
-		DoFatalAlert("\pMakeNewSkeletonObject: MakeNewSkeletonBaseData == nil");
+		DoFatalAlert("MakeNewSkeletonObject: MakeNewSkeletonBaseData == nil");
 
 	UpdateObjectTransforms(newNode);
 
@@ -286,7 +286,7 @@ int					i, numDecomp;
 	skeletonDefPtr = gLoadedSkeletonsList[skeletonNum];				// get ptr to source skeleton definition info
 	if (skeletonDefPtr == nil)
 	{
-		DoAlert("\pMakeNewSkeletonBaseData: Skeleton data isnt loaded!");
+		DoAlert("MakeNewSkeletonBaseData: Skeleton data isnt loaded!");
 		ShowSystemErr(skeletonNum);
 	}
 

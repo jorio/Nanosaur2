@@ -162,19 +162,19 @@ long		createdDirID;
 	iErr = FindFolder(kOnSystemDisk,kPreferencesFolderType,kDontCreateFolder,			// locate the folder
 					&gPrefsFolderVRefNum,&gPrefsFolderDirID);
 	if (iErr != noErr)
-		DoAlert("\pWarning: Cannot locate the Preferences folder.");
+		DoAlert("Warning: Cannot locate the Preferences folder.");
 
-	iErr = DirCreate(gPrefsFolderVRefNum,gPrefsFolderDirID,"\pNanosaur2",&createdDirID);		// make folder in there
+	iErr = DirCreate(gPrefsFolderVRefNum,gPrefsFolderDirID,"Nanosaur2",&createdDirID);		// make folder in there
 
 
 			/* MAKE FSSPEC FOR DATA FOLDER */
 
 	SetDefaultDirectory();							// be sure to get the default directory
 
-	iErr = FSMakeFSSpec(0, 0, "\p::Resources:Data:Images", &gDataSpec);
+	iErr = FSMakeFSSpec(0, 0, "::Resources:Data:Images", &gDataSpec);
 	if (iErr)
 	{
-		DoAlert("\pThe game's data appears to be missing.  You should reinstall the game.");
+		DoAlert("The game's data appears to be missing.  You should reinstall the game.");
 		ExitToShell();
 	}
 
@@ -191,7 +191,7 @@ long		createdDirID;
 	{
 		FSSpec	spc;
 
-		if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:Images:DemoExpired", &spc) == noErr)
+		if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Images:DemoExpired", &spc) == noErr)
 			gSharewareMode = SHAREWARE_MODE_YES;
 		else
 			gSharewareMode = SHAREWARE_MODE_NO;
@@ -914,7 +914,7 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
     err = CreateWindowFromNib(gNibs, CFStringCreateWithCString(nil, "TimeDemo",
     						kCFStringEncodingMacRoman), &gDialogWindow);
 	if (err)
-		DoFatalAlert("\pShowTimeDemoResults: CreateWindowFromNib failed!");
+		DoFatalAlert("ShowTimeDemoResults: CreateWindowFromNib failed!");
 
     winEvtHandler = NewEventHandlerUPP(ShowTimeDemoResults_EventHandler);
     InstallWindowEventHandler(gDialogWindow, winEvtHandler, GetEventTypeCount(list), list, 0, &ref);

@@ -133,7 +133,7 @@ MetaObjectPtr	mo;
 				break;
 
 		default:
-				DoFatalAlert("\pMO_CreateNewObjectOfType: object type not recognized");
+				DoFatalAlert("MO_CreateNewObjectOfType: object type not recognized");
 	}
 
 	return(mo);
@@ -166,7 +166,7 @@ int					size;
 							break;
 
 					default:
-							DoFatalAlert("\pAllocateEmptyMetaObject: object subtype not recognized");
+							DoFatalAlert("AllocateEmptyMetaObject: object subtype not recognized");
 							return(nil);
 				}
 				break;
@@ -188,7 +188,7 @@ int					size;
 				break;
 
 		default:
-				DoFatalAlert("\pAllocateEmptyMetaObject: object type not recognized");
+				DoFatalAlert("AllocateEmptyMetaObject: object type not recognized");
 				return(nil);
 	}
 
@@ -197,7 +197,7 @@ int					size;
 
 	mo = AllocPtr(size);
 	if (mo == nil)
-		DoFatalAlert("\pAllocateEmptyMetaObject: AllocPtr failed!");
+		DoFatalAlert("AllocateEmptyMetaObject: AllocPtr failed!");
 
 
 			/* INIT STRUCTURE */
@@ -220,7 +220,7 @@ int					size;
 	if (gFirstMetaObject == nil)
 	{
 		if (gLastMetaObject)
-			DoFatalAlert("\pAllocateEmptyMetaObject: gFirstMetaObject & gLastMetaObject should be nil");
+			DoFatalAlert("AllocateEmptyMetaObject: gFirstMetaObject & gLastMetaObject should be nil");
 
 		mo->prevNode = nil;
 		gFirstMetaObject = gLastMetaObject = mo;
@@ -268,7 +268,7 @@ static void SetMetaObjectToGeometry(MetaObjectPtr mo, u_long subType, void *data
 				break;
 
 		default:
-				DoFatalAlert("\pSetMetaObjectToGeometry: unknown subType");
+				DoFatalAlert("SetMetaObjectToGeometry: unknown subType");
 
 	}
 }
@@ -372,7 +372,7 @@ Rect		r;
 		/* LOAD PICTURE INTO GWORLD */
 
 	if (DrawPictureIntoGWorld(inData , &gworld, 32))
-		DoFatalAlert("\pSetMetaObjectToPicture: DrawPictureIntoGWorld failed!");
+		DoFatalAlert("SetMetaObjectToPicture: DrawPictureIntoGWorld failed!");
 
 
 			/* GET GWORLD INFO */
@@ -433,7 +433,7 @@ Rect		r;
 				break;
 
 		default:
-				DoFatalAlert("\pSetMetaObjectToPicture: this width not implemented yet");
+				DoFatalAlert("SetMetaObjectToPicture: this width not implemented yet");
 				return;
 	}
 
@@ -462,7 +462,7 @@ Rect		r;
 				break;
 
 		default:
-				DoFatalAlert("\pSetMetaObjectToPicture: this height not implemented yet");
+				DoFatalAlert("SetMetaObjectToPicture: this height not implemented yet");
 				return;
 	}
 
@@ -488,7 +488,7 @@ Rect		r;
 
 	picData->materials 		= (MOMaterialObject **)AllocPtr(sizeof(MOMaterialObject *) * numCells);	// alloc array of material objects
 	if (picData->materials == nil)
-		DoFatalAlert("\pSetMetaObjectToPicture: AllocPtr failed!");
+		DoFatalAlert("SetMetaObjectToPicture: AllocPtr failed!");
 
 
 		/*************************************/
@@ -499,7 +499,7 @@ Rect		r;
 
 	buffer = AllocPtr(horizCellSize * vertCellSize * bytesPerPixel);
 	if (buffer == nil)
-		DoFatalAlert("\pSetMetaObjectToPicture: AllocPtr failed!");
+		DoFatalAlert("SetMetaObjectToPicture: AllocPtr failed!");
 	bufferRowBytes = horizCellSize * bytesPerPixel;
 
 
@@ -547,7 +547,7 @@ Rect		r;
 			}
 			else
 			{
-				DoFatalAlert("\pSetMetaObjectToPicture: 16-bit not implemented yet");
+				DoFatalAlert("SetMetaObjectToPicture: 16-bit not implemented yet");
 			}
 
 					/***************************/
@@ -584,7 +584,7 @@ Rect		r;
 			cellNum++;
 
 			if (cellNum > numCells)
-				DoFatalAlert("\pSetMetaObjectToPicture: cellNum overflow");
+				DoFatalAlert("SetMetaObjectToPicture: cellNum overflow");
 
 		}
 	}
@@ -632,7 +632,7 @@ MOSpriteData	*spriteData = &spriteObj->objectData;
 		type = inData->type;
 
 		if (inData->type >= gNumSpritesInGroupList[group])								// make sure type is valid
-			DoFatalAlert("\pSetMetaObjectToSprite: illegal type");
+			DoFatalAlert("SetMetaObjectToSprite: illegal type");
 
 		spriteData->material = gSpriteGroupList[group][type].materialObject;
 		MO_GetNewReference(spriteData->material);										// this is a new reference, so inc ref count
@@ -677,12 +677,12 @@ int	i;
 			/* VERIFY COOKIE */
 
 	if ((group->objectHeader.cookie != MO_COOKIE) || (((MetaObjectHeader *)newObject)->cookie != MO_COOKIE))
-		DoFatalAlert("\pMO_AppendToGroup: cookie is invalid!");
+		DoFatalAlert("MO_AppendToGroup: cookie is invalid!");
 
 
 	i = group->objectData.numObjectsInGroup++;		// get index into group list
 	if (i >= MO_MAX_ITEMS_IN_GROUP)
-		DoFatalAlert("\pMO_AppendToGroup: too many objects in group!");
+		DoFatalAlert("MO_AppendToGroup: too many objects in group!");
 
 	MO_GetNewReference(newObject);					// get new reference to object
 	group->objectData.groupContents[i] = newObject;	// save object reference in group
@@ -700,12 +700,12 @@ int	i,j;
 			/* VERIFY COOKIE */
 
 	if ((group->objectHeader.cookie != MO_COOKIE) || (((MetaObjectHeader *)newObject)->cookie != MO_COOKIE))
-		DoFatalAlert("\pMO_AttachToGroupStart: cookie is invalid!");
+		DoFatalAlert("MO_AttachToGroupStart: cookie is invalid!");
 
 
 	i = group->objectData.numObjectsInGroup++;		// get index into group list
 	if (i >= MO_MAX_ITEMS_IN_GROUP)
-		DoFatalAlert("\pMO_AttachToGroupStart: too many objects in group!");
+		DoFatalAlert("MO_AttachToGroupStart: too many objects in group!");
 
 	MO_GetNewReference(newObject);					// get new reference to object
 
@@ -735,7 +735,7 @@ MOVertexArrayObject	*vObj;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_DrawObject: cookie is invalid!");
+		DoFatalAlert("MO_DrawObject: cookie is invalid!");
 
 
 			/* HANDLE TYPE */
@@ -751,7 +751,7 @@ MOVertexArrayObject	*vObj;
 							break;
 
 					default:
-						DoFatalAlert("\pMO_DrawObject: unknown sub-type!");
+						DoFatalAlert("MO_DrawObject: unknown sub-type!");
 				}
 				break;
 
@@ -776,7 +776,7 @@ MOVertexArrayObject	*vObj;
 				break;
 
 		default:
-			DoFatalAlert("\pMO_DrawObject: unknown type!");
+			DoFatalAlert("MO_DrawObject: unknown type!");
 	}
 }
 
@@ -790,7 +790,7 @@ int	numChildren,i;
 				/* VERIFY OBJECT TYPE */
 
 	if (object->objectHeader.type != MO_TYPE_GROUP)
-		DoFatalAlert("\pMO_DrawGroup: this isnt a group!");
+		DoFatalAlert("MO_DrawGroup: this isnt a group!");
 
 
 			/*************************************/
@@ -854,7 +854,7 @@ Boolean		needNormals;
 
 
 	if (OGL_CheckError())
-		DoFatalAlert("\pMO_DrawGeometry_VertexArray: color!");
+		DoFatalAlert("MO_DrawGeometry_VertexArray: color!");
 
 
 
@@ -961,7 +961,7 @@ use_current:
 					u_short	envMapNum 			= gMostRecentMaterial->objectData.envMapNum;
 
 					if (envMapNum >= gNumSpritesInGroupList[SPRITE_GROUP_SPHEREMAPS])
-						DoFatalAlert("\pMO_DrawGeometry_VertexArray: illegal envMapNum");
+						DoFatalAlert("MO_DrawGeometry_VertexArray: illegal envMapNum");
 
 					multiTexture = true;
 
@@ -1029,7 +1029,7 @@ use_current:
 				useTexture = true;
 
 				if (OGL_CheckError())
-					DoFatalAlert("\pMO_DrawGeometry_VertexArray: uv!");
+					DoFatalAlert("MO_DrawGeometry_VertexArray: uv!");
 			}
 		}
 	}
@@ -1043,7 +1043,7 @@ use_current:
 	{
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		if (OGL_CheckError())
-			DoFatalAlert("\pMO_DrawGeometry_VertexArray: glDisableClientState(GL_TEXTURE_COORD_ARRAY)!");
+			DoFatalAlert("MO_DrawGeometry_VertexArray: glDisableClientState(GL_TEXTURE_COORD_ARRAY)!");
 	}
 
 go_here:
@@ -1099,7 +1099,7 @@ go_here:
 		glDisableClientState(GL_NORMAL_ARRAY);			// disable normal arrays
 
 	if (OGL_CheckError())
-		DoFatalAlert("\pMO_DrawGeometry_VertexArray: normals!");
+		DoFatalAlert("MO_DrawGeometry_VertexArray: normals!");
 
 
 			/***********/
@@ -1109,7 +1109,7 @@ go_here:
 	glDrawElements(GL_TRIANGLES,data->numTriangles*3,GL_UNSIGNED_INT,&data->triangles[0]);
 
 	if (OGL_CheckError())
-		DoFatalAlert("\pMO_DrawGeometry_VertexArray: glDrawElements");
+		DoFatalAlert("MO_DrawGeometry_VertexArray: glDrawElements");
 
 	gPolysThisFrame += data->numPoints;					// inc poly counter
 
@@ -1149,7 +1149,7 @@ u_long				matFlags;
 	matData = &matObj->objectData;									// point to material data
 
 	if (matObj->objectHeader.cookie != MO_COOKIE)					// verify cookie
-		DoFatalAlert("\pMO_DrawMaterial: bad cookie!");
+		DoFatalAlert("MO_DrawMaterial: bad cookie!");
 
 
 				/****************************/
@@ -1161,7 +1161,7 @@ u_long				matFlags;
 	if (matFlags & BG3D_MATERIALFLAG_TEXTURED)
 	{
 		if (matData->setupInfo != setupInfo)						// make sure texture is loaded for this draw context
-			DoFatalAlert("\pMO_DrawMaterial: texture is not assigned to this draw context");
+			DoFatalAlert("MO_DrawMaterial: texture is not assigned to this draw context");
 
 
 				/* ACTIVATE MATERIAL */
@@ -1458,10 +1458,10 @@ MetaObjectHeader	*header = obj;
 MOVertexArrayObject	*vObj;
 
 	if (obj == nil)
-		DoFatalAlert("\pMO_DisposeObjectReference: obj == nil");
+		DoFatalAlert("MO_DisposeObjectReference: obj == nil");
 
 	if (header->cookie != MO_COOKIE)					// verify cookie
-		DoFatalAlert("\pMO_DisposeObjectReference: bad cookie!");
+		DoFatalAlert("MO_DisposeObjectReference: bad cookie!");
 
 
 			/**************************************/
@@ -1471,7 +1471,7 @@ MOVertexArrayObject	*vObj;
 	header->refCount--;									// dec ref count
 
 	if (header->refCount < 0)							// see if over did it
-		DoFatalAlert("\pMO_DisposeObjectReference: refcount < 0!");
+		DoFatalAlert("MO_DisposeObjectReference: refcount < 0!");
 
 	if (header->refCount == 0)							// see if we can DELETE this node
 	{
@@ -1492,7 +1492,7 @@ MOVertexArrayObject	*vObj;
 								break;
 
 						default:
-								DoFatalAlert("\pMO_DisposeObject: unknown sub-type");
+								DoFatalAlert("MO_DisposeObject: unknown sub-type");
 					}
 					break;
 
@@ -1533,7 +1533,7 @@ MetaObjectHeader	*prev,*next;
 			/* VERIFY COOKIE */
 
 	if (header->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_DetachFromLinkedList: cookie is invalid!");
+		DoFatalAlert("MO_DetachFromLinkedList: cookie is invalid!");
 
 
 	prev = header->prevNode;
@@ -1569,18 +1569,18 @@ MetaObjectHeader	*prev,*next;
 	gNumMetaObjects--;
 
 	if (gNumMetaObjects < 0)
-		DoFatalAlert("\pMO_DetachFromLinkedList: counter mismatch");
+		DoFatalAlert("MO_DetachFromLinkedList: counter mismatch");
 
 	if (gNumMetaObjects == 0)
 	{
 		if (prev || next)							// if all gone, then prev & next should be nil
-			DoFatalAlert("\pMO_DetachFromLinkedList: prev/next should be nil!");
+			DoFatalAlert("MO_DetachFromLinkedList: prev/next should be nil!");
 
 		if (gFirstMetaObject != nil)
-			DoFatalAlert("\pMO_DetachFromLinkedList: gFirstMetaObject should be nil!");
+			DoFatalAlert("MO_DetachFromLinkedList: gFirstMetaObject should be nil!");
 
 		if (gLastMetaObject != nil)
-			DoFatalAlert("\pMO_DetachFromLinkedList: gLastMetaObject should be nil!");
+			DoFatalAlert("MO_DetachFromLinkedList: gLastMetaObject should be nil!");
 	}
 }
 
@@ -1897,7 +1897,7 @@ float				x,y,z;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_CalcBoundingBox_Recurse: cookie is invalid!");
+		DoFatalAlert("MO_CalcBoundingBox_Recurse: cookie is invalid!");
 
 
 	switch(objHead->type)
@@ -1920,7 +1920,7 @@ float				x,y,z;
 
 								if (numPoints > 1000)					// make sure not overflowing buffer
 								{
-									DoFatalAlert("\pMO_CalcBoundingBox_Recurse: buffer overflow!");
+									DoFatalAlert("MO_CalcBoundingBox_Recurse: buffer overflow!");
 									return;
 								}
 
@@ -1978,7 +1978,7 @@ float				x,y,z;
 							break;
 
 					default:
-						DoFatalAlert("\pMO_CalcBoundingBox_Recurse: unknown sub-type!");
+						DoFatalAlert("MO_CalcBoundingBox_Recurse: unknown sub-type!");
 				}
 				break;
 
@@ -1994,7 +1994,7 @@ float				x,y,z;
 
 
 		case	MO_TYPE_MATRIX:
-				DoFatalAlert("\pMO_CalcBoundingBox_Recurse: why is there a matrix here?");
+				DoFatalAlert("MO_CalcBoundingBox_Recurse: why is there a matrix here?");
 				break;
 	}
 }
@@ -2026,7 +2026,7 @@ float				d;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_CalcBoundingSphere_Recurse: cookie is invalid!");
+		DoFatalAlert("MO_CalcBoundingSphere_Recurse: cookie is invalid!");
 
 
 	switch(objHead->type)
@@ -2050,7 +2050,7 @@ float				d;
 							break;
 
 					default:
-						DoFatalAlert("\pMO_CalcBoundingSphere_Recurse: unknown sub-type!");
+						DoFatalAlert("MO_CalcBoundingSphere_Recurse: unknown sub-type!");
 				}
 				break;
 
@@ -2066,7 +2066,7 @@ float				d;
 
 
 		case	MO_TYPE_MATRIX:
-				DoFatalAlert("\pMO_CalcBoundingSphere_Recurse: why is there a matrix here?");
+				DoFatalAlert("MO_CalcBoundingSphere_Recurse: why is there a matrix here?");
 				break;
 	}
 }
@@ -2121,7 +2121,7 @@ Rect			r;
 		/* LOAD PICTURE INTO GWORLD */
 
 	if (DrawPictureIntoGWorld(spec , &pGWorld, 32))			//--- for now, must be 32bit for OpenGL internal b/c 16bit not supported
-		DoFatalAlert("\pMO_GetTextureFromFile: DrawPictureIntoGWorld failed!");
+		DoFatalAlert("MO_GetTextureFromFile: DrawPictureIntoGWorld failed!");
 
 
 			/* GET GWORLD INFO */
@@ -2132,7 +2132,7 @@ Rect			r;
 	height = r.bottom - r.top;
 
 	if ((!IsPowerOf2(width)) || (!IsPowerOf2(height)))				// make sure its a power of 2
-		DoFatalAlert("\pMO_GetTextureFromFile: dimensions not power of 2");
+		DoFatalAlert("MO_GetTextureFromFile: dimensions not power of 2");
 
 	hPixMap = GetGWorldPixMap(pGWorld);								// get gworld's pixmap
 	depth = (*hPixMap)->pixelSize;									// get gworld pixel bitdepth
@@ -2146,7 +2146,7 @@ Rect			r;
 
 	buffer = AllocPtr(width * height * 4);							// alloc enough for a 32bit texture
 	if (buffer == nil)
-		DoFatalAlert("\pMO_GetTextureFromResource: AllocPtr failed!");
+		DoFatalAlert("MO_GetTextureFromResource: AllocPtr failed!");
 
 	pictMapAddr = GetPixBaseAddr(hPixMap);
 	pictRowBytes = (u_long)(**hPixMap).rowBytes & 0x3fff;
@@ -2192,7 +2192,7 @@ Rect			r;
 
 	else
 	{
-		DoFatalAlert("\pMO_GetTextureFromFile: 16 bit textures not supported yet.");
+		DoFatalAlert("MO_GetTextureFromFile: 16 bit textures not supported yet.");
 		//-------- TODO
 	}
 
@@ -2216,7 +2216,7 @@ Rect			r;
 		matData.pixelSrcFormat	= GL_RGBA;
 	else
 	{
-		DoFatalAlert("\pMO_GetTextureFromFile: 16 bit textures not supported yet.");
+		DoFatalAlert("MO_GetTextureFromFile: 16 bit textures not supported yet.");
 		//-------- TODO
 	}
 
@@ -2249,7 +2249,7 @@ MOVertexArrayObject	*mo;
 		MOGroupObject	*groupObj = (MOGroupObject *)mo;
 
 		if (geometryNum >= groupObj->objectData.numObjectsInGroup)					// make sure # is valid
-			DoFatalAlert("\pMO_Geometry_OffserUVs: geometryNum out of range");
+			DoFatalAlert("MO_Geometry_OffserUVs: geometryNum out of range");
 
 				/* POINT TO 1ST GEOMETRY IN THE GROUP */
 
@@ -2287,7 +2287,7 @@ MOGroupObject		*group;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_Group_OffsetUVs: cookie is invalid!");
+		DoFatalAlert("MO_Group_OffsetUVs: cookie is invalid!");
 
 
 			/* HANDLE IT */
@@ -2322,7 +2322,7 @@ MOGroupObject		*group;
 
 
 		default:
-			DoFatalAlert("\pMO_Group_OffsetUVs: object type is not supported.");
+			DoFatalAlert("MO_Group_OffsetUVs: object type is not supported.");
 	}
 
 }
@@ -2342,13 +2342,13 @@ short				varType;
 			/* VERIFY COOKIE */
 
 	if (objHead->cookie != MO_COOKIE)
-		DoFatalAlert("\pMO_VertexArray_OffsetUVs: cookie is invalid!");
+		DoFatalAlert("MO_VertexArray_OffsetUVs: cookie is invalid!");
 
 
 		/* MAKE SURE IT IS A VERTEX ARRAY */
 
 	if ((objHead->type != MO_TYPE_GEOMETRY) || (objHead->subType != MO_GEOMETRY_SUBTYPE_VERTEXARRAY))
-		DoFatalAlert("\pMO_VertexArray_OffsetUVs: object is not a Vertex Array!");
+		DoFatalAlert("MO_VertexArray_OffsetUVs: object is not a Vertex Array!");
 
 	vObj = object;
 	data = &vObj->objectData;						// point to data
@@ -2403,7 +2403,7 @@ MOMaterialObject	*obj;
 	iErr = DrawPictureIntoGWorld(spec, &gworld, 32);
 	if (iErr)
 	{
-		DoAlert("\pMO_LoadTextureObjectFromFile: something went wrong");
+		DoAlert("MO_LoadTextureObjectFromFile: something went wrong");
 		return(nil);
 	}
 
@@ -2415,7 +2415,7 @@ MOMaterialObject	*obj;
 
 	if ((!IsPowerOf2(width)) || (!IsPowerOf2(height)))						// make sure texture is power of 2
 	{
-		DoAlert("\pMO_LoadTextureObjectFromFile:  texture dimensions are not power of 2");
+		DoAlert("MO_LoadTextureObjectFromFile:  texture dimensions are not power of 2");
 		DisposeGWorld(gworld);
 		return(nil);
 	}

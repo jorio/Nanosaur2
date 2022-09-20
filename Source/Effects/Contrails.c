@@ -191,7 +191,7 @@ void AddPointToContrail(short contrailNum, OGLPoint3D *where, OGLVector3D *aim, 
 long	p;
 
 	if (!gContrails[contrailNum].isUsed)
-		DoFatalAlert("\pAddPointToContrail:  bad contrailNum");
+		DoFatalAlert("AddPointToContrail:  bad contrailNum");
 
 	p = gContrails[contrailNum].nextPointIndex;				// get index into ref point list
 
@@ -217,9 +217,9 @@ void ModifyContrailPreviousAddition(short contrailNum, OGLPoint3D *where)
 long	p;
 
 	if (contrailNum < 0)
-		DoFatalAlert("\pModifyContrailPreviousAddition:  bad contrailNum");
+		DoFatalAlert("ModifyContrailPreviousAddition:  bad contrailNum");
 	if (!gContrails[contrailNum].isUsed)
-		DoFatalAlert("\pModifyContrailPreviousAddition:  bad contrailNum");
+		DoFatalAlert("ModifyContrailPreviousAddition:  bad contrailNum");
 
 	p = gContrails[contrailNum].nextPointIndex - 1;				// get index into ref point list, then back 1
 	if (p < 0)

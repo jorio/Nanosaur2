@@ -46,60 +46,60 @@ extern	Boolean			gPlayingFromSavedGame;
 
 static const Str63	terrainFiles[NUM_LEVELS] =
 {
-	"\p:terrain:Level1.ter",
-	"\p:terrain:Level2.ter",
-	"\p:terrain:Level3.ter",
+	":terrain:Level1.ter",
+	":terrain:Level2.ter",
+	":terrain:Level3.ter",
 
-	"\p:terrain:race1.ter",
-	"\p:terrain:race2.ter",
-	"\p:terrain:battle1.ter",
-	"\p:terrain:battle2.ter",
-	"\p:terrain:flag1.ter",
-	"\p:terrain:flag2.ter",
+	":terrain:race1.ter",
+	":terrain:race2.ter",
+	":terrain:battle1.ter",
+	":terrain:battle2.ter",
+	":terrain:flag1.ter",
+	":terrain:flag2.ter",
 };
 
 static const Str63	levelModelFiles[NUM_LEVELS] =
 {
-	"\p:models:Level1.bg3d",
-	"\p:models:Level2.bg3d",
-	"\p:models:Level3.bg3d",
+	":models:Level1.bg3d",
+	":models:Level2.bg3d",
+	":models:Level3.bg3d",
 
-	"\p:models:Level3.bg3d",			// race 1:  swamp
-	"\p:models:Level2.bg3d",			// race 2:  desert
-	"\p:models:Level1.bg3d",			// battle 1: forest
-	"\p:models:Level2.bg3d",			// battle 2: desert
-	"\p:models:Level3.bg3d",			// flag 1:  swamp
-	"\p:models:Level1.bg3d",			// flag 2: forest
+	":models:Level3.bg3d",			// race 1:  swamp
+	":models:Level2.bg3d",			// race 2:  desert
+	":models:Level1.bg3d",			// battle 1: forest
+	":models:Level2.bg3d",			// battle 2: desert
+	":models:Level3.bg3d",			// flag 1:  swamp
+	":models:Level1.bg3d",			// flag 2: forest
 
 };
 
 static const Str63	levelSpriteFiles[NUM_LEVELS] =
 {
-	"\p:sprites:Level1.sprites",
-	"\p:sprites:Level2.sprites",
-	"\p:sprites:Level3.sprites",
+	":sprites:Level1.sprites",
+	":sprites:Level2.sprites",
+	":sprites:Level3.sprites",
 
-	"\p:sprites:Level3.sprites",			// race 1:  swamp
-	"\p:sprites:Level2.sprites",
-	"\p:sprites:Level1.sprites",			// battle 1: forest
-	"\p:sprites:Level2.sprites",
-	"\p:sprites:Level3.sprites",			// flag 1:  swamp
-	"\p:sprites:Level1.sprites",			// flag 2:  forest
+	":sprites:Level3.sprites",			// race 1:  swamp
+	":sprites:Level2.sprites",
+	":sprites:Level1.sprites",			// battle 1: forest
+	":sprites:Level2.sprites",
+	":sprites:Level3.sprites",			// flag 1:  swamp
+	":sprites:Level1.sprites",			// flag 2:  forest
 };
 
 #if 0
 static const Str63	levelSoundFiles[NUM_LEVELS] =
 {
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
 
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
-	"\p:Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
+	":Audio:Garden.sounds",
 };
 #endif
 
@@ -127,13 +127,13 @@ short	i;
 
 			/* LOAD GLOBAL BG3D GEOMETRY */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:models:Global.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:Global.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_GLOBAL, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:models:playerparts.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:playerparts.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_PLAYER, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:Models:Weapons.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:Weapons.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_WEAPONS, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_PLAYER, PLAYER_ObjType_JetPack,
@@ -175,16 +175,16 @@ short	i;
 		LoadSpriteFile(&spec, SPRITE_GROUP_LEVELSPECIFIC, setupInfo);
 	}
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:infobar.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:infobar.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_INFOBAR, setupInfo);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:global.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:global.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_GLOBAL, setupInfo);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:spheremap.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:spheremap.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_SPHEREMAPS, setupInfo);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, "\p:sprites:font.sprites", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:font.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_FONT, setupInfo);
 
 

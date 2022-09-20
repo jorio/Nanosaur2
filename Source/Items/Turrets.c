@@ -98,7 +98,7 @@ short	typeB, typeT, typeW, typeG;
 				break;
 
 		default:
-				DoFatalAlert("\pAddTowerTurret: not here yet, call Brian!");
+				DoFatalAlert("AddTowerTurret: not here yet, call Brian!");
 				return(false);
 	}
 

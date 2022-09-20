@@ -694,8 +694,14 @@ short	dataLen = inSourceStr[0] + 1;
 
 void CalcFramesPerSecond(void)
 {
+#if 1
+static UnsignedWide time;
+UnsignedWide currTime;
+unsigned long deltaTime;
+#else
 AbsoluteTime currTime,deltaTime;
 static AbsoluteTime time = {0,0};
+#endif
 //Nanoseconds	nano;
 float		fps;
 
@@ -710,19 +716,34 @@ wait:
 	}
 	else
 	{
-		SOFTIMPME;
+#if 1
+		Microseconds(&currTime);
+		deltaTime = currTime.lo - time.lo;
 
-#if 0
+		gFramesPerSecond = 1000000.0f / deltaTime;
+
+		if (gFramesPerSecond < DEFAULT_FPS)			// (avoid divide by 0's later)
+			gFramesPerSecond = DEFAULT_FPS;
+
+#if _DEBUG
+		if (GetKeyState(SDL_SCANCODE_KP_PLUS))		// debug speed-up with KP_PLUS
+			gFramesPerSecond = DEFAULT_FPS;
+#endif
+
+		gFramesPerSecondFrac = 1.0f/gFramesPerSecond;		// calc fractional for multiplication
+
+		time = currTime;	// reset for next time interval
+#else
 		currTime = UpTime();
 
 		deltaTime = SubAbsoluteFromAbsolute(currTime, time);
 		nano = AbsoluteToNanoseconds(deltaTime);
 
 		fps = (float)kSecondScale / (float)nano.lo;
-#endif
 
 		if (fps > MAX_FPS)				// limit to avoid issues
 			goto wait;
+#endif
 	}
 
 			/* ADD TO LIST */

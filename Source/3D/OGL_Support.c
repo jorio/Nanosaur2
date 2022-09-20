@@ -1,7 +1,8 @@
 /****************************/
 /*   OPENGL SUPPORT.C	    */
-/* (c)2003 Pangea Software  */
 /*   By Brian Greenstone    */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -10,6 +11,7 @@
 /****************************/
 
 #include "game.h"
+#include "stb_image.h"
 
 extern int				gNumObjectNodes,gNumPointers;
 extern	MOMaterialObject	*gMostRecentMaterial;
@@ -260,13 +262,19 @@ short	i;
 				/* SETUP */
 
 	OGL_CreateDrawContext(setupDefPtr);
+	OGL_CheckError();
 	OGL_SetStyles(setupDefPtr);
+	OGL_CheckError();
 	OGL_CreateLights(&setupDefPtr->lights);
-	SOFTIMPME;
+	OGL_CheckError();
+
+	SOFTIMPME; // don't think we're going to need shaders, remove this if true
 #if 0
 	OGL_LoadAllShaderPrograms();
 #endif
+
 	OGL_InitVertexArrayMemory();
+	OGL_CheckError();
 
 
 				/* PASS BACK INFO */
@@ -361,7 +369,35 @@ OGLSetupOutputType	*data;
 
 static void OGL_CreateDrawContext(OGLSetupInputType *def)
 {
-	IMPME;
+GLint			maxTexSize;
+static char			*s;
+OGLViewDefType *viewDefPtr = &def->view;
+
+	GAME_ASSERT_MESSAGE(!gAGLContext, "GL context already exists");
+	GAME_ASSERT_MESSAGE(gSDLWindow, "Window must be created before the DC!");
+
+			/* CREATE AGL CONTEXT & ATTACH TO WINDOW */
+
+	gAGLContext = SDL_GL_CreateContext(gSDLWindow);
+
+	if (!gAGLContext)
+		DoFatalAlert(SDL_GetError());
+
+	GAME_ASSERT(glGetError() == GL_NO_ERROR);
+
+
+			/* ACTIVATE CONTEXT */
+
+	int mkc = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext);
+	GAME_ASSERT_MESSAGE(mkc == 0, SDL_GetError());
+
+			/* ENABLE VSYNC */
+
+	SDL_GL_SetSwapInterval(1);
+
+
+
+	SOFTIMPME;
 #if 0
 AGLPixelFormat 	fmt;
 GLboolean      mkc, ok;
@@ -504,6 +540,7 @@ OGLViewDefType *viewDefPtr = &def->view;
 			/* NO LONGER NEED PIXEL FORMAT */
 
 	aglDestroyPixelFormat(fmt);
+#endif
 
 
 			/* CLEAR ALL BUFFERS TO BLACK */
@@ -555,7 +592,6 @@ OGLViewDefType *viewDefPtr = &def->view;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
 	if (maxTexSize < 1024)
 		DoFatalAlert("Your video card cannot do 1024x1024 textures, so it is below the game's minimum system requirements.");
-#endif
 }
 
 
@@ -572,11 +608,13 @@ AGLContext agl_ctx = gAGLContext;
 	OGL_EnableCullFace();
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);									// CCW is front face
+	OGL_CheckError();
 
 	if (gGamePrefs.depth == 16)
 		glEnable(GL_DITHER);
 	else
 		glDisable(GL_DITHER);
+	OGL_CheckError();
 
 			/* SET BLENDING DEFAULTS */
 
@@ -585,14 +623,20 @@ AGLContext agl_ctx = gAGLContext;
 
 	gMyState_Blend = true;
 	OGL_DisableBlend();
+	OGL_CheckError();
 
+#if 0
 	glHint(GL_TRANSFORM_HINT_APPLE, GL_FASTEST);
+	OGL_CheckError();
+#endif
 	glDisable(GL_RESCALE_NORMAL);
+	OGL_CheckError();
 
 	gMyState_TextureUnit = GL_TEXTURE0_ARB;
 	OGL_ActiveTextureUnit(GL_TEXTURE0_ARB);
 	gMyState_Texture2D = true;
 	OGL_DisableTexture2D();
+	OGL_CheckError();
 
 
 	gMyState_Color.r =
@@ -605,6 +649,7 @@ AGLContext agl_ctx = gAGLContext;
 
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_NOTEQUAL, 0);	// draw any pixel who's Alpha != 0
+	OGL_CheckError();
 
 
 		/* SET FOG */
@@ -626,11 +671,13 @@ AGLContext agl_ctx = gAGLContext;
 		gMyState_Fog = true;
 		OGL_DisableFog();
 	}
+	OGL_CheckError();
 
 		/* ANISOTRIPIC FILTERING */
 
 	if (gDoAnisotropy)
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &gMaxAnisotropy);
+	OGL_CheckError();
 }
 
 /**************** CLEAR ALL BUFFERS TO BLACK *********************/
@@ -750,6 +797,9 @@ AGLContext agl_ctx = setupInfo->drawContext;
 //    EventRef        theEvent;
 //	ReceiveNextEvent(0, NULL, kEventDurationNoWait, false, &theEvent);
 
+
+
+	SDL_GetWindowSize(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
 
 
 #if 0
@@ -1237,8 +1287,12 @@ AGLContext agl_ctx = gAGLContext;
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
  		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+#if 1
+		GAME_ASSERT_MESSAGE(!textureInRAM, "GL_UNPACK_CLIENT_STORAGE_APPLE is unsupported");
+#else
 		if (textureInRAM)
 			glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
+#endif
 
 		glTexImage2D(GL_TEXTURE_2D,
 					0,										// mipmap level
@@ -1263,6 +1317,69 @@ AGLContext agl_ctx = gAGLContext;
 
 	return(textureName);
 }
+
+
+/***************** OGL TEXTUREMAP LOAD FROM PNG/JPG **********************/
+
+GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight)
+{
+uint8_t*				pixelData = nil;
+int						width;
+int						height;
+long					imageFileLength = 0;
+Ptr						imageFileData = nil;
+
+				/* LOAD PICTURE FILE */
+
+	imageFileData = LoadDataFile(path, &imageFileLength);
+	GAME_ASSERT(imageFileData);
+
+	pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) imageFileData, imageFileLength, &width, &height, NULL, 4);
+	GAME_ASSERT(pixelData);
+
+	SafeDisposePtr(imageFileData);
+	imageFileData = NULL;
+
+			/* PRE-PROCESS IMAGE */
+
+	int internalFormat = GL_RGBA;
+
+#if 0
+	if (flags & kLoadTextureFlags_KeepOriginalAlpha)
+	{
+		internalFormat = GL_RGBA;
+	}
+	else
+	{
+		internalFormat = GL_RGB;
+	}
+#endif
+
+			/* LOAD TEXTURE */
+
+	GLuint glTextureName = OGL_TextureMap_Load(
+			pixelData,
+			width,
+			height,
+			GL_RGBA,
+			internalFormat,
+			GL_UNSIGNED_BYTE,
+			false);
+	OGL_CheckError();
+
+			/* CLEAN UP */
+
+	//DisposePtr((Ptr) pixelData);
+	free(pixelData);  // TODO: define STBI_MALLOC/STBI_REALLOC/STBI_FREE in stb_image.c?
+
+	if (outWidth)
+		*outWidth = width;
+	if (outHeight)
+		*outHeight = height;
+
+	return glTextureName;
+}
+
 
 
 /******************** CONVERT TEXTURE TO GREY **********************/
@@ -1857,56 +1974,26 @@ long			pixelSize;
 
 /******************** OGL: CHECK ERROR ********************/
 
-GLenum OGL_CheckError(void)
+GLenum OGL_CheckError_Impl(const char* file, const int line)
 {
-GLenum	err;
-AGLContext agl_ctx = gAGLContext;
-GLint	errPos;
-GLubyte		*errString;
-
-	err = glGetError();
-	if (err != GL_NO_ERROR)
+	GLenum error = glGetError();
+	if (error != 0)
 	{
-		switch(err)
+		const char* text;
+		switch (error)
 		{
-			case	GL_INVALID_ENUM:
-					DoAlert("OGL_CheckError: GL_INVALID_ENUM");
-					break;
-
-			case	GL_INVALID_VALUE:
-					DoAlert("OGL_CheckError: GL_INVALID_VALUE");
-					break;
-
-			case	GL_INVALID_OPERATION:
-					DoAlert("OGL_CheckError: GL_INVALID_OPERATION");
-
-					glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);			// find error position
-
-					errString = (GLubyte *)glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-
-					DoAlert(errString);
-
-					break;
-
-			case	GL_STACK_OVERFLOW:
-					DoAlert("OGL_CheckError: GL_STACK_OVERFLOW");
-					break;
-
-			case	GL_STACK_UNDERFLOW:
-					DoAlert("OGL_CheckError: GL_STACK_UNDERFLOW");
-					break;
-
-			case	GL_OUT_OF_MEMORY:
-					DoAlert("OGL_CheckError: GL_OUT_OF_MEMORY  (increase your Virtual Memory setting!)");
-					break;
-
+			case	GL_INVALID_ENUM:		text = "invalid enum"; break;
+			case	GL_INVALID_VALUE:		text = "invalid value"; break;
+			case	GL_INVALID_OPERATION:	text = "invalid operation"; break;
+			case	GL_STACK_OVERFLOW:		text = "stack overflow"; break;
+			case	GL_STACK_UNDERFLOW:		text = "stack underflow"; break;
 			default:
-					DoAlert("OGL_CheckError: some other error");
-					ShowSystemErr_NonFatal(err);
+				text = "";
 		}
-	}
 
-	return(err);
+		DoFatalAlert("OpenGL error 0x%x (%s)\nin %s:%d", error, text, file, line);
+	}
+	return error;
 }
 
 
@@ -2367,13 +2454,12 @@ static void OGL_InitVertexArrayMemory(void)
 AGLContext agl_ctx = gAGLContext;
 short	i;
 
-
 	if (gVARMemoryAllocated)
 		DoFatalAlert("OGL_InitVertexArrayMemory: memory already allocated.");
 
 		/* GENERATE VERTEX ARRAY OBJECTS */
 
-	IMPME;
+	SOFTIMPME;
 #if 0
 	glGenVertexArraysAPPLE(NUM_VERTEX_ARRAY_RANGES, &gVertexArrayRangeObjects[0]);
 #endif
@@ -2718,7 +2804,7 @@ Boolean	cached;
 
 update_it:
 
-		IMPME;
+		SOFTIMPME;
 #if 0
 		glBindVertexArrayAPPLE(gVertexArrayRangeObjects[i]);
 #endif

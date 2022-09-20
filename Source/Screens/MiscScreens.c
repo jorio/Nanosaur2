@@ -57,7 +57,7 @@ static	Boolean		gDontShowDemoQuit = false;
 // If showAndBail == true, then show it and bail out
 //
 
-void DisplayPicture(FSSpec *spec)
+void DisplayPicture(const char* path)
 {
 OGLSetupInputType	viewDef;
 float	timeout = 40.0f;
@@ -71,8 +71,8 @@ float	timeout = 40.0f;
 
 	viewDef.camera.hither 			= 10;
 	viewDef.camera.yon 				= 3000;
-	viewDef.view.clearColor.r 		= 0;
-	viewDef.view.clearColor.g 		= 0;
+	viewDef.view.clearColor.r 		= 1;
+	viewDef.view.clearColor.g 		= 1;
 	viewDef.view.clearColor.b		= 0;
 	viewDef.styles.useFog			= false;
 
@@ -82,7 +82,7 @@ float	timeout = 40.0f;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, spec);
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, path);
 	if (!gBackgoundPicture)
 		DoFatalAlert("DisplayPicture: MO_CreateNewObjectOfType failed");
 
@@ -148,14 +148,8 @@ static void DisplayPicture_Draw(OGLSetupOutputType *info)
 
 void DoLegalScreen(void)
 {
-FSSpec	spec;
-
 	GammaFadeOut();
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:legal.gif", &spec);
-
-	DisplayPicture(&spec);
-
+	DisplayPicture(":images:legal.gif");
 }
 
 

@@ -2,25 +2,9 @@
 // miscscreens.h
 //
 
+#pragma once
 
-
-
-#define	NUM_SCORES		15
-#define	MAX_NAME_LENGTH	15
-
-#define	SCORE_TEXT_SPACING	15.0f
-#define	SCORE_DIGITS		9
-
-
-typedef struct
-{
-	unsigned char	name[MAX_NAME_LENGTH+1];
-	unsigned long	score;
-}HighScoreType;
-
-#define	DARKEN_PANE_Z	450.0f
-
-void DisplayPicture(FSSpec *spec);
+void DisplayPicture(const char* path);
 void DoPaused(void);
 
 void DoLegalScreen(void);
@@ -29,9 +13,6 @@ void DoGameOptionsDialog(void);
 
 
 void DrawLoading(float percent);
-
-void DoDemoExpiredScreen(void);
-void ShowDemoQuitScreen(void);
 
 
 		/* MAIN MENU */
@@ -98,13 +79,3 @@ void DoLevelIntroScreen(Byte mode);
 	/* WIN SCREEN */
 
 void DoWinScreen(void);
-
-
-
-
-
-
-
-
-
-

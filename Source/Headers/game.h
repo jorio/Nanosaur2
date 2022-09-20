@@ -12,6 +12,7 @@
 #include <Pomme.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_opengl_glext.h>
 #include <GL/glu.h> //---TEMP
 
 typedef void* AGLContext;
@@ -81,3 +82,6 @@ typedef float CGGammaValue;
 
 #define IMPME DoFatalAlert("IMPLEMENT ME in %s", __func__)
 #define SOFTIMPME printf("soft IMPLEMENT ME in %s\n", __func__)
+
+#define GAME_ASSERT(condition) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, #condition); } while(0)
+#define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)

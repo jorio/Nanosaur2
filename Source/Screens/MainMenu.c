@@ -192,9 +192,7 @@ again:
 	else
 	if (gDoCredits)
 	{
-		FSSpec	spec;
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:Credits", &spec);
-		DisplayPicture(&spec);
+		DisplayPicture(":images:credits");
 		goto again;
 	}
 }
@@ -286,8 +284,7 @@ int					i;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":images:menuback.jpg", &spec);
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, &spec);
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (u_long)gGameViewInfoPtr, ":images:menuback.jpg");
 
 
 

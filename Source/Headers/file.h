@@ -154,14 +154,7 @@ void DecompressJPEGToGWorld(ImageDescriptionHandle imageDesc, Ptr compressedData
 void LoadLevelArt(OGLSetupOutputType *setupInfo);
 
 
+Ptr LoadDataFile(const char* path, long* outLength);
+char* LoadTextFile(const char* path, long* outLength);
 
-
-
-
-
-
-
-
-
-
-
+char* CSVIterator(char** csvCursor, bool* eolOut);

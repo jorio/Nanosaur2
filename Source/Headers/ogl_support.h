@@ -307,9 +307,11 @@ void OGL_Camera_SetPlacementAndUpdateMatrices(OGLSetupOutputType *setupInfo, int
 void OGL_Texture_SetOpenGLTexture(GLuint textureName);
 GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat,
 							GLint srcFormat, GLint dataType, Boolean textureInRAM);
+GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight);
 void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, u_long *pixels);
 GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel);
-GLenum OGL_CheckError(void);
+GLenum OGL_CheckError_Impl(const char* file, int line);
+#define OGL_CheckError() OGL_CheckError_Impl(__FILE__, __LINE__)
 void OGL_GetCurrentViewport(const OGLSetupOutputType *setupInfo, int *x, int *y, int *w, int *h, Byte whichPane);
 
 void OGL_PushState(void);

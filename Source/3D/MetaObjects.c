@@ -37,7 +37,7 @@ static void MO_DetachFromLinkedList(MetaObjectPtr obj);
 static void MO_DisposeObject_Group(MOGroupObject *group);
 static void MO_DeleteObjectInfo_Material(MOMaterialObject *obj);
 static void MO_CalcBoundingBox_Recurse(MetaObjectPtr object, OGLBoundingBox *bBox, const OGLMatrix4x4 *m);
-static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, FSSpec *inData);
+static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, const char* path);
 static void MO_DeleteObjectInfo_Picture(MOPictureObject *obj);
 
 static void SetMetaObjectToSprite(MOSpriteObject *spriteObj, OGLSetupOutputType *setupInfo, MOSpriteSetupData *inData);
@@ -353,9 +353,39 @@ static void SetMetaObjectToMatrix(MOMatrixObject *matObj, OGLMatrix4x4 *inData)
 // This takes the given input data and copies it.
 //
 
-static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, FSSpec *inData)
+static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, const char* path)
 {
-	IMPME;
+	int			width,height;
+	MOPictureData	*picData = &pictObj->objectData;
+	MOMaterialData	matData;
+
+	/* LOAD PICTURE FILE */
+
+	GLuint textureName = OGL_TextureMap_LoadImageFile(path, &width, &height);
+	OGL_CheckError();
+
+	puts(path);
+
+	/***************************/
+	/* CREATE A TEXTURE OBJECT */
+	/***************************/
+
+//	matData.drawContext		= gAGLContext;
+	matData.setupInfo		= setupInfo;
+	matData.flags			= BG3D_MATERIALFLAG_TEXTURED|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_CLAMP_V;
+	matData.diffuseColor	= (OGLColorRGBA) {1,1,1,1};
+	matData.numMipmaps		= 1;
+	matData.width			= width;
+	matData.height			= height;
+	matData.pixelSrcFormat	= GL_RGBA;
+	matData.pixelDstFormat 	= GL_RGBA;//destPixelFormat;
+	matData.texturePixels[0]= nil;						// we're going to preload
+	matData.textureName[0]	= textureName;
+
+	picData->material		= MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);
+	OGL_CheckError();
+
+
 #if 0
 GWorldPtr	gworld;
 int			width,height,depth,cellNum,numCells;
@@ -1290,65 +1320,41 @@ long			numCellsW, numCellsH;
 float			cellWidth, cellHeight, ratio, offset;
 AGLContext agl_ctx = setupInfo->drawContext;
 
-
 	OGL_PushState();
 
 			/* SET STATE */
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);	// no filtering!
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	SetInfobarSpriteState(-5);
-
-
 
 			/* GET DIMENSIONAL DATA */
 
-	numCellsW = picData->numCellsWide;
-	numCellsH = picData->numCellsHigh;
-
-	cellWidth = 640.0f / (float)numCellsW;
-	cellHeight = 480.0f / (float)numCellsH;
+	cellWidth = 640.0f;
+	cellHeight = 480.0f;
 
 			/* CENTER VERTICALLY */
 
-	ratio = (float)picData->fullHeight / (float)picData->fullWidth;
-	offset = gCurrentPaneAspectRatio / ratio - 1.0f;
-	y = 240.0f * offset;
-
-	i = 0;
+//	ratio = (float)picData->fullHeight / (float)picData->fullWidth;
+//	offset = gCurrentAspectRatio / ratio - 1.0f;
+	y = 0; //240.0f * offset;
+	x = 0;
 	z = 0;
 
-	for (row = 0; row < numCellsH; row++)
-	{
-		x = 0;
+			/* ACTIVATE THE MATERIAL */
 
-		for (col = 0; col < numCellsW; col++)
-		{
-					/* ACTIVATE THE MATERIAL */
+	MO_DrawMaterial(picData->material, setupInfo);		// submit material #0
 
-			MO_DrawMaterial(picData->materials[i++], setupInfo);		// submit material #0
+	glBegin(GL_QUADS);
+	glTexCoord2f(0,1);	glVertex3f(x, y + cellHeight,z);
+	glTexCoord2f(1,1);	glVertex3f(x + cellWidth, y + cellHeight,z);
+	glTexCoord2f(1,0);	glVertex3f(x + cellWidth, y,z);
+	glTexCoord2f(0,0);	glVertex3f(x, y, z);
+	glEnd();
 
-			glBegin(GL_QUADS);
-			glTexCoord2f(0,0);	glVertex3f(x, y + cellHeight,z);
-			glTexCoord2f(1,0);	glVertex3f(x + cellWidth, y + cellHeight,z);
-			glTexCoord2f(1,1);	glVertex3f(x + cellWidth, y,z);
-			glTexCoord2f(0,1);	glVertex3f(x, y, z);
-			glEnd();
-
-			x += cellWidth;
-			gPolysThisFrame += 2;										// 2 more triangles
-		}
-		y += cellHeight;
-
-	}
+	gPolysThisFrame += 2;										// 2 more triangles
 
 			/* RESTORE STATE */
 
 	OGL_PopState();
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 /************************ MO: DRAW SPRITE **************************/
@@ -1723,6 +1729,10 @@ int		numCells,i;
 
 				/* DEREFERENCE THE MATERIALS */
 
+#if 1
+	MO_DisposeObjectReference(data->material);
+	data->material = nil;
+#else
 	numCells = data->numCellsWide * data->numCellsHigh;
 	for (i = 0; i < numCells; i++)
 		MO_DisposeObjectReference(data->materials[i]);		// dispose of this object's ref
@@ -1731,6 +1741,7 @@ int		numCells,i;
 
 	SafeDisposePtr((Ptr)data->materials);
 	data->materials = nil;
+#endif
 }
 
 

@@ -33,7 +33,8 @@ long	gRAMAlloced = 0;
 
 uint32_t 	gSeed0 = 0, gSeed1 = 0, gSeed2 = 0;
 
-float	gFramesPerSecond, gFramesPerSecondFrac;
+float	gFramesPerSecond = DEFAULT_FPS;
+float	gFramesPerSecondFrac = 1.0f / DEFAULT_FPS;
 
 int		gNumPointers = 0;
 
@@ -689,8 +690,8 @@ unsigned long deltaTime;
 #else
 AbsoluteTime currTime,deltaTime;
 static AbsoluteTime time = {0,0};
+Nanoseconds	nano;
 #endif
-//Nanoseconds	nano;
 float		fps;
 
 int				i;
@@ -708,19 +709,22 @@ wait:
 		Microseconds(&currTime);
 		deltaTime = currTime.lo - time.lo;
 
-		gFramesPerSecond = 1000000.0f / deltaTime;
+		if (deltaTime == 0)
+		{
+			fps = DEFAULT_FPS;
+		}
+		else
+		{
+			fps = 1000000.0f / deltaTime;
 
-		if (gFramesPerSecond < DEFAULT_FPS)			// (avoid divide by 0's later)
-			gFramesPerSecond = DEFAULT_FPS;
+			if (fps < DEFAULT_FPS)					// (avoid divide by 0's later)
+				fps = DEFAULT_FPS;
+		}
 
 #if _DEBUG
 		if (GetKeyState(SDL_SCANCODE_KP_PLUS))		// debug speed-up with KP_PLUS
-			gFramesPerSecond = DEFAULT_FPS;
+			fps = DEFAULT_FPS;
 #endif
-
-		gFramesPerSecondFrac = 1.0f/gFramesPerSecond;		// calc fractional for multiplication
-
-		time = currTime;	// reset for next time interval
 #else
 		currTime = UpTime();
 

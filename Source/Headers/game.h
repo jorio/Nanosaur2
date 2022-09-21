@@ -69,7 +69,7 @@ typedef float CGGammaValue;
 #include "fences.h"
 #include "splineitems.h"
 #include "items.h"
-#include "windows.h"
+#include "window.h"
 #include "enemy.h"
 #include "water.h"
 #include "miscscreens.h"

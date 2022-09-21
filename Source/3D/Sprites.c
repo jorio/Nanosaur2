@@ -626,7 +626,7 @@ float				scale,x;
 
 	newObj->NumStringSprites = 0;											// no sprites in there yet
 
-	len = s[0];																// get length of string
+	len = strlen(s);														// get length of string
 	if (len > 31)
 		DoFatalAlert("MakeFontStringObject: string > 31 characters!");
 
@@ -646,7 +646,7 @@ float				scale,x;
 			/* MAKE SPRITE META-OBJECTS */
 			/****************************/
 
-	for (i = 1; i <= len; i++)
+	for (i = 0; i <= len; i++)
 	{
 		letter = s[i];
 
@@ -809,12 +809,10 @@ int CharToSprite(char c)
 
 float GetStringWidth(const char* s, float scale)
 {
-int		i;
 float	w = 0;
 
-	for (i = 1; i <= s[0]; i++)
-		w += GetCharSpacing(s[i], scale);
-
+	for (; *s; s++)
+		w += GetCharSpacing(*s, scale);
 
 	return(w);
 }

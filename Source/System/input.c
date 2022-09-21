@@ -325,6 +325,7 @@ void UpdateInput(void)
 {
 float	analog, mouseDX, mouseDY;
 
+
 	UpdateKeyMap();												// always read real keyboard anyway via GetKeys()
 	UpdateMouseDeltas();							// get mouse deltas
 
@@ -334,7 +335,7 @@ float	analog, mouseDX, mouseDY;
 			/****************************************/
 
 	SOFTIMPME; //	PollAllHIDInputNeeds();
-
+	SDL_PumpEvents();		//------------------TODO: Remove me
 
 
 			/****************************/
@@ -3093,9 +3094,10 @@ EventRecord   theEvent;
 
 		FlushEvents(everyEvent, 0);							// keep the event queue flushed of other key events and stuff		
 	}
-	
+#endif
+
 		/* WHILE WE'RE HERE UPDATE THE MOUSE BUTTON STATE */
-	
+
 	if (Button())											// is mouse button down?
 	{
 		if (!gMouseButtonState)								// is this a new click?
@@ -3107,8 +3109,6 @@ EventRecord   theEvent;
 	{
 		gMouseButtonState = gMouseNewButtonState = false;	
 	}
-
-#endif
 }
 
 

@@ -1032,6 +1032,10 @@ SoundHeaderPtr   sndPtr;
 #endif
 
 
+	printf("TODO: Play effect %d\n", effectNum);
+	SOFTIMPME;
+	return -1;
+
 
 			/* GET BANK & SOUND #'S FROM TABLE */
 

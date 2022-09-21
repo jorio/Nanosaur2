@@ -374,7 +374,7 @@ short	numDecomp, i;
 #if 0
 		glDeleteFencesAPPLE(1, &skeletonData->oglFence);
 #endif
-		skeletonData->oglFence = nil;
+		skeletonData->oglFence = 0;
 		skeletonData->oglFenceIsActive = false;
 	}
 

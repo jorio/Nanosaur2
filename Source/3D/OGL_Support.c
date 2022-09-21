@@ -775,7 +775,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DrawScene(OGLSetupOutputType *setupInfo, void (*drawRoutine)(OGLSetupOutputType *))
 {
-int	x,y,w,h;
 AGLContext agl_ctx = setupInfo->drawContext;
 
 
@@ -907,6 +906,7 @@ do_anaglyph:
 
 						/* SET SPLIT-SCREEN VIEWPORT */
 
+		int	x,y,w,h;
 		OGL_GetCurrentViewport(setupInfo, &x, &y, &w, &h, gCurrentSplitScreenPane);
 		glViewport(x,y, w, h);
 		gCurrentPaneAspectRatio = (float)h/(float)w;
@@ -2361,7 +2361,7 @@ AGLContext agl_ctx = gAGLContext;
 
 /**************** OGL_DRAW STRING ********************/
 
-void OGL_DrawString(Str255 s, GLint x, GLint y)
+void OGL_DrawString(const char* s, GLint x, GLint y)
 {
 
 AGLContext agl_ctx = gAGLContext;
@@ -2391,12 +2391,14 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DrawFloat(float f, GLint x, GLint y)
 {
+	SOFTIMPME;
 
+#if 0
 Str255	s;
 
 	FloatToString(f,s);
 	OGL_DrawString(s,x,y);
-
+#endif
 }
 
 
@@ -2539,7 +2541,6 @@ void *OGL_AllocVertexArrayMemory(long size, Byte type)
 {
 VertexArrayMemoryNode	*scanNode, *newNode;
 Ptr			prevEndPtr;
-long		freeSpace;
 
 	if (type >= VERTEX_ARRAY_RANGE_TYPE_USER1)						// can't allocate memory for the "User" Types
 		DoFatalAlert("OGL_AllocVertexArrayMemory: illegal type");
@@ -2583,7 +2584,7 @@ long		freeSpace;
 	prevEndPtr = gVertexArrayMemoryBlock[type] - 1;					// pretend like a node ended before the master block
 	do
 	{
-		freeSpace = (int)scanNode->pointer - (int)prevEndPtr - 1;	// how much memory is between these nodes?
+		ptrdiff_t freeSpace = scanNode->pointer - prevEndPtr - 1;	// how much memory is between these nodes?
 		if (freeSpace >= size)										// is this big enough for us?
 		{
 				/* INSERT A NEW NODE BEFORE THE CURRENT ONE */

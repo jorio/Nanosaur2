@@ -52,7 +52,7 @@ typedef struct
 	float	dx,dy;
 	float	drot;
 	float	delayUntilEffect;
-	Str63	narrationFile;
+	const char*	narrationFile;
 }SlideType;
 
 #define	ZoomSpeed			SpecialF[0]

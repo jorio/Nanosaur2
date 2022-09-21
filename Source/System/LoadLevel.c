@@ -26,7 +26,7 @@
 /*     VARIABLES      */
 /**********************/
 
-static const Str63	terrainFiles[NUM_LEVELS] =
+static const char*	terrainFiles[NUM_LEVELS] =
 {
 	":terrain:Level1.ter",
 	":terrain:Level2.ter",
@@ -40,7 +40,7 @@ static const Str63	terrainFiles[NUM_LEVELS] =
 	":terrain:flag2.ter",
 };
 
-static const Str63	levelModelFiles[NUM_LEVELS] =
+static const char*	levelModelFiles[NUM_LEVELS] =
 {
 	":models:Level1.bg3d",
 	":models:Level2.bg3d",
@@ -55,7 +55,7 @@ static const Str63	levelModelFiles[NUM_LEVELS] =
 
 };
 
-static const Str63	levelSpriteFiles[NUM_LEVELS] =
+static const char*	levelSpriteFiles[NUM_LEVELS] =
 {
 	":sprites:Level1.sprites",
 	":sprites:Level2.sprites",
@@ -68,23 +68,6 @@ static const Str63	levelSpriteFiles[NUM_LEVELS] =
 	":sprites:Level3.sprites",			// flag 1:  swamp
 	":sprites:Level1.sprites",			// flag 2:  forest
 };
-
-#if 0
-static const Str63	levelSoundFiles[NUM_LEVELS] =
-{
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-	":Audio:Garden.sounds",
-};
-#endif
-
 
 
 /************************** LOAD LEVEL ART ***************************/

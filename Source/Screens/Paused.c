@@ -128,7 +128,7 @@ ObjNode	*newObj;
 float	aspectRatio;
 int		px,py,pw,ph;
 
-static const Str31 names[MAX_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
+static const char* names[MAX_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 {
 	{												// ENGLISH
 		"RESUME",

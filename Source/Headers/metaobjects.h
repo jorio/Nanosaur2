@@ -36,10 +36,10 @@ enum
 
 struct MetaObjectHeader
 {
-	uint32_t		cookie;						// this value should always == MO_COOKIE
+	uint32_t	cookie;						// this value should always == MO_COOKIE
 	long		refCount;					// # times this is referenced
-	uint32_t		type;						// object type
-	uint32_t		subType;					// object sub-type
+	uint32_t	type;						// object type
+	intptr_t	subType;					// object sub-type
 	void		*data;						// pointer to meta object's specific data
 
 	struct MetaObjectHeader *parentGroup;			// illegal reference to parent group, or nil if no parent
@@ -222,7 +222,7 @@ typedef struct
 //-----------------------------
 
 void MO_InitHandler(void);
-MetaObjectPtr MO_CreateNewObjectOfType(uint32_t type, void* subType, void *data);
+MetaObjectPtr MO_CreateNewObjectOfType(uint32_t type, intptr_t subType, void *data);
 MetaObjectPtr MO_GetNewReference(MetaObjectPtr mo);
 void MO_AppendToGroup(MOGroupObject *group, MetaObjectPtr newObject);
 void MO_AttachToGroupStart(MOGroupObject *group, MetaObjectPtr newObject);

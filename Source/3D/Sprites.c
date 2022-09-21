@@ -108,7 +108,7 @@ MOMaterialData	matData;
 		/* READ # SPRITES IN THIS FILE */
 
 	count = sizeof(int32_t);
-	FSRead(refNum, &count, &gNumSpritesInGroupList[groupNum]);
+	FSRead(refNum, &count, (Ptr) &gNumSpritesInGroupList[groupNum]);
 
 	gNumSpritesInGroupList[groupNum] = SwizzleLong(&gNumSpritesInGroupList[groupNum]);
 
@@ -132,15 +132,15 @@ MOMaterialData	matData;
 			/* READ WIDTH/HEIGHT, ASPECT RATIO */
 
 		count = sizeof(int32_t);
-		FSRead(refNum, &count, &gSpriteGroupList[groupNum][i].width);
+		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].width);
 		gSpriteGroupList[groupNum][i].width = SwizzleLong(&gSpriteGroupList[groupNum][i].width);
 
 		count = sizeof(int32_t);
-		FSRead(refNum, &count, &gSpriteGroupList[groupNum][i].height);
+		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].height);
 		gSpriteGroupList[groupNum][i].height = SwizzleLong(&gSpriteGroupList[groupNum][i].height);
 
 		count = sizeof(float);
-		FSRead(refNum, &count, &gSpriteGroupList[groupNum][i].aspectRatio);
+		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].aspectRatio);
 		gSpriteGroupList[groupNum][i].aspectRatio = SwizzleFloat(&gSpriteGroupList[groupNum][i].aspectRatio);
 
 		w = gSpriteGroupList[groupNum][i].width;
@@ -150,7 +150,7 @@ MOMaterialData	matData;
 				/* READ HAS-ALPHA FLAG */
 
 		count = sizeof(hasAlpha);
-		FSRead(refNum, &count, &hasAlpha);
+		FSRead(refNum, &count, (Ptr) &hasAlpha);
 		hasAlpha = SwizzleULong(&hasAlpha);
 
 
@@ -173,7 +173,7 @@ MOMaterialData	matData;
 				/* READ JPEG DATA SIZE */
 
 			count = sizeof(dataSize);
-			FSRead(refNum, &count, &dataSize);
+			FSRead(refNum, &count, (Ptr) &dataSize);
 			dataSize = SwizzleLong(&dataSize);			// swizzle
 			printf("%d\n", dataSize);
 
@@ -255,7 +255,7 @@ MOMaterialData	matData;
 
 				alphaBuffer = AllocPtr(count);						// alloc buffer for alpha channel
 
-				FSRead(refNum, &count, alphaBuffer);				// read alpha channel
+				FSRead(refNum, &count, (Ptr) alphaBuffer);			// read alpha channel
 
 				for (j = 0; j < count; j++)
 				{
@@ -431,7 +431,7 @@ MOSpriteSetupData	spriteData;
 	spriteData.type 		= newObjDef->type;								// set group subtype
 	spriteData.drawCentered = drawCentered;
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("MakeSpriteObject: MO_CreateNewObjectOfType failed!");
 
@@ -473,7 +473,7 @@ MOSpriteObject		*spriteMO;
 	spriteData.group	= theNode->Group;							// set group
 	spriteData.type 	= type;										// set group subtype
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("ModifySpriteObjectFrame: MO_CreateNewObjectOfType failed!");
 
@@ -606,7 +606,7 @@ AGLContext agl_ctx = setupInfo->drawContext;
 
 /************* MAKE FONT STRING OBJECT *************/
 
-ObjNode *MakeFontStringObject(const Str31 s, NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean center)
+ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean center)
 {
 ObjNode				*newObj;
 MOSpriteObject		*spriteMO;
@@ -659,7 +659,7 @@ float				scale,x;
 
 		spriteData.drawCentered = center;
 
-		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, setupInfo, &spriteData);
+		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
 		if (!spriteMO)
 			DoFatalAlert("MakeFontStringObject: MO_CreateNewObjectOfType failed!");
 
@@ -807,7 +807,7 @@ int CharToSprite(char c)
 
 /***************** GET STRING WIDTH *************************/
 
-float GetStringWidth(const u_char *s, float scale)
+float GetStringWidth(const char* s, float scale)
 {
 int		i;
 float	w = 0;

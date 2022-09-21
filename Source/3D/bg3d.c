@@ -181,7 +181,7 @@ long			count;
 
 	count = sizeof(BG3DHeaderType);
 
-	if (FSRead(refNum, &count, &headerData) != noErr)
+	if (FSRead(refNum, &count, (Ptr) &headerData) != noErr)
 		DoFatalAlert("ReadBG3DHeader: FSRead failed");
 
 			/* VERIFY FILE */
@@ -210,7 +210,7 @@ MetaObjectPtr 	newObj;
 			/* READ A TAG */
 
 		count = sizeof(tag);
-		if (FSRead(refNum, &count, &tag) != noErr)
+		if (FSRead(refNum, &count, (Ptr) &tag) != noErr)
 			DoFatalAlert("ParseBG3DFile: FSRead failed");
 
 		tag = SwizzleULong(&tag);
@@ -302,7 +302,7 @@ uint32_t				flags;
 			/* READ FLAGS */
 
 	count = sizeof(flags);
-	if (FSRead(refNum, &count, &flags) != noErr)
+	if (FSRead(refNum, &count, (Ptr) &flags) != noErr)
 		DoFatalAlert("ReadMaterialFlags: FSRead failed");
 
 	flags = SwizzleULong(&flags);
@@ -349,7 +349,7 @@ MOMaterialData	*data;
 			/* READ COLOR VALUE */
 
 	count = sizeof(GLfloat) * 4;
-	if (FSRead(refNum, &count, color) != noErr)
+	if (FSRead(refNum, &count, (Ptr) color) != noErr)
 		DoFatalAlert("ReadMaterialDiffuseColor: FSRead failed");
 
 	color[0] = SwizzleFloat(&color[0]);
@@ -395,7 +395,7 @@ MOMaterialData	*data;
 			/***********************/
 
 	count = sizeof(textureHeader);
-	FSRead(refNum, &count, &textureHeader);		// read header
+	FSRead(refNum, &count, (Ptr) &textureHeader);		// read header
 
 	textureHeader.width			= SwizzleULong(&textureHeader.width);
 	textureHeader.height		= SwizzleULong(&textureHeader.height);
@@ -476,7 +476,7 @@ Boolean					hasAlpha;
 			/***********************/
 
 	count = sizeof(textureHeader);
-	FSRead(refNum, &count, &textureHeader);					// read header
+	FSRead(refNum, &count, (Ptr) &textureHeader);					// read header
 
 	textureHeader.width			= SwizzleULong(&textureHeader.width);
 	textureHeader.height		= SwizzleULong(&textureHeader.height);
@@ -678,7 +678,7 @@ MetaObjectPtr		newObj;
 			/* READ GEOMETRY HEADER */
 
 	count = sizeof(BG3DGeometryHeader);
-	FSRead(refNum, &count, &geoHeader);		// read header
+	FSRead(refNum, &count, (Ptr) &geoHeader);		// read header
 
 	geoHeader.type = SwizzleULong(&geoHeader.type);
 	geoHeader.numMaterials = SwizzleLong(&geoHeader.numMaterials);
@@ -790,7 +790,7 @@ OGLPoint3D			*pointList;
 	else
 		pointList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
-	FSRead(refNum, &count, pointList);								// read the data
+	FSRead(refNum, &count, (Ptr) pointList);								// read the data
 
 	for (i = 0; i < numPoints; i++)						// swizzle
 	{
@@ -823,7 +823,7 @@ OGLVector3D			*normalList;
 	else
 		normalList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
-	FSRead(refNum, &count, normalList);								// read the data
+	FSRead(refNum, &count, (Ptr) normalList);								// read the data
 
 	for (i = 0; i < numPoints; i++)						// swizzle
 	{
@@ -855,7 +855,7 @@ OGLTextureCoord		*uvList;
 	else
 		uvList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
-	FSRead(refNum, &count, uvList);									// read the data
+	FSRead(refNum, &count, (Ptr) uvList);								// read the data
 
 	for (i = 0; i < numPoints; i++)						// swizzle
 	{
@@ -885,7 +885,7 @@ OGLColorRGBA		*colorsF;
 
 	count = sizeof(OGLColorRGBA_Byte) * numPoints;					// calc size of data to read
 	colorList = AllocPtr(count);									// alloc buffer to read into
-	FSRead(refNum, &count, colorList);								// read the data
+	FSRead(refNum, &count, (Ptr) colorList);						// read the data
 
 
 
@@ -931,7 +931,7 @@ MOTriangleIndecies	*triList;
 	else
 		triList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
-	FSRead(refNum, &count, triList);								// read the data
+	FSRead(refNum, &count, (Ptr) triList);								// read the data
 
 
 	for (i = 0; i < numTriangles; i++)							//	swizzle
@@ -957,7 +957,7 @@ MOVertexArrayData	*data;
 
 	count = sizeof(OGLBoundingBox);									// calc size of data to read
 
-	FSRead(refNum, &count, &data->bBox);							// read the bbox data directly into geometry header
+	FSRead(refNum, &count, (Ptr) &data->bBox);						// read the bbox data directly into geometry header
 
 	data->bBox.min.x = SwizzleFloat(&data->bBox.min.x);
 	data->bBox.min.y = SwizzleFloat(&data->bBox.min.y);
@@ -966,8 +966,6 @@ MOVertexArrayData	*data;
 	data->bBox.max.x = SwizzleFloat(&data->bBox.max.x);
 	data->bBox.max.y = SwizzleFloat(&data->bBox.max.y);
 	data->bBox.max.z = SwizzleFloat(&data->bBox.max.z);
-
-
 }
 
 

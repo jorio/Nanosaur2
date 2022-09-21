@@ -189,7 +189,7 @@ void ChangeChannelRate(short channel, long rateMult);
 Boolean StopAChannelIfEffectNum(short *channelNum, short effectNum);
 
 
-void StreamAudioFile(Str255 filename, short streamNum, float volumeTweak, Boolean playNow);
+void StreamAudioFile(const char* filename, short streamNum, float volumeTweak, Boolean playNow);
 void KillAudioStream(short streamNum);
 void StartAudioStream(short streamNum);
 

@@ -251,7 +251,7 @@ SkeletonObjDataType	*currentSkelObjData;
 
 			/* TOGGLE VERTEX ARRAY DOUBLE-BUFFER */
 
-	theNode->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_SKELETONS + gGameViewInfoPtr->frameCount & 1;
+	theNode->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_SKELETONS + (gGameViewInfoPtr->frameCount & 1);
 
 
 				/* INIT BBOX */
@@ -320,7 +320,6 @@ float						newX,newY,newZ;
 SkeletonObjDataType			*currentSkelObjData = gCurrentSkelObjData;
 const SkeletonDefType		*currentSkeleton = gCurrentSkeleton;
 OGLMatrix4x4				*matPtr;
-float						x,y,z;
 const MOVertexArrayData		*localTriMeshes;
 Byte						buffNum;
 const u_short						*normalIndexList, *pointIndexList;
@@ -383,9 +382,9 @@ const DecomposedPointType	*decomposedPointList;
 	{
 		i = normalIndexList[p];												// get index to normal in gDecomposedNormalsList
 
-		x = decomposedNormalsList[i].x;										// get xyz of normal
-		y = decomposedNormalsList[i].y;
-		z = decomposedNormalsList[i].z;
+		float x = decomposedNormalsList[i].x;								// get xyz of normal
+		float y = decomposedNormalsList[i].y;
+		float z = decomposedNormalsList[i].z;
 
 		gTransformedNormals[i].x = (m00*x) + (m10*y) + (m20*z);					// transform the normal
 		gTransformedNormals[i].y = (m01*x) + (m11*y) + (m21*z);

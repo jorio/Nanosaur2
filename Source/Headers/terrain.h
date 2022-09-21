@@ -139,7 +139,7 @@ void SetTerrainScale(int polygonSize);
 void CreateSuperTileMemoryList(OGLSetupOutputType *setupInfo);
 void DisposeSuperTileMemoryList(void);
 extern 	void DisposeTerrain(void);
-extern	void GetSuperTileInfo(long x, long z, long *superCol, long *superRow, long *tileCol, long *tileRow);
+void GetSuperTileInfo(long x, long z, int *superCol, int *superRow, int *tileCol, int *tileRow);
 extern	void InitTerrainManager(void);
 float	GetTerrainY(float x, float z);
 float	GetMinTerrainY(float x, float z, short group, short type, float scale);

@@ -1415,8 +1415,10 @@ SCStatus	theStatus;
 
 /******************** STREAM AUDIO FILE ***********************/
 
-void StreamAudioFile(Str255 filename, short streamNum, float volumeTweak, Boolean playNow)
+void StreamAudioFile(const char* filename, short streamNum, float volumeTweak, Boolean playNow)
 {
+	SOFTIMPME;
+	printf("Stream: %s\n", filename);
 	return;
 OSErr 	iErr;
 short	myRefNum;

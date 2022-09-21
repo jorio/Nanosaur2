@@ -184,8 +184,8 @@ static void SetupMainMenuScreen(void)
 {
 FSSpec				spec;
 OGLSetupInputType	viewDef;
-const static OGLVector3D	fillDirection1 = { -.7, .9, -1.0 };
-const static OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
+static const OGLVector3D	fillDirection1 = { -.7, .9, -1.0 };
+static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 int					i;
 
 	gPlayNow 		= false;
@@ -263,7 +263,7 @@ int					i;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, gGameViewInfoPtr, ":images:menuback.jpg");
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (intptr_t) gGameViewInfoPtr, ":images:menuback.jpg");
 
 
 
@@ -334,7 +334,7 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const Str31 names[MAX_LANGUAGES][4] =
+					static const char* names[MAX_LANGUAGES][4] =
 					{
 						{									// ENGLISH
 							"PLAY GAME",
@@ -418,7 +418,7 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const Str31 names[MAX_LANGUAGES][4] =
+					static const char* names[MAX_LANGUAGES][4] =
 					{
 						{												// ENGLISH
 							"ADVENTURE",
@@ -498,7 +498,7 @@ int			language;
 				y = CalcMenuTopY(5);
 				for (i = 0; i < 5; i++)
 				{
-					static const Str31 names[MAX_LANGUAGES][5] =
+					static const char* names[MAX_LANGUAGES][5] =
 					{
 						{														// ENGLISH
 							"STORY",
@@ -586,7 +586,7 @@ int			language;
 				y = CalcMenuTopY(7);
 				for (i = 0; i < 7; i++)
 				{
-					static const Str31 names[MAX_LANGUAGES][7] =
+					static const char* names[MAX_LANGUAGES][7] =
 					{
 						{											// ENGLISH
 							"RACE 1",

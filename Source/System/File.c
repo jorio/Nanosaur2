@@ -50,17 +50,17 @@ typedef struct
 typedef struct
 {
 	NumVersion	version;							// version of file
-	long		numItems;							// # items in map
-	long		mapWidth;							// width of map
-	long		mapHeight;							// height of map
+	int32_t		numItems;							// # items in map
+	int32_t		mapWidth;							// width of map
+	int32_t		mapHeight;							// height of map
 	float		tileSize;							// 3D unit size of a tile
 	float		minY,maxY;							// min/max height values
-	long		numSplines;							// # splines
-	long		numFences;							// # fences
-	long		numUniqueSuperTiles;				// # unique supertile
-	long        numWaterPatches;                    // # water patches
-	long		numCheckpoints;						// # checkpoints
-	long        unused[10];
+	int32_t		numSplines;							// # splines
+	int32_t		numFences;							// # fences
+	int32_t		numUniqueSuperTiles;				// # unique supertile
+	int32_t		numWaterPatches;                    // # water patches
+	int32_t		numCheckpoints;						// # checkpoints
+	int32_t		unused[10];
 }PlayfieldHeaderType;
 
 
@@ -73,7 +73,7 @@ typedef struct
 
 typedef	struct
 {
-	long		x,z;
+	int32_t			x,z;
 }FencePointType;
 
 
@@ -159,7 +159,7 @@ QDErr		iErr;
 short		fRefNum;
 FSSpec		fsSpec;
 SkeletonDefType	*skeleton;
-const Str63	fileNames[MAX_SKELETON_TYPES] =
+const char*	fileNames[MAX_SKELETON_TYPES] =
 {
 	":Skeletons:nano.skeleton",
 	":Skeletons:wormhole.skeleton",
@@ -575,7 +575,7 @@ long				count;
 				/* WRITE DATA */
 
 	count = sizeof(PrefsType);
-	FSWrite(refNum, &count, &gGamePrefs);
+	FSWrite(refNum, &count, (Ptr) &gGamePrefs);
 	FSClose(refNum);
 
 
@@ -744,7 +744,7 @@ long				count;
 				/* WRITE DATA */
 
 	count = sizeof(float);
-	FSWrite(refNum, &count, &gDemoVersionTimer);
+	FSWrite(refNum, &count, (Ptr) &gDemoVersionTimer);
 	FSClose(refNum);
 }
 
@@ -786,7 +786,6 @@ Handle					hand;
 PlayfieldHeaderType		**header;
 long					row,col,j,i,size, texSize;
 float					yScale;
-float					*src;
 short					fRefNum;
 OSErr					iErr;
 Ptr						textureBuffer32 = nil;
@@ -890,7 +889,7 @@ Rect					toRect, srcRect;
 		DoAlert("ReadDataFromPlayfieldFile: Error reading height data resource!");
 	else
 	{
-		src = (float *)*hand;
+		float *src = (float *)*hand;
 		for (row = 0; row <= gTerrainTileDepth; row++)
 			for (col = 0; col <= gTerrainTileWidth; col++)
 			{
@@ -1224,7 +1223,8 @@ Rect					toRect, srcRect;
 
 	for (i = 0; i < gNumUniqueSuperTiles; i++)
 	{
-		long					dataSize, descSize;
+		int32_t					dataSize;
+		long					descSize;
 		MOMaterialData			matData;
 		Ptr						tempBuff, imageDataPtr;
 //		ImageDescriptionHandle	imageDescHandle;
@@ -1233,8 +1233,8 @@ Rect					toRect, srcRect;
 
 				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
 
-		size = sizeof(long);
-		iErr = FSRead(fRefNum, &size, &dataSize);
+		size = sizeof(int32_t);
+		iErr = FSRead(fRefNum, &size, (Ptr) &dataSize);
 		if (iErr)
 			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
 
@@ -1694,7 +1694,7 @@ Boolean			success = false;
 				/* READ FROM FILE */
 
 	count = sizeof(SaveGameType);
-	if (FSRead(fRefNum, &count, &saveData) != noErr)
+	if (FSRead(fRefNum, &count, (Ptr) &saveData) != noErr)
 	{
 		DoAlert("Error reading Save file");
 		FSClose(fRefNum);

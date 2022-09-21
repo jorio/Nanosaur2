@@ -179,7 +179,7 @@ MOVertexArrayData	*vaData;
 	switch(objHead->type)
 	{
 		case	MO_TYPE_GEOMETRY:
-				switch(objHead->subType)
+				switch ((int) objHead->subType)
 				{
 					case	MO_GEOMETRY_SUBTYPE_VERTEXARRAY:
 							vaData = &((MOVertexArrayObject *)obj)->objectData;

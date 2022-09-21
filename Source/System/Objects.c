@@ -263,14 +263,7 @@ Byte	group,type;
 
 	if (type >= gNumObjectsInBG3DGroupList[group])							// see if illegal
 	{
-		Str255	s;
-
-		DoAlert("MakeNewDisplayGroupObject: type > gNumObjectsInGroupList[]!");
-
-		NumToString(group, s);
-		DoAlert(s);
-		NumToString(type,s);
-		DoFatalAlert(s);
+		DoFatalAlert("MakeNewDisplayGroupObject: type > gNumObjectsInGroupList[]! group=%d type=%d", group, type);
 	}
 
 	AttachGeometryToDisplayGroupObject(newObj,gBG3DGroupList[group][type]);

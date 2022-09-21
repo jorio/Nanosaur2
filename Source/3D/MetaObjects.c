@@ -15,9 +15,9 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, uint32_t subType);
+static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, intptr_t subType);
 static void SetMetaObjectToGroup(MOGroupObject *groupObj);
-static void SetMetaObjectToGeometry(MetaObjectPtr mo, uint32_t subType, void *data);
+static void SetMetaObjectToGeometry(MetaObjectPtr mo, intptr_t subType, void *data);
 static void SetMetaObjectToMaterial(MOMaterialObject *matObj, MOMaterialData *inData);
 static void SetMetaObjectToVertexArrayGeometry(MOVertexArrayObject *geoObj, MOVertexArrayData *data);
 static void SetMetaObjectToMatrix(MOMatrixObject *matObj, OGLMatrix4x4 *inData);
@@ -76,7 +76,7 @@ void MO_InitHandler(void)
 //
 
 
-MetaObjectPtr	MO_CreateNewObjectOfType(uint32_t type, void* subType, void *data)
+MetaObjectPtr	MO_CreateNewObjectOfType(uint32_t type, intptr_t subType, void *data)
 {
 MetaObjectPtr	mo;
 
@@ -131,7 +131,7 @@ MetaObjectPtr	mo;
 // allocates an empty meta object and connects it to the linked list
 //
 
-static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, uint32_t subType)
+static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, intptr_t subType)
 {
 MetaObjectHeader	*mo;
 int					size;
@@ -245,7 +245,7 @@ static void SetMetaObjectToGroup(MOGroupObject *groupObj)
 // INPUT:	mo = meta object which has already been allocated and added to linked list.
 //
 
-static void SetMetaObjectToGeometry(MetaObjectPtr mo, uint32_t subType, void *data)
+static void SetMetaObjectToGeometry(MetaObjectPtr mo, intptr_t subType, void *data)
 {
 	switch(subType)
 	{

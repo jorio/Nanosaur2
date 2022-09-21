@@ -59,8 +59,10 @@ MOMaterialObject	*gSuperTileTextureObjects[MAX_SUPERTILE_TEXTURES];
 //u_short			**gAttributeGrid = nil;
 
 long			gNumSuperTilesDeep,gNumSuperTilesWide;	  		// dimensions of terrain in terms of supertiles
-static long		gCurrentSuperTileRow[MAX_PLAYERS],gCurrentSuperTileCol[MAX_PLAYERS];
-static long		gPreviousSuperTileCol[MAX_PLAYERS],gPreviousSuperTileRow[MAX_PLAYERS];
+static int		gCurrentSuperTileRow[MAX_PLAYERS];
+static int		gCurrentSuperTileCol[MAX_PLAYERS];
+static int		gPreviousSuperTileCol[MAX_PLAYERS];
+static int		gPreviousSuperTileRow[MAX_PLAYERS];
 
 short			gNumFreeSupertiles = 0;
 SuperTileMemoryType	gSuperTileMemoryList[MAX_SUPERTILES];
@@ -164,11 +166,10 @@ void SetTerrainScale(int polygonSize)
 void InitCurrentScrollSettings(void)
 {
 long	x,y;
-long	dummy1,dummy2;
+int		dummy1,dummy2;
 ObjNode	*obj;
-long	i;
 
-	for (i = 0; i < gNumPlayers; i++)						// init settings for each player in game
+	for (int i = 0; i < gNumPlayers; i++)						// init settings for each player in game
 	{
 		x = gPlayerInfo[i].coord.x-(gSuperTileActiveRange*gTerrainSuperTileUnitSize);
 		y = gPlayerInfo[i].coord.z-(gSuperTileActiveRange*gTerrainSuperTileUnitSize);
@@ -500,7 +501,7 @@ AGLContext agl_ctx = gAGLContext;
 #if 0
 		glDeleteFencesAPPLE(1, &gTerrainOpenGLFence);
 #endif
-		gTerrainOpenGLFence = nil;
+		gTerrainOpenGLFence = 0;
 		gTerrainOpenGLFenceIsActive = false;
 	}
 
@@ -1252,9 +1253,9 @@ float			minX,maxX,minZ,maxZ;
 // OUTPUT: row/col in tile coords and supertile coords
 //
 
-void GetSuperTileInfo(long x, long z, long *superCol, long *superRow, long *tileCol, long *tileRow)
+void GetSuperTileInfo(long x, long z, int *superCol, int *superRow, int *tileCol, int *tileRow)
 {
-long	row,col;
+int	row,col;
 
 	if ((x < 0) || (z < 0))									// see if out of bounds
 		return;

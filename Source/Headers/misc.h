@@ -11,10 +11,9 @@
 
 void	DoAlert(const char* format, ...);
 POMME_NORETURN void DoFatalAlert(const char* format, ...);
-extern	void CleanQuit(void);
+POMME_NORETURN void CleanQuit(void);
 extern	void SetMyRandomSeed(unsigned long seed);
 extern	unsigned long MyRandomLong(void);
-extern	void FloatToString(float num, Str255 string);
 extern	Handle	AllocHandle(long size);
 extern	void *AllocPtr(long size);
 void *AllocPtrClear(long size);
@@ -23,7 +22,6 @@ extern	void VerifySystem(void);
 extern	float RandomFloat(void);
 u_short	RandomRange(unsigned short min, unsigned short max);
 extern	void RegulateSpeed(short fps);
-extern	void CopyPStr(ConstStr255Param	inSourceStr, StringPtr	outDestStr);
 void CalcFramesPerSecond(void);
 Boolean IsPowerOf2(int num);
 float RandomFloat2(void);

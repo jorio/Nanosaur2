@@ -48,19 +48,19 @@ typedef	struct
 typedef struct
 {
 	float			placement;			// where on spline to start item (0=front, 1.0 = end)
-	u_short			type;
-	Byte			parm[4];
-	u_short			flags;
+	uint16_t		type;
+	uint8_t			parm[4];
+	uint16_t		flags;
 }SplineItemType;
 
 
 typedef struct
 {
-	short			numNubs;			// # nubs in spline
+	int16_t			numNubs;			// # nubs in spline
 	SplinePointType	*nubList;			// ptr to nub list
-	long			numPoints;			// # points in spline
+	int32_t			numPoints;			// # points in spline
 	SplinePointType	*pointList;			// ptr to calculated spline points
-	short			numItems;			// # items on the spline
+	int16_t			numItems;			// # items on the spline
 	SplineItemType	*itemList;			// ptr to spline items
 
 	Rect			bBox;				// bounding box of spline area
@@ -121,8 +121,8 @@ typedef struct
 
 typedef struct
 {
-	long		tick;					// time at which this state exists
-	long		accelerationMode;		// mode of in/out acceleration
+	int32_t		tick;					// time at which this state exists
+	int32_t		accelerationMode;		// mode of in/out acceleration
 	OGLPoint3D	coord;					// current 3D coords of joint (relative to link)
 	OGLVector3D	rotation;				// current rotation values of joint (relative to link)
 	OGLVector3D	scale;					// current scale values of joint mesh

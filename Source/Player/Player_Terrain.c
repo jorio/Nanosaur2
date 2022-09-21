@@ -1291,7 +1291,6 @@ OGLMatrix4x4	m;
 
 static void MakeJetpackExhaust(ObjNode *jetpack)
 {
-short	i;
 OGLPoint3D			buttPt;
 
 			/************************/
@@ -1300,7 +1299,7 @@ OGLPoint3D			buttPt;
 
 	if (jetpack->Sparkles[2] == -1)
 	{
-		i = jetpack->Sparkles[2] = GetFreeSparkle(jetpack);			// make new sparkle
+		int i = jetpack->Sparkles[2] = GetFreeSparkle(jetpack);			// make new sparkle
 		if (i != -1)
 		{
 			gSparkles[i].flags = SPARKLE_FLAG_TRANSFORMWITHOWNER | SPARKLE_FLAG_FLICKER | SPARKLE_FLAG_RANDOMSPIN;
@@ -1363,8 +1362,7 @@ OGLPoint3D			buttPt;
 
 		if (particleGroup != -1)
 		{
-			short	i;
-			for (i = 0; i < 2; i++)
+			for (int i = 0; i < 2; i++)
 			{
 				d.x = RandomFloat2() * 10.0f;
 				d.y = RandomFloat2() * 10.0f;

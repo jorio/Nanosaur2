@@ -157,7 +157,7 @@ static void SetupLevelIntroScreen(void)
 {
 FSSpec				spec;
 OGLSetupInputType	viewDef;
-const static OGLVector3D	fillDirection1 = { -.3, -.5, -1.0 };
+static const OGLVector3D	fillDirection1 = { -.3, -.5, -1.0 };
 ObjNode	*newObj;
 
 
@@ -545,7 +545,7 @@ static float		waveX = 0, waveY = 1.0;
 	{
 		OGLPoint3D		coord,prevCoord;
 		OGLMatrix4x4	m2, m, m3;
-		const static	OGLVector3D up = {0,1,0};
+		static const OGLVector3D up = {0,1,0};
 
 
 				/* GET COORDS OF THIS SEGMENT */

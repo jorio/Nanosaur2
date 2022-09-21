@@ -72,7 +72,7 @@ float	timeout = 40.0f;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, gGameViewInfoPtr, path);
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (intptr_t) gGameViewInfoPtr, (void*) path);
 	if (!gBackgoundPicture)
 		DoFatalAlert("DisplayPicture: MO_CreateNewObjectOfType failed");
 

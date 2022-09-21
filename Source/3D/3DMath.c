@@ -117,7 +117,7 @@ float		dot,angle;
 
 float	CalcYAngleFromPointToPoint(float oldRot, float fromX, float fromZ, float toX, float toZ)
 {
-const static OGLVector2D	zax = {0,-1};
+static const OGLVector2D	zax = {0,-1};
 OGLVector2D					aim;
 float		dot,angle,cross;
 

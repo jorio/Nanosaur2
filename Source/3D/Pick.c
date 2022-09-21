@@ -787,7 +787,7 @@ float		bestDist = 10000000;
 OGLPoint3D	hitPt;
 OGLVector3D	segVec, hitNormal;
 float		hitDist;
-long		gridX1, gridX2, gridY1, gridY2, gridZ1, gridZ2;
+int			gridX1, gridX2, gridY1, gridY2, gridZ1, gridZ2;
 Boolean		hit;
 
 			/* CALC GRID COORDS OF ENDPOINTS */
@@ -1802,14 +1802,14 @@ Byte		buffNum;
 ObjNode *OGL_DoSphereCollision_ObjNodes(const OGLBoundingSphere *sphere, uint32_t statusFilter, uint32_t cTypes)
 {
 ObjNode		*thisNodePtr;
-long		gridX, gridY, gridZ;
+int			gridX, gridY, gridZ;
 OGLBoundingSphere	sphere2;
 
 			/* CALC GRID COORDS OF ENDPOINTS */
 
-	gridX = (long)sphere->origin.x / GRID_SIZE;
-	gridY = (long)sphere->origin.y / GRID_SIZE;
-	gridZ = (long)sphere->origin.z / GRID_SIZE;
+	gridX = (int)sphere->origin.x / GRID_SIZE;
+	gridY = (int)sphere->origin.y / GRID_SIZE;
+	gridZ = (int)sphere->origin.z / GRID_SIZE;
 
 
 

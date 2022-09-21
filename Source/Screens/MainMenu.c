@@ -859,19 +859,6 @@ static void DoMenuControls(void)
 					break;
 
 			case	MENU_PAGE_BATTLE:
-
-#if !ALLOW_2P_INDEMO
-					if ((!gGameIsRegistered) && (gCurrentMenuItem != 6))								// no multi-player in demo mode
-					{
-						DoAlert("Nano vs. Nano games are not available in Demo mode.  You must purchase a Nanosaur 2 serial number to play these games.");
-					}
-#else
-					if ((!gGameIsRegistered) && (gCurrentMenuItem != 1) && (gCurrentMenuItem != 3) && (gCurrentMenuItem != 6))			// allow race 2 and battle 2 in Apple's .Mac mode
-					{
-						DoAlert("Only Race 2 and Battle 2 are available in demo mode.  You must purchase a Nanosaur 2 serial number to play all the games.");
-					}
-#endif
-					else
 					switch(gCurrentMenuItem)
 					{
 						case	0:										// RACE 1

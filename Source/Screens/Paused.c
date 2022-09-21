@@ -46,16 +46,6 @@ void DoPaused(void)
 Boolean	oldMute = gMuteMusicFlag;
 short	i;
 
-#if DEMO == 0
-	if (gGameIsRegistered)
-	{
-		FlightPhysicsCalibration(true);
-		if (!gGameIsRegistered)
-			CleanQuit();
-	}
-#endif
-
-
 	GammaOn();
 
 	InitPausedObjects();

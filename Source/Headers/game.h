@@ -4,8 +4,6 @@
 		/* MY BUILD OPTIONS */
 
 #define	OEM				1
-#define DEMO			0
-#define ALLOW_2P_INDEMO 0			// special build for Apple's .Mac promotion
 
 #if !defined(__LITTLE_ENDIAN__) && !(__BIG_ENDIAN__)
 #define __LITTLE_ENDIAN__ 1
@@ -28,7 +26,6 @@ typedef float CGGammaValue;
 #define AGL_NO_ERROR GL_NO_ERROR
 #define aglSwapBuffers(whatever) SDL_GL_SwapWindow(gSDLWindow)
 #define aglSetCurrentContext(whatever) SDL_GL_MakeCurrent(gSDLWindow, (whatever))
-#define FlightPhysicsCalibration(whatever)
 
 #if 0
 #include <Carbon/Carbon.h>
@@ -52,7 +49,6 @@ typedef float CGGammaValue;
 #include "collision.h"
 #include "ogl_support.h"
 #include "metaobjects.h"
-#include "ogl_shaders.h"
 #include "main.h"
 #include "terrain.h"
 #include "player.h"
@@ -60,7 +56,6 @@ typedef float CGGammaValue;
 #include "objects.h"
 #include "misc.h"
 #include "sound2.h"
-#include "mycoreaudio.h"
 #include "sobjtypes.h"
 #include "sprites.h"
 #include "shards.h"
@@ -80,7 +75,6 @@ typedef float CGGammaValue;
 #include "miscscreens.h"
 #include	"infobar.h"
 #include	"pick.h"
-#include "internet.h"
 #include "splinemanager.h"
 #include "3dmath.h"
 
@@ -96,10 +90,8 @@ extern	Boolean					gDisableAnimSounds;
 extern	Boolean					gDisableHiccupTimer;
 extern	Boolean					gDrawLensFlare;
 extern	Boolean					gForceVertexArrayUpdate[];
-extern	Boolean					gGameIsRegistered;
 extern	Boolean					gGameOver;
 extern	Boolean					gLevelCompleted, gTimeDemo;
-extern	Boolean					gLittleSnitch;
 extern	Boolean					gLowRAM;
 extern	Boolean					gMuteMusicFlag;
 extern	Boolean					gMyState_Lighting;
@@ -153,7 +145,6 @@ extern	PrefsType				gGamePrefs;
 extern	SDL_Window*				gSDLWindow;
 extern	SparkleType				gSparkles[MAX_SPARKLES];
 extern	SpriteType				*gSpriteGroupList[MAX_SPRITE_GROUPS];
-extern	Str255					gSerialFileName;
 extern	SuperTileItemIndexType	**gSuperTileItemIndexGrid;
 extern	SuperTileMemoryType		gSuperTileMemoryList[MAX_SUPERTILES];
 extern	SuperTileStatus			**gSuperTileStatusGrid;
@@ -175,7 +166,6 @@ extern	float					gCameraStartupTimer;
 extern	float					gCurrentMaxSpeed[];
 extern	float					gCurrentPaneAspectRatio;
 extern	float					gDeathTimer[];
-extern	float					gDemoVersionTimer;
 extern	float					gFramesPerSecond;
 extern	float					gFramesPerSecondFrac;
 extern	float					gGammaFadePercent;
@@ -234,8 +224,6 @@ extern	signed char				gNumEnemyOfKind[];
 extern	uint32_t				gDisplayVRAM;
 extern	uint32_t				gGameFrameNum;
 extern	uint32_t				gGlobalMaterialFlags;
-extern	uint32_t				gSerialWasVerifiedMode;
-extern	uint32_t				gSharewareMode;
 extern	uint32_t				gTerrainPolygonSizeInt;
 extern	uint32_t				gVRAMAfterBuffers;
 extern	uint32_t 				gAutoFadeStatusBits;

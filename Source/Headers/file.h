@@ -64,8 +64,6 @@ typedef struct
 
 		/* PREFERENCES */
 
-#define	MAX_HTTP_NOTES	1000
-
 #define	CURRENT_PREFS_VERS	0x0300
 
 typedef struct
@@ -77,8 +75,6 @@ typedef struct
 	double	hz;
 	Boolean	lowRenderQuality;
 	Byte	language;
-//	DateTimeRec	lastVersCheckDate;
-	Byte	didThisNote[MAX_HTTP_NOTES];
 	Boolean	hasConfiguredISpControls;
 
 	HIDControlSettingsType	controlSettings;
@@ -114,8 +110,6 @@ void SavePrefs(void);
 
 void LoadPlayfield(FSSpec *specPtr, OGLSetupOutputType *setupInfo);
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);
-void GetDemoTimer(void);
-void SaveDemoTimer(void);
 void SetDefaultDirectory(void);
 
 Boolean SaveGame(void);

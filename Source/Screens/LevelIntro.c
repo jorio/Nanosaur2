@@ -60,20 +60,6 @@ float	timer = 5.0f;
 	GammaFadeOut();
 
 
-	if (gGameIsRegistered)
-	{
-		if (gSerialWasVerifiedMode != gSharewareMode)							// check if hackers bypassed the reg verify - if so, de-register us
-		{
-			FSSpec	spec;
-
-			gGameIsRegistered = false;
-
-			if (FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, gSerialFileName, &spec) == noErr)	// delete the serial # file
-				FSpDelete(&spec);
-			ExitToShell();
-		}
-	}
-
 			/* SETUP */
 
 	SetupLevelIntroScreen();

@@ -201,15 +201,6 @@ static OGLVector3D			fillDirection2 = { -1, -.3, -.3 };
 	viewDef->lights.fillDirection[1] = fillDirection2;
 	viewDef->lights.fillColor[0] 	= fillColor;
 	viewDef->lights.fillColor[1] 	= fillColor;
-
-#if DEMO == 0
-	if (gGameIsRegistered)
-	{
-		FlightPhysicsCalibration(true);
-		if (!gGameIsRegistered)
-			CleanQuit();
-	}
-#endif
 }
 
 

@@ -560,20 +560,6 @@ FSSpec	spec;
 short	myRefNum;
 GrafPtr	oldPort;
 
-	if (gGameIsRegistered)
-	{
-		if (gSerialWasVerifiedMode != gSharewareMode)							// check if hackers bypassed the reg verify - if so, de-register us
-		{
-			FSSpec	spec;
-
-			gGameIsRegistered = false;
-
-			if (FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, gSerialFileName, &spec) == noErr)	// delete the serial # file
-				FSpDelete(&spec);
-			ExitToShell();
-		}
-	}
-
 	if (songNum == gCurrentSong)					// see if this is already playing
 		return;
 

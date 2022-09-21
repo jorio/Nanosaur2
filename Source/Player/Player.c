@@ -54,31 +54,6 @@ void InitPlayerInfo_Game(void)
 {
 short	i, w;
 
-
-#if DEMO == 0
-	if (gGameIsRegistered)
-	{
-		FlightPhysicsCalibration(true);
-		if (!gGameIsRegistered)
-			CleanQuit();
-	}
-#endif
-
-
-	if (gGameIsRegistered)
-	{
-		if (gSerialWasVerifiedMode != gSharewareMode)							// check if hackers bypassed the reg verify - if so, de-register us
-		{
-			FSSpec	spec;
-
-			gGameIsRegistered = false;
-
-			if (FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, gSerialFileName, &spec) == noErr)	// delete the serial # file
-				FSpDelete(&spec);
-			ExitToShell();
-		}
-	}
-
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
 

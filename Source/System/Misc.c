@@ -38,18 +38,10 @@ float	gFramesPerSecondFrac = 1.0f / DEFAULT_FPS;
 
 int		gNumPointers = 0;
 
-Str255  gSerialFileName = ":Nanosaur2:Info";
-
-Boolean	gGameIsRegistered = false;
-
-unsigned char	gRegInfo[64];
-
 
 uint32_t			gSerialWasVerifiedMode = 0;
 
 Boolean			gPanther = false;
-
-Boolean			gLittleSnitch = false;
 
 Boolean			gAltivec = false;
 

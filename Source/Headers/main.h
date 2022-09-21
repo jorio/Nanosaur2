@@ -50,14 +50,6 @@ enum
 #define		VERT_PANE_FOV		1.1
 
 
-enum
-{
-	SHAREWARE_MODE_NO  =   0xC981,
-	SHAREWARE_MODE_YES  =   0x124A,
-};
-
-
-
 //=================================================
 
 

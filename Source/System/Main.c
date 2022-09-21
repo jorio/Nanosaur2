@@ -42,10 +42,6 @@ static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFP
 short	gPrefsFolderVRefNum;
 long	gPrefsFolderDirID;
 
-uint32_t				gSharewareMode = SHAREWARE_MODE_NO;
-
-float				gDemoVersionTimer = 0;
-
 Byte				gDebugMode = 0;				// 0 == none, 1 = fps, 2 = all
 
 uint32_t				gAutoFadeStatusBits;
@@ -155,26 +151,6 @@ long		createdDirID;
 #endif
 
 
-			/* DETERMINE IF SHAREWARE OR BOXED/OEM VERSION */
-			//
-			// The boxed version cannot play in demo mode, so it will not
-			// have the DemoQuit / DemoExpired image files.
-			//
-
-#if OEM
-	gSharewareMode = SHAREWARE_MODE_NO;
-#else
-	{
-		FSSpec	spc;
-
-		if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Images:DemoExpired", &spc) == noErr)
-			gSharewareMode = SHAREWARE_MODE_YES;
-		else
-			gSharewareMode = SHAREWARE_MODE_NO;
-	}
-#endif
-
-
 		/* FIRST VERIFY SYSTEM BEFORE GOING TOO FAR */
 
 	VerifySystem();
@@ -199,48 +175,6 @@ long		createdDirID;
 
 #if 0
 	EnterMovies();
-#endif
-
-
-
-			/************************************/
-            /* SEE IF GAME IS REGISTERED OR NOT */
-			/************************************/
-#if DEMO
-	gGameIsRegistered = false;
-	gSerialWasVerifiedMode = SHAREWARE_MODE_YES;
-#elif OEM
-	gGameIsRegistered = true;
-	gSerialWasVerifiedMode = SHAREWARE_MODE_NO;
-#else
-    FlightPhysicsCalibration(false);
-#endif
-
-
-		/**********************************/
-		/* SEE IF SHOULD DO VERSION CHECK */
-		/**********************************/
-
-#if 0
-	if (gGameIsRegistered)								// only do HTTP if registered
-	{
-		DateTimeRec	dateTime;
-		uint32_t		seconds, seconds2;
-
-		GetTime(&dateTime);								// get date time
-		DateToSeconds(&dateTime, &seconds);
-
-		DateToSeconds(&gGamePrefs.lastVersCheckDate, &seconds2);
-
-		if ((seconds - seconds2) > 259000)				// see if 3 days have passed since last check
-		{
-			MyFlushEvents();
-			gGamePrefs.lastVersCheckDate = dateTime;	// update time
-			SavePrefs();
-
-			ReadHTTPData_VersionInfo();					// do version check (also checks serial #'s)
-		}
-	}
 #endif
 
 			/*********************************/
@@ -307,7 +241,6 @@ long 		keyboardScript, languageCode;
 	gGamePrefs.screenWidth			= 1024;
 	gGamePrefs.screenHeight			= 768;
 	gGamePrefs.lowRenderQuality		= false;
-//	gGamePrefs.lastVersCheckDate.year = 0;
 	gGamePrefs.hasConfiguredISpControls = false;
 	gGamePrefs.splitScreenMode		= SPLITSCREEN_MODE_VERT;
 	gGamePrefs.stereoGlassesMode	= STEREO_GLASSES_MODE_OFF;
@@ -329,9 +262,6 @@ long 		keyboardScript, languageCode;
 	gGamePrefs.reserved[5] 			= 0;
 	gGamePrefs.reserved[6] 			= 0;
 	gGamePrefs.reserved[7] 			= 0;
-
-	for (i = 0; i < MAX_HTTP_NOTES; i++)
-		gGamePrefs.didThisNote[i] = false;
 }
 
 
@@ -361,12 +291,9 @@ static void PlayGame_Adventure(void)
 	{
 		gLevelNum = LEVEL_NUM_ADVENTURE1;
 
-		if (gGameIsRegistered)				// only allow cheating if game is registered
-		{
-			if (GetKeyState(KEY_F10))		// see if do Level cheat
-				if (DoLevelCheatDialog())
-					CleanQuit();
-		}
+		if (GetKeyState(KEY_F10))		// see if do Level cheat
+			if (DoLevelCheatDialog())
+				CleanQuit();
 	}
 
 	if (gTimeDemo)
@@ -413,9 +340,6 @@ static void PlayGame_Adventure(void)
 		MyFlushEvents();
 		GammaFadeOut();
 		CleanupLevel();
-
-		if (!gGameIsRegistered)				// only allow this one level if not registered or is demo
-			break;
 
 			/***************/
 			/* SEE IF LOST */
@@ -781,7 +705,6 @@ float	fps;
 
 		gGameFrameNum++;
 		gGameLevelTimer += fps;
-		gDemoVersionTimer += fps;									// count the seconds for Demo or unregistered version
 		gDisableHiccupTimer = false;								// reenable this after the 1st frame
 
 
@@ -1253,13 +1176,6 @@ unsigned long	someLong;
 	GetDateTime ((unsigned long *)(&someLong));		// init random seed
 	SetMyRandomSeed(someLong);
 	HideCursor();
-
-
-
-		/* SEE IF DEMO EXPIRED */
-
-	if (!gGameIsRegistered)
-		GetDemoTimer();
 
 
 		/* SHOW TITLES */

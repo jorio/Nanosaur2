@@ -115,10 +115,10 @@ OGLPoint3D				tc[4];
 const OGLPoint3D		*cameraLocation;
 static OGLPoint3D		frame[4] =
 {
-	-130,130,0,
-	130,130,0,
-	130,-130,0,
-	-130,-130,0
+	{-130,130,0},
+	{130,130,0},
+	{130,-130,0},
+	{-130,-130,0}
 };
 
 

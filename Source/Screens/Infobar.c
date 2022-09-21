@@ -104,54 +104,54 @@ ObjNode			*gFinalPlaceObj = nil;
 static MOMaterialObject	*gOverheadMapMaterial = nil;
 
 static MOVertexArrayData	gOHMTriMesh;
-static MOTriangleIndecies	gOHMTriangles[2] = {0, 1, 2, 2, 0, 3};
+static MOTriangleIndecies	gOHMTriangles[2] = {{{0, 1, 2}}, {{2, 0, 3}}};
 static OGLTextureCoord		gOHMuv1[4];
-static OGLTextureCoord		gOHMuv2[4] = {0,0, 0,1, 1,1, 1,0};
+static OGLTextureCoord		gOHMuv2[4] = {{0,0}, {0,1}, {1,1}, {1,0}};
 static OGLPoint3D			gOHMPoints[4];
 
 
 			/* HEALTH */
 
 static MOVertexArrayData	gHealthTriMesh;
-static MOTriangleIndecies	gHealthTriangles[2] = {0, 1, 2, 2, 0, 3};
-static OGLTextureCoord		gHealthuv1[4] = {0,1, 1,1, 1,0, 0,0};
-static OGLTextureCoord		gHealthuv2[4] = {0,1, 1,1, 1,0, 0,0};
+static MOTriangleIndecies	gHealthTriangles[2] = {{{0, 1, 2}}, {{2, 0, 3}}};
+static OGLTextureCoord		gHealthuv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
+static OGLTextureCoord		gHealthuv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gHealthPoints[4] =
 {
-	HEALTH_X - HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0,
-	HEALTH_X + HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0,
-	HEALTH_X + HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2,	 	0,
-	HEALTH_X - HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2, 		0,
+	{HEALTH_X - HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0},
+	{HEALTH_X + HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0},
+	{HEALTH_X + HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2,	 	0},
+	{HEALTH_X - HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2, 		0},
 };
 
 
 			/* SHIELD */
 
 static MOVertexArrayData	gShieldTriMesh;
-static MOTriangleIndecies	gShieldTriangles[2] = {0, 1, 2, 2, 0, 3};
-static OGLTextureCoord		gShielduv1[4] = {0,1, 1,1, 1,0, 0,0};
-static OGLTextureCoord		gShielduv2[4] = {0,1, 1,1, 1,0, 0,0};
+static MOTriangleIndecies	gShieldTriangles[2] = {{{0, 1, 2}}, {{2, 0, 3}}};
+static OGLTextureCoord		gShielduv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
+static OGLTextureCoord		gShielduv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gShieldPoints[4] =
 {
-	SHIELD_X - SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0,
-	SHIELD_X + SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0,
-	SHIELD_X + SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2,	 	0,
-	SHIELD_X - SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2, 		0,
+	{SHIELD_X - SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0},
+	{SHIELD_X + SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0},
+	{SHIELD_X + SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2,	 	0},
+	{SHIELD_X - SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2, 		0},
 };
 
 
 			/* FUEL */
 
 static MOVertexArrayData	gFuelTriMesh;
-static MOTriangleIndecies	gFuelTriangles[2] = {0, 1, 2, 2, 0, 3};
-static OGLTextureCoord		gFueluv1[4] = {0,1, 1,1, 1,0, 0,0};
-static OGLTextureCoord		gFueluv2[4] = {0,1, 1,1, 1,0, 0,0};
+static MOTriangleIndecies	gFuelTriangles[2] = {{{0, 1, 2}}, {{2, 0, 3}}};
+static OGLTextureCoord		gFueluv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
+static OGLTextureCoord		gFueluv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gFuelPoints[4] =
 {
-	FUEL_X - FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0,
-	FUEL_X + FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0,
-	FUEL_X + FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2,	 	0,
-	FUEL_X - FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2, 		0,
+	{FUEL_X - FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0},
+	{FUEL_X + FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0},
+	{FUEL_X + FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2,	 	0},
+	{FUEL_X - FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2, 		0},
 };
 
 

@@ -149,7 +149,6 @@ if(NOT MSVC)
 		-Werror=return-type
 		-Wno-unused-function
 		#-----------------------------------
-		-Wno-missing-braces
 		-Wno-unused-parameter
 		-Wno-unused-variable
 	)

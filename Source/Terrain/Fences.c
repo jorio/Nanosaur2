@@ -45,8 +45,8 @@ FenceDefType	*gFenceList = nil;
 
 static const short			gFenceTexture[NUM_FENCE_TYPES][2] =
 {
-	SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_PineTree,		// pine trees
-	0,	0,															// invisible enemy blocker
+	{SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_PineTree},		// pine trees
+	{0,	0},															// invisible enemy blocker
 };
 
 

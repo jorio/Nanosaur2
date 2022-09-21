@@ -443,7 +443,7 @@ Byte				buffNum;
 
 	if (gCurrentSplitScreenPane == (gNumPlayers-1))				// only submit the fence on the last pane to be drawn
 	{
-		IMPME;
+		SOFTIMPME;
 #if 0
 		glSetFenceAPPLE(skeleton->oglFence);
 #endif

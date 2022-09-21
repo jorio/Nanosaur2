@@ -115,11 +115,7 @@ void SetDefaultDirectory(void);
 Boolean SaveGame(void);
 Boolean LoadSavedGame(void);
 
-
-void DecompressJPEGToGWorld(ImageDescriptionHandle imageDesc, Ptr compressedData, GWorldPtr gworld, Rect *srcRect);
-
 void LoadLevelArt(OGLSetupOutputType *setupInfo);
-
 
 Ptr LoadDataFile(const char* path, long* outLength);
 char* LoadTextFile(const char* path, long* outLength);

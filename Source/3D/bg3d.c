@@ -10,6 +10,7 @@
 /****************************/
 
 #include "game.h"
+#include "stb_image.h"
 
 
 /****************************/
@@ -451,16 +452,11 @@ MOMaterialData	*data;
 static void ReadMaterialJPEGTextureMap(short refNum)
 {
 BG3DJPEGTextureHeader	textureHeader;
-long					count,i, w, h, descSize;
+long					count,i, w, h;
 uint32_t 					*texturePixels;
 Ptr	 					jpegBuffer;
 MOMaterialData			*data;
-//ImageDescriptionHandle	imageDescHandle;
-//ImageDescriptionPtr		imageDescPtr;
-Ptr						imageDataPtr;
-Rect					r;
 OSErr					iErr;
-GWorldPtr				buffGWorld = nil;
 Boolean					hasAlpha;
 
 			/* GET PTR TO CURRENT MATERIAL */
@@ -522,40 +518,34 @@ Boolean					hasAlpha;
 	if (texturePixels == nil)
 		DoFatalAlert("ReadMaterialJPEGTextureMap: AllocPtr failed");
 
-	r.left = r.top = 0;
-	r.right = w;
-	r.bottom = h;
-
-	IMPME;
-#if 0
-	iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &r, nil, nil, 0, texturePixels, w * 4);
-	if (iErr || (buffGWorld == nil))
-		DoFatalAlert("ReadMaterialJPEGTextureMap: QTNewGWorldFromPtr failed.");
-
-
-			/* EXTRACT THE IMAGE DESC */
-
-	imageDescPtr = (ImageDescriptionPtr)jpegBuffer;						// create ptr into buffer to fake the imagedesc
-	descSize = imageDescPtr->idSize;									// get size of the imagedesc data
-	descSize = SwizzleLong(&descSize);
-
-	imageDescHandle = (ImageDescriptionHandle)AllocHandle(descSize);	// convert Image Desc into a "real" handle
-	BlockMove(imageDescPtr, *imageDescHandle, descSize);
-
+	// The beginning of the buffer is an ImageDescription record.
+	// The first int is an offset to the actual data.
+	int32_t offset = SwizzleLong((int32_t*) jpegBuffer);
 
 			/************************/
 			/* DECOMPRESS THE IMAGE */
 			/************************/
-			//
-			// This decompresses the texture into a 32-bit GWorld.
-			// But, if the screen is in 16-bit mode then let's just convert
-			// the 32-bit texture to a 16-bit dithered texture in order to save
-			// VRAM and to make the textures look better by pre-dithering them.
-			//
 
-	imageDataPtr = jpegBuffer + descSize;								// compressed image data is after the imagedesc data
+	int bogusW, bogusH;
+	uint8_t* pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) jpegBuffer+offset, textureHeader.bufferSize-offset, &bogusW, &bogusH, NULL, 4);
+	GAME_ASSERT(pixelData);
+	GAME_ASSERT(bogusW == w);
+	GAME_ASSERT(bogusH == h);
+	SafeDisposePtr(jpegBuffer);
+	jpegBuffer = NULL;
 
-	DecompressJPEGToGWorld(imageDescHandle, imageDataPtr, buffGWorld, nil);
+	for (int p = 0; p < w*h; p++)
+	{
+		uint8_t r = pixelData[4*p+0];
+		uint8_t g = pixelData[4*p+1];
+		uint8_t b = pixelData[4*p+2];
+		uint8_t a = pixelData[4*p+3];
+		texturePixels[p] = (a << 24) | (r << 16) | (g << 8) | (b);
+	}
+//			SwizzleARGBtoBGRA(w,h, buffer);
+
+	free(pixelData);
+	pixelData = NULL;
 
 
 		/***************************************/
@@ -564,12 +554,12 @@ Boolean					hasAlpha;
 
 	if (hasAlpha)
 	{
-		Byte	*alphaBuffer;
+		uint8_t	*alphaBuffer;
 
 		count = w * h;
 		alphaBuffer = AllocPtr(count);
 
-		FSRead(refNum, &count, alphaBuffer);		// read alpha buffer
+		FSRead(refNum, &count, (Ptr) alphaBuffer);		// read alpha buffer
 
 		for (i = 0; i < count; i++)
 		{
@@ -579,12 +569,7 @@ Boolean					hasAlpha;
 			texturePixels[i] = pixel32; 						// save new RGBA
 		}
 
-		SafeDisposePtr((Ptr)alphaBuffer);
-	}
-	else
-	{
-		SetAlphaInARGBBuffer(w,h, texturePixels);				// no alpha channel, so be sure the alpha is set to $ff
-		SwizzleARGBtoBGRA(w, h, (uint32_t *)texturePixels);
+		SafeDisposePtr(alphaBuffer);
 	}
 
 
@@ -595,14 +580,6 @@ Boolean					hasAlpha;
 
 	i = data->numMipmaps++;						// increment the mipmap count
 	data->texturePixels[i] = texturePixels;		// set ptr to pixelmap
-
-
-		/* CLEANUP */
-
-	DisposeHandle((Handle)imageDescHandle);								// free our image desc handle
-	SafeDisposePtr(jpegBuffer);											// free the jpeg data
-	DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
-#endif
 }
 
 

@@ -161,21 +161,12 @@ MOMaterialData	matData;
 		{
 			Ptr			jpegBuffer;
 			int32_t		dataSize;
-//			int32_t		descSize;
-//			GWorldPtr	buffGWorld;
-//			ImageDescriptionHandle	imageDescHandle;
-//			ImageDescriptionPtr		imageDescPtr;
-//			Ptr						imageDataPtr;
-//			Rect		r;
-//			OSErr		iErr;
-
 
 				/* READ JPEG DATA SIZE */
 
 			count = sizeof(dataSize);
 			FSRead(refNum, &count, (Ptr) &dataSize);
 			dataSize = SwizzleLong(&dataSize);			// swizzle
-			printf("%d\n", dataSize);
 
 				/* READ JPEG DATA */
 
@@ -183,11 +174,11 @@ MOMaterialData	matData;
 			jpegBuffer = AllocPtr(count);							// alloc memory for jpeg buffer
 			FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
 
-
+			// The beginning of the buffer is an ImageDescription record.
+			// The first int is an offset to the actual data.
 			int32_t offset = SwizzleLong((int32_t*) jpegBuffer);
-			printf("Offset may be %d\n", offset);
 
-#if _DEBUG
+#if 0 && _DEBUG
 			{
 				char dumppath[256];
 				snprintf(dumppath, sizeof(dumppath), "sprite%d.jpg", i);
@@ -198,49 +189,31 @@ MOMaterialData	matData;
 			}
 #endif
 
-
 					/* ALLOCATE PIXEL BUFFER & GWORLD */
 
 			buffer = AllocPtr(w * h * 4);
-
-
 
 			int bogusW, bogusH;
 			uint8_t* pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) jpegBuffer+offset, dataSize-offset, &bogusW, &bogusH, NULL, 4);
 			GAME_ASSERT(pixelData);
 			GAME_ASSERT(bogusW == w);
 			GAME_ASSERT(bogusH == h);
-			BlockMove(pixelData, buffer, w * h * 4);
-			free(pixelData);
-			pixelData = NULL;
-
 			SafeDisposePtr(jpegBuffer);
 			jpegBuffer = NULL;
 
-#if 0
-			r.left = r.top = 0;	r.right = w; r.bottom = h;
+			for (int p = 0; p < w*h; p++)
+			{
+				uint8_t r = pixelData[4*p+0];
+				uint8_t g = pixelData[4*p+1];
+				uint8_t b = pixelData[4*p+2];
+				uint8_t a = pixelData[4*p+3];
+				buffer[p] = (a << 24) | (r << 16) | (g << 8) | (b);
+			}
+//			SwizzleARGBtoBGRA(w,h, buffer);
 
-			iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &r, nil, nil, 0, buffer, w * 4);
-			if (iErr || (buffGWorld == nil))
-				DoFatalAlert("ReadMaterialJPEGTextureMap: QTNewGWorldFromPtr failed.");
+			free(pixelData);
+			pixelData = NULL;
 
-					/* EXTRACT THE IMAGE DESC */
-
-			imageDescPtr = (ImageDescriptionPtr)jpegBuffer;						// create ptr into buffer to fake the imagedesc
-			descSize = imageDescPtr->idSize;									// get size of the imagedesc data
-			descSize = SwizzleLong(&descSize);
-
-			imageDescHandle = (ImageDescriptionHandle)AllocHandle(descSize);	// convert Image Desc into a "real" handle
-			BlockMove(imageDescPtr, *imageDescHandle, descSize);
-
-
-				/* DECOMPRESS THE IMAGE */
-
-			imageDataPtr = jpegBuffer + descSize;								// compressed image data is after the imagedesc data
-			DecompressJPEGToGWorld(imageDescHandle, imageDataPtr, buffGWorld, nil);
-#endif
-
-			SwizzleARGBtoBGRA(w,h, buffer);
 
 
 			/**********************/
@@ -267,15 +240,7 @@ MOMaterialData	matData;
 				}
 
 				SafeDisposePtr(alphaBuffer);
-
 			}
-			else
-				SetAlphaInARGBBuffer(w,h,buffer);				// no alpha channel so set all aphas to $ff
-
-
-//			DisposeHandle((Handle)imageDescHandle);								// free our image desc handle
-//			SafeDisposePtr(jpegBuffer);											// free the jpeg data
-//			DisposeGWorld(buffGWorld);											// free the gworld (but it keeps the pixel buffer)
 		}
 
 				/*****************************/

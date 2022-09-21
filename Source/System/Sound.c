@@ -384,7 +384,7 @@ OSErr			iErr;
 
 			/* OPEN APPROPRIATE REZ FILE */
 
-	srcFile1 = FSpOpenResFile(spec, fsCurPerm);
+	srcFile1 = FSpOpenResFile(spec, fsRdPerm);
 	if (srcFile1 == -1)
 	{
 		DoAlert("LoadSoundBank: OpenResFile failed!");

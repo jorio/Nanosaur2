@@ -81,7 +81,7 @@ typedef struct
 {
 	u_short			type;				// type of fence
 	short			numNubs;			// # nubs in fence
-	FencePointType	**nubList;			// handle to nub list
+	int32_t			junk;			// handle to nub list
 	Rect			bBox;				// bounding box of fence area
 }FileFenceDefType;
 
@@ -716,7 +716,7 @@ Rect					toRect, srcRect;
 
 				/* OPEN THE REZ-FORK */
 
-	fRefNum = FSpOpenResFile(specPtr,fsCurPerm);
+	fRefNum = FSpOpenResFile(specPtr,fsRdPerm);
 	if (fRefNum == -1)
 		DoFatalAlert("LoadPlayfield: FSpOpenResFile failed.  You seem to have a corrupt or missing file.  Please reinstall the game.");
 	UseResFile(fRefNum);
@@ -858,7 +858,7 @@ Rect					toRect, srcRect;
 	hand = GetResource('Spln',1000);
 	if (hand)
 	{
-		SplineDefType	*splinePtr = (SplineDefType *)*hand;
+		File_SplineDefType	*splinePtr = (File_SplineDefType *)*hand;
 
 		gSplineList = AllocPtr(sizeof(SplineDefType) * gNumSplines);				// allocate memory for spline data
 
@@ -1129,7 +1129,7 @@ Rect					toRect, srcRect;
 
 				/* OPEN THE DATA FORK */
 
-	iErr = FSpOpenDF(specPtr, fsCurPerm, &fRefNum);
+	iErr = FSpOpenDF(specPtr, fsRdPerm, &fRefNum);
 	if (iErr)
 		DoFatalAlert("ReadDataFromPlayfieldFile: FSpOpenDF failed!");
 

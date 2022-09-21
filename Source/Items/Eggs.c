@@ -42,7 +42,7 @@ static void ResetEggToNest(ObjNode *egg);
 #define	CanResetEgg		Flag[0]						// set after a player has moved the egg
 #define	ResetEggDelay	SpecialF[0]
 
-#define	Wormhole		Special[0]
+#define	Wormhole		SpecialPtr[0]
 #define	TargetJoint		Special[1]					// which joint in wormhole to move to
 #define	DelayUntilCanPickup	Timer					// delay after dropping egg before it can be picked back up
 
@@ -463,7 +463,7 @@ static short 	dropNeed[MAX_PLAYERS] = {kNeed_P1_Drop, kNeed_P2_Drop};
 		egg->ChainHead = nil;
 		nest->TerrainItemPtr->flags |= ITEM_FLAGS_USER1;			// set flag so nest knows the egg is gone forever
 
-		egg->Wormhole = (int)wormhole;
+		egg->Wormhole = wormhole;
 		egg->MoveCall = MoveEgg_IntoWormhole;
 		egg->Delta.x =
 		egg->Delta.y =

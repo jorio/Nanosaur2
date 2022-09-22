@@ -493,6 +493,9 @@ Boolean StopAChannelIfEffectNum(short *channelNum, short effectNum)
 {
 short		c = *channelNum;
 
+	if (c < 0)
+		return false;
+
 	if (gChannelInfo[c].effectNum != effectNum)		// make sure its the right effect
 		return(false);
 
@@ -714,6 +717,10 @@ short					theChan;
 Byte					bankNum,soundNum;
 uint32_t					leftVol, rightVol;
 
+	printf("TODO: 3D Play effect %d\n", effectNum);
+	SOFTIMPME;
+	return 0;
+
 			/* GET BANK & SOUND #'S FROM TABLE */
 
 	bankNum 	= gEffectsTable[effectNum].bank;
@@ -753,6 +760,10 @@ short PlayEffect_Parms3D(short effectNum, OGLPoint3D *where, uint32_t rateMultip
 short			theChan;
 Byte			bankNum,soundNum;
 uint32_t			leftVol, rightVol;
+
+	printf("TODO: Parms3D Play effect %d\n", effectNum);
+	SOFTIMPME;
+	return 0;
 
 			/* GET BANK & SOUND #'S FROM TABLE */
 
@@ -1027,7 +1038,7 @@ SoundHeaderPtr   sndPtr;
 
 	printf("TODO: Play effect %d\n", effectNum);
 	SOFTIMPME;
-	return -1;
+	return 0;
 
 
 			/* GET BANK & SOUND #'S FROM TABLE */

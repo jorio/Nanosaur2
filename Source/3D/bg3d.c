@@ -539,7 +539,7 @@ Boolean					hasAlpha;
 
 		for (i = 0; i < count; i++)
 		{
-			uint32_t	pixel32 = SwizzleULong(&texturePixels[i]);
+			uint32_t	pixel32 = texturePixels[i];
 			pixel32 &= 0x00ffffff;								// get RGBx and mask out alpha
 			pixel32 |= alphaBuffer[i] << 24;					// insert alpha
 			texturePixels[i] = pixel32; 						// save new RGBA

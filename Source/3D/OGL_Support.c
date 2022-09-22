@@ -1254,8 +1254,7 @@ AGLContext agl_ctx = gAGLContext;
 
 		if (error)
 		{
-			DoAlert("OGL_TextureMap_Load: gluBuild2DMipmaps failed!");
-			ShowSystemErr(error);
+			DoFatalAlert("OGL_TextureMap_Load: gluBuild2DMipmaps failed! %d", error);
 		}
 	}
 	else
@@ -2614,8 +2613,7 @@ Ptr			prevEndPtr;
 	{
 		SafeDisposePtr(newNode);
 
-		DoAlert("OGL_AllocVertexArrayMemory:  Master Block is full!");
-		ShowSystemErr(type);
+		DoFatalAlert("OGL_AllocVertexArrayMemory:  Master Block is full! Type %d", type);
 
 		return(nil);
 	}

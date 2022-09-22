@@ -169,8 +169,7 @@ MOVertexArrayData	*data;
 				refNum = decomposedPoint->numRefs;												// get # refs for this point
 				if (refNum >= MAX_POINT_REFS)
 				{
-					DoAlert("DecomposeATriMesh: MAX_POINT_REFS exceeded!");
-					ShowSystemErr(refNum);
+					DoFatalAlert("DecomposeATriMesh: MAX_POINT_REFS exceeded! refNum %d", refNum);
 				}
 
 				decomposedPoint->whichTriMesh[refNum] = n;										// set triMesh #

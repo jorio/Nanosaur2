@@ -4,11 +4,6 @@
 
 #pragma once
 
-#define SERIAL_LENGTH      12
-
-#define ShowSystemErr(errNo) DoFatalAlert("System error %d", errNo)
-#define ShowSystemErr_NonFatal(errNo) DoAlert("System error %d", errNo)
-
 void	DoAlert(const char* format, ...);
 POMME_NORETURN void DoFatalAlert(const char* format, ...);
 POMME_NORETURN void CleanQuit(void);

@@ -290,8 +290,7 @@ Boolean			flag;
 		type = itemPtr[i].type;									// get item #
 		if (type > MAX_ITEM_NUM)								// error check!
 		{
-			DoAlert("Illegal Map Item Type!");
-			ShowSystemErr(type);
+			DoFatalAlert("Illegal Map Item Type %d!", type);
 		}
 
 		flag = gTerrainItemAddRoutines[type](&itemPtr[i],itemPtr[i].x, itemPtr[i].y); // call item's ADD routine

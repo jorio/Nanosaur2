@@ -657,9 +657,7 @@ float				aspect;
 
 	if (texNum >= gNumSpritesInGroupList[group])
 	{
-		DoAlert("DrawInfobarSprite2_Centered: sprite # > max in group");
-		ShowSystemErr_NonFatal(texNum);
-		ShowSystemErr(gNumSpritesInGroupList[group]);
+		DoFatalAlert("DrawInfobarSprite2_Centered: sprite # (%d) > max in group (%d)!", texNum, gNumSpritesInGroupList[group]);
 	}
 
 		/* ACTIVATE THE MATERIAL */

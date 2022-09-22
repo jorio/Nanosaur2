@@ -387,8 +387,7 @@ OSErr			iErr;
 	srcFile1 = FSpOpenResFile(spec, fsRdPerm);
 	if (srcFile1 == -1)
 	{
-		DoAlert("LoadSoundBank: OpenResFile failed!");
-		ShowSystemErr(ResError());
+		DoFatalAlert("LoadSoundBank: OpenResFile failed! Error %d", ResError());
 	}
 
 			/****************************/
@@ -408,11 +407,7 @@ OSErr			iErr;
 		if (gSndHandles[bankNum][i] == nil)
 		{
 			iErr = ResError();
-			DoAlert("LoadSoundBank: GetResource failed!");
-			if (iErr == memFullErr)
-				DoFatalAlert("LoadSoundBank: Out of Memory");
-			else
-				ShowSystemErr(iErr);
+			DoFatalAlert("LoadSoundBank: GetResource failed! Error %d", iErr);
 		}
 		DetachResource((Handle)gSndHandles[bankNum][i]);				// detach resource from rez file & make a normal Handle
 
@@ -726,8 +721,7 @@ uint32_t					leftVol, rightVol;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("Illegal sound number!");
-		ShowSystemErr(effectNum);
+		DoFatalAlert("Illegal sound number %d!", effectNum);
 	}
 
 				/* CALC VOLUME */
@@ -767,8 +761,7 @@ uint32_t			leftVol, rightVol;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("Illegal sound number!");
-		ShowSystemErr(effectNum);
+		DoFatalAlert("Illegal sound number %d!", effectNum);
 	}
 
 				/* CALC VOLUME */
@@ -1044,8 +1037,7 @@ SoundHeaderPtr   sndPtr;
 
 	if (soundNum >= gNumSndsInBank[bankNum])					// see if illegal sound #
 	{
-		DoAlert("Illegal sound number!");
-		ShowSystemErr(effectNum);
+		DoFatalAlert("Illegal sound number %d!", effectNum);
 	}
 
 			/* LOOK FOR FREE CHANNEL */

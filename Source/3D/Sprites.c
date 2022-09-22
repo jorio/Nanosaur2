@@ -174,46 +174,14 @@ MOMaterialData	matData;
 			jpegBuffer = AllocPtr(count);							// alloc memory for jpeg buffer
 			FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
 
-			// The beginning of the buffer is an ImageDescription record.
-			// The first int is an offset to the actual data.
-			int32_t offset = SwizzleLong((int32_t*) jpegBuffer);
-
-#if 0 && _DEBUG
-			{
-				char dumppath[256];
-				snprintf(dumppath, sizeof(dumppath), "sprite%d.jpg", i);
-				FILE* dump = fopen(dumppath, "wb");
-				fwrite(jpegBuffer+offset, dataSize-offset, 1, dump);
-				fclose(dump);
-				puts(dumppath);
-			}
-#endif
-
 					/* ALLOCATE PIXEL BUFFER & GWORLD */
 
 			buffer = AllocPtr(w * h * 4);
 
-			int bogusW, bogusH;
-			uint8_t* pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) jpegBuffer+offset, dataSize-offset, &bogusW, &bogusH, NULL, 4);
-			GAME_ASSERT(pixelData);
-			GAME_ASSERT(bogusW == w);
-			GAME_ASSERT(bogusH == h);
+			DecompressQTImage(jpegBuffer, dataSize, (Ptr) buffer, w, h);
+
 			SafeDisposePtr(jpegBuffer);
 			jpegBuffer = NULL;
-
-			for (int p = 0; p < w*h; p++)
-			{
-				uint8_t r = pixelData[4*p+0];
-				uint8_t g = pixelData[4*p+1];
-				uint8_t b = pixelData[4*p+2];
-				uint8_t a = pixelData[4*p+3];
-				buffer[p] = (a << 24) | (r << 16) | (g << 8) | (b);
-			}
-//			SwizzleARGBtoBGRA(w,h, buffer);
-
-			free(pixelData);
-			pixelData = NULL;
-
 
 
 			/**********************/

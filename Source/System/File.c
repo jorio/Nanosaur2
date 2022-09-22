@@ -11,6 +11,7 @@
 /***************/
 
 #include "game.h"
+#include "stb_image.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -96,8 +97,6 @@ typedef struct
 float	g3DTileSize, g3DMinY, g3DMaxY;
 
 static 	FSSpec		gSavedGameSpec;
-
-static	Boolean		gTerrainIs32Bit = false;
 
 
 /****************** SET DEFAULT DIRECTORY ********************/
@@ -696,7 +695,8 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr, OGLSetupOutputType *setup
 {
 Handle					hand;
 PlayfieldHeaderType		**header;
-long					row,col,j,i,size, texSize;
+int						row,col,j,i,texSize;
+long					size;
 float					yScale;
 short					fRefNum;
 OSErr					iErr;
@@ -705,12 +705,14 @@ Ptr						textureBuffer16 = nil;
 GWorldPtr				buffGWorld = nil;
 Rect					toRect, srcRect;
 
+#if 0
 			/* USE 16-BIT IF IN LOW-QUALITY RENDER MODES OR LOW ON VRAM */
 
 	if (gGamePrefs.lowRenderQuality || (gGamePrefs.depth != 32) || (gVRAMAfterBuffers < 0x6000000))
 		gTerrainIs32Bit = false;
 	else
 		gTerrainIs32Bit = true;
+#endif
 
 
 				/* OPEN THE REZ-FORK */
@@ -1087,43 +1089,13 @@ Rect					toRect, srcRect;
 		/********************************************/
 
 				/* ALLOC BUFFERS */
-	if (gLowRAM)
-		texSize = SUPERTILE_TEXMAP_SIZE / 4;
-	else
-		texSize = SUPERTILE_TEXMAP_SIZE;
+//	if (gLowRAM)
+//		texSize = SUPERTILE_TEXMAP_SIZE / 4;
+//	else
+	texSize = SUPERTILE_TEXMAP_SIZE;
 
 
-	if (gTerrainIs32Bit)
-		textureBuffer32 = AllocPtr(texSize * texSize * 4);		// alloc for 32bit pixels
-	else
-		textureBuffer16 = AllocPtr(texSize * texSize * 2);		// alloc for 16bit pixels
-
-
-
-			/* MAKE GWORLD FROM BUFFER */
-
-	toRect.left = toRect.top = 0;
-	toRect.right = toRect.bottom = texSize;
-
-
-#if 0
-	if (gTerrainIs32Bit)
-		iErr = QTNewGWorldFromPtr(&buffGWorld, k32ARGBPixelFormat, &toRect, nil, nil, 0, textureBuffer32, texSize * 4);
-	else
-		iErr = QTNewGWorldFromPtr(&buffGWorld, k16BE555PixelFormat, &toRect, nil, nil, 0, textureBuffer16, texSize * 2);
-#endif
-	iErr = unimpErr;
-	IMPME;
-
-	if (iErr || (buffGWorld == nil))
-		DoFatalAlert("ReadDataFromPlayfieldFile: QTNewGWorldFromPtr failed.");
-
-
-	srcRect.left = srcRect.top = 0;
-	srcRect.right = srcRect.bottom = SUPERTILE_TEXMAP_SIZE;
-
-
-
+	textureBuffer32 = AllocPtr(texSize * texSize * 4);		// alloc for 32bit pixels
 
 
 				/* OPEN THE DATA FORK */
@@ -1139,8 +1111,6 @@ Rect					toRect, srcRect;
 		long					descSize;
 		MOMaterialData			matData;
 		Ptr						tempBuff, imageDataPtr;
-//		ImageDescriptionHandle	imageDescHandle;
-//		ImageDescriptionPtr		imageDescPtr;
 
 
 				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
@@ -1163,41 +1133,21 @@ Rect					toRect, srcRect;
 			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
 
 
-				/* EXTRACT THE IMAGE DESC */
-
-		IMPME;
-#if 0
-		imageDescPtr = (ImageDescriptionPtr)tempBuff;								// create ptr into buffer to fake the imagedesc
-		descSize = imageDescPtr->idSize;											// get size of the imagedesc data
-		descSize = SwizzleLong(&descSize);
-
-		imageDescHandle = (ImageDescriptionHandle)AllocHandle(descSize);			// convert Image Desc into a "real" handle
-		BlockMove(imageDescPtr, *imageDescHandle, descSize);
-
-
-
 				/* DECOMPRESS THE IMAGE */
 
-		imageDataPtr = tempBuff + descSize;											// compressed image data is after the imagedesc data
-
-		DecompressJPEGToGWorld(imageDescHandle, imageDataPtr, buffGWorld, &srcRect);
-
-		DisposeHandle((Handle)imageDescHandle);										// free our image desc handle
+		DecompressQTImage(
+				tempBuff,
+				dataSize,
+				textureBuffer32,
+				texSize,
+				texSize
+		);
 		SafeDisposePtr(tempBuff);													// free the temp buff
 		tempBuff = nil;
-#endif
 
 
-		if (gTerrainIs32Bit)
-		{
-			SetAlphaInARGBBuffer(texSize, texSize, (uint32_t *)textureBuffer32);
-			SwizzleARGBtoBGRA(texSize,texSize, (uint32_t *)textureBuffer32);
-		}
-		else
-		{
-			SetAlphaIn16BitBuffer(texSize, texSize, (u_short *)textureBuffer16);
-		}
-
+//		SetAlphaInARGBBuffer(texSize, texSize, (uint32_t *)textureBuffer32);
+//		SwizzleARGBtoBGRA(texSize,texSize, (uint32_t *)textureBuffer32);
 
 
 
@@ -1205,20 +1155,10 @@ Rect					toRect, srcRect;
 				/* CREATE MATERIAL OBJECT */
 				/**************************/
 
-		if (gTerrainIs32Bit)
-		{
-			matData.pixelSrcFormat 	= GL_UNSIGNED_INT_8_8_8_8_REV;
-			matData.pixelDstFormat 	= GL_RGBA8;
-			matData.textureName[0] 	= OGL_TextureMap_Load(textureBuffer32, texSize, texSize,
-													 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
-		}
-		else
-		{
-			matData.pixelSrcFormat 	= GL_UNSIGNED_SHORT_1_5_5_5_REV;
-			matData.pixelDstFormat 	= GL_RGB5_A1;
-			matData.textureName[0] 	= OGL_TextureMap_Load(textureBuffer16, texSize, texSize,
-													 GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, false);
-		}
+		matData.pixelSrcFormat 	= GL_UNSIGNED_INT_8_8_8_8_REV;
+		matData.pixelDstFormat 	= GL_RGBA8;
+		matData.textureName[0] 	= OGL_TextureMap_Load(textureBuffer32, texSize, texSize,
+												 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
 
 
 		matData.setupInfo				= setupInfo;								// remember which draw context this material is assigned to
@@ -1268,10 +1208,6 @@ Rect					toRect, srcRect;
 
 	if (textureBuffer32)
 		SafeDisposePtr(textureBuffer32);
-	if (textureBuffer16)
-		SafeDisposePtr(textureBuffer16);
-	if (buffGWorld)
-		DisposeGWorld(buffGWorld);
 }
 
 
@@ -1773,4 +1709,54 @@ char* CSVIterator(char** csvCursor, bool* eolOut)
 	*csvCursor = (char*) reader;
 	*eolOut = eol;
 	return columnStart;
+}
+
+
+
+void DecompressQTImage(
+		const char* data,
+		int dataSize,
+		char* outputBuffer,
+		int w,
+		int h)
+{
+	// The beginning of the buffer is an ImageDescription record.
+	// The first int is an offset to the actual data.
+	int offset = SwizzleLong((int32_t*) data);
+	int payloadSize = dataSize - offset;
+	const uint8_t* payload = (const uint8_t*) data + offset;
+
+#if 0 && _DEBUG && !_WIN32
+	{
+		static int n = 0;
+		char dumppath[256];
+		snprintf(dumppath, sizeof(dumppath), "/tmp/nanosaur-%04d.jpg", n++);
+		FILE* dump = fopen(dumppath, "wb");
+		fwrite(payload, payloadSize, 1, dump);
+		fclose(dump);
+		puts(dumppath);
+	}
+#endif
+
+	int actualW, actualH;
+	uint8_t* pixelData = (uint8_t*) stbi_load_from_memory(payload, payloadSize, &actualW, &actualH, NULL, 4);
+	GAME_ASSERT(pixelData);
+	GAME_ASSERT(actualW == w);
+	GAME_ASSERT(actualH == h);
+
+	uint8_t* out = (uint8_t*) outputBuffer;
+	for (int p = 0; p < 4*w*h; p += 4)
+	{
+		uint8_t r = pixelData[p+0];
+		uint8_t g = pixelData[p+1];
+		uint8_t b = pixelData[p+2];
+		uint8_t a = pixelData[p+3];
+		out[p+0] = b;
+		out[p+1] = g;
+		out[p+2] = r;
+		out[p+3] = a;
+	}
+
+	free(pixelData);
+	pixelData = NULL;
 }

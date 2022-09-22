@@ -2610,7 +2610,7 @@ Ptr			prevEndPtr;
 
 	prevEndPtr = gVertexArrayMemory_Tail[type]->pointer + gVertexArrayMemory_Tail[type]->size - 1;		// calc end of allocations
 
-	if (((long)prevEndPtr + size) >= ((long)(gVertexArrayMemoryBlock[type]) + OGL_MaxMemForVARType(type)))		// would this allocation go over our master block's range?
+	if (((uintptr_t) prevEndPtr + size) >= ((uintptr_t) (gVertexArrayMemoryBlock[type]) + OGL_MaxMemForVARType(type)))		// would this allocation go over our master block's range?
 	{
 		SafeDisposePtr(newNode);
 

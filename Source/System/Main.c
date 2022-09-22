@@ -252,7 +252,7 @@ long 		keyboardScript, languageCode;
 
 	gGamePrefs.showTargetingCrosshairs	= true;
 	gGamePrefs.kiddieMode				= false;
-	gGamePrefs.dontUseHID				= false;
+	gGamePrefs.dontUseHID				= true;
 
 	gGamePrefs.reserved[0] 			= 0;
 	gGamePrefs.reserved[1] 			= 0;

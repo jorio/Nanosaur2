@@ -334,7 +334,7 @@ float	analog, mouseDX, mouseDY;
 			/* UPDATE ALL THE NEEDS CONTROLS VALUES */		
 			/****************************************/
 
-	SOFTIMPME; //	PollAllHIDInputNeeds();
+	PollAllHIDInputNeeds();
 	SDL_PumpEvents();		//------------------TODO: Remove me
 
 
@@ -2516,6 +2516,7 @@ short	n, d, keyboardDevice, e;
 }
 
 
+#endif
 
 #pragma mark -
 #pragma mark ========= HID DEVICE POLLING ===========
@@ -2530,15 +2531,11 @@ short	n, d, keyboardDevice, e;
 static void PollAllHIDInputNeeds(void)
 {
 short					n, d, e;
-IOHIDElementCookie		cookie;
-IOHIDDeviceInterface 	**hidDeviceInterface;
-IOHIDEventStruct 		hidEvent;
+//IOHIDElementCookie		cookie;
+//IOHIDDeviceInterface 	**hidDeviceInterface;
+//IOHIDEventStruct 		hidEvent;
 long					bestValue, value, elementType;
-HRESULT 				result;
-
-	if (!gHIDInitialized)
-		return;
-		
+//HRESULT 				result;
 
 			/* SEE IF USER HAS HID DISABLED FOR MANUAL GETKEYS() KEYBOARD READS */
 			//
@@ -2609,7 +2606,11 @@ HRESULT 				result;
 	}
 
 
+	if (!gHIDInitialized)
+		return;
 
+
+#if 0
 			/******************************************/
 			/* SCAN THRU ALL OF THE NEEDS IN OUR LIST */
 			/******************************************/
@@ -2682,10 +2683,11 @@ HRESULT 				result;
 		else
 			gControlNeeds[n].newButtonPress	= false;
 	}
-		
+#endif
 }
 
 
+#if 0
 /********************** CALIBRATE ELEMENT VALUE ***************************/
 
 static long CalibrateElementValue(long inValue, short deviceNum, short elementNum, long elementType)

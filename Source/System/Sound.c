@@ -717,7 +717,6 @@ short					theChan;
 Byte					bankNum,soundNum;
 uint32_t					leftVol, rightVol;
 
-	printf("TODO: 3D Play effect %d\n", effectNum);
 	SOFTIMPME;
 	return 0;
 
@@ -761,7 +760,6 @@ short			theChan;
 Byte			bankNum,soundNum;
 uint32_t			leftVol, rightVol;
 
-	printf("TODO: Parms3D Play effect %d\n", effectNum);
 	SOFTIMPME;
 	return 0;
 
@@ -1036,7 +1034,6 @@ SoundHeaderPtr   sndPtr;
 #endif
 
 
-	printf("TODO: Play effect %d\n", effectNum);
 	SOFTIMPME;
 	return 0;
 

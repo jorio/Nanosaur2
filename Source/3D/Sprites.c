@@ -544,7 +544,6 @@ ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef,
 ObjNode				*newObj;
 MOSpriteObject		*spriteMO;
 MOSpriteSetupData	spriteData;
-int					i,len;
 char				letter;
 float				scale,x;
 
@@ -558,10 +557,6 @@ float				scale,x;
 	newObj = MakeNewObject(newObjDef);
 
 	newObj->NumStringSprites = 0;											// no sprites in there yet
-
-	len = strlen(s);														// get length of string
-	if (len > 31)
-		DoFatalAlert("MakeFontStringObject: string > 31 characters!");
 
 
 			/* ADJUST FOR CENTERING */
@@ -579,13 +574,16 @@ float				scale,x;
 			/* MAKE SPRITE META-OBJECTS */
 			/****************************/
 
-	for (i = 0; i <= len; i++)
+	for (int i = 0; s[i]; i++)
 	{
 		letter = s[i];
 
 		spriteData.type = CharToSprite(letter);								// convert letter to sprite index
 		if (spriteData.type == -1)											// skip spaces
 			goto next;
+
+		if (i >= MAX_CHAR_SPRITES_PER_OBJNODE)
+			DoFatalAlert("MakeFontStringObject: too long! \"%s\"", s);
 
 		spriteData.loadFile = false;										// these sprites are already loaded into gSpriteList
 		spriteData.group	= newObjDef->group;								// set group

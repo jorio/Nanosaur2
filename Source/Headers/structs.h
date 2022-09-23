@@ -2,9 +2,7 @@
 // structs.h
 //
 
-#ifndef STRUCTS_H
-#define STRUCTS_H
-
+#pragma once
 
 #include "globals.h"
 #include "ogl_support.h"
@@ -35,6 +33,7 @@
 
 #define	MAX_MESHES_IN_MODEL		10					// max # of different meshes in a single ObjNode model / BG3D model
 
+#define	MAX_CHAR_SPRITES_PER_OBJNODE	32
 
 			/*********************/
 			/* SPLINE STRUCTURES */
@@ -389,7 +388,7 @@ struct ObjNode
 	MOSpriteObject		*SpriteMO;				// ref to sprite meta object for sprite genre.
 
 	Byte				NumStringSprites;		// # sprites to build string (NOT SAME AS LENGTH OF STRING B/C SPACES ET.AL.)
-	MOSpriteObject		*StringCharacters[31];	// sprites for each character
+	MOSpriteObject		*StringCharacters[MAX_CHAR_SPRITES_PER_OBJNODE];	// sprites for each character
 
 	float				AnaglyphZ;
 };
@@ -407,11 +406,3 @@ typedef struct
 	void			(*moveCall)(ObjNode *);
 	float			rot,scale;
 }NewObjectDefinitionType;
-
-
-
-#endif
-
-
-
-

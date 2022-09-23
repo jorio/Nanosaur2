@@ -174,12 +174,7 @@ static EffectType	gEffectsTable[] =
 
 void InitSoundTools(void)
 {
-	SOFTIMPME;
-#if 0
 OSErr			iErr;
-short			i;
-ExtSoundHeader	sndHdr;
-const double	crap = rate44khz;
 FSSpec			spec;
 
 
@@ -191,33 +186,12 @@ FSSpec			spec;
 
 			/* INIT BANK INFO */
 
-	for (i = 0; i < MAX_SOUND_BANKS; i++)
+	for (int i = 0; i < MAX_SOUND_BANKS; i++)
 		gNumSndsInBank[i] = 0;
 
 			/******************/
 			/* ALLOC CHANNELS */
 			/******************/
-
-				/* MAKE DUMMY SOUND HEADER */
-
-	sndHdr.samplePtr 		= nil;
-    sndHdr.sampleRate		= rate44khz;
-    sndHdr.loopStart		= 0;
-    sndHdr.loopEnd			= 0;
-    sndHdr.encode			= extSH;
-    sndHdr.baseFrequency 	= 0;
-    sndHdr.numFrames		= 0;
-    sndHdr.numChannels		= 2;
-   	dtox80(&crap, &sndHdr.AIFFSampleRate);
-    sndHdr.markerChunk		= 0;
-    sndHdr.instrumentChunks	= 0;
-    sndHdr.AESRecording		= 0;
-    sndHdr.sampleSize		= 16;
-    sndHdr.futureUse1		= 0;
-    sndHdr.futureUse2		= 0;
-    sndHdr.futureUse3		= 0;
-    sndHdr.futureUse4		= 0;
-    sndHdr.sampleArea[0]		= 0;
 
 	for (gMaxChannels = 0; gMaxChannels < MAX_CHANNELS; gMaxChannels++)
 	{
@@ -225,13 +199,14 @@ FSSpec			spec;
 
 		SndCommand 		mySndCmd;
 
-		iErr = SndNewChannel(&gSndChannel[gMaxChannels],sampledSynth,initMono+initNoInterp,NewSndCallBackUPP(CallBackFn));
+		iErr = SndNewChannel(&gSndChannel[gMaxChannels],sampledSynth,initMono+initNoInterp,nil);//NewSndCallBackUPP(CallBackFn));
 		if (iErr)												// if err, stop allocating channels
 			break;
 
 		gChannelInfo[gMaxChannels].isLooping = false;
 
 
+#if 0
 			/* FOR POST- SM 3.6.5 DO THIS! */
 
 		mySndCmd.cmd = soundCmd;
@@ -252,6 +227,7 @@ FSSpec			spec;
 			DoAlert("InitSoundTools: SndDoImmediate failed 2!");
 			ShowSystemErr_NonFatal(iErr);
 		}
+#endif
 	}
 
 
@@ -261,7 +237,7 @@ FSSpec			spec;
 
 	gNumStreamingAudioFiles = 0;
 
-	for (i = 0; i < MAX_AUDIO_STREAMS; i++)
+	for (int i = 0; i < MAX_AUDIO_STREAMS; i++)
 	{
 		gStreamingAudioMovie[i] 	= nil;
 		gStreamingAudioTaskTimer[i] = 0;
@@ -286,6 +262,7 @@ FSSpec			spec;
 			/* INIT MOVIES TASK THREAD */
 			/***************************/
 
+#if 0
 	{
 		pthread_cond_t refresh;
 		pthread_mutex_t mutex;
@@ -717,9 +694,6 @@ short					theChan;
 Byte					bankNum,soundNum;
 uint32_t					leftVol, rightVol;
 
-	SOFTIMPME;
-	return 0;
-
 			/* GET BANK & SOUND #'S FROM TABLE */
 
 	bankNum 	= gEffectsTable[effectNum].bank;
@@ -759,9 +733,6 @@ short PlayEffect_Parms3D(short effectNum, OGLPoint3D *where, uint32_t rateMultip
 short			theChan;
 Byte			bankNum,soundNum;
 uint32_t			leftVol, rightVol;
-
-	SOFTIMPME;
-	return 0;
 
 			/* GET BANK & SOUND #'S FROM TABLE */
 
@@ -1034,10 +1005,6 @@ SoundHeaderPtr   sndPtr;
 #endif
 
 
-	SOFTIMPME;
-	return 0;
-
-
 			/* GET BANK & SOUND #'S FROM TABLE */
 
 	bankNum = gEffectsTable[effectNum].bank;
@@ -1081,13 +1048,13 @@ SoundHeaderPtr   sndPtr;
 	mySndCmd.cmd = volumeCmd;										// set sound playback volume
 	mySndCmd.param1 = 0;
 	mySndCmd.param2 = (rv2<<16) | lv2;
-	myErr = SndDoCommand(chanPtr, &mySndCmd, true);
+	myErr = SndDoImmediate(chanPtr, &mySndCmd);
 
 
 	mySndCmd.cmd = bufferCmd;										// make it play
 	mySndCmd.param1 = 0;
 	mySndCmd.ptr = ((Ptr)*gSndHandles[bankNum][soundNum])+gSndOffsets[bankNum][soundNum];	// pointer to SoundHeader
-    SndDoCommand(chanPtr, &mySndCmd, true);
+    SndDoImmediate(chanPtr, &mySndCmd);
 	if (myErr)
 		return(-1);
 
@@ -1110,7 +1077,7 @@ SoundHeaderPtr   sndPtr;
     	mySndCmd.cmd = callBackCmd;										// let us know when the buffer is done playing
     	mySndCmd.param1 = 0;
     	mySndCmd.ptr = ((Ptr)*gSndHandles[bankNum][soundNum])+gSndOffsets[bankNum][soundNum];	// pointer to SoundHeader
-    	SndDoCommand(chanPtr, &mySndCmd, true);
+    	SndDoImmediate(chanPtr, &mySndCmd);
 
     	gChannelInfo[theChan].isLooping = true;
     	gNumLoopingEffects++;

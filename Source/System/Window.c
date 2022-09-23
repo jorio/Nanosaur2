@@ -511,7 +511,7 @@ EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
 ControlID 		idControl;
 ControlRef 		control;
 int				i;
-const char		*rezNames[MAX_LANGUAGES] =
+const char		*rezNames[NUM_LANGUAGES] =
 {
 	"VideoMode_English",
 	"VideoMode_French",

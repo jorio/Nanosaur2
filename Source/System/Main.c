@@ -193,47 +193,11 @@ long		createdDirID;
 
 void InitDefaultPrefs(void)
 {
-int			i;
-long 		keyboardScript, languageCode;
+	memset(&gGamePrefs, 0, sizeof(gGamePrefs));
 
 		/* DETERMINE WHAT LANGUAGE IS ON THIS MACHINE */
 
-#if 0
-	keyboardScript = GetScriptManagerVariable(smKeyScript);
-	languageCode = GetScriptVariable(keyboardScript, smScriptLang);
-#endif
-	SOFTIMPME;
-	languageCode = LANGUAGE_ENGLISH;
-
-	switch(languageCode)
-	{
-		case	langFrench:
-				gGamePrefs.language 			= LANGUAGE_FRENCH;
-				break;
-
-		case	langGerman:
-				gGamePrefs.language 			= LANGUAGE_GERMAN;
-				break;
-
-		case	langSpanish:
-				gGamePrefs.language 			= LANGUAGE_SPANISH;
-				break;
-
-		case	langItalian:
-				gGamePrefs.language 			= LANGUAGE_ITALIAN;
-				break;
-
-		case	langSwedish:
-				gGamePrefs.language 			= LANGUAGE_SWEDISH;
-				break;
-
-		case	langDutch:
-				gGamePrefs.language 			= LANGUAGE_DUTCH;
-				break;
-
-		default:
-				gGamePrefs.language 			= LANGUAGE_ENGLISH;
-	}
+	gGamePrefs.language = GetBestLanguageIDFromSystemLocale();
 
 	gGamePrefs.version				= CURRENT_PREFS_VERS;
 	gGamePrefs.showScreenModeDialog = true;

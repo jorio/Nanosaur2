@@ -254,7 +254,7 @@ ControlID 		idControl;
 ControlRef 		control;
 EventHandlerRef	ref;
 
-const char		*rezNames[MAX_LANGUAGES] =
+const char		*rezNames[NUM_LANGUAGES] =
 {
 	"Settings_English",
 	"Settings_French",
@@ -266,7 +266,7 @@ const char		*rezNames[MAX_LANGUAGES] =
 };
 
 
-	if (gGamePrefs.language >= MAX_LANGUAGES)		// verify prefs for the hell of it.
+	if (gGamePrefs.language >= NUM_LANGUAGES)		// verify prefs for the hell of it.
 		InitDefaultPrefs();
 
 	Enter2D();
@@ -490,7 +490,7 @@ ControlRef		ctrlHandle;
 Boolean			dialogDone;
 Boolean			doAgain = false;
 
-	if (gGamePrefs.language >= MAX_LANGUAGES)		// verify prefs for the hell of it.
+	if (gGamePrefs.language >= NUM_LANGUAGES)		// verify prefs for the hell of it.
 		InitDefaultPrefs();
 
 	Enter2D();

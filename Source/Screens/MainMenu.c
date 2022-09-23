@@ -334,7 +334,7 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const char* names[MAX_LANGUAGES][4] =
+					static const char* names[NUM_LANGUAGES][4] =
 					{
 						{									// ENGLISH
 							"PLAY GAME",
@@ -418,7 +418,7 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const char* names[MAX_LANGUAGES][4] =
+					static const char* names[NUM_LANGUAGES][4] =
 					{
 						{												// ENGLISH
 							"ADVENTURE",
@@ -498,7 +498,7 @@ int			language;
 				y = CalcMenuTopY(5);
 				for (i = 0; i < 5; i++)
 				{
-					static const char* names[MAX_LANGUAGES][5] =
+					static const char* names[NUM_LANGUAGES][5] =
 					{
 						{														// ENGLISH
 							"STORY",
@@ -586,7 +586,7 @@ int			language;
 				y = CalcMenuTopY(7);
 				for (i = 0; i < 7; i++)
 				{
-					static const char* names[MAX_LANGUAGES][7] =
+					static const char* names[NUM_LANGUAGES][7] =
 					{
 						{											// ENGLISH
 							"RACE 1",

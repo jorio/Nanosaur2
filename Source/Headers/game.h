@@ -53,6 +53,7 @@ typedef float CGGammaValue;
 #include "collision.h"
 #include "ogl_support.h"
 #include "metaobjects.h"
+#include "localization.h"
 #include "main.h"
 #include "terrain.h"
 #include "player.h"

@@ -1702,7 +1702,7 @@ EventTypeSpec	list[] = {   { kEventClassWindow, kEventWindowClose },
                              { kEventClassWindow, kEventWindowDrawContent },
                              { kEventClassControl, kEventControlClick },
                              { kEventClassCommand,  kEventProcessCommand } };
-const char		*rezNames[MAX_LANGUAGES] =
+const char		*rezNames[NUM_LANGUAGES] =
 {
 	"HIDConfigWindow_English",
 	"HIDConfigWindow_French",

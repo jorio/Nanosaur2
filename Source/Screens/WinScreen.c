@@ -61,7 +61,7 @@ static SlideType 	gSlides[NUM_SLIDES] =
 		-23,0,								// dx / dy
 		.01,									// drot
 		.5,									// delay to play effect
-		nil, //":audio:intro:story1.m4a",		// narration pathname
+		.narrationSound = EFFECT_NULL,
 	},
 
 
@@ -161,20 +161,6 @@ short				i;
 			/****************/
 
 	BuildSlideShowObjects();
-
-
-
-
-		/* PRIME STREAMING AUDIO */
-
-
-	for (i = 0; i < NUM_SLIDES; i++)
-	{
-		if (gSlides[i].narrationFile != nil)
-		{
-			StreamAudioFile(gSlides[i].narrationFile, i, 1.8, false);
-		}
-	}
 }
 
 
@@ -183,8 +169,6 @@ short				i;
 
 static void FreeWinScreen(void)
 {
-	KillAudioStream(-1);
-
 	MyFlushEvents();
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
@@ -304,22 +288,6 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 		theNode->ColorFilter.a += fps * SLIDE_FADE_RATE;
 		if (theNode->ColorFilter.a > 1.0f)
 			theNode->ColorFilter.a = 1.0f;
-	}
-
-
-			/* PLAY EFFECT? */
-
-	if (gSlides[slideNum].narrationFile != nil)				// does it have an effect?
-	{
-		if (!theNode->HasPlayedEffect)						// has it been played yet?
-		{
-			theNode->EffectTimer -= fps;
-			if (theNode->EffectTimer <= 0.0f)				// is it time to play it?
-			{
-				StartAudioStream(slideNum);
-				theNode->HasPlayedEffect = true;
-			}
-		}
 	}
 }
 

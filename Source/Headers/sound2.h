@@ -27,7 +27,8 @@ enum
 	SONG_LEVEL1,
 	SONG_LEVEL2,
 	SONG_LEVEL3,
-	SONG_WIN
+	SONG_WIN,
+	MAX_SONGS
 };
 
 
@@ -38,6 +39,8 @@ enum
 
 enum
 {
+	EFFECT_NULL,
+
 		/* DEFAULT */
 
 	EFFECT_CHANGESELECT,
@@ -77,7 +80,25 @@ enum
 	EFFECT_BRACHDEATH,
 	EFFECT_DIRT,
 
+		/* NARRATION */
+
+	EFFECT_STORY1,
+	EFFECT_STORY2,
+	EFFECT_STORY3,
+	EFFECT_STORY4,
+	EFFECT_STORY5,
+	EFFECT_STORY6,
+	EFFECT_STORY7,
+
 	NUM_EFFECTS
+};
+
+enum
+{
+	SOUND_BANK_NULL,
+	SOUND_BANK_MAIN,
+	SOUND_BANK_NARRATION,
+	NUM_SOUND_BANKS,
 };
 
 
@@ -93,6 +114,8 @@ void ShutdownSound(void);
 
 void StopAChannel(short *channelNum);
 extern	void StopAllEffectChannels(void);
+void LoadSoundBank(uint8_t bank);
+void DisposeSoundBank(uint8_t bank);
 void PlaySong(short songNum, Boolean loopFlag);
 extern void	KillSong(void);
 extern	short PlayEffect(short effectNum);

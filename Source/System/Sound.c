@@ -1,7 +1,8 @@
 /****************************/
 /*     SOUND ROUTINES       */
-/* (c)2003 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -16,8 +17,6 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void LoadSoundBank(void);
-static void DisposeSoundBank(void);
 static short FindSilentChannel(void);
 static void Calc3DEffectVolume(short effectNum, OGLPoint3D *where, float volAdjust, uint32_t *leftVolOut, uint32_t *rightVolOut);
 static void UpdateGlobalVolume(void);
@@ -37,9 +36,13 @@ static void UpdateGlobalVolume(void);
 
 #define		MAX_AUDIO_STREAMS		9
 
+#define		FULL_SONG_VOLUME		0.5f
+#define		FULL_EFFECTS_VOLUME		0.5f
+
 
 typedef struct
 {
+	uint8_t			bank;
 	const char*		name;
 	float			refVol;
 }EffectType;
@@ -52,50 +55,9 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-static volatile  Boolean gInQuicktimeFunction = false, gInMoviesTask = false;
-
-
-			/* SONG RELATED */
-
-static CGrafPtr		gQTDummyPort = nil;
-/*Movie*/ void*		gSongMovie = nil;
-
-const float	gSongVolumeTweaks[]=
-{
-	1.0,			// theme
-	1.0,			// INTRO
-	1.1,			// level 1
-	1.0,			// level 2
-	1.0,			// level 3
-	1.0,			//  WIN
-};
-
-
-const Str32	gSongNames[] =
-{
-	":audio:theme.m4a",
-	":audio:introsong.m4a",
-	":audio:level1song.m4a",
-	":audio:level2song.m4a",
-	":audio:level3song.m4a",
-	":audio:winsong.m4a",
-};
-
-
-
-
-			/* STREAMING FILES */
-
-short				gNumStreamingAudioFiles = 0;
-void* /*Movie*/		gStreamingAudioMovie[MAX_AUDIO_STREAMS];
-float				gStreamingAudioTaskTimer[MAX_AUDIO_STREAMS];
-float				gStreamingAudioVolume[MAX_AUDIO_STREAMS];
-Boolean				gStreamingFileFlag[MAX_AUDIO_STREAMS];
-
-		/* OTHER */
-
-
 float						gGlobalVolume = 1.0;
+static float				gMusicVolume = FULL_SONG_VOLUME;
+static float				gMusicVolumeTweak = 1.0f;
 
 static OGLPoint3D			gEarCoords[MAX_PLAYERS];						// coord of camera plus a tad to get pt in front of camera
 static	OGLVector3D			gEyeVector[MAX_PLAYERS];
@@ -106,13 +68,11 @@ static  long				gSndOffsets[MAX_EFFECTS];
 
 static	SndChannelPtr		gSndChannel[MAX_CHANNELS];
 ChannelInfoType				gChannelInfo[MAX_CHANNELS];
+static	SndChannelPtr		gMusicChannel;
 
 static short				gMaxChannels = 0;
 
 static short				gMostRecentChannel = -1;
-
-static short				gNumSndsInBank = 0;
-
 
 Boolean						gSongPlayingFlag = false;
 Boolean						gLoopSongFlag = true;
@@ -128,44 +88,59 @@ short				gCurrentSong = -1;
 		/* EFFECTS TABLE */
 		/*****************/
 
-static EffectType	gEffectsTable[] =
+static const char* gSoundBankNames[NUM_SOUND_BANKS] =
 {
-	[EFFECT_CHANGESELECT   ] = {"CHANGESELECT",		1},
-	[EFFECT_GETPOW         ] = {"GETPOW",			1},
-	[EFFECT_SPLASH         ] = {"SPLASH",			1},
-	[EFFECT_TURRETEXPLOSION] = {"TURRETEXPLOSION",	2.0},
-	[EFFECT_IMPACTSIZZLE   ] = {"IMPACTSIZZLE",		1},
-	[EFFECT_SHIELD         ] = {"SHIELD",			1},
-	[EFFECT_MINEEXPLODE    ] = {"MINEEXPLODE",		3},
-	[EFFECT_PLANECRASH     ] = {"PLANECRASH",		1},
-	[EFFECT_TURRETFIRE     ] = {"TURRETFIRE",		1.0},
-	[EFFECT_STUNGUN        ] = {"STUNGUN",			.7},
-	[EFFECT_ROCKETLAUNCH   ] = {"ROCKETLAUNCH",		1},
-	[EFFECT_WEAPONCHARGE   ] = {"WEAPONCHARGE",		1},
-	[EFFECT_FLARESHOOT     ] = {"FLARESHOOT",		1},
-	[EFFECT_CHANGEWEAPON   ] = {"CHANGEWEAPON",		1},
-	[EFFECT_SONICSCREAM    ] = {"SONICSCREAM",		1},
-	[EFFECT_ELECTRODEHUM   ] = {"ELECTRODEHUM",		.2},
-	[EFFECT_WORMHOLE       ] = {"WORMHOLE",			1.0},
-	[EFFECT_WORMHOLEVANISH ] = {"WORMHOLEVANISH",	1.6},
-	[EFFECT_WORMHOLEAPPEAR ] = {"WORMHOLEAPPEAR",	1.6},
-	[EFFECT_EGGINTOWORMHOLE] = {"EGGINTOWORMHOLE",	1.0},
-	[EFFECT_BODYHIT        ] = {"BODYHIT",			1.0},
-	[EFFECT_LAUNCHMISSILE  ] = {"LAUNCHMISSILE",	.7},
-	[EFFECT_GRABEGG        ] = {"GRABEGG",			.7},
-	[EFFECT_JETPACKHUM     ] = {"JETPACKHUM",		.8},
-	[EFFECT_JETPACKIGNITE  ] = {"JETPACKIGNITE",	.6},
-	[EFFECT_MENUSELECT     ] = {"MENUSELECT",		.6},
-	[EFFECT_MISSILEENGINE  ] = {"MISSILEENGINE",	.6},
-	[EFFECT_BOMBDROP       ] = {"BOMBDROP",			1.0},
-	[EFFECT_DUSTDEVIL      ] = {"DUSTDEVIL",		1.0},
-	[EFFECT_LASERBEAM      ] = {"LASERBEAM",		1.0},
-	[EFFECT_CRYSTALSHATTER ] = {"CRYSTALSHATTER",	1.5},
-	[EFFECT_RAPTORDEATH    ] = {"RAPTORDEATH",		.8},
-	[EFFECT_RAPTORATTACK   ] = {"RAPTORATTACK",		1.0},
-	[EFFECT_BRACHHURT      ] = {"BRACHHURT",		1.2},
-	[EFFECT_BRACHDEATH     ] = {"BRACHDEATH",		1.0},
-	[EFFECT_DIRT           ] = {"DIRT",				1.0},
+	[SOUND_BANK_NULL] = NULL,
+	[SOUND_BANK_MAIN] = "SoundBank",
+	[SOUND_BANK_NARRATION] = "Narration",
+};
+
+static const EffectType gEffectsTable[NUM_EFFECTS] =
+{
+	[EFFECT_NULL           ] = {SOUND_BANK_NULL, NULL,				1},
+	[EFFECT_CHANGESELECT   ] = {SOUND_BANK_MAIN, "CHANGESELECT",	1},
+	[EFFECT_GETPOW         ] = {SOUND_BANK_MAIN, "GETPOW",			1},
+	[EFFECT_SPLASH         ] = {SOUND_BANK_MAIN, "SPLASH",			1},
+	[EFFECT_TURRETEXPLOSION] = {SOUND_BANK_MAIN, "TURRETEXPLOSION",	2},
+	[EFFECT_IMPACTSIZZLE   ] = {SOUND_BANK_MAIN, "IMPACTSIZZLE",	1},
+	[EFFECT_SHIELD         ] = {SOUND_BANK_MAIN, "SHIELD",			1},
+	[EFFECT_MINEEXPLODE    ] = {SOUND_BANK_MAIN, "MINEEXPLODE",		3},
+	[EFFECT_PLANECRASH     ] = {SOUND_BANK_MAIN, "PLANECRASH",		1},
+	[EFFECT_TURRETFIRE     ] = {SOUND_BANK_MAIN, "TURRETFIRE",		1},
+	[EFFECT_STUNGUN        ] = {SOUND_BANK_MAIN, "STUNGUN",			.7f},
+	[EFFECT_ROCKETLAUNCH   ] = {SOUND_BANK_MAIN, "ROCKETLAUNCH",	1},
+	[EFFECT_WEAPONCHARGE   ] = {SOUND_BANK_MAIN, "WEAPONCHARGE",	1},
+	[EFFECT_FLARESHOOT     ] = {SOUND_BANK_MAIN, "FLARESHOOT",		1},
+	[EFFECT_CHANGEWEAPON   ] = {SOUND_BANK_MAIN, "CHANGEWEAPON",	1},
+	[EFFECT_SONICSCREAM    ] = {SOUND_BANK_MAIN, "SONICSCREAM",		1},
+	[EFFECT_ELECTRODEHUM   ] = {SOUND_BANK_MAIN, "ELECTRODEHUM",	.2f},
+	[EFFECT_WORMHOLE       ] = {SOUND_BANK_MAIN, "WORMHOLE",		1},
+	[EFFECT_WORMHOLEVANISH ] = {SOUND_BANK_MAIN, "WORMHOLEVANISH",	1.6f},
+	[EFFECT_WORMHOLEAPPEAR ] = {SOUND_BANK_MAIN, "WORMHOLEAPPEAR",	1.6f},
+	[EFFECT_EGGINTOWORMHOLE] = {SOUND_BANK_MAIN, "EGGINTOWORMHOLE",	1},
+	[EFFECT_BODYHIT        ] = {SOUND_BANK_MAIN, "BODYHIT",			1},
+	[EFFECT_LAUNCHMISSILE  ] = {SOUND_BANK_MAIN, "LAUNCHMISSILE",	.7f},
+	[EFFECT_GRABEGG        ] = {SOUND_BANK_MAIN, "GRABEGG",			.7f},
+	[EFFECT_JETPACKHUM     ] = {SOUND_BANK_MAIN, "JETPACKHUM",		.8f},
+	[EFFECT_JETPACKIGNITE  ] = {SOUND_BANK_MAIN, "JETPACKIGNITE",	.6f},
+	[EFFECT_MENUSELECT     ] = {SOUND_BANK_MAIN, "MENUSELECT",		.6f},
+	[EFFECT_MISSILEENGINE  ] = {SOUND_BANK_MAIN, "MISSILEENGINE",	.6f},
+	[EFFECT_BOMBDROP       ] = {SOUND_BANK_MAIN, "BOMBDROP",		1},
+	[EFFECT_DUSTDEVIL      ] = {SOUND_BANK_MAIN, "DUSTDEVIL",		1},
+	[EFFECT_LASERBEAM      ] = {SOUND_BANK_MAIN, "LASERBEAM",		1},
+	[EFFECT_CRYSTALSHATTER ] = {SOUND_BANK_MAIN, "CRYSTALSHATTER",	1.5f},
+	[EFFECT_RAPTORDEATH    ] = {SOUND_BANK_MAIN, "RAPTORDEATH",		.8f},
+	[EFFECT_RAPTORATTACK   ] = {SOUND_BANK_MAIN, "RAPTORATTACK",	1},
+	[EFFECT_BRACHHURT      ] = {SOUND_BANK_MAIN, "BRACHHURT",		1.2f},
+	[EFFECT_BRACHDEATH     ] = {SOUND_BANK_MAIN, "BRACHDEATH",		1},
+	[EFFECT_DIRT           ] = {SOUND_BANK_MAIN, "DIRT",			1},
+	[EFFECT_STORY1         ] = {SOUND_BANK_NARRATION, "STORY1",		1},
+	[EFFECT_STORY2         ] = {SOUND_BANK_NARRATION, "STORY2",		1},
+	[EFFECT_STORY3         ] = {SOUND_BANK_NARRATION, "STORY3",		1},
+	[EFFECT_STORY4         ] = {SOUND_BANK_NARRATION, "STORY4",		1},
+	[EFFECT_STORY5         ] = {SOUND_BANK_NARRATION, "STORY5",		1},
+	[EFFECT_STORY6         ] = {SOUND_BANK_NARRATION, "STORY6",		1},
+	[EFFECT_STORY7         ] = {SOUND_BANK_NARRATION, "STORY7",		1},
 };
 
 
@@ -182,10 +157,6 @@ FSSpec			spec;
 	gMaxChannels = 0;
 	gMostRecentChannel = -1;
 
-
-			/* INIT BANK INFO */
-
-	gNumSndsInBank = 0;
 
 			/******************/
 			/* ALLOC CHANNELS */
@@ -204,19 +175,10 @@ FSSpec			spec;
 		gChannelInfo[gMaxChannels].isLooping = false;
 	}
 
+		/* SONG CHANNEL */
 
-			/****************/
-			/* INIT STREAMS */
-			/****************/
-
-	gNumStreamingAudioFiles = 0;
-
-	for (int i = 0; i < MAX_AUDIO_STREAMS; i++)
-	{
-		gStreamingAudioMovie[i] 	= nil;
-		gStreamingAudioTaskTimer[i] = 0;
-		gStreamingFileFlag[i] 		= false;
-	}
+	iErr = SndNewChannel(&gMusicChannel, sampledSynth, initStereo, nil);
+	GAME_ASSERT(!iErr);
 
 
 
@@ -225,11 +187,7 @@ FSSpec			spec;
 		/* LOAD DEFAULT SOUNDS */
 		/***********************/
 
-	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Audio:Main.sounds", &spec);
-	if (iErr)
-		DoFatalAlert("InitSoundTools: FSMakeFSSpec failed");
-
-	LoadSoundBank();
+	LoadSoundBank(SOUND_BANK_MAIN);
 }
 
 
@@ -240,8 +198,6 @@ FSSpec			spec;
 
 void ShutdownSound(void)
 {
-int	i;
-
 			/* STOP ANY PLAYING AUDIO */
 
 	StopAllEffectChannels();
@@ -250,27 +206,33 @@ int	i;
 
 		/* DISPOSE OF CHANNELS */
 
-	for (i = 0; i < gMaxChannels; i++)
+	for (int i = 0; i < gMaxChannels; i++)
 		SndDisposeChannel(gSndChannel[i], true);
 	gMaxChannels = 0;
 
 
-		/* DISPOSE SOUND BANK */
+		/* DISPOSE OF ALL SOUND BANKS */
 
-	DisposeSoundBank();
+	for (int i = 0; i < NUM_SOUND_BANKS; i++)
+	{
+		DisposeSoundBank(i);
+	}
 }
 
 #pragma mark -
 
 /******************* LOAD SOUND BANK ************************/
 
-static void LoadSoundBank(void)
+void LoadSoundBank(uint8_t bank)
 {
+	static const char* kSoundExts[] = {"aiff", "mp3", NULL};
+	OSErr iErr;
+
 	StopAllEffectChannels();
 
 			/* DISPOSE OF EXISTING BANK */
 
-	DisposeSoundBank();
+	DisposeSoundBank(bank);
 
 			/****************************/
 			/* LOAD ALL EFFECTS IN BANK */
@@ -278,13 +240,42 @@ static void LoadSoundBank(void)
 
 	for (int i = 0; i < NUM_EFFECTS; i++)
 	{
-		char path[64];
-		FSSpec spec;
-		short refNum;
+		const EffectType* effectDef = &gEffectsTable[i];
 
-		snprintf(path, sizeof(path), ":Audio:SoundBank:%s.aiff", gEffectsTable[i].name);
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
-		FSpOpenDF(&spec, fsRdPerm, &refNum);
+				/* FILTER EFFECTS BY BANK */
+
+		if (effectDef->bank != bank)
+			continue;
+
+				/* FIND FSSPEC TO EFFECT FILE */
+
+		FSSpec spec;
+		short refNum = -1;
+		iErr = noErr;
+
+		for (size_t extNum = 0; kSoundExts[extNum]; extNum++)
+		{
+			char path[64];
+
+			snprintf(path, sizeof(path), ":Audio:%s:%s.%s",
+				gSoundBankNames[effectDef->bank],
+				effectDef->name,
+				kSoundExts[extNum]);
+
+			iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
+			if (iErr == noErr)	// if the file exists, stop; otherwise try next extension
+			{
+				break;
+			}
+		}
+
+		// after trying all extensions, stop here if still don't have a valid FSSpec
+		GAME_ASSERT(!iErr);
+
+				/* OPEN DATA FORK */
+
+		iErr = FSpOpenDF(&spec, fsRdPerm, &refNum);
+		GAME_ASSERT(!iErr);
 
 				/* LOAD SND REZ */
 
@@ -299,29 +290,34 @@ static void LoadSoundBank(void)
 
 		Pomme_DecompressSoundResource(&gSndHandles[i], &gSndOffsets[i]);
 
+				/* CLOSE DATA FORK */
+
 		FSClose(refNum);
 	}
-
-	gNumSndsInBank = NUM_EFFECTS;					// remember how many sounds we've got
 }
 
 
 /******************** DISPOSE SOUND BANK **************************/
 
-static void DisposeSoundBank(void)
+void DisposeSoundBank(uint8_t bank)
 {
 	StopAllEffectChannels();									// make sure all sounds are stopped before nuking any banks
 
 			/* FREE ALL SAMPLES */
 
-	for (int i = 0; i < gNumSndsInBank; i++)
+	for (int i = 0; i < NUM_EFFECTS; i++)
 	{
-		DisposeHandle((Handle) gSndHandles[i]);
-		gSndHandles[i] = nil;
+		if (gEffectsTable[i].bank == bank)
+		{
+			if (gSndHandles[i])
+			{
+				DisposeHandle((Handle) gSndHandles[i]);
+			}
+
+			gSndHandles[i] = nil;
+			gSndOffsets[i] = 0;
+		}
 	}
-
-
-	gNumSndsInBank = 0;
 }
 
 
@@ -334,7 +330,6 @@ static void DisposeSoundBank(void)
 void StopAChannel(short *channelNum)
 {
 SndCommand 	mySndCmd;
-OSErr 		myErr;
 short		c = *channelNum;
 
 	if ((c < 0) || (c >= gMaxChannels))		// make sure its a legal #
@@ -343,12 +338,12 @@ short		c = *channelNum;
 	mySndCmd.cmd = flushCmd;
 	mySndCmd.param1 = 0;
 	mySndCmd.param2 = 0;
-	myErr = SndDoImmediate(gSndChannel[c], &mySndCmd);
+	SndDoImmediate(gSndChannel[c], &mySndCmd);
 
 	mySndCmd.cmd = quietCmd;
 	mySndCmd.param1 = 0;
 	mySndCmd.param2 = 0;
-	myErr = SndDoImmediate(gSndChannel[c], &mySndCmd);
+	SndDoImmediate(gSndChannel[c], &mySndCmd);
 
 	*channelNum = -1;
 
@@ -432,9 +427,9 @@ SCStatus				theStatus;
 void PlaySong(short songNum, Boolean loopFlag)
 {
 OSErr 	iErr;
+static	SndCommand 		mySndCmd;
 FSSpec	spec;
-short	myRefNum;
-GrafPtr	oldPort;
+short	musicFileRefNum;
 
 	if (songNum == gCurrentSong)					// see if this is already playing
 		return;
@@ -448,79 +443,91 @@ GrafPtr	oldPort;
 	DoSoundMaintenance();
 
 			/******************************/
-			/* OPEN APPROPRIATE SND FILE */
+			/* OPEN APPROPRIATE SONG FILE */
 			/******************************/
 
-	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, gSongNames[songNum], &spec);
-	if (iErr)
-		DoFatalAlert("PlaySong: song file not found");
+
+	static const struct
+	{
+		const char* path;
+		float volumeTweak;
+	} songs[MAX_SONGS] =
+	{
+		[SONG_THEME]		= {":audio:theme.mp3",			1.0f},
+		[SONG_INTRO]		= {":audio:introsong.mp3",		1.0f},
+		[SONG_LEVEL1]		= {":audio:level1song.mp3",		1.1f},
+		[SONG_LEVEL2]		= {":audio:level2song.mp3",		1.0f},
+		[SONG_LEVEL3]		= {":audio:level3song.mp3",		1.0f},
+		[SONG_WIN]			= {":audio:winsong.mp3",		1.0f},
+	};
+
+	iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, songs[songNum].path, &spec);
+	GAME_ASSERT(!iErr);
+
+	iErr = FSpOpenDF(&spec, fsRdPerm, &musicFileRefNum);
+	GAME_ASSERT(!iErr);
 
 	gCurrentSong = songNum;
+	gMusicVolumeTweak = songs[songNum].volumeTweak;
 
 
-	SOFTIMPME;
-#if 0
 				/*****************/
 				/* START PLAYING */
 				/*****************/
 
-			/* GOT TO SET A DUMMY PORT OR QT MAY FREAK */
+			/* START PLAYING FROM FILE */
 
-	if (gQTDummyPort == nil)						// create a blank graf port
-		gQTDummyPort = CreateNewPort();
+	iErr = SndStartFilePlay(
+		gMusicChannel,
+		musicFileRefNum,
+		0,
+		0, //STREAM_BUFFER_SIZE
+		0, //gMusicBuffer
+		nil,
+		nil, //SongCompletionProc
+		true);
 
-	GetPort(&oldPort);								// set as active before NewMovieFromFile()
-	SetPort(gQTDummyPort);
+	FSClose(musicFileRefNum);		// close the file (Pomme decompresses entire song into memory)
 
-
-	iErr = OpenMovieFile(&spec, &myRefNum, fsRdPerm);
-	if (myRefNum && (iErr == noErr))
+	if (iErr)
 	{
-		iErr = NewMovieFromFile(&gSongMovie, myRefNum, 0, nil, newMovieActive, nil);
-		CloseMovieFile(myRefNum);
-
-		if (iErr == noErr)
-		{
-			TimeValue timeNow, duration;
-			Fixed playRate;
-			Media theMedia;
-
-			SetMoviePlayHints(gSongMovie, 0, hintsUseSoundInterp|hintsHighQuality);	// turn these off
-			if (loopFlag)
-				SetMoviePlayHints(gSongMovie, hintsLoop, hintsLoop);	// turn this on
-
-			timeNow = GetMovieTime(gSongMovie, nil);
-			duration = GetMovieDuration(gSongMovie);
-			playRate = GetMoviePreferredRate(gSongMovie);
-			theMedia = GetTrackMedia(GetMovieIndTrack(gSongMovie, 1));
-
-			LoadMovieIntoRam(gSongMovie, timeNow, duration, keepInRam);
-			LoadMediaIntoRam(theMedia, timeNow, duration, keepInRam);
-
-//			MediaSetPreferredChunkSize(theMedia, 200000);
- 			PrePrerollMovie(gSongMovie, timeNow, playRate, nil, nil);
-  			PrerollMovie(gSongMovie, timeNow, playRate);
-
-			SetMovieVolume(gSongMovie, FloatToFixed16(gGlobalVolume * gSongVolumeTweaks[songNum])); // set volume
-			StartMovie(gSongMovie);
-
-			gSongPlayingFlag = true;
-		}
+		DoFatalAlert("PlaySong: SndStartFilePlay failed! (System error %d)", iErr);
 	}
 
-	SetPort(oldPort);
+	gSongPlayingFlag = true;
 
+
+			/* SET LOOP FLAG ON STREAM (SOURCE PORT ADDITION) */
+			/* So we don't need to re-read the file over and over. */
+
+	mySndCmd.cmd = pommeSetLoopCmd;
+	mySndCmd.param1 = loopFlag ? 1 : 0;
+	mySndCmd.param2 = 0;
+	iErr = SndDoImmediate(gMusicChannel, &mySndCmd);
+	if (iErr)
+		DoFatalAlert("PlaySong: SndDoImmediate (pomme loop extension) failed!");
+
+	uint32_t lv2 = kFullVolume * gMusicVolumeTweak * gMusicVolume;
+	uint32_t rv2 = kFullVolume * gMusicVolumeTweak * gMusicVolume;
+	mySndCmd.cmd = volumeCmd;
+	mySndCmd.param1 = 0;
+	mySndCmd.param2 = (rv2<<16) | lv2;
+	iErr = SndDoImmediate(gMusicChannel, &mySndCmd);
+	if (iErr)
+		DoFatalAlert("PlaySong: SndDoImmediate (volumeCmd) failed!");
 
 
 			/* SEE IF WANT TO MUTE THE MUSIC */
 
 	if (gMuteMusicFlag)
 	{
+		SOFTIMPME;
+#if 0
 		if (gSongMovie)
 			StopMovie(gSongMovie);
-
-	}
 #endif
+	}
+
 }
 
 
@@ -528,28 +535,14 @@ GrafPtr	oldPort;
 
 void KillSong(void)
 {
-	gInQuicktimeFunction = true;				// dont allow song task to start anything new
-	while(gInMoviesTask);			// DONT DO ANYTHING WHILE IN THE SONG TASK!!
-
-
 	gCurrentSong = -1;
 
 	if (!gSongPlayingFlag)
-		goto bail;
+		return;
 
 	gSongPlayingFlag = false;											// tell callback to do nothing
 
-	SOFTIMPME;
-#if 0
-	StopMovie(gSongMovie);
-	DisposeMovie(gSongMovie);
-#endif
-
-	gSongMovie = nil;
-
-
-bail:
-	gInQuicktimeFunction = false;
+	SndStopFilePlay(gMusicChannel, true);								// stop it
 }
 
 /******************** TOGGLE MUSIC *********************/
@@ -594,7 +587,7 @@ short PlayEffect3D(short effectNum, OGLPoint3D *where)
 short					theChan;
 uint32_t					leftVol, rightVol;
 
-	if (effectNum >= gNumSndsInBank)					// see if illegal sound #
+	if (effectNum >= MAX_EFFECTS)			// see if illegal sound #
 	{
 		DoFatalAlert("Illegal sound number %d!", effectNum);
 	}
@@ -628,7 +621,7 @@ short PlayEffect_Parms3D(short effectNum, OGLPoint3D *where, uint32_t rateMultip
 short			theChan;
 uint32_t			leftVol, rightVol;
 
-	if (effectNum >= gNumSndsInBank)					// see if illegal sound #
+	if (effectNum >= MAX_EFFECTS)					// see if illegal sound #
 	{
 		DoFatalAlert("Illegal sound number %d!", effectNum);
 	}
@@ -850,29 +843,6 @@ short PlayEffect(short effectNum)
 
 }
 
-#if 0
-/***************************** CALLBACKFN ***************************/
-//
-// Called by the Sound Manager at interrupt time to let us know that
-// the sound is done playing.
-//
-
-static pascal void CallBackFn (SndChannelPtr chan, SndCommand *cmd)
-{
-SndCommand      theCmd;
-
-    // Play the sound again (loop it)
-
-    theCmd.cmd = bufferCmd;
-    theCmd.param1 = 0;
-    theCmd.param2 = cmd->param2;
-	SndDoCommand (chan, &theCmd, true);
-
-    // Just reuse the callBackCmd that got us here in the first place
-    SndDoCommand (chan, cmd, true);
-}
-#endif
-
 /***************************** PLAY EFFECT PARMS ***************************/
 //
 // Plays an effect with parameters
@@ -892,10 +862,9 @@ static UInt32          loopStart, loopEnd;
 SoundHeaderPtr   sndPtr;
 #endif
 
-	if (effectNum >= gNumSndsInBank)									// see if illegal sound #
-	{
-		DoFatalAlert("Illegal sound number %d!", effectNum);
-	}
+	GAME_ASSERT(effectNum >= 0);
+	GAME_ASSERT(effectNum < MAX_EFFECTS);
+	GAME_ASSERT_MESSAGE(gSndHandles[effectNum], "sound effect wasn't loaded!");
 
 			/* LOOK FOR FREE CHANNEL */
 
@@ -1092,6 +1061,7 @@ SndChannelPtr			chanPtr;
 
 void DoSoundMaintenance(void)
 {
+#if 0
 float	fps = gFramesPerSecondFrac;
 short	i;
 
@@ -1121,77 +1091,7 @@ short	i;
 			UpdateGlobalVolume();
 		}
 	}
-
-
-				/***************/
-				/* UPDATE SONG */
-				/***************/
-
-	if (gSongPlayingFlag)
-	{
-		SOFTIMPME;
-#if 0
-		gInQuicktimeFunction = true;				// dont allow song task to start anything new
-		while(gInMoviesTask);			// DONT DO ANYTHING WHILE IN THE SONG TASK!!
-
-		if (IsMovieDone(gSongMovie))				// see if the song has completed
-		{
-			if (gLoopSongFlag)						// see if repeat it
-			{
-				GoToBeginningOfMovie(gSongMovie);
-				StartMovie(gSongMovie);
-			}
-			else									// otherwise kill the song
-				KillSong();
-		}
 #endif
-
-		gInQuicktimeFunction = false;
-	}
-
-
-				/**************************/
-				/* UPDATE STREAMING AUDIO */
-				/**************************/
-
-	if (gNumStreamingAudioFiles > 0)
-	{
-		for (i = 0; i < MAX_AUDIO_STREAMS; i++)
-		{
-			if (gStreamingFileFlag[i])
-			{
-				SOFTIMPME;
-#if 0
-				if (IsMovieDone(gStreamingAudioMovie[i]))				// see if the song has completed
-				{
-					KillAudioStream(i);
-				}
-				else
-				{
-					gStreamingAudioTaskTimer[i] -= fps;
-					if (gStreamingAudioTaskTimer[i] <= 0.0f)
-					{
-						gInQuicktimeFunction = true;				// dont allow song task to start anything new
-						while(gInMoviesTask);						// DONT DO ANYTHING WHILE IN THE SONG TASK!!
-
-						MoviesTask(gStreamingAudioMovie[i], 0);
-						gStreamingAudioTaskTimer[i] += .15f;
-
-						gInQuicktimeFunction = false;
-					}
-				}
-#endif
-			}
-		}
-	}
-
-		/* ALSO CHECK OPTIONS */
-
-	if (GetNewKeyState(KEY_F1))
-	{
-		DoGameOptionsDialog();
-	}
-
 }
 
 
@@ -1246,136 +1146,3 @@ SCStatus	theStatus;
 	SndChannelStatus(gSndChannel[chanNum],sizeof(SCStatus),&theStatus);	// get channel info
 	return (theStatus.scChannelBusy);
 }
-
-
-
-#pragma mark -
-
-
-/******************** STREAM AUDIO FILE ***********************/
-
-void StreamAudioFile(const char* filename, short streamNum, float volumeTweak, Boolean playNow)
-{
-	SOFTIMPME;
-	printf("Stream: %s\n", filename);
-	return;
-OSErr 	iErr;
-short	myRefNum;
-GrafPtr	oldPort;
-FSSpec spec;
-
-	if (streamNum >= MAX_AUDIO_STREAMS)
-		DoFatalAlert("StreamAudioFile: streamNum >= MAX_AUDIO_STREAMS");
-
-		/* ZAP ANY EXISTING STREAM */
-
-	KillAudioStream(streamNum);
-	DoSoundMaintenance();
-
-
-	if (FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, filename, &spec) != noErr)
-		DoFatalAlert("StreamAudioFile: file not found");
-
-
-				/*****************/
-				/* START PLAYING */
-				/*****************/
-
-	SOFTIMPME;
-#if 0
-			/* GOT TO SET A DUMMY PORT OR QT MAY FREAK */
-
-	if (gQTDummyPort == nil)						// create a blank graf port
-		gQTDummyPort = CreateNewPort();
-
-	GetPort(&oldPort);								// set as active before NewMovieFromFile()
-	SetPort(gQTDummyPort);
-
-
-	iErr = OpenMovieFile(&spec, &myRefNum, fsRdPerm);
-	if (myRefNum && (iErr == noErr))
-	{
-		iErr = NewMovieFromFile(&gStreamingAudioMovie[streamNum], myRefNum, 0, nil, newMovieActive, nil);
-		CloseMovieFile(myRefNum);
-
-		if (iErr == noErr)
-		{
-			LoadMovieIntoRam(gStreamingAudioMovie[streamNum], 0, GetMovieDuration(gStreamingAudioMovie[streamNum]), keepInRam);
-
-			SetMoviePlayHints(gStreamingAudioMovie[streamNum], 0, hintsUseSoundInterp|hintsHighQuality);	// turn these off
-
-			SetMovieVolume(gStreamingAudioMovie[streamNum], FloatToFixed16(gGlobalVolume * volumeTweak));	// set volume
-			if (playNow)
-				StartMovie(gStreamingAudioMovie[streamNum]);												// start playing now if we want
-
-			gStreamingFileFlag[streamNum] = true;
-		}
-	}
-
-	SetPort(oldPort);
-#endif
-
-	gStreamingAudioVolume[streamNum] = volumeTweak;
-
-
-	gNumStreamingAudioFiles++;
-
-}
-
-/************************* START AUDIO STREAM ***********************/
-
-void StartAudioStream(short streamNum)
-{
-	SOFTIMPME;
-#if 0
-	if (gStreamingFileFlag[streamNum])
-		StartMovie(gStreamingAudioMovie[streamNum]);
-#endif
-}
-
-
-/*********************** KILL AUDIO STREAM *********************/
-
-void KillAudioStream(short streamNum)
-{
-	SOFTIMPME;
-#if 0
-		/* KILL ALL AUDIO STREAMS */
-
-	if (streamNum == -1)
-	{
-		for (streamNum = 0; streamNum < MAX_AUDIO_STREAMS; streamNum++)
-		{
-			if (!gStreamingFileFlag[streamNum])
-				continue;
-
-			gStreamingFileFlag[streamNum] = false;											// tell callback to do nothing
-
-			StopMovie(gStreamingAudioMovie[streamNum]);
-			DisposeMovie(gStreamingAudioMovie[streamNum]);
-
-			gStreamingAudioMovie[streamNum] = nil;
-
-			gNumStreamingAudioFiles--;
-		}
-	}
-
-			/* JUST KILL THIS ONE */
-
-	else
-	{
-		if (!gStreamingFileFlag[streamNum])
-			return;
-
-		gStreamingFileFlag[streamNum] = false;											// tell callback to do nothing
-
-		StopMovie(gStreamingAudioMovie[streamNum]);
-		DisposeMovie(gStreamingAudioMovie[streamNum]);
-
-		gStreamingAudioMovie[streamNum] = nil;
-
-		gNumStreamingAudioFiles--;
-	}
-#endif
-}
-

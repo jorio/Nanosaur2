@@ -70,7 +70,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		0,									// drot
 		0,									// delay to play effect
-		nil,								// effect #
+		.narrationSound = EFFECT_NULL,		// effect #
 	},
 
 
@@ -87,7 +87,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		.03,								// drot
 		.5,									// delay to play effect
-		":audio:intro:story1.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY1,
 	},
 
 
@@ -104,7 +104,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		35,-12,								// dx / dy
 		-.02,								// drot
 		1.0,								// delay to play effect
-		":audio:intro:story2.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY2,
 	},
 
 		/* THE MISSION WAS A SUCCESS */
@@ -120,7 +120,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-40,0,								// dx / dy
 		.05,								// drot
 		1.0,								// delay to play effect
-		":audio:intro:story3.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY3,
 	},
 
 			/* BUT BEFORE... */
@@ -136,7 +136,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		0,									// drot
 		1.0,								// delay to play effect
-		":audio:intro:story4.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY4,
 	},
 
 		/* THE EGGS WERE TAKEN TO... */
@@ -152,7 +152,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-40,0,								// dx / dy
 		.02,								// drot
 		1.0,								// delay to play effect
-		":audio:intro:story5.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY5,
 	},
 
 		/* BUT THE REBELS LEFT... */
@@ -168,7 +168,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		-.02,								// drot
 		1.0,								// delay to play effect
-		":audio:intro:story6.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY6,
 	},
 
 
@@ -185,7 +185,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,20,								// dx / dy
 		-.05,								// drot
 		1.0,								// delay to play effect
-		":audio:intro:story7.m4a",		// narration pathname
+		.narrationSound = EFFECT_STORY7,
 	},
 
 
@@ -201,7 +201,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,0,								// dx / dy
 		0,									// drot
 		0.0,								// delay to play effect
-		nil,								// narration pathname
+		.narrationSound = EFFECT_NULL,
 	},
 
 
@@ -294,6 +294,7 @@ short				i;
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:IntroStory.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
 
+	LoadSoundBank(SOUND_BANK_NARRATION);
 
 
 			/****************/
@@ -301,20 +302,6 @@ short				i;
 			/****************/
 
 	BuildSlideShowObjects();
-
-
-
-
-		/* PRIME STREAMING AUDIO */
-
-
-	for (i = 0; i < NUM_SLIDES; i++)
-	{
-		if (gSlides[i].narrationFile != nil)
-		{
-			StreamAudioFile(gSlides[i].narrationFile, i, 1.8, false);
-		}
-	}
 }
 
 
@@ -323,14 +310,13 @@ short				i;
 
 static void FreeIntroStoryScreen(void)
 {
-	KillAudioStream(-1);
-
 	MyFlushEvents();
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
 	DisposeTerrain();
+	DisposeSoundBank(SOUND_BANK_NARRATION);
 
 	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
 }
@@ -449,16 +435,14 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 
 			/* PLAY EFFECT? */
 
-	if (gSlides[slideNum].narrationFile != nil)				// does it have an effect?
+	if (gSlides[slideNum].narrationSound != EFFECT_NULL		// does it have an effect?
+		&& !theNode->HasPlayedEffect)						// has it been played yet?
 	{
-		if (!theNode->HasPlayedEffect)						// has it been played yet?
+		theNode->EffectTimer -= fps;
+		if (theNode->EffectTimer <= 0.0f)				// is it time to play it?
 		{
-			theNode->EffectTimer -= fps;
-			if (theNode->EffectTimer <= 0.0f)				// is it time to play it?
-			{
-				StartAudioStream(slideNum);
-				theNode->HasPlayedEffect = true;
-			}
+			PlayEffect(gSlides[slideNum].narrationSound);
+			theNode->HasPlayedEffect = true;
 		}
 	}
 }

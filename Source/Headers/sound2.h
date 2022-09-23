@@ -32,21 +32,6 @@ enum
 
 
 
-enum
-{
-	SOUND_BANK_MAIN 			= 0,
-	SOUND_BANK_MENU				= 1,
-	SOUND_BANK_BONUS			= 1,
-	SOUND_BANK_LOSE				= 1,
-	SOUND_BANK_MAINMENU			= 1,
-	SOUND_BANK_LEVELSPECIFIC	= 2,
-	SOUND_BANK_SONG				= 3,
-
-	MAX_SOUND_BANKS
-};
-
-
-
 /***************** EFFECTS *************************/
 // This table must match gEffectsTable
 //
@@ -96,68 +81,6 @@ enum
 };
 
 
-
-/**********************/
-/* SOUND BANK TABLES  */
-/**********************/
-//
-// These are simple enums for equating the sound effect #'s in each sound
-// bank's rez file.
-//
-
-/******** SOUND_BANK_MAIN *********/
-
-enum
-{
-	SOUND_DEFAULT_CHANGESELECT = 0,
-	SOUND_DEFAULT_GETPOT,
-	SOUND_DEFAULT_SPLASH,
-	SOUND_DEFAULT_TURRETEXPLOSION,
-	SOUND_DEFAULT_IMPACTSIZZLE,
-	SOUND_DEFAULT_SHIELD,
-	SOUND_DEFAULT_MINEEXPLODE,
-	SOUND_DEFAULT_PLANECRASH,
-	SOUND_DEFAULT_TURRETFIRE,
-	SOUND_DEFAULT_STUNGUN,
-	SOUND_DEFAULT_ROCKETLAUNCH,
-	SOUND_DEFAULT_WEAPONCHARGE,
-	SOUND_DEFAULT_FLARESHOOT,
-	SOUND_DEFAULT_CHANGEWEAPON,
-	SOUND_DEFAULT_SONICSCREAM,
-	SOUND_DEFAULT_ELECTRODEHUM,
-	SOUND_DEFAULT_WORMHOLE,
-	SOUND_DEFAULT_WORMHOLEVANISH,
-	SOUND_DEFAULT_WORMHOLEAPPEAR,
-	SOUND_DEFAULT_EGGINTOWORMHOLE,
-	SOUND_DEFAULT_BODYHIT,
-	SOUND_DEFAULT_LAUNCHMISSILE,
-	SOUND_DEFAULT_GRABEGG,
-	SOUND_DEFAULT_JETPACKHUM,
-	SOUND_DEFAULT_JETPACKIGNITE,
-	SOUND_DEFAULT_MENUSELECT,
-	SOUND_DEFAULT_MISSILEENGINE,
-	SOUND_DEFAULT_BOMBDROP,
-	SOUND_DEFAULT_DUSTDEVIL,
-	SOUND_DEFAULT_LASERBEAM,
-	SOUND_DEFAULT_CRYSTALSHATTER,
-	SOUND_DEFAULT_RAPTORDEATH,
-	SOUND_DEFAULT_RAPTORATTACK,
-	SOUND_DEFAULT_BRACHHURT,
-	SOUND_DEFAULT_BRACHDEATH,
-	SOUND_DEFAULT_DIRT
-};
-
-
-
-/********** SOUND BANK: GARDEN **************/
-
-enum
-{
-	SOUND_GARDEN_GNOMESTEP = 0
-};
-
-
-
 			/* EXTERNS */
 
 extern	ChannelInfoType				gChannelInfo[];
@@ -176,9 +99,7 @@ extern	short PlayEffect(short effectNum);
 short PlayEffect_Parms3D(short effectNum, OGLPoint3D *where, uint32_t rateMultiplier, float volumeAdjust);
 extern void	ToggleMusic(void);
 extern void	DoSoundMaintenance(void);
-extern	void LoadSoundBank(FSSpec *spec, long bankNum);
 extern	void WaitEffectsSilent(void);
-extern	void DisposeSoundBank(short bankNum);
 short PlayEffect_Parms(short effectNum, uint32_t leftVolume, uint32_t rightVolume, unsigned long rateMultiplier);
 void ChangeChannelVolume(short channel, float leftVol, float rightVol);
 short PlayEffect3D(short effectNum, OGLPoint3D *where);

@@ -966,7 +966,6 @@ static void CleanupLevel(void)
 	DisposeParticleSystem();
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
-	DisposeSoundBank(SOUND_BANK_LEVELSPECIFIC);
 	DisposeContrails();
 
 	OGL_DisposeWindowSetup(&gGameViewInfoPtr);	// do this last!

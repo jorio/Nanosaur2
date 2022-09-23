@@ -394,6 +394,7 @@ static void MoveSlide(ObjNode *theNode)
 {
 float	fps = gFramesPerSecondFrac;
 short	slideNum = theNode->Kind;
+bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 
 	if (!gSlideActive[slideNum])							// is this slide still waiting?
 		return;
@@ -413,11 +414,9 @@ short	slideNum = theNode->Kind;
 			/* SEE IF TIME TO TRIGGER NEXT SLIDE */
 
 	theNode->Timer -= fps;
-	if (theNode->Timer <= 0.0f)
+	if (!isLastSlide && theNode->Timer <= 0.0f)
 	{
-		slideNum++;
-		if (slideNum < NUM_SLIDES)
-			gSlideActive[slideNum] = true;
+		gSlideActive[slideNum + 1] = true;
 	}
 
 
@@ -433,7 +432,7 @@ short	slideNum = theNode->Kind;
 			if (theNode->Timer <= 0.0f)				// dont delete until the other timer is also done
 			{
 				DeleteObject(theNode);
-				if (slideNum >= NUM_SLIDES)			// was that the last slide?
+				if (isLastSlide)					// was that the last slide?
 					gEndSlideShow = true;
 				return;
 			}

@@ -763,7 +763,7 @@ AGLContext agl_ctx = setupInfo->drawContext;
 
 
 
-	SDL_GetWindowSize(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
+	SDL_GL_GetDrawableSize(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
 
 
 #if 0

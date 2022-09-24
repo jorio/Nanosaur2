@@ -1033,98 +1033,33 @@ float	x,y;
 
 static void CalcGameCursorCoord(void)
 {
-Point	mousePt;
-float	viewAspectRatio = gCurrentPaneAspectRatio;
-
-float	bottom = 640.0f * viewAspectRatio;
+float	bottom = 640.0f * gCurrentPaneAspectRatio;
 
 			/*****************************/
 			/* UPDATE CROSSHAIR POSITION */
 			/*****************************/
 
 
-	if (gPlayFullScreen)
-	{
-		GetMouse(&mousePt);
+	int mx, my;
+	int ww, wh;
+	SDL_GetMouseState(&mx, &my);
+	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
 
-		gCursorCoord.x = ((float)mousePt.h / (float)gGameWindowWidth) * 640.0f;
-		gCursorCoord.y = ((float)mousePt.v / (float)gGameWindowHeight) * bottom;
+	gCursorCoord.x = ((float)mx / (float)ww) * 640.0f;
+	gCursorCoord.y = ((float)my / (float)wh) * bottom;
 
-		if (gCursorCoord.x < 0.0f)										// keep in bounds (for multiple monitor systems)
-			gCursorCoord.x = 0.0f;
-		else
-		if (gCursorCoord.x > 640.0f)
-			gCursorCoord.x = 640.0f;
-
-		if (gCursorCoord.y < 0.0f)
-			gCursorCoord.y = 0.0f;
-		else
-		if (gCursorCoord.y > bottom)
-			gCursorCoord.y = bottom;
-	}
-
-				/************************/
-				/* CALC FOR WINDOW MODE */
-				/************************/
+#if 0
+	if (gCursorCoord.x < 0.0f)										// keep in bounds (for multiple monitor systems)
+		gCursorCoord.x = 0.0f;
 	else
-	{
-//		GrafPtr	oldPort;
-		Boolean	cursorOut;
+	if (gCursorCoord.x > 640.0f)
+		gCursorCoord.x = 640.0f;
 
-			/* CALC WINDOW'S GLOBAL SCREEN COORD */
-
-//		GetPort(&oldPort);
-//		SetPort(gGameWindowGrafPtr);
-
-		GetMouse(&mousePt);
-
-//		SetPort(oldPort);
-
-				/* CALC CURSOR COORD IN THE WINDOW */
-
-		gCursorCoord.x = ((float)mousePt.h / (float)gGameWindowWidth) * 640.0f;
-		gCursorCoord.y = ((float)mousePt.v / (float)gGameWindowHeight) * bottom;
-
-
-				/* SHOW CURSOR WHEN OUT OF WINDOW, HIDE WHEN IN */
-
-		if (gCursorCoord.x < 0.0f)										// keep in bounds (for multiple monitor systems)
-		{
-			cursorOut = true;
-		}
-		else
-		if (gCursorCoord.x > 640.0f)
-		{
-			cursorOut = true;
-		}
-		else
-			cursorOut = false;
-
-		if (gCursorCoord.y < 0.0f)
-		{
-			cursorOut = true;
-		}
-		else
-		if (gCursorCoord.y > bottom)
-		{
-			cursorOut = true;
-		}
-
-//		if (cursorOut && (!gRealCursorVisible))
-//			ShowRealCursor();
-//		else
-//		if ((!cursorOut) && gRealCursorVisible)
-//			HideRealCursor();
-	}
-
-
-
-
+	if (gCursorCoord.y < 0.0f)
+		gCursorCoord.y = 0.0f;
+	else
+	if (gCursorCoord.y > bottom)
+		gCursorCoord.y = bottom;
+#endif
 }
-
-
-
-
-
-
 

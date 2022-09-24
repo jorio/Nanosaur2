@@ -147,7 +147,6 @@ short	i;
 
 			/* DRAW THE LOADING TEXT AND THERMO */
 
-	GammaOn();
 	DrawLoading(0);
 
 
@@ -172,9 +171,6 @@ short	i;
 		LoadPlayfield(&spec);
 	}
 
-
-
-	GammaOff();
 
 			/* RESTORE CLEAR COLOR */
 

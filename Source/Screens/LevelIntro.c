@@ -57,8 +57,6 @@ float	timer = 5.0f;
 
 	gSaveSelection = -1;
 
-	GammaFadeOut();
-
 
 			/* SETUP */
 
@@ -110,17 +108,7 @@ float	timer = 5.0f;
 			/* FADE OUT */
 			/************/
 
-	if (gPlayFullScreen)										// only do fades when in full-screen mode
-	{
-		MakeFadeEvent(false, 1.5);
-		while(gGammaFadePercent > 0.0f)
-		{
-			CalcFramesPerSecond();
-			UpdateInput();
-			MoveObjects();
-			OGL_DrawScene(DrawObjects);
-		}
-	}
+	OGL_FadeOutScene(DrawObjects, MoveObjects);
 
 
 			/* DO SAVE */
@@ -131,7 +119,6 @@ float	timer = 5.0f;
 
 			/* CLEANUP */
 
-	GammaFadeOut();
 	FreeLevelIntroScreen();
 }
 

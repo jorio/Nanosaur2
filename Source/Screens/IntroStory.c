@@ -258,9 +258,6 @@ static SlideType gSlides[NUM_SLIDES] =
 
 void DoIntroStoryScreen(void)
 {
-
-	GammaFadeOut();
-
 			/* SETUP */
 
 	SetupIntroStoryScreen();
@@ -289,13 +286,15 @@ void DoIntroStoryScreen(void)
 				/* DRAW */
 
 		OGL_DrawScene(DrawObjects);
-
 	}
+
+			/* FADE OUT */
+
+	OGL_FadeOutScene(DrawObjects, NULL);
 
 
 			/* CLEANUP */
 
-	GammaFadeOut();
 	FreeIntroStoryScreen();
 }
 

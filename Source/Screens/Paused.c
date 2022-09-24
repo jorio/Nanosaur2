@@ -46,8 +46,6 @@ void DoPaused(void)
 Boolean	oldMute = gMuteMusicFlag;
 short	i;
 
-	GammaOn();
-
 	InitPausedObjects();
 
 

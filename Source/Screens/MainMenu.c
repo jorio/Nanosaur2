@@ -81,8 +81,6 @@ void DoMainMenuScreen(void)
 Boolean	doScreenSaver;
 
 again:
-	GammaFadeOut();
-
 	if (gCurrentSong != SONG_THEME)
 		PlaySong(SONG_THEME, true);
 
@@ -143,11 +141,13 @@ again:
 	}
 
 
+
+
 			/***********/
 			/* CLEANUP */
 			/***********/
 
-	GammaFadeOut();
+	OGL_FadeOutScene(DrawMainMenuCallback, NULL);
 	FreeMainMenuScreen();
 
 

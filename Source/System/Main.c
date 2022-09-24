@@ -265,9 +265,6 @@ static void PlayGame_Adventure(void)
 		gLevelNum = LEVEL_NUM_ADVENTURE3;
 	}
 
-
-	GammaFadeOut();
-
 	for (;gLevelNum <= LEVEL_NUM_ADVENTURE3; gLevelNum++)
 	{
 				/* DO LEVEL INTRO */
@@ -302,7 +299,7 @@ static void PlayGame_Adventure(void)
 			/* CLEANUP LEVEL */
 
 		MyFlushEvents();
-		GammaFadeOut();
+//		GammaFadeOut();
 		CleanupLevel();
 
 			/***************/
@@ -339,7 +336,6 @@ static void PlayGame_Versus(void)
 			/* GAME INITIALIZATION */
 
 	InitPlayerInfo_Game();														// init player info for entire game
-	GammaFadeOut();
 
 			/* DO LEVEL INTRO */
 
@@ -363,7 +359,7 @@ static void PlayGame_Versus(void)
 		/* CLEANUP LEVEL */
 
 	MyFlushEvents();
-	GammaFadeOut();
+//	GammaFadeOut();
 	CleanupLevel();
 }
 
@@ -612,13 +608,6 @@ OGLSetupInputType	viewDef;
 
 	for (i = 0; i < gNumPlayers; i++)
 		InitCamera_Terrain(i);
-
-
-
-
-	HideCursor();								// do this again to be sure!
-	GammaFadeOut();
-
  }
 
 
@@ -689,7 +678,7 @@ float	fps;
 						if (oldTimer > 0.0f)						// if just now crossed zero then start fade
 							MakeFadeEvent(false, 4.0);
 						else
-						if (gGammaFadePercent <= 0.0f)				// once fully faded out reset player @ checkpoint
+						if (gGammaFadeFrac <= 0.0f)					// once fully faded out reset player @ checkpoint
 							ResetPlayerAtBestCheckpoint(i);
 					}
 					else

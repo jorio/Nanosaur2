@@ -72,9 +72,6 @@ static SlideType 	gSlides[NUM_SLIDES] =
 
 void DoWinScreen(void)
 {
-
-	GammaFadeOut();
-
 			/* SETUP */
 
 	SetupWinScreen();
@@ -106,10 +103,10 @@ void DoWinScreen(void)
 
 	}
 
+	OGL_FadeOutScene(DrawObjects, NULL);
 
 			/* CLEANUP */
 
-	GammaFadeOut();
 	FreeWinScreen();
 }
 

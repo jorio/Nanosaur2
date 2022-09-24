@@ -105,6 +105,11 @@ float	timeout = 40.0f;
 		}
 
 
+			/* FADE OUT */
+
+	OGL_FadeOutScene(DisplayPicture_Draw, NULL);
+
+
 			/* CLEANUP */
 
 	DeleteAllObjects();
@@ -112,9 +117,6 @@ float	timeout = 40.0f;
 	DisposeAllSpriteGroups();
 
 
-			/* FADE OUT */
-
-	GammaFadeOut();
 
 
 	OGL_DisposeGameView();
@@ -138,7 +140,6 @@ static void DisplayPicture_Draw(void)
 
 void DoLegalScreen(void)
 {
-	GammaFadeOut();
 	DisplayPicture(":images:legal.png");
 }
 

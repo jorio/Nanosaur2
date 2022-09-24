@@ -125,14 +125,6 @@ static Boolean	beenHere = false;
 	InitCursor();
 	MyFlushEvents();
 
-#if 0
-			/* RESTORE ORIGINAL GAMMA */
-
-	if (gPlayFullScreen)
-		CGSetDisplayTransferByTable(0, 256, gOriginalRedTable, gOriginalGreenTable, gOriginalBlueTable);
-#endif
-
-
 	ExitToShell();
 }
 

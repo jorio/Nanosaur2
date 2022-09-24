@@ -12,14 +12,10 @@
 //==================================================
 
 extern void	InitWindowStuff(void);
-void MakeFadeEvent(Boolean fadeIn, float fadeSpeed);
+ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed);
 
-void GammaFadeOut(void);
-void GammaFadeIn(void);
-void GammaOn(void);
-void GammaOff(void);
+void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void));
 
-void Wait(uint32_t ticks);
 void DoScreenModeDialog(void);
 
 void Enter2D(void);

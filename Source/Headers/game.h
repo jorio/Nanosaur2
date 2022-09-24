@@ -22,6 +22,8 @@
 #include <OpenGL/glu.h> //---TEMP
 #endif
 
+static inline void DoSDLMaintenance(void) {puts("TODO: DoSDLMaintenance");}
+
 typedef float CGGammaValue;
 
 #if 0
@@ -110,7 +112,6 @@ extern	Byte					gCurrentSplitScreenPane;
 extern	Byte					gDebugMode;
 extern	Byte					gNumPlayers;
 extern	Byte					gTotalSides;
-extern	CGGammaValue			gOriginalRedTable[256], gOriginalGreenTable[256], gOriginalBlueTable[256];
 extern	CollisionRec			gCollisionList[];
 extern	FSSpec					gDataSpec;
 extern	GDHandle 				gGDevice;
@@ -169,8 +170,7 @@ extern	float					gCurrentPaneAspectRatio;
 extern	float					gDeathTimer[];
 extern	float					gFramesPerSecond;
 extern	float					gFramesPerSecondFrac;
-extern	float					gGammaFadePercent;
-extern	float					gGammaTweak;
+extern	float					gGammaFadeFrac;
 extern	float					gGlobalTransparency;
 extern	float					gLoadingThermoPercent;
 extern	float					gMapToUnitValue;

@@ -4,7 +4,7 @@
 // A "codepoint page" is a block of 256 codepoints. For Western European
 // languages, we only need codepoint page 0, which covers Unicode blocks
 // "Basic Latin" and "Latin-1 Supplement".
-#define MAX_CODEPOINT_PAGES 1
+#define MAX_CODEPOINT_PAGES 64
 
 #define MAX_KERNPAIRS		256
 

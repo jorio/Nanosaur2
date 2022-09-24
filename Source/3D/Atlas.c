@@ -64,7 +64,7 @@ Atlas*					gAtlases[MAX_SPRITE_GROUPS];
 
 static uint32_t ReadNextCodepointFromUTF8(const char** utf8TextPtr, int flags)
 {
-#define TRY_ADVANCE(t) do { if (!*t) return 0; else t++; } while(0)
+#define TRY_ADVANCE(t) do { if (!*(t)) return 0; else (t)++; } while(0)
 
 	uint32_t codepoint = 0;
 	const uint8_t* t = (const uint8_t*) *utf8TextPtr;
@@ -402,11 +402,13 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 
 	if (flags & kAtlasLoadFont)
 	{
+#if 0
 		// Parse kerning table
 		char* data = LoadTextFile(":system:kerning.txt", NULL);
 		GAME_ASSERT(data);
 		ParseKerningFile(atlas, data);
 		SafeDisposePtr(data);
+#endif
 
 	}
 

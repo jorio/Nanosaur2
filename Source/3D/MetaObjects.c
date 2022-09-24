@@ -181,7 +181,7 @@ int					size;
 
 			/* ALLOC MEMORY FOR META OBJECT */
 
-	mo = AllocPtr(size);
+	mo = AllocPtrClear(size);
 	if (mo == nil)
 		DoFatalAlert("AllocateEmptyMetaObject: AllocPtr failed!");
 

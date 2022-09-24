@@ -22,7 +22,7 @@ static void MoveLaserOrb(ObjNode *theNode);
 static void MoveLaserOrbOnSpline(ObjNode *theNode);
 static Boolean LaserOrbHitByWeaponCallback(ObjNode *bullet, ObjNode *theNode, OGLPoint3D *hitCoord, OGLVector3D *hitTriangleNormal);
 static void ExplodeLaserOrb(ObjNode *theNode);
-static void DrawOrbLaserBeam(ObjNode *beam, const OGLSetupOutputType *setupInfo);
+static void DrawOrbLaserBeam(ObjNode *beam);
 static Boolean CalcLaserVectorToPlayer(ObjNode *orb, short p);
 static void UpdateLaserOrbSparkles(ObjNode *orb);
 
@@ -505,7 +505,7 @@ float					x,y,z, q;
 
 /*************************** DRAW ORB LASER BEAM ***************************/
 
-static void DrawOrbLaserBeam(ObjNode *beam, const OGLSetupOutputType *setupInfo)
+static void DrawOrbLaserBeam(ObjNode *beam)
 {
 ObjNode	*orb = beam->ChainHead->ChainHead;
 
@@ -521,7 +521,7 @@ ObjNode	*orb = beam->ChainHead->ChainHead;
 		float		x,y,z,dist;
 		float		vx,vy,vz, u;
 
-		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_LaserOrbBeam].materialObject, setupInfo);		// activate material
+		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_LaserOrbBeam].materialObject);		// activate material
 		OGL_SetColor4f(1,1,1,orb->Timer * 2.0f);
 
 		dist =  orb->LaserDistance;

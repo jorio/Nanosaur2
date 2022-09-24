@@ -76,7 +76,7 @@ float	timer = 5.0f;
 		UpdateInput();
 
 		MoveObjects();
-		OGL_DrawScene(gGameViewInfoPtr, DrawObjects);
+		OGL_DrawScene(DrawObjects);
 
 		switch(gIntroMode)
 		{
@@ -118,7 +118,7 @@ float	timer = 5.0f;
 			CalcFramesPerSecond();
 			UpdateInput();
 			MoveObjects();
-			OGL_DrawScene(gGameViewInfoPtr, DrawObjects);
+			OGL_DrawScene(DrawObjects);
 		}
 	}
 
@@ -194,23 +194,23 @@ ObjNode	*newObj;
 	}
 
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 				/************/
 				/* LOAD ART */
 				/************/
 
-	InitParticleSystem(gGameViewInfoPtr);
+	InitParticleSystem();
 	InitSparkles();
 
 			/* LOAD MODELS */
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:playerparts.bg3d", &spec);
-	ImportBG3D(&spec, MODEL_GROUP_PLAYER, gGameViewInfoPtr, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+	ImportBG3D(&spec, MODEL_GROUP_PLAYER, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:levelintro.bg3d", &spec);
-	ImportBG3D(&spec, MODEL_GROUP_LEVELINTRO, gGameViewInfoPtr, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+	ImportBG3D(&spec, MODEL_GROUP_LEVELINTRO, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 
 			/* LOAD SPRITES */
@@ -222,8 +222,8 @@ ObjNode	*newObj;
 
 			/* LOAD SKELETONS */
 
-	LoadASkeleton(SKELETON_TYPE_BONUSWORMHOLE, gGameViewInfoPtr);
-	LoadASkeleton(SKELETON_TYPE_PLAYER, gGameViewInfoPtr);
+	LoadASkeleton(SKELETON_TYPE_BONUSWORMHOLE);
+	LoadASkeleton(SKELETON_TYPE_PLAYER);
 
 
 
@@ -305,7 +305,7 @@ ObjNode	*newObj;
 				gNewObjectDefinition.moveCall 	= nil;
 				gNewObjectDefinition.rot 		= 0;
 				gNewObjectDefinition.scale 	    = 150.0;
-				newObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, true);
+				newObj = MakeSpriteObject(&gNewObjectDefinition, true);
 				newObj->ColorFilter.a = .6f;
 				newObj->AnaglyphZ = 6.0f;
 
@@ -315,7 +315,7 @@ ObjNode	*newObj;
 				gNewObjectDefinition.coord.x 	= 20;
 				gNewObjectDefinition.coord.y 	= 0;
 				gNewObjectDefinition.scale 	    = 150.0;
-				newObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+				newObj = MakeSpriteObject(&gNewObjectDefinition, false);
 				newObj->AnaglyphZ = 6.0f;
 
 				break;
@@ -421,7 +421,7 @@ static void FreeLevelIntroScreen(void)
 	InitSparkles();				// this will actually delete all the sparkles
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
+	OGL_DisposeGameView();
 
 }
 
@@ -459,7 +459,7 @@ OGLPoint3D	p;
 	p.y = theNode->Coord.y * .5f;
 	p.z = theNode->Coord.z - 500.0f;
 
-	OGL_UpdateCameraFromTo(gGameViewInfoPtr, &gGameViewInfoPtr->cameraPlacement[0].cameraLocation, &p, 0);
+	OGL_UpdateCameraFromTo(&gGameViewInfoPtr->cameraPlacement[0].cameraLocation, &p, 0);
 
 }
 
@@ -581,7 +581,7 @@ float	aspect, y;
 	gNewObjectDefinition.moveCall 	= MoveCursor;
 	gNewObjectDefinition.rot 		= 0;
 	gNewObjectDefinition.scale 	    = CURSOR_SCALE;
-	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, false);
 
 	gMenuCursorObj->ColorFilter.a = .9f;
 
@@ -597,7 +597,7 @@ float	aspect, y;
 	gNewObjectDefinition.moveCall 	= MoveSaveIcon;
 	gNewObjectDefinition.scale 	    = 80.0f;
 	gNewObjectDefinition.slot--;
-	gSaveObjs[0] = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+	gSaveObjs[0] = MakeSpriteObject(&gNewObjectDefinition, false);
 
 	gSaveObjs[0]->Kind = 0;
 
@@ -613,7 +613,7 @@ float	aspect, y;
 
 	gNewObjectDefinition.type 		= MAINMENU_SObjType_NoSaveIcon;
 	gNewObjectDefinition.coord.x 	= 640.0f - gNewObjectDefinition.scale - 210.0f;
-	gSaveObjs[1] = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+	gSaveObjs[1] = MakeSpriteObject(&gNewObjectDefinition, false);
 
 	gSaveObjs[1]->Kind = 1;
 

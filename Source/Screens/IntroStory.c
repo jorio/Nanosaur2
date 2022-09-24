@@ -288,7 +288,7 @@ void DoIntroStoryScreen(void)
 
 				/* DRAW */
 
-		OGL_DrawScene(gGameViewInfoPtr, DrawObjects);
+		OGL_DrawScene(DrawObjects);
 
 	}
 
@@ -328,7 +328,7 @@ short				i;
 
 	viewDef.view.clearBackBuffer	= true;
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 				/************/
@@ -367,7 +367,7 @@ static void FreeIntroStoryScreen(void)
 	DisposeTerrain();
 	DisposeSoundBank(SOUND_BANK_NARRATION);
 
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
+	OGL_DisposeGameView();
 }
 
 
@@ -396,7 +396,7 @@ ObjNode	*slideObj;
 		gNewObjectDefinition.moveCall 	= MoveSlide;
 		gNewObjectDefinition.rot 		= gSlides[i].rotz;
 		gNewObjectDefinition.scale 	    = gSlides[i].scale;
-		slideObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, true);
+		slideObj = MakeSpriteObject(&gNewObjectDefinition, true);
 
 		slideObj->Kind = i;
 
@@ -509,11 +509,25 @@ static void MoveSubtitle(ObjNode* theNode)
 	{
 		theNode->StatusBits |= STATUS_BIT_HIDDEN;
 		*delay -= gFramesPerSecondFrac;
+		theNode->ColorFilter.a = 0;
 	}
 	else
 	{
+
 		theNode->StatusBits &= ~STATUS_BIT_HIDDEN;
 		theNode->Health -= gFramesPerSecondFrac;
+
+		if (theNode->Health < 0.25)
+			theNode->ColorFilter.a -= gFramesPerSecondFrac * 5;
+		else
+			theNode->ColorFilter.a += gFramesPerSecondFrac * 5;
+
+		if (theNode->ColorFilter.a > 1)
+			theNode->ColorFilter.a = 1;
+		else if (theNode->ColorFilter.a < 0)
+			theNode->ColorFilter.a = 0;
+
+
 		if (floorf(theNode->Health * 100) < 0)
 		{
 			DeleteObject(theNode);
@@ -524,6 +538,9 @@ static void MoveSubtitle(ObjNode* theNode)
 static void MakeSubtitleObjects(int slideNum)
 {
 	const char* text = gSlides[slideNum].subtitles[gGamePrefs.language];
+
+	if (!text)
+		gSlides[slideNum].subtitles[LANGUAGE_ENGLISH];
 
 	if (!text)
 		return;
@@ -575,7 +592,7 @@ static void MakeSubtitleObjects(int slideNum)
 			};
 
 #if 0
-			ObjNode* textNode = MakeFontStringObject(cursor, &def, gGameViewInfoPtr, true);
+			ObjNode* textNode = MakeFontStringObject(cursor, &def, true);
 			textNode->SpecialF[0] = subDelay;
 			textNode->Health = subDuration;
 			textNode->MoveCall = MoveSubtitle;

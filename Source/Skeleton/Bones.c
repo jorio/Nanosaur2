@@ -49,7 +49,7 @@ static	OGLVector3D			gTransformedNormals[MAX_DECOMPOSED_NORMALS];	// temporary b
 // INPUT: inSpec = spec of 3dmf file to load or nil to StdDialog it.
 //
 
-void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType, OGLSetupOutputType *setupInfo)
+void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType)
 {
 int				g;
 MetaObjectPtr	model;
@@ -57,7 +57,7 @@ MetaObjectPtr	model;
 	gCurrentSkeleton = skeleton;
 
 	g = MODEL_GROUP_SKELETONBASE+skeletonType;						// calc group # to store model into
-	ImportBG3D(inSpec, g, setupInfo, -1);							// load skeleton model (no VAR memory)
+	ImportBG3D(inSpec, g,  -1);							// load skeleton model (no VAR memory)
 
 	model = gBG3DContainerList[g]->root;							// point to base group
 

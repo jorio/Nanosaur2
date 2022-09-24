@@ -84,7 +84,7 @@ void InitDialogManager(void);
 
 
 void DoDialogMessage(int messNum, int priority, float duration, OGLPoint3D *fromWhere);
-void DrawDialogMessage(const OGLSetupOutputType *setupInfo);
+void DrawDialogMessage(void);
 
 
 int CharToSprite(char c);

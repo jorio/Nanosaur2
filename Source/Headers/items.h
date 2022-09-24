@@ -10,7 +10,7 @@
 
 extern	void InitItemsManager(void);
 void CreateCyclorama(void);
-void DrawCyclorama(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+void DrawCyclorama(ObjNode *theNode);
 
 Boolean AddRock(TerrainItemEntryType *itemPtr, float  x, float z);
 Boolean AddCrystal(TerrainItemEntryType *itemPtr, float  x, float z);

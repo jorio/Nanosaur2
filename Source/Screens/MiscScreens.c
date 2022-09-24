@@ -16,8 +16,8 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void DisplayPicture_Draw(OGLSetupOutputType *info);
-static void DrawLoading_Callback(OGLSetupOutputType *info);
+static void DisplayPicture_Draw(void);
+static void DrawLoading_Callback(void);
 
 
 /****************************/
@@ -66,13 +66,13 @@ float	timeout = 40.0f;
 	viewDef.view.clearColor.b		= 0;
 	viewDef.styles.useFog			= false;
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (intptr_t) gGameViewInfoPtr, (void*) path);
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, 0, (void*) path);
 	if (!gBackgoundPicture)
 		DoFatalAlert("DisplayPicture: MO_CreateNewObjectOfType failed");
 
@@ -93,7 +93,7 @@ float	timeout = 40.0f;
 		{
 			CalcFramesPerSecond();
 			MoveObjects();
-			OGL_DrawScene(gGameViewInfoPtr, DisplayPicture_Draw);
+			OGL_DrawScene(DisplayPicture_Draw);
 
 			UpdateInput();
 			if (AreAnyNewKeysPressed())
@@ -117,7 +117,7 @@ float	timeout = 40.0f;
 	GammaFadeOut();
 
 
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
+	OGL_DisposeGameView();
 
 
 }
@@ -125,10 +125,10 @@ float	timeout = 40.0f;
 
 /***************** DISPLAY PICTURE: DRAW *******************/
 
-static void DisplayPicture_Draw(OGLSetupOutputType *info)
+static void DisplayPicture_Draw(void)
 {
-	MO_DrawObject(gBackgoundPicture, info);
-	DrawObjects(info);
+	MO_DrawObject(gBackgoundPicture);
+	DrawObjects();
 }
 
 
@@ -620,7 +620,7 @@ do_again:
 
 void DrawLoading(float percent)
 {
-	OGL_DrawScene(gGameViewInfoPtr, DrawLoading_Callback);
+	OGL_DrawScene(DrawLoading_Callback);
 
 	gLoadingThermoPercent = percent;
 }
@@ -636,11 +636,9 @@ void DrawLoading(float percent)
 #define	THERMO_LEFT			(320 - (THERMO_WIDTH/2))
 #define	THERMO_RIGHT		(320 + (THERMO_WIDTH/2))
 
-static void DrawLoading_Callback(OGLSetupOutputType *info)
+static void DrawLoading_Callback(void)
 {
 float	w, x;
-
-#pragma unused (info)
 
 	if (gCurrentSplitScreenPane != 0)						// only show in player 1's pane
 		return;

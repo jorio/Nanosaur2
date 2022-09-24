@@ -4,8 +4,8 @@
 
 
 
-void InitInfobar(OGLSetupOutputType *setupInfo);
-void DrawInfobar(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+void InitInfobar(void);
+void DrawInfobar(ObjNode *theNode);
 void DisposeInfobar(void);
 void DrawInfobarSprite(float x, float y, float size, short texNum);
 void DrawInfobarSprite2_Centered(float x, float y, float size, short group, short texNum);

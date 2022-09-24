@@ -32,10 +32,10 @@ static void MoveShockwaveRing(ObjNode *theNode);
 
 /************************* INIT EFFECTS ***************************/
 
-void InitEffects(OGLSetupOutputType *setupInfo)
+void InitEffects(void)
 {
 
-	InitParticleSystem(setupInfo);
+	InitParticleSystem();
 	InitConfettiManager();
 	InitShardSystem();
 

@@ -339,7 +339,7 @@ long	count, i;
 
 /************* MAKE NEW SRITE OBJECT *************/
 
-ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean drawCentered)
+ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, Boolean drawCentered)
 {
 ObjNode				*newObj;
 MOSpriteObject		*spriteMO;
@@ -367,7 +367,7 @@ MOSpriteSetupData	spriteData;
 	spriteData.type 		= newObjDef->type;								// set group subtype
 	spriteData.drawCentered = drawCentered;
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, 0, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("MakeSpriteObject: MO_CreateNewObjectOfType failed!");
 
@@ -389,7 +389,7 @@ MOSpriteSetupData	spriteData;
 
 /*********************** MODIFY SPRITE OBJECT IMAGE ******************************/
 
-void ModifySpriteObjectFrame(ObjNode *theNode, short type, OGLSetupOutputType *setupInfo)
+void ModifySpriteObjectFrame(ObjNode *theNode, short type)
 {
 MOSpriteSetupData	spriteData;
 MOSpriteObject		*spriteMO;
@@ -409,7 +409,7 @@ MOSpriteObject		*spriteMO;
 	spriteData.group	= theNode->Group;							// set group
 	spriteData.type 	= type;										// set group subtype
 
-	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
+	spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, 0, &spriteData);
 	if (!spriteMO)
 		DoFatalAlert("ModifySpriteObjectFrame: MO_CreateNewObjectOfType failed!");
 
@@ -483,7 +483,7 @@ MOMaterialObject	*m;
 
 /************************** DRAW SPRITE ************************/
 
-void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags, const OGLSetupOutputType *setupInfo)
+void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags)
 {
 			/* SET STATE */
 
@@ -510,7 +510,7 @@ void DrawSprite(int	group, int type, float x, float y, float scale, float rot, u
 
 		/* ACTIVATE THE MATERIAL */
 
-	MO_DrawMaterial(gSpriteGroupList[group][type].materialObject, setupInfo);
+	MO_DrawMaterial(gSpriteGroupList[group][type].materialObject);
 
 
 			/* DRAW IT */
@@ -539,7 +539,7 @@ void DrawSprite(int	group, int type, float x, float y, float scale, float rot, u
 
 /************* MAKE FONT STRING OBJECT *************/
 
-ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean center)
+ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, Boolean center)
 {
 ObjNode				*newObj;
 MOSpriteObject		*spriteMO;
@@ -590,7 +590,7 @@ float				scale,x;
 
 		spriteData.drawCentered = center;
 
-		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, (intptr_t) setupInfo, &spriteData);
+		spriteMO = MO_CreateNewObjectOfType(MO_TYPE_SPRITE, 0, &spriteData);
 		if (!spriteMO)
 			DoFatalAlert("MakeFontStringObject: MO_CreateNewObjectOfType failed!");
 

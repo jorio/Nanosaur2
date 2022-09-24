@@ -136,7 +136,7 @@ typedef struct
 
 void SetTerrainScale(int polygonSize);
 
-void CreateSuperTileMemoryList(OGLSetupOutputType *setupInfo);
+void CreateSuperTileMemoryList(void);
 void DisposeSuperTileMemoryList(void);
 extern 	void DisposeTerrain(void);
 void GetSuperTileInfo(long x, long z, int *superCol, int *superRow, int *tileCol, int *tileRow);
@@ -148,7 +148,7 @@ void InitCurrentScrollSettings(void);
 extern 	void BuildTerrainItemList(void);
 void AddTerrainItemsOnSuperTile(long row, long col);
 extern 	Boolean TrackTerrainItem(ObjNode *theNode);
-void DrawTerrain(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+void DrawTerrain(ObjNode *theNode);
 Boolean SeeIfCoordsOutOfRange(float x, float z);
 void InitSuperTileGrid(void);
 void RotateOnTerrain(ObjNode *theNode, float yOffset, OGLVector3D *surfaceNormal);
@@ -159,5 +159,5 @@ void CalcTileNormals_NotNormalized(long row, long col, OGLVector3D *n1, OGLVecto
 void CalculateSplitModeMatrix(void);
 void CalculateSupertileVertexNormals(MOVertexArrayData	*meshData, long	startRow, long startCol);
 
-void DoItemShadowCasting(OGLSetupOutputType *setupInfo);
+void DoItemShadowCasting(void);
 Boolean SeeIfCrossedLineMarker(ObjNode *theNode, long *whichLine);

@@ -17,7 +17,7 @@
 
 static void Infobar_DrawMap(void);
 static void Infobar_DrawCrosshairs(void);
-static void DrawAnaglyphCrosshairs(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawAnaglyphCrosshairs(ObjNode *theNode);
 static void Infobar_DrawPlayerLabels(void);
 static void Infobar_DrawRaceInfo(void);
 static void Infobar_DrawLives(void);
@@ -160,12 +160,12 @@ static OGLPoint3D			gFuelPoints[4] =
 // Called at beginning of level
 //
 
-void InitInfobar(OGLSetupOutputType *setupInfo)
+void InitInfobar(void)
 {
 MOMaterialObject	*mo;
 ObjNode		*newObj;
 
-#pragma unused (setupInfo)
+#pragma unused ()
 
 		/***********************/
 		/* CREATE DUMMY OBJECT */
@@ -400,13 +400,13 @@ void SetInfobarSpriteState(float anaglyphZ)
 
 /********************** DRAW INFOBAR ****************************/
 
-void DrawInfobar(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+void DrawInfobar(ObjNode *theNode)
 {
 #pragma unused (theNode)
 
 			/* DRAW SOME OTHER GOODIES WHILE WE'RE HERE */
 
-	DrawLensFlare(setupInfo);											// draw lens flare
+	DrawLensFlare();											// draw lens flare
 
 	if ((gCurrentSplitScreenPane == 0) && (gAnaglyphPass == 0))
 		if (GetNewKeyState(KEY_F9))								// see if toggle statbar
@@ -508,7 +508,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[SPRITE_GROUP_INFOBAR][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.height / (float)mo->objectData.width;
 
@@ -535,7 +535,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[SPRITE_GROUP_INFOBAR][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.height / (float)mo->objectData.width;
 
@@ -567,7 +567,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[group][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.height / (float)mo->objectData.width;
 
@@ -595,7 +595,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[SPRITE_GROUP_INFOBAR][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.width / (float)mo->objectData.height;
 
@@ -619,7 +619,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[SPRITE_GROUP_INFOBAR][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.width / (float)mo->objectData.height;
 
@@ -655,7 +655,7 @@ float				aspect;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[group][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 	aspect = (float)mo->objectData.height / (float)mo->objectData.width;
 
@@ -686,7 +686,7 @@ OGLMatrix3x3		m;
 		/* ACTIVATE THE MATERIAL */
 
 	mo = gSpriteGroupList[SPRITE_GROUP_INFOBAR][texNum].materialObject;
-	MO_DrawMaterial(mo, gGameViewInfoPtr);
+	MO_DrawMaterial(mo);
 
 				/* SET COORDS */
 
@@ -945,7 +945,7 @@ double				leftEdge, topEdge;
 
 			/* DRAW MAP */
 
-	MO_DrawGeometry_VertexArray(&gOHMTriMesh, gGameViewInfoPtr);
+	MO_DrawGeometry_VertexArray(&gOHMTriMesh);
 
 
 			/* DRAW FRAME OVERLAY */
@@ -994,7 +994,7 @@ float				visibleRange;
 	if (!gGamePrefs.lowRenderQuality)
 		DrawInfobarSprite_Centered(HEALTH_X + 2, HEALTH_Y + 2, HEALTH_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
-	MO_DrawGeometry_VertexArray(&gHealthTriMesh, gGameViewInfoPtr);
+	MO_DrawGeometry_VertexArray(&gHealthTriMesh);
 
 
 			/* DRAW FRAME OVERLAY */
@@ -1044,7 +1044,7 @@ float				q;
 		DrawInfobarSprite_Centered(SHIELD_X + 2, SHIELD_Y + 2, SHIELD_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
 
-	MO_DrawGeometry_VertexArray(&gShieldTriMesh, gGameViewInfoPtr);
+	MO_DrawGeometry_VertexArray(&gShieldTriMesh);
 
 
 			/* DRAW FRAME OVERLAY */
@@ -1092,7 +1092,7 @@ float				visibleRange;
 		DrawInfobarSprite_Centered(FUEL_X + 2, FUEL_Y + 2, FUEL_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
 
-	MO_DrawGeometry_VertexArray(&gFuelTriMesh, gGameViewInfoPtr);
+	MO_DrawGeometry_VertexArray(&gFuelTriMesh);
 
 
 			/* DRAW FRAME OVERLAY */
@@ -1329,7 +1329,7 @@ int		x,y,w,h;
 
 	lapNum = gPlayerInfo[playerNum].lapNum;
 
-	OGL_GetCurrentViewport(gGameViewInfoPtr, &x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
+	OGL_GetCurrentViewport(&x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
 	aspectRatio = (float)h/(float)w;
 
 			/* SEE IF TELL LAP */
@@ -1349,7 +1349,7 @@ int		x,y,w,h;
 		gNewObjectDefinition.moveCall 	= MoveLapMessage;
 		gNewObjectDefinition.rot 		= 0;
 		gNewObjectDefinition.scale 	    = 170;
-		newObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, true);
+		newObj = MakeSpriteObject(&gNewObjectDefinition, true);
 
 
 		newObj->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;			// only display for this player
@@ -1384,7 +1384,7 @@ float	aspectRatio;
 int		x,y,w,h;
 ObjNode *newObj;
 
-	OGL_GetCurrentViewport(gGameViewInfoPtr, &x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
+	OGL_GetCurrentViewport(&x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
 	aspectRatio = (float)h/(float)w;
 
 
@@ -1414,7 +1414,7 @@ ObjNode *newObj;
 	gNewObjectDefinition.moveCall 	= nil;
 	gNewObjectDefinition.rot 		= 0;
 	gNewObjectDefinition.scale 	    = 230;
-	newObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, true);
+	newObj = MakeSpriteObject(&gNewObjectDefinition, true);
 
 
 	newObj->PlayerNum = playerNum;						// only show for this player
@@ -1481,7 +1481,7 @@ float		dot, cross;
 
 /********************** DRAW ANAGLYPH CROSSHAIRS *************************/
 
-static void DrawAnaglyphCrosshairs(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawAnaglyphCrosshairs(ObjNode *theNode)
 {
 short	playerNum = gCurrentSplitScreenPane;
 short	i;
@@ -1538,7 +1538,7 @@ Boolean		lockedOn;
 			const float	size2 = 35.0f;
 
 
-			MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_OuterRing].materialObject, setupInfo);		// activate material
+			MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_OuterRing].materialObject);		// activate material
 
 			glBegin(GL_QUADS);
 			glTexCoord2f(0,0);	glVertex2f(-size, -size);
@@ -1549,7 +1549,7 @@ Boolean		lockedOn;
 
 			if (lockedOn)
 			{
-				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Locked].materialObject, setupInfo);		// activate material
+				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Locked].materialObject);		// activate material
 
 				glBegin(GL_QUADS);
 				glTexCoord2f(0,0);	glVertex2f(-size, -size);
@@ -1560,7 +1560,7 @@ Boolean		lockedOn;
 			}
 			else
 			{
-				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Normal].materialObject, setupInfo);		// activate material
+				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Normal].materialObject);		// activate material
 
 				glBegin(GL_QUADS);
 				glTexCoord2f(0,0);	glVertex2f(-size2, -size2);
@@ -1570,7 +1570,7 @@ Boolean		lockedOn;
 				glEnd();
 
 
-				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Pointer].materialObject, setupInfo);		// activate material
+				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Pointer].materialObject);		// activate material
 
 				glBegin(GL_QUADS);
 				glTexCoord2f(0,0);	glVertex2f(-size, -size);
@@ -1586,7 +1586,7 @@ Boolean		lockedOn;
 		{
 			const float	size = 30.0f;
 
-			MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Normal].materialObject, setupInfo);		// activate material
+			MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_Normal].materialObject);		// activate material
 
 			glBegin(GL_QUADS);
 			glTexCoord2f(0,0);	glVertex2f(-size, -size);
@@ -1658,7 +1658,7 @@ float		scale;
 
 			/* CALC ADJUSTMENT FOR SCREEN COORDS TO OUR 640X480 COORDS */
 
-	OGL_GetCurrentViewport(gGameViewInfoPtr, &px, &py, &pw, &ph, playerNum);
+	OGL_GetCurrentViewport(&px, &py, &pw, &ph, playerNum);
 
 	screenToPaneX = (640.0f / (float)pw);
 	screenToPaneY = (640.0f * gCurrentPaneAspectRatio) / (float)ph;

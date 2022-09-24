@@ -73,11 +73,11 @@ extern  float	gAccelerationCurve[CURVE_SIZE];
 extern	ObjNode	*MakeNewSkeletonObject(NewObjectDefinitionType *newObjDef);
 extern	void AllocSkeletonDefinitionMemory(SkeletonDefType *skeleton);
 extern	void InitSkeletonManager(void);
-void LoadASkeleton(Byte num, OGLSetupOutputType *setupInfo);
+void LoadASkeleton(Byte num);
 extern	void FreeSkeletonFile(Byte skeletonType);
 extern	void FreeAllSkeletonFiles(short skipMe);
 void FreeSkeletonBaseData(SkeletonObjDataType *skeletonData, short skeletonType);
-void DrawSkeleton(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+void DrawSkeleton(ObjNode *theNode);
 
 
 
@@ -99,7 +99,7 @@ void FindCoordOnJointAtFlagEvent(ObjNode *theNode, long jointNum, const OGLPoint
 void FindJointMatrixAtFlagEvent(ObjNode *theNode, long jointNum, Byte flagNum, OGLMatrix4x4 *m);
 
 
-void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType, OGLSetupOutputType *setupInfo);
+void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType);
 extern	void UpdateSkinnedGeometry(ObjNode *theNode);
 extern	void PrimeBoneData(SkeletonDefType *skeleton);
 

@@ -17,7 +17,7 @@
 /****************************/
 
 static void MoveContrails(ObjNode *dummy);
-static void DrawContrails(ObjNode *dummy, const OGLSetupOutputType *setupInfo);
+static void DrawContrails(ObjNode *dummy);
 
 
 /****************************/
@@ -431,13 +431,12 @@ short				buffNum;
 
 /*********************** DRAW CONTRAILS **************************/
 
-static void DrawContrails(ObjNode *dummy, const OGLSetupOutputType *setupInfo)
+static void DrawContrails(ObjNode *dummy)
 {
 short		i;
-Boolean		drewSomething = false;
-short		buffNum = setupInfo->frameCount & 1;					// which VAR buffer to use?
+short		buffNum = gGameViewInfoPtr->frameCount & 1;					// which VAR buffer to use?
 
-#pragma unused (dummy)
+	(void) dummy;
 
 
 	OGL_EnableBlend();
@@ -445,16 +444,12 @@ short		buffNum = setupInfo->frameCount & 1;					// which VAR buffer to use?
 
 	for (i = 0; i < MAX_CONTRAILS; i++)
 	{
-		if (gContrails[i].isUsed)
+		if (gContrails[i].isUsed
+			&& gContrails[i].meshData[buffNum].numTriangles > 0)
 		{
-			if (gContrails[i].meshData[buffNum].numTriangles > 0)
-			{
-				MO_DrawGeometry_VertexArray(&gContrails[i].meshData[buffNum], setupInfo);
-				drewSomething = true;
-			}
+			MO_DrawGeometry_VertexArray(&gContrails[i].meshData[buffNum]);
 		}
 	}
-
 }
 
 

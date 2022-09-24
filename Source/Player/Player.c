@@ -17,7 +17,7 @@
 /****************************/
 
 static Boolean PlayerShieldHitByWeaponCallback(ObjNode *bullet, ObjNode *shield, OGLPoint3D *hitCoord, OGLVector3D *hitTriangleNormal);
-static void DrawPlayerShield(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawPlayerShield(ObjNode *theNode);
 
 
 /****************************/
@@ -1096,7 +1096,7 @@ ObjNode	*shield = gPlayerInfo[playerNum].shieldObj;
 //
 //
 
-static void DrawPlayerShield(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawPlayerShield(ObjNode *theNode)
 {
 MOVertexArrayObject	*mo;
 MOVertexArrayData	*va;
@@ -1126,7 +1126,7 @@ MOVertexArrayData	*va;
 
 			/* DRAW IT */
 
-	MO_DrawObject(theNode->BaseGroup, setupInfo);
+	MO_DrawObject(theNode->BaseGroup);
 
 
 			/* RESTORE MODS */

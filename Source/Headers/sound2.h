@@ -128,7 +128,7 @@ void ChangeChannelVolume(short channel, float leftVol, float rightVol);
 short PlayEffect3D(short effectNum, OGLPoint3D *where);
 Boolean Update3DSoundChannel(short effectNum, short *channel, OGLPoint3D *where);
 Boolean IsEffectChannelPlaying(short chanNum);
-void UpdateListenerLocation(OGLSetupOutputType *setupInfo);
+void UpdateListenerLocation(void);
 void ChangeChannelRate(short channel, long rateMult);
 Boolean StopAChannelIfEffectNum(short *channelNum, short effectNum);
 

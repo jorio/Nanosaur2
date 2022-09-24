@@ -18,7 +18,7 @@
 /****************************/
 
 static void CreateCloudLayer(void);
-static void DrawCloudLayer(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawCloudLayer(ObjNode *theNode);
 static void MoveCloudLayer(ObjNode *theNode);
 static void MoveGasMound(ObjNode *theNode);
 
@@ -88,9 +88,9 @@ ObjNode	*newObj;
 
 /********************** DRAW CYCLORAMA *************************/
 
-void DrawCyclorama(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+void DrawCyclorama(ObjNode *theNode)
 {
-OGLPoint3D cameraCoord = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
+OGLPoint3D cameraCoord = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
 
 	glDisable(GL_ALPHA_TEST);	//--------
 
@@ -105,7 +105,7 @@ OGLPoint3D cameraCoord = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cam
 
 			/* DRAW THE OBJECT */
 
-	MO_DrawObject(theNode->BaseGroup, setupInfo);
+	MO_DrawObject(theNode->BaseGroup);
 
 	glEnable(GL_ALPHA_TEST);	//--------
 
@@ -157,9 +157,9 @@ static void MoveCloudLayer(ObjNode *theNode)
 
 /********************** DRAW CLOUD LAYER *************************/
 
-static void DrawCloudLayer(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawCloudLayer(ObjNode *theNode)
 {
-OGLPoint3D cameraCoord = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
+OGLPoint3D cameraCoord = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
 
 	glDisable(GL_ALPHA_TEST);	//--------
 
@@ -182,7 +182,7 @@ OGLPoint3D cameraCoord = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cam
 
 			/* DRAW THE OBJECT */
 
-	MO_DrawObject(theNode->BaseGroup, setupInfo);
+	MO_DrawObject(theNode->BaseGroup);
 
 
 

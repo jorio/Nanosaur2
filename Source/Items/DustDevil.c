@@ -19,7 +19,7 @@
 
 static ObjNode *MakeDustDevil(float  x, float z);
 
-static void DrawDustDevils(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawDustDevils(ObjNode *theNode);
 static long FindFreeDustDevilSlot(void);
 static void MoveDustDevil(ObjNode *theNode);
 
@@ -394,7 +394,7 @@ long	i;
 
 /********************** DRAW DUST DEVILS *************************/
 
-static void DrawDustDevils(ObjNode *dummyNode, const OGLSetupOutputType *setupInfo)
+static void DrawDustDevils(ObjNode *dummyNode)
 {
 const MOVertexArrayData	*mesh;													// point to trimesh data
 OGLMatrix4x4	m;
@@ -427,7 +427,7 @@ ObjNode	*theNode;
 
 		glPushMatrix();
 
-		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL2_SObjType_DustDevil].materialObject, setupInfo);		// activate material
+		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL2_SObjType_DustDevil].materialObject);		// activate material
 
 
 					/* TRANSLATE */
@@ -448,7 +448,7 @@ ObjNode	*theNode;
 			OGLMatrix4x4_SetRotate_Y(&m, PI);
 			glMultMatrixf((GLfloat *)&m);
 
-			MO_DrawGeometry_VertexArray(mesh, setupInfo);
+			MO_DrawGeometry_VertexArray(mesh);
 
 			OGL_SetColor4f(1,1,1,1);
 			glPopMatrix();
@@ -458,7 +458,7 @@ ObjNode	*theNode;
 					/* DRAW OUTER SHELL */
 
 
-		MO_DrawGeometry_VertexArray(mesh, setupInfo);
+		MO_DrawGeometry_VertexArray(mesh);
 
 
 		glPopMatrix();

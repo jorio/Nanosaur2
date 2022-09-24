@@ -857,7 +857,7 @@ void Atlas_ImmediateDraw(int groupNum, const char* text, uint32_t flags)
 
 			/* ACTIVATE THE MATERIAL */
 
-	MO_DrawMaterial(font->material, gGameViewInfoPtr);
+	MO_DrawMaterial(font->material);
 
 			/* DRAW IT */
 

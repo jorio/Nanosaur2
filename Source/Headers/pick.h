@@ -26,7 +26,7 @@ ObjNode *OGL_DoRayCollision_ObjNodes(OGLRay *ray, uint32_t statusFilter, uint32_
 Boolean OGL_RayGetHitInfo_DisplayGroup(OGLRay *ray, ObjNode *theNode, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal);
 Boolean OGL_IsObjectInFrontOfRay(ObjNode *theNode, OGLRay *ray);
 
-void OGL_GetWorldRayAtScreenPoint(OGLPoint2D *screenCoord, OGLRay *ray, const OGLSetupOutputType *setupInfo);
+void OGL_GetWorldRayAtScreenPoint(OGLPoint2D *screenCoord, OGLRay *ray);
 Boolean	OGL_RayIntersectsTriangle(OGLPoint3D *trianglePoints, OGLRay *ray, OGLPoint3D *intersectPt, OGLVector3D *triangleNormal);
 
 ObjNode *OGL_DoLineSegmentCollision_ObjNodes(const OGLLineSegment *lineSeg, uint32_t statusFilter, uint32_t cTypes,

@@ -22,13 +22,13 @@ void InitSpriteManager(void);
 void DisposeAllSpriteGroups(void);
 void DisposeSpriteGroup(int groupNum);
 void LoadSpriteGroup(int groupNum, const char* fileName, int flags);
-ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean drawCentered);
+ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, Boolean drawCentered);
 void BlendAllSpritesInGroup(short group);
-void ModifySpriteObjectFrame(ObjNode *theNode, short type, OGLSetupOutputType *setupInfo);
-void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags, const OGLSetupOutputType *setupInfo);
+void ModifySpriteObjectFrame(ObjNode *theNode, short type);
+void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags);
 void BlendASprite(int group, int type);
 
-ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, OGLSetupOutputType *setupInfo, Boolean center);
+ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, Boolean center);
 float GetStringWidth(const char* s, float scale);
 float GetCharSpacing(char c, float spacingScale);
 int CharToSprite(char c);

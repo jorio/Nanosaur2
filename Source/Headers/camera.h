@@ -21,7 +21,7 @@ extern  Byte		gCameraMode[];
 
 void UpdateCameras(void);
 void InitCamera_Terrain(short playerNum);
-void DrawLensFlare(const OGLSetupOutputType *setupInfo);
+void DrawLensFlare(void);
 
 
 void PrepAnaglyphCameras(void);

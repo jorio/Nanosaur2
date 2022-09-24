@@ -502,7 +502,7 @@ ObjNode		*thisNodePtr;
 
 /**************************** DRAW OBJECTS ***************************/
 
-void DrawObjects(OGLSetupOutputType *setupInfo)
+void DrawObjects(void)
 {
 ObjNode		*theNode;
 unsigned long	statusBits;
@@ -529,8 +529,8 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 
 			/* GET CAMERA COORDS */
 
-	cameraX = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.x;
-	cameraZ = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.z;
+	cameraX = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.x;
+	cameraZ = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.z;
 
 			/***********************/
 			/* MAIN NODE TASK LOOP */
@@ -637,7 +637,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 			/* CHECK NO FOG */
 			/****************/
 
-		if (setupInfo->useFog)
+		if (gGameViewInfoPtr->useFog)
 		{
 			if (statusBits & STATUS_BIT_NOFOG)
 				OGL_DisableFog();
@@ -826,14 +826,14 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					break;
 
 			case	SKELETON_GENRE:
-					DrawSkeleton(theNode, setupInfo);
+					DrawSkeleton(theNode);
 					break;
 
 			case	DISPLAY_GROUP_GENRE:
 			case	QUADMESH_GENRE:
 					if (theNode->BaseGroup)
 					{
-						MO_DrawObject(theNode->BaseGroup, setupInfo);
+						MO_DrawObject(theNode->BaseGroup);
 					}
 					break;
 
@@ -850,7 +850,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 						theNode->SpriteMO->objectData.scaleY = theNode->Scale.y;
 						theNode->SpriteMO->objectData.rot = theNode->Rot.y;
 
-						MO_DrawObject(theNode->SpriteMO, setupInfo);
+						MO_DrawObject(theNode->SpriteMO);
 						OGL_PopState();											// restore state
 					}
 					break;
@@ -862,7 +862,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					SetInfobarSpriteState(theNode->AnaglyphZ);
 
 					for (i = 0; i < theNode->NumStringSprites; i++)
-						MO_DrawObject(theNode->StringCharacters[i], setupInfo);
+						MO_DrawObject(theNode->StringCharacters[i]);
 
 					OGL_PopState();												// restore state
 					break;
@@ -874,7 +874,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 						OGL_PushState();	//--
 						SetInfobarSpriteState(theNode->AnaglyphZ);	//--
 
-						MO_DrawObject(theNode->BaseGroup, setupInfo);
+						MO_DrawObject(theNode->BaseGroup);
 
 						if (gDebugMode >= 2)
 						{
@@ -890,7 +890,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 custom_draw:
 					if (theNode->CustomDrawFunction)
 					{
-						theNode->CustomDrawFunction(theNode, setupInfo);
+						theNode->CustomDrawFunction(theNode);
 					}
 					break;
 

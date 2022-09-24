@@ -102,7 +102,7 @@ void DoWinScreen(void)
 
 				/* DRAW */
 
-		OGL_DrawScene(gGameViewInfoPtr, DrawObjects);
+		OGL_DrawScene(DrawObjects);
 
 	}
 
@@ -142,7 +142,7 @@ short				i;
 
 	viewDef.view.clearBackBuffer	= true;
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 				/************/
@@ -175,7 +175,7 @@ static void FreeWinScreen(void)
 	DisposeAllBG3DContainers();
 	DisposeTerrain();
 
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
+	OGL_DisposeGameView();
 }
 
 
@@ -204,7 +204,7 @@ ObjNode	*slideObj;
 		gNewObjectDefinition.moveCall 	= MoveSlide;
 		gNewObjectDefinition.rot 		= gSlides[i].rotz;
 		gNewObjectDefinition.scale 	    = gSlides[i].scale;
-		slideObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, true);
+		slideObj = MakeSpriteObject(&gNewObjectDefinition, true);
 
 		slideObj->Kind = i;
 

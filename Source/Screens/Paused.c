@@ -83,7 +83,7 @@ short	i;
 
 		gGameViewInfoPtr->frameCount &= 0xfffffffe;				// keep frame count event # so that particles won't flicker during pause
 
-		OGL_DrawScene(gGameViewInfoPtr, DrawObjects);
+		OGL_DrawScene(DrawObjects);
 
 	}
 
@@ -189,7 +189,7 @@ static const char* names[NUM_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 	gNewObjectDefinition.moveCall 	= nil;
 	gNewObjectDefinition.rot 		= 0;
 	gNewObjectDefinition.scale 	    = CURSOR_SCALE;
-	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, false);
 
 	gMenuCursorObj->ColorFilter.a = .9f;
 
@@ -200,7 +200,7 @@ static const char* names[NUM_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 		/* BUILD PAUSED MENU */
 		/*********************/
 
-	OGL_GetCurrentViewport(gGameViewInfoPtr, &px, &py, &pw, &ph, 0);			// calc aspect ratio for player #0's pane
+	OGL_GetCurrentViewport(&px, &py, &pw, &ph, 0);			// calc aspect ratio for player #0's pane
 	aspectRatio = (float)ph/(float)pw;
 
 	y = 250.0f * aspectRatio;
@@ -213,7 +213,7 @@ static const char* names[NUM_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 		gNewObjectDefinition.scale 	    = PAUSED_FONT_SCALE;
 		gNewObjectDefinition.slot 		= SPRITE_SLOT + 4000;
 
-		gMenuItems[i] = newObj 	= MakeFontStringObject(names[language][i], &gNewObjectDefinition, gGameViewInfoPtr, true);
+		gMenuItems[i] = newObj 	= MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
 
 		w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
 		gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);

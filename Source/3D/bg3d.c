@@ -92,7 +92,7 @@ int	i;
 // 				If it is -1 then we don't want it in VAR memory.
 //
 
-void ImportBG3D(FSSpec *spec, int groupNum, OGLSetupOutputType *setupInfo, short varType)
+void ImportBG3D(FSSpec *spec, int groupNum, short varType)
 {
 short				refNum;
 int					i;
@@ -105,7 +105,7 @@ MOGroupData			*data;
 
 			/* INIT SOME VARIABLES */
 
-	gBG3D_CurrentDrawContext	= setupInfo;
+	gBG3D_CurrentDrawContext	= gGameViewInfoPtr;
 	gBG3D_CurrentMaterialObj 	= nil;
 	gBG3D_CurrentGeometryObj	= nil;
 	gBG3D_GroupStackIndex		= 0;			// init the group stack
@@ -1030,7 +1030,7 @@ void				*pixels;
 					// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
 					//
 
-			MO_DrawMaterial(mat, gBG3D_CurrentDrawContext);
+			MO_DrawMaterial(mat);
 			glBegin(GL_TRIANGLES);
 			glVertex3f(0,0,0);
 			glVertex3f(0,0,0);

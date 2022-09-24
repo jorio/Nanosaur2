@@ -17,8 +17,8 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType, OGLSetupOutputType *setupInfo);
-static void ReadDataFromPlayfieldFile(FSSpec *specPtr, OGLSetupOutputType *setupInfo);
+static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType);
+static void ReadDataFromPlayfieldFile(FSSpec *specPtr);
 
 /****************************/
 /*    CONSTANTS             */
@@ -152,7 +152,7 @@ static WDPBRec wpb;
 // OUTPUT:	Ptr to skeleton data
 //
 
-SkeletonDefType *LoadSkeletonFile(short skeletonType, OGLSetupOutputType *setupInfo)
+SkeletonDefType *LoadSkeletonFile(short skeletonType)
 {
 QDErr		iErr;
 short		fRefNum;
@@ -199,7 +199,7 @@ const char*	fileNames[MAX_SKELETON_TYPES] =
 
 			/* READ SKELETON RESOURCES */
 
-	ReadDataFromSkeletonFile(skeleton,&fsSpec,skeletonType,setupInfo);
+	ReadDataFromSkeletonFile(skeleton, &fsSpec, skeletonType);
 	PrimeBoneData(skeleton);
 
 			/* CLOSE REZ FILE */
@@ -215,7 +215,7 @@ const char*	fileNames[MAX_SKELETON_TYPES] =
 // Current rez file is set to the file.
 //
 
-static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType, OGLSetupOutputType *setupInfo)
+static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType)
 {
 Handle				hand;
 int					i,k,j;
@@ -264,7 +264,7 @@ OGLPoint3D				*pointPtr;
 	{
 		iErr = ResolveAlias(fsSpec, alias, &target, &wasChanged);	// try to resolve alias
 		if (!iErr)
-			LoadBonesReferenceModel(&target,skeleton, skeletonType, setupInfo);
+			LoadBonesReferenceModel(&target,skeleton, skeletonType);
 		else
 			DoFatalAlert("ReadDataFromSkeletonFile: Cannot find Skeleton's BG3D file!");
  		ReleaseResource((Handle)alias);
@@ -664,19 +664,19 @@ ComponentResult				result;
 
 /******************* LOAD PLAYFIELD *******************/
 
-void LoadPlayfield(FSSpec *specPtr, OGLSetupOutputType *setupInfo)
+void LoadPlayfield(FSSpec *specPtr)
 {
 
 	gDisableHiccupTimer = true;
 
 			/* READ PLAYFIELD RESOURCES */
 
-	ReadDataFromPlayfieldFile(specPtr, setupInfo);
+	ReadDataFromPlayfieldFile(specPtr);
 
 
 				/* DO ADDITIONAL SETUP */
 
-	CreateSuperTileMemoryList(setupInfo);		// allocate memory for the supertile geometry
+	CreateSuperTileMemoryList();		// allocate memory for the supertile geometry
 	CalculateSplitModeMatrix();					// precalc the tile split mode matrix
 	InitSuperTileGrid();						// init the supertile state grid
 
@@ -685,13 +685,13 @@ void LoadPlayfield(FSSpec *specPtr, OGLSetupOutputType *setupInfo)
 
 			/* CAST ITEM SHADOWS */
 
-	DoItemShadowCasting(setupInfo);
+	DoItemShadowCasting();
 }
 
 
 /********************** READ DATA FROM PLAYFIELD FILE ************************/
 
-static void ReadDataFromPlayfieldFile(FSSpec *specPtr, OGLSetupOutputType *setupInfo)
+static void ReadDataFromPlayfieldFile(FSSpec *specPtr)
 {
 Handle					hand;
 PlayfieldHeaderType		**header;
@@ -1161,7 +1161,7 @@ Rect					toRect, srcRect;
 												 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
 
 
-		matData.setupInfo				= setupInfo;								// remember which draw context this material is assigned to
+		matData.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
 		matData.flags 					= 	BG3D_MATERIALFLAG_CLAMP_U|
 											BG3D_MATERIALFLAG_CLAMP_V|
 											BG3D_MATERIALFLAG_TEXTURED;
@@ -1185,7 +1185,7 @@ Rect					toRect, srcRect;
 			//
 
 		SetInfobarSpriteState(0);
-		MO_DrawMaterial(gSuperTileTextureObjects[i], setupInfo);
+		MO_DrawMaterial(gSuperTileTextureObjects[i]);
 		glBegin(GL_TRIANGLES);
 		glVertex3f(0,1,0);
 		glVertex3f(0,0,0);

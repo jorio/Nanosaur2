@@ -19,7 +19,7 @@ static int FindFreeShard(void);
 static void ExplodeGeometry_Recurse(MetaObjectPtr obj);
 static void ExplodeVertexArray(MOVertexArrayData *data, MOMaterialObject *overrideTexture);
 static void MoveShards(ObjNode *theNode);
-static void DrawShards(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawShards(ObjNode *theNode);
 
 
 /****************************/
@@ -431,7 +431,7 @@ del:
 
 /************************* DRAW SHARDS ****************************/
 
-static void DrawShards(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawShards(ObjNode *theNode)
 {
 #pragma unused (theNode)
 long	i;
@@ -462,7 +462,7 @@ long	i;
 
 
 			if (gShards[i].material)
-				MO_DrawMaterial(gShards[i].material, setupInfo);
+				MO_DrawMaterial(gShards[i].material);
 
 					/* SET MATRIX */
 

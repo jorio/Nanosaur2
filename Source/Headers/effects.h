@@ -177,13 +177,13 @@ extern	NewConfettiGroupDefType	gNewConfettiGroupDef;
 		/* MISC EFFECTS */
 
 
-void InitEffects(OGLSetupOutputType *setupInfo);
+void InitEffects(void);
 ObjNode *MakeShockwaveRing(OGLPoint3D *coord, float scale);
 
 
 			/* PARTICLES */
 
-void InitParticleSystem(OGLSetupOutputType *setupInfo);
+void InitParticleSystem(void);
 void DeleteAllParticleGroups(void);
 short NewParticleGroup(NewParticleGroupDefType *def);
 Boolean AddParticleToGroup(const NewParticleDefType *def);

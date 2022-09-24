@@ -16,7 +16,7 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void DrawShadow(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawShadow(ObjNode *theNode);
 
 static void MO_CalcWorldPoints_Object(ObjNode *theNode, const MetaObjectPtr object);
 static void MO_CalcWorldPoints_Group(ObjNode *theNode, const MOGroupObject *object);
@@ -575,7 +575,7 @@ int		kind;
 
 /******************* DRAW SHADOW ******************/
 
-static void DrawShadow(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawShadow(ObjNode *theNode)
 {
 int	shadowType = theNode->Kind;
 
@@ -591,7 +591,7 @@ int	shadowType = theNode->Kind;
 
 	gGlobalTransparency = theNode->ColorFilter.a;
 
-	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_Shadow_Circular+shadowType].materialObject, setupInfo);
+	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_Shadow_Circular+shadowType].materialObject);
 
 
 			/* DRAW THE SHADOW */

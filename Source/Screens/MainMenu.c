@@ -18,7 +18,7 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void BuildMainMenu(int menuLevel);
-static void DrawMainMenuCallback(OGLSetupOutputType *info);
+static void DrawMainMenuCallback(void);
 static void DrawCredits(void);
 static void DoMenuControls(void);
 static void MoveMenuItem(ObjNode *theNode);
@@ -125,7 +125,7 @@ again:
 
 				/* DRAW */
 
-		OGL_DrawScene(gGameViewInfoPtr, DrawMainMenuCallback);
+		OGL_DrawScene(DrawMainMenuCallback);
 
 				/* DO USER INPUT */
 
@@ -240,7 +240,7 @@ int					i;
 	viewDef.lights.fillColor[1].g 	= .5;
 	viewDef.lights.fillColor[1].b 	= .0;
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 	InitSparkles();
@@ -260,7 +260,7 @@ int					i;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, (intptr_t) gGameViewInfoPtr, ":images:menuback.jpg");
+	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, 0, ":images:menuback.jpg");
 
 
 
@@ -280,7 +280,7 @@ int					i;
 	gNewObjectDefinition.moveCall 	= MoveCursor;
 	gNewObjectDefinition.rot 		= 0;
 	gNewObjectDefinition.scale 	    = CURSOR_SCALE;
-	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, gGameViewInfoPtr, false);
+	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, false);
 
 	gMenuCursorObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
 
@@ -393,7 +393,7 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, gGameViewInfoPtr, true);
+					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
 					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
@@ -475,7 +475,7 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, gGameViewInfoPtr, true);
+					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
 					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
@@ -563,7 +563,7 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, gGameViewInfoPtr, true);
+					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
 					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
@@ -665,7 +665,7 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, gGameViewInfoPtr, true);
+					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
 					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
@@ -716,7 +716,7 @@ static void FreeMainMenuScreen(void)
 	}
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);
+	OGL_DisposeGameView();
 }
 
 
@@ -920,16 +920,15 @@ static void DoMenuControls(void)
 
 /***************** DRAW MAINMENU CALLBACK *******************/
 
-static void DrawMainMenuCallback(OGLSetupOutputType *info)
+static void DrawMainMenuCallback(void)
 {
 	if (gBackgoundPicture)
-		MO_DrawObject(gBackgoundPicture, info);
+		MO_DrawObject(gBackgoundPicture);
 
-	DrawObjects(info);
+	DrawObjects();
 
 	if (gShowCredits)
 		DrawCredits();
-
 }
 
 
@@ -938,7 +937,6 @@ static void DrawMainMenuCallback(OGLSetupOutputType *info)
 
 static void DrawCredits(void)
 {
-
 			/* SET STATE */
 
 	OGL_PushState();
@@ -952,7 +950,6 @@ static void DrawCredits(void)
 
 
 	OGL_PopState();
-
 }
 
 

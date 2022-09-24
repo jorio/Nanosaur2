@@ -13,7 +13,7 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void DrawFences(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawFences(ObjNode *theNode);
 static void MakeFenceGeometry(void);
 
 
@@ -481,14 +481,14 @@ short					f;
 
 /********************* DRAW FENCES ***********************/
 
-static void DrawFences(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawFences(ObjNode *theNode)
 {
 long		f,type;
 Byte		buffNum;
 
 #pragma unused	(theNode)
 
-	buffNum = setupInfo->frameCount & 1;								// which VAR buffer to use?
+	buffNum = gGameViewInfoPtr->frameCount & 1;				// which VAR buffer to use?
 
 
 			/* SET GLOBAL MATERIAL FLAGS */
@@ -523,13 +523,13 @@ Byte		buffNum;
 
 					/* SUBMIT IT */
 
-			MO_DrawMaterial(gFenceMaterials[f], setupInfo);
-			MO_DrawGeometry_VertexArray(&gFenceTriMeshData[f][buffNum], setupInfo);
+			MO_DrawMaterial(gFenceMaterials[f]);
+			MO_DrawGeometry_VertexArray(&gFenceTriMeshData[f][buffNum]);
 
 			gNumFencesDrawn++;
 
 //			if (gDebugMode == 2)
-//				DrawFenceNormals(f, setupInfo);
+//				DrawFenceNormals(f);
 		}
 	}
 
@@ -539,7 +539,7 @@ Byte		buffNum;
 #if 0
 /****************** DRAW FENCE NORMALS ***************************/
 
-static void DrawFenceNormals(short f, const OGLSetupOutputType *setupInfo)
+static void DrawFenceNormals(short f)
 {
 int				i,numNubs;
 OGLPoint3D		*nubs;

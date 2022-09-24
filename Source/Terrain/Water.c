@@ -16,11 +16,11 @@
 /****************************/
 
 static void MoveWater(ObjNode *theNode);
-static void DrawWater(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawWater(ObjNode *theNode);
 static void MakeWaterGeometry(void);
 
 static void InitRipples(void);
-static void DrawRipples(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawRipples(ObjNode *theNode);
 static void MoveRippleEvent(ObjNode *theNode);
 
 
@@ -506,7 +506,7 @@ short	i;
 
 /********************* DRAW WATER ***********************/
 
-static void DrawWater(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawWater(ObjNode *theNode)
 {
 long	f, i;
 long	prevType = -1;
@@ -551,7 +551,7 @@ long	prevType = -1;
 			}
 					/* DRAW IT */
 
-			MO_DrawGeometry_VertexArray(&gWaterTriMeshData[f], setupInfo);
+			MO_DrawGeometry_VertexArray(&gWaterTriMeshData[f]);
 			gNumWaterDrawn++;
 
 			prevType = waterType;
@@ -857,7 +857,7 @@ float	fps = gFramesPerSecondFrac;
 
 /******************** DRAW RIPPLES ***************************/
 
-static void DrawRipples(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawRipples(ObjNode *theNode)
 {
 int			i;
 float		s,x,y,z;
@@ -866,7 +866,7 @@ float		s,x,y,z;
 
 		/* ACTIVATE MATERIAL */
 
-	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_WaterRipple].materialObject, setupInfo);
+	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_WaterRipple].materialObject);
 
 
 		/* DRAW EACH RIPPLE */

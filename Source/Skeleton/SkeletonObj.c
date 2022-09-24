@@ -50,7 +50,7 @@ short	i;
 
 /******************** LOAD A SKELETON ****************************/
 
-void LoadASkeleton(Byte num, OGLSetupOutputType *setupInfo)
+void LoadASkeleton(Byte num)
 {
 	if (num >= MAX_SKELETON_TYPES)
 		DoFatalAlert("LoadASkeleton: MAX_SKELETON_TYPES exceeded!");
@@ -61,7 +61,7 @@ void LoadASkeleton(Byte num, OGLSetupOutputType *setupInfo)
 
 				/* LOAD THE SKELETON FILE */
 
-	gLoadedSkeletonsList[num] = LoadSkeletonFile(num, setupInfo);
+	gLoadedSkeletonsList[num] = LoadSkeletonFile(num);
 
 
 	gNumDecomposedTriMeshesInSkeleton[num] = gLoadedSkeletonsList[num]->numDecomposedTriMeshes;		// keep easy access version of this value
@@ -396,7 +396,7 @@ short	numDecomp, i;
 
 /*************************** DRAW SKELETON ******************************/
 
-void DrawSkeleton(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+void DrawSkeleton(ObjNode *theNode)
 {
 short				i,numTriMeshes;
 short				skelType;
@@ -404,7 +404,7 @@ MOMaterialObject	*overrideTexture, *oldTexture = nil;
 SkeletonObjDataType	*skeleton = theNode->Skeleton;
 Byte				buffNum;
 
-	buffNum = setupInfo->frameCount & 1;
+	buffNum = gGameViewInfoPtr->frameCount & 1;
 
 	skelType = theNode->Type;
 	numTriMeshes = gNumDecomposedTriMeshesInSkeleton[skelType];						// get # trimeshes to draw
@@ -425,7 +425,7 @@ Byte				buffNum;
 
 					/* SUBMIT IT */
 
-		MO_DrawGeometry_VertexArray(triMesh, setupInfo);
+		MO_DrawGeometry_VertexArray(triMesh);
 
 
 		if (overrideTexture && oldTexture)											// see if need to set texture back to normal

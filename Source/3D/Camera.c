@@ -101,7 +101,7 @@ static const Byte	gFlareImageTable[]=
 
 /*********************** DRAW LENS FLARE ***************************/
 
-void DrawLensFlare(const OGLSetupOutputType *setupInfo)
+void DrawLensFlare(void)
 {
 short			i;
 float			x,y,dot;
@@ -132,10 +132,10 @@ float			oneOverAspect;
 
 			/* CALC SUN COORD */
 
-	from = setupInfo->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
-	gSunCoord.x = from.x - (gWorldSunDirection.x * setupInfo->yon);
-	gSunCoord.y = from.y - (gWorldSunDirection.y * setupInfo->yon);
-	gSunCoord.z = from.z - (gWorldSunDirection.z * setupInfo->yon);
+	from = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation;
+	gSunCoord.x = from.x - (gWorldSunDirection.x * gGameViewInfoPtr->yon);
+	gSunCoord.y = from.y - (gWorldSunDirection.y * gGameViewInfoPtr->yon);
+	gSunCoord.z = from.z - (gWorldSunDirection.z * gGameViewInfoPtr->yon);
 
 
 
@@ -146,9 +146,9 @@ float			oneOverAspect;
 						from.z - gSunCoord.z,
 						&sunVector);
 
-	FastNormalizeVector(setupInfo->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.x - from.x,
-						setupInfo->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.y - from.y,
-						setupInfo->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.z - from.z,
+	FastNormalizeVector(gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.x - from.x,
+						gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.y - from.y,
+						gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].pointOfInterest.z - from.z,
 						&lookAtVector);
 
 	dot = OGLVector3D_Dot(&lookAtVector, &sunVector);
@@ -167,7 +167,7 @@ float			oneOverAspect;
 
 			/* CALC CENTER OF VIEWPORT */
 
-	OGL_GetCurrentViewport(setupInfo, &px, &py, &pw, &ph, gCurrentSplitScreenPane);
+	OGL_GetCurrentViewport(&px, &py, &pw, &ph, gCurrentSplitScreenPane);
 	cx = pw/2 + px;
 	cy = ph/2 + py;
 
@@ -203,7 +203,7 @@ float			oneOverAspect;
 		else
 			gGlobalTransparency = transColor.a;
 
-		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][gFlareImageTable[i]].materialObject, setupInfo);		// activate material
+		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][gFlareImageTable[i]].materialObject);		// activate material
 
 
 
@@ -557,7 +557,7 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 
 
 		OGLVector3D_Transform(&up, &m, &v);									// transform the "up" vector to give us tilt
-		OGL_UpdateCameraFromToUp(gGameViewInfoPtr, &from, &to, &v, i);		// update camera settings
+		OGL_UpdateCameraFromToUp(&from, &to, &v, i);		// update camera settings
 
 
 
@@ -601,7 +601,7 @@ float	fps = gFramesPerSecondFrac;
 	if (camCoord.y  < terrainY)
 		camCoord.y = terrainY;
 
-	OGL_UpdateCameraFromTo(gGameViewInfoPtr, &camCoord, nil, p);		// update camera settings
+	OGL_UpdateCameraFromTo(&camCoord, nil, p);		// update camera settings
 
 }
 
@@ -634,7 +634,7 @@ const OGLVector3D	forward = {0,0,-1};
 	to.y = player->Coord.y + v.y;
 	to.z = player->Coord.z + v.z;
 
-	OGL_UpdateCameraFromToUp(gGameViewInfoPtr, &player->Coord, &to, &up, i);		// update camera settings
+	OGL_UpdateCameraFromToUp(&player->Coord, &to, &up, i);		// update camera settings
 
 
 

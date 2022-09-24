@@ -104,18 +104,18 @@ typedef struct
 
 //=================================================
 
-SkeletonDefType *LoadSkeletonFile(short skeletonType, OGLSetupOutputType *setupInfo);
+SkeletonDefType *LoadSkeletonFile(short skeletonType);
 extern	OSErr LoadPrefs(PrefsType *prefBlock);
 void SavePrefs(void);
 
-void LoadPlayfield(FSSpec *specPtr, OGLSetupOutputType *setupInfo);
+void LoadPlayfield(FSSpec *specPtr);
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);
 void SetDefaultDirectory(void);
 
 Boolean SaveGame(void);
 Boolean LoadSavedGame(void);
 
-void LoadLevelArt(OGLSetupOutputType *setupInfo);
+void LoadLevelArt(void);
 
 Ptr LoadDataFile(const char* path, long* outLength);
 char* LoadTextFile(const char* path, long* outLength);

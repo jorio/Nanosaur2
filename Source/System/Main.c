@@ -20,7 +20,7 @@ static void PlayGame_Adventure(void);
 static void PlayGame_Versus(void);
 static void InitLevel(void);
 static void PlayLevel(void);
-static void DrawLevelCallback(OGLSetupOutputType *setupInfo);
+static void DrawLevelCallback(void);
 static void MoveTimeDemoOnSpline(ObjNode *theNode);
 static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFPS);
 
@@ -528,7 +528,7 @@ OGLSetupInputType	viewDef;
 			/* MAKE DRAW CONTEXT */
 			/*********************/
 
-	OGL_SetupWindow(&viewDef, &gGameViewInfoPtr);
+	OGL_SetupGameView(&viewDef);
 
 
 			/**********************/
@@ -562,15 +562,15 @@ OGLSetupInputType	viewDef;
 			// NOTE: only call this *after* draw context is created!
 			//
 
-	LoadLevelArt(gGameViewInfoPtr);
-	InitInfobar(gGameViewInfoPtr);
+	LoadLevelArt();
+	InitInfobar();
 
 			/* INIT OTHER MANAGERS */
 
 	InitSplineManager();
 	InitContrails();
 	InitEnemyManager();
-	InitEffects(gGameViewInfoPtr);
+	InitEffects();
 	InitSparkles();
 	InitItemsManager();
 
@@ -654,7 +654,7 @@ float	fps;
 		UpdateInput();									// read local keys
 		MoveEverything();
 		DoPlayerTerrainUpdate();
-		OGL_DrawScene(gGameViewInfoPtr,DrawLevelCallback);
+		OGL_DrawScene(DrawLevelCallback);
 
 
 			/*************************/
@@ -874,7 +874,7 @@ HICommand 		command;
 
 /****************** DRAW LEVEL CALLBACK *********************/
 
-static void DrawLevelCallback(OGLSetupOutputType *setupInfo)
+static void DrawLevelCallback(void)
 {
 
 	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
@@ -910,7 +910,7 @@ static void DrawLevelCallback(OGLSetupOutputType *setupInfo)
 		}
 	}
 
-	DrawObjects(setupInfo);
+	DrawObjects();
 }
 
 
@@ -932,7 +932,7 @@ static void CleanupLevel(void)
 	DisposeAllBG3DContainers();
 	DisposeContrails();
 
-	OGL_DisposeWindowSetup(&gGameViewInfoPtr);	// do this last!
+	OGL_DisposeGameView();	// do this last!
 
 
 		/* SET SOME IMPORTANT GLOBALS BACK TO DEFAULTS */
@@ -1071,7 +1071,7 @@ ObjNode	*player = gPlayerInfo[0].objNode;
 
 			/* AIM ALONG SPLINE */
 
-	OGL_UpdateCameraFromToUp(gGameViewInfoPtr, &theNode->OldCoord, &theNode->Coord, &gUp, 0);
+	OGL_UpdateCameraFromToUp(&theNode->OldCoord, &theNode->Coord, &gUp, 0);
 
 
 	gPlayerInfo[0].camera.cameraLocation = theNode->Coord;

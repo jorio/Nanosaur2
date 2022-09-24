@@ -524,7 +524,7 @@ Boolean	gotHit = false;
 // screenCoord is in grafPort coordinates.
 //
 
-void OGL_GetWorldRayAtScreenPoint(OGLPoint2D *screenCoord, OGLRay *ray, const OGLSetupOutputType *setupInfo)
+void OGL_GetWorldRayAtScreenPoint(OGLPoint2D *screenCoord, OGLRay *ray)
 {
 GLdouble	model_view[16];
 GLdouble	projection[16];
@@ -552,7 +552,7 @@ double		dx,dy,dz;
 
 			/* CONVERT TO RAY */
 
-	ray->origin = setupInfo->cameraPlacement[0].cameraLocation;		// ray origin @ camera location
+	ray->origin = gGameViewInfoPtr->cameraPlacement[0].cameraLocation;		// ray origin @ camera location
 	ray->direction.x = dx - ray->origin.x;							// calc vector of ray
 	ray->direction.y = dy - ray->origin.y;
 	ray->direction.z = dz - ray->origin.z;

@@ -20,7 +20,7 @@ static void MoveEggWormhole(ObjNode *egg);
 static void MoveEntryWormhole(ObjNode *theNode);
 static void MoveExitWormhole(ObjNode *theNode);
 static void MakeExitWormhole(float x, float z);
-static void DrawWormhole(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawWormhole(ObjNode *theNode);
 static void ModifyWormholeTextures(void);
 static void SeeIfExitWormholeGrabPlayer(ObjNode *wormhole);
 
@@ -363,7 +363,7 @@ float	x,z;
 //
 //
 
-static void DrawWormhole(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawWormhole(ObjNode *theNode)
 {
 MOVertexArrayObject	*mo;
 MOVertexArrayData	*va;
@@ -372,7 +372,7 @@ MOVertexArrayData	*va;
 	{
 		SkeletonObjDataType	*skeleton = theNode->Skeleton;
 //		Byte		buffNum = skeleton->activeBuffer;
-		Byte	buffNum = setupInfo->frameCount & 1;
+		Byte	buffNum = gGameViewInfoPtr->frameCount & 1;
 
 		va = &skeleton->deformedMeshes[buffNum][0];			// point to triMesh
 	}
@@ -402,9 +402,9 @@ MOVertexArrayData	*va;
 			/* DRAW IT */
 
 	if (theNode->What == WHAT_EGGWORMHOLE)
-		DrawSkeleton(theNode, setupInfo);
+		DrawSkeleton(theNode);
 	else
-		MO_DrawObject(theNode->BaseGroup, setupInfo);
+		MO_DrawObject(theNode->BaseGroup);
 
 
 			/* RESTORE MODS */

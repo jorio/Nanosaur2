@@ -20,14 +20,14 @@ static void DeleteParticleGroup(long groupNum);
 static void MoveParticleGroups(ObjNode *theNode);
 static void PurgePendingParticleGroups(Boolean forcePurgeNow);
 static void UpdateParticleGroupsGeometry(void);
-static void DrawParticleGroups(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawParticleGroups(ObjNode *theNode);
 
 static void MoveSmoker(ObjNode *theNode);
-static void DrawFlame(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawFlame(ObjNode *theNode);
 static void MoveFlame(ObjNode *theNode);
 
 static void MoveFireRing(ObjNode *theNode);
-static void DrawFireRing(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawFireRing(ObjNode *theNode);
 
 
 /****************************/
@@ -60,16 +60,11 @@ short			gNumActiveParticleGroups = 0;
 
 /************************ INIT PARTICLE SYSTEM **************************/
 
-void InitParticleSystem(OGLSetupOutputType *setupInfo)
+void InitParticleSystem(void)
 {
-short	i;
-FSSpec	spec;
-ObjNode	*obj;
-
-
 			/* INIT GROUP ARRAY */
 
-	for (i = 0; i < MAX_PARTICLE_GROUPS; i++)
+	for (int i = 0; i < MAX_PARTICLE_GROUPS; i++)
 		gParticleGroups[i] = nil;
 
 	gNumActiveParticleGroups = 0;
@@ -97,7 +92,7 @@ ObjNode	*obj;
 	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|
 									STATUS_BIT_GLOW;
 
-	obj = MakeNewObject(&gNewObjectDefinition);
+	ObjNode* obj = MakeNewObject(&gNewObjectDefinition);
 	obj->CustomDrawFunction = DrawParticleGroups;
 
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_PARTICLES1;
@@ -788,7 +783,7 @@ short				paneNum;
 
 /**************** DRAW PARTICLE GROUPS *********************/
 
-static void DrawParticleGroups(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawParticleGroups(ObjNode *theNode)
 {
 long				g, buffNum;
 short				paneNum = gCurrentSplitScreenPane;
@@ -799,7 +794,7 @@ Boolean				isVisible;
 
 			/* DRAW SOME OTHER GOODIES WHILE WE'RE HERE */
 
-	DrawSparkles(setupInfo);												// draw light sparkles
+	DrawSparkles();												// draw light sparkles
 
 
 				/* SETUP ENVIRONTMENT */
@@ -808,7 +803,7 @@ Boolean				isVisible;
 	OGL_EnableBlend();
 	OGL_SetColor4f(1,1,1,1);												// full white & alpha to start with
 
-	buffNum = setupInfo->frameCount & 1;									// which VAR buffer to use?
+	buffNum = gGameViewInfoPtr->frameCount & 1;								// which VAR buffer to use?
 
 	for (g = 0; g < MAX_PARTICLE_GROUPS; g++)
 	{
@@ -832,7 +827,7 @@ Boolean				isVisible;
 					/* DRAW IT */
 
 				OGL_BlendFunc(src, dst);														// set blending mode
-				MO_DrawObject(gParticleGroups[g]->geometryObj[buffNum][paneNum], setupInfo);	// draw geometry
+				MO_DrawObject(gParticleGroups[g]->geometryObj[buffNum][paneNum]);	// draw geometry
 			}
 		}
 	}
@@ -1820,7 +1815,7 @@ static void MoveFlame(ObjNode *theNode)
 
 /****************** DRAW FLAME ***********************/
 
-static void DrawFlame(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawFlame(ObjNode *theNode)
 {
 OGLMatrix4x4	m;
 const OGLVector3D	up = {0,1,0};
@@ -1850,7 +1845,7 @@ float	s;
 
 			/* CALC VERTEX COORDS */
 
-	SetLookAtMatrixAndTranslate(&m, &up, &theNode->Coord, &setupInfo->cameraPlacement[paneNum].cameraLocation);	// aim at camera & translate
+	SetLookAtMatrixAndTranslate(&m, &up, &theNode->Coord, &gGameViewInfoPtr->cameraPlacement[paneNum].cameraLocation);	// aim at camera & translate
 	OGLPoint3D_TransformArray(&frame[0], &m, frame, 4);
 
 
@@ -1860,7 +1855,7 @@ float	s;
 	gGlobalColorFilter.g = .8;
 	gGlobalColorFilter.b = .8;
 
-	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][PARTICLE_SObjType_Flame0 + theNode->FlameFrame].materialObject, setupInfo);
+	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][PARTICLE_SObjType_Flame0 + theNode->FlameFrame].materialObject);
 
 
 			/* DRAW QUAD */
@@ -1929,7 +1924,7 @@ float	fps = gFramesPerSecondFrac;
 
 /****************** DRAW FIRE RING ***********************/
 
-static void DrawFireRing(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawFireRing(ObjNode *theNode)
 {
 OGLPoint3D	verts[4];
 float		x,y,z,s;
@@ -1961,7 +1956,7 @@ float		x,y,z,s;
 
 	gGlobalTransparency = theNode->ColorFilter.a;
 
-	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][PARTICLE_SObjType_FireRing].materialObject, setupInfo);
+	MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_PARTICLES][PARTICLE_SObjType_FireRing].materialObject);
 
 
 			/* DRAW QUAD */

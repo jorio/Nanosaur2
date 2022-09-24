@@ -25,10 +25,10 @@ static void MO_DetachFromLinkedList(MetaObjectPtr obj);
 static void MO_DisposeObject_Group(MOGroupObject *group);
 static void MO_DeleteObjectInfo_Material(MOMaterialObject *obj);
 static void MO_CalcBoundingBox_Recurse(MetaObjectPtr object, OGLBoundingBox *bBox, const OGLMatrix4x4 *m);
-static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, const char* path);
+static void SetMetaObjectToPicture(MOPictureObject *pictObj, const char* path);
 static void MO_DeleteObjectInfo_Picture(MOPictureObject *obj);
 
-static void SetMetaObjectToSprite(MOSpriteObject *spriteObj, OGLSetupOutputType *setupInfo, MOSpriteSetupData *inData);
+static void SetMetaObjectToSprite(MOSpriteObject *spriteObj, MOSpriteSetupData *inData);
 static void MO_DisposeObject_Sprite(MOSpriteObject *obj);
 static void MO_CalcBoundingSphere_Recurse(MetaObjectPtr object, float *bSphere);
 
@@ -111,11 +111,11 @@ MetaObjectPtr	mo;
 //				if (gGamePrefs.depth == 16)		// picture depth depends on display depth (no point in doing 32 bit if display is 16)
 //					SetMetaObjectToPicture(mo, (OGLSetupOutputType *)subType, data, GL_RGB5_A1);
 //				else
-					SetMetaObjectToPicture(mo, (OGLSetupOutputType *)subType, data);
+					SetMetaObjectToPicture(mo, data);
 				break;
 
 		case	MO_TYPE_SPRITE:
-				SetMetaObjectToSprite(mo, (OGLSetupOutputType *)subType, data);
+				SetMetaObjectToSprite(mo, data);
 				break;
 
 		default:
@@ -304,7 +304,7 @@ static void SetMetaObjectToMaterial(MOMaterialObject *matObj, MOMaterialData *in
 
 #if 0
 		{
-			MO_DrawMaterial(matObj, gGameViewInfoPtr);		// safety prime ----------
+			MO_DrawMaterial(matObj);		// safety prime ----------
 			glBegin(GL_TRIANGLES);
 			glTexCoord2f(0,0); glVertex3f(0,0,0);
 			glTexCoord2f(1,0); glVertex3f(0,100,0);
@@ -339,7 +339,7 @@ static void SetMetaObjectToMatrix(MOMatrixObject *matObj, OGLMatrix4x4 *inData)
 // This takes the given input data and copies it.
 //
 
-static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType *setupInfo, const char* path)
+static void SetMetaObjectToPicture(MOPictureObject *pictObj, const char* path)
 {
 	int			width,height;
 	MOPictureData	*picData = &pictObj->objectData;
@@ -355,7 +355,7 @@ static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType 
 	/***************************/
 
 //	matData.drawContext		= gAGLContext;
-	matData.setupInfo		= setupInfo;
+	matData.setupInfo		= gGameViewInfoPtr;
 	matData.flags			= BG3D_MATERIALFLAG_TEXTURED|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_CLAMP_V;
 	matData.diffuseColor	= (OGLColorRGBA) {1,1,1,1};
 	matData.numMipmaps		= 1;
@@ -620,7 +620,7 @@ Rect		r;
 // This takes the given input data and copies it.
 //
 
-static void SetMetaObjectToSprite(MOSpriteObject *spriteObj, OGLSetupOutputType *setupInfo, MOSpriteSetupData *inData)
+static void SetMetaObjectToSprite(MOSpriteObject *spriteObj, MOSpriteSetupData *inData)
 {
 MOSpriteData	*spriteData = &spriteObj->objectData;
 
@@ -631,7 +631,7 @@ MOSpriteData	*spriteData = &spriteObj->objectData;
 	{
 		GLint	destPixelFormat = inData->pixelFormat;									// use passed in format
 
-		spriteData->material = MO_GetTextureFromFile(&inData->spec, setupInfo, destPixelFormat);
+		spriteData->material = MO_GetTextureFromFile(&inData->spec,  destPixelFormat);
 
 		spriteData->width = spriteData->material->objectData.width;						// get dimensions of the texture
 		spriteData->height = spriteData->material->objectData.width;
@@ -742,7 +742,7 @@ int	i,j;
 // This recursive function will draw any objects submitted and parses groups.
 //
 
-void MO_DrawObject(const MetaObjectPtr object, const OGLSetupOutputType *setupInfo)
+void MO_DrawObject(const MetaObjectPtr object)
 {
 MetaObjectHeader	*objHead = object;
 MOVertexArrayObject	*vObj;
@@ -762,7 +762,7 @@ MOVertexArrayObject	*vObj;
 				{
 					case	MO_GEOMETRY_SUBTYPE_VERTEXARRAY:
 							vObj = object;
-							MO_DrawGeometry_VertexArray(&vObj->objectData, setupInfo);
+							MO_DrawGeometry_VertexArray(&vObj->objectData);
 							break;
 
 					default:
@@ -771,23 +771,23 @@ MOVertexArrayObject	*vObj;
 				break;
 
 		case	MO_TYPE_MATERIAL:
-				MO_DrawMaterial(object, setupInfo);
+				MO_DrawMaterial(object);
 				break;
 
 		case	MO_TYPE_GROUP:
-				MO_DrawGroup(object, setupInfo);
+				MO_DrawGroup(object);
 				break;
 
 		case	MO_TYPE_MATRIX:
-				MO_DrawMatrix(object, setupInfo);
+				MO_DrawMatrix(object);
 				break;
 
 		case	MO_TYPE_PICTURE:
-				MO_DrawPicture(object, setupInfo);
+				MO_DrawPicture(object);
 				break;
 
 		case	MO_TYPE_SPRITE:
-				MO_DrawSprite(object, setupInfo);
+				MO_DrawSprite(object);
 				break;
 
 		default:
@@ -798,7 +798,7 @@ MOVertexArrayObject	*vObj;
 
 /******************** MO_DRAW GROUP *************************/
 
-void MO_DrawGroup(const MOGroupObject *object, const OGLSetupOutputType *setupInfo)
+void MO_DrawGroup(const MOGroupObject *object)
 {
 int	numChildren,i;
 
@@ -824,7 +824,7 @@ int	numChildren,i;
 
 	for (i = 0; i < numChildren; i++)
 	{
-		MO_DrawObject(object->objectData.groupContents[i], setupInfo);
+		MO_DrawObject(object->objectData.groupContents[i]);
 	}
 
 
@@ -838,7 +838,7 @@ int	numChildren,i;
 
 /******************** MO: DRAW GEOMETRY - VERTEX ARRAY *************************/
 
-void MO_DrawGeometry_VertexArray(const MOVertexArrayData *data, const OGLSetupOutputType *setupInfo)
+void MO_DrawGeometry_VertexArray(const MOVertexArrayData *data)
 {
 Boolean		useTexture = false, multiTexture = false, texGen = false;
 uint32_t 		materialFlags;
@@ -934,7 +934,7 @@ Boolean		needNormals;
 
 							/* SUBMIT MATERIAL FOR THIS TEXTURE UNIT */
 
-				MO_DrawMaterial(data->materials[i], setupInfo);						// submit material #n
+				MO_DrawMaterial(data->materials[i]);						// submit material #n
 
 				if (i == 0)
 				{
@@ -948,7 +948,7 @@ Boolean		needNormals;
 
 				/* MAYBE ONLY 1 MATERIAL IN GEOMETRY */
 
-		MO_DrawMaterial(data->materials[0], setupInfo);			// submit material #0 (also applies for multitexture layer 0)
+		MO_DrawMaterial(data->materials[0]);			// submit material #0 (also applies for multitexture layer 0)
 
 
 			/* IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY */
@@ -999,7 +999,7 @@ use_current:
 									else
 									{
 
-										MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_SPHEREMAPS][envMapNum].materialObject, setupInfo);		// activate reflection map texture
+										MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_SPHEREMAPS][envMapNum].materialObject);		// activate reflection map texture
 
 //										glEnable(GL_COLOR_MATERIAL);		///----  fixes a glitch in OpenGL?
 
@@ -1152,7 +1152,7 @@ go_here:
 
 /************************ DRAW MATERIAL **************************/
 
-void MO_DrawMaterial(MOMaterialObject *matObj, const OGLSetupOutputType *setupInfo)
+void MO_DrawMaterial(MOMaterialObject *matObj)
 {
 MOMaterialData		*matData;
 OGLColorRGBA		*diffuseColor,diffColor2;
@@ -1174,7 +1174,7 @@ uint32_t				matFlags;
 
 	if (matFlags & BG3D_MATERIALFLAG_TEXTURED)
 	{
-		if (matData->setupInfo != setupInfo)						// make sure texture is loaded for this draw context
+		if (matData->setupInfo != gGameViewInfoPtr)						// make sure texture is loaded for this draw context
 			DoFatalAlert("MO_DrawMaterial: texture is not assigned to this draw context");
 
 
@@ -1280,7 +1280,7 @@ uint32_t				matFlags;
 
 /************************ DRAW MATRIX **************************/
 
-void MO_DrawMatrix(const MOMatrixObject *matObj, const OGLSetupOutputType *setupInfo)
+void MO_DrawMatrix(const MOMatrixObject *matObj)
 {
 const OGLMatrix4x4		*m;
 
@@ -1293,7 +1293,7 @@ const OGLMatrix4x4		*m;
 
 /************************ MO: DRAW PICTURE **************************/
 
-void MO_DrawPicture(const MOPictureObject *picObj, const OGLSetupOutputType *setupInfo)
+void MO_DrawPicture(const MOPictureObject *picObj)
 {
 int				row,col,i;
 float			x,y,z;
@@ -1322,7 +1322,7 @@ float			cellWidth, cellHeight, ratio, offset;
 
 			/* ACTIVATE THE MATERIAL */
 
-	MO_DrawMaterial(picData->material, setupInfo);		// submit material #0
+	MO_DrawMaterial(picData->material);		// submit material #0
 
 	glBegin(GL_QUADS);
 	glTexCoord2f(0,1);	glVertex3f(x, y + cellHeight,z);
@@ -1345,7 +1345,7 @@ float			cellWidth, cellHeight, ratio, offset;
 // Also, assume that the projection matrix is already the identity matrix.
 //
 
-void MO_DrawSprite(const MOSpriteObject *spriteObj, const OGLSetupOutputType *setupInfo)
+void MO_DrawSprite(const MOSpriteObject *spriteObj)
 {
 const MOSpriteData	*spriteData = &spriteObj->objectData;
 float			scaleX,scaleY,x,y;
@@ -1361,7 +1361,7 @@ OGLPoint2D			p[4];
 
 		/* ACTIVATE THE MATERIAL */
 
-	MO_DrawMaterial(mo = spriteData->material, setupInfo);
+	MO_DrawMaterial(mo = spriteData->material);
 
 	aspect = (float)mo->objectData.height / (float)mo->objectData.width;
 
@@ -2070,7 +2070,7 @@ float				d;
 
 /******************* MO: GET TEXTURE FROM FILE ************************/
 
-MOMaterialObject *MO_GetTextureFromFile(FSSpec *spec, OGLSetupOutputType *setupInfo, int destPixelFormat)
+MOMaterialObject *MO_GetTextureFromFile(FSSpec *spec, int destPixelFormat)
 {
 	IMPME;
 	return NULL;
@@ -2377,7 +2377,7 @@ short				varType;
 // Takes the input image file and converts it into a 32-bit texture material object
 //
 
-MOMaterialObject *MO_LoadTextureObjectFromFile(OGLSetupOutputType *setupInfo, FSSpec *spec, Boolean useAlpha, Boolean textureInRAM)
+MOMaterialObject *MO_LoadTextureObjectFromFile(FSSpec *spec, Boolean useAlpha, Boolean textureInRAM)
 {
 	IMPME;
 	return NULL;
@@ -2453,7 +2453,7 @@ MOMaterialObject	*obj;
 			/* CREATE A TEXTURE OBJECT */
 			/***************************/
 
-	obj = MO_CreateTextureObjectFromARGBBuffer(setupInfo, r.right, r.bottom, buffer, textureInRAM);
+	obj = MO_CreateTextureObjectFromARGBBuffer(r.right, r.bottom, buffer, textureInRAM);
 
 	if (!textureInRAM)									// we it's not being kept in RAM then nuke it
 		SafeDisposePtr(buffer);
@@ -2475,7 +2475,7 @@ MOMaterialObject	*obj;
 //			textureInRAM = true if we want OpenGL to use our buffer in RAM and not it's own copy.
 //
 
-MOMaterialObject *MO_CreateTextureObjectFromARGBBuffer(OGLSetupOutputType *setupInfo, int width, int height, Ptr buffer, Boolean textureInRAM)
+MOMaterialObject *MO_CreateTextureObjectFromARGBBuffer(int width, int height, Ptr buffer, Boolean textureInRAM)
 {
 MOMaterialData	data;
 MOMaterialObject	*obj;
@@ -2487,7 +2487,7 @@ MOMaterialObject	*obj;
 
 		/* INIT NEW MATERIAL DATA */
 
-	data.setupInfo				= setupInfo;							// remember which draw context this material is assigned to
+	data.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
 	data.flags 					= BG3D_MATERIALFLAG_TEXTURED;
 	data.width					= width;
 	data.height					= height;

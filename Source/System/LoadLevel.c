@@ -72,7 +72,7 @@ static const char*	levelSpriteFiles[NUM_LEVELS] =
 
 /************************** LOAD LEVEL ART ***************************/
 
-void LoadLevelArt(OGLSetupOutputType *setupInfo)
+void LoadLevelArt(void)
 {
 FSSpec	spec;
 short	i;
@@ -93,13 +93,13 @@ short	i;
 			/* LOAD GLOBAL BG3D GEOMETRY */
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:Global.bg3d", &spec);
-	ImportBG3D(&spec, MODEL_GROUP_GLOBAL, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+	ImportBG3D(&spec, MODEL_GROUP_GLOBAL,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:playerparts.bg3d", &spec);
-	ImportBG3D(&spec, MODEL_GROUP_PLAYER, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+	ImportBG3D(&spec, MODEL_GROUP_PLAYER,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:Weapons.bg3d", &spec);
-	ImportBG3D(&spec, MODEL_GROUP_WEAPONS, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+	ImportBG3D(&spec, MODEL_GROUP_WEAPONS,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_PLAYER, PLAYER_ObjType_JetPack,
 									-1, MULTI_TEXTURE_COMBINE_ADD, SPHEREMAP_SObjType_Satin);
@@ -113,7 +113,7 @@ short	i;
 	if (levelModelFiles[gLevelNum][0] > 0)
 	{
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, levelModelFiles[gLevelNum], &spec);
-		ImportBG3D(&spec, MODEL_GROUP_LEVELSPECIFIC, setupInfo, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
+		ImportBG3D(&spec, MODEL_GROUP_LEVELSPECIFIC,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 	}
 
 
@@ -155,11 +155,11 @@ short	i;
 			/* LOAD SKELETONS */
 			/******************/
 
-	LoadASkeleton(SKELETON_TYPE_PLAYER, setupInfo);
-	LoadASkeleton(SKELETON_TYPE_RAPTOR, setupInfo);
-	LoadASkeleton(SKELETON_TYPE_BRACH, setupInfo);
+	LoadASkeleton(SKELETON_TYPE_PLAYER);
+	LoadASkeleton(SKELETON_TYPE_RAPTOR);
+	LoadASkeleton(SKELETON_TYPE_BRACH);
 
-	LoadASkeleton(SKELETON_TYPE_WORMHOLE, setupInfo);
+	LoadASkeleton(SKELETON_TYPE_WORMHOLE);
 
 
 			/****************/
@@ -169,7 +169,7 @@ short	i;
 	if (terrainFiles[gLevelNum][0] > 0)
 	{
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, terrainFiles[gLevelNum], &spec);
-		LoadPlayfield(&spec, setupInfo);
+		LoadPlayfield(&spec);
 	}
 
 
@@ -211,8 +211,8 @@ short	i;
 		case	LEVEL_NUM_ADVENTURE3:
 		case	LEVEL_NUM_RACE1:
 		case	LEVEL_NUM_FLAG1:
-				LoadASkeleton(SKELETON_TYPE_WORM, setupInfo);
-				LoadASkeleton(SKELETON_TYPE_RAMPHOR, setupInfo);
+				LoadASkeleton(SKELETON_TYPE_WORM);
+				LoadASkeleton(SKELETON_TYPE_RAMPHOR);
 				break;
 
 	}

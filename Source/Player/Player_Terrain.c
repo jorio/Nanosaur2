@@ -28,7 +28,7 @@ static void MovePlayer_ReadyToGrab(ObjNode *theNode);
 static void MovePlayer_Banking(ObjNode *theNode);
 
 
-static void DrawPlayer(ObjNode *theNode, const OGLSetupOutputType *setupInfo);
+static void DrawPlayer(ObjNode *theNode);
 static void UpdatePlayer(ObjNode *theNode);
 static void PlayerJetpackButtonPressed(ObjNode *player, short playerNum);
 static void MakeJetpackExhaust(ObjNode *jetpack);
@@ -879,11 +879,11 @@ OGLPoint3D			p;
 
 /********************** DRAW PLAYER *************************/
 
-static void DrawPlayer(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
+static void DrawPlayer(ObjNode *theNode)
 {
 	if ((gCameraMode[theNode->PlayerNum] != CAMERA_MODE_FIRSTPERSON) || (gCurrentSplitScreenPane != theNode->PlayerNum))
 	{
-		DrawSkeleton(theNode, setupInfo);
+		DrawSkeleton(theNode);
 	}
 
 
@@ -911,7 +911,7 @@ static void DrawPlayer(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 				OGL_PushState();
 				glMultMatrixf((GLfloat *)&m);
 
-				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_OuterRing].materialObject, setupInfo);		// activate material
+				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_OuterRing].materialObject);		// activate material
 
 				OGL_DisableCullFace();
 				OGL_DisableLighting();

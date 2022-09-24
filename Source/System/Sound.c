@@ -811,21 +811,21 @@ short	whichEar = 0;
 // Get ear coord for all local players
 //
 
-void UpdateListenerLocation(OGLSetupOutputType *setupInfo)
+void UpdateListenerLocation(void)
 {
-OGLVector3D	v;
-short	i;
-
-	for (i = 0; i < gNumPlayers; i++)
+	for (int i = 0; i < gNumPlayers; i++)
 	{
-		v.x = setupInfo->cameraPlacement[i].pointOfInterest.x - setupInfo->cameraPlacement[i].cameraLocation.x;	// calc line of sight vector
-		v.y = setupInfo->cameraPlacement[i].pointOfInterest.y - setupInfo->cameraPlacement[i].cameraLocation.y;
-		v.z = setupInfo->cameraPlacement[i].pointOfInterest.z - setupInfo->cameraPlacement[i].cameraLocation.z;
+		OGLCameraPlacement* p = &gGameViewInfoPtr->cameraPlacement[i];
+
+		OGLVector3D	v;
+		v.x = p->pointOfInterest.x - p->cameraLocation.x;	// calc line of sight vector
+		v.y = p->pointOfInterest.y - p->cameraLocation.y;
+		v.z = p->pointOfInterest.z - p->cameraLocation.z;
 		FastNormalizeVector(v.x, v.y, v.z, &v);
 
-		gEarCoords[i].x = setupInfo->cameraPlacement[i].cameraLocation.x + (v.x * 300.0f);			// put ear coord in front of camera
-		gEarCoords[i].y = setupInfo->cameraPlacement[i].cameraLocation.y + (v.y * 300.0f);
-		gEarCoords[i].z = setupInfo->cameraPlacement[i].cameraLocation.z + (v.z * 300.0f);
+		gEarCoords[i].x = p->cameraLocation.x + (v.x * 300.0f);			// put ear coord in front of camera
+		gEarCoords[i].y = p->cameraLocation.y + (v.y * 300.0f);
+		gEarCoords[i].z = p->cameraLocation.z + (v.z * 300.0f);
 
 		gEyeVector[i] = v;
 	}

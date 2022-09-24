@@ -22,7 +22,7 @@ static Boolean DoTrig_Electrode(ObjNode *mine, ObjNode *player);
 static void MoveElectrode(ObjNode *theNode);
 static void DoElectrodeZap(ObjNode *fromObj, ObjNode *toObj);
 static short GetFreeZapSlot(void);
-static void DrawZaps(ObjNode *dummy, const OGLSetupOutputType *setupInfo);
+static void DrawZaps(ObjNode *dummy);
 static void MoveZaps(ObjNode *theNode);
 static void AllocateZapGeometry(short zapSlot);
 static void FreeZap(short zapNum);
@@ -707,7 +707,7 @@ OGLPoint3D			worldHitCoord;
 
 /******************* DRAW ZAPS *****************************/
 
-static void DrawZaps(ObjNode *dummy, const OGLSetupOutputType *setupInfo)
+static void DrawZaps(ObjNode *dummy)
 {
 #pragma unused (dummy)
 
@@ -722,7 +722,7 @@ short	i;
 
 		gGlobalTransparency = gZaps[i].alpha;
 
-		MO_DrawGeometry_VertexArray(&gZaps[i].triMesh[gZapBuffer], setupInfo);
+		MO_DrawGeometry_VertexArray(&gZaps[i].triMesh[gZapBuffer]);
 	}
 
 	gGlobalTransparency = 1.0f;

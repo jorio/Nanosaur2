@@ -283,14 +283,14 @@ enum
 void OGL_Boot(void);
 void OGL_Shutdown(void);
 void OGL_NewViewDef(OGLSetupInputType *viewDef);
-void OGL_SetupWindow(OGLSetupInputType *setupDefPtr, OGLSetupOutputType **outputHandle);
-void OGL_DisposeWindowSetup(OGLSetupOutputType **dataHandle);
-void OGL_DrawScene(OGLSetupOutputType *setupInfo, void (*drawRoutine)(OGLSetupOutputType *));
-void OGL_MoveCameraFromTo(OGLSetupOutputType *setupInfo, float fromDX, float fromDY, float fromDZ, float toDX, float toDY, float toDZ, int camNum);
-void OGL_UpdateCameraFromTo(OGLSetupOutputType *setupInfo, OGLPoint3D *from, OGLPoint3D *to, int camNum);
-void OGL_MoveCameraFrom(OGLSetupOutputType *setupInfo, float fromDX, float fromDY, float fromDZ, Byte camNum);
-void OGL_UpdateCameraFromToUp(OGLSetupOutputType *setupInfo, OGLPoint3D *from, OGLPoint3D *to, const OGLVector3D *up, int camNum);
-void OGL_Camera_SetPlacementAndUpdateMatrices(OGLSetupOutputType *setupInfo, int camNum);
+void OGL_SetupGameView(OGLSetupInputType *setupDefPtr);
+void OGL_DisposeGameView(void);
+void OGL_DrawScene(void (*drawRoutine)(void));
+void OGL_MoveCameraFromTo(float fromDX, float fromDY, float fromDZ, float toDX, float toDY, float toDZ, int camNum);
+void OGL_UpdateCameraFromTo(OGLPoint3D *from, OGLPoint3D *to, int camNum);
+void OGL_MoveCameraFrom(float fromDX, float fromDY, float fromDZ, Byte camNum);
+void OGL_UpdateCameraFromToUp(OGLPoint3D *from, OGLPoint3D *to, const OGLVector3D *up, int camNum);
+void OGL_Camera_SetPlacementAndUpdateMatrices(int camNum);
 void OGL_Texture_SetOpenGLTexture(GLuint textureName);
 GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat,
 							GLint srcFormat, GLint dataType, Boolean textureInRAM);
@@ -299,7 +299,7 @@ void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uin
 GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel);
 GLenum OGL_CheckError_Impl(const char* file, int line);
 #define OGL_CheckError() OGL_CheckError_Impl(__FILE__, __LINE__)
-void OGL_GetCurrentViewport(const OGLSetupOutputType *setupInfo, int *x, int *y, int *w, int *h, Byte whichPane);
+void OGL_GetCurrentViewport(int *x, int *y, int *w, int *h, Byte whichPane);
 
 void OGL_PushState(void);
 void OGL_PopState(void);

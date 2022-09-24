@@ -22,15 +22,7 @@
 #include <OpenGL/glu.h> //---TEMP
 #endif
 
-typedef void* AGLContext;
-typedef void* AGLPixelFormat;
-typedef void* AGLDrawable;
-typedef void* ImageDescriptionHandle;
 typedef float CGGammaValue;
-#define aglGetError() glGetError()
-#define AGL_NO_ERROR GL_NO_ERROR
-#define aglSwapBuffers(whatever) SDL_GL_SwapWindow(gSDLWindow)
-#define aglSetCurrentContext(whatever) SDL_GL_MakeCurrent(gSDLWindow, (whatever))
 
 #if 0
 #include <Carbon/Carbon.h>
@@ -95,7 +87,7 @@ if (!softImpMeWarningShown++) printf("soft IMPLEMENT ME in %s, %s:%d\n", __func_
 #define GAME_ASSERT(condition) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, #condition); } while(0)
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
-extern	AGLContext				gAGLContext;
+extern	SDL_GLContext			gAGLContext;
 extern	Boolean					gAltivec;
 extern	Boolean					gDisableAnimSounds;
 extern	Boolean					gDisableHiccupTimer;
@@ -119,7 +111,6 @@ extern	Byte					gDebugMode;
 extern	Byte					gNumPlayers;
 extern	Byte					gTotalSides;
 extern	CGGammaValue			gOriginalRedTable[256], gOriginalGreenTable[256], gOriginalBlueTable[256];
-extern	CGrafPtr				gGameWindowGrafPtr;
 extern	CollisionRec			gCollisionList[];
 extern	FSSpec					gDataSpec;
 extern	GDHandle 				gGDevice;

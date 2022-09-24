@@ -14,7 +14,6 @@
 extern void	InitWindowStuff(void);
 void MakeFadeEvent(Boolean fadeIn, float fadeSpeed);
 
-void CleanupDisplay(void);
 void GammaFadeOut(void);
 void GammaFadeIn(void);
 void GammaOn(void);

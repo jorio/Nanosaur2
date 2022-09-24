@@ -112,10 +112,10 @@ static Boolean	beenHere = false;
 		if (gGameViewInfoPtr)							// see if need to dispose this
 			OGL_DisposeWindowSetup(&gGameViewInfoPtr);
 
+		OGL_Shutdown();
+
 		ShutdownSound();								// cleanup sound stuff
 	}
-
-	CleanupDisplay();								// unloads Draw Sprocket
 
 	if (gHIDInitialized)							// unload HID
 	{

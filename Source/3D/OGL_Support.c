@@ -17,7 +17,9 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void OGL_CreateDrawContext(OGLSetupInputType *def);
+static void OGL_CreateDrawContext(void);
+static void OGL_DisposeDrawContext(void);
+static void OGL_InitDrawContext(OGLSetupInputType *def);
 static void OGL_SetStyles(OGLSetupInputType *setupDefPtr);
 static void OGL_CreateLights(OGLLightDefType *lightDefPtr);
 static void OGL_InitFont(void);
@@ -63,10 +65,9 @@ static	float 			gMaxAnisotropy 	= 1.0;
 float					gAnaglyphFocallength	= 450.0f;
 float					gAnaglyphEyeSeparation 	= 40.0f;
 Byte					gAnaglyphPass;
-u_char					gAnaglyphGreyTable[255];
+Byte					gAnaglyphGreyTable[255];
 
-AGLDrawable				gAGLWin;
-AGLContext				gAGLContext = nil;
+SDL_GLContext			gAGLContext = nil;
 
 static GLuint 			gFontList;
 
@@ -148,8 +149,22 @@ float	f;
 		f += (PI/2.0) / 255.0f;
 	}
 
+
+		/* CREATE DRAW CONTEXT */
+		//
+		// The source port reuses a single draw context throughout the lifespan of the program.
+		//
+
+	OGL_CreateDrawContext();
 }
 
+
+/******************** OGL SHUTDOWN *****************/
+
+void OGL_Shutdown(void)
+{
+	OGL_DisposeDrawContext();
+}
 
 /*********************** OGL: NEW VIEW DEF **********************/
 //
@@ -239,7 +254,7 @@ short	i;
 
 				/* SETUP */
 
-	OGL_CreateDrawContext(setupDefPtr);
+	OGL_InitDrawContext(setupDefPtr);
 	OGL_CheckError();
 	OGL_SetStyles(setupDefPtr);
 	OGL_CheckError();
@@ -252,7 +267,7 @@ short	i;
 
 				/* PASS BACK INFO */
 
-	outputPtr->drawContext 		= gAGLContext;
+//	outputPtr->drawContext 		= gAGLContext;
 	outputPtr->clip 			= setupDefPtr->view.clip;
 	outputPtr->hither 			= setupDefPtr->camera.hither;			// remember hither/yon
 	outputPtr->yon 				= setupDefPtr->camera.yon;
@@ -312,12 +327,6 @@ OGLSetupOutputType	*data;
 	OGL_DisableVertexArrayRanges();
 
 
-			/* NUKE THE CONTEXT */
-
-	SDL_GL_MakeCurrent(gSDLWindow, nil);					// make context not current
-	SDL_GL_DeleteContext(data->drawContext);				// nuke the AGL context
-
-
 		/* FREE MEMORY & NIL POINTER */
 
 	data->isActive = false;									// now inactive
@@ -328,14 +337,15 @@ OGLSetupOutputType	*data;
 }
 
 
-
-
 /**************** OGL: CREATE DRAW CONTEXT *********************/
+//
+// Call this ONCE when booting the game.
+// The source port reuses a single draw context throughout the lifespan of the program.
+//
 
-static void OGL_CreateDrawContext(OGLSetupInputType *def)
+static void OGL_CreateDrawContext(void)
 {
 GLint			maxTexSize;
-OGLViewDefType *viewDefPtr = &def->view;
 
 	GAME_ASSERT_MESSAGE(!gAGLContext, "GL context already exists");
 	GAME_ASSERT_MESSAGE(gSDLWindow, "Window must be created before the DC!");
@@ -360,175 +370,6 @@ OGLViewDefType *viewDefPtr = &def->view;
 	SDL_GL_SetSwapInterval(1);
 
 
-
-	SOFTIMPME;
-#if 0
-AGLPixelFormat 	fmt;
-GLboolean      mkc, ok;
-GLint          attribWindow[]	= {AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
-GLint          attrib32bit[] 	= {AGL_RGBA, AGL_FULLSCREEN, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
-GLint          attrib16bit[] 	= {AGL_RGBA, AGL_FULLSCREEN, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
-GLint          attrib2[] 		= {AGL_RGBA, AGL_FULLSCREEN, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_ALL_RENDERERS, AGL_NONE};
-GLint          attrib32bitStereo[] 	= {AGL_RGBA, AGL_FULLSCREEN, AGL_STEREO, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
-GLint          attrib16bitStereo[] 	= {AGL_RGBA, AGL_FULLSCREEN, AGL_STEREO, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 32, AGL_ALL_RENDERERS, AGL_ACCELERATED, AGL_NO_RECOVERY, AGL_NONE};
-AGLContext agl_ctx;
-GLint			maxTexSize;
-static char			*s;
-
-OGLViewDefType *viewDefPtr = &def->view;
-
-
-			/* FIX FOG FOR FOR B&W ANAGLYPH */
-			//
-			// The NTSC luminance standard where grayscale = .299r + .587g + .114b
-			//
-
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
-	{
-		if (gGamePrefs.anaglyphColor)
-		{
-			uint32_t	r,g,b;
-
-			r = viewDefPtr->clearColor.r * 255.0f;
-			g = viewDefPtr->clearColor.g * 255.0f;
-			b = viewDefPtr->clearColor.b * 255.0f;
-
-			ColorBalanceRGBForAnaglyph(&r, &g, &b, true);
-
-			viewDefPtr->clearColor.r = (float)r / 255.0f;
-			viewDefPtr->clearColor.g = (float)g / 255.0f;
-			viewDefPtr->clearColor.b = (float)b / 255.0f;
-
-		}
-		else
-		{
-			float	f;
-
-			f = viewDefPtr->clearColor.r * .299;
-			f += viewDefPtr->clearColor.g * .587;
-			f += viewDefPtr->clearColor.b * .114;
-
-			viewDefPtr->clearColor.r =
-			viewDefPtr->clearColor.g =
-			viewDefPtr->clearColor.b = f;
-		}
-	}
-
-			/***********************/
-			/* CHOOSE PIXEL FORMAT */
-			/***********************/
-
-			/* PLAY IN WINDOW */
-
-	if (!gPlayFullScreen)
-	{
-		if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
-			DoFatalAlert("Cannot play stero mode in a window!");
-
-		fmt = aglChoosePixelFormat(&gGDevice, 1, attribWindow);
-	}
-
-			/* FULL-SCREEN */
-	else
-	{
-				/* STEREO FOR SHUTTER GLASSES */
-
-		if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
-		{
-			if (gGamePrefs.depth == 32)
-				fmt = aglChoosePixelFormat(&gGDevice, 1, attrib32bitStereo);
-			else
-				fmt = aglChoosePixelFormat(&gGDevice, 1, attrib16bitStereo);
-		}
-				/* NORMAL FULL-SCREEN DISPLAY */
-		else
-		{
-			if (gGamePrefs.depth == 32)
-				fmt = aglChoosePixelFormat(&gGDevice, 1, attrib32bit);						// 32-bit display
-			else
-				fmt = aglChoosePixelFormat(&gGDevice, 1, attrib16bit);						// 16-bit display
-		}
-	}
-
-			/* BACKUP PLAN IF ERROR */
-
-	if ((fmt == NULL) || (aglGetError() != AGL_NO_ERROR))
-	{
-		fmt = aglChoosePixelFormat(&gGDevice, 1, attrib2);							// try being less stringent
-		if ((fmt == NULL) || (aglGetError() != AGL_NO_ERROR))
-		{
-			DoFatalAlert("aglChoosePixelFormat failed!  OpenGL could not initialize your video card for 3D.  Check that your video card meets the game's minimum system requirements.");
-		}
-	}
-
-
-			/* CREATE AGL CONTEXT & ATTACH TO WINDOW */
-
-	gAGLContext = aglCreateContext(fmt, nil);
-	if ((gAGLContext == nil) || (aglGetError() != AGL_NO_ERROR))
-		DoFatalAlert("OGL_CreateDrawContext: aglCreateContext failed!");
-
-	agl_ctx = gAGLContext;
-
-	if (gPlayFullScreen)
-	{
-		gAGLWin = nil;
-		aglEnable (gAGLContext, AGL_FS_CAPTURE_SINGLE);
-		aglSetFullScreen(gAGLContext, 0, 0, 0, 0);
-	}
-	else
-	{
-		gAGLWin = (AGLDrawable)gGameWindowGrafPtr;
-		ok = aglSetDrawable(gAGLContext, gAGLWin);
-		if ((!ok) || (aglGetError() != AGL_NO_ERROR))
-		{
-			if (aglGetError() == AGL_BAD_ALLOC)
-			{
-				gGamePrefs.showScreenModeDialog	= true;
-				SavePrefs();
-				DoFatalAlert("Not enough VRAM for the selected video mode.  Please try again and select a different mode.");
-			}
-			else
-				DoFatalAlert("OGL_CreateDrawContext: aglSetDrawable failed!");
-		}
-	}
-
-
-			/* ACTIVATE CONTEXT */
-
-	mkc = aglSetCurrentContext(gAGLContext);
-	if ((mkc == nil) || (aglGetError() != AGL_NO_ERROR))
-		return;
-
-
-			/* NO LONGER NEED PIXEL FORMAT */
-
-	aglDestroyPixelFormat(fmt);
-#endif
-
-
-			/* CLEAR ALL BUFFERS TO BLACK */
-
-	ClearAllBuffersToBlack();
-
-
-				/* SET VARIOUS STATE INFO */
-
-
-	glClearColor(viewDefPtr->clearColor.r, viewDefPtr->clearColor.g, viewDefPtr->clearColor.b, 1.0);
-	glEnable(GL_DEPTH_TEST);								// use z-buffer
-
-	{
-		GLfloat	color[] = {1,1,1,1};									// set global material color to white
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, color);
-	}
-
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	glEnable(GL_COLOR_MATERIAL);
-
-  	glEnable(GL_NORMALIZE);
-
-
 #if VERTEXARRAYRANGES
  		/***************************/
 		/* GET OPENGL CAPABILITIES */
@@ -544,14 +385,6 @@ OGLViewDefType *viewDefPtr = &def->view;
 		gHardwareSupportsVertexArrayRange = false;
 #endif
 
-
-
-
-			/* INIT DEBUG FONT */
-
-	OGL_InitFont();
-
-
 			/* SEE IF SUPPORT 1024x1024 TEXTURES */
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
@@ -559,6 +392,90 @@ OGLViewDefType *viewDefPtr = &def->view;
 		DoFatalAlert("Your video card cannot do 1024x1024 textures, so it is below the game's minimum system requirements.");
 }
 
+/**************** OGL: NUKE DRAW CONTEXT *********************/
+//
+// Do this when QUITTING the game!
+// The game reuses the same draw context for all scenes!
+//
+
+static void OGL_DisposeDrawContext(void)
+{
+	if (!gAGLContext)
+	{
+		return;
+	}
+
+	SDL_GL_MakeCurrent(gSDLWindow, NULL);		// make context not current
+	SDL_GL_DeleteContext(gAGLContext);			// nuke context
+	gAGLContext = nil;
+}
+
+/**************** OGL: INIT DRAW CONTEXT *********************/
+//
+// Call this when setting up a new scene.
+// Note: the source port reuses a SINGLE draw context throughout the lifespan of the program.
+//
+
+static void OGL_InitDrawContext(OGLSetupInputType *def)
+{
+OGLViewDefType *viewDefPtr = &def->view;
+
+		/* FIX FOG FOR FOR B&W ANAGLYPH */
+		//
+		// The NTSC luminance standard where grayscale = .299r + .587g + .114b
+		//
+
+	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+	{
+		if (gGamePrefs.anaglyphColor)
+		{
+			uint32_t r = viewDefPtr->clearColor.r * 255.0f;
+			uint32_t g = viewDefPtr->clearColor.g * 255.0f;
+			uint32_t b = viewDefPtr->clearColor.b * 255.0f;
+
+			ColorBalanceRGBForAnaglyph(&r, &g, &b, true);
+
+			viewDefPtr->clearColor.r = (float)r / 255.0f;
+			viewDefPtr->clearColor.g = (float)g / 255.0f;
+			viewDefPtr->clearColor.b = (float)b / 255.0f;
+
+		}
+		else
+		{
+			float	f;
+			f = viewDefPtr->clearColor.r * .299;
+			f += viewDefPtr->clearColor.g * .587;
+			f += viewDefPtr->clearColor.b * .114;
+
+			viewDefPtr->clearColor.r =
+			viewDefPtr->clearColor.g =
+			viewDefPtr->clearColor.b = f;
+		}
+	}
+
+		/* CLEAR ALL BUFFERS TO BLACK */
+
+	ClearAllBuffersToBlack();
+
+		/* SET VARIOUS STATE INFO */
+
+	glClearColor(viewDefPtr->clearColor.r, viewDefPtr->clearColor.g, viewDefPtr->clearColor.b, 1.0);
+	glEnable(GL_DEPTH_TEST);								// use z-buffer
+
+	{
+		GLfloat	color[] = {1,1,1,1};									// set global material color to white
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, color);
+	}
+
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+
+	glEnable(GL_NORMALIZE);
+
+		/* INIT DEBUG FONT */
+
+	OGL_InitFont();
+}
 
 
 /**************** OGL: SET STYLES ****************/
@@ -684,7 +601,6 @@ static void ClearAllBuffersToBlack(void)
 
 static void OGL_CreateLights(OGLLightDefType *lightDefPtr)
 {
-int		i;
 GLfloat	ambient[4];
 
 	gMyState_Lighting = false;
@@ -706,7 +622,7 @@ GLfloat	ambient[4];
 			/* CREATE FILL LIGHTS */
 			/**********************/
 
-	for (i=0; i < lightDefPtr->numFillLights; i++)
+	for (int i = 0; i < lightDefPtr->numFillLights; i++)
 	{
 		static GLfloat lightamb[4] = { 0.0, 0.0, 0.0, 1.0 };
 		GLfloat lightVec[4];
@@ -735,6 +651,15 @@ GLfloat	ambient[4];
 
 
 		glEnable(GL_LIGHT0+i);								// enable the light
+	}
+
+
+
+		/* NUKE ANY FILL LIGHTS REMAINING FROM PREVIOUS SCENE */
+
+	for (int i = lightDefPtr->numFillLights; i < MAX_FILL_LIGHTS; i++)
+	{
+		glDisable(GL_LIGHT0+i);
 	}
 
 }

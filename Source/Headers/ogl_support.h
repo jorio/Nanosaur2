@@ -227,7 +227,7 @@ typedef struct
 typedef struct
 {
 	Boolean					isActive;
-	AGLContext				drawContext;
+//	AGLContext				drawContext;
 	Rect					clip;				// not pane size, but clip:  left = amount to clip off left
 	float					windowAspectRatio;
 
@@ -281,6 +281,7 @@ enum
 //=====================================================================
 
 void OGL_Boot(void);
+void OGL_Shutdown(void);
 void OGL_NewViewDef(OGLSetupInputType *viewDef);
 void OGL_SetupWindow(OGLSetupInputType *setupDefPtr, OGLSetupOutputType **outputHandle);
 void OGL_DisposeWindowSetup(OGLSetupOutputType **dataHandle);

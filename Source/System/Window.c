@@ -59,10 +59,6 @@ short			g2DStackDepth = 0;
 
 Boolean			gPlayFullScreen;
 
-WindowPtr		gGameWindow;
-GrafPtr			gGameWindowGrafPtr;
-GDHandle 		gGDevice;
-
 CGGammaValue gOriginalRedTable[256];
 CGGammaValue gOriginalGreenTable[256];
 CGGammaValue gOriginalBlueTable[256];
@@ -294,19 +290,6 @@ void GammaOff(void)
 		SOFTIMPME;
 		//CGSetDisplayTransferByTable( 0, 256, gGammaRedTable, gGammaGreenTable, gGammaBlueTable);
 	}
-}
-
-
-
-/****************** CLEANUP DISPLAY *************************/
-
-void CleanupDisplay(void)
-{
-
-//	CGReleaseAllDisplays();
-
-
-	gGameWindowGrafPtr = nil;
 }
 
 

@@ -12,9 +12,13 @@
 
 			/* SOME FLOATING POINT HELPERS */
 
-#define INFINITE	1e20
 #define EPS .0001					// a very small number which is useful for FP compares close to 0
-#define	IS_ZERO(_x)  (fabs(_x) < EPS)
+
+#define GAME_CLAMP(x, lo, hi) ( (x) < (lo) ? (lo) : ( (x) > (hi) ? (hi) : (x) ) )
+#define GAME_MIN(a, b) ( (a) < (b) ? (a) : (b) )
+#define GAME_MAX(a, b) ( (a) > (b) ? (a) : (b) )
+#define	SQUARED(x)					((x)*(x))
+
 
 
 
@@ -154,9 +158,7 @@ enum
 	STATUS_BIT_ISCULLED2	=	(1<<11),	// set if culling function deemed it culled for pane 2
 	STATUS_BIT_ROTYZX		=  (1<<12),		//
 	STATUS_BIT_NOLIGHTING	 =  (1<<13),	// used when want to render object will NULL shading (no lighting)
-	STATUS_BIT_xxxxx		 =  (1<<14),	//
 	STATUS_BIT_CLIPALPHA6 	 =  (1<<15), 	// set if want to not draw pixels with alpha <= .6
-	STATUS_BIT_DELETE		=	(1<<16),	// set by a function which cannot actually delete an object but we want to tell system to delete it at its convenience
 	STATUS_BIT_NOZBUFFER	=	(1<<17),	// set when want to turn off z buffer
 	STATUS_BIT_NOZWRITES	=	(1<<18),	// set when want to turn off z buffer writes
 	STATUS_BIT_NOFOG		=	(1<<19),
@@ -173,6 +175,13 @@ enum
 	STATUS_BIT_NOSHOWTHISPLAYER = (1<<30)			// opposite of STATUS_BIT_ONLYSHOWTHISPLAYER
 };
 
+#define STATUS_BITS_FOR_2D \
+	(STATUS_BIT_NOTEXTUREWRAP \
+	| STATUS_BIT_DONTCULL \
+	| STATUS_BIT_NOZBUFFER \
+	| STATUS_BIT_NOZWRITES \
+	| STATUS_BIT_NOFOG \
+	| STATUS_BIT_NOLIGHTING)
 
 enum
 {

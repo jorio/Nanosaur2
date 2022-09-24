@@ -20,7 +20,6 @@ static void FlushObjectDeleteQueue(void);
 static void DrawCollisionBoxes(ObjNode *theNode, Boolean old);
 static void DrawBoundingBoxes(ObjNode *theNode);
 static void DrawBoundingSpheres(ObjNode *theNode);
-static inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry);
 static void CreateDummyInitObject(void);
 
 
@@ -365,7 +364,7 @@ short	i;
 // called which made the group & transforms.
 //
 
-static inline void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry)
+void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry)
 {
 	MO_AppendToGroup(theNode->BaseGroup, geometry);
 }
@@ -823,11 +822,15 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 
 		switch(theNode->Genre)
 		{
+			case	EVENT_GENRE:
+					break;
+
 			case	SKELETON_GENRE:
 					DrawSkeleton(theNode, setupInfo);
 					break;
 
 			case	DISPLAY_GROUP_GENRE:
+			case	QUADMESH_GENRE:
 					if (theNode->BaseGroup)
 					{
 						MO_DrawObject(theNode->BaseGroup, setupInfo);
@@ -865,12 +868,37 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					break;
 
 
+			case	TEXTMESH_GENRE:
+					if (theNode->BaseGroup)
+					{
+						OGL_PushState();	//--
+						SetInfobarSpriteState(theNode->AnaglyphZ);	//--
+
+						MO_DrawObject(theNode->BaseGroup, setupInfo);
+
+						if (gDebugMode >= 2)
+						{
+							TextMesh_DrawExtents(theNode);
+						}
+
+						OGL_PopState();	//--
+					}
+					break;
+
+
 			case	CUSTOM_GENRE:
 custom_draw:
 					if (theNode->CustomDrawFunction)
 					{
 						theNode->CustomDrawFunction(theNode, setupInfo);
 					}
+					break;
+
+
+			default:
+#if _DEBUG
+					printf("Unsupported draw for genre %d\n", theNode->Genre);
+#endif
 					break;
 		}
 

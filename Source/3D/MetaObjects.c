@@ -1115,18 +1115,19 @@ go_here:
 	else
 		glDisableClientState(GL_NORMAL_ARRAY);			// disable normal arrays
 
-	if (OGL_CheckError())
-		DoFatalAlert("MO_DrawGeometry_VertexArray: normals!");
+	OGL_CheckError();
 
 
 			/***********/
 			/* DRAW IT */
 			/***********/
 
-	glDrawElements(GL_TRIANGLES,data->numTriangles*3,GL_UNSIGNED_INT,&data->triangles[0]);
-
-	if (OGL_CheckError())
-		DoFatalAlert("MO_DrawGeometry_VertexArray: glDrawElements");
+	if (data->numTriangles)
+	{
+		GAME_ASSERT(data->triangles);
+		glDrawElements(GL_TRIANGLES,data->numTriangles*3,GL_UNSIGNED_INT,&data->triangles[0]);
+		OGL_CheckError();
+	}
 
 	gPolysThisFrame += data->numPoints;					// inc poly counter
 

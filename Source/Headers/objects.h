@@ -20,12 +20,15 @@
 
 enum
 {
+	ILLEGAL_GENRE = 0,
 	SKELETON_GENRE,
 	DISPLAY_GROUP_GENRE,
 	SPRITE_GENRE,
 	CUSTOM_GENRE,
 	EVENT_GENRE,
-	FONTSTRING_GENRE
+	FONTSTRING_GENRE,
+	TEXTMESH_GENRE,
+	QUADMESH_GENRE,
 };
 
 
@@ -103,6 +106,7 @@ void CreateCollisionBoxFromBoundingBox_Update(ObjNode *theNode, float tweakXZ, f
 void KeepOldCollisionBoxes(ObjNode *theNode);
 void AddCollisionBoxToObject(ObjNode *theNode, float top, float bottom, float left,
 							 float right, float front, float back);
+void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry);
 void CalcDisplayGroupWorldPoints(ObjNode *theNode);
 
 void HideObjectChain(ObjNode *theNode);

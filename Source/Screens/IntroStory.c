@@ -342,6 +342,8 @@ short				i;
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "wallfont", 0);		// TODO: hacky -- sprite groups & atlas numbers overlap
+
 
 			/****************/
 			/* MAKE OBJECTS */
@@ -360,6 +362,7 @@ static void FreeIntroStoryScreen(void)
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
 	DisposeAllSpriteGroups();
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT);	// TODO: hacky -- sprite groups & atlas numbers overlap
 	DisposeAllBG3DContainers();
 	DisposeTerrain();
 	DisposeSoundBank(SOUND_BANK_NARRATION);
@@ -563,19 +566,26 @@ static void MakeSubtitleObjects(int slideNum)
 		{
 			NewObjectDefinitionType def =
 			{
-				.coord = {640/2, 480-60 + 22*subRow, 0},
+				.coord = {640/2, 640*gCurrentPaneAspectRatio-60 + 22*subRow, 0},
 				.scale = 35 * 0.5f,
 				.slot = SPRITE_SLOT,
 				.group = SPRITE_GROUP_FONT,
-				.flags = STATUS_BIT_HIDDEN,
 			};
 
+#if 0
 			ObjNode* textNode = MakeFontStringObject(cursor, &def, gGameViewInfoPtr, true);
 			textNode->SpecialF[0] = subDelay;
 			textNode->Health = subDuration;
 			textNode->MoveCall = MoveSubtitle;
 			//pChain->ChainNode = textNode;
 			//pChain = textNode;
+#else
+			def.scale *= 0.015f;
+			ObjNode* textNode = TextMesh_New(cursor, kTextMeshAllCaps, &def);
+			textNode->SpecialF[0] = subDelay;
+			textNode->Health = subDuration;
+			textNode->MoveCall = MoveSubtitle;
+#endif
 
 			cursor = nextLinebreak;
 			subRow++;

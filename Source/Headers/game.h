@@ -83,6 +83,8 @@ typedef float CGGammaValue;
 #include	"pick.h"
 #include "splinemanager.h"
 #include "3dmath.h"
+#include "quadmesh.h"
+#include "atlas.h"
 
 #define IMPME DoFatalAlert("IMPLEMENT ME in %s", __func__)
 #define SOFTIMPME do { \

@@ -91,7 +91,7 @@ short				gCurrentSong = -1;
 static const char* gSoundBankNames[NUM_SOUND_BANKS] =
 {
 	[SOUND_BANK_NULL] = NULL,
-	[SOUND_BANK_MAIN] = "SoundBank",
+	[SOUND_BANK_MAIN] = "Main",
 	[SOUND_BANK_NARRATION] = "Narration",
 };
 

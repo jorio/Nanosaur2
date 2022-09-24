@@ -793,7 +793,7 @@ static void DrawExtents(OGLRect extents, float z)
 {
 	OGL_PushState();								// keep state
 //	SetInfobarSpriteState(true);
-	glDisable(GL_TEXTURE_2D);
+	OGL_DisableTexture2D();
 
 	glColor4f(1,1,1,1);
 	glBegin(GL_LINE_LOOP);
@@ -899,11 +899,11 @@ void Atlas_DrawString2(
 #endif
 
 	OGL_DisableLighting();
-	glDisable(GL_CULL_FACE);
+	OGL_DisableCullFace();
 	glDisable(GL_DEPTH_TEST);
 
 	if (flags & kTextMeshGlow)
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	glTranslatef(x,y,0);
 	glScalef(scaleX, scaleY, 1);					// Assume ortho projection

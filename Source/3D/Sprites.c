@@ -755,6 +755,9 @@ float GetCharSpacing(char c, float spacingScale)
 {
 float	s;
 
+	if (c >= 'a' && c <= 'z')
+		c = 'A' + (c - 'a');
+
 	switch(c)
 	{
 		case	',':
@@ -764,7 +767,6 @@ float	s;
 		case	'I':
 		case	'.':
 		case	'!':
-		case	'i':
 				s = .3;
 				break;
 

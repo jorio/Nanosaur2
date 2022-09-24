@@ -52,7 +52,8 @@ typedef struct
 	float	dx,dy;
 	float	drot;
 	float	delayUntilEffect;
-	int 	narrationSound;
+	int		narrationSound;
+	const char* subtitles[NUM_LANGUAGES];
 }SlideType;
 
 #define	ZoomSpeed			SpecialF[0]

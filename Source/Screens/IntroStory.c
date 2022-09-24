@@ -19,6 +19,7 @@ static void SetupIntroStoryScreen(void);
 static void FreeIntroStoryScreen(void);
 static void BuildSlideShowObjects(void);
 static void MoveSlide(ObjNode *theNode);
+static void MakeSubtitleObjects(int slideNum);
 
 
 /****************************/
@@ -88,6 +89,11 @@ static SlideType gSlides[NUM_SLIDES] =
 		.03,								// drot
 		.5,									// delay to play effect
 		.narrationSound = EFFECT_STORY1,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH] =	"#7500\nIn the year 4122, a sole Nanosaur was\nsent 65 million years into the past.",
+			[LANGUAGE_FRENCH] =		"#7500\nEn l'an 4122, un Nanosaur solitaire fut envoy\203\n65 millions d'ann\203es dans le pass\203.",
+		}
 	},
 
 
@@ -105,6 +111,13 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY2,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH]	=	"#3230\n\nHis mission was to find the unhatched eggs\n"
+									"#4200\nof ancient dinosaur species\nand return them to the future.",
+			[LANGUAGE_FRENCH]	=	"#3230\n\nIl \203tait charg\203 de trouver les oeufs non-\203clos\n"
+									"#4200\nd'esp\351ces pr\203historiques de dinosaures\net de les renvoyer dans le futur.",
+		},
 	},
 
 		/* THE MISSION WAS A SUCCESS */
@@ -121,6 +134,11 @@ static SlideType gSlides[NUM_SLIDES] =
 		.05,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY3,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH]	= "#3000\n\nThe mission was a success.",
+			[LANGUAGE_FRENCH]	= "#3000\n\nLa mission fut accomplie.",
+		},
 	},
 
 			/* BUT BEFORE... */
@@ -137,6 +155,11 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,									// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY4,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH]	=	"#6500\nBut before the eggs could be hatched,\nthey were stolen by a group of rebel Nanosaurs.",
+			[LANGUAGE_FRENCH]	=	"#6500\nMais avant que les oeufs ne puissent \203clore,\nils furent vol\203s par un groupe de Nanosaurs rebelles.",
+		},
 	},
 
 		/* THE EGGS WERE TAKEN TO... */
@@ -153,6 +176,15 @@ static SlideType gSlides[NUM_SLIDES] =
 		.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY5,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH]	=	"#3000\n\nThe rebels took the eggs to off-world bases\n"
+									"#3333\n\nwhere they planned on breeding the dinosaurs.\n"
+									"#5200\nTheir goal was to create warriors\nfor fighting their battle against Earth.",
+			[LANGUAGE_FRENCH]	=	"#3000\n\nLes rebelles emmen\351rent les oeufs dans une base lointaine\n"
+									"#3333\n\nou ils comptaient \203lever les dinosaures.\n"
+									"#5200\nIls avaient pour but de cr\203er des guerriers\npour gagner leur bataille contre la Terre.",
+		},
 	},
 
 		/* BUT THE REBELS LEFT... */
@@ -169,6 +201,13 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY6,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH]	=	"#2900\n\nBut the rebels left one egg behind.\n"
+									"#3600\n\nWhen it hatched, a new Nanosaur was born.",
+			[LANGUAGE_FRENCH]	=	"#2900\n\nMais les rebelles laisserent un oeuf derri\351re eux.\n"
+									"#3600\n\nEn \203closant, il donna naissance \313 un nouveau nanosaur.",
+		},
 	},
 
 
@@ -186,6 +225,13 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.05,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY7,
+		.subtitles =
+		{
+			[LANGUAGE_ENGLISH] =	"#4750\n\nThis hatchling was sent on a mission to recover the stolen eggs\n"
+									"#3000\n\nand defeat the rebel forces.",
+			[LANGUAGE_FRENCH] =		"#4750\n\nCe nouveau-n\203 fut confi\203 la mission de r\203cup\203rer les oeufs vol\203s\n"
+									"#3000\n\net de vaincre les forces rebelles.",
+		},
 	},
 
 
@@ -293,6 +339,9 @@ short				i;
 
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:IntroStory.sprites", &spec);
 	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
+
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:Font.sprites", &spec);
+	LoadSpriteFile(&spec, SPRITE_GROUP_FONT, gGameViewInfoPtr);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 
@@ -443,6 +492,8 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 		{
 			PlayEffect(gSlides[slideNum].narrationSound);
 			theNode->HasPlayedEffect = true;
+
+			MakeSubtitleObjects(slideNum);
 		}
 	}
 }
@@ -450,4 +501,87 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 
 
 
+static void MoveSubtitle(ObjNode* theNode)
+{
+	float* delay = &theNode->SpecialF[0];
 
+	if (*delay > 0)
+	{
+		theNode->StatusBits |= STATUS_BIT_HIDDEN;
+		*delay -= gFramesPerSecondFrac;
+	}
+	else
+	{
+		theNode->StatusBits &= ~STATUS_BIT_HIDDEN;
+		theNode->Health -= gFramesPerSecondFrac;
+		if (theNode->Health < 0)
+		{
+			DeleteObject(theNode);
+		}
+	}
+}
+
+static void MakeSubtitleObjects(int slideNum)
+{
+	const char* text = gSlides[slideNum].subtitles[gGamePrefs.language];
+
+	if (!text)
+		return;
+
+	char textCopy[512];
+	strncpy(textCopy, text, sizeof(textCopy));
+
+	char* cursor = textCopy;
+	int subRow = 0;
+	float subDuration = 0;
+	float subDelay = 0;
+
+	while (cursor && *cursor)
+	{
+		char* nextLinebreak = strchr(cursor, '\n');
+
+		if (nextLinebreak)
+		{
+			*nextLinebreak = '\0';
+			nextLinebreak++;
+		}
+
+		if (*cursor == '#')
+		{
+			subDelay += subDuration;
+			subDuration = 0;
+			subRow = 0;
+
+			cursor++;
+			while (*cursor)
+			{
+				subDuration *= 10;
+				subDuration += (*cursor - '0');
+				cursor++;
+			}
+			subDuration *= .001f;
+			cursor++;
+		}
+		else
+		{
+			NewObjectDefinitionType def =
+			{
+				.coord = {640/2, 480-60 + 22*subRow, 0},
+				.scale = 35 * 0.5f,
+				.slot = SPRITE_SLOT,
+				.group = SPRITE_GROUP_FONT,
+				.flags = STATUS_BIT_HIDDEN,
+			};
+
+			ObjNode* textNode = MakeFontStringObject(cursor, &def, gGameViewInfoPtr, true);
+			textNode->SpecialF[0] = subDelay;
+			textNode->Health = subDuration;
+			textNode->MoveCall = MoveSubtitle;
+			//pChain->ChainNode = textNode;
+			//pChain = textNode;
+
+			cursor = nextLinebreak;
+			subRow++;
+		}
+	}
+}

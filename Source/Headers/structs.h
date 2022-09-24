@@ -33,7 +33,7 @@
 
 #define	MAX_MESHES_IN_MODEL		10					// max # of different meshes in a single ObjNode model / BG3D model
 
-#define	MAX_CHAR_SPRITES_PER_OBJNODE	32
+#define	MAX_CHAR_SPRITES_PER_OBJNODE	64
 
 			/*********************/
 			/* SPLINE STRUCTURES */

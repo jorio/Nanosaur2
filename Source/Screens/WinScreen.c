@@ -151,8 +151,7 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:Win.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
+	LoadSpriteGroup(SPRITE_GROUP_INTROSTORY, ":sprites:win.sprites", 0);
 
 
 

@@ -78,8 +78,7 @@ ObjNode	*obj;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:particle.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_PARTICLES, setupInfo);
+	LoadSpriteGroup(SPRITE_GROUP_PARTICLES, ":sprites:particle.sprites", 0);
 
 	BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES);
 

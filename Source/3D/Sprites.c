@@ -92,18 +92,23 @@ int 		i,n;
 //			because all imported textures are named with OpenGL and loaded into OpenGL!
 //
 
-void LoadSpriteFile(FSSpec *spec, int groupNum, OGLSetupOutputType *setupInfo)
+void LoadSpriteGroup(int groupNum, const char* fileName, int flags)
 {
 short			refNum;
 int				i,w,h;
 long			count, j;
 MOMaterialData	matData;
 
+	(void) flags;
+
 
 		/* OPEN THE FILE */
 
-	if (FSpOpenDF(spec, fsRdPerm, &refNum) != noErr)
-		DoFatalAlert("LoadSpriteFile: FSpOpenDF failed");
+	FSSpec spec;
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, fileName, &spec);
+
+	if (FSpOpenDF(&spec, fsRdPerm, &refNum) != noErr)
+		DoFatalAlert("LoadSpriteGroup: FSpOpenDF failed");
 
 		/* READ # SPRITES IN THIS FILE */
 
@@ -116,8 +121,7 @@ MOMaterialData	matData;
 		/* ALLOCATE MEMORY FOR SPRITE RECORDS */
 
 	gSpriteGroupList[groupNum] = (SpriteType *)AllocPtr(sizeof(SpriteType) * gNumSpritesInGroupList[groupNum]);
-	if (gSpriteGroupList[groupNum] == nil)
-		DoFatalAlert("LoadSpriteFile: AllocPtr failed");
+	GAME_ASSERT(gSpriteGroupList[groupNum]);
 
 
 			/********************/
@@ -215,7 +219,7 @@ MOMaterialData	matData;
 				/* CREATE NEW TEXTURE OBJECT */
 				/*****************************/
 
-		matData.setupInfo		= setupInfo;
+		matData.setupInfo		= gGameViewInfoPtr;
 		matData.flags			= BG3D_MATERIALFLAG_TEXTURED;
 		if (hasAlpha)
 			matData.flags		|= BG3D_MATERIALFLAG_ALWAYSBLEND;
@@ -240,8 +244,7 @@ MOMaterialData	matData;
 
 		gSpriteGroupList[groupNum][i].materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);
 
-		if (gSpriteGroupList[groupNum][i].materialObject == nil)
-			DoFatalAlert("LoadSpriteFile: MO_CreateNewObjectOfType failed");
+		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
 
 
 		SafeDisposePtr((Ptr)buffer);														// free the buffer

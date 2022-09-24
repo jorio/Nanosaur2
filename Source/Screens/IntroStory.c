@@ -337,11 +337,8 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:IntroStory.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_INTROSTORY, gGameViewInfoPtr);
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:Font.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_FONT, gGameViewInfoPtr);
+	LoadSpriteGroup(SPRITE_GROUP_INTROSTORY, ":sprites:introstory.sprites", 0);
+	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 

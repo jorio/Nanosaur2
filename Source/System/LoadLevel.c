@@ -136,21 +136,13 @@ short	i;
 
 	if (levelSpriteFiles[gLevelNum][0] > 0)
 	{
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, levelSpriteFiles[gLevelNum], &spec);
-		LoadSpriteFile(&spec, SPRITE_GROUP_LEVELSPECIFIC, setupInfo);
+		LoadSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC, levelSpriteFiles[gLevelNum], 0);
 	}
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:infobar.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_INFOBAR, setupInfo);
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:global.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_GLOBAL, setupInfo);
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:spheremap.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_SPHEREMAPS, setupInfo);
-
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":sprites:font.sprites", &spec);
-	LoadSpriteFile(&spec, SPRITE_GROUP_FONT, setupInfo);
+	LoadSpriteGroup(SPRITE_GROUP_INFOBAR, ":sprites:infobar.sprites", 0);
+	LoadSpriteGroup(SPRITE_GROUP_GLOBAL, ":sprites:global.sprites", 0);
+	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
+	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 
 			/* DRAW THE LOADING TEXT AND THERMO */

@@ -46,7 +46,7 @@ struct VertexArrayMemoryNode
 	struct	VertexArrayMemoryNode	*nextNode;
 
 	Ptr			pointer;
-	long		size;
+	size_t		size;
 };
 typedef struct VertexArrayMemoryNode VertexArrayMemoryNode;
 
@@ -109,20 +109,20 @@ int			gPolysThisFrame;
 
 		/* VERTEX ARRAY RANGE */
 
-static	Ptr						gVertexArrayMemoryBlock[NUM_VERTEX_ARRAY_RANGES] = {nil, nil, nil};
+static	Boolean					gVARMemoryAllocated = false;
+static	Ptr						gVertexArrayMemoryBlock[NUM_VERTEX_ARRAY_RANGES] = {NULL};
 static	VertexArrayMemoryNode	*gVertexArrayMemory_Head[NUM_VERTEX_ARRAY_RANGES];
 static	VertexArrayMemoryNode	*gVertexArrayMemory_Tail[NUM_VERTEX_ARRAY_RANGES];
-static 	long					gVertexArrayRangeSize[NUM_VERTEX_ARRAY_RANGES];
-static	long					gPreviousVertexArrayRangeSize[NUM_VERTEX_ARRAY_RANGES] = {0, 0, 0};
-Boolean							gForceVertexArrayUpdate[NUM_VERTEX_ARRAY_RANGES] = {false, false, false};
-static	Boolean					gVertexArrayRangeActivated[NUM_VERTEX_ARRAY_RANGES] = {false, false, false};
-static	Boolean					gVertexArrayRangeUsed[NUM_VERTEX_ARRAY_RANGES] = {false, false, false};
-GLuint							gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
-
-
-Boolean					gHardwareSupportsVertexArrayRange = false;
-Boolean					gUsingVertexArrayRange = false;
-Boolean					gVARMemoryAllocated = false;
+#if VERTEXARRAYRANGES
+static	size_t					gVertexArrayRangeSize[NUM_VERTEX_ARRAY_RANGES] = {0};
+static	size_t					gPreviousVertexArrayRangeSize[NUM_VERTEX_ARRAY_RANGES] = {0};
+static	Boolean					gVertexArrayRangeUsed[NUM_VERTEX_ARRAY_RANGES] = {0};
+static	Boolean					gForceVertexArrayUpdate[NUM_VERTEX_ARRAY_RANGES] = {0};
+static	Boolean					gVertexArrayRangeActivated[NUM_VERTEX_ARRAY_RANGES] = {0};
+GLuint							gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES] = {0};
+Boolean							gHardwareSupportsVertexArrayRange = false;
+Boolean							gUsingVertexArrayRange = false;
+#endif
 
 
 /******************** OGL BOOT *****************/
@@ -246,11 +246,6 @@ short	i;
 	OGL_CreateLights(&setupDefPtr->lights);
 	OGL_CheckError();
 
-	SOFTIMPME; // don't think we're going to need shaders, remove this if true
-#if 0
-	OGL_LoadAllShaderPrograms();
-#endif
-
 	OGL_InitVertexArrayMemory();
 	OGL_CheckError();
 
@@ -317,14 +312,6 @@ OGLSetupOutputType	*data;
 	OGL_DisableVertexArrayRanges();
 
 
-	SOFTIMPME;
-#if 0
-			/* UNLOAD VERTEX PROGRAMS */
-
-	OGL_UnloadAllShaderPrograms();
-#endif
-
-
 			/* NUKE THE CONTEXT */
 
 	SDL_GL_MakeCurrent(gSDLWindow, nil);					// make context not current
@@ -348,7 +335,6 @@ OGLSetupOutputType	*data;
 static void OGL_CreateDrawContext(OGLSetupInputType *def)
 {
 GLint			maxTexSize;
-static char			*s;
 OGLViewDefType *viewDefPtr = &def->view;
 
 	GAME_ASSERT_MESSAGE(!gAGLContext, "GL context already exists");
@@ -543,12 +529,12 @@ OGLViewDefType *viewDefPtr = &def->view;
   	glEnable(GL_NORMALIZE);
 
 
-
+#if VERTEXARRAYRANGES
  		/***************************/
 		/* GET OPENGL CAPABILITIES */
  		/***************************/
 
-	s = (char *)glGetString(GL_EXTENSIONS);					// get extensions list
+	char* s = (char *)glGetString(GL_EXTENSIONS);					// get extensions list
 
 		/* SEE IF HAVE VERTEX ARRAY RANGE CAPABILITIES */
 
@@ -556,6 +542,7 @@ OGLViewDefType *viewDefPtr = &def->view;
 		gHardwareSupportsVertexArrayRange = true;
 	else
 		gHardwareSupportsVertexArrayRange = false;
+#endif
 
 
 
@@ -814,9 +801,11 @@ AGLContext agl_ctx = setupInfo->drawContext;
 	gGlobalTransparency = 1.0f;
 	OGL_SetColor4f(1,1,1,1);
 
+#if VERTEXARRAYRANGES
 				/* MAKE SURE VERTEX ARRAY RANGE INFO IS UP-TO-DATE */
 
 	OGL_UpdateVertexArrayRange();
+#endif
 
 
 do_shutter:
@@ -2430,49 +2419,48 @@ Str255	s;
 
 static void OGL_InitVertexArrayMemory(void)
 {
-AGLContext agl_ctx = gAGLContext;
-short	i;
-
 	if (gVARMemoryAllocated)
 		DoFatalAlert("OGL_InitVertexArrayMemory: memory already allocated.");
 
-		/* GENERATE VERTEX ARRAY OBJECTS */
 
-	SOFTIMPME;
-#if 0
+
+		/* INIT THE LINKED LIST HEAD & TAIL PTRS */
+
+	memset(gVertexArrayMemory_Head, 0, sizeof(gVertexArrayMemory_Head));
+	memset(gVertexArrayMemory_Tail, 0, sizeof(gVertexArrayMemory_Tail));
+
+
+		/* ALLOCATE MASTER BLOCK FOR NON-"USER" V.A.R. TYPES */
+
+	for (int i = 0; i < VERTEX_ARRAY_RANGE_TYPE_USER1; i++)
+	{
+		gVertexArrayMemoryBlock[i] = AllocPtr(OGL_MaxMemForVARType(i));
+	}
+
+#if VERTEXARRAYRANGES
+			/* GENERATE VERTEX ARRAY OBJECTS */
+
 	glGenVertexArraysAPPLE(NUM_VERTEX_ARRAY_RANGES, &gVertexArrayRangeObjects[0]);
-#endif
-
 
 			/* INIT EACH */
 
-	for (i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)											// init both the "Static/Cached" memory and the "Dynamic/Shared" memory systems
+	for (int i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)										// init both the "Static/Cached" memory and the "Dynamic/Shared" memory systems
 	{
 		gVertexArrayRangeActivated[i] 		= false;
 		gVertexArrayRangeUsed[i] 			= false;
 		gPreviousVertexArrayRangeSize[i]	= 0;
 		gVertexArrayRangeSize[i] 			= 0;
-
-		if (i < VERTEX_ARRAY_RANGE_TYPE_USER1)												// don't allocate memory for the "User" Types
-		{
-				/* ALLOCATE THE MASTER BLOCK */
-
-			gVertexArrayMemoryBlock[i] = AllocPtr(OGL_MaxMemForVARType(i));
-
-
-					/* INIT THE LINKED LIST HEAD & TAIL PTRS */
-
-			gVertexArrayMemory_Head[i] = nil;
-			gVertexArrayMemory_Tail[i] = nil;
-		}
 	}
-
-	gVARMemoryAllocated = true;
 
 	if (gHardwareSupportsVertexArrayRange)					// only use VAR capability if hardware supports it
 		gUsingVertexArrayRange = true;
 	else
 		gUsingVertexArrayRange = false;
+#endif
+
+		/* WE'RE DONE */
+
+	gVARMemoryAllocated = true;
 }
 
 
@@ -2480,23 +2468,21 @@ short	i;
 
 static void OGL_DisableVertexArrayRanges(void)
 {
-short	i;
-AGLContext agl_ctx = gAGLContext;
-
-
 	if (!gVARMemoryAllocated)
 		DoFatalAlert("OGL_DisableVertexArrayRanges: VAR already off.");
 
 
+#if VERTEXARRAYRANGES
 			/* TELL OPENGL WE ARE NOT USING VERTEX ARRAY RANGES ANYMORE */
 
-	SOFTIMPME;
-#if 0
-	for (i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)
+	for (int i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)
 	{
 		glBindVertexArrayAPPLE(gVertexArrayRangeObjects[i]);
 		glDisableClientState(GL_VERTEX_ARRAY_RANGE_APPLE);
 		glVertexArrayRangeAPPLE(0, nil);
+
+		gVertexArrayRangeActivated[i] = false;
+		gVertexArrayRangeUsed[i] = false;
 	}
 
 	glDeleteVertexArraysAPPLE(NUM_VERTEX_ARRAY_RANGES, gVertexArrayRangeObjects);
@@ -2504,21 +2490,22 @@ AGLContext agl_ctx = gAGLContext;
 
 
 				/* FREE UP THE MEMORY */
+				// Only for non-"User" types. "User" types don't have allocated memory.
 
-	for (i = 0; i < NUM_VERTEX_ARRAY_RANGES; i++)
+	for (int i = 0; i < VERTEX_ARRAY_RANGE_TYPE_USER1; i++)
 	{
-		if (i < VERTEX_ARRAY_RANGE_TYPE_USER1)							// "User" Types dont have allocated memory
+		if (gVertexArrayMemoryBlock[i])
 		{
 			SafeDisposePtr(gVertexArrayMemoryBlock[i]);
 			gVertexArrayMemoryBlock[i] = nil;
 		}
-
-		gVertexArrayRangeActivated[i] = false;
-		gVertexArrayRangeUsed[i] = false;
 	}
 
 	gVARMemoryAllocated 	= false;
+
+#if VERTEXARRAYRANGES
 	gUsingVertexArrayRange 	= false;
+#endif
 }
 
 
@@ -2631,8 +2618,10 @@ Ptr			prevEndPtr;
 
 
 got_it:
+#if VERTEXARRAYRANGES
 	gVertexArrayRangeUsed[type] = true;																					// memory has been allocated, so mark this type as used
-	gVertexArrayRangeSize[type] = (long)gVertexArrayMemory_Tail[type]->pointer + gVertexArrayMemory_Tail[type]->size - (long)gVertexArrayMemoryBlock[type];	// calc the total size of the memory block we're using
+	gVertexArrayRangeSize[type] = (uintptr_t)gVertexArrayMemory_Tail[type]->pointer + gVertexArrayMemory_Tail[type]->size - (uintptr_t)gVertexArrayMemoryBlock[type];	// calc the total size of the memory block we're using
+#endif
 
 	return(newNode->pointer);
 }
@@ -2681,15 +2670,17 @@ VertexArrayMemoryNode	*scanNode, *prev, *next;
 			SafeDisposePtr(scanNode);							// delete the node
 
 
+#if VERTEXARRAYRANGES
 					/* IS IT ALL FREED UP? */
 
 			if (gVertexArrayMemory_Head[type] == nil)
 				gVertexArrayRangeUsed[type] = false;
 
 			if (gVertexArrayMemory_Tail[type])					// calc the total size of the memory block we're using
-				gVertexArrayRangeSize[type] = (long)gVertexArrayMemory_Tail[type]->pointer + gVertexArrayMemory_Tail[type]->size - (long)gVertexArrayMemoryBlock[type];
+				gVertexArrayRangeSize[type] = (uintptr_t)gVertexArrayMemory_Tail[type]->pointer + gVertexArrayMemory_Tail[type]->size - (uintptr_t)gVertexArrayMemoryBlock[type];
 			else
 				gVertexArrayRangeSize[type] = 0;
+#endif
 
 			return;
 		}
@@ -2704,6 +2695,7 @@ VertexArrayMemoryNode	*scanNode, *prev, *next;
 }
 
 
+#if VERTEXARRAYRANGES
 /************************ ASSIGN VERTEX ARRAY RANGE MEMORY ************************/
 //
 // For directly assigning memory blocks to the USER slots.
@@ -2735,7 +2727,24 @@ void ReleaseVertexArrayRangeMemory(Byte type)
 	gVertexArrayRangeUsed[type] 	= false;
 	gVertexArrayRangeActivated[type] = false;
 }
+#endif
 
+
+/********************* OGL:  SET VERTEX ARRAY RANGE DIRTY ***************************/
+//
+// Call this to force a Vertex Array range to be updated after modifying geometry
+
+void OGL_SetVertexArrayRangeDirty(short buffer)
+{
+#if VERTEXARRAYRANGES
+	if (buffer < 0)		// ignore -1
+		return;
+
+	GAME_ASSERT(buffer < NUM_VERTEX_ARRAY_RANGES);
+
+	gForceVertexArrayUpdate[buffer] = true;
+#endif
+}
 
 /********************* OGL:  UPDATE VERTEX ARRAY RANGE ***************************/
 //
@@ -2744,6 +2753,7 @@ void ReleaseVertexArrayRangeMemory(Byte type)
 
 static void OGL_UpdateVertexArrayRange(void)
 {
+#if VERTEXARRAYRANGES
 AGLContext agl_ctx = gAGLContext;
 long	size;
 Byte	i;
@@ -2781,10 +2791,7 @@ Boolean	cached;
 
 update_it:
 
-		SOFTIMPME;
-#if 0
 		glBindVertexArrayAPPLE(gVertexArrayRangeObjects[i]);
-#endif
 
 
 				/* IS THIS TYPE CACHED? */
@@ -2814,8 +2821,6 @@ update_it:
 
 		if (!gVertexArrayRangeActivated[i])
 		{
-			SOFTIMPME;
-#if 0
 			glVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);
 
 			if (cached)
@@ -2824,7 +2829,6 @@ update_it:
 				glVertexArrayParameteriAPPLE(GL_VERTEX_ARRAY_STORAGE_HINT_APPLE, GL_STORAGE_SHARED_APPLE);
 
 			glFlushVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);				// this isn't documented, but you MUST call this flush to get the data uploaded to VRAM!!
-#endif
 
 			glEnableClientState(GL_VERTEX_ARRAY_RANGE_APPLE);
 
@@ -2839,15 +2843,12 @@ update_it:
 
 		else
 		{
-			SOFTIMPME;
-#if 0
 			if (cached)														// cached data seems to need a complete reset
 			{
 				glVertexArrayRangeAPPLE(0, nil);
 				glVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);
 			}
 			glFlushVertexArrayRangeAPPLE(size, gVertexArrayMemoryBlock[i]);	// force an update of the existing memory
-#endif
 		}
 
 
@@ -2858,6 +2859,7 @@ update_it:
 		if (OGL_CheckError())
 			DoFatalAlert("OGL_UpdateVertexArrayRange: error!");
 	}
+#endif
 }
 
 
@@ -2894,11 +2896,4 @@ static long OGL_MaxMemForVARType(Byte varType)
 				return(1000000);
 	}
 }
-
-
-
-
-
-
-
 

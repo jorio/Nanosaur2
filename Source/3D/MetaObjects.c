@@ -352,8 +352,6 @@ static void SetMetaObjectToPicture(MOPictureObject *pictObj, OGLSetupOutputType 
 	GLuint textureName = OGL_TextureMap_LoadImageFile(path, &width, &height);
 	OGL_CheckError();
 
-	puts(path);
-
 	/***************************/
 	/* CREATE A TEXTURE OBJECT */
 	/***************************/
@@ -2374,9 +2372,7 @@ short				varType;
 
 			/* THIS UPDATE WILL CAUSE US TO UPDATE THE VAR IF IT'S USED */
 
-	varType = data->VARtype;
-	if (varType != -1)
-		gForceVertexArrayUpdate[varType] = true;
+	OGL_SetVertexArrayRangeDirty(data->VARtype);
 }
 
 

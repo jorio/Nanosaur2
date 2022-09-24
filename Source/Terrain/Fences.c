@@ -200,6 +200,7 @@ float					sink;
 	gFenceObj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_USER_FENCES;
 
 
+#if VERTEXARRAYRANGES
 			/* ASSIGN MEMORY TO VERTEX ARRAY RANGE */
 			//
 			// Each double-buffer of fence geometry gets its own VAR range type
@@ -207,8 +208,7 @@ float					sink;
 
 	AssignVertexArrayRangeMemory(sizeof(FenceVertexArraysType), &gFenceVertexArrays[0], VERTEX_ARRAY_RANGE_TYPE_USER_FENCES);
 	AssignVertexArrayRangeMemory(sizeof(FenceVertexArraysType), &gFenceVertexArrays[1], VERTEX_ARRAY_RANGE_TYPE_USER_FENCES2);
-
-
+#endif
 }
 
 
@@ -366,8 +366,10 @@ int		f;
 	if (!gFenceList)
 		return;
 
+#if VERTEXARRAYRANGES
 	ReleaseVertexArrayRangeMemory(VERTEX_ARRAY_RANGE_TYPE_USER_FENCES);
 	ReleaseVertexArrayRangeMemory(VERTEX_ARRAY_RANGE_TYPE_USER_FENCES2);
+#endif
 
 	for (f = 0; f < gNumFences; f++)
 	{
@@ -471,7 +473,7 @@ short					f;
 				gFenceVertexArrays[buffNum].fenceColors[f][j].a = gFenceVertexArrays[buffNum].fenceColors[f][j+1].a = alpha;
 			}
 
-			gForceVertexArrayUpdate[gFenceObj->VertexArrayMode] = true;		// we've updated the VAR
+			OGL_SetVertexArrayRangeDirty(gFenceObj->VertexArrayMode);				// we've updated the VAR
 		}
 	}
 }

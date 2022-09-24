@@ -137,7 +137,7 @@ ObjNode	*newObj;
 	}
 
 
-
+#if VERTEXARRAYRANGES
 			/* ASSIGN MEMORY TO VERTEX ARRAY RANGE */
 			//
 			// Each double-buffer of fence geometry gets its own VAR range type
@@ -145,6 +145,7 @@ ObjNode	*newObj;
 
 	AssignVertexArrayRangeMemory(sizeof(DustDevilVertexArraysType), &gDustDevilVertexArrays[0], VERTEX_ARRAY_RANGE_TYPE_USER_DUSTDEVIL);
 	AssignVertexArrayRangeMemory(sizeof(DustDevilVertexArraysType), &gDustDevilVertexArrays[1], VERTEX_ARRAY_RANGE_TYPE_USER_DUSTDEVIL);
+#endif
 
 
 

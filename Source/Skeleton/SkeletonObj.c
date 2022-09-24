@@ -323,6 +323,7 @@ int					i, numDecomp;
 	}
 
 
+#if VERTEXARRAYRANGES
 		/* CREATE AN OPENGL "FENCE" SO THAT WE CAN TELL WHEN DRAWING THE SKELETON IS DONE */
 		//
 		// NOTE:  We only use these fences for determinine when it is safe do delete a skeleton.
@@ -332,12 +333,10 @@ int					i, numDecomp;
 
 	if (gUsingVertexArrayRange)
 	{
-		IMPME;
-#if 0
 		glGenFencesAPPLE(1, &skeletonData->oglFence);
-#endif
 		skeletonData->oglFenceIsActive = false;
 	}
+#endif
 
 
 	return(skeletonData);
@@ -350,6 +349,7 @@ void FreeSkeletonBaseData(SkeletonObjDataType *skeletonData, short skeletonType)
 {
 short	numDecomp, i;
 
+#if VERTEXARRAYRANGES
 		/* WAIT FOR OPENGL FENCE MARKER BEFORE DELETING VAR'S */
 		//
 		// The geometry might still be in the GPU, so be sure it's finished before
@@ -361,21 +361,16 @@ short	numDecomp, i;
 	{
 		if (skeletonData->oglFenceIsActive)
 		{
-			IMPME;
-#if 0
 			glFinishFenceAPPLE(skeletonData->oglFence);
-#endif
 		}
 
 			/* DISPOSE OF THE OPENGL "FENCE" */
 
-		IMPME;
-#if 0
 		glDeleteFencesAPPLE(1, &skeletonData->oglFence);
-#endif
 		skeletonData->oglFence = 0;
 		skeletonData->oglFenceIsActive = false;
 	}
+#endif
 
 
 		/* FREE OUR LOCAL COPY OF THE SKELETON'S TRIMESH */
@@ -438,16 +433,15 @@ Byte				buffNum;
 	}
 
 
+#if VERTEXARRAYRANGES
 		/* INSERT AN OPENGL "FENCE" INTO THE DATA STREAM SO THAT WE CAN DETECT WHEN DRAWING THIS SKELETON IS COMPLETE */
 
 	if (gCurrentSplitScreenPane == (gNumPlayers-1))				// only submit the fence on the last pane to be drawn
 	{
-		SOFTIMPME;
-#if 0
 		glSetFenceAPPLE(skeleton->oglFence);
-#endif
 		skeleton->oglFenceIsActive = true;						// it's ok to call glTestFenceAPPLE or glFinishFenceAPPLE now that we've set it
 	}
+#endif
 
 }
 

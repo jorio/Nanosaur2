@@ -404,7 +404,7 @@ short		buffNum, varMode;
 			if (gParticleGroups[i]->inPurgeQueue)							// is this particle group pending purging?
 				continue;
 
-			gForceVertexArrayUpdate[varMode] = true;						// VAR is being updated
+			OGL_SetVertexArrayRangeDirty(varMode);							// VAR is being updated
 
 			baseScale 	= gParticleGroups[i]->baseScale;					// get base scale
 			oneOverBaseScaleSquared = 1.0f/(baseScale*baseScale);

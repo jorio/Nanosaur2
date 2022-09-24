@@ -684,7 +684,7 @@ OGLPoint3D			worldHitCoord;
 			p += 2;
 		}
 
-		gForceVertexArrayUpdate[VERTEX_ARRAY_RANGE_TYPE_ZAPS1 + gZapBuffer] = true;
+		OGL_SetVertexArrayRangeDirty(VERTEX_ARRAY_RANGE_TYPE_ZAPS1 + gZapBuffer);
 
 
 				/*********************/

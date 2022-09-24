@@ -434,16 +434,15 @@ AGLContext 	agl_ctx = setupInfo->drawContext;
 		}
 	}
 
+#if VERTEXARRAYRANGES
 		/* ALSO CREATE AN OPENGL "FENCE" SO THAT WE CAN TELL WHEN DRAWING THE TERRAIN IS DONE */
 
 	if (gUsingVertexArrayRange)
 	{
-		IMPME;
-#if 0
 		glGenFencesAPPLE(1, &gTerrainOpenGLFence);
-#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
+#endif
 }
 
 
@@ -492,18 +491,16 @@ AGLContext agl_ctx = gAGLContext;
 
 
 
-
+#if VERTEXARRAYRANGES
 			/* DISPOSE OF THE OPENGL "FENCE" */
 
 	if (gUsingVertexArrayRange)
 	{
-		IMPME;
-#if 0
 		glDeleteFencesAPPLE(1, &gTerrainOpenGLFence);
-#endif
 		gTerrainOpenGLFence = 0;
 		gTerrainOpenGLFenceIsActive = false;
 	}
+#endif
 
 }
 
@@ -571,17 +568,13 @@ OGLVector3D			*vertexNormals;
 				// in the vertex array memory until the GPU is done with it.
 				//
 
+#if VERTEXARRAYRANGES
 	if (gUsingVertexArrayRange && gTerrainOpenGLFenceIsActive)
 	{
-		IMPME;
-#if 0
-		AGLContext agl_ctx = gAGLContext;
-
 		glFinishFenceAPPLE(gTerrainOpenGLFence);			// wait until the GPU is done using the previous frame's data
-#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
-
+#endif
 
 	superTileNum = GetFreeSuperTileMemory();						// get memory block for the data
 	superTilePtr = &gSuperTileMemoryList[superTileNum];				// get ptr to it
@@ -844,7 +837,7 @@ OGLVector3D			*vertexNormals;
 
 			/* WE'VE MODIFIED DATA IN THE VERTEX ARRAY RANGE, SO FORCE AN UPDATE */
 
-	gForceVertexArrayUpdate[VERTEX_ARRAY_RANGE_TYPE_TERRAIN] = true;
+	OGL_SetVertexArrayRangeDirty(VERTEX_ARRAY_RANGE_TYPE_TERRAIN);
 
 	return(superTileNum);
 }
@@ -940,17 +933,15 @@ long				ro,co;
 
 static inline void ReleaseSuperTileObject(short superTileNum)
 {
+#if VERTEXARRAYRANGES
 		/* MAKE SURE GPU ISNT STILL USING THIS SUPERTILE'S VERTEX DATA */
 
 	if (gUsingVertexArrayRange && gTerrainOpenGLFenceIsActive)
 	{
-		AGLContext agl_ctx = gAGLContext;
-		IMPME;
-#if 0
 		glFinishFenceAPPLE(gTerrainOpenGLFence);			// wait until the GPU is done using this
-#endif
 		gTerrainOpenGLFenceIsActive = false;
 	}
+#endif
 
 
 	gSuperTileMemoryList[superTileNum].mode = SUPERTILE_MODE_FREE;		// it's free!
@@ -1091,16 +1082,15 @@ Boolean			superTileVisible;
 dont_prep_grid:;
 
 
+#if VERTEXARRAYRANGES
 		/* INSERT AN OPENGL "FENCE" INTO THE DATA STREAM SO THAT WE CAN DETECT WHEN DRAWING THE TERRAIN IS COMPLETE */
 
 	if (gCurrentSplitScreenPane == (gNumPlayers-1))				// only submit the fence on the last pane to be drawn
 	{
-		SOFTIMPME;
-#if 0
 		glSetFenceAPPLE(gTerrainOpenGLFence);
-#endif
 		gTerrainOpenGLFenceIsActive = true;						// it's ok to call glTestFenceAPPLE or glFinishFenceAPPLE now that we've set it
 	}
+#endif
 
 }
 

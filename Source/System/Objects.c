@@ -806,13 +806,12 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 			/* SUBMIT THE GEOMETRY */
 			/***********************/
 
+#if VERTEXARRAYRANGES
 		if (gUsingVertexArrayRange)
 		{
-			IMPME;
-#if 0
 			glBindVertexArrayAPPLE(gVertexArrayRangeObjects[theNode->VertexArrayMode]);		// bind to the correct vertex array range
-#endif
 		}
+#endif
 
  		if (noLighting || (theNode->Scale.y == 1.0f))				// if scale == 1 or no lighting, then dont need to normalize vectors
  			glDisable(GL_NORMALIZE);

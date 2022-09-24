@@ -4,6 +4,7 @@
 		/* MY BUILD OPTIONS */
 
 #define	OEM				1
+#define	VERTEXARRAYRANGES	0
 
 #if !defined(__LITTLE_ENDIAN__) && !(__BIG_ENDIAN__)
 #define __LITTLE_ENDIAN__ 1
@@ -97,7 +98,6 @@ extern	Boolean					gAltivec;
 extern	Boolean					gDisableAnimSounds;
 extern	Boolean					gDisableHiccupTimer;
 extern	Boolean					gDrawLensFlare;
-extern	Boolean					gForceVertexArrayUpdate[];
 extern	Boolean					gGameOver;
 extern	Boolean					gLevelCompleted, gTimeDemo;
 extern	Boolean					gLowRAM;

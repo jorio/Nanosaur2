@@ -423,7 +423,7 @@ short				buffNum;
 		}
 
 
-		gForceVertexArrayUpdate[theNode->VertexArrayMode] = true;		// we modified some geometry so we'll need an update
+		OGL_SetVertexArrayRangeDirty(theNode->VertexArrayMode);				// we modified some geometry so we'll need an update
 	}
 }
 

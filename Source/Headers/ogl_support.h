@@ -325,8 +325,11 @@ void OGL_DrawInt(int f, GLint x, GLint y);
 
 void *OGL_AllocVertexArrayMemory(long size, Byte type);
 void OGL_FreeVertexArrayMemory(void *pointer, Byte type);
+void OGL_SetVertexArrayRangeDirty(short buffer);
+#if VERTEXARRAYRANGES
 void AssignVertexArrayRangeMemory(long size, void *pointer, Byte type);
 void ReleaseVertexArrayRangeMemory(Byte type);
+#endif
 
 
 void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean doChannelBalancing);

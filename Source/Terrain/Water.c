@@ -294,20 +294,14 @@ float					y,centerX,centerZ;
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_USER_WATER;
 
 
+#if VERTEXARRAYRANGES
 			/* ASSIGN MEMORY TO VERTEX ARRAY RANGE */
 			//
 			// Each double-buffer of fence geometry gets its own VAR range type
 			//
 
 	AssignVertexArrayRangeMemory(sizeof(WaterVertexArraysType), &gWaterVertexArrays, VERTEX_ARRAY_RANGE_TYPE_USER_WATER);
-
-
-
-			/* UPDATE SONG */
-
-//	if (gSongMovie)
-//		MoviesTask(gSongMovie, 0);
-
+#endif
 }
 
 

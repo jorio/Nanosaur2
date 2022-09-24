@@ -521,7 +521,7 @@ const DecomposedPointType	*decomposedPointList;
 	}
 
 
-	gForceVertexArrayUpdate[VERTEX_ARRAY_RANGE_TYPE_SKELETONS + buffNum] = true;		// remember to update VAR
+	OGL_SetVertexArrayRangeDirty(VERTEX_ARRAY_RANGE_TYPE_SKELETONS + buffNum);			// remember to update VAR
 }
 
 

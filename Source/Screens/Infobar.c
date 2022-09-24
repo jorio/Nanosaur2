@@ -365,8 +365,6 @@ void DisposeInfobar(void)
 
 void SetInfobarSpriteState(float anaglyphZ)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	OGL_DisableLighting();
 	OGL_DisableCullFace();
 	glDisable(GL_DEPTH_TEST);								// no z-buffer
@@ -504,7 +502,6 @@ void DrawInfobar(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 
 void DrawInfobarSprite(float x, float y, float size, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -532,7 +529,6 @@ float				aspect;
 
 void DrawInfobarSprite_Centered(float x, float y, float size, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -565,7 +561,6 @@ float				aspect;
 
 void DrawInfobarSprite2(float x, float y, float size, short group, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -594,7 +589,6 @@ float				aspect;
 
 void DrawInfobarSprite3(float x, float y, float size, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -619,7 +613,6 @@ float				aspect;
 
 void DrawInfobarSprite3_Centered(float x, float y, float size, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -651,7 +644,6 @@ float				aspect;
 
 void DrawInfobarSprite2_Centered(float x, float y, float size, short group, short texNum)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect;
 
@@ -686,7 +678,6 @@ float				aspect;
 
 static void DrawInfobarSprite_Rotated(float x, float y, float size, short texNum, float rot)
 {
-AGLContext agl_ctx = gAGLContext;
 MOMaterialObject	*mo;
 float				aspect, xoff, yoff;
 OGLPoint2D			p[4];
@@ -1497,7 +1488,6 @@ short	i;
 OGLPoint3D		*coord;
 OGLMatrix4x4	m;
 const OGLVector3D up = {0,1,0};
-AGLContext agl_ctx = gAGLContext;
 Boolean		lockedOn;
 
 #pragma unused (theNode)

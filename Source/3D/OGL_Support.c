@@ -566,7 +566,6 @@ OGLViewDefType *viewDefPtr = &def->view;
 static void OGL_SetStyles(OGLSetupInputType *setupDefPtr)
 {
 OGLStyleDefType *styleDefPtr = &setupDefPtr->styles;
-AGLContext agl_ctx = gAGLContext;
 
 
 	gMyState_CullFace = false;
@@ -649,8 +648,6 @@ AGLContext agl_ctx = gAGLContext;
 
 static void ClearAllBuffersToBlack(void)
 {
-	AGLContext agl_ctx = gAGLContext;
-
 	glClearColor(0,0,0,1);
 	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
 	{
@@ -659,27 +656,23 @@ static void ClearAllBuffersToBlack(void)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_BACK_RIGHT);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		aglSwapBuffers(agl_ctx);
+		SDL_GL_SwapWindow(gSDLWindow);
 		glDrawBuffer(GL_BACK_LEFT);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_BACK_RIGHT);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		aglSwapBuffers(agl_ctx);
+		SDL_GL_SwapWindow(gSDLWindow);
 
-		if (OGL_CheckError())
-			DoFatalAlert("ClearAllBuffersToBlack: a GL call has failed here.");
-
-		if (aglGetError() != AGL_NO_ERROR)
-			DoFatalAlert("ClearAllBuffersToBlack: an AGL call has failed here.");
-
-
+		OGL_CheckError();
 	}
 	else
 	{
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);		// clear buffer
-		aglSwapBuffers(agl_ctx);
+		SDL_GL_SwapWindow(gSDLWindow);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);		// clear buffer
-		aglSwapBuffers(agl_ctx);
+		SDL_GL_SwapWindow(gSDLWindow);
+
+		OGL_CheckError();
 	}
 }
 
@@ -693,7 +686,6 @@ static void OGL_CreateLights(OGLLightDefType *lightDefPtr)
 {
 int		i;
 GLfloat	ambient[4];
-AGLContext agl_ctx = gAGLContext;
 
 	gMyState_Lighting = false;
 	OGL_EnableLighting();
@@ -753,16 +745,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DrawScene(OGLSetupOutputType *setupInfo, void (*drawRoutine)(OGLSetupOutputType *))
 {
-AGLContext agl_ctx = setupInfo->drawContext;
-
-
-			/* POLL EVENT QUEUE ONCE PER FRAME TO KEEP SYSTEM HAPPY */
-
-//    EventRef        theEvent;
-//	ReceiveNextEvent(0, NULL, kEventDurationNoWait, false, &theEvent);
-
-
-
 	SDL_GL_GetDrawableSize(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
 
 
@@ -784,7 +766,7 @@ AGLContext agl_ctx = setupInfo->drawContext;
 	if (!setupInfo->isActive)
 		DoFatalAlert("OGL_DrawScene isActive == false");
 
-  	aglSetCurrentContext(setupInfo->drawContext);			// make context active
+//  	aglSetCurrentContext(setupInfo->drawContext);			// make context active
 
 
 			/* INIT SOME STUFF */
@@ -1032,7 +1014,7 @@ do_anaglyph:
 
            /* SWAP THE BUFFS */
 
-	aglSwapBuffers(setupInfo->drawContext);					// end render loop
+	SDL_GL_SwapWindow(gSDLWindow);							// end render loop
 
 	setupInfo->frameCount++;								// inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
 
@@ -1049,7 +1031,6 @@ do_anaglyph:
 
 static void DrawBlueLine(GLint window_width, GLint window_height)
 {
-AGLContext agl_ctx = gAGLContext;
 unsigned long buffer;
 
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -1194,7 +1175,6 @@ GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destF
 							GLint srcFormat, GLint dataType, Boolean textureInRAM)
 {
 GLuint	textureName;
-AGLContext agl_ctx = gAGLContext;
 
 
 
@@ -1642,8 +1622,6 @@ uint32_t	a;
 
 void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	glBindTexture(GL_TEXTURE_2D, textureName);				// this is now the currently active texture
 
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixels);
@@ -1658,8 +1636,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_Texture_SetOpenGLTexture(GLuint textureName)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	glBindTexture(GL_TEXTURE_2D, textureName);
 	if (OGL_CheckError())
 		DoFatalAlert("OGL_Texture_SetOpenGLTexture: glBindTexture failed!");
@@ -1759,7 +1735,6 @@ float	aspect;
 OGLCameraPlacement	*placement;
 int		temp, w, h, i;
 OGLLightDefType	*lights;
-AGLContext agl_ctx = gAGLContext;
 
 	OGL_GetCurrentViewport(setupInfo, &temp, &temp, &w, &h, 0);
 	aspect = (float)w/(float)h;
@@ -1971,7 +1946,6 @@ GLenum OGL_CheckError_Impl(const char* file, const int line)
 void OGL_PushState(void)
 {
 int	i;
-AGLContext agl_ctx = gAGLContext;
 
 		/* PUSH MATRIES WITH OPENGL */
 
@@ -2011,7 +1985,6 @@ AGLContext agl_ctx = gAGLContext;
 void OGL_PopState(void)
 {
 int		i;
-AGLContext agl_ctx = gAGLContext;
 
 		/* RETREIVE OPENGL MATRICES */
 
@@ -2076,8 +2049,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_EnableLighting(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (!gMyState_Lighting)
 	{
 		gMyState_Lighting = true;
@@ -2090,8 +2061,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DisableLighting(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (gMyState_Lighting)
 	{
 		gMyState_Lighting = false;
@@ -2104,8 +2073,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_EnableBlend(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (!gMyState_Blend)
 	{
 		gMyState_Blend = true;
@@ -2118,8 +2085,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DisableBlend(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (gMyState_Blend)
 	{
 		gMyState_Blend = false;
@@ -2132,8 +2097,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_EnableTexture2D(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 		/* DO STATE CACHINE FOR UNIT 0 */
 
 	if (gMyState_TextureUnit == GL_TEXTURE0)
@@ -2158,8 +2121,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DisableTexture2D(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 		/* DO STATE CACHINE FOR UNIT 0 */
 
 	if (gMyState_TextureUnit == GL_TEXTURE0)
@@ -2187,8 +2148,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_ActiveTextureUnit(uint32_t texUnit)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	glActiveTexture(texUnit);
 	glClientActiveTexture(texUnit);
 
@@ -2205,8 +2164,6 @@ void OGL_SetColor4fv(OGLColorRGBA *color)
 		(color->b != gMyState_Color.b) ||
 		(color->a != gMyState_Color.a))
 	{
-		AGLContext agl_ctx = gAGLContext;
-
 		glColor4fv((GLfloat *)color);
 
 		gMyState_Color = *color;
@@ -2224,8 +2181,6 @@ void OGL_SetColor4f(float r, float g, float b, float a)
 		(b != gMyState_Color.b) ||
 		(a != gMyState_Color.a))
 	{
-		AGLContext agl_ctx = gAGLContext;
-
 		glColor4f(r, g, b, a);
 
 		gMyState_Color.r = r;
@@ -2240,8 +2195,6 @@ void OGL_SetColor4f(float r, float g, float b, float a)
 
 void OGL_EnableCullFace(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (!gMyState_CullFace)
 	{
 		gMyState_CullFace = true;
@@ -2254,8 +2207,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DisableCullFace(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (gMyState_CullFace)
 	{
 		gMyState_CullFace = false;
@@ -2268,8 +2219,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_EnableFog(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (!gMyState_Fog)
 	{
 		gMyState_Fog = true;
@@ -2282,8 +2231,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DisableFog(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	if (gMyState_Fog)
 	{
 		gMyState_Fog = false;
@@ -2298,8 +2245,6 @@ void OGL_BlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	if ((sfactor != gMyState_BlendFuncS) || (dfactor != gMyState_BlendFuncD))
 	{
-		AGLContext agl_ctx = gAGLContext;
-
 		glBlendFunc(sfactor, dfactor);
 
 		gMyState_BlendFuncS = sfactor;
@@ -2316,8 +2261,6 @@ void OGL_BlendFunc(GLenum sfactor, GLenum dfactor)
 
 static void OGL_InitFont(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 	gFontList = glGenLists(256);
 
 //    if (!aglUseFont(gAGLContext, kFontIDMonaco, bold, 9, 0, 256, gFontList))
@@ -2332,8 +2275,6 @@ AGLContext agl_ctx = gAGLContext;
 
 static void OGL_FreeFont(void)
 {
-
-AGLContext agl_ctx = gAGLContext;
 	glDeleteLists(gFontList, 256);
 
 }
@@ -2342,9 +2283,6 @@ AGLContext agl_ctx = gAGLContext;
 
 void OGL_DrawString(const char* s, GLint x, GLint y)
 {
-
-AGLContext agl_ctx = gAGLContext;
-
 	OGL_PushState();
 
 	glMatrixMode (GL_MODELVIEW);
@@ -2754,7 +2692,6 @@ void OGL_SetVertexArrayRangeDirty(short buffer)
 static void OGL_UpdateVertexArrayRange(void)
 {
 #if VERTEXARRAYRANGES
-AGLContext agl_ctx = gAGLContext;
 long	size;
 Byte	i;
 Boolean	cached;

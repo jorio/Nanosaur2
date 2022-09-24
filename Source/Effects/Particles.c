@@ -1825,7 +1825,6 @@ static void DrawFlame(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 OGLMatrix4x4	m;
 const OGLVector3D	up = {0,1,0};
 OGLPoint3D	frame[4];
-AGLContext agl_ctx = setupInfo->drawContext;
 short				paneNum = gCurrentSplitScreenPane;
 float	s;
 
@@ -1932,7 +1931,6 @@ float	fps = gFramesPerSecondFrac;
 
 static void DrawFireRing(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 {
-AGLContext agl_ctx = setupInfo->drawContext;
 OGLPoint3D	verts[4];
 float		x,y,z,s;
 

@@ -331,7 +331,6 @@ int	i;
 void CreateSuperTileMemoryList(OGLSetupOutputType *setupInfo)
 {
 int	u,v,i,j;
-AGLContext 	agl_ctx = setupInfo->drawContext;
 
 
 			/*************************************************/
@@ -450,8 +449,6 @@ AGLContext 	agl_ctx = setupInfo->drawContext;
 
 void DisposeSuperTileMemoryList(void)
 {
-AGLContext agl_ctx = gAGLContext;
-
 			/* NUKE ALL MASTER ARRAYS WHICH WILL FREE UP ALL SUPERTILE MEMORY */
 
 	if (gSuperTileMeshData)
@@ -971,7 +968,6 @@ void DrawTerrain(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 {
 int				r,c;
 int				i,unique;
-AGLContext agl_ctx = setupInfo->drawContext;
 Boolean			superTileVisible;
 #pragma unused(theNode)
 

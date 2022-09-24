@@ -304,8 +304,6 @@ static void SetMetaObjectToMaterial(MOMaterialObject *matObj, MOMaterialData *in
 
 #if 0
 		{
-			AGLContext agl_ctx = gGameViewInfoPtr->drawContext;
-
 			MO_DrawMaterial(matObj, gGameViewInfoPtr);		// safety prime ----------
 			glBegin(GL_TRIANGLES);
 			glTexCoord2f(0,0); glVertex3f(0,0,0);
@@ -843,7 +841,6 @@ int	numChildren,i;
 void MO_DrawGeometry_VertexArray(const MOVertexArrayData *data, const OGLSetupOutputType *setupInfo)
 {
 Boolean		useTexture = false, multiTexture = false, texGen = false;
-AGLContext 	agl_ctx = setupInfo->drawContext;
 uint32_t 		materialFlags;
 short		i;
 Boolean		needNormals;
@@ -1160,7 +1157,6 @@ void MO_DrawMaterial(MOMaterialObject *matObj, const OGLSetupOutputType *setupIn
 MOMaterialData		*matData;
 OGLColorRGBA		*diffuseColor,diffColor2;
 Boolean				alreadySet;
-AGLContext agl_ctx = setupInfo->drawContext;
 uint32_t				matFlags;
 
 
@@ -1287,7 +1283,6 @@ uint32_t				matFlags;
 void MO_DrawMatrix(const MOMatrixObject *matObj, const OGLSetupOutputType *setupInfo)
 {
 const OGLMatrix4x4		*m;
-AGLContext agl_ctx = setupInfo->drawContext;
 
 	m = &matObj->matrix;							// point to matrix
 
@@ -1305,7 +1300,6 @@ float			x,y,z;
 const MOPictureData	*picData = &picObj->objectData;
 long			numCellsW, numCellsH;
 float			cellWidth, cellHeight, ratio, offset;
-AGLContext agl_ctx = setupInfo->drawContext;
 
 	OGL_PushState();
 
@@ -1355,7 +1349,6 @@ void MO_DrawSprite(const MOSpriteObject *spriteObj, const OGLSetupOutputType *se
 {
 const MOSpriteData	*spriteData = &spriteObj->objectData;
 float			scaleX,scaleY,x,y;
-AGLContext agl_ctx = setupInfo->drawContext;
 MOMaterialObject	*mo;
 float				aspect, xoff, yoff;
 OGLPoint2D			p[4];
@@ -1697,7 +1690,6 @@ Boolean	usingVAR = (varType != -1);					// were these arrays stored in VAR memor
 static void MO_DeleteObjectInfo_Material(MOMaterialObject *obj)
 {
 MOMaterialData		*data = &obj->objectData;
-AGLContext agl_ctx = gAGLContext;
 
 		/* DISPOSE OF TEXTURE NAMES */
 

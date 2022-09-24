@@ -520,7 +520,6 @@ ObjNode	*orb = beam->ChainHead->ChainHead;
 		OGLVector3D	side;
 		float		x,y,z,dist;
 		float		vx,vy,vz, u;
-		AGLContext 	agl_ctx = setupInfo->drawContext;
 
 		MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_LaserOrbBeam].materialObject, setupInfo);		// activate material
 		OGL_SetColor4f(1,1,1,orb->Timer * 2.0f);

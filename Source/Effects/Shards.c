@@ -435,7 +435,6 @@ static void DrawShards(ObjNode *theNode, const OGLSetupOutputType *setupInfo)
 {
 #pragma unused (theNode)
 long	i;
-AGLContext agl_ctx = setupInfo->drawContext;
 
 	if (gNumShards == 0)												// quick check if any particles at all
 		return;

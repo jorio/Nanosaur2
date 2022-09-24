@@ -545,7 +545,6 @@ int				i,numNubs;
 OGLPoint3D		*nubs;
 OGLVector2D		*normals;
 float			x,y,z,nx,nz;
-AGLContext agl_ctx = setupInfo->drawContext;
 
 	OGL_PushState();
 	OGL_DisableTexture2D();

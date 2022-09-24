@@ -17,6 +17,7 @@
 #define	WATER_SLOT		(SLOT_OF_DUMB - 50)		// do before DUMB because some glowing weapons need to be drawn after the water
 #define	CONTRAIL_SLOT	(SPRITE_SLOT - 10)
 #define	INFOBAR_SLOT	(SLOT_OF_DUMB + 3000)
+#define	FADEPANE_SLOT	(SLOT_OF_DUMB + 4000)
 
 enum
 {

@@ -160,7 +160,7 @@ ObjNode	*thisNodePtr;
 	{
 		.genre = CUSTOM_GENRE,
 		.flags = 0,
-		.slot = SLOT_OF_DUMB + 1000,
+		.slot = FADEPANE_SLOT,
 		.moveCall = MoveFadePane,
 		.scale = 1,
 	};

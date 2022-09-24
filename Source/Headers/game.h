@@ -22,10 +22,6 @@
 #include <OpenGL/glu.h> //---TEMP
 #endif
 
-static inline void DoSDLMaintenance(void) {puts("TODO: DoSDLMaintenance");}
-
-typedef float CGGammaValue;
-
 #if 0
 #include <Carbon/Carbon.h>
 

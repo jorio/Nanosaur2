@@ -626,6 +626,8 @@ float	fps;
 	CalcFramesPerSecond();
 	CalcFramesPerSecond();
 
+	MakeFadeEvent(true, 1.0);
+
 	if (gTimeDemo)
 	{
 		gTimeDemoStartTime = TickCount();
@@ -652,9 +654,6 @@ float	fps;
 
 		CalcFramesPerSecond();
 		fps = gFramesPerSecondFrac;
-
-		if (gGameFrameNum == 1)										// if that was 2nd frame, then create a fade event
-			MakeFadeEvent(true, 1.0);
 
 		gGameFrameNum++;
 		gGameLevelTimer += fps;
@@ -733,6 +732,8 @@ float	fps;
 				break;
 		}
 	}
+
+	OGL_FadeOutScene(DrawLevelCallback, DoPlayerTerrainUpdate);
 
 	if (gTimeDemo)
 	{

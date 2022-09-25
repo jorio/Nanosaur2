@@ -1,7 +1,8 @@
 /****************************/
 /*   	MAINMENU SCREEN.C	*/
-/* (c)2003 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -10,6 +11,7 @@
 /****************************/
 
 #include "game.h"
+#include "menu.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -18,6 +20,7 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void BuildMainMenu(int menuLevel);
+static void ProcessMenuOutcome(int outcome);
 static void DrawMainMenuCallback(void);
 static void DrawCredits(void);
 static void DoMenuControls(void);
@@ -48,6 +51,37 @@ enum
 };
 
 #define	LINE_SPACING	(FONT_SCALE * 1.1f)
+
+static const MenuItem gMainMenuTree[] =
+{
+	{ .id='titl' },
+	{kMIPick, STR_PLAY_GAME,	.next='play', },
+	{kMIPick, STR_SETTINGS,		.next='sett', },
+	{kMIPick, STR_INFO,			.next='info', },
+	{kMIPick, STR_QUIT,			.id='quit', .next='EXIT', },
+
+	{ .id='play' },
+	{kMIPick, STR_ADVENTURE,	.id='camp', .next='EXIT' },
+	{kMIPick, STR_NANO_VS_NANO,	.next='bttl' },
+	{kMIPick, STR_SAVED_GAMES,	},
+	{kMIPick, STR_BACK_SYMBOL,	.next='BACK' },
+
+	{ .id='info' },
+	{kMIPick, STR_STORY,			.id='intr',	.next='EXIT' },
+	{kMIPick, STR_CREDITS,			.id='cred',	.next='EXIT' },
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{ .id='bttl' },
+	{kMIPick, STR_RACE1,			.id='rac1',	.next='EXIT' },
+	{kMIPick, STR_RACE2,			.id='rac2',	.next='EXIT' },
+	{kMIPick, STR_BATTLE1,			.id='bat1',	.next='EXIT' },
+	{kMIPick, STR_BATTLE2,			.id='bat2',	.next='EXIT' },
+	{kMIPick, STR_CAPTURE1,			.id='cap1',	.next='EXIT' },
+	{kMIPick, STR_CAPTURE2,			.id='cap2',	.next='EXIT' },
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{ .id=0 }
+};
 
 /*********************/
 /*    VARIABLES      */
@@ -89,11 +123,20 @@ again:
 
 	SetupMainMenuScreen();
 
+
 	gScreensaverTimer = SCREENSAVER_DELAY;
 	doScreenSaver = false;
 	gDoIntroStory = false;
 	gDoCredits = false;
 
+			/* NEW MENU SETUP */
+
+	MenuStyle style = kDefaultMenuStyle;
+	style.yOffset = 40 +  700.0f * gGameViewInfoPtr->windowAspectRatio  * .5f;
+	style.fadeOutSceneOnExit = false;
+	int outcome = StartMenu(gMainMenuTree, &style, MoveObjects, DrawMainMenuCallback);
+
+#if 0
 			/*************/
 			/* MAIN LOOP */
 			/*************/
@@ -139,7 +182,7 @@ again:
 			break;
 		}
 	}
-
+#endif
 
 
 
@@ -151,7 +194,10 @@ again:
 	FreeMainMenuScreen();
 
 
-			/* DO SCREENSAVER */
+	ProcessMenuOutcome(outcome);
+
+
+		/* DO SCREENSAVER */
 
 	if (doScreenSaver)
 	{
@@ -256,6 +302,8 @@ int					i;
 
 	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
+
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "subtitlefont", kAtlasLoadFont);
 
 
 			/* CREATE BACKGROUND OBJECT */
@@ -483,6 +531,7 @@ static void FreeMainMenuScreen(void)
 		gBackgoundPicture = nil;
 	}
 	DisposeAllSpriteGroups();
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
 }
@@ -679,6 +728,94 @@ static void DoMenuControls(void)
 					}
 
 		}
+	}
+}
+
+
+static void ProcessMenuOutcome(int outcome)
+{
+	switch (outcome)
+	{
+		case	'camp':										// SINGLE-PLAYER ADVENTURE CAMPAIGN
+			gNumPlayers = 1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'cont':										// CONTINUE SINGLE-PLAYER GAME
+			if (LoadSavedGame())
+			{
+				gPlayingFromSavedGame = true;
+				gNumPlayers = 1;
+				gPlayNow = true;
+			}
+			break;
+
+		case	'intr':										// STORY
+			gDoIntroStory = true;
+			gPlayNow = true;
+			break;
+
+		case	'cred':										// CREDITS
+			gDoCredits = true;
+			gPlayNow = true;
+			break;
+
+		case	'rac1':										// RACE 1
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_RACE;
+			gLevelNum = LEVEL_NUM_RACE1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'rac2':										// RACE 2
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_RACE;
+			gLevelNum = LEVEL_NUM_RACE2;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'bat1':										// BATTLE 1
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_BATTLE;
+			gLevelNum = LEVEL_NUM_BATTLE1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'bat2':										// BATTLE 2
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_BATTLE;
+			gLevelNum = LEVEL_NUM_BATTLE2;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'cap1':										// CAPTURE THE FLAG 1
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_CAPTURETHEFLAG;
+			gLevelNum = LEVEL_NUM_FLAG1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		case	'cap2':										// CAPTURE THE FLAG 2
+			gNumPlayers = 2;
+			gVSMode = VS_MODE_CAPTURETHEFLAG;
+			gLevelNum = LEVEL_NUM_FLAG2;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			break;
+
+		default:
+			DoFatalAlert("Unimplemented menu outcome '%c%c%c%c'",
+						 (outcome >> 24) & 0xFF,
+						 (outcome >> 16) & 0xFF,
+						 (outcome >> 8) & 0xFF,
+						 (outcome >> 0) & 0xFF);
+			break;
 	}
 }
 

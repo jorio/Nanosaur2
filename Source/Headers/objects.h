@@ -18,6 +18,7 @@
 #define	CONTRAIL_SLOT	(SPRITE_SLOT - 10)
 #define	INFOBAR_SLOT	(SLOT_OF_DUMB + 3000)
 #define	FADEPANE_SLOT	(SLOT_OF_DUMB + 4000)
+#define	MENU_SLOT		INFOBAR_SLOT
 
 enum
 {
@@ -112,3 +113,11 @@ void CalcDisplayGroupWorldPoints(ObjNode *theNode);
 
 void HideObjectChain(ObjNode *theNode);
 void ShowObjectChain(ObjNode *theNode);
+
+Boolean SetObjectVisible(ObjNode *theNode, Boolean visible);
+
+int GetNodeChainLength(ObjNode* start);
+ObjNode* GetNthChainedNode(ObjNode* start, int targetIndex, ObjNode** outPrevNode);
+ObjNode* GetChainTailNode(ObjNode* start);
+void AppendNodeToChain(ObjNode* start, ObjNode* newTail);
+void UnchainNode(ObjNode* theNode);

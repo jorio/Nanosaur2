@@ -9,6 +9,7 @@
 
 #define ANY_PLAYER (-1)
 
+#define MAX_USER_BINDINGS_PER_NEED			2
 #define MAX_BINDINGS_PER_NEED				4
 
 #define NUM_SUPPORTED_MOUSE_BUTTONS			31

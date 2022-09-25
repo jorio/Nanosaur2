@@ -33,3 +33,14 @@ int32_t SwizzleLong(const int32_t *longPtr);
 float SwizzleFloat(const float *floatPtr);
 uint32_t SwizzleULong(const uint32_t *longPtr);
 uint16_t SwizzleUShort(const uint16_t *shortPtr);
+
+static inline int PositiveModulo(int value, unsigned int m)
+{
+	int mod = value % (int) m;
+	if (mod < 0)
+	{
+		mod += m;
+	}
+	return mod;
+}
+

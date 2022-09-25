@@ -1787,15 +1787,121 @@ MOMatrixObject	*mo = theNode->BaseTransformObject;
 }
 
 
+/***************** TOGGLE OBJECT VISIBILITY *******************/
 
+Boolean SetObjectVisible(ObjNode* theNode, Boolean visible)
+{
+	if (visible)
+	{
+		theNode->StatusBits &= ~STATUS_BIT_HIDDEN;
+	}
+	else
+	{
+		theNode->StatusBits |= STATUS_BIT_HIDDEN;
+	}
 
+	return visible;
+}
 
+#pragma mark - Advanced node chaining
 
+int GetNodeChainLength(ObjNode* node)
+{
+	for (int length = 0; length <= 0x7FFF; length++)
+	{
+		if (!node)
+			return length;
 
+		node = node->ChainNode;
+	}
 
+	DoFatalAlert("Circular chain?");
+}
 
+ObjNode* GetNthChainedNode(ObjNode* start, int targetIndex, ObjNode** outPrevNode)
+{
+	ObjNode* pNode = NULL;
+	ObjNode* node = start;
 
+	if (start != NULL)
+	{
+		int currentIndex;
+		for (currentIndex = 0; (node != NULL) && (currentIndex < targetIndex); currentIndex++)
+		{
+			pNode = node;
+			node = pNode->ChainNode;
 
+			if (pNode && node)
+			{
+				GAME_ASSERT_MESSAGE(pNode->Slot <= node->Slot, "the game assumes that chained nodes are sorted after their parent");
+			}
+		}
 
+		if (currentIndex != targetIndex)
+		{
+			node = NULL;
+		}
+	}
 
+	if (outPrevNode)
+	{
+		*outPrevNode = pNode;
+	}
+
+	return node;
+}
+
+ObjNode* GetChainTailNode(ObjNode* start)
+{
+	ObjNode* pNode = NULL;
+	ObjNode* node = start;
+
+	while (node != NULL)
+	{
+		pNode = node;
+		node = pNode->ChainNode;
+
+		if (node)
+			GAME_ASSERT(node->Slot > pNode->Slot);
+	}
+
+	return pNode;
+}
+
+void AppendNodeToChain(ObjNode* first, ObjNode* newTail)
+{
+	ObjNode* oldTail = GetChainTailNode(first);
+	oldTail->ChainNode = newTail;
+
+	newTail->ChainHead = first->ChainHead;
+	if (!newTail->ChainHead)
+		newTail->ChainHead = first;
+
+	GAME_ASSERT(newTail->Slot > oldTail->Slot);
+}
+
+void UnchainNode(ObjNode* theNode)
+{
+	if (theNode == NULL)
+		return;
+
+	ObjNode* chainHead = theNode->ChainHead;
+	ObjNode* chainNext = theNode->ChainNode;
+
+	for (ObjNode* node = chainHead; node != NULL; node = node->ChainNode)
+	{
+		if (node == theNode)
+			continue;
+
+		if (node->ChainNode == theNode)
+		{
+			node->ChainNode = chainNext;
+		}
+
+		if (node->ChainHead == theNode)		// rewrite ChainHead
+		{
+			node->ChainHead = chainNext;
+		}
+	}
+}
 

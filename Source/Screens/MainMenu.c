@@ -331,59 +331,8 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const char* names[NUM_LANGUAGES][4] =
-					{
-						{									// ENGLISH
-							"PLAY GAME",
-							"SETTINGS",
-							"INFO",
-							"QUIT",
-						},
-
-						{									// FRENCH
-							"NOUVELLE PARTIE",
-							"PR\203F\203RENCES",
-							"INFOS",
-							"QUITTER",
-						},
-
-						{									// GERMAN
-							"SPIELEN",
-							"EINSTELLUNGEN",
-							"INFO",
-							"BEENDEN",
-						},
-
-						{									// SPANISH
-							"JUGAR",
-							"PREFERENCIAS",
-							"INFO",
-							"SALIR",
-						},
-
-						{									// ITALIAN
-							"GIOCA",
-							"IMPOSTAZIONI",
-							"INFO",
-							"ESCI",
-						},
-
-						{									// SWEDISH
-							"SPELA",
-							"INST\200LLNINGAR",
-							"INFORMATION",
-							"AVSLUTA",
-						},
-
-						{									// DUTCH
-							"SPEL SPELEN",
-							"INSTELLINGEN",
-							"INFO",
-							"AFSLUITEN",
-						},
-
-
-					};
+					static const LocStrID nameIDs[4] = {STR_PLAY_GAME, STR_SETTINGS, STR_INFO, STR_QUIT};
+					const char* name = Localize(nameIDs[i]);
 
 					gNewObjectDefinition.coord.x 	= 640/2;
 					gNewObjectDefinition.coord.y 	= y;
@@ -393,8 +342,8 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
-					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
+					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
+					w = GetStringWidth(name, gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
 
@@ -415,57 +364,8 @@ int			language;
 				y = CalcMenuTopY(4);
 				for (i = 0; i < 4; i++)
 				{
-					static const char* names[NUM_LANGUAGES][4] =
-					{
-						{												// ENGLISH
-							"ADVENTURE",
-							"NANO VS. NANO",
-							"SAVED GAMES",
-							"~",
-						},
-
-						{												// FRENCH
-							"AVENTURE",
-							"NANO CONTRE NANO",
-							"PARTIES ENREGISTR\203ES",
-							"~",
-						},
-
-						{												// GERMAN
-							"ADVENTURE",
-							"NANO VS. NANO",
-							"SPIEL FORTSETZEN",
-							"~",
-						},
-
-						{												// SPANISH
-							"AVENTURA",
-							"NANO CONTRA NANO",
-							"CONTINUAR PARTIDA GUARDADA",
-							"~",
-						},
-
-						{												// ITALIAN
-							"AVVENTURA",
-							"NANO VS. NANO",
-							"PARTITE SALVATE",
-							"~",
-						},
-
-						{												// SWEDISH
-							"ADVENTURE",
-							"NANO VS. NANO",
-							"LADDA SPARAT SPEL",
-							"~",
-						},
-
-						{												// DUTCH
-							"AVONTUUR",
-							"NANO TEGEN NANO",
-							"OPGESLAGEN SPELEN",
-							"~",
-						},
-					};
+					static const LocStrID nameIDs[4] = {STR_ADVENTURE, STR_NANO_VS_NANO, STR_SAVED_GAMES, STR_BACK_SYMBOL};
+					const char* name = Localize(nameIDs[i]);
 
 					gNewObjectDefinition.coord.x 	= 640/2;
 					gNewObjectDefinition.coord.y 	= y;
@@ -475,8 +375,8 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
-					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
+					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
+					w = GetStringWidth(name, gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
 
@@ -495,65 +395,8 @@ int			language;
 				y = CalcMenuTopY(5);
 				for (i = 0; i < 5; i++)
 				{
-					static const char* names[NUM_LANGUAGES][5] =
-					{
-						{														// ENGLISH
-							"STORY",
-							"CREDITS",
-							"PANGEA WEB SITE",
-							"3D GLASSES",
-							"~",
-						},
-
-						{														// FRENCH
-							"L'UNIVERS",
-							"CR\203DITS",
-							"SITE WEB PANGEA",
-							"LUNETTES 3D",
-							"~",
-						},
-
-						{														// GERMAN
-							"GESCHICHTE",
-							"CREDITS",
-							"PANGEA-WEBSEITE",
-							"3D-BRILLE",
-							"~",
-						},
-
-						{														// SPANISH
-							"HISTORIA",
-							"CR\203DITOS",
-							"PAGINA WEB DE PANGEA",
-							"GAFAS 3D",
-							"~",
-						},
-
-						{														// ITALIAN
-							"BAKGRUNDSHISTORIA",
-							"TITOLI",
-							"SITO DI PANGEA",
-							"OCCHIALI 3D",
-							"~",
-						},
-
-						{														// SWEDISH
-							"STORY",
-							"VI SOM G\205R NANOSAUR",
-							"PANGEAS HEMSIDA",
-							"3D-GLAS\205GON",
-							"~",
-						},
-
-						{														// DUTCH
-							"GESCHIEDENIS",
-							"CREDITS",
-							"PANGEA-WEBSITE",
-							"3D-BRIL",
-							"~",
-						},
-
-					};
+					static const LocStrID nameIDs[5] = {STR_STORY, STR_CREDITS, STR_PANGEA_WEBSITE, STR_3D_GLASSES, STR_BACK_SYMBOL};
+					const char* name = Localize(nameIDs[i]);
 
 					gNewObjectDefinition.coord.x 	= 640/2;
 					gNewObjectDefinition.coord.y 	= y;
@@ -563,8 +406,8 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
-					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
+					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
+					w = GetStringWidth(name, gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
 
@@ -583,79 +426,8 @@ int			language;
 				y = CalcMenuTopY(7);
 				for (i = 0; i < 7; i++)
 				{
-					static const char* names[NUM_LANGUAGES][7] =
-					{
-						{											// ENGLISH
-							"RACE 1",
-							"RACE 2",
-							"BATTLE 1",
-							"BATTLE 2",
-							"CAPTURE THE EGGS 1",
-							"CAPTURE THE EGGS 2",
-							"~",
-						},
-
-						{											// FRENCH
-							"COURSE 1",
-							"COURSE 2",
-							"COMBAT 1",
-							"COMBAT 2",
-							"PRISE DES OEUFS 1",
-							"PRISE DES OEUFS 2",
-							"~",
-						},
-
-						{											// GERMAN
-							"RENNEN 1",
-							"RENNEN 2",
-							"KAMPF 1",
-							"KAMPF 2",
-							"EIER EROBERN 1",
-							"EIER EROBERN 2",
-							"~",
-						},
-
-						{											// SPANISH
-							"CARRERA 1",
-							"CARRERA 2",
-							"BATALLA 1",
-							"BATALLA 2",
-							"CAPTURAR LOS HUEVOS 1",
-							"CAPTURAR LOS HUEVOS 2",
-							"~",
-						},
-
-						{											// ITALIAN
-							"GARA 1",
-							"GARA 2",
-							"BATTAGLIA 1",
-							"BATTAGLIA 2",
-							"AFFERRA LE UOVA 1",
-							"AFFERRA LE UOVA 2",
-							"~",
-						},
-
-						{											// SWEDISH
-							"T\200VLING 1",
-							"T\200VLING 2",
-							"TVEKAMP 1",
-							"TVEKAMP 2",
-							"F\201NGA \200GGEN 1",
-							"F\201NGA \200GGEN 2",
-							"~",
-						},
-
-						{											// DUTCH
-							"RACE 1",
-							"RACE 2",
-							"STRIJD 1",
-							"STRIJD 2",
-							"DE EIEREN BEMACHTIGEN 1",
-							"DE EIEREN BEMACHTIGEN 2",
-							"~",
-						},
-
-					};
+					static const LocStrID nameIDs[7] = {STR_RACE1, STR_RACE2, STR_BATTLE1, STR_BATTLE2, STR_CAPTURE1, STR_CAPTURE2, STR_BACK_SYMBOL};
+					const char* name = Localize(nameIDs[i]);
 
 					gNewObjectDefinition.coord.x 	= 640/2;
 					gNewObjectDefinition.coord.y 	= y;
@@ -665,8 +437,8 @@ int			language;
 					gNewObjectDefinition.rot 		= 0;
 					gNewObjectDefinition.scale 	    = FONT_SCALE;
 					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
-					w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
+					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
+					w = GetStringWidth(name, gNewObjectDefinition.scale);
 					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
 

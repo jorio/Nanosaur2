@@ -1109,6 +1109,7 @@ unsigned long	someLong;
 
 			/* INIT SOME OF MY STUFF */
 
+	LoadLocalizedStrings(gGamePrefs.language);
 	InitSpriteManager();
 	InitBG3DManager();
 	InitWindowStuff();

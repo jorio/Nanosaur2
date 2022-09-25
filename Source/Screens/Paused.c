@@ -116,51 +116,11 @@ ObjNode	*newObj;
 float	aspectRatio;
 int		px,py,pw,ph;
 
-static const char* names[NUM_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
+static const LocStrID names[NUM_PAUSED_MENU_ITEMS] =
 {
-	{												// ENGLISH
-		"RESUME",
-		"END",
-		"QUIT",
-	},
-
-	{												// FRENCH
-	"RETOUR AU JEU",
-	"FIN",
-	"QUITTER",
-	},
-
-	{												// GERMAN
-	"FORTFAHREN",
-	"MISSION BEENDEN",
-	"SPIEL BEENDEN",
-	},
-
-	{												// SPANISH
-	"CONTINUAR",
-	"TERMINAR",
-	"SALIR",
-	},
-
-	{												// ITALIAN
-	"RIPRENDI",
-	"TERMINA",
-	"ESCI",
-	},
-
-	{												// SWEDISH
-	"RESUME",
-	"END",
-	"QUIT",
-	},
-
-	{												// DUTCH
-	"DOORGAAN",
-	"EINDE",
-	"AFSLUITEN",
-	},
-
-
+	STR_RESUME,
+	STR_END,
+	STR_QUIT,
 };
 
 	gCurrentMenuItem = -1;
@@ -205,15 +165,16 @@ static const char* names[NUM_LANGUAGES][NUM_PAUSED_MENU_ITEMS] =
 
 	for (i = 0; i < NUM_PAUSED_MENU_ITEMS; i++)
 	{
+		const char* name = Localize(names[i]);
 
 		gNewObjectDefinition.coord.x 	= 640/2;
 		gNewObjectDefinition.coord.y 	= y;
 		gNewObjectDefinition.scale 	    = PAUSED_FONT_SCALE;
 		gNewObjectDefinition.slot 		= SPRITE_SLOT + 4000;
 
-		gMenuItems[i] = newObj 	= MakeFontStringObject(names[language][i], &gNewObjectDefinition, true);
+		gMenuItems[i] = newObj 	= MakeFontStringObject(name, &gNewObjectDefinition, true);
 
-		w = GetStringWidth(names[language][i], gNewObjectDefinition.scale);
+		w = GetStringWidth(name, gNewObjectDefinition.scale);
 		gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
 		gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
 

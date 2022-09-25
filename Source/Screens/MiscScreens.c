@@ -84,19 +84,19 @@ float	timeout = 40.0f;
 
 
 	MakeFadeEvent(true, 2.0);
-	UpdateInput();
+	DoSDLMaintenance();
 	CalcFramesPerSecond();
 
 					/* MAIN LOOP */
 
-		while(!Button())
+		while (1)
 		{
 			CalcFramesPerSecond();
 			MoveObjects();
 			OGL_DrawScene(DisplayPicture_Draw);
 
-			UpdateInput();
-			if (AreAnyNewKeysPressed())
+			DoSDLMaintenance();
+			if (UserWantsOut() || IsClickDown(SDL_BUTTON_LEFT))
 				break;
 
 			timeout -= gFramesPerSecondFrac;

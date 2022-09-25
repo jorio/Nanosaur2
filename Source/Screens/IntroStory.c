@@ -273,8 +273,8 @@ void DoIntroStoryScreen(void)
 	while(!gEndSlideShow)
 	{
 		CalcFramesPerSecond();
-		UpdateKeyMap();
-		if (AreAnyNewKeysPressed())
+		DoSDLMaintenance();
+		if (UserWantsOut())
 			break;
 
 

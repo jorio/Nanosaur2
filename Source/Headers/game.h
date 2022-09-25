@@ -22,22 +22,6 @@
 #include <OpenGL/glu.h> //---TEMP
 #endif
 
-#if 0
-#include <Carbon/Carbon.h>
-
-#include <IOKit/IOKitLib.h>
-#include <IOKit/IOCFPlugIn.h>
-#include <IOKit/hid/IOHIDLib.h>
-#include <IOKit/hid/IOHIDKeys.h>
-#include <Kernel/IOKit/hidsystem/IOHIDUsageTables.h>
-
-#include <Quicktime/Movies.h>
-#include <AGL/agl.h>
-//#include <AGL/glu.h>
-#include <OpenGL/glext.h>
-#endif
-
-
 #include "globals.h"
 #include "structs.h"
 
@@ -85,6 +69,7 @@ if (!softImpMeWarningShown++) printf("soft IMPLEMENT ME in %s, %s:%d\n", __func_
 #define GAME_ASSERT(condition) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, #condition); } while(0)
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
+extern	const InputBinding		kDefaultInputBindings[NUM_CONTROL_NEEDS];
 extern	SDL_GLContext			gAGLContext;
 extern	Boolean					gAltivec;
 extern	Boolean					gDisableAnimSounds;

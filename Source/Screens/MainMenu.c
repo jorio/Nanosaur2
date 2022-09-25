@@ -99,14 +99,14 @@ again:
 			/*************/
 
 	CalcFramesPerSecond();
-	UpdateInput();
+	DoSDLMaintenance();
 
 	while(!gPlayNow)
 	{
 		const float fps = gFramesPerSecondFrac;
 
 		CalcFramesPerSecond();
-		UpdateInput();
+		DoSDLMaintenance();
 
 			/* ONLY DO MENU STUFF IF IS FRONT WINDOW */
 
@@ -728,7 +728,7 @@ static void FreeMainMenuScreen(void)
 
 static void DoMenuControls(void)
 {
-	if (GetNewKeyState(KEY_T))					// activate time demo?
+	if (IsKeyDown(SDL_SCANCODE_T))					// activate time demo?
 	{
 		gTimeDemo = true;
 		gNumPlayers = 1;
@@ -739,17 +739,14 @@ static void DoMenuControls(void)
 
 			/* BACK UP? */
 
-	if (GetNewKeyState(KEY_ESC))
+	if (IsNeedDown(kNeed_UIBack, ANY_PLAYER) && gMenuMode != MENU_PAGE_MAIN)
 	{
-		if (gMenuMode != MENU_PAGE_MAIN)
-		{
-			BuildMainMenu(MENU_PAGE_MAIN);
-			return;
-		}
+		BuildMainMenu(MENU_PAGE_MAIN);
+		return;
 	}
 
 
-	if (!gMouseNewButtonState)								// did the user click?
+	if (!IsClickDown(SDL_BUTTON_LEFT))				// did the user click?
 		return;
 
 

@@ -165,8 +165,6 @@ void InitInfobar(void)
 MOMaterialObject	*mo;
 ObjNode		*newObj;
 
-#pragma unused ()
-
 		/***********************/
 		/* CREATE DUMMY OBJECT */
 		/***********************/
@@ -402,15 +400,18 @@ void SetInfobarSpriteState(float anaglyphZ)
 
 void DrawInfobar(ObjNode *theNode)
 {
-#pragma unused (theNode)
+	(void) theNode;
 
 			/* DRAW SOME OTHER GOODIES WHILE WE'RE HERE */
 
 	DrawLensFlare();											// draw lens flare
 
-	if ((gCurrentSplitScreenPane == 0) && (gAnaglyphPass == 0))
-		if (GetNewKeyState(KEY_F9))								// see if toggle statbar
-			gHideInfobar = !gHideInfobar;
+	if (gCurrentSplitScreenPane == 0
+		&& gAnaglyphPass == 0
+		&& IsKeyDown(SDL_SCANCODE_F9))							// see if toggle statbar
+	{
+		gHideInfobar = !gHideInfobar;
+	}
 
 	if (gHideInfobar)
 		return;

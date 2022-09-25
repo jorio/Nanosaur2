@@ -1073,9 +1073,6 @@ static void CheckPlayerActionControls(ObjNode *player)
 {
 short	playerNum = player->PlayerNum;
 short	n;
-static short fireNeed[MAX_PLAYERS] = {kNeed_P1_Fire, kNeed_P2_Fire};
-static short nextWeapon[MAX_PLAYERS] = {kNeed_P1_NextWeapon, kNeed_P2_NextWeapon};
-static short jetpackNeed[MAX_PLAYERS] = {kNeed_P1_Jetpack, kNeed_P2_Jetpack};
 
 			/* SEE IF CONTROL IS ALLOWED RIGHT NOW */
 
@@ -1090,8 +1087,7 @@ static short jetpackNeed[MAX_PLAYERS] = {kNeed_P1_Jetpack, kNeed_P2_Jetpack};
 
 				/* SEE IF SELECT NEXT WEAPON */
 
-	n = nextWeapon[playerNum];											// which need should we test?
-	if (gControlNeeds[n].newButtonPress)								// is Next button pressed?
+	if (IsNeedDown(kNeed_NextWeapon, playerNum))			// is Next button pressed?
 	{
 		SelectNextWeapon(playerNum, true);
 		gAutoFireDelay[playerNum] = 0;
@@ -1102,27 +1098,26 @@ static short jetpackNeed[MAX_PLAYERS] = {kNeed_P1_Jetpack, kNeed_P2_Jetpack};
 			/* SEE IF NEW FIRE BUTTON */
 			/**************************/
 
-	n = fireNeed[playerNum];													// which need should we test?
-	if (gControlNeeds[n].value)													// is fire button pressed?
+	switch (GetNeedState(kNeed_Fire, playerNum))
 	{
-		PlayerFireButtonPressed(player, gControlNeeds[n].newButtonPress);		// pass the newButtonPressed flag for handlers that don't auto-fire
+		case KEYSTATE_DOWN:
+			PlayerFireButtonPressed(player, true);			// pass the newButtonPressed flag for handlers that don't auto-fire
+			break;
+		case KEYSTATE_HELD:
+			PlayerFireButtonPressed(player, false);
+			break;
+		case KEYSTATE_UP:
+			PlayerFireButtonReleased(player);
+			break;
+		default:
+			gAutoFireDelay[playerNum] = 0;					// not pressing Fire button, so clear auto-fire delay timer
 	}
-	else
-	if (gControlNeeds[n].oldValue)												// see if released fire button
-	{
-		PlayerFireButtonReleased(player);
-	}
-	else
-		gAutoFireDelay[playerNum] = 0;											// not pressing Fire button, so clear auto-fire delay timer
-
-
 
 			/*************************/
 			/* SEE IF JETPACK BUTTON */
 			/*************************/
 
-	n = jetpackNeed[playerNum];													// which need should we test?
-	if (gControlNeeds[n].value)													// is jetpack button pressed?
+	if (IsNeedActive(kNeed_Jetpack, playerNum))				// is jetpack button pressed?
 		PlayerJetpackButtonPressed(player, playerNum);
 	else
 		JetpackOff(playerNum);

@@ -350,8 +350,6 @@ const OGLVector3D 	up = {0,1,0};
 OGLMatrix4x4		m;
 const OGLPoint3D	tailOff = {0, 60, CAMERA_DEFAULT_DIST_FROM_ME};
 const OGLPoint3D	noseOff = {0, 0, -600};
-short				i, n;
-const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode};
 
 	if (gTimeDemo)			// don't do anything in time demo mode
 		return;
@@ -374,34 +372,33 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 
 
 
-	for (i = 0; i < gNumPlayers; i++)
+	for (int playerNum = 0; playerNum < gNumPlayers; playerNum++)
 	{
-		playerObj =  gPlayerInfo[i].objNode;
+		playerObj =  gPlayerInfo[playerNum].objNode;
 
 		if (!playerObj)
 			continue;
 
 				/* SEE IF TOGGLE CAMERA MODE */
 
-		n = cameraToggle[i];											// which need should we test?
-		if (gControlNeeds[n].newButtonPress)							// is button pressed?
+		if (IsNeedDown(kNeed_CameraMode, playerNum))				// is button pressed?
 		{
-			gCameraMode[i]++;
+			gCameraMode[playerNum]++;
 			if (0)  //gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 			{
-				if (gCameraMode[i] > CAMERA_MODE_ANAGLYPHCLOSE)
-					gCameraMode[i] = 0;
+				if (gCameraMode[playerNum] > CAMERA_MODE_ANAGLYPHCLOSE)
+					gCameraMode[playerNum] = 0;
 			}
 			else
 			{
-				if (gCameraMode[i] > CAMERA_MODE_FIRSTPERSON)
-					gCameraMode[i] = 0;
+				if (gCameraMode[playerNum] > CAMERA_MODE_FIRSTPERSON)
+					gCameraMode[playerNum] = 0;
 			}
 		}
 
-		if (gCameraMode[i] == CAMERA_MODE_FIRSTPERSON)
+		if (gCameraMode[playerNum] == CAMERA_MODE_FIRSTPERSON)
 		{
-			UpdateCamera_FirstPerson(i);
+			UpdateCamera_FirstPerson(playerNum);
 			continue;
 		}
 
@@ -427,17 +424,17 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 					/* GET COORD DATA */
 					/******************/
 
-		oldCamX = gGameViewInfoPtr->cameraPlacement[i].cameraLocation.x;				// get current/old cam coords
-		oldCamY = gGameViewInfoPtr->cameraPlacement[i].cameraLocation.y;
-		oldCamZ = gGameViewInfoPtr->cameraPlacement[i].cameraLocation.z;
+		oldCamX = gGameViewInfoPtr->cameraPlacement[playerNum].cameraLocation.x;				// get current/old cam coords
+		oldCamY = gGameViewInfoPtr->cameraPlacement[playerNum].cameraLocation.y;
+		oldCamZ = gGameViewInfoPtr->cameraPlacement[playerNum].cameraLocation.z;
 
-		oldPointOfInterestX = gGameViewInfoPtr->cameraPlacement[i].pointOfInterest.x;
-		oldPointOfInterestY = gGameViewInfoPtr->cameraPlacement[i].pointOfInterest.y;
-		oldPointOfInterestZ = gGameViewInfoPtr->cameraPlacement[i].pointOfInterest.z;
+		oldPointOfInterestX = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.x;
+		oldPointOfInterestY = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.y;
+		oldPointOfInterestZ = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.z;
 
-		myX = gPlayerInfo[i].coord.x;
-		myY = gPlayerInfo[i].coord.y + playerObj->BottomOff;
-		myZ = gPlayerInfo[i].coord.z;
+		myX = gPlayerInfo[playerNum].coord.x;
+		myY = gPlayerInfo[playerNum].coord.y + playerObj->BottomOff;
+		myZ = gPlayerInfo[playerNum].coord.z;
 
 
 				/**********************/
@@ -473,7 +470,7 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 				/* CALC FROM POINT */
 				/*******************/
 
-		if (!gCameraInDeathDiveMode[i])
+		if (!gCameraInDeathDiveMode[playerNum])
 		{
 			fromAcc = gCameraFromAccel;
 
@@ -518,7 +515,7 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 			OGLMatrix4x4	mm;
 
 			OGLMatrix4x4_SetRotateAboutPoint(&mm, &playerObj->Coord, 0, fps * .4, 0);
-			OGLPoint3D_Transform(&gGameViewInfoPtr->cameraPlacement[i].cameraLocation, &mm, &from);
+			OGLPoint3D_Transform(&gGameViewInfoPtr->cameraPlacement[playerNum].cameraLocation, &mm, &from);
 			from.y += fps * 100.0f;
 
 		}
@@ -548,7 +545,7 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 		v.z = to.z - from.z;
 		FastNormalizeVector(v.x, v.y, v.z, &v);
 
-		gPlayerInfo[i].camera.cameraAim = v;
+		gPlayerInfo[playerNum].camera.cameraAim = v;
 
 		if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)		// exaggerate z-rot in anaglyph mode
 			OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj->Rot.z * .3f);
@@ -557,14 +554,14 @@ const Byte cameraToggle[MAX_PLAYERS] = {kNeed_P1_CameraMode, kNeed_P2_CameraMode
 
 
 		OGLVector3D_Transform(&up, &m, &v);									// transform the "up" vector to give us tilt
-		OGL_UpdateCameraFromToUp(&from, &to, &v, i);		// update camera settings
+		OGL_UpdateCameraFromToUp(&from, &to, &v, playerNum);				// update camera settings
 
 
 
 					/* UPDATE PLAYER'S CAMERA INFO */
 
-		gPlayerInfo[i].camera.cameraLocation = from;
-		gPlayerInfo[i].camera.pointOfInterest = to;
+		gPlayerInfo[playerNum].camera.cameraLocation = from;
+		gPlayerInfo[playerNum].camera.pointOfInterest = to;
 	}
 }
 

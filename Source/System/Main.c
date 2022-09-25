@@ -154,8 +154,9 @@ long		createdDirID;
 		/* FIRST VERIFY SYSTEM BEFORE GOING TOO FAR */
 
 	VerifySystem();
- 	InitInput();							// note:  we must init our default HID settings before we try to read the saved Prefs!
+// 	InitInput();							// note:  we must init our default HID settings before we try to read the saved Prefs!
 
+	SDL_ShowCursor(0);
 
 			/********************/
 			/* INIT PREFERENCES */
@@ -205,7 +206,6 @@ void InitDefaultPrefs(void)
 	gGamePrefs.screenWidth			= 1024;
 	gGamePrefs.screenHeight			= 768;
 	gGamePrefs.lowRenderQuality		= false;
-	gGamePrefs.hasConfiguredISpControls = false;
 	gGamePrefs.splitScreenMode		= SPLITSCREEN_MODE_VERT;
 	gGamePrefs.stereoGlassesMode	= STEREO_GLASSES_MODE_OFF;
 	gGamePrefs.anaglyphColor		= true;
@@ -216,16 +216,9 @@ void InitDefaultPrefs(void)
 
 	gGamePrefs.showTargetingCrosshairs	= true;
 	gGamePrefs.kiddieMode				= false;
-	gGamePrefs.dontUseHID				= true;
 
-	gGamePrefs.reserved[0] 			= 0;
-	gGamePrefs.reserved[1] 			= 0;
-	gGamePrefs.reserved[2] 			= 0;
-	gGamePrefs.reserved[3] 			= 0;
-	gGamePrefs.reserved[4] 			= 0;
-	gGamePrefs.reserved[5] 			= 0;
-	gGamePrefs.reserved[6] 			= 0;
-	gGamePrefs.reserved[7] 			= 0;
+	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");
+	memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));
 }
 
 
@@ -255,7 +248,7 @@ static void PlayGame_Adventure(void)
 	{
 		gLevelNum = LEVEL_NUM_ADVENTURE1;
 
-		if (GetKeyState(KEY_F10))		// see if do Level cheat
+		if (IsKeyDown(SDL_SCANCODE_F10))	// see if do Level cheat
 			if (DoLevelCheatDialog())
 				CleanQuit();
 	}
@@ -622,7 +615,7 @@ float	fps;
 
 			/* PREP STUFF */
 
-	UpdateInput();
+	DoSDLMaintenance();
 	CalcFramesPerSecond();
 	CalcFramesPerSecond();
 
@@ -642,7 +635,7 @@ float	fps;
 	{
 				/* MOVE OBJECTS & UPDATE TERRAIN & DRAW */
 
-		UpdateInput();									// read local keys
+		DoSDLMaintenance();
 		MoveEverything();
 		DoPlayerTerrainUpdate();
 		OGL_DrawScene(DrawLevelCallback);
@@ -691,7 +684,7 @@ float	fps;
 			/* SEE IF PAUSED */
 			/*****************/
 
-		if (GetNewKeyState(KEY_ESC))								// do regular pause mode
+		if (IsNeedDown(kNeed_UIPause, ANY_PLAYER))					// do regular pause mode
 			DoPaused();
 
 #if 0
@@ -712,9 +705,11 @@ float	fps;
 
 				/* LEVEL CHEAT */
 
-		if (GetKeyState(KEY_APPLE))								// see if skip level
-			if (GetNewKeyState(KEY_F10))
-				gLevelCompleted = true;
+		if ((IsKeyActive(SDL_SCANCODE_LGUI) || IsKeyActive(SDL_SCANCODE_RGUI))
+			&& IsKeyDown(SDL_SCANCODE_F10))								// see if skip level
+		{
+			gLevelCompleted = true;
+		}
 
 
 
@@ -1128,7 +1123,7 @@ unsigned long	someLong;
 
 	GetDateTime ((unsigned long *)(&someLong));		// init random seed
 	SetMyRandomSeed(someLong);
-	HideCursor();
+	SDL_ShowCursor(0);
 
 
 		/* SHOW TITLES */

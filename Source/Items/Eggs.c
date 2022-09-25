@@ -435,7 +435,6 @@ short			playerNum = egg->PlayerNum;								// which player # is carrying this eg
 ObjNode			*player = gPlayerInfo[playerNum].objNode;				// get holding player obj
 short			n;
 ObjNode			*wormhole;
-static short 	dropNeed[MAX_PLAYERS] = {kNeed_P1_Drop, kNeed_P2_Drop};
 
 
 
@@ -478,8 +477,7 @@ static short 	dropNeed[MAX_PLAYERS] = {kNeed_P1_Drop, kNeed_P2_Drop};
 			/* SEE IF PLAYER DROP EGG */
 			/**************************/
 
-	n = dropNeed[playerNum];											// which need should we test?
-	if (gControlNeeds[n].newButtonPress)								// is drop button pressed?
+	if (IsNeedDown(kNeed_Drop, playerNum))							// is drop button pressed?
 	{
 		DropEgg_NoWormhole(playerNum);
 	}

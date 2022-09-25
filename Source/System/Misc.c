@@ -117,12 +117,7 @@ static Boolean	beenHere = false;
 		ShutdownSound();								// cleanup sound stuff
 	}
 
-	if (gHIDInitialized)							// unload HID
-	{
-		ShutdownHID();
-	}
-
-	InitCursor();
+	SDL_ShowCursor(1);
 	MyFlushEvents();
 
 	ExitToShell();

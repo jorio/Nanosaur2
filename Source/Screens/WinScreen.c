@@ -87,20 +87,15 @@ void DoWinScreen(void)
 	while(!gEndSlideShow)
 	{
 		CalcFramesPerSecond();
-		UpdateKeyMap();
-//		if (AreAnyNewKeysPressed())
-//			break;
-
+		DoSDLMaintenance();
 
 				/* MOVE */
 
 		MoveObjects();
 
-
 				/* DRAW */
 
 		OGL_DrawScene(DrawObjects);
-
 	}
 
 	OGL_FadeOutScene(DrawObjects, NULL);

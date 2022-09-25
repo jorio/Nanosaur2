@@ -54,7 +54,7 @@ short	i;
 				/*************/
 
 	CalcFramesPerSecond();
-	UpdateInput();
+	DoSDLMaintenance();
 
 	while(true)
 	{
@@ -76,7 +76,7 @@ short	i;
 			/* DRAW STUFF */
 
 		CalcFramesPerSecond();
-		UpdateInput();
+		DoSDLMaintenance();
 		DoPlayerTerrainUpdate();										// need to call this to keep supertiles active
 
 		gGameViewInfoPtr->frameCount &= 0xfffffffe;				// keep frame count event # so that particles won't flicker during pause
@@ -282,7 +282,7 @@ Boolean	continueGame = false;
 			/* SEE IF MAKE A SELECTION */
 			/***************************/
 
-	if (gMouseNewButtonState)
+	if (IsClickDown(SDL_BUTTON_LEFT))
 	{
 		PlayEffect_Parms(EFFECT_CHANGESELECT,FULL_CHANNEL_VOLUME/3,FULL_CHANNEL_VOLUME/2,NORMAL_CHANNEL_RATE);
 
@@ -310,7 +310,8 @@ Boolean	continueGame = false;
 			/*****************************/
 
 	else
-	if (GetNewKeyState(KEY_ESC))
+	if (IsNeedDown(kNeed_UIBack, ANY_PLAYER)
+		|| IsNeedDown(kNeed_UIPause, ANY_PLAYER))
 	{
 		continueGame = true;
 	}

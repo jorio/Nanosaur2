@@ -1,3 +1,5 @@
+#if 0
+
 /****************************/
 /*   	  INPUT.C	   	    */
 /* (c)2003 Pangea Software  */
@@ -3275,5 +3277,7 @@ HICommand 			command;
 
 
 
+
+#endif
 
 #endif

@@ -71,7 +71,7 @@ float	timer = 5.0f;
 	do
 	{
 		CalcFramesPerSecond();
-		UpdateInput();
+		DoSDLMaintenance();
 
 		MoveObjects();
 		OGL_DrawScene(DrawObjects);
@@ -79,21 +79,21 @@ float	timer = 5.0f;
 		switch(gIntroMode)
 		{
 			case	INTRO_MODE_SCREENSAVER:
-					if (AreAnyNewKeysPressed())
+					if (UserWantsOut())
 						bail = true;
 					break;
 
 
 			case	INTRO_MODE_NOSAVE:
 					timer -= gFramesPerSecondFrac;
-					if ((timer < 0.0f) || AreAnyNewKeysPressed())
+					if ((timer < 0.0f) || UserWantsOut())
 						bail = true;
 					break;
 
 			case	INTRO_MODE_SAVEGAME:
 					if (CheckSaveSelection())
 					{
-						if (gMouseNewButtonState)
+						if (IsClickDown(SDL_BUTTON_LEFT))
 						{
 							bail = true;
 						}

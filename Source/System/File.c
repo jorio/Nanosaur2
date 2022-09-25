@@ -517,10 +517,6 @@ try_again:
 		goto err;
 	}
 
-		/* THEY'RE GOOD, SO ALSO RESTORE THE HID CONTROL SETTINGS */
-
-	RestoreHIDControlSettings(&gGamePrefs.controlSettings);
-
 	return(noErr);
 
 err:
@@ -545,9 +541,6 @@ short				refNum;
 long				count;
 
 		/* GET THE CURRENT CONTROL SETTINGS */
-
-	if (!gHIDInitialized)								// can't save prefs unless HID is initialized!
-		return;
 
 	SOFTIMPME;
 //	BuildHIDControlSettings(&gGamePrefs.controlSettings);

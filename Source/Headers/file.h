@@ -75,9 +75,6 @@ typedef struct
 	double	hz;
 	Boolean	lowRenderQuality;
 	Byte	language;
-	Boolean	hasConfiguredISpControls;
-
-	HIDControlSettingsType	controlSettings;
 
 	Byte	splitScreenMode;
 
@@ -93,11 +90,10 @@ typedef struct
 	uint32_t	version;
 
 	Boolean kiddieMode;
-	Boolean dontUseHID;
 
 	Byte	antialiasingLevel;
 
-	int		reserved[8];
+	InputBinding	bindings[NUM_CONTROL_NEEDS];
 }PrefsType;
 
 

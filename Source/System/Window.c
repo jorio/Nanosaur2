@@ -20,8 +20,6 @@
 static void MoveFadePane(ObjNode *theNode);
 static void DrawFadePane(ObjNode *theNode);
 
-#define FaderMode			Flag[0]
-#define FaderDone			Flag[1]
 #define FaderFrameCounter	Special[0]
 
 static void CreateDisplayModeList(void);
@@ -37,6 +35,12 @@ static void CalcVRAMAfterBuffers(void);
 
 #define	NUM_CALIBRATION_IMAGES	4
 
+enum
+{
+	kFaderMode_FadeOut,
+	kFaderMode_FadeIn,
+	kFaderMode_Done,
+};
 
 /**********************/
 /*     VARIABLES      */
@@ -87,7 +91,7 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 
 	long pFaderFrameCount = fader->FaderFrameCounter;
 
-	while (!fader->FaderDone)
+	while (fader->Mode != kFaderMode_Done)
 	{
 		CalcFramesPerSecond();
 		DoSDLMaintenance();
@@ -143,8 +147,7 @@ ObjNode	*thisNodePtr;
 	{
 		if (thisNodePtr->MoveCall == MoveFadePane)
 		{
-			thisNodePtr->FaderMode = fadeIn;							// set new mode
-			thisNodePtr->FaderDone = false;
+			thisNodePtr->Mode = fadeIn;									// set new mode
 			thisNodePtr->Speed = fadeSpeed;
 			return thisNodePtr;
 		}
@@ -167,8 +170,7 @@ ObjNode	*thisNodePtr;
 	newObj = MakeNewObject(&def);
 	newObj->CustomDrawFunction = DrawFadePane;
 
-	newObj->FaderMode = fadeIn;
-	newObj->FaderDone = false;
+	newObj->Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut;
 	newObj->FaderFrameCounter = 0;
 	newObj->Speed = fadeSpeed;
 
@@ -185,33 +187,28 @@ float	speed = theNode->Speed * fps;
 
 			/* SEE IF FADE IN */
 
-	if (theNode->FaderMode)
+	if (theNode->Mode == kFaderMode_FadeIn)
 	{
 		gGammaFadeFrac += speed;
-		if (gGammaFadeFrac >= 1.0f)										// see if @ 100%
+		if (gGammaFadeFrac >= 1.0f)				// see if @ 100%
 		{
 			gGammaFadeFrac = 1;
-			theNode->FaderDone = true;
+			theNode->Mode = kFaderMode_Done;
+			DeleteObject(theNode);				// nuke it if fading in
 		}
 	}
 
 			/* FADE OUT */
-	else
+
+	else if (theNode->Mode == kFaderMode_FadeOut)
 	{
 		gGammaFadeFrac -= speed;
-		if (gGammaFadeFrac <= 0.0f)													// see if @ 0%
+		if (gGammaFadeFrac <= 0.0f)				// see if @ 0%
 		{
 			gGammaFadeFrac = 0;
-			theNode->FaderDone = true;
+			theNode->Mode = kFaderMode_Done;
+			theNode->MoveCall = NULL;			// DON'T nuke the fader pane if fading out -- but don't run this again
 		}
-	}
-
-	if (theNode->FaderDone)
-	{
-		if (theNode->FaderMode)			// nuke it if fading in, hold it if fading out
-			DeleteObject(theNode);
-
-		theNode->MoveCall = NULL;		// don't run this again
 	}
 }
 

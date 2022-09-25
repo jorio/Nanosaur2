@@ -40,6 +40,7 @@ typedef struct Controller
 	SDL_GameController*		controllerInstance;
 	SDL_JoystickID			joystickInstance;
 	KeyState				needStates[NUM_CONTROL_NEEDS];
+	float					needAnalog[NUM_CONTROL_NEEDS];
 	OGLVector2D				analogSteering;
 } Controller;
 
@@ -56,13 +57,18 @@ Boolean				gMouseMotionNow = false;
 char				gTextInput[SDL_TEXTINPUTEVENT_TEXT_SIZE];
 
 static void OnJoystickRemoved(SDL_JoystickID which);
-static void UpdateAnalogSteering(int controllerNum);
 static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex);
-static SDL_GameController* TryOpenAnyController(bool showMessage);
+static SDL_GameController* TryOpenAnyUnusedController(bool showMessage);
+static void TryFillUpVacantControllerSlots(void);
 static int GetControllerSlotFromSDLJoystickInstanceID(SDL_JoystickID joystickInstanceID);
 
 #pragma mark -
 /**********************/
+
+void InitInput(void)
+{
+	TryFillUpVacantControllerSlots();
+}
 
 static inline void UpdateKeyState(KeyState* state, bool downNow)
 {
@@ -153,35 +159,37 @@ static void UpdateMouseButtonStates(int mouseWheelDelta)
 
 static void UpdateInputNeeds(void)
 {
-	for (int i = 0; i < NUM_CONTROL_NEEDS; i++)
+	for (int need = 0; need < NUM_CONTROL_NEEDS; need++)
 	{
-		const InputBinding* kb = &gGamePrefs.bindings[i];
+		const InputBinding* kb = &gGamePrefs.bindings[need];
 
-		bool downNow = false;
+		bool pressed = false;
 
 		for (int j = 0; j < MAX_BINDINGS_PER_NEED; j++)
 		{
 			int16_t scancode = kb->key[j];
 			if (scancode && scancode < SDL_NUM_SCANCODES)
 			{
-				downNow |= gKeyboardStates[scancode] & KEYSTATE_ACTIVE_BIT;
+				pressed |= gKeyboardStates[scancode] & KEYSTATE_ACTIVE_BIT;
 			}
 		}
 
-//		downNow |= gMouseButtonStates[kb->mouseButton] & KEYSTATE_ACTIVE_BIT;
+		pressed |= gMouseButtonStates[kb->mouseButton] & KEYSTATE_ACTIVE_BIT;
 
-		UpdateKeyState(&gNeedStates[i], downNow);
+		UpdateKeyState(&gNeedStates[need], pressed);
 	}
 }
 
 static void UpdateControllerSpecificInputNeeds(int controllerNum)
 {
-	if (!gControllers[controllerNum].open)
+	Controller* controller = &gControllers[controllerNum];
+
+	if (!controller->open)
 	{
 		return;
 	}
 
-	SDL_GameController* controllerInstance = gControllers[controllerNum].controllerInstance;
+	SDL_GameController* controllerInstance = controller->controllerInstance;
 
 	for (int needNum = 0; needNum < NUM_CONTROL_NEEDS; needNum++)
 	{
@@ -191,7 +199,8 @@ static void UpdateControllerSpecificInputNeeds(int controllerNum)
 						   ? kJoystickDeadZone_UI
 						   : kJoystickDeadZone;
 
-		bool downNow = false;
+		bool pressed = false;
+		float analogPressed = 0;
 
 		for (int buttonNum = 0; buttonNum < MAX_BINDINGS_PER_NEED; buttonNum++)
 		{
@@ -200,23 +209,45 @@ static void UpdateControllerSpecificInputNeeds(int controllerNum)
 			switch (pb->type)
 			{
 				case kInputTypeButton:
-					downNow |= 0 != SDL_GameControllerGetButton(controllerInstance, pb->id);
+					if (0 != SDL_GameControllerGetButton(controllerInstance, pb->id))
+					{
+						pressed = true;
+						analogPressed = 1;
+					}
 					break;
 
 				case kInputTypeAxisPlus:
-					downNow |= SDL_GameControllerGetAxis(controllerInstance, pb->id) > deadZone;
+				{
+					int16_t axis = SDL_GameControllerGetAxis(controllerInstance, pb->id);
+					if (axis > deadZone)
+					{
+						pressed = true;
+						float absAxisFrac = (axis - deadZone) / (32767.0f - deadZone);
+						analogPressed = GAME_MAX(analogPressed, absAxisFrac);
+					}
 					break;
+				}
 
 				case kInputTypeAxisMinus:
-					downNow |= SDL_GameControllerGetAxis(controllerInstance, pb->id) < -deadZone;
+				{
+					int16_t axis = SDL_GameControllerGetAxis(controllerInstance, pb->id);
+					if (axis < -deadZone)
+					{
+						pressed = true;
+						float absAxisFrac = (-axis - deadZone) / (32767.0f - deadZone);
+						analogPressed = GAME_MAX(analogPressed, absAxisFrac);
+					}
 					break;
+				}
 
 				default:
 					break;
 			}
 		}
 
-		UpdateKeyState(&gControllers[controllerNum].needStates[needNum], downNow);
+		controller->needAnalog[needNum] = analogPressed;
+
+		UpdateKeyState(&controller->needStates[needNum], pressed);
 	}
 }
 
@@ -323,7 +354,6 @@ void DoSDLMaintenance(void)
 	for (int controllerNum = 0; controllerNum < MAX_LOCAL_PLAYERS; controllerNum++)
 	{
 		UpdateControllerSpecificInputNeeds(controllerNum);
-		UpdateAnalogSteering(controllerNum);
 	}
 }
 
@@ -389,6 +419,47 @@ int GetNeedState(int needID, int playerID)
 	return KEYSTATE_OFF;
 }
 
+float GetNeedAnalogValue(int needID, int playerID)
+{
+	GAME_ASSERT(playerID >= 0);
+	GAME_ASSERT(playerID < MAX_LOCAL_PLAYERS);
+	GAME_ASSERT(needID >= 0);
+	GAME_ASSERT(needID < NUM_CONTROL_NEEDS);
+
+	const Controller* controller = &gControllers[playerID];
+
+	if (controller->open && controller->needAnalog[needID] != 0.0f)
+	{
+		return controller->needAnalog[needID];
+	}
+
+	// Fallback to KB/M
+	if (gNumLocalPlayers <= 1 || controller->fallbackToKeyboard)
+	{
+		if (gNeedStates[needID] & KEYSTATE_ACTIVE_BIT)
+		{
+			return 1.0f;
+		}
+	}
+
+	return 0.0f;
+}
+
+float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID)
+{
+	float neg = GetNeedAnalogValue(negativeNeedID, playerID);
+	float pos = GetNeedAnalogValue(positiveNeedID, playerID);
+
+	if (neg > pos)
+	{
+		return -neg;
+	}
+	else
+	{
+		return pos;
+	}
+}
+
 Boolean UserWantsOut(void)
 {
 	return IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
@@ -447,53 +518,6 @@ static float GetControllerAnalogSteeringAxis(SDL_GameController* sdlController, 
 	}
 
 	return steer;
-}
-
-static void UpdateAnalogSteering(int playerID)
-{
-	OGLVector2D steer = {0, 0};								// assume no control input
-
-//	SDL_GameController* sdlController = SDL_GameControllerFromPlayerIndex(playerID);
-	SDL_GameController* sdlController = gControllers[playerID].controllerInstance;
-
-			/****************************/
-			/* SET PLAYER AXIS CONTROLS */
-			/****************************/
-
-			/* FIRST CHECK ANALOG AXES */
-
-	if (sdlController)
-	{
-		steer.x = GetControllerAnalogSteeringAxis(sdlController, SDL_CONTROLLER_AXIS_LEFTX);
-		steer.y = GetControllerAnalogSteeringAxis(sdlController, SDL_CONTROLLER_AXIS_LEFTY);
-	}
-
-			/* NEXT CHECK THE DIGITAL KEYS */
-
-	if (IsNeedActive(kNeed_TurnLeft_Key, playerID))				// is Left Key pressed?
-	{
-		steer.x = -1.0f;
-	}
-	else if (IsNeedActive(kNeed_TurnRight_Key, playerID))		// is Right Key pressed?
-	{
-		steer.x = 1.0f;
-	}
-
-	if (IsNeedActive(kNeed_PitchUp_Key, playerID))				// is Up Key pressed?  (up key makes submarine dive deeper)
-	{
-		steer.y = -1.0f;
-	}
-	else if (IsNeedActive(kNeed_PitchDown_Key, playerID))		// is Down Key pressed?  (down key makes submarine float up)
-	{
-		steer.y = 1.0f;
-	}
-
-	gControllers[playerID].analogSteering = steer;
-}
-
-OGLVector2D GetAnalogSteering(int playerID)
-{
-	return gControllers[playerID].analogSteering;
 }
 
 #pragma mark - Controller mapping

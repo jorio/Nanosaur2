@@ -9,9 +9,7 @@
 
 #define ANY_PLAYER (-1)
 
-#define MAX_USER_BINDINGS_PER_NEED		2
-#define MAX_HARD_BINDINGS_PER_NEED		1
-#define MAX_BINDINGS_PER_NEED		(MAX_USER_BINDINGS_PER_NEED + MAX_HARD_BINDINGS_PER_NEED)
+#define MAX_BINDINGS_PER_NEED				4
 
 #define NUM_SUPPORTED_MOUSE_BUTTONS			31
 #define NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL	(NUM_SUPPORTED_MOUSE_BUTTONS-2)
@@ -58,10 +56,10 @@ enum
 
 enum
 {
-	kNeed_TurnLeft_Key	= 0,
-	kNeed_TurnRight_Key,
-	kNeed_PitchUp_Key,
-	kNeed_PitchDown_Key,
+	kNeed_PitchUp,
+	kNeed_PitchDown,
+	kNeed_YawLeft,
+	kNeed_YawRight,
 	kNeed_Fire,
 	kNeed_Drop,
 	kNeed_NextWeapon,
@@ -106,14 +104,14 @@ void RestoreHIDControlSettings(HIDControlSettingsType *settings);
 
 
 void InitInput(void);
-void ReadKeyboard(void);
 void InvalidateAllInputs(void);
 void InvalidateNeedState(int need);
 
 int GetKeyState(uint16_t sdlScancode);
 int GetClickState(int mouseButton);
 int GetNeedState(int needID, int playerID);
-//int GetNeedStateAnyP(int needID);
+float GetNeedAnalogValue(int needID, int playerID);
+float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID);
 
 #define IsKeyDown(scancode) (KEYSTATE_DOWN == GetKeyState((scancode)))
 #define IsKeyHeld(scancode) (KEYSTATE_HELD == GetKeyState((scancode)))
@@ -133,11 +131,6 @@ OGLVector2D GetAnalogSteering(int playerID);
 
 Boolean UserWantsOut(void);
 Boolean IsCheatKeyComboDown(void);
-void InitControlBits(void);
-void GetLocalKeyState(void);
-
-Boolean GetControlState(short player, uint32_t control);
-Boolean GetControlStateNew(short player, uint32_t control);
 
 void PushKeys(void);
 void PopKeys(void);

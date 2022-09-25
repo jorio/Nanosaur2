@@ -123,7 +123,7 @@ extern	OGLVector3D				gWorldSunDirection;
 extern	ObjNode					*gCurrentNode;
 extern	ObjNode					*gFirstNodePtr;
 extern	ParticleGroupType		*gParticleGroups[];
-extern	PlayerInfoType			gPlayerInfo[];
+extern	PlayerInfoType			gPlayerInfo[MAX_PLAYERS];
 extern	PrefsType				gGamePrefs;
 extern	SDL_Window*				gSDLWindow;
 extern	SparkleType				gSparkles[MAX_SPARKLES];

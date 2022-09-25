@@ -35,7 +35,7 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	[kNeed_NextWeapon] =
 	{
 		.key = { SC_NWEAP1, SC_NWEAP2 },
-		.pad = { CB(RIGHTSHOULDER) },
+		.pad = { CB(B) },
 	},
 
 	[kNeed_CameraMode] =
@@ -47,28 +47,28 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	[kNeed_Jetpack] =
 	{
 		.key = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT },
-		.pad = { CAPLUS(TRIGGERRIGHT) },
+		.pad = { CB(A) },
 	},
 
-	[kNeed_PitchUp_Key] =
+	[kNeed_PitchUp] =
 	{
 		.key = { SDL_SCANCODE_UP, SDL_SCANCODE_W },
 		.pad = { CAMINUS(LEFTY), CB(DPAD_UP) },
 	},
 
-	[kNeed_PitchDown_Key] =
+	[kNeed_PitchDown] =
 	{
 		.key = { SDL_SCANCODE_DOWN, SDL_SCANCODE_S },
 		.pad = { CAPLUS(LEFTY), CB(DPAD_DOWN) },
 	},
 
-	[kNeed_TurnLeft_Key] =
+	[kNeed_YawLeft] =
 	{
 		.key = { SDL_SCANCODE_LEFT, SDL_SCANCODE_A },
 		.pad = { CAMINUS(LEFTX), CB(DPAD_LEFT) },
 	},
 
-	[kNeed_TurnRight_Key] =
+	[kNeed_YawRight] =
 	{
 		.key = { SDL_SCANCODE_RIGHT, SDL_SCANCODE_D },
 		.pad = { CAPLUS(LEFTX), CB(DPAD_RIGHT) },

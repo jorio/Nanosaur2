@@ -1,7 +1,8 @@
 /****************************/
 /*    NANOSAUR 2 - MAIN 	*/
-/* (c)2003 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -149,7 +150,7 @@ long		createdDirID;
 		/* FIRST VERIFY SYSTEM BEFORE GOING TOO FAR */
 
 	VerifySystem();
-// 	InitInput();							// note:  we must init our default HID settings before we try to read the saved Prefs!
+	InitInput();
 
 	SDL_ShowCursor(0);
 
@@ -604,7 +605,6 @@ OGLSetupInputType	viewDef;
 
 static void PlayLevel(void)
 {
-short	i;
 float	fps;
 
 
@@ -628,9 +628,15 @@ float	fps;
 
 	while(true)
 	{
-				/* MOVE OBJECTS & UPDATE TERRAIN & DRAW */
+				/* INPUT */
 
 		DoSDLMaintenance();
+
+		for (int i = 0; i < gNumPlayers; i++)
+			UpdatePlayerSteering(i);
+
+				/* MOVE OBJECTS & UPDATE TERRAIN & DRAW */
+
 		MoveEverything();
 		DoPlayerTerrainUpdate();
 		OGL_DrawScene(DrawLevelCallback);
@@ -652,7 +658,7 @@ float	fps;
 				/* SEE IF RESET PLAYER NOW */
 				/***************************/
 
-		for (i = 0; i < gNumPlayers; i++)							// check all players
+		for (int i = 0; i < gNumPlayers; i++)						// check all players
 		{
 			if (gPlayerIsDead[i])									// is this player dead?
 			{

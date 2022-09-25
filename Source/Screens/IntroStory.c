@@ -91,8 +91,8 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY1,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH] =	"#7500\nIn the year 4122, a sole Nanosaur was\nsent 65 million years into the past.",
-			[LANGUAGE_FRENCH] =		"#7500\nEn l’an 4122, un Nanosaur solitaire fut envoyé\n65 millions d’années dans le passé.",
+			[LANGUAGE_ENGLISH] =	"#9500\nIn the year 4122, a sole Nanosaur was\nsent 65 million years into the past.",
+			[LANGUAGE_FRENCH] =		"#9500\nEn l’an 4122, un Nanosaur solitaire fut envoyé\n65 millions d’années dans le passé.",
 		}
 	},
 
@@ -113,10 +113,8 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY2,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH]	=	"#3230\n\nHis mission was to find the unhatched eggs\n"
-									"#4200\nof ancient dinosaur species\nand return them to the future.",
-			[LANGUAGE_FRENCH]	=	"#3230\n\nIl était chargé de trouver les œufs non-éclos\n"
-									"#4200\nde dinosaures préhistoriques\net de les renvoyer dans le futur.",
+			[LANGUAGE_ENGLISH]	=	"#10500\nHis mission was to find the unhatched eggs of\nancient dinosaur species and return them to the future.",
+			[LANGUAGE_FRENCH]	=	"#10500\nIl était chargé de trouver des œufs intacts de\ndinosaures préhistoriques et de les renvoyer dans le futur.",
 		},
 	},
 
@@ -136,8 +134,8 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY3,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH]	= "#3000\n\nThe mission was a success.",
-			[LANGUAGE_FRENCH]	= "#3000\n\nLa mission fut accomplie.",
+			[LANGUAGE_ENGLISH]	= "#7000\n\nThe mission was a success.",
+			[LANGUAGE_FRENCH]	= "#7000\n\nLa mission fut accomplie.",
 		},
 	},
 
@@ -157,8 +155,8 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY4,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH]	=	"#6500\nBut before the eggs could be hatched,\nthey were stolen by a group of rebel Nanosaurs.",
-			[LANGUAGE_FRENCH]	=	"#6500\nMais avant que les œufs n’éclosent,\nils furent volés par un groupe de Nanosaurs rebelles.",
+			[LANGUAGE_ENGLISH]	=	"#8000\nBut before the eggs could be hatched,\nthey were stolen by a group of rebel Nanosaurs.",
+			[LANGUAGE_FRENCH]	=	"#8000\nMais avant que les œufs n’éclosent,\nils furent volés par un groupe de Nanosaurs rebelles.",
 		},
 	},
 
@@ -178,12 +176,10 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY5,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH]	=	"#3000\n\nThe rebels took the eggs to offworld bases\n"
-									"#3333\n\nwhere they planned on breeding the dinosaurs.\n"
-									"#5200\nTheir goal was to create warriors\nfor fighting their battle against Earth.",
-			[LANGUAGE_FRENCH]	=	"#3000\nLes rebelles emmenèrent les œufs\ndans une base lointaine\n"
-									"#3333\n\nd’où ils comptaient élever les dinosaures.\n"
-									"#5200\nIls voulaient créer des guerriers\npour gagner leur bataille contre la Terre.",
+			[LANGUAGE_ENGLISH]	=	"#6333\nThe rebels took the eggs to offworld bases\nwhere they planned on breeding the dinosaurs.\n"
+									"#6000\nTheir goal was to create warriors\nfor fighting their battle against Earth.",
+			[LANGUAGE_FRENCH]	=	"#6333\nLes rebelles emmenèrent les œufs dans une base lointaine\nd’où ils comptaient élever les dinosaures.\n"
+									"#6000\nIls voulaient créer des mercenaires\npour gagner leur bataille contre la Terre.",
 		},
 	},
 
@@ -203,10 +199,8 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY6,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH]	=	"#2900\n\nBut the rebels left one egg behind.\n"
-									"#3600\n\nWhen it hatched, a new Nanosaur was born.",
-			[LANGUAGE_FRENCH]	=	"#2900\n\nMais les rebelles laissèrent un œuf derrière eux.\n"
-									"#3600\n\nEn éclosant, un nouveau Nanosaur fut né.",
+			[LANGUAGE_ENGLISH]	=	"#8000\nBut the rebels left one egg behind.\nWhen it hatched, a new Nanosaur was born.",
+			[LANGUAGE_FRENCH]	=	"#8000\nMais les rebelles laissèrent un œuf derrière eux.\nEn éclosant, un nouveau Nanosaur fut né.",
 		},
 	},
 
@@ -227,10 +221,10 @@ static SlideType gSlides[NUM_SLIDES] =
 		.narrationSound = EFFECT_STORY7,
 		.subtitles =
 		{
-			[LANGUAGE_ENGLISH] =	"#4750\nThis hatchling was sent on a mission\nto recover the stolen eggs\n"
-									"#3000\n\nand defeat the rebel forces.",
-			[LANGUAGE_FRENCH] =		"#4750\nCe nouveau-né se vit confier la mission\nde récupérer les œufs volés\n"
-									"#3000\n\net de vaincre les forces rebelles.",
+			[LANGUAGE_ENGLISH] =	"#4750\nThis hatchling was sent on a mission\nto recover the stolen eggs . . .\n"
+									"#4000\n\n. . . and defeat the rebel forces.",
+			[LANGUAGE_FRENCH] =		"#4750\nCe nouveau-né se vit confier la mission\nde récupérer les œufs volés...\n"
+									"#4000\n\n...et de vaincre les forces rebelles.",
 		},
 	},
 
@@ -539,7 +533,7 @@ static void MakeSubtitleObjects(int slideNum)
 	const char* text = gSlides[slideNum].subtitles[gGamePrefs.language];
 
 	if (!text)
-		gSlides[slideNum].subtitles[LANGUAGE_ENGLISH];
+		text = gSlides[slideNum].subtitles[LANGUAGE_ENGLISH];
 
 	if (!text)
 		return;

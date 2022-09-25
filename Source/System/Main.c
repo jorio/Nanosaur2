@@ -728,7 +728,10 @@ float	fps;
 		}
 	}
 
-	OGL_FadeOutScene(DrawLevelCallback, DoPlayerTerrainUpdate);
+	if (gGammaFadeFrac > 0)											// only fade out if we haven't called MakeFadeEvent(false) already
+	{
+		OGL_FadeOutScene(DrawLevelCallback, DoPlayerTerrainUpdate);
+	}
 
 	if (gTimeDemo)
 	{

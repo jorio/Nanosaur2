@@ -244,9 +244,8 @@ static void PlayGame_Adventure(void)
 	{
 		gLevelNum = LEVEL_NUM_ADVENTURE1;
 
-		if (IsKeyDown(SDL_SCANCODE_F10))	// see if do Level cheat
-			if (DoLevelCheatDialog())
-				CleanQuit();
+		if (IsKeyActive(SDL_SCANCODE_F10))	// see if do Level cheat
+			DoLevelCheatDialog();
 	}
 
 	if (gTimeDemo)

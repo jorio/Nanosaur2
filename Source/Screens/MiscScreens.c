@@ -152,91 +152,38 @@ void DoLegalScreen(void)
 
 Boolean DoLevelCheatDialog(void)
 {
-	IMPME;
-#if 0
-OSErr			err;
-EventHandlerRef	ref;
-EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
+	SDL_MessageBoxButtonData buttons[3] =
+	{
+		{.buttonid = 0, .text = "1", .flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT},
+		{.buttonid = 1, .text = "LEVEL 2",},
+		{.buttonid = 2, .text = "LEVEL 3",},
+	};
+
+	SDL_MessageBoxData box =
+	{
+		.title = "LEVEL CHEAT DIALOG",
+		.message = "Pick a level",
+		.numbuttons = 3,
+		.buttons = buttons
+	};
 
 	Enter2D();
 
-    		/***************/
-    		/* INIT DIALOG */
-    		/***************/
-
-				/* CREATE WINDOW FROM THE NIB */
-
-    err = CreateWindowFromNib(gNibs, CFSTR ("Cheat"), &gDialogWindow);
-	if (err)
-		DoFatalAlert("DoLevelCheatDialog: CreateWindowFromNib failed!");
-
-
-			/* CREATE NEW WINDOW EVENT HANDLER */
-
-    gWinEvtHandler = NewEventHandlerUPP(DoCheatDialog_EventHandler);
-    InstallWindowEventHandler(gDialogWindow, gWinEvtHandler, GetEventTypeCount(list), list, 0, &ref);
-
-
-			/* PROCESS THE DIALOG */
-
-    ShowWindow(gDialogWindow);
-	RunAppModalLoopForWindow(gDialogWindow);
-
-
-				/* CLEANUP */
-
-	DisposeEventHandlerUPP (gWinEvtHandler);
-	DisposeWindow (gDialogWindow);
+	int button = 0;
+	int rc = SDL_ShowMessageBox(&box, &button);
 
 	Exit2D();
-#endif
 
-	return(false);
-}
-
-
-#if 0
-/****************** DO CHEAT DIALOG EVENT HANDLER *************************/
-
-static pascal OSStatus DoCheatDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData)
-{
-#pragma unused (myHandler, userData)
-OSStatus			result = eventNotHandledErr;
-HICommand 			command;
-
-	switch(GetEventKind(event))
+	if (rc == 0)
 	{
-
-				/*******************/
-				/* PROCESS COMMAND */
-				/*******************/
-
-		case	kEventProcessCommand:
-				GetEventParameter (event, kEventParamDirectObject, kEventParamHICommand, NULL, sizeof(command), NULL, &command);
-				switch(command.commandID)
-				{
-					case	'lev1':
-							gLevelNum = 0;
-		                    QuitAppModalLoopForWindow(gDialogWindow);
-		                    break;
-
-					case	'lev2':
-							gLevelNum = 1;
-		                    QuitAppModalLoopForWindow(gDialogWindow);
-		                    break;
-
-					case	'lev3':
-							gLevelNum = 2;
-		                    QuitAppModalLoopForWindow(gDialogWindow);
-		                    break;
-				}
-				break;
-    }
-
-    return (result);
+		gLevelNum = button;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
-
-#endif
 
 
 #pragma mark -
@@ -245,7 +192,7 @@ HICommand 			command;
 
 void DoGameOptionsDialog(void)
 {
-	IMPME;
+	SOFTIMPME;
 #if 0
 OSErr			err;
 EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };

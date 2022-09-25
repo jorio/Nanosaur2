@@ -260,6 +260,8 @@ void Enter2D(void)
 
 void Exit2D(void)
 {
+	SDL_ShowCursor(0);
+
 #if 0
 		/* BE SURE GREEN CHANNEL IS CLEAR FOR ANAGLYPH */
 

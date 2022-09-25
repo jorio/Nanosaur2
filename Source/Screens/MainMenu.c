@@ -502,6 +502,7 @@ static void DoMenuControls(void)
 		gNumPlayers = 1;
 		gPlayNow = true;
 		gPlayingFromSavedGame = false;
+		SDL_GL_SetSwapInterval(0);					// no vsync for time demo
 		return;
 	}
 

@@ -342,7 +342,7 @@ float				fps = gFramesPerSecondFrac;
 OGLPoint3D			from,to,target;
 float				distX,distZ,distY,fromAcc, terrainY;
 OGLVector3D			v;
-float				myX,myY,myZ,delta;
+float				delta;
 ObjNode				*playerObj;
 SkeletonObjDataType	*skeleton;
 float				oldCamX,oldCamZ,oldCamY,oldPointOfInterestX,oldPointOfInterestZ,oldPointOfInterestY;
@@ -432,9 +432,9 @@ const OGLPoint3D	noseOff = {0, 0, -600};
 		oldPointOfInterestY = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.y;
 		oldPointOfInterestZ = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.z;
 
-		myX = gPlayerInfo[playerNum].coord.x;
-		myY = gPlayerInfo[playerNum].coord.y + playerObj->BottomOff;
-		myZ = gPlayerInfo[playerNum].coord.z;
+		//myX = gPlayerInfo[playerNum].coord.x;
+		//myY = gPlayerInfo[playerNum].coord.y + playerObj->BottomOff;
+		//myZ = gPlayerInfo[playerNum].coord.z;
 
 
 				/**********************/

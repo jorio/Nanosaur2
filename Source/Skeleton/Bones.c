@@ -313,7 +313,6 @@ OGLMatrix4x4				oldM;
 OGLVector3D					*normalAttribs;
 BoneDefinitionType			*bonePtr;
 float						minX,maxX,maxY,minY,maxZ,minZ;
-long						numDecomposedPoints,numDecomposedNormals;
 register float				m00,m01,m02,m10,m11,m12,m20,m21,m22,m30,m31,m32;
 float						newX,newY,newZ;
 SkeletonObjDataType			*currentSkelObjData = gCurrentSkelObjData;
@@ -336,9 +335,6 @@ const DecomposedPointType	*decomposedPointList;
 	maxX = gBBox->max.x;
 	maxY = gBBox->max.y;
 	maxZ = gBBox->max.z;
-
-	numDecomposedPoints = currentSkeleton->numDecomposedPoints;
-	numDecomposedNormals = currentSkeleton->numDecomposedNormals;
 
 				/*********************************/
 				/* FACTOR IN THIS JOINT'S MATRIX */

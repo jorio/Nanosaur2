@@ -257,7 +257,7 @@ static void  MoveBrach_Eat(ObjNode *theNode)
 
 static void  MoveBrach_Walk(ObjNode *theNode)
 {
-float		r,fps,dist;
+float		r,fps;
 short		playerNum;
 
 	fps = gFramesPerSecondFrac;
@@ -265,7 +265,7 @@ short		playerNum;
 
 			/* MOVE TOWARD PLAYER */
 
-	dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum);
+	CalcDistanceToClosestPlayer(&gCoord, &playerNum);		// find out who's the closest player
 
 	if (!gPlayerIsDead[playerNum])							// don't aim at dead players
 	{

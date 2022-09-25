@@ -110,7 +110,6 @@ short	i;
 
 static void InitPausedObjects(void)
 {
-short	i, language;
 float	w, y;
 ObjNode	*newObj;
 float	aspectRatio;
@@ -127,9 +126,6 @@ static const LocStrID names[NUM_PAUSED_MENU_ITEMS] =
 
 	if (!gMuteMusicFlag)							// see if pause music
 		ToggleMusic();
-
-	language = gGamePrefs.language;
-
 
 			/*****************/
 			/* BUILD OBJECTS */
@@ -163,7 +159,7 @@ static const LocStrID names[NUM_PAUSED_MENU_ITEMS] =
 
 	y = 250.0f * aspectRatio;
 
-	for (i = 0; i < NUM_PAUSED_MENU_ITEMS; i++)
+	for (int i = 0; i < NUM_PAUSED_MENU_ITEMS; i++)
 	{
 		const char* name = Localize(names[i]);
 

@@ -423,7 +423,7 @@ OGLMatrix4x4	*m,m2;
 void RotateOnTerrain_WideArea(ObjNode *theNode, float yOffset, float radius)
 {
 OGLVector3D		up;
-float			r,x,z,x2,z2;
+float			r,x,z;
 
 
 			/* GET CENTER Y COORD & TERRAIN NORMAL */
@@ -437,8 +437,8 @@ float			r,x,z,x2,z2;
 
 	for (r = 0; r < PI2; r += (PI/8))
 	{
-		x2 = x + sin(r) * radius;
-		z2 = z + cos(r) * radius;
+		//float x2 = x + sin(r) * radius;
+		//float z2 = z + cos(r) * radius;
 
 		GetTerrainY(x, z);
 		up.x += gRecentTerrainNormal.x;

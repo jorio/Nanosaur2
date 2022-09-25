@@ -300,7 +300,7 @@ float		offXSign,offZSign,offYSign;
 Byte		base,target;
 ObjNode		*targetObj;
 CollisionBoxType *baseBoxPtr,*targetBoxPtr = nil;
-float		leftSide,rightSide,frontSide,backSide,bottomSide;
+float		/*leftSide,rightSide,frontSide,backSide,*/bottomSide;
 CollisionBoxType *boxList;
 short		numSolidHits, numPasses = 0;
 Boolean		hitImpenetrable = false;
@@ -345,10 +345,10 @@ again:
 	if (theNode->NumCollisionBoxes == 0)					// it's gotta have a collision box
 		return(0);
 	boxList 	= theNode->CollisionBoxes;
-	leftSide 	= boxList->left;
-	rightSide 	= boxList->right;
-	frontSide 	= boxList->front;
-	backSide 	= boxList->back;
+	//leftSide 	= boxList->left;
+	//rightSide 	= boxList->right;
+	//frontSide 	= boxList->front;
+	//backSide 	= boxList->back;
 	bottomSide 	= boxList->bottom;
 
 			/*************************************/

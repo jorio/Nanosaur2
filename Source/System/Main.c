@@ -30,11 +30,6 @@ static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFP
 /****************************/
 
 
-#define kDefaultNibFileName "Game"
-
-#define	MINUTES_PER_LEVEL	20.0f
-
-
 /****************************/
 /*    VARIABLES             */
 /****************************/
@@ -83,7 +78,7 @@ float				gScratchF = 0;
 
 			/* LEVEL SONGS */
 
-const short gLevelSongs[] =
+const short gLevelSongs[NUM_LEVELS] =
 {
 	SONG_LEVEL1,				// ADVENTURE LEVEL 1
 	SONG_LEVEL2,				// ADVENTURE LEVEL 2

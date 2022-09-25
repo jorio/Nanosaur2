@@ -24,10 +24,6 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr);
 /*    CONSTANTS             */
 /****************************/
 
-#define	BASE_PATH_TILE		900					// tile # of 1st path tile
-
-#define	PICT_HEADER_SIZE	512
-
 #define	SKELETON_FILE_VERS_NUM	0x0110			// v1.1
 
 #define	SAVE_GAME_VERSION	0x0100		// 1.0
@@ -96,49 +92,6 @@ typedef struct
 
 float	g3DTileSize, g3DMinY, g3DMaxY;
 
-static 	FSSpec		gSavedGameSpec;
-
-
-/****************** SET DEFAULT DIRECTORY ********************/
-//
-// This function needs to be called for OS X because OS X doesnt automatically
-// set the default directory to the application directory.
-//
-
-void SetDefaultDirectory(void)
-{
-OSErr	iErr;
-#if 0
-ProcessSerialNumber serial;
-ProcessInfoRec info;
-FSSpec	app_spec;
-static WDPBRec wpb;
-
-	serial.highLongOfPSN = 0;
-	serial.lowLongOfPSN = kCurrentProcess;
-
-
-	info.processInfoLength = sizeof(ProcessInfoRec);
-	info.processName = NULL;
-	info.processAppSpec = &app_spec;
-
-	iErr = GetProcessInformation(&serial, &info);
-
-	wpb.ioVRefNum = &app_spec.vRefNum;
-	wpb.ioWDDirID = &app_spec.parID;
-	wpb.ioNamePtr = NULL;
-
-	iErr = PBHSetVolSync(&wpb);
-#endif
-
-
-		/* ALSO SET SAVED GAME SPEC TO DESKTOP */
-
-	iErr = FindFolder(kOnSystemDisk,kDesktopFolderType,kDontCreateFolder,			// locate the desktop folder
-					&gSavedGameSpec.vRefNum,&gSavedGameSpec.parID);
-	gSavedGameSpec.cName[0] = 0;
-
-}
 
 
 
@@ -1438,6 +1391,10 @@ bail:
 
 Boolean LoadSavedGame(void)
 {
+	SOFTIMPME;
+	return false;
+
+#if 0
 SaveGameType	saveData;
 short			fRefNum;
 long			count, i;
@@ -1453,7 +1410,6 @@ Boolean			success = false;
 
 				/* GET FILE WITH NAVIGATION SERVICES */
 
-	IMPME;
 //	if (GetFileWithNavServices(&gSavedGameSpec) != noErr)
 //		goto bail;
 
@@ -1507,6 +1463,7 @@ bail:
 //		PlaySong(oldSong, true);
 
 	return(success);
+#endif
 }
 
 

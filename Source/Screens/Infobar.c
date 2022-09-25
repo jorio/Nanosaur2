@@ -966,7 +966,6 @@ double				leftEdge, topEdge;
 static void Infobar_DrawHealth(void)
 {
 float				v;
-float				visibleRange;
 
 
 
@@ -975,7 +974,6 @@ float				visibleRange;
 			/* CALC UV COORDS */
 			/******************/
 
-	visibleRange = .15f;
 	v = (1.0f - gPlayerInfo[gCurrentSplitScreenPane].health) * .5f;
 
 			/* SET U'S FOR SCROLLING OF HEALTH BAR */
@@ -1014,7 +1012,6 @@ float				visibleRange;
 static void Infobar_DrawShield(void)
 {
 float				v;
-float				visibleRange;
 float				q;
 
 	q = gPlayerInfo[gCurrentSplitScreenPane].shieldPower / MAX_SHIELD_POWER;		// convert shield power to 0..1 value
@@ -1023,7 +1020,6 @@ float				q;
 			/* CALC UV COORDS */
 			/******************/
 
-	visibleRange = .15f;
 	v = (1.0f - q) * .5f;
 
 			/* SET U'S FOR SCROLLING OF SHIELD BAR */
@@ -1066,13 +1062,11 @@ float				q;
 static void Infobar_DrawFuel(void)
 {
 float				v;
-float				visibleRange;
 
 			/******************/
 			/* CALC UV COORDS */
 			/******************/
 
-	visibleRange = .15f;
 	v = (1.0f - gPlayerInfo[gCurrentSplitScreenPane].jetpackFuel) * .5f;
 
 			/* SET U'S FOR SCROLLING OF FUEL BAR */

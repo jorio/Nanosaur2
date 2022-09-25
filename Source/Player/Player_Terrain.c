@@ -1585,7 +1585,6 @@ static Boolean DoPlayerCollisionDetect(ObjNode *theNode, Boolean useBBoxForTerra
 {
 short		i;
 ObjNode		*hitObj;
-u_char		sides;
 float		distToFloor, terrainY, fps = gFramesPerSecondFrac;
 float		bottomOff;
 Boolean		killed = false;
@@ -1609,7 +1608,7 @@ uint32_t		ctype;
 
 				/* CALL DEFAULT HANDLER */
 
-	sides = HandleCollisions(theNode, ctype, -.2);
+	HandleCollisions(theNode, ctype, -.2);
 
 	killed = gPlayerIsDead[playerNum];							// see if player was killed during that
 

@@ -543,17 +543,16 @@ int	i;
 // OUTPUT: index to supertile
 //
 
-static u_short	BuildTerrainSuperTile(long	startCol, long startRow)
+static uint16_t	BuildTerrainSuperTile(long	startCol, long startRow)
 {
 long	 			row,col,row2,col2,numPoints,i;
-u_short				superTileNum;
+uint16_t			superTileNum;
 float				height,miny,maxy;
 MOVertexArrayData	*meshData;
 SuperTileMemoryType	*superTilePtr;
 OGLColorRGBA		*vertexColorList;
 MOTriangleIndecies	*triangleList;
 OGLPoint3D			*vertexPointList;
-OGLTextureCoord		*uvs;
 OGLVector3D			*vertexNormals;
 
 
@@ -599,7 +598,7 @@ OGLVector3D			*vertexNormals;
 	vertexPointList 		= meshData->points;									// get ptr to points list
 	vertexColorList 		= meshData->colorsFloat;							// get ptr to vertex color
 	vertexNormals			= meshData->normals;								// get ptr to vertex normals
-	uvs						= meshData->uvs[0];									// get ptr to uvs
+//	uvs						= meshData->uvs[0];									// get ptr to uvs
 
 	miny = 10000000;													// init bbox counters
 	maxy = -miny;

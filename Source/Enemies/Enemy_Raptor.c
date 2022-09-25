@@ -222,7 +222,6 @@ static	void(*myMoveTable[])(ObjNode *) =
 
 static void  MoveRaptor_Stand(ObjNode *theNode)
 {
-float	angleToTarget;
 float	dist;
 short	playerNum;
 
@@ -230,7 +229,7 @@ short	playerNum;
 
 	dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum);
 
-	angleToTarget = TurnObjectTowardTarget(theNode, &gCoord, gPlayerInfo[playerNum].coord.x,
+	TurnObjectTowardTarget(theNode, &gCoord, gPlayerInfo[playerNum].coord.x,
 										gPlayerInfo[playerNum].coord.z, RAPTOR_TURN_SPEED, false, nil);
 
 
@@ -326,6 +325,15 @@ ObjNode		*player;
 
 			dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z);							// calc dist to player
 			aim = TurnObjectTowardTarget(theNode, &gCoord, px, pz, RAPTOR_TURN_SPEED, true,  &cross);
+		}
+
+		else
+		{
+			// shouldn't happen
+#if _DEBUG
+			DoFatalAlert("MoveRaptor_Walk: unsupported mode");
+#endif
+			return;
 		}
 	}
 

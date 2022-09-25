@@ -410,7 +410,6 @@ float					autoFadeRangeFrac = gAutoFadeRange_Frac;
 long					i,numNubs,j;
 FenceDefType			*fence;
 OGLPoint3D				*nubs;
-Boolean					overrideAlphaFunc = false;
 Byte					buffNum;
 short					f;
 
@@ -455,19 +454,16 @@ short					f;
 				if (dist < autoFadeStart)
 					alpha = 1.0;
 				else
+				if (dist >= autoFadeEndDist)
+					alpha = 0.0;
+				else
 				{
-					overrideAlphaFunc = true;
-					if (dist >= autoFadeEndDist)
-						alpha = 0.0;
+					dist -= autoFadeStart;										// calc xparency %
+					dist *= autoFadeRangeFrac;
+					if (dist < 0.0f)
+						alpha = 0;
 					else
-					{
-						dist -= autoFadeStart;										// calc xparency %
-						dist *= autoFadeRangeFrac;
-						if (dist < 0.0f)
-							alpha = 0;
-						else
-							alpha = 1.0f - dist;
-					}
+						alpha = 1.0f - dist;
 				}
 
 				gFenceVertexArrays[buffNum].fenceColors[f][j].a = gFenceVertexArrays[buffNum].fenceColors[f][j+1].a = alpha;

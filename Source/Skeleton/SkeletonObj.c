@@ -122,10 +122,8 @@ ObjNode	*MakeNewSkeletonObject(NewObjectDefinitionType *newObjDef)
 {
 ObjNode	*newNode;
 int		type;
-float	scale;
 
 	type = newObjDef->type;
-	scale = newObjDef->scale;
 
 			/* CREATE NEW OBJECT NODE */
 
@@ -203,17 +201,14 @@ long	numAnims,numJoints;
 
 static void DisposeSkeletonDefinitionMemory(SkeletonDefType *skeleton)
 {
-short	j,numAnims,numJoints;
-
 	if (skeleton == nil)
 		return;
 
-	numAnims = skeleton->NumAnims;										// get # anims in skeleton
-	numJoints = skeleton->NumBones;
+	int numJoints = skeleton->NumBones;
 
 			/* NUKE THE SKELETON BONE POINT & NORMAL INDEX ARRAYS */
 
-	for (j=0; j < numJoints; j++)
+	for (int j = 0; j < numJoints; j++)
 	{
 		if (skeleton->Bones[j].pointList)
 			SafeDisposePtr(skeleton->Bones[j].pointList);
@@ -232,7 +227,7 @@ short	j,numAnims,numJoints;
 
 			/* DISPOSE JOINT INFO */
 
-	for (j=0; j < numJoints; j++)
+	for (int j = 0; j < numJoints; j++)
 	{
 		Free_2d_array(skeleton->JointKeyframes[j].keyFrames);		// dispose 2D array of keyframe data
 

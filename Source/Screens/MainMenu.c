@@ -303,7 +303,6 @@ static void BuildMainMenu(int menuLevel)
 ObjNode		*newObj;
 int			i;
 float		y,w;
-int			language;
 	gMenuMode = menuLevel;
 
 			/* DELETE EXISTING MENU DATA */
@@ -316,9 +315,6 @@ int			language;
 			gMenuItems[i] = nil;
 		}
 	}
-
-
-	language = gGamePrefs.language;
 
 
 	switch(menuLevel)

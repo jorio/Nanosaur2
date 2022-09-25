@@ -1736,8 +1736,6 @@ float	nx, ny, nz, oneOverDotD;
 static Boolean OGL_LineSegGetHitInfo_Skeleton(const OGLLineSegment *lineSeg, ObjNode *theNode,
 											OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal, float *hitDist)
 {
-short		i,numTriMeshes;
-short			skelType;
 OGLPoint3D	where;
 float		thisDist, bestDist = 100000000;
 Boolean		gotHit = false;
@@ -1754,8 +1752,8 @@ Byte		buffNum;
 
 				/* GET SKELETON DATA */
 
-	numTriMeshes = theNode->Skeleton->skeletonDefinition->numDecomposedTriMeshes;
-	skelType = theNode->Type;
+	int numTriMeshes = theNode->Skeleton->skeletonDefinition->numDecomposedTriMeshes;
+//	skelType = theNode->Type;
 
 //	buffNum = theNode->Skeleton->activeBuffer;
 	buffNum = gGameViewInfoPtr->frameCount & 1;
@@ -1764,7 +1762,7 @@ Byte		buffNum;
 			/* CHECK EACH MESH IN THE SKELETON */
 			/***********************************/
 
-	for (i = 0; i < numTriMeshes; i++)
+	for (int i = 0; i < numTriMeshes; i++)
 	{
 		if (OGL_DoesLineSegIntersectMesh(lineSeg, &lineVec, &theNode->Skeleton->deformedMeshes[buffNum][i],
 										&where, &thisNormal, &thisDist))

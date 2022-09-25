@@ -281,7 +281,7 @@ static void MoveConfettiGroups(ObjNode *theNode)
 uint32_t		flags;
 long		i,n,p;
 float		fps = gFramesPerSecondFrac;
-float		y,baseScale,oneOverBaseScaleSquared,gravity;
+float		y,gravity;
 float		decayRate,fadeRate;
 OGLPoint3D	*coord;
 OGLVector3D	*delta;
@@ -292,8 +292,8 @@ OGLVector3D	*delta;
 	{
 		if (gConfettiGroups[i])
 		{
-			baseScale 	= gConfettiGroups[i]->baseScale;					// get base scale
-			oneOverBaseScaleSquared = 1.0f/(baseScale*baseScale);
+			//baseScale 	= gConfettiGroups[i]->baseScale;					// get base scale
+			//oneOverBaseScaleSquared = 1.0f/(baseScale*baseScale);
 			gravity 	= gConfettiGroups[i]->gravity;						// get gravity
 			decayRate 	= gConfettiGroups[i]->decayRate;					// get decay rate
 			fadeRate 	= gConfettiGroups[i]->fadeRate;						// get fade rate

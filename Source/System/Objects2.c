@@ -440,7 +440,6 @@ ObjNode *shadowNode,*thisNodePtr;
 float	x,bottom,z,y;
 float	dist,scaleX,scaleZ;
 Boolean	onBlocker = false;
-int		kind;
 
 	if (theNode == nil)
 		return;
@@ -454,8 +453,6 @@ int		kind;
 	else
 		shadowNode->StatusBits &= ~STATUS_BIT_HIDDEN;
 
-
-	kind = shadowNode->Kind;
 
 	shadowNode->ColorFilter.a = theNode->ColorFilter.a * .9f;		// match fade and decay a little to adjust it how we want it
 
@@ -735,13 +732,13 @@ uint32_t		clipCodeAND;			// Clip test for entire object
 			switch (i)							// load current bbox corner in IX,IY,IZ
 			{
 				case	0:	lX = minX;	lY = minY;	lZ = minZ;	break;
-				case	1:							lZ = maxZ;	break;
-				case	2:				lY = maxY;	lZ = minZ;	break;
-				case	3:							lZ = maxZ;	break;
+				case	1:	lX = minX;	lY = minY;	lZ = maxZ;	break;
+				case	2:	lX = minX;	lY = maxY;	lZ = minZ;	break;
+				case	3:	lX = minX;	lY = maxY;	lZ = maxZ;	break;
 				case	4:	lX = maxX;	lY = minY;	lZ = minZ;	break;
-				case	5:							lZ = maxZ;	break;
-				case	6:				lY = maxY;	lZ = minZ;	break;
-				case	7:							lZ = maxZ;  break;
+				case	5:	lX = maxX;	lY = minY;	lZ = maxZ;	break;
+				case	6:	lX = maxX;	lY = maxY;	lZ = minZ;	break;
+				case	7:	lX = maxX;	lY = maxY;	lZ = maxZ;  break;
 			}
 
 			hW = lX * m30 + lY * m31 + lZ * m32 + m33;

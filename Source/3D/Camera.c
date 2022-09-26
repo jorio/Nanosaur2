@@ -72,12 +72,12 @@ static const float	gFlareOffsetTable[NUM_FLARES]=
 
 static const float	gFlareScaleTable[NUM_FLARES]=
 {
-	.3,
-	.06,
-	.1,
-	.2,
-	.03,
-	.1
+	.30f * (4.0f/3.0f),
+	.06f * (4.0f/3.0f),
+	.10f * (4.0f/3.0f),
+	.20f * (4.0f/3.0f),
+	.03f * (4.0f/3.0f),
+	.10f * (4.0f/3.0f),
 };
 
 static const Byte	gFlareImageTable[]=
@@ -184,8 +184,6 @@ float			oneOverAspect;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	oneOverAspect = 1.0f / gCurrentPaneAspectRatio;
-
 	for (i = 0; i < NUM_FLARES; i++)
 	{
 		float	sx,sy,o,fx,fy;
@@ -208,8 +206,9 @@ float			oneOverAspect;
 
 
 		o = gFlareOffsetTable[i];
-		sx = gFlareScaleTable[i];
-		sy = sx * oneOverAspect;
+
+		sy = gFlareScaleTable[i];
+		sx = sy * gCurrentPaneAspectRatio;
 
 		x = cx + axis.x * length * o;
 		y = cy + axis.y * length * o;

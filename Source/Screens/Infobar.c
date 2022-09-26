@@ -1349,43 +1349,34 @@ float   scale;
 // Called from Checkpoints.c whenever the player completes a new lap (except for winning lap).
 //
 
-void ShowLapNum(short playerNum)
+ObjNode* ShowLapNum(short playerNum)
 {
 short	lapNum;
 ObjNode	*newObj;
-float	aspectRatio;
-int		x,y,w,h;
 
 	lapNum = gPlayerInfo[playerNum].lapNum;
 
-	OGL_GetCurrentViewport(&x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
-	aspectRatio = (float)h/(float)w;
-
 			/* SEE IF TELL LAP */
 
-	if (lapNum > 0)
+	if (lapNum <= 0)
+		return NULL;
+
+	NewObjectDefinitionType def =
 	{
-		gNewObjectDefinition.group 		= SPRITE_GROUP_INFOBAR;
-		if (lapNum == 1)
-			gNewObjectDefinition.type 		= INFOBAR_SObjType_Lap2Message;
-		else
-			gNewObjectDefinition.type 		= INFOBAR_SObjType_FinalLapMessage;
-		gNewObjectDefinition.coord.x 	= 640/2;
-		gNewObjectDefinition.coord.y 	= 420.0f * aspectRatio;
-		gNewObjectDefinition.coord.z 	= 0;
-		gNewObjectDefinition.flags 		= 0;
-		gNewObjectDefinition.slot 		= SPRITE_SLOT;
-		gNewObjectDefinition.moveCall 	= MoveLapMessage;
-		gNewObjectDefinition.rot 		= 0;
-		gNewObjectDefinition.scale 	    = 170;
-		newObj = MakeSpriteObject(&gNewObjectDefinition, true);
+		.group		= SPRITE_GROUP_INFOBAR,
+		.type		= lapNum == 1 ? INFOBAR_SObjType_Lap2Message : INFOBAR_SObjType_FinalLapMessage,
+		.coord		= {640/2, 315, 0},
+		.flags		= STATUS_BIT_ONLYSHOWTHISPLAYER,
+		.slot		= SPRITE_SLOT,
+		.moveCall 	= MoveLapMessage,
+		.rot		= 0,
+		.scale		= 170,
+	};
 
-
-		newObj->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;			// only display for this player
-		newObj->PlayerNum = playerNum;
-
-		newObj->ColorFilter.a = 2.0f;
-	}
+	newObj = MakeSpriteObject(&def, true);
+	newObj->PlayerNum = playerNum;			// only show for this player
+	newObj->ColorFilter.a = 2.0f;
+	return newObj;
 }
 
 /************* MOVE LAP MESSAGE *****************/
@@ -1407,47 +1398,44 @@ static void MoveLapMessage(ObjNode *theNode)
 //			mode 2 : draw
 //
 
-void ShowWinLose(short playerNum, Byte mode)
+ObjNode* ShowWinLose(short playerNum, Byte mode)
 {
-float	aspectRatio;
-int		x,y,w,h;
 ObjNode *newObj;
-
-	OGL_GetCurrentViewport(&x, &y, &w, &h, playerNum);			// calc aspect ratio for this pane
-	aspectRatio = (float)h/(float)w;
-
-
-			/* MAKE SPRITE OBJECT */
+int spriteNum;
 
 	switch(mode)
 	{
 		case	0:
-				gNewObjectDefinition.type 		= INFOBAR_SObjType_YouWin;
+				spriteNum		= INFOBAR_SObjType_YouWin;
 				break;
 
 		case	1:
-				gNewObjectDefinition.type 		= INFOBAR_SObjType_YouLose;
+				spriteNum		= INFOBAR_SObjType_YouLose;
 				break;
 
 		case	2:
-				gNewObjectDefinition.type 		= INFOBAR_SObjType_YouDraw;
+				spriteNum		= INFOBAR_SObjType_YouDraw;
 				break;
 
+		default:
+				return NULL;
 	}
 
-	gNewObjectDefinition.coord.x 	= 640/2;
-	gNewObjectDefinition.coord.y 	= 400.0f;
-	gNewObjectDefinition.coord.z 	= 0;
-	gNewObjectDefinition.flags 		= STATUS_BIT_ONLYSHOWTHISPLAYER;
-	gNewObjectDefinition.slot 		= SPRITE_SLOT;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 	    = 230;
-	newObj = MakeSpriteObject(&gNewObjectDefinition, true);
+	NewObjectDefinitionType def =
+	{
+		.coord		= {640/2, 400, 0},
+		.flags		= STATUS_BIT_ONLYSHOWTHISPLAYER,
+		.slot		= SPRITE_SLOT,
+		.moveCall	= nil,
+		.rot		= 0,
+		.scale		= 230,
+		.group		= SPRITE_GROUP_INFOBAR,
+		.type		= spriteNum,
+	};
 
-
+	newObj = MakeSpriteObject(&def, true);
 	newObj->PlayerNum = playerNum;						// only show for this player
-
+	return newObj;
 }
 
 

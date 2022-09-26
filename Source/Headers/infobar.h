@@ -17,7 +17,6 @@ void Infobar_DrawNumber(int number, float x, float y, float scale, int numDigits
 
 void SetInfobarSpriteState(float anaglyphZ);
 
-void ShowLapNum(short playerNum);
-
-void ShowWinLose(short playerNum, Byte mode);
+ObjNode* ShowLapNum(short playerNum);
+ObjNode* ShowWinLose(short playerNum, Byte mode);
 

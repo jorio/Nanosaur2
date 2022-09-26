@@ -21,6 +21,7 @@
 
 #define MAX_LOCAL_PLAYERS MAX_PLAYERS
 #define gNumLocalPlayers gNumPlayers
+#define REQUIRE_LOCK_MAPPING 0
 
 #define kJoystickDeadZone				(33 * 32767 / 100)
 #define kJoystickDeadZone_UI			(66 * 32767 / 100)
@@ -411,7 +412,11 @@ int GetNeedState(int needID, int playerID)
 	}
 
 	// Fallback to KB/M
+#if REQUIRE_LOCK_MAPPING
 	if (gNumLocalPlayers <= 1 || controller->fallbackToKeyboard)
+#else
+	if (playerID == 0)
+#endif
 	{
 		return gNeedStates[needID];
 	}
@@ -434,7 +439,11 @@ float GetNeedAnalogValue(int needID, int playerID)
 	}
 
 	// Fallback to KB/M
+#if REQUIRE_LOCK_MAPPING
 	if (gNumLocalPlayers <= 1 || controller->fallbackToKeyboard)
+#else
+	if (playerID == 0)
+#endif
 	{
 		if (gNeedStates[needID] & KEYSTATE_ACTIVE_BIT)
 		{
@@ -797,6 +806,7 @@ static void OnJoystickRemoved(SDL_JoystickID joystickInstanceID)
 	TryFillUpVacantControllerSlots();
 }
 
+#if REQUIRE_LOCK_MAPPING
 void LockPlayerControllerMapping(void)
 {
 	int keyboardPlayer = gNumLocalPlayers-1;
@@ -815,6 +825,7 @@ void UnlockPlayerControllerMapping(void)
 	CompactControllerSlots();
 	TryFillUpVacantControllerSlots();
 }
+#endif
 
 #if 0
 const char* GetPlayerName(int whichPlayer)

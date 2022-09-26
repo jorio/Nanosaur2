@@ -73,9 +73,6 @@ short				gBestCheckpointNum[MAX_PLAYERS];
 OGLPoint3D			gBestCheckpointCoord[MAX_PLAYERS];
 float				gBestCheckpointAim[MAX_PLAYERS];
 
-int					gScratch = 0;
-float				gScratchF = 0;
-
 
 			/* LEVEL SONGS */
 

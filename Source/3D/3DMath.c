@@ -52,9 +52,6 @@ enum
 /*********************/
 
 const 	OGLVector3D	gUp = {0,1,0};
-#if defined(__VEC__)
-static void OGLMatrix4x4_Multiply_Altivec(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result);
-#endif
 static void OGLMatrix4x4_Multiply_Float(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result);
 
 
@@ -1583,13 +1580,7 @@ OGLMatrix4x4		negTransM, rotM;
 
 void OGLMatrix4x4_Multiply(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result)
 {
-#if defined(__VEC__)
-
-	if (gAltivec)
-		OGLMatrix4x4_Multiply_Altivec(mA, mB, result);
-	else
-#endif
-		OGLMatrix4x4_Multiply_Float(mA,mB, result);
+	OGLMatrix4x4_Multiply_Float(mA,mB, result);
 }
 
 
@@ -1597,7 +1588,6 @@ void OGLMatrix4x4_Multiply(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMa
 
 static void OGLMatrix4x4_Multiply_Float(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result)
 {
-#if 1
 	float	b00, b01, b02, b03;
 	float	b10, b11, b12, b13;
 	float	b20, b21, b22, b23;
@@ -1640,65 +1630,8 @@ static void OGLMatrix4x4_Multiply_Float(const OGLMatrix4x4	*mA, const OGLMatrix4
 	result->value[M13] = ax0*b01 + ax1*b11 + ax2*b21 + ax3*b31;
 	result->value[M23] = ax0*b02 + ax1*b12 + ax2*b22 + ax3*b32;
 	result->value[M33] = ax0*b03 + ax1*b13 + ax2*b23 + ax3*b33;
-#else
-
-	vSgemul(4,4,4, mA, 'n', mB, 'n', result);
-
-#endif
 }
 
-
-#if defined(__VEC__)
-
-/****************** OGL MATRIX 4X4 MULTIPLY ALTIVEC ********************/
-
-static void OGLMatrix4x4_Multiply_Altivec(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result)
-{
-	vector float A1,A2,A3,A4, B1, B2, B3, B4;
-	vector float zeroF = (vector float) vec_splat_u32(0);
-	vector float C1, C2, C3, C4;
-
-	/* LOAD MATRIX A */
-
-	A1 = vec_ld(  0, (float*) mA );
-	A2 = vec_ld( 16, (float*) mA );
-	A3 = vec_ld( 32, (float*) mA );
-	A4 = vec_ld( 48, (float*) mA );
-	B1 = vec_ld(  0, (float*) mB );
-	B2 = vec_ld( 16, (float*) mB );
-	B3 = vec_ld( 32, (float*) mB );
-	B4 = vec_ld( 48, (float*) mB );
-
-	//Do the first scalar x vector multiply for each row
-	C1 = vec_madd( vec_splat( A1, 0 ), B1, zeroF );
-	C2 = vec_madd( vec_splat( A2, 0 ), B1, zeroF );
-	C3 = vec_madd( vec_splat( A3, 0 ), B1, zeroF );
-	C4 = vec_madd( vec_splat( A4, 0 ), B1, zeroF );
-
-	//Accumulate in the second scalar x vector multiply for each row
-	C1 = vec_madd( vec_splat( A1, 1 ), B2, C1 );
-	C2 = vec_madd( vec_splat( A2, 1 ), B2, C2 );
-	C3 = vec_madd( vec_splat( A3, 1 ), B2, C3 );
-	C4 = vec_madd( vec_splat( A4, 1 ), B2, C4 );
-
-	//Accumulate in the third scalar x vector multiply for each row
-	C1 = vec_madd( vec_splat( A1, 2 ), B3, C1 );
-	C2 = vec_madd( vec_splat( A2, 2 ), B3, C2 );
-	C3 = vec_madd( vec_splat( A3, 2 ), B3, C3 );
-	C4 = vec_madd( vec_splat( A4, 2 ), B3, C4 );
-
-	//Accumulate in the fourth scalar x vector multiply for each row
-	C1 = vec_madd( vec_splat( A1, 3 ), B4, C1 );
-	C2 = vec_madd( vec_splat( A2, 3 ), B4, C2 );
-	C3 = vec_madd( vec_splat( A3, 3 ), B4, C3 );
-	C4 = vec_madd( vec_splat( A4, 3 ), B4, C4 );
-
-	vec_st( C1,  0, (float*) result );
-	vec_st( C2, 16, (float*) result );
-	vec_st( C3, 32, (float*) result );
-	vec_st( C4, 48, (float*) result );
-}
-#endif
 
 /************** MATRIX4X4 SET TRANSLATE ******************/
 

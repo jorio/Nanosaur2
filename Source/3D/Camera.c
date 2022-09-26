@@ -27,11 +27,6 @@ static void UpdateCamera_FirstPerson(short i);
 /****************************/
 
 
-#define	CAM_MINY			60.0f
-
-#define	CAMERA_CLOSEST		75.0f
-#define	CAMERA_FARTHEST		400.0f
-
 #define	NUM_FLARE_TYPES		4
 #define	NUM_FLARES			6
 
@@ -56,10 +51,7 @@ static OGLCameraPlacement	gAnaglyphCameraBackup[MAX_PLAYERS];		// backup of orig
 Boolean				gCameraInExitMode = false;
 Boolean				gDrawLensFlare = true;
 
-float				gCameraStartupTimer;
-
 static float		gCameraLookAtAccel,gCameraFromAccel;
-float				gMinHeightOffGround, gTopCamDist, gMaxCameraHeightOff;
 
 Boolean				gCameraInDeathDiveMode[MAX_PLAYERS] = {false, false};
 
@@ -67,7 +59,7 @@ static OGLPoint3D	gSunCoord;
 
 Byte				gCameraMode[MAX_PLAYERS] = {CAMERA_MODE_NORMAL, CAMERA_MODE_NORMAL};
 
-static const float	gFlareOffsetTable[]=
+static const float	gFlareOffsetTable[NUM_FLARES]=
 {
 	1.0,
 	.6,
@@ -78,7 +70,7 @@ static const float	gFlareOffsetTable[]=
 };
 
 
-static const float	gFlareScaleTable[]=
+static const float	gFlareScaleTable[NUM_FLARES]=
 {
 	.3,
 	.06,
@@ -318,18 +310,9 @@ ObjNode	*playerObj = gPlayerInfo[playerNum].objNode;
 
 static void ResetCameraSettings(void)
 {
-	gTopCamDist = 300.0f;
-
 	gCameraFromAccel 	= MAX_CAMERA_ACCEL;
-
-	gMinHeightOffGround = 60;
-
 	gCameraInExitMode = false;
-
 	gCameraLookAtAccel 	= 8.0;
-
-	gMaxCameraHeightOff = MAX_ALTITUDE_DIFF * 1.2f;
-
 }
 
 

@@ -29,6 +29,7 @@ static void MakeSubtitleObjects(int slideNum);
 
 enum
 {
+	INTROSTORY_SObjType_PangeaLogo,
 	INTROSTORY_SObjType_Image1,
 	INTROSTORY_SObjType_Image2,
 	INTROSTORY_SObjType_Image3,
@@ -36,9 +37,7 @@ enum
 	INTROSTORY_SObjType_Image5,
 	INTROSTORY_SObjType_Image6,
 	INTROSTORY_SObjType_Image7,
-
 	INTROSTORY_SObjType_NanoLogo,
-	INTROSTORY_SObjType_PangeaLogo
 };
 
 #define	NUM_SLIDES	9
@@ -300,7 +299,6 @@ static void SetupIntroStoryScreen(void)
 {
 FSSpec				spec;
 OGLSetupInputType	viewDef;
-short				i;
 
 
 			/**************/
@@ -330,7 +328,20 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroup(SPRITE_GROUP_INTROSTORY, ":sprites:introstory.sprites", 0);
+	static const char* introSlides[NUM_SLIDES] =
+	{
+		":images:intro0.jpg",
+		":images:intro1.jpg",
+		":images:intro2.jpg",
+		":images:intro3.jpg",
+		":images:intro4.jpg",
+		":images:intro5.jpg",
+		":images:intro6.jpg",
+		":images:intro7.jpg",
+		":images:intro8.jpg",
+	};
+
+	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, introSlides, 0);
 	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);

@@ -46,8 +46,8 @@ enum
 	BG3D_MATERIALFLAG_CLAMP_V		=	(1<<3),
 	BG3D_MATERIALFLAG_MULTITEXTURE	=	(1<<4),
 	BG3D_MATERIALFLAG_CLAMP_U_TRUE	=	(1<<5),	// this flag is set after glTexParameterf has been called to set clamping for this texture
-	BG3D_MATERIALFLAG_CLAMP_V_TRUE	=	(1<<6)
-
+	BG3D_MATERIALFLAG_CLAMP_V_TRUE	=	(1<<6),
+	BG3D_MATERIALFLAG_UPRIGHT_V		=	(1<<7),
 };
 
 

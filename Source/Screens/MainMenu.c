@@ -217,7 +217,7 @@ again:
 	else
 	if (gDoCredits)
 	{
-		DisplayPicture(":images:credits");
+		DisplayPicture(":images:credits.jpg");
 		goto again;
 	}
 }

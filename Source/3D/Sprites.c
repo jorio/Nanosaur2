@@ -1,7 +1,8 @@
 /****************************/
 /*   	SPRITES.C			*/
-/* (c)2003 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -86,6 +87,68 @@ int 		i,n;
 
 
 
+/********************** ALLOCATE SPRITE GROUP **************************/
+
+void AllocSpriteGroup(int groupNum, int capacity)
+{
+	GAME_ASSERT_MESSAGE(!gSpriteGroupList[groupNum], "Sprite group already allocated");
+	GAME_ASSERT(gNumSpritesInGroupList[groupNum] == 0);
+
+	gNumSpritesInGroupList[groupNum] = capacity;
+
+	gSpriteGroupList[groupNum] = (SpriteType *)AllocPtrClear(sizeof(SpriteType) * capacity);
+	GAME_ASSERT(gSpriteGroupList[groupNum]);
+}
+
+
+/************** LOAD SPRITE GROUP FROM IMAGE FILES ********************/
+
+void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, int flags)
+{
+	AllocSpriteGroup(groupNum, numSprites);
+
+	for (int i = 0; i < numSprites; i++)
+	{
+			/* LOAD TEXTURE FROM IMAGE FILE */
+
+		int width = 0;
+		int height = 0;
+		GLuint textureName = OGL_TextureMap_LoadImageFile(paths[i], &width, &height);
+		GAME_ASSERT(textureName);
+
+			/* SET UP MATERIAL */
+
+		MOMaterialData	matData =
+		{
+			.setupInfo		= gGameViewInfoPtr,
+			.flags			= BG3D_MATERIALFLAG_TEXTURED
+								| BG3D_MATERIALFLAG_ALWAYSBLEND		// assume all files have alpha
+								| BG3D_MATERIALFLAG_UPRIGHT_V,		// unlike .sprites files, standalone image files aren't flipped vertically
+			.diffuseColor	= {1, 1, 1, 1},
+			.width			= width,
+			.height			= height,
+			.pixelSrcFormat	= GL_UNSIGNED_BYTE,						// see OGL_TextureMap_LoadImageFile
+			.pixelDstFormat	= GL_RGBA,								// see OGL_TextureMap_LoadImageFile
+			.numMipmaps		= 1,
+			.texturePixels	= {NULL},								// we've preloaded the texture
+			.textureName	= {textureName},
+		};
+
+			/* SET SPRITE INFO */
+
+		gSpriteGroupList[groupNum][i] = (SpriteType)
+		{
+			.width = width,
+			.height = height,
+			.aspectRatio = (float)height / (float)width,
+			.materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData),
+		};
+
+		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
+	}
+}
+
+
 /********************** LOAD SPRITE FILE **************************/
 //
 // NOTE:  	All sprite files must be imported AFTER the draw context has been created,
@@ -95,8 +158,8 @@ int 		i,n;
 void LoadSpriteGroup(int groupNum, const char* fileName, int flags)
 {
 short			refNum;
-int				i,w,h;
-long			count, j;
+int				w,h;
+long			count;
 MOMaterialData	matData;
 
 	(void) flags;
@@ -112,23 +175,22 @@ MOMaterialData	matData;
 
 		/* READ # SPRITES IN THIS FILE */
 
-	count = sizeof(int32_t);
-	FSRead(refNum, &count, (Ptr) &gNumSpritesInGroupList[groupNum]);
+	int32_t numSprites = 0;
+	count = sizeof(numSprites);
+	FSRead(refNum, &count, (Ptr) &numSprites);
 
-	gNumSpritesInGroupList[groupNum] = SwizzleLong(&gNumSpritesInGroupList[groupNum]);
-
+	numSprites = SwizzleLong(&numSprites);
 
 		/* ALLOCATE MEMORY FOR SPRITE RECORDS */
 
-	gSpriteGroupList[groupNum] = (SpriteType *)AllocPtr(sizeof(SpriteType) * gNumSpritesInGroupList[groupNum]);
-	GAME_ASSERT(gSpriteGroupList[groupNum]);
+	AllocSpriteGroup(groupNum, numSprites);
 
 
 			/********************/
 			/* READ EACH SPRITE */
 			/********************/
 
-	for (i = 0; i < gNumSpritesInGroupList[groupNum]; i++)
+	for (int i = 0; i < numSprites; i++)
 	{
 		uint32_t *buffer;
 		uint32_t	hasAlpha;
@@ -202,7 +264,7 @@ MOMaterialData	matData;
 
 				FSRead(refNum, &count, (Ptr) alphaBuffer);			// read alpha channel
 
-				for (j = 0; j < count; j++)
+				for (int j = 0; j < count; j++)
 				{
 					uint32_t	pixel = buffer[j];
 
@@ -256,8 +318,6 @@ MOMaterialData	matData;
 		/* CLOSE FILE */
 
 	FSClose(refNum);
-
-
 }
 
 
@@ -386,6 +446,7 @@ MOSpriteSetupData	spriteData;
 	return(newObj);
 }
 
+#if 0
 
 /*********************** MODIFY SPRITE OBJECT IMAGE ******************************/
 
@@ -426,6 +487,8 @@ MOSpriteObject		*spriteMO;
 	theNode->SpriteMO = spriteMO;
 	theNode->Type = type;
 }
+
+#endif
 
 
 #pragma mark -
@@ -481,6 +544,7 @@ MOMaterialObject	*m;
 }
 
 
+#if 0
 /************************** DRAW SPRITE ************************/
 
 void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags)
@@ -530,7 +594,7 @@ void DrawSprite(int	group, int type, float x, float y, float scale, float rot, u
 
 	gPolysThisFrame += 2;						// 2 tris drawn
 }
-
+#endif
 
 
 

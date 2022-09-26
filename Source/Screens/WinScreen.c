@@ -143,7 +143,12 @@ short				i;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroup(SPRITE_GROUP_INTROSTORY, ":sprites:win.sprites", 0);
+	static const char* winSlides[NUM_SLIDES] =
+	{
+		":images:win.jpg",
+	};
+
+	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, winSlides, 0);
 
 
 

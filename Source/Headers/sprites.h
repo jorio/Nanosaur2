@@ -21,11 +21,11 @@ typedef struct
 void InitSpriteManager(void);
 void DisposeAllSpriteGroups(void);
 void DisposeSpriteGroup(int groupNum);
+void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, int flags);
 void LoadSpriteGroup(int groupNum, const char* fileName, int flags);
 ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, Boolean drawCentered);
 void BlendAllSpritesInGroup(short group);
 void ModifySpriteObjectFrame(ObjNode *theNode, short type);
-void DrawSprite(int	group, int type, float x, float y, float scale, float rot, uint32_t flags);
 void BlendASprite(int group, int type);
 
 ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, Boolean center);

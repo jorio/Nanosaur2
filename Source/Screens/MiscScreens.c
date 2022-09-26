@@ -568,6 +568,9 @@ do_again:
 
 void DrawLoading(float percent)
 {
+	// Prevent the OS from thinking our process has locked up
+	DoSDLMaintenance();
+
 	OGL_DrawScene(DrawLoading_Callback);
 
 	gLoadingThermoPercent = percent;

@@ -132,7 +132,7 @@ again:
 			/* NEW MENU SETUP */
 
 	MenuStyle style = kDefaultMenuStyle;
-	style.yOffset = 40 +  700.0f * gGameViewInfoPtr->windowAspectRatio  * .5f;
+	style.yOffset = 302.5f;
 	style.fadeOutSceneOnExit = false;
 	int outcome = StartMenu(gMainMenuTree, &style, MoveObjects, DrawMainMenuCallback);
 
@@ -504,8 +504,7 @@ float		y,w;
 
 static float CalcMenuTopY(long numLines)
 {
-//float	centerY = 640.0f * gGameViewInfoPtr->windowAspectRatio  * .5f;
-float	centerY = 700.0f * gGameViewInfoPtr->windowAspectRatio  * .5f;
+float	centerY = 262.5;
 float	y;
 
 	y = centerY - (float)numLines * .5f * LINE_SPACING;
@@ -930,7 +929,8 @@ float	x,y;
 
 static void CalcGameCursorCoord(void)
 {
-float	bottom = 640.0f * gCurrentPaneAspectRatio;
+	extern OGLRect gLogicalRect;
+
 
 			/*****************************/
 			/* UPDATE CROSSHAIR POSITION */
@@ -942,21 +942,10 @@ float	bottom = 640.0f * gCurrentPaneAspectRatio;
 	SDL_GetMouseState(&mx, &my);
 	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
 
-	gCursorCoord.x = ((float)mx / (float)ww) * 640.0f;
-	gCursorCoord.y = ((float)my / (float)wh) * bottom;
+	float screenToPaneX = (gLogicalRect.right - gLogicalRect.left) / (float)ww;
+	float screenToPaneY = (gLogicalRect.bottom - gLogicalRect.top) / (float)wh;
 
-#if 0
-	if (gCursorCoord.x < 0.0f)										// keep in bounds (for multiple monitor systems)
-		gCursorCoord.x = 0.0f;
-	else
-	if (gCursorCoord.x > 640.0f)
-		gCursorCoord.x = 640.0f;
-
-	if (gCursorCoord.y < 0.0f)
-		gCursorCoord.y = 0.0f;
-	else
-	if (gCursorCoord.y > bottom)
-		gCursorCoord.y = bottom;
-#endif
+	gCursorCoord.x = (float)mx * screenToPaneX + gLogicalRect.left;
+	gCursorCoord.y = (float)my * screenToPaneY + gLogicalRect.top;
 }
 

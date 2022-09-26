@@ -112,7 +112,6 @@ static void InitPausedObjects(void)
 {
 float	w, y;
 ObjNode	*newObj;
-float	aspectRatio;
 int		px,py,pw,ph;
 
 static const LocStrID names[NUM_PAUSED_MENU_ITEMS] =
@@ -154,10 +153,10 @@ static const LocStrID names[NUM_PAUSED_MENU_ITEMS] =
 		/* BUILD PAUSED MENU */
 		/*********************/
 
-	OGL_GetCurrentViewport(&px, &py, &pw, &ph, 0);			// calc aspect ratio for player #0's pane
-	aspectRatio = (float)ph/(float)pw;
+//	OGL_GetCurrentViewport(&px, &py, &pw, &ph, 0);			// calc aspect ratio for player #0's pane
+//	aspectRatio = (float)ph/(float)pw;
 
-	y = 250.0f * aspectRatio;
+	y = 187.5;
 
 	for (int i = 0; i < NUM_PAUSED_MENU_ITEMS; i++)
 	{

@@ -272,7 +272,7 @@ short	i;
 	gGameViewInfoPtr->useFog			= setupDefPtr->styles.useFog;
 	gGameViewInfoPtr->clearBackBuffer	= setupDefPtr->view.clearBackBuffer;
 	gGameViewInfoPtr->clearColor		= setupDefPtr->view.clearColor;
-	gGameViewInfoPtr->windowAspectRatio = (float)gGameWindowHeight / (float)gGameWindowWidth;
+//	gGameViewInfoPtr->windowAspectRatio = (float)gGameWindowHeight / (float)gGameWindowWidth;
 
 	gGameViewInfoPtr->isActive = true;									// it's now an active structure
 

@@ -189,7 +189,7 @@ ObjNode	*slideObj;
 		gNewObjectDefinition.group 		= SPRITE_GROUP_INTROSTORY;
 		gNewObjectDefinition.type 		= gSlides[i].spriteNum;
 		gNewObjectDefinition.coord.x 	= 640.0f * gSlides[i].x;
-		gNewObjectDefinition.coord.y 	= 640.0f * gGameViewInfoPtr->windowAspectRatio * gSlides[i].y;
+		gNewObjectDefinition.coord.y 	= 480.0f * gSlides[i].y;
 		gNewObjectDefinition.coord.z 	= 0;
 		gNewObjectDefinition.flags 		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZBUFFER;
 		gNewObjectDefinition.slot 		= SPRITE_SLOT - i;

@@ -373,16 +373,15 @@ static void FreeIntroStoryScreen(void)
 
 static void BuildSlideShowObjects(void)
 {
-short	i;
 ObjNode	*slideObj;
 
 
-	for (i = 0; i < NUM_SLIDES; i++)
+	for (int i = 0; i < NUM_SLIDES; i++)
 	{
 		gNewObjectDefinition.group 		= SPRITE_GROUP_INTROSTORY;
 		gNewObjectDefinition.type 		= gSlides[i].spriteNum;
 		gNewObjectDefinition.coord.x 	= 640.0f * gSlides[i].x;
-		gNewObjectDefinition.coord.y 	= 640.0f * gGameViewInfoPtr->windowAspectRatio * gSlides[i].y;
+		gNewObjectDefinition.coord.y 	= 480.0f * gSlides[i].y;
 		gNewObjectDefinition.coord.z 	= 0;
 		gNewObjectDefinition.flags 		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZBUFFER;
 		gNewObjectDefinition.slot 		= SPRITE_SLOT - i;
@@ -577,7 +576,7 @@ static void MakeSubtitleObjects(int slideNum)
 		{
 			NewObjectDefinitionType def =
 			{
-				.coord = {640/2, 640*gCurrentPaneAspectRatio-60 + 22*subRow, 0},
+				.coord = {640/2, 480-60 + 22*subRow, 0},
 				.scale = 35 * 0.5f,
 				.slot = SPRITE_SLOT,
 				.group = SPRITE_GROUP_FONT,

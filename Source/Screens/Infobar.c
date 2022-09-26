@@ -41,11 +41,11 @@ static void MoveLapMessage(ObjNode *theNode);
 #define MAP_SCALE	80.0f
 #define MAP_SCALE2	(MAP_SCALE * .8 * .5)
 #define	MAP_X		(665.0f - MAP_SCALE)
-#define	MAP_Y		((640.0f * gCurrentPaneAspectRatio - MAP_SCALE * .6f))
+#define	MAP_Y		((480 - MAP_SCALE * .6f))
 
 #define	LIVES_SCALE		25.0f
 #define	LIVES_X			0.0f
-#define	LIVES_Y			(610.0f * gCurrentPaneAspectRatio - LIVES_SCALE * .6f)
+#define	LIVES_Y			(457.5f - LIVES_SCALE * .6f)
 
 #define	WEAPON_X		150.0f
 #define	WEAPON_Y		0
@@ -69,7 +69,7 @@ static void MoveLapMessage(ObjNode *theNode);
 
 #define	PLAYER_X		0.0f
 #define	PLAYER_Y		HEALTH_SCALE
-#define	PLAYER_SCALE	(80.0f * gCurrentPaneAspectRatio)
+#define	PLAYER_SCALE	60.0f
 
 
 #define	EGGS_X			558.0f
@@ -80,10 +80,10 @@ static void MoveLapMessage(ObjNode *theNode);
 #define	CAP_EGGS_Y			0
 #define	CAP_EGGS_SCALE		25.0f
 
-#define ARROW_SCALE		(50.0f * gCurrentPaneAspectRatio)
+#define ARROW_SCALE		37.5f
 
 
-#define	GUNSIGHT_SCALE	20.0f
+#define	GUNSIGHT_SCALE	15.0f
 
 #define	DIGIT_WIDTH		.58f
 
@@ -92,6 +92,8 @@ static void MoveLapMessage(ObjNode *theNode);
 /*********************/
 /*    VARIABLES      */
 /*********************/
+
+OGLRect gLogicalRect;
 
 Boolean			gHideInfobar = false;
 
@@ -381,6 +383,36 @@ void SetInfobarSpriteState(float anaglyphZ)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
+	int drawableW = 1;
+	int drawableH = 1;
+	SDL_GL_GetDrawableSize(gSDLWindow, &drawableW, &drawableH);
+
+	float referenceW = 640;
+	float referenceH = 480;
+	float referenceAR = referenceW / referenceH;
+
+	float logicalW;
+	float logicalH;
+
+	float drawableAR = drawableW / (float) drawableH;
+	if (drawableAR >= referenceAR)
+	{
+		// wide
+		logicalW = referenceH * drawableAR;
+		logicalH = referenceH;
+	}
+	else
+	{
+		// tall
+		logicalW = referenceW;
+		logicalH = referenceW / drawableAR;
+	}
+
+	gLogicalRect.left	= (referenceW - logicalW) * 0.5f;
+	gLogicalRect.top	= (referenceH - logicalH) * 0.5f;
+	gLogicalRect.right	= gLogicalRect.left + logicalW;
+	gLogicalRect.bottom	= gLogicalRect.top + logicalH;
+
 	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 	{
 		if (gAnaglyphPass == 0)
@@ -389,7 +421,9 @@ void SetInfobarSpriteState(float anaglyphZ)
 			glOrtho(anaglyphZ, 640+anaglyphZ, 640.0f * gCurrentPaneAspectRatio, 0, 0, 1);
 	}
 	else
-		glOrtho(0, 640, 640.0f * gCurrentPaneAspectRatio, 0, 0, 1);
+	{
+		glOrtho(gLogicalRect.left, gLogicalRect.right, gLogicalRect.bottom, gLogicalRect.top, 0, 1);
+	}
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -1258,20 +1292,20 @@ float   scale;
 	n = gRaceReadySetGoTimer + 1;
 	if (n >= 0)
 	{
-		scale = 180.0f * gCurrentPaneAspectRatio;
+		scale = 135.0f;
 
 		switch(n)
 		{
 			case	2:
-					DrawInfobarSprite_Centered(640/2, 430.0f * gCurrentPaneAspectRatio, scale, INFOBAR_SObjType_Ready);
+					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Ready);
 					break;
 
 			case	1:
-					DrawInfobarSprite_Centered(640/2, 430.0f * gCurrentPaneAspectRatio, scale, INFOBAR_SObjType_Set);
+					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Set);
 					break;
 
 			case	0:
-					DrawInfobarSprite_Centered(640/2, 430.0f * gCurrentPaneAspectRatio, scale, INFOBAR_SObjType_Go);
+					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Go);
 					break;
 		}
 	}
@@ -1279,7 +1313,7 @@ float   scale;
 
 			/* DRAW PLACE */
 
-	scale = 80.0f * gCurrentPaneAspectRatio;
+	scale = 60.0f;
 
 	place = gPlayerInfo[playerNum].place;
 	DrawInfobarSprite(300, 0, scale, INFOBAR_SObjType_Place1+place);
@@ -1302,7 +1336,7 @@ float   scale;
 	if (gPlayerInfo[playerNum].wrongWay)
 	{
 		gGlobalTransparency = .6;
-		DrawInfobarSprite_Centered(640/2, 320*gCurrentPaneAspectRatio, 80, INFOBAR_SObjType_WrongWay);
+		DrawInfobarSprite_Centered(640/2, 480/2, 80, INFOBAR_SObjType_WrongWay);
 		gGlobalTransparency = 1.0;
 	}
 }
@@ -1402,7 +1436,7 @@ ObjNode *newObj;
 	}
 
 	gNewObjectDefinition.coord.x 	= 640/2;
-	gNewObjectDefinition.coord.y 	= 400.0f * aspectRatio;
+	gNewObjectDefinition.coord.y 	= 400.0f;
 	gNewObjectDefinition.coord.z 	= 0;
 	gNewObjectDefinition.flags 		= STATUS_BIT_ONLYSHOWTHISPLAYER;
 	gNewObjectDefinition.slot 		= SPRITE_SLOT;
@@ -1458,11 +1492,11 @@ float		dot, cross;
 		cross = OGLVector2D_Cross(&v, &v2);								// sign of cross tells us which side
 		if (cross > 0.0f)
 		{
-			DrawInfobarSprite(0, 320*gCurrentPaneAspectRatio, ARROW_SCALE, INFOBAR_SObjType_LeftArrow);
+			DrawInfobarSprite(0, 480/2, ARROW_SCALE, INFOBAR_SObjType_LeftArrow);
 		}
 		else
 		{
-			DrawInfobarSprite(640-ARROW_SCALE, 320*gCurrentPaneAspectRatio, ARROW_SCALE, INFOBAR_SObjType_RightArrow);
+			DrawInfobarSprite(640-ARROW_SCALE, 480/2, ARROW_SCALE, INFOBAR_SObjType_RightArrow);
 		}
 		gGlobalTransparency = 1.0f;
 	}
@@ -1655,13 +1689,16 @@ float		scale;
 
 	OGL_GetCurrentViewport(&px, &py, &pw, &ph, playerNum);
 
-	screenToPaneX = (640.0f / (float)pw);
-	screenToPaneY = (640.0f * gCurrentPaneAspectRatio) / (float)ph;
+	float lrw = gLogicalRect.right - gLogicalRect.left;
+	float lrh = gLogicalRect.bottom - gLogicalRect.top;
+
+	screenToPaneX = lrw / (float)pw;
+	screenToPaneY = lrh / (float)ph;
 
 
 			/* SET SCALE BASED ON ASPECT RATIO */
 
-	scale = gCurrentPaneAspectRatio * GUNSIGHT_SCALE;
+	scale = GUNSIGHT_SCALE;
 
 
 			/*******************************/
@@ -1678,6 +1715,9 @@ float		scale;
 	OGLPoint3D_Transform(&gPlayerInfo[playerNum].crosshairCoord[0],	&gWorldToWindowMatrix[playerNum], &screenCoord);
 	screenCoord.x = screenCoord.x * screenToPaneX;
 	screenCoord.y = screenCoord.y * screenToPaneY;
+	screenCoord.x += gLogicalRect.left;
+	screenCoord.y += gLogicalRect.top;
+
 
 	if (lockedOn)
 	{
@@ -1714,6 +1754,8 @@ float		scale;
 	OGLPoint3D_Transform(&gPlayerInfo[playerNum].crosshairCoord[1],	&gWorldToWindowMatrix[playerNum], &screenCoord);
 	screenCoord.x = screenCoord.x * screenToPaneX;
 	screenCoord.y = screenCoord.y * screenToPaneY;
+	screenCoord.x += gLogicalRect.left;
+	screenCoord.y += gLogicalRect.top;
 
 	DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale * .6, INFOBAR_SObjType_GunSight_Normal);
 

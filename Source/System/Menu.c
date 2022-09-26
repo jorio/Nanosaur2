@@ -170,7 +170,7 @@ typedef struct
 	int					historyPos;
 
 	bool				mouseHoverValid;
-//	int					mouseHoverColumn;
+	int					mouseHoverColumn;
 #if USE_SDL_CURSOR
 	SDL_Cursor*			handCursor;
 	SDL_Cursor*			standardCursor;
@@ -203,7 +203,7 @@ static void InitMenuNavigation(void)
 	memcpy(&nav->style, &kDefaultMenuStyle, sizeof(MenuStyle));
 	nav->menuPick = -1;
 	nav->menuState = kMenuStateOff;
-//	nav->mouseHoverColumn = -1;
+	nav->mouseHoverColumn = -1;
 
 #if USE_SDL_CURSOR
 	nav->standardCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
@@ -827,17 +827,31 @@ static void NavigateSettingEntriesVertically(int delta)
 
 static void NavigateSettingEntriesMouseHover(void)
 {
-#if 0
-	if (!gMouseMotionNow)
-	{
-		return;
-	}
+	static int pMxRaw = -1, pMyRaw = -1;
 
 	int mxRaw, myRaw;
 	SDL_GetMouseState(&mxRaw, &myRaw);
 
-	float mx = (mxRaw - gGameWindowWidth/2.0f) * g2DLogicalWidth / gGameWindowWidth;
-	float my = (myRaw - gGameWindowHeight/2.0f) * g2DLogicalHeight / gGameWindowHeight;
+	if (mxRaw == pMxRaw && myRaw == pMyRaw)
+	{
+		return;
+	}
+
+	pMxRaw = mxRaw;
+	pMyRaw = myRaw;
+
+	float g2DLogicalWidth = 640;	//TODO----TEMP
+	float g2DLogicalHeight = 480;
+	int MAX_MENU_COLS = 4;
+
+	int ww, wh;
+	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
+
+
+	float mx = (mxRaw /*- ww/2.0f*/) * g2DLogicalWidth / ww;
+	float my = (myRaw /*- wh/2.0f*/) * g2DLogicalHeight / wh;
+
+	printf("%f %f\n", mx, my);
 
 	gNav->mouseHoverValid = false;
 	gNav->mouseHoverColumn = -1;
@@ -853,11 +867,12 @@ static void NavigateSettingEntriesMouseHover(void)
 		fullExtents.top		= fullExtents.left	= 100000;
 		fullExtents.bottom	= fullExtents.right	= -100000;
 
-		for (int col = 0; col < MAX_MENU_COLS; col++)
+		ObjNode* textNode = gNav->menuObjects[row];
+		for (int col = 0; textNode; col++, textNode=textNode->ChainNode)
 		{
-			ObjNode* textNode = gNav->menuObjects[row][col];
-			if (!textNode)
-				continue;
+			//ObjNode* textNode = gNav->menuObjects[row][col];
+			//if (!textNode)
+			//	continue;
 
 			OGLRect extents = TextMesh_GetExtents(textNode);
 			if (extents.top		< fullExtents.top	) fullExtents.top		= extents.top;
@@ -881,7 +896,9 @@ static void NavigateSettingEntriesMouseHover(void)
 		{
 			gNav->mouseHoverValid = true;
 
+#if USE_SDL_CURSOR
 			SetHandMouseCursor();				// set hand cursor
+#endif
 
 			if (gNav->menuRow != row)
 			{
@@ -895,6 +912,7 @@ static void NavigateSettingEntriesMouseHover(void)
 
 	GAME_ASSERT(!gNav->mouseHoverValid);		// if we got here, we're not hovering over anything
 
+#if USE_SDL_CURSOR
 	SetStandardMouseCursor();					// restore standard cursor
 #endif
 }
@@ -1395,7 +1413,7 @@ static void NavigateMenu(void)
 	}
 	else
 	{
-//		NavigateSettingEntriesMouseHover();
+		NavigateSettingEntriesMouseHover();
 	}
 
 	const MenuItem* entry = &gNav->menu[gNav->menuRow];

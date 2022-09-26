@@ -285,7 +285,7 @@ ObjNode	*newObj;
 				gNewObjectDefinition.group 		= SPRITE_GROUP_MAINMENU;
 				gNewObjectDefinition.type 		= MAINMENU_SObjType_PressAnyKey;
 				gNewObjectDefinition.coord.x 	= 640/2;
-				gNewObjectDefinition.coord.y 	= 600.0f * gGameViewInfoPtr->windowAspectRatio;
+				gNewObjectDefinition.coord.y 	= 450;
 				gNewObjectDefinition.coord.z 	= 0;
 				gNewObjectDefinition.flags 		= 0;
 				gNewObjectDefinition.slot 		= SPRITE_SLOT;
@@ -551,10 +551,7 @@ static float		waveX = 0, waveY = 1.0;
 
 static void MakeLevelIntroSaveSprites(void)
 {
-float	aspect, y;
-
-	aspect = gGameViewInfoPtr->windowAspectRatio;
-	y = 500.0f * aspect;
+	float y = 375.0f;
 
 			/* CURSOR */
 

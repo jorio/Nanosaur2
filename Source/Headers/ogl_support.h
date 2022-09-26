@@ -229,7 +229,7 @@ typedef struct
 	Boolean					isActive;
 //	AGLContext				drawContext;
 	Rect					clip;				// not pane size, but clip:  left = amount to clip off left
-	float					windowAspectRatio;
+//	float					windowAspectRatio;
 
 	OGLLightDefType			lightList;
 	OGLCameraPlacement		cameraPlacement[MAX_SPLITSCREENS];	// 2 cameras, one for each viewport/player

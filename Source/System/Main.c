@@ -1028,12 +1028,14 @@ unsigned long	someLong;
 	SDL_ShowCursor(0);
 
 
+#if !SKIPFLUFF
 		/* SHOW TITLES */
 
 	DoLegalScreen();
 
 	DoIntroStoryScreen();
 
+#endif
 
 
 		/*************/

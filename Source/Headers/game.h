@@ -10,6 +10,10 @@
 #define __LITTLE_ENDIAN__ 1
 #endif
 
+#if _DEBUG
+#define SKIPFLUFF 1
+#endif
+
 		/* HEADERS */
 
 #include <Pomme.h>

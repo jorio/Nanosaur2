@@ -53,6 +53,13 @@ void DoLevelIntroScreen(Byte mode)
 Boolean	bail = false;
 float	timer = 5.0f;
 
+#if SKIPFLUFF
+	if (mode == INTRO_MODE_NOSAVE)
+	{
+		return;
+	}
+#endif
+
 	gIntroMode = mode;
 
 	gSaveSelection = -1;

@@ -79,6 +79,11 @@ void InitWindowStuff(void)
 
 void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 {
+#if SKIPFLUFF
+	gGammaFadeFrac = 0;
+	return;
+#endif
+
 #if 0
 	if (gDebugMode)
 	{
@@ -136,6 +141,14 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 
 ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed)
 {
+#if SKIPFLUFF
+	if (fadeIn)
+		gGammaFadeFrac = 1;
+	else
+		gGammaFadeFrac = 0;
+	return NULL;
+#endif
+
 ObjNode	*newObj;
 ObjNode	*thisNodePtr;
 

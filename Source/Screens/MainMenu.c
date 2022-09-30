@@ -132,6 +132,8 @@ again:
 			/* NEW MENU SETUP */
 
 	MenuStyle style = kDefaultMenuStyle;
+	style.standardScale = (FONT_SCALE / 32.0f) * 0.5f;
+	style.rowHeight = LINE_SPACING;
 	style.yOffset = 302.5f;
 	style.fadeOutSceneOnExit = false;
 	int outcome = StartMenu(gMainMenuTree, &style, MoveObjects, DrawMainMenuCallback);
@@ -303,7 +305,7 @@ int					i;
 	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "subtitlefont", kAtlasLoadFont);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 
 			/* CREATE BACKGROUND OBJECT */

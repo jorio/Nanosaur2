@@ -779,6 +779,7 @@ static void CleanupLevel(void)
 	DisposeInfobar();
 	DisposeParticleSystem();
 	DisposeAllSpriteGroups();
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	DisposeContrails();
 

@@ -441,11 +441,6 @@ void MoveObjects(void)
 {
 ObjNode		*thisNodePtr;
 
-			/* CALL SOUND MAINTENANCE HERE FOR CONVENIENCE */
-
-	DoSoundMaintenance();
-
-
 	if (gFirstNodePtr == nil)								// see if there are any objects
 		return;
 
@@ -460,6 +455,12 @@ ObjNode		*thisNodePtr;
 
 		gCurrentNode = thisNodePtr;							// set current object node
 		gNextNode	 = thisNodePtr->NextNode;				// get next node now (cuz current node might get deleted)
+
+
+				/* SEE IF SHOULD SKIP WHEN PAUSED */
+
+		if (gGamePaused && !(thisNodePtr->StatusBits & STATUS_BIT_MOVEINPAUSE))
+			goto next;
 
 
 				/* UPDATE SKELETON ANIMATION */
@@ -486,7 +487,7 @@ ObjNode		*thisNodePtr;
 			if (thisNodePtr->Skeleton)
 				UpdateSkinnedGeometry(thisNodePtr);
 
-
+next:
 		thisNodePtr = gNextNode;							// next node
 	}
 	while (thisNodePtr != nil);

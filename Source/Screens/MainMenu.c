@@ -19,15 +19,8 @@
 
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
-static void BuildMainMenu(int menuLevel);
 static void ProcessMenuOutcome(int outcome);
 static void DrawMainMenuCallback(void);
-static void DrawCredits(void);
-static void DoMenuControls(void);
-static void MoveMenuItem(ObjNode *theNode);
-
-static void CalcGameCursorCoord(void);
-static float CalcMenuTopY(long numLines);
 
 
 /****************************/
@@ -35,22 +28,10 @@ static float CalcMenuTopY(long numLines);
 /****************************/
 
 #define	FONT_SCALE	35.0f
-
 #define	SCREENSAVER_DELAY	15.0f
-
-#define	MAX_MENU_ITEMS	20
-
 #define	MENU_TEXT_ANAGLYPH_Z	4.0f
-
-enum
-{
-	MENU_PAGE_MAIN,
-	MENU_PAGE_PLAY,
-	MENU_PAGE_INFO,
-	MENU_PAGE_BATTLE
-};
-
 #define	LINE_SPACING	(FONT_SCALE * 1.1f)
+#define	CURSOR_SCALE	35.0f
 
 static const MenuItem gMainMenuTree[] =
 {
@@ -63,7 +44,7 @@ static const MenuItem gMainMenuTree[] =
 	{ .id='play' },
 	{kMIPick, STR_ADVENTURE,	.id='camp', .next='EXIT' },
 	{kMIPick, STR_NANO_VS_NANO,	.next='bttl' },
-	{kMIPick, STR_SAVED_GAMES,	},
+	{kMIPick, STR_SAVED_GAMES,	.id='todo'},
 	{kMIPick, STR_BACK_SYMBOL,	.next='BACK' },
 
 	{ .id='info' },
@@ -87,140 +68,57 @@ static const MenuItem gMainMenuTree[] =
 /*    VARIABLES      */
 /*********************/
 
-static	Boolean	gShowScores = false, gShowCredits = false;
-Boolean	gPlayNow = false;
-
-static	float	gInactivityTimer;
+static Boolean	gPlayNow = false;
 
 ObjNode		*gMenuCursorObj;
 OGLPoint2D	gCursorCoord;						// screen coords based on 640x480 system
 
-static	int		gMenuMode ;
-short	gCurrentMenuItem = -1, gOldMenuItem;
 
-ObjNode	*gMenuItems[MAX_MENU_ITEMS];
-float	gMenuItemMinX[MAX_MENU_ITEMS];
-float	gMenuItemMaxX[MAX_MENU_ITEMS];
 
-static	float	gScreensaverTimer;
+/********************** MAIN MENU MOVE CALLBACK **************************/
 
-static	Boolean	gDoIntroStory;
-static	Boolean	gDoCredits;
+static void MoveMainMenu(void)
+{
+	MoveObjects();
+
+			/* SEE IF DO SCREENSAVER */
+
+	if (GetMenuIdleTime() > SCREENSAVER_DELAY)
+	{
+		KillMenu('ssav');
+	}
+	else if (IsKeyDown(SDL_SCANCODE_T))				// activate time demo?
+	{
+		KillMenu('demo');
+	}
+}
 
 
 /********************** DO MAINMENU SCREEN **************************/
 
 void DoMainMenuScreen(void)
 {
-Boolean	doScreenSaver;
+	gPlayNow = false;
 
-again:
-	if (gCurrentSong != SONG_THEME)
-		PlaySong(SONG_THEME, true);
-
-
-			/* SETUP */
-
-	SetupMainMenuScreen();
-
-
-	gScreensaverTimer = SCREENSAVER_DELAY;
-	doScreenSaver = false;
-	gDoIntroStory = false;
-	gDoCredits = false;
-
-			/* NEW MENU SETUP */
-
-	MenuStyle style = kDefaultMenuStyle;
-	style.standardScale = (FONT_SCALE / 32.0f) * 0.5f;
-	style.rowHeight = LINE_SPACING;
-	style.yOffset = 302.5f;
-	style.fadeOutSceneOnExit = false;
-	int outcome = StartMenu(gMainMenuTree, &style, MoveObjects, DrawMainMenuCallback);
-
-#if 0
-			/*************/
-			/* MAIN LOOP */
-			/*************/
-
-	CalcFramesPerSecond();
-	DoSDLMaintenance();
-
-	while(!gPlayNow)
+	while (!gPlayNow)
 	{
-		const float fps = gFramesPerSecondFrac;
+		if (gCurrentSong != SONG_THEME)
+			PlaySong(SONG_THEME, true);
 
-		CalcFramesPerSecond();
-		DoSDLMaintenance();
+		SetupMainMenuScreen();
 
-			/* ONLY DO MENU STUFF IF IS FRONT WINDOW */
+		MenuStyle style = kDefaultMenuStyle;
+		style.standardScale = (FONT_SCALE / 32.0f) * 0.5f;
+		style.rowHeight = LINE_SPACING;
+		style.yOffset = 302.5f;
+		style.fadeOutSceneOnExit = false;
 
-		if (!gPlayFullScreen)									// only are if in window mode
-			if (!WeAreFrontProcess())
-				continue;
+		int outcome = StartMenu(gMainMenuTree, &style, MoveMainMenu, DrawMainMenuCallback);
 
-				/* MOVE */
+		OGL_FadeOutScene(DrawMainMenuCallback, NULL);
+		FreeMainMenuScreen();
 
-		gCurrentMenuItem = -1;									// assume nothing selected
-		MoveObjects();
-		gOldMenuItem = gCurrentMenuItem;
-
-
-				/* DRAW */
-
-		OGL_DrawScene(DrawMainMenuCallback);
-
-				/* DO USER INPUT */
-
-		DoMenuControls();
-
-
-			/* SEE IF DO SCREENSAVER */
-
-		gScreensaverTimer -= fps;
-		if (gScreensaverTimer <= 0.0f)
-		{
-			doScreenSaver = true;
-			break;
-		}
-	}
-#endif
-
-
-
-			/***********/
-			/* CLEANUP */
-			/***********/
-
-	OGL_FadeOutScene(DrawMainMenuCallback, NULL);
-	FreeMainMenuScreen();
-
-
-	ProcessMenuOutcome(outcome);
-
-
-		/* DO SCREENSAVER */
-
-	if (doScreenSaver)
-	{
-		DoLevelIntroScreen(INTRO_MODE_SCREENSAVER);
-		goto again;
-	}
-
-			/* DO INTRO STORY */
-	else
-	if (gDoIntroStory)
-	{
-		DoIntroStoryScreen();
-		goto again;
-	}
-
-			/* DO CREDITS */
-	else
-	if (gDoCredits)
-	{
-		DisplayPicture(":images:credits.jpg");
-		goto again;
+		ProcessMenuOutcome(outcome);
 	}
 }
 
@@ -230,21 +128,11 @@ again:
 
 static void SetupMainMenuScreen(void)
 {
-FSSpec				spec;
 OGLSetupInputType	viewDef;
 static const OGLVector3D	fillDirection1 = { -.7, .9, -1.0 };
 static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
-int					i;
 
 	gPlayNow 		= false;
-	gInactivityTimer = 0;
-	gCurrentMenuItem = -1;
-	gShowScores 	= false;
-	gShowCredits 	= false;
-
-
-	for (i = 0; i < MAX_MENU_ITEMS; i++)
-		gMenuItems[i] = nil;
 
 
 			/**************/
@@ -318,206 +206,11 @@ int					i;
 			/* BUILD OBJECTS */
 			/*****************/
 
-			/* CURSOR */
-
-	gNewObjectDefinition.group 		= SPRITE_GROUP_FONT;
-	gNewObjectDefinition.type 		= FONT_SObjType_ArrowCursor;
-	gNewObjectDefinition.coord.x 	= 0;
-	gNewObjectDefinition.coord.y 	= 0;
-	gNewObjectDefinition.coord.z 	= 0;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot 		= SPRITE_SLOT+5;			// make sure this is the last sprite drawn
-	gNewObjectDefinition.moveCall 	= MoveCursor;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 	    = CURSOR_SCALE;
-	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, false);
-
-	gMenuCursorObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
-
-
-
-
-			/* BUILD MAIN MENU */
-
-	BuildMainMenu(MENU_PAGE_MAIN);
+	MakeMouseCursorObject();
 
 
 	MakeFadeEvent(true, 3.0);
 }
-
-
-/********************* BUILD MAIN MENU ***************************/
-
-static void BuildMainMenu(int menuLevel)
-{
-ObjNode		*newObj;
-int			i;
-float		y,w;
-	gMenuMode = menuLevel;
-
-			/* DELETE EXISTING MENU DATA */
-
-	for (i = 0; i < MAX_MENU_ITEMS; i++)
-	{
-		if (gMenuItems[i])
-		{
-			DeleteObject(gMenuItems[i]);
-			gMenuItems[i] = nil;
-		}
-	}
-
-
-	switch(menuLevel)
-	{
-				/*************/
-				/* MAIN MENU */
-				/*************/
-
-		case	MENU_PAGE_MAIN:
-				y = CalcMenuTopY(4);
-				for (i = 0; i < 4; i++)
-				{
-					static const LocStrID nameIDs[4] = {STR_PLAY_GAME, STR_SETTINGS, STR_INFO, STR_QUIT};
-					const char* name = Localize(nameIDs[i]);
-
-					gNewObjectDefinition.coord.x 	= 640/2;
-					gNewObjectDefinition.coord.y 	= y;
-					gNewObjectDefinition.coord.z 	= 0;
-					gNewObjectDefinition.flags 		= 0;
-					gNewObjectDefinition.moveCall 	= MoveMenuItem;
-					gNewObjectDefinition.rot 		= 0;
-					gNewObjectDefinition.scale 	    = FONT_SCALE;
-					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
-					w = GetStringWidth(name, gNewObjectDefinition.scale);
-					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
-					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
-
-					newObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z;
-					newObj->Kind = i;
-
-
-					y += LINE_SPACING;
-				}
-				break;
-
-
-				/*************/
-				/* PLAY MENU */
-				/*************/
-
-		case	MENU_PAGE_PLAY:
-				y = CalcMenuTopY(4);
-				for (i = 0; i < 4; i++)
-				{
-					static const LocStrID nameIDs[4] = {STR_ADVENTURE, STR_NANO_VS_NANO, STR_SAVED_GAMES, STR_BACK_SYMBOL};
-					const char* name = Localize(nameIDs[i]);
-
-					gNewObjectDefinition.coord.x 	= 640/2;
-					gNewObjectDefinition.coord.y 	= y;
-					gNewObjectDefinition.coord.z 	= 0;
-					gNewObjectDefinition.flags 		= 0;
-					gNewObjectDefinition.moveCall 	= MoveMenuItem;
-					gNewObjectDefinition.rot 		= 0;
-					gNewObjectDefinition.scale 	    = FONT_SCALE;
-					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
-					w = GetStringWidth(name, gNewObjectDefinition.scale);
-					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
-					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
-
-					newObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z;
-					newObj->Kind = i;
-
-					y += LINE_SPACING;
-				}
-				break;
-
-				/*************/
-				/* INFO MENU */
-				/*************/
-
-		case	MENU_PAGE_INFO:
-				y = CalcMenuTopY(5);
-				for (i = 0; i < 5; i++)
-				{
-					static const LocStrID nameIDs[5] = {STR_STORY, STR_CREDITS, STR_PANGEA_WEBSITE, STR_3D_GLASSES, STR_BACK_SYMBOL};
-					const char* name = Localize(nameIDs[i]);
-
-					gNewObjectDefinition.coord.x 	= 640/2;
-					gNewObjectDefinition.coord.y 	= y;
-					gNewObjectDefinition.coord.z 	= 0;
-					gNewObjectDefinition.flags 		= 0;
-					gNewObjectDefinition.moveCall 	= MoveMenuItem;
-					gNewObjectDefinition.rot 		= 0;
-					gNewObjectDefinition.scale 	    = FONT_SCALE;
-					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
-					w = GetStringWidth(name, gNewObjectDefinition.scale);
-					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
-					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
-
-					newObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z;
-					newObj->Kind = i;
-
-					y += LINE_SPACING;
-				}
-				break;
-
-				/***************/
-				/* BATTLE MENU */
-				/***************/
-
-		case	MENU_PAGE_BATTLE:
-				y = CalcMenuTopY(7);
-				for (i = 0; i < 7; i++)
-				{
-					static const LocStrID nameIDs[7] = {STR_RACE1, STR_RACE2, STR_BATTLE1, STR_BATTLE2, STR_CAPTURE1, STR_CAPTURE2, STR_BACK_SYMBOL};
-					const char* name = Localize(nameIDs[i]);
-
-					gNewObjectDefinition.coord.x 	= 640/2;
-					gNewObjectDefinition.coord.y 	= y;
-					gNewObjectDefinition.coord.z 	= 0;
-					gNewObjectDefinition.flags 		= 0;
-					gNewObjectDefinition.moveCall 	= MoveMenuItem;
-					gNewObjectDefinition.rot 		= 0;
-					gNewObjectDefinition.scale 	    = FONT_SCALE;
-					gNewObjectDefinition.slot 		= SPRITE_SLOT;
-					gMenuItems[i] = newObj = MakeFontStringObject(name, &gNewObjectDefinition, true);
-					w = GetStringWidth(name, gNewObjectDefinition.scale);
-					gMenuItemMinX[i] = gNewObjectDefinition.coord.x - (w/2);
-					gMenuItemMaxX[i] = gMenuItemMinX[i] + w;
-
-					newObj->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z;
-					newObj->Kind = i;
-
-					y += LINE_SPACING;
-				}
-				break;
-	}
-}
-
-
-/********************** CALC MENU TOP Y ************************/
-//
-// We try to center the menu in the window since there's no good way to
-// hard-wire it.  Different screen size ratios will cause issues with hard-wired alignment.
-//
-
-static float CalcMenuTopY(long numLines)
-{
-float	centerY = 262.5;
-float	y;
-
-	y = centerY - (float)numLines * .5f * LINE_SPACING;
-	y += FONT_SCALE * .5f;													// characters are centered, so offset y by half a char height
-
-	y += 40.0f;												// this offset just moves it down, out of the way of the header/titling
-
-	return(y);
-}
-
-
 
 
 /********************** FREE MAINMENU SCREEN **********************/
@@ -542,201 +235,34 @@ static void FreeMainMenuScreen(void)
 
 
 
-/*********************** DO MENU CONTROLS ***********************/
-
-static void DoMenuControls(void)
-{
-	if (IsKeyDown(SDL_SCANCODE_T))					// activate time demo?
-	{
-		gTimeDemo = true;
-		gNumPlayers = 1;
-		gPlayNow = true;
-		gPlayingFromSavedGame = false;
-		SDL_GL_SetSwapInterval(0);					// no vsync for time demo
-		return;
-	}
-
-			/* BACK UP? */
-
-	if (IsNeedDown(kNeed_UIBack, ANY_PLAYER) && gMenuMode != MENU_PAGE_MAIN)
-	{
-		BuildMainMenu(MENU_PAGE_MAIN);
-		return;
-	}
-
-
-	if (!IsClickDown(SDL_BUTTON_LEFT))				// did the user click?
-		return;
-
-
-			/* SEE WHAT WAS SELECTED */
-
-	if (gCurrentMenuItem != -1)
-	{
-		PlayEffect_Parms(EFFECT_MENUSELECT, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/5, NORMAL_CHANNEL_RATE);
-		switch(gMenuMode)
-		{
-			case	MENU_PAGE_MAIN:
-					switch(gCurrentMenuItem)
-					{
-						case	0:							// PLAY GAME
-								BuildMainMenu(MENU_PAGE_PLAY);
-								break;
-
-						case	1:							// SETTINGS
-								DoGameOptionsDialog();
-								BuildMainMenu(gMenuMode);	// rebuild menu in case language changed
-								break;
-
-						case	2:							// INFO
-								BuildMainMenu(MENU_PAGE_INFO);
-								break;
-
-						case	3:							// EXIT
-								CleanQuit();
-								break;
-					}
-					break;
-
-
-			case	MENU_PAGE_PLAY:
-					switch(gCurrentMenuItem)
-					{
-						case	0:							// START NEW GAME
-								gNumPlayers = 1;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	1:							// NANO VS. NANO
-								BuildMainMenu(MENU_PAGE_BATTLE);
-								break;
-
-						case	2:							// CONTINUE GAME
-								if (LoadSavedGame())
-								{
-									gPlayingFromSavedGame = true;
-									gNumPlayers = 1;
-									gPlayNow = true;
-								}
-								break;
-
-						case	3:							// BACK
-								BuildMainMenu(MENU_PAGE_MAIN);
-								break;
-
-
-					}
-					break;
-
-
-			case	MENU_PAGE_INFO:
-					switch(gCurrentMenuItem)
-					{
-						case	0:							// STORY
-								gDoIntroStory = true;
-								gPlayNow = true;
-								break;
-
-						case	1:							// CREDITS
-								gDoCredits = true;
-								gPlayNow = true;
-								break;
-
-						case	2:
-								SOFTIMPME;
-#if 0
-							if (LaunchURL("http://www.pangeasoft.net/nano2") == noErr)	// PANGEA WEB SITE
-								{
-									if (gPlayFullScreen)
-					                   ExitToShell();
-				             	}
-#endif
-								break;
-
-						case	3:
-								SOFTIMPME;
-#if 0
-								if (LaunchURL("http://www.pangeasoft.net/nano2/3dglasses.html") == noErr)	// 3D GLASSES
-								{
-									if (gPlayFullScreen)
-					                   ExitToShell();
-				             	}
-#endif
-								break;
-
-						case	4:							// BACK
-								BuildMainMenu(MENU_PAGE_MAIN);
-								break;
-					}
-					break;
-
-			case	MENU_PAGE_BATTLE:
-					switch(gCurrentMenuItem)
-					{
-						case	0:										// RACE 1
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_RACE;
-								gLevelNum = LEVEL_NUM_RACE1;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	1:										// RACE 2
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_RACE;
-								gLevelNum = LEVEL_NUM_RACE2;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	2:										// BATTLE 1
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_BATTLE;
-								gLevelNum = LEVEL_NUM_BATTLE1;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	3:										// BATTLE 2
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_BATTLE;
-								gLevelNum = LEVEL_NUM_BATTLE2;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	4:										// CAPTURE THE FLAG 1
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_CAPTURETHEFLAG;
-								gLevelNum = LEVEL_NUM_FLAG1;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	5:										// CAPTURE THE FLAG 2
-								gNumPlayers = 2;
-								gVSMode = VS_MODE_CAPTURETHEFLAG;
-								gLevelNum = LEVEL_NUM_FLAG2;
-								gPlayNow = true;
-								gPlayingFromSavedGame = false;
-								break;
-
-						case	6:										// BACK
-								gVSMode = VS_MODE_NONE;
-								BuildMainMenu(MENU_PAGE_MAIN);
-								break;
-					}
-
-		}
-	}
-}
-
+/*********************** PROCESS MENU OUTCOME ***********************/
 
 static void ProcessMenuOutcome(int outcome)
 {
+	gPlayNow = false;
+
 	switch (outcome)
 	{
+		case	'ssav':										// SCREENSAVER
+			DoLevelIntroScreen(INTRO_MODE_SCREENSAVER);
+			break;
+
+		case	'intr':										// STORY
+			DoIntroStoryScreen();
+			break;
+
+		case	'cred':										// CREDITS
+			DisplayPicture(":images:credits.jpg");
+			break;
+
+		case	'demo':										// TIME DEMO (BENCHMARK)
+			gTimeDemo = true;
+			gNumPlayers = 1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			SDL_GL_SetSwapInterval(0);						// no vsync for time demo
+			break;
+
 		case	'camp':										// SINGLE-PLAYER ADVENTURE CAMPAIGN
 			gNumPlayers = 1;
 			gPlayNow = true;
@@ -750,16 +276,6 @@ static void ProcessMenuOutcome(int outcome)
 				gNumPlayers = 1;
 				gPlayNow = true;
 			}
-			break;
-
-		case	'intr':										// STORY
-			gDoIntroStory = true;
-			gPlayNow = true;
-			break;
-
-		case	'cred':										// CREDITS
-			gDoCredits = true;
-			gPlayNow = true;
 			break;
 
 		case	'rac1':										// RACE 1
@@ -811,7 +327,7 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 
 		default:
-			DoFatalAlert("Unimplemented menu outcome '%c%c%c%c'",
+			DoAlert("Unimplemented menu outcome '%c%c%c%c'",
 						 (outcome >> 24) & 0xFF,
 						 (outcome >> 16) & 0xFF,
 						 (outcome >> 8) & 0xFF,
@@ -830,30 +346,6 @@ static void DrawMainMenuCallback(void)
 		MO_DrawObject(gBackgoundPicture);
 
 	DrawObjects();
-
-	if (gShowCredits)
-		DrawCredits();
-}
-
-
-
-/****************** DRAW CREDITS ***********************/
-
-static void DrawCredits(void)
-{
-			/* SET STATE */
-
-	OGL_PushState();
-
-	SetInfobarSpriteState(4);
-
-
-			/* DRAW CREDITS */
-
-	DrawInfobarSprite2_Centered(640/2, 480/2, 400, SPRITE_GROUP_MAINMENU, MAINMENU_SObjType_Credits);
-
-
-	OGL_PopState();
 }
 
 
@@ -865,71 +357,7 @@ static void DrawCredits(void)
 // NOTE:  this function is called from other places which need the cursor, not just the main menu
 //
 
-void MoveCursor(ObjNode *theNode)
-{
-	CalcGameCursorCoord();
-
-	theNode->Coord.x = gCursorCoord.x;
-	theNode->Coord.y = gCursorCoord.y;
-
-	UpdateObjectTransforms(theNode);
-
-}
-
-
-/*************** MOVE MENU ITEM ***********************/
-
-static void MoveMenuItem(ObjNode *theNode)
-{
-float	d;
-int		i = theNode->Kind;
-float	x,y;
-
-	if (gShowScores || gShowCredits)
-	{
-		gCurrentMenuItem = -1;
-		return;
-	}
-
-			/* IS THE CURSOR OVER THIS ITEM? */
-
-	x = gMenuCursorObj->Coord.x;						// get tip of cursor coords
-	y = gMenuCursorObj->Coord.y;
-
-
-	if ((x >= gMenuItemMinX[i]) && (x < gMenuItemMaxX[i]))
-	{
-		d = fabs(y - theNode->Coord.y);
-		if (d < (FONT_SCALE/2))
-		{
-			theNode->ColorFilter.r =
-			theNode->ColorFilter.g =
-			theNode->ColorFilter.b = 1.0;
-			gCurrentMenuItem = theNode->Kind;
-
-			if (gCurrentMenuItem != gOldMenuItem)			// change?
-			{
-				gScreensaverTimer = SCREENSAVER_DELAY;
-				PlayEffect_Parms(EFFECT_CHANGESELECT, FULL_CHANNEL_VOLUME/5, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
-			}
-			return;
-		}
-	}
-			/* CURSOR NOT ON THIS */
-
-	theNode->ColorFilter.r = .7;
-	theNode->ColorFilter.g =
-	theNode->ColorFilter.b = .6;
-}
-
-
-#pragma mark -
-
-
-
-/********************* CALC GAME CURSOR COORD *****************************/
-
-static void CalcGameCursorCoord(void)
+static void MoveMouseCursorObject(ObjNode *theNode)
 {
 	extern OGLRect gLogicalRect;
 
@@ -947,7 +375,33 @@ static void CalcGameCursorCoord(void)
 	float screenToPaneX = (gLogicalRect.right - gLogicalRect.left) / (float)ww;
 	float screenToPaneY = (gLogicalRect.bottom - gLogicalRect.top) / (float)wh;
 
-	gCursorCoord.x = (float)mx * screenToPaneX + gLogicalRect.left;
-	gCursorCoord.y = (float)my * screenToPaneY + gLogicalRect.top;
+	theNode->Coord.x = (float)mx * screenToPaneX + gLogicalRect.left;
+	theNode->Coord.y = (float)my * screenToPaneY + gLogicalRect.top;
+
+	gCursorCoord.x = theNode->Coord.x;
+	gCursorCoord.y = theNode->Coord.x;
+
+	UpdateObjectTransforms(theNode);
 }
 
+/********************* MAKE MOUSE CURSOR OBJECT *********************/
+
+ObjNode* MakeMouseCursorObject(void)
+{
+	NewObjectDefinitionType def =
+	{
+		.group		= SPRITE_GROUP_FONT,
+		.type		= FONT_SObjType_ArrowCursor,
+		.coord		= {0,0,0},
+		.flags		= STATUS_BIT_MOVEINPAUSE,
+		.slot		= CURSOR_SLOT,			// make sure this is the last sprite drawn
+		.moveCall	= MoveMouseCursorObject,
+		.rot		= 0,
+		.scale		= CURSOR_SCALE,
+	};
+
+	ObjNode* cursor = MakeSpriteObject(&def, false);
+	cursor->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
+
+	return cursor;
+}

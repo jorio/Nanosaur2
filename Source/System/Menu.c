@@ -83,7 +83,9 @@ typedef struct
 #define kSfxDelete			EFFECT_TURRETEXPLOSION
 #define kSfxStartBinding	EFFECT_MENUSELECT
 
-#define PlayConfirmEffect() PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME, FULL_CHANNEL_VOLUME, NORMAL_CHANNEL_RATE * 2/3)
+#define PlayNavigateEffect() PlayEffect_Parms(kSfxNavigate, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
+#define PlayConfirmEffect() PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
+#define PlayBackEffect() PlayEffect_Parms(kSfxBack, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 
 const int16_t kJoystickDeadZone_BindingThreshold = (75 * 32767 / 100);
 
@@ -112,11 +114,11 @@ const MenuStyle kDefaultMenuStyle =
 	.isInteractive		= true,
 	.canBackOutOfRootMenu	= false,
 	.textSlot			= MENU_SLOT,
-	.yOffset			= 0,
+	.yOffset			= 480/2,
 
-	.highlightColor		= {0.3f, 0.5f, 0.2f, 1.0f},
+	.highlightColor		= {1.0f, 1.0f, 1.0f, 1.0f},
 	.arrowColor			= {0.7f, 0.7f, 0.7f, 1.0f},
-	.idleColor			= {1.0f, 1.0f, 1.0f, 1.0f},
+	.idleColor			= {0.7f, 0.6f, 0.6f, 1.0f},
 	.labelColor			= {0.35f, 0.35f, 0.35f, 1.0f},
 };
 
@@ -695,7 +697,7 @@ static void GoBackInHistory(void)
 
 	if (gNav->historyPos != 0)
 	{
-		PlayEffect(kSfxBack);
+		PlayBackEffect();
 		gNav->historyPos--;
 
 		gTempForceSwipeRTL = true;
@@ -704,7 +706,7 @@ static void GoBackInHistory(void)
 	}
 	else if (gNav->style.canBackOutOfRootMenu)
 	{
-		PlayEffect(kSfxBack);
+		PlayBackEffect();
 		gNav->menuState = kMenuStateFadeOut;
 	}
 	else
@@ -817,7 +819,7 @@ static void NavigateSettingEntriesVertically(int delta)
 
 	if (makeSound)
 	{
-		PlayEffect(kSfxNavigate);
+		PlayNavigateEffect();
 		TwitchSelection();
 	}
 
@@ -900,7 +902,7 @@ static void NavigateSettingEntriesMouseHover(void)
 			if (gNav->menuRow != row)
 			{
 				gNav->menuRow = row;
-				PlayEffect(kSfxNavigate);
+				PlayNavigateEffect();
 			}
 
 			return;
@@ -1073,11 +1075,10 @@ static void NavigateCycler(const MenuItem* entry)
 
 		gTempForceSwipeRTL = (delta == -1);
 
-		ObjNode* node;
 		if (entry->type == kMICycler1)
-			node = LayOutCycler1(gNav->menuRow);
+			LayOutCycler1(gNav->menuRow);
 		else
-			node = LayOutCycler2ValueText(gNav->menuRow);
+			LayOutCycler2ValueText(gNav->menuRow);
 
 		RepositionArrows();
 
@@ -1232,7 +1233,7 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		keyNo = PositiveModulo(keyNo - 1, MAX_USER_BINDINGS_PER_NEED);
 		gNav->idleTime = 0;
 		gNav->menuCol = keyNo;
-		PlayEffect(kSfxNavigate);
+		PlayNavigateEffect();
 		gNav->mouseHoverValid = false;
 		TwitchSelection();
 		RepositionArrows();
@@ -1245,7 +1246,7 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		keyNo = PositiveModulo(keyNo + 1, MAX_USER_BINDINGS_PER_NEED);
 		gNav->idleTime = 0;
 		gNav->menuCol = keyNo;
-		PlayEffect(kSfxNavigate);
+		PlayNavigateEffect();
 		gNav->mouseHoverValid = false;
 		TwitchSelection();
 		RepositionArrows();
@@ -1302,8 +1303,8 @@ static void NavigatePadBinding(const MenuItem* entry)
 		btnNo = PositiveModulo(btnNo - 1, MAX_USER_BINDINGS_PER_NEED);
 		gNav->menuCol = btnNo;
 		gNav->idleTime = 0;
-		PlayEffect(kSfxNavigate);
 		gNav->mouseHoverValid = false;
+		PlayNavigateEffect();
 		TwitchSelection();
 		RepositionArrows();
 		return;
@@ -1315,8 +1316,8 @@ static void NavigatePadBinding(const MenuItem* entry)
 		btnNo = PositiveModulo(btnNo + 1, MAX_USER_BINDINGS_PER_NEED);
 		gNav->menuCol = btnNo;
 		gNav->idleTime = 0;
-		PlayEffect(kSfxNavigate);
 		gNav->mouseHoverValid = false;
+		PlayNavigateEffect();
 		TwitchSelection();
 		RepositionArrows();
 		return;
@@ -1931,15 +1932,16 @@ static ObjNode* LayOutMouseBinding(int row)
 
 static void LayOutMenu(int menuID)
 {
-	// Remember we've been to this menu
-	gNav->history[gNav->historyPos].menuID = menuID;
-
 	const MenuItem* menu = LookUpMenu(menuID);
 
 	if (!menu)
 	{
 		DoFatalAlert("Menu not registered: '%s'", FourccToString(menuID));
+		return;
 	}
+
+	// Remember we've been in this menu
+	gNav->history[gNav->historyPos].menuID = menuID;
 
 	gNav->menu				= menu;
 	gNav->menuID			= menuID;

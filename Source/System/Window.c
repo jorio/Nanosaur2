@@ -57,9 +57,8 @@ static VideoModeType		gVideoModeList[MAX_VIDEO_MODES];
 
 float			gGammaFadeFrac = 1.0f;
 
-int				gGameWindowWidth, gGameWindowHeight;
-
-Boolean			gPlayFullScreen;
+int				gGameWindowWidth = 640;
+int				gGameWindowHeight = 480;
 
 static	short					gCurrentCalibrationImage = 0;
 

@@ -51,7 +51,7 @@ typedef enum LocStrID
 	STR_CAPTURE2,
 
 	STR_RESUME,
-	STR_END,
+	STR_RETIRE,
 
 	STR_CONTROLS,
 	STR_SOUND,

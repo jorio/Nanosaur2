@@ -930,8 +930,10 @@ do_anaglyph:
 
 	SDL_GL_SwapWindow(gSDLWindow);							// end render loop
 
-	gGameViewInfoPtr->frameCount++;								// inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
-
+	if (!gGamePaused)										// freeze frame count if paused (otherwise double-buffered skeletons will flicker)
+	{
+		gGameViewInfoPtr->frameCount++;						// inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
+	}
 
 	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 		RestoreCamerasFromAnaglyph();

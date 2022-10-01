@@ -134,9 +134,6 @@ OGLVector2D GetAnalogSteering(int playerID);
 Boolean UserWantsOut(void);
 Boolean IsCheatKeyComboDown(void);
 
-void PushKeys(void);
-void PopKeys(void);
-
 void DoSDLMaintenance(void);
 
 int GetNumControllers(void);

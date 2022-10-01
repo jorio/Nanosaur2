@@ -17,24 +17,10 @@ void DrawLoading(float percent);
 
 		/* MAIN MENU */
 
-#define	CURSOR_SCALE	35.0f
 
 
 void DoMainMenuScreen(void);
-void MoveCursor(ObjNode *theNode);
-
-extern	ObjNode		*gMenuCursorObj;
-extern	OGLPoint2D	gCursorCoord;
-extern	ObjNode	*gMenuItems[];
-extern	float	gMenuItemMinX[];
-extern	float	gMenuItemMaxX[];
-extern	short	gCurrentMenuItem, gOldMenuItem;
-
-
-
-		/* LEVEL INTROS */
-
-void DoLevelIntro(void);
+ObjNode* MakeMouseCursorObject(void);
 
 
 		/* INTRO STORY */

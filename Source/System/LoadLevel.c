@@ -144,6 +144,8 @@ short	i;
 	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
+
 
 			/* DRAW THE LOADING TEXT AND THERMO */
 

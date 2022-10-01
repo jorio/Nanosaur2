@@ -562,21 +562,9 @@ static void MakeLevelIntroSaveSprites(void)
 
 			/* CURSOR */
 
-	gNewObjectDefinition.group 		= SPRITE_GROUP_FONT;
-	gNewObjectDefinition.type 		= FONT_SObjType_ArrowCursor;
-	gNewObjectDefinition.coord.x 	= 0;
-	gNewObjectDefinition.coord.y 	= 0;
-	gNewObjectDefinition.coord.z 	= 0;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot 		= 150;
-	gNewObjectDefinition.moveCall 	= MoveCursor;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 	    = CURSOR_SCALE;
-	gMenuCursorObj = MakeSpriteObject(&gNewObjectDefinition, false);
-
-	gMenuCursorObj->ColorFilter.a = .9f;
-
-	gMenuCursorObj->AnaglyphZ = 2.5f;
+	MakeMouseCursorObject();
+//	gMenuCursorObj->ColorFilter.a = .9f;
+//	gMenuCursorObj->AnaglyphZ = 2.5f;
 
 
 		/* MAKE SAVE ICON */

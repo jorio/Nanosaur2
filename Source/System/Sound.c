@@ -123,7 +123,7 @@ static const EffectType gEffectsTable[NUM_EFFECTS] =
 	[EFFECT_GRABEGG        ] = {SOUND_BANK_MAIN, "GRABEGG",			.7f},
 	[EFFECT_JETPACKHUM     ] = {SOUND_BANK_MAIN, "JETPACKHUM",		.8f},
 	[EFFECT_JETPACKIGNITE  ] = {SOUND_BANK_MAIN, "JETPACKIGNITE",	.6f},
-	[EFFECT_MENUSELECT     ] = {SOUND_BANK_MAIN, "MENUSELECT",		.6f},
+	[EFFECT_MENUSELECT     ] = {SOUND_BANK_MAIN, "MENUSELECT",		.6f * (1.0f/4.0f)},
 	[EFFECT_MISSILEENGINE  ] = {SOUND_BANK_MAIN, "MISSILEENGINE",	.6f},
 	[EFFECT_BOMBDROP       ] = {SOUND_BANK_MAIN, "BOMBDROP",		1},
 	[EFFECT_DUSTDEVIL      ] = {SOUND_BANK_MAIN, "DUSTDEVIL",		1},
@@ -396,25 +396,6 @@ short		i;
 }
 
 
-/****************** WAIT EFFECTS SILENT *********************/
-
-void WaitEffectsSilent(void)
-{
-short	i;
-Boolean	isBusy;
-SCStatus				theStatus;
-
-	do
-	{
-		isBusy = 0;
-		for (i=0; i < gMaxChannels; i++)
-		{
-			SndChannelStatus(gSndChannel[i],sizeof(SCStatus),&theStatus);	// get channel info
-			isBusy |= theStatus.scChannelBusy;
-		}
-	}while(isBusy);
-}
-
 #pragma mark -
 
 
@@ -441,7 +422,6 @@ short	musicFileRefNum;
 	gCurrentSong 	= songNum;
 	gLoopSongFlag 	= loopFlag;
 	KillSong();
-	DoSoundMaintenance();
 
 			/******************************/
 			/* OPEN APPROPRIATE SONG FILE */
@@ -1053,48 +1033,6 @@ SndChannelPtr			chanPtr;
 
 
 #pragma mark -
-
-
-/******************** DO SOUND MAINTENANCE *************/
-//
-// 		ReadKeyboard() must have already been called
-//
-
-void DoSoundMaintenance(void)
-{
-#if 0
-float	fps = gFramesPerSecondFrac;
-short	i;
-
-	if (gAllowAudioKeys)
-	{
-					/* SEE IF TOGGLE MUSIC */
-
-		if (GetNewKeyState(KEY_M))
-		{
-			ToggleMusic();
-		}
-
-
-				/* SEE IF CHANGE VOLUME */
-
-		if (GetKeyState(KEY_PLUS))
-		{
-			gGlobalVolume += .5f * fps;
-			UpdateGlobalVolume();
-		}
-		else
-		if (GetKeyState(KEY_MINUS))
-		{
-			gGlobalVolume -= .5f * fps;
-			if (gGlobalVolume < 0.0f)
-				gGlobalVolume = 0.0f;
-			UpdateGlobalVolume();
-		}
-	}
-#endif
-}
-
 
 
 /******************** FIND SILENT CHANNEL *************************/

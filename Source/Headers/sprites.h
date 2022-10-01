@@ -28,11 +28,6 @@ void BlendAllSpritesInGroup(short group);
 void ModifySpriteObjectFrame(ObjNode *theNode, short type);
 void BlendASprite(int group, int type);
 
-ObjNode *MakeFontStringObject(const char* s, NewObjectDefinitionType *newObjDef, Boolean center);
-float GetStringWidth(const char* s, float scale);
-float GetCharSpacing(char c, float spacingScale);
-int CharToSprite(char c);
-
 void SwizzleARGBtoBGRA(long w, long h, uint32_t *pixels);
 void SwizzleARGBtoRGBA(long w, long h, uint32_t *pixels);
 void SetAlphaInARGBBuffer(long w, long h, uint32_t *pixels);

@@ -478,11 +478,13 @@ OGLStyleDefType *styleDefPtr = &setupDefPtr->styles;
 	glFrontFace(GL_CCW);									// CCW is front face
 	OGL_CheckError();
 
+#if 0
 	if (gGamePrefs.depth == 16)
 		glEnable(GL_DITHER);
 	else
 		glDisable(GL_DITHER);
 	OGL_CheckError();
+#endif
 
 			/* SET BLENDING DEFAULTS */
 
@@ -920,7 +922,7 @@ do_anaglyph:
 			/**************/
 
 	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
-		DrawBlueLine (gGamePrefs.screenWidth, gGamePrefs.screenHeight);
+		DrawBlueLine(gGameWindowWidth, gGameWindowHeight);
 
 
 

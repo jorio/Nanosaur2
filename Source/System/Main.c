@@ -102,46 +102,9 @@ const short gLevelSongs[NUM_LEVELS] =
 
 void ToolBoxInit(void)
 {
-OSErr		iErr;
-long		createdDirID;
-
-
 	MyFlushEvents();
 
-
-			/*****************/
-			/* INIT NIB INFO */
-			/*****************/
-
-#if 0
-	gBundle = CFBundleGetMainBundle();
-	CreateNibReferenceWithCFBundle(gBundle, CFSTR(kDefaultNibFileName), &gNibs);
-#endif
-
-
-
 			/* CHECK PREFERENCES FOLDER */
-
-	iErr = FindFolder(kOnSystemDisk,kPreferencesFolderType,kDontCreateFolder,			// locate the folder
-					&gPrefsFolderVRefNum,&gPrefsFolderDirID);
-	if (iErr != noErr)
-		DoAlert("Warning: Cannot locate the Preferences folder.");
-
-	iErr = DirCreate(gPrefsFolderVRefNum,gPrefsFolderDirID,"Nanosaur2",&createdDirID);		// make folder in there
-
-
-			/* MAKE FSSPEC FOR DATA FOLDER */
-
-#if 0
-	SetDefaultDirectory();							// be sure to get the default directory
-
-	iErr = FSMakeFSSpec(0, 0, "::Resources:Data:Images", &gDataSpec);
-	if (iErr)
-	{
-		DoAlert("The game's data appears to be missing.  You should reinstall the game.");
-		ExitToShell();
-	}
-#endif
 
 
 		/* FIRST VERIFY SYSTEM BEFORE GOING TOO FAR */
@@ -155,8 +118,9 @@ long		createdDirID;
 			/* INIT PREFERENCES */
 			/********************/
 
+	InitPrefsFolder(false);
 	InitDefaultPrefs();
-	LoadPrefs(&gGamePrefs);
+	LoadPrefs();
 
 
 
@@ -164,12 +128,6 @@ long		createdDirID;
 
 	OGL_Boot();
 
-
-			/* START QUICKTIME */
-
-#if 0
-	EnterMovies();
-#endif
 
 			/*********************************/
 			/* DO BOOT CHECK FOR SCREEN MODE */
@@ -193,11 +151,6 @@ void InitDefaultPrefs(void)
 
 	gGamePrefs.language = GetBestLanguageIDFromSystemLocale();
 
-	gGamePrefs.version				= CURRENT_PREFS_VERS;
-	gGamePrefs.showScreenModeDialog = true;
-	gGamePrefs.depth				= 32;
-	gGamePrefs.screenWidth			= 1024;
-	gGamePrefs.screenHeight			= 768;
 	gGamePrefs.lowRenderQuality		= false;
 	gGamePrefs.splitScreenMode		= SPLITSCREEN_MODE_VERT;
 	gGamePrefs.stereoGlassesMode	= STEREO_GLASSES_MODE_OFF;

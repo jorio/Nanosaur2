@@ -64,15 +64,12 @@ typedef struct
 
 		/* PREFERENCES */
 
-#define	CURRENT_PREFS_VERS	0x0300
+#define PREFS_MAGIC "Nanosaur2 Prefs v0"
+#define PREFS_FILENAME "Preferences"
+#define PREFS_FOLDER_NAME "Nanosaur2"
 
 typedef struct
 {
-	Boolean	showScreenModeDialog;
-	short	depth;
-	int		screenWidth;
-	int		screenHeight;
-	double	hz;
 	Boolean	lowRenderQuality;
 	Byte	language;
 
@@ -87,8 +84,6 @@ typedef struct
 
 	Boolean	showTargetingCrosshairs;
 
-	uint32_t	version;
-
 	Boolean kiddieMode;
 
 	Byte	antialiasingLevel;
@@ -101,8 +96,9 @@ typedef struct
 //=================================================
 
 SkeletonDefType *LoadSkeletonFile(short skeletonType);
-extern	OSErr LoadPrefs(PrefsType *prefBlock);
-void SavePrefs(void);
+OSErr InitPrefsFolder(Boolean createIt);
+OSErr LoadPrefs(void);
+OSErr SavePrefs(void);
 
 void LoadPlayfield(FSSpec *specPtr);
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);
@@ -112,6 +108,8 @@ Boolean LoadSavedGame(void);
 
 void LoadLevelArt(void);
 
+OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
+OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
 Ptr LoadDataFile(const char* path, long* outLength);
 char* LoadTextFile(const char* path, long* outLength);
 

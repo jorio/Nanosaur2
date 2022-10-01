@@ -422,108 +422,29 @@ OGLPoint3D				*pointPtr;
 
 
 /******************** LOAD PREFS **********************/
-//
-// Load in standard preferences
-//
 
-OSErr LoadPrefs(PrefsType *prefBlock)
+OSErr LoadPrefs(void)
 {
-OSErr		iErr;
-short		refNum;
-FSSpec		file;
-long		count;
-Boolean		retry;
+	OSErr iErr = LoadUserDataFile(PREFS_FILENAME, PREFS_MAGIC, sizeof(gGamePrefs), (Ptr) &gGamePrefs);
 
-				/*************/
-				/* READ FILE */
-				/*************/
-
-try_again:
-
-	retry = false;
-
-	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, ":Nanosaur2:Preferences", &file);
-	iErr = FSpOpenDF(&file, fsRdPerm, &refNum);
-	if (iErr)
-		return(iErr);
-
-	count = sizeof(PrefsType);
-	iErr = FSRead(refNum, &count,  (Ptr)prefBlock);		// read data from file
-	if (iErr)
+	if (noErr != iErr)
 	{
-		FSClose(refNum);
-		return(iErr);
+		InitDefaultPrefs();
 	}
 
-	FSClose(refNum);
-
-			/****************/
-			/* VERIFY PREFS */
-			/****************/
-
-	if ((gGamePrefs.depth != 16) && (gGamePrefs.depth != 32))
-		goto err;
-
-	if (gGamePrefs.version != CURRENT_PREFS_VERS)
-	{
-		retry = true;
-		goto err;
-	}
-
-	return(noErr);
-
-err:
-	InitDefaultPrefs();
-	SavePrefs();
-
-	if (retry)
-		goto try_again;
-
-	return(noErr);
+	return iErr;
 }
 
 
 
 /******************** SAVE PREFS **********************/
 
-void SavePrefs(void)
+OSErr SavePrefs(void)
 {
-FSSpec				file;
-OSErr				iErr;
-short				refNum;
-long				count;
-
-		/* GET THE CURRENT CONTROL SETTINGS */
-
-	SOFTIMPME;
-//	BuildHIDControlSettings(&gGamePrefs.controlSettings);
-
-
-				/* CREATE BLANK FILE */
-
-	FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, ":Nanosaur2:Preferences", &file);
-	FSpDelete(&file);															// delete any existing file
-	iErr = FSpCreate(&file, kGameID, 'Pref', smSystemScript);					// create blank file
-	if (iErr)
-		return;
-
-				/* OPEN FILE */
-
-	iErr = FSpOpenDF(&file, fsRdWrPerm, &refNum);
-	if (iErr)
-	{
-		FSpDelete(&file);
-		return;
-	}
-
-				/* WRITE DATA */
-
-	count = sizeof(PrefsType);
-	FSWrite(refNum, &count, (Ptr) &gGamePrefs);
-	FSClose(refNum);
-
-
+	return SaveUserDataFile(PREFS_FILENAME, PREFS_MAGIC, sizeof(gGamePrefs), (Ptr) &gGamePrefs);
 }
+
+
 
 #pragma mark -
 
@@ -1469,6 +1390,165 @@ bail:
 
 
 #pragma mark -
+
+OSErr InitPrefsFolder(Boolean createIt)
+{
+	long createdDirID;
+
+	OSErr iErr = FindFolder(kOnSystemDisk, kPreferencesFolderType, kDontCreateFolder,			// locate the folder
+					  &gPrefsFolderVRefNum, &gPrefsFolderDirID);
+	if (iErr != noErr)
+		DoAlert("Warning: Cannot locate the Preferences folder.");
+
+	if (createIt)
+	{
+		iErr = DirCreate(gPrefsFolderVRefNum, gPrefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID);	// make folder in there
+	}
+
+	return iErr;
+}
+
+static OSErr MakeFSSpecForUserDataFile(const char* filename, FSSpec* spec)
+{
+	char path[256];
+	snprintf(path, sizeof(path), ":%s:%s", PREFS_FOLDER_NAME, filename);
+
+	return FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, path, spec);
+}
+
+
+/********* LOAD STRUCT FROM USER FILE IN PREFS FOLDER ***********/
+
+OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr)
+{
+OSErr		iErr;
+short		refNum;
+FSSpec		file;
+long		count;
+long		eof = 0;
+char		fileMagic[64];
+long		magicLength = (long) strlen(magic) + 1;		// including null-terminator
+Ptr			payloadCopy = NULL;
+
+	GAME_ASSERT(magicLength < (long) sizeof(fileMagic));
+
+				/* INIT PREFS FOLDER FSSPEC FIRST */
+
+	InitPrefsFolder(false);
+
+
+				/*************/
+				/* READ FILE */
+				/*************/
+
+	MakeFSSpecForUserDataFile(filename, &file);
+	iErr = FSpOpenDF(&file, fsRdPerm, &refNum);
+	if (iErr)
+		return iErr;
+
+				/* CHECK FILE LENGTH */
+
+	GetEOF(refNum, &eof);
+
+	if (eof != magicLength + payloadLength)
+	{
+		goto fileIsCorrupt;
+	}
+
+				/* READ HEADER */
+
+	count = magicLength;
+	iErr = FSRead(refNum, &count, fileMagic);
+	if (iErr ||
+		count != magicLength ||
+		0 != strncmp(magic, fileMagic, magicLength-1))
+	{
+		goto fileIsCorrupt;
+	}
+
+				/* READ PAYLOAD */
+
+	payloadCopy = AllocPtrClear(payloadLength);
+
+	count = payloadLength;
+	iErr = FSRead(refNum, &count, payloadCopy);
+	if (iErr || count != payloadLength)
+	{
+		goto fileIsCorrupt;
+	}
+
+				/* COMMIT PAYLOAD AND FINISH */
+
+	BlockMove(payloadCopy, payloadPtr, payloadLength);
+	iErr = noErr;
+	goto cleanup;
+
+fileIsCorrupt:
+	printf("File '%s' appears to be corrupt!\n", file.cName);
+	iErr = badFileFormat;
+	goto cleanup;
+
+cleanup:
+	if (payloadCopy)
+	{
+		SafeDisposePtr(payloadCopy);
+		payloadCopy = nil;
+	}
+	FSClose(refNum);
+	return iErr;
+}
+
+
+/********* SAVE STRUCT TO USER FILE IN PREFS FOLDER ***********/
+
+OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr)
+{
+FSSpec				file;
+OSErr				iErr;
+short				refNum;
+long				count;
+
+	InitPrefsFolder(true);
+
+				/* CREATE BLANK FILE */
+
+	MakeFSSpecForUserDataFile(filename, &file);
+	FSpDelete(&file);															// delete any existing file
+	iErr = FSpCreate(&file, kGameID, 'Pref', smSystemScript);					// create blank file
+	if (iErr)
+	{
+		return iErr;
+	}
+
+				/* OPEN FILE */
+
+	iErr = FSpOpenDF(&file, fsRdWrPerm, &refNum);
+	if (iErr)
+	{
+		FSpDelete(&file);
+		return iErr;
+	}
+
+				/* WRITE MAGIC */
+
+	count = (long) strlen(magic) + 1;
+	iErr = FSWrite(refNum, &count, (Ptr) magic);
+	if (iErr)
+	{
+		FSClose(refNum);
+		return iErr;
+	}
+
+				/* WRITE DATA */
+
+	count = payloadLength;
+	iErr = FSWrite(refNum, &count, payloadPtr);
+	FSClose(refNum);
+
+	printf("Wrote %s\n", file.cName);
+
+	return iErr;
+}
 
 
 /*********************** LOAD DATA FILE INTO MEMORY ***********************************/

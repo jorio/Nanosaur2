@@ -1089,7 +1089,12 @@ short	n;
 
 	if (IsNeedDown(kNeed_NextWeapon, playerNum))			// is Next button pressed?
 	{
-		SelectNextWeapon(playerNum, true);
+		SelectNextWeapon(playerNum, true, 1);
+		gAutoFireDelay[playerNum] = 0;
+	}
+	else if (IsNeedDown(kNeed_PrevWeapon, playerNum))
+	{
+		SelectNextWeapon(playerNum, true, -1);
 		gAutoFireDelay[playerNum] = 0;
 	}
 

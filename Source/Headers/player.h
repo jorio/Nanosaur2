@@ -69,10 +69,10 @@ enum
 
 		/* WEAPON TYPES */
 
-#define	WEAPON_TYPE_NONE	-1
-
 enum
 {
+	WEAPON_TYPE_NONE			= -1,
+
 	WEAPON_TYPE_BLASTER 		= 0,
 	WEAPON_TYPE_CLUSTERSHOT,
 	WEAPON_TYPE_HEATSEEKER,
@@ -233,7 +233,7 @@ void HitPlayerShield(short playerNum, float damage, float shieldGlowDuration, Bo
 void UpdatePlayerCrosshairs(ObjNode *player);
 void PlayerFireButtonPressed(ObjNode *player, Boolean newFireButton);
 void PlayerFireButtonReleased(ObjNode *player);
-void SelectNextWeapon(short playerNum, Boolean allowSonicScream);
+void SelectNextWeapon(short playerNum, Boolean allowSonicScream, int delta);
 Boolean AddWeaponPOW(TerrainItemEntryType *itemPtr, float  x, float z);
 void CauseBombShockwaveDamage(ObjNode *wave, uint32_t ctype);
 

@@ -63,6 +63,7 @@ enum
 	kNeed_YawRight,
 	kNeed_Fire,
 	kNeed_Drop,
+	kNeed_PrevWeapon,
 	kNeed_NextWeapon,
 	kNeed_Jetpack,
 	kNeed_CameraMode,

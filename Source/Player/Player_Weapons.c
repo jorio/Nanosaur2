@@ -261,7 +261,7 @@ Boolean			didShoot = false;
 	{
 		gPlayerInfo[playerNum].weaponQuantity[weaponType]--;		// dec bullet count
 		if (gPlayerInfo[playerNum].weaponQuantity[weaponType] <= 0)	// if we're out, try to select next weapon in inventory
-			SelectNextWeapon(playerNum, false);
+			SelectNextWeapon(playerNum, false, 1);
 	}
 }
 
@@ -319,7 +319,7 @@ Boolean			didShoot = false;
 	{
 		gPlayerInfo[playerNum].weaponQuantity[weaponType]--;		// dec bullet count
 		if (gPlayerInfo[playerNum].weaponQuantity[weaponType] <= 0)	// if we're out, try to select next weapon in inventory
-			SelectNextWeapon(playerNum, false);
+			SelectNextWeapon(playerNum, false, 1);
 	}
 
 }
@@ -331,28 +331,27 @@ Boolean			didShoot = false;
 // which we have inventory for.
 //
 
-void SelectNextWeapon(short playerNum, Boolean allowSonicScream)
+void SelectNextWeapon(short playerNum, Boolean allowSonicScream, int delta)
 {
-short	weaponType, i;
+int	startWeapon, i;
 
 	gPlayerInfo[playerNum].weaponCharge = 0;					// make sure not charging
 
-	weaponType  = gPlayerInfo[playerNum].currentWeapon;			// get currently selected weapon
-	if (weaponType == WEAPON_TYPE_NONE)							// if nothing was selected then just start as though we had the first weapon type
-		weaponType = 0;
+	startWeapon  = gPlayerInfo[playerNum].currentWeapon;			// get currently selected weapon
+	if (startWeapon == WEAPON_TYPE_NONE)							// if nothing was selected then just start as though we had the first weapon type
+		startWeapon = 0;
 
 
 			/* SCAN FOR ANOTHER WEAPON */
 
-	i = weaponType;
+	i = startWeapon;
 
 	while(true)													// scan until we've looped back to where we started
 	{
-		i++;													// try next weapon slot
-		if (i >= NUM_WEAPON_TYPES)								// loop back to front of list?
-			i = 0;
+		i += delta;												// try next weapon slot
+		i = PositiveModulo(i, NUM_WEAPON_TYPES);				// loop back to front of list?
 
-		if (i == weaponType)									// did we loop to where we started?
+		if (i == startWeapon)									// did we loop to where we started?
 		{
 			if (i == WEAPON_TYPE_SONICSCREAM)					// if already SS, then bail
 				return;
@@ -361,9 +360,11 @@ short	weaponType, i;
 			goto setthis;
 		}
 
-		if (!allowSonicScream)									// see if skip sonic scream
-			if (i == WEAPON_TYPE_SONICSCREAM)
-				continue;
+		if (!allowSonicScream									// see if skip sonic scream
+			&& i == WEAPON_TYPE_SONICSCREAM)
+		{
+			continue;
+		}
 
 		if (gPlayerInfo[playerNum].weaponQuantity[i] > 0)		// do we have any of this weapon type?
 		{
@@ -373,7 +374,6 @@ setthis:
 			gPlayerInfo[playerNum].currentWeapon = i;
 			return;
 		}
-
 	}
 
 

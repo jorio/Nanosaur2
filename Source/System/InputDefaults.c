@@ -1,13 +1,13 @@
 #include "game.h"
 
 #if __APPLE__
-	#define SC_NWEAP1 SDL_SCANCODE_LGUI
-	#define SC_NWEAP2 SDL_SCANCODE_RGUI
+	#define SC_NWEAP SDL_SCANCODE_LGUI
+	#define SC_PWEAP SDL_SCANCODE_RGUI
 	#define SC_DROP1 SDL_SCANCODE_LALT
 	#define SC_DROP2 SDL_SCANCODE_RALT
 #else
-	#define SC_NWEAP1 SDL_SCANCODE_LCTRL
-	#define SC_NWEAP2 SDL_SCANCODE_RCTRL
+	#define SC_NWEAP SDL_SCANCODE_LCTRL
+	#define SC_PWEAP SDL_SCANCODE_RCTRL
 	#define SC_DROP1 SDL_SCANCODE_LALT
 	#define SC_DROP2 SDL_SCANCODE_RALT
 #endif
@@ -33,17 +33,24 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 		.pad = { CB(Y) },
 	},
 
+	[kNeed_PrevWeapon] =
+	{
+		.key = { SC_PWEAP },
+		.pad = { CB(LEFTSHOULDER) },
+		.mouseButton = SDL_BUTTON_WHEELUP,
+	},
+
 	[kNeed_NextWeapon] =
 	{
-		.key = { SC_NWEAP1, SC_NWEAP2 },
-		.pad = { CB(B) },
+		.key = { SC_NWEAP },
+		.pad = { CB(RIGHTSHOULDER), CB(B) },
 		.mouseButton = SDL_BUTTON_WHEELDOWN,
 	},
 
 	[kNeed_CameraMode] =
 	{
 		.key = { SDL_SCANCODE_TAB },
-		.pad = { CB(LEFTSHOULDER) },
+		.pad = { CB(LEFTSTICK) },
 	},
 
 	[kNeed_Jetpack] =

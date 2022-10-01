@@ -847,11 +847,8 @@ static void NavigateSettingEntriesMouseHover(void)
 	int ww, wh;
 	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
 
-
 	float mx = (mxRaw /*- ww/2.0f*/) * g2DLogicalWidth / ww;
 	float my = (myRaw /*- wh/2.0f*/) * g2DLogicalHeight / wh;
-
-	printf("%f %f\n", mx, my);
 
 	gNav->mouseHoverValid = false;
 	gNav->mouseHoverColumn = -1;
@@ -921,6 +918,7 @@ static void NavigatePick(const MenuItem* entry)
 {
 	if (IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
 //			|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
+			|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
 			)
 	{
 		PlayConfirmEffect();

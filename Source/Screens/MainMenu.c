@@ -70,7 +70,6 @@ static const MenuItem gMainMenuTree[] =
 
 static Boolean	gPlayNow = false;
 
-ObjNode		*gMenuCursorObj;
 OGLPoint2D	gCursorCoord;						// screen coords based on 640x480 system
 
 
@@ -191,7 +190,6 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 			/* LOAD SPRITES */
 
 	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
@@ -243,6 +241,10 @@ static void ProcessMenuOutcome(int outcome)
 
 	switch (outcome)
 	{
+		case	'quit':
+			CleanQuit();
+			break;
+
 		case	'ssav':										// SCREENSAVER
 			DoLevelIntroScreen(INTRO_MODE_SCREENSAVER);
 			break;
@@ -388,10 +390,15 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 
 ObjNode* MakeMouseCursorObject(void)
 {
+	if (gNumSpritesInGroupList[SPRITE_GROUP_CURSOR] == 0)
+	{
+		LoadSpriteGroupFromFiles(SPRITE_GROUP_CURSOR, 1, (const char*[]) {":sprites:cursor.png"}, 0);
+	}
+
 	NewObjectDefinitionType def =
 	{
-		.group		= SPRITE_GROUP_FONT,
-		.type		= FONT_SObjType_ArrowCursor,
+		.group		= SPRITE_GROUP_CURSOR,
+		.type		= CURSOR_SObjType_ArrowCursor,
 		.coord		= {0,0,0},
 		.flags		= STATUS_BIT_MOVEINPAUSE,
 		.slot		= CURSOR_SLOT,			// make sure this is the last sprite drawn

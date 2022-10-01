@@ -142,7 +142,6 @@ short	i;
 	LoadSpriteGroup(SPRITE_GROUP_INFOBAR, ":sprites:infobar.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_GLOBAL, ":sprites:global.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 

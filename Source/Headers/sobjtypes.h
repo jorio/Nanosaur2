@@ -7,6 +7,7 @@ enum
 {
 	SPRITE_GROUP_SPHEREMAPS 		= 	0,
 	SPRITE_GROUP_INFOBAR			=	1,
+	SPRITE_GROUP_CURSOR				=	2,
 	SPRITE_GROUP_PARTICLES			=	3,
 	SPRITE_GROUP_INTROSTORY			=	4,
 	SPRITE_GROUP_MAINMENU			=	4,
@@ -123,66 +124,7 @@ enum
 
 enum
 {
-	FONT_SObjType_Comma,
-	FONT_SObjType_Dash,
-	FONT_SObjType_Period,
-	FONT_SObjType_ExclamationMark,
-	FONT_SObjType_Apostrophe,
-	FONT_SObjType_Ampersand,
-
-	FONT_SObjType_UU,
-	FONT_SObjType_OO,
-	FONT_SObjType_AA,
-	FONT_SObjType_AO,
-	FONT_SObjType_NN,
-	FONT_SObjType_EE,
-	FONT_SObjType_Ax,
-	FONT_SObjType_Ox,
-	FONT_SObjType_Oa,
-	FONT_SObjType_beta,
-
-	FONT_SObjType_0,
-	FONT_SObjType_1,
-	FONT_SObjType_2,
-	FONT_SObjType_3,
-	FONT_SObjType_4,
-	FONT_SObjType_5,
-	FONT_SObjType_6,
-	FONT_SObjType_7,
-	FONT_SObjType_8,
-	FONT_SObjType_9,
-
-	FONT_SObjType_A,
-	FONT_SObjType_B,
-	FONT_SObjType_C,
-	FONT_SObjType_D,
-	FONT_SObjType_E,
-	FONT_SObjType_F,
-	FONT_SObjType_G,
-	FONT_SObjType_H,
-	FONT_SObjType_I,
-	FONT_SObjType_J,
-	FONT_SObjType_K,
-	FONT_SObjType_L,
-	FONT_SObjType_M,
-	FONT_SObjType_N,
-	FONT_SObjType_O,
-	FONT_SObjType_P,
-	FONT_SObjType_Q,
-	FONT_SObjType_R,
-	FONT_SObjType_S,
-	FONT_SObjType_T,
-	FONT_SObjType_U,
-	FONT_SObjType_V,
-	FONT_SObjType_W,
-	FONT_SObjType_X,
-	FONT_SObjType_Y,
-	FONT_SObjType_Z,
-
-	FONT_SObjType_BackArrow,
-
-	FONT_SObjType_BoxCursor,
-	FONT_SObjType_ArrowCursor
+	CURSOR_SObjType_ArrowCursor
 };
 
 

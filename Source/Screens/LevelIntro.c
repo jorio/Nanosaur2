@@ -211,7 +211,6 @@ ObjNode	*newObj;
 
 	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
 	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
 
 
 			/* LOAD SKELETONS */

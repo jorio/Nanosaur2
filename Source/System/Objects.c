@@ -857,18 +857,6 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					break;
 
 
-			case	FONTSTRING_GENRE:
-					OGL_PushState();											// keep state
-
-					SetInfobarSpriteState(theNode->AnaglyphZ);
-
-					for (i = 0; i < theNode->NumStringSprites; i++)
-						MO_DrawObject(theNode->StringCharacters[i]);
-
-					OGL_PopState();												// restore state
-					break;
-
-
 			case	TEXTMESH_GENRE:
 					if (theNode->BaseGroup)
 					{
@@ -1373,11 +1361,6 @@ int		i;
 		case	SPRITE_GENRE:
 				MO_DisposeObjectReference(theNode->SpriteMO);	// dispose reference to sprite meta object
 		   		theNode->SpriteMO = nil;
-				break;
-
-		case	FONTSTRING_GENRE:
-				for (i = 0; i < theNode->NumStringSprites; i++)
-					MO_DisposeObjectReference(theNode->StringCharacters[i]);	// dispose reference to sprite meta objects
 				break;
 	}
 

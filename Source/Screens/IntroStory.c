@@ -342,11 +342,9 @@ OGLSetupInputType	viewDef;
 	};
 
 	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, introSlides, 0);
-	LoadSpriteGroup(SPRITE_GROUP_FONT, ":sprites:font.sprites", 0);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
-
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
 
 
 			/****************/

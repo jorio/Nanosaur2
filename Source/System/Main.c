@@ -163,6 +163,8 @@ void InitDefaultPrefs(void)
 	gGamePrefs.showTargetingCrosshairs	= true;
 	gGamePrefs.kiddieMode				= false;
 
+	gGamePrefs.mouseSensitivityLevel	= DEFAULT_MOUSE_SENSITIVITY_LEVEL;
+
 	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");
 	memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));
 }
@@ -571,6 +573,9 @@ float	fps;
 	}
 
 
+	GrabMouse(true);
+
+
 		/******************/
 		/* MAIN GAME LOOP */
 		/******************/
@@ -635,7 +640,11 @@ float	fps;
 			/*****************/
 
 		if (IsNeedDown(kNeed_UIPause, ANY_PLAYER))					// do regular pause mode
+		{
+			GrabMouse(false);
 			DoPaused();
+			GrabMouse(true);
+		}
 
 #if 0
 		if (GetNewKeyState(KEY_F15))								// do screen-saver-safe paused mode
@@ -677,6 +686,8 @@ float	fps;
 				break;
 		}
 	}
+
+	GrabMouse(false);
 
 	if (gGammaFadeFrac > 0)											// only fade out if we haven't called MakeFadeEvent(false) already
 	{

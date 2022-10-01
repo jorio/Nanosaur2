@@ -24,6 +24,7 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	{
 		.key = { SDL_SCANCODE_SPACE },
 		.pad = { CB(X) },
+		.mouseButton = SDL_BUTTON_LEFT,
 	},
 
 	[kNeed_Drop] =
@@ -36,6 +37,7 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	{
 		.key = { SC_NWEAP1, SC_NWEAP2 },
 		.pad = { CB(B) },
+		.mouseButton = SDL_BUTTON_WHEELDOWN,
 	},
 
 	[kNeed_CameraMode] =
@@ -48,6 +50,7 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	{
 		.key = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT },
 		.pad = { CB(A) },
+		.mouseButton = SDL_BUTTON_RIGHT,
 	},
 
 	[kNeed_PitchUp] =

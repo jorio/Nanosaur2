@@ -1186,38 +1186,40 @@ void UpdatePlayerSteering(int playerNum)
 	float pitch		= GetNeedAnalogSteering(kNeed_PitchUp, kNeed_PitchDown, playerNum);
 	float yaw		= GetNeedAnalogSteering(kNeed_YawLeft, kNeed_YawRight, playerNum);
 
-#if 0
-	/* AND FINALLY SEE IF MOUSE DELTAS ARE BEST */
-	//
-	// The mouse is only used for Player 1
-	//
+	/* AND FINALLY SEE IF MOUSE DELTAS ARE BEST (FOR PLAYER 1 ONLY) */
 
-	mouseDX = gMouseDeltaX * 0.015f;											// scale down deltas for our use
-	mouseDY = gMouseDeltaY * 0.015f;
+	if (playerNum == 0)
+	{
+		const float mouseSensitivityFrac = (float)gGamePrefs.mouseSensitivityLevel * (1.0f / NUM_MOUSE_SENSITIVITY_LEVELS);
 
-	if (mouseDX > 1.0f)											// keep x values pinned
-		mouseDX = 1.0f;
-	else
-	if (mouseDX < -1.0f)
-		mouseDX = -1.0f;
+		OGLVector2D mouseDelta = GetMouseDelta();
 
-	if (fabs(mouseDX) > fabs(gPlayerInfo[0].analogControlX))		// is the mouse delta better than what we've got from the other devices?
-		gPlayerInfo[0].analogControlX = mouseDX;
+		//float mult = 0.015f;	// original
+		float mult = 0.05f * mouseSensitivityFrac;
+
+		float mouseYaw   = mouseDelta.x * mult;				// scale down deltas for our use
+		float mousePitch = mouseDelta.y * mult;
+
+		if (mouseYaw > 1.0f)								// keep x values pinned
+			mouseYaw = 1.0f;
+		else if (mouseYaw < -1.0f)
+			mouseYaw = -1.0f;
+
+		if (fabsf(mouseYaw) > fabsf(yaw))					// is the mouse delta better than what we've got from the other devices?
+			yaw = mouseYaw;
 
 
-	if (mouseDY > 1.0f)											// keep y values pinned
-		mouseDY = 1.0f;
-	else
-	if (mouseDY < -1.0f)
-		mouseDY = -1.0f;
+		if (mousePitch > 1.0f)								// keep y values pinned
+			mousePitch = 1.0f;
+		else if (mousePitch < -1.0f)
+			mousePitch = -1.0f;
 
-	if (fabs(mouseDY) > fabs(gPlayerInfo[0].analogControlZ))		// is the mouse delta better than what we've got from the other devices?
-		gPlayerInfo[0].analogControlZ = mouseDY;
-#endif
+		if (fabsf(mousePitch) > fabsf(pitch))				// is the mouse delta better than what we've got from the other devices?
+			pitch = mousePitch;
+	}
 
 
 	playerInfo->analogControlX = yaw;
 	playerInfo->analogControlZ = pitch;
-
 }
 

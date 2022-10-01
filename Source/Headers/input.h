@@ -151,5 +151,5 @@ void ResetDefaultKeyboardBindings(void);
 void ResetDefaultGamepadBindings(void);
 void ResetDefaultMouseBindings(void);
 
-
-
+OGLVector2D GetMouseDelta(void);
+void GrabMouse(Boolean capture);

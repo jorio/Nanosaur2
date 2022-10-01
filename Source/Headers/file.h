@@ -88,6 +88,8 @@ typedef struct
 
 	Byte	antialiasingLevel;
 
+	Byte	mouseSensitivityLevel;
+
 	InputBinding	bindings[NUM_CONTROL_NEEDS];
 }PrefsType;
 

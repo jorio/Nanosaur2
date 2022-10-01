@@ -22,11 +22,17 @@
 #define MAX_LOCAL_PLAYERS MAX_PLAYERS
 #define gNumLocalPlayers gNumPlayers
 #define REQUIRE_LOCK_MAPPING 0
+#define MOUSE_SMOOTHING 0
 
 #define kJoystickDeadZone				(33 * 32767 / 100)
 #define kJoystickDeadZone_UI			(66 * 32767 / 100)
 #define kJoystickDeadZoneFrac			(kJoystickDeadZone / 32767.0f)
 #define kJoystickDeadZoneFracSquared	(kJoystickDeadZoneFrac * kJoystickDeadZoneFrac)
+
+#if MOUSE_SMOOTHING
+static const int kMouseSmoothingAccumulatorWindowTicks = 10;
+#define DELTA_MOUSE_MAX_SNAPSHOTS 64
+#endif
 
 /**********************/
 /*     PROTOTYPES     */
@@ -56,6 +62,27 @@ static KeyState		gNeedStates[NUM_CONTROL_NEEDS];
 
 Boolean				gMouseMotionNow = false;
 char				gTextInput[SDL_TEXTINPUTEVENT_TEXT_SIZE];
+
+#if MOUSE_SMOOTHING
+static struct MouseSmoothingState
+{
+	bool initialized;
+	struct
+	{
+		uint32_t timestamp;
+		int dx;
+		int dy;
+	} snapshots[DELTA_MOUSE_MAX_SNAPSHOTS];
+	int ringStart;
+	int ringLength;
+	int dxAccu;
+	int dyAccu;
+} gMouseSmoothing = {0};
+
+static void MouseSmoothing_ResetState(void);
+static void MouseSmoothing_StartFrame(void);
+static void MouseSmoothing_OnMouseMotion(const SDL_MouseMotionEvent* motion);
+#endif
 
 static void OnJoystickRemoved(SDL_JoystickID which);
 static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex);
@@ -268,6 +295,10 @@ void DoSDLMaintenance(void)
 			/* DO SDL MAINTENANCE */
 			/**********************/
 
+#if MOUSE_SMOOTHING
+	MouseSmoothing_StartFrame();
+#endif
+
 	SDL_PumpEvents();
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
@@ -300,6 +331,9 @@ void DoSDLMaintenance(void)
 
 				case SDL_MOUSEMOTION:
 					gMouseMotionNow = true;
+#if MOUSE_SMOOTHING
+					MouseSmoothing_OnMouseMotion(&event.motion);
+#endif
 					break;
 
 				case SDL_MOUSEWHEEL:
@@ -890,4 +924,101 @@ void ResetDefaultMouseBindings(void)
 	{
 		gGamePrefs.bindings[i].mouseButton = kDefaultInputBindings[i].mouseButton;
 	}
+}
+
+#pragma mark - Mouse smoothing
+
+#if MOUSE_SMOOTHING
+static void MouseSmoothing_PopOldestSnapshot(void)
+{
+	struct MouseSmoothingState* state = &gMouseSmoothing;
+
+	state->dxAccu -= state->snapshots[state->ringStart].dx;
+	state->dyAccu -= state->snapshots[state->ringStart].dy;
+
+	state->ringStart = (state->ringStart + 1) % DELTA_MOUSE_MAX_SNAPSHOTS;
+	state->ringLength--;
+
+	GAME_ASSERT(state->ringLength != 0 || (state->dxAccu == 0 && state->dyAccu == 0));
+}
+
+static void MouseSmoothing_ResetState(void)
+{
+	struct MouseSmoothingState* state = &gMouseSmoothing;
+	state->ringLength = 0;
+	state->ringStart = 0;
+	state->dxAccu = 0;
+	state->dyAccu = 0;
+}
+
+static void MouseSmoothing_StartFrame(void)
+{
+	struct MouseSmoothingState* state = &gMouseSmoothing;
+
+	if (!state->initialized)
+	{
+		MouseSmoothing_ResetState();
+		state->initialized = true;
+	}
+
+	uint32_t now = SDL_GetTicks();
+	uint32_t cutoffTimestamp = now - kMouseSmoothingAccumulatorWindowTicks;
+
+	// Purge old snapshots
+	while (state->ringLength > 0 &&
+		   state->snapshots[state->ringStart].timestamp < cutoffTimestamp)
+	{
+		MouseSmoothing_PopOldestSnapshot();
+	}
+}
+
+static void MouseSmoothing_OnMouseMotion(const SDL_MouseMotionEvent* motion)
+{
+	struct MouseSmoothingState* state = &gMouseSmoothing;
+
+	// ignore mouse input if user has alt-tabbed away from the game
+	if (!(SDL_GetWindowFlags(gSDLWindow) & SDL_WINDOW_INPUT_FOCUS))
+	{
+		return;
+	}
+
+	if (state->ringLength == DELTA_MOUSE_MAX_SNAPSHOTS)
+	{
+//		printf("%s: buffer full!!\n", __func__);
+		MouseSmoothing_PopOldestSnapshot();				// make room at start of ring buffer
+	}
+
+	int i = (state->ringStart + state->ringLength) % DELTA_MOUSE_MAX_SNAPSHOTS;
+	state->ringLength++;
+
+	state->snapshots[i].timestamp = motion->timestamp;
+	state->snapshots[i].dx = motion->xrel;
+	state->snapshots[i].dy = motion->yrel;
+
+	state->dxAccu += motion->xrel;
+	state->dyAccu += motion->yrel;
+}
+#endif
+
+OGLVector2D GetMouseDelta(void)
+{
+#if MOUSE_SMOOTHING
+	struct MouseSmoothingState* state = &gMouseSmoothing;
+
+	GAME_ASSERT(state->ringLength != 0 || (state->dxAccu == 0 && state->dyAccu == 0));
+
+	return (OGLVector2D) {(float) state->dxAccu, (float) state->dyAccu};
+#else
+	int x = 0;
+	int y = 0;
+	SDL_GetRelativeMouseState(&x, &y);
+	return (OGLVector2D) {(float) x, (float) y};
+#endif
+}
+
+void GrabMouse(Boolean capture)
+{
+	SDL_SetWindowGrab(gSDLWindow, capture);
+	SDL_SetRelativeMouseMode(capture? SDL_TRUE: SDL_FALSE);
+	SDL_ShowCursor(capture? 0: 1);
 }

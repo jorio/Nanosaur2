@@ -539,17 +539,7 @@ Boolean				same;
 
 int16_t SwizzleShort(const int16_t *shortPtr)
 {
-int16_t	theShort = *shortPtr;
-
-#if __LITTLE_ENDIAN__
-
-	Byte	b1 = theShort & 0xff;
-	Byte	b2 = (theShort & 0xff00) >> 8;
-
-	theShort = (b1 << 8) | b2;
-#endif
-
-	return(theShort);
+	return (int16_t) SwizzleUShort((const uint16_t*) shortPtr);
 }
 
 
@@ -561,8 +551,8 @@ uint16_t	theShort = *shortPtr;
 
 #if __LITTLE_ENDIAN__
 
-	Byte	b1 = theShort & 0xff;
-	Byte	b2 = (theShort & 0xff00) >> 8;
+	uint32_t	b1 = theShort & 0xff;
+	uint32_t	b2 = (theShort & 0xff00) >> 8;
 
 	theShort = (b1 << 8) | b2;
 #endif
@@ -576,20 +566,8 @@ uint16_t	theShort = *shortPtr;
 
 int32_t SwizzleLong(const int32_t *longPtr)
 {
-int32_t	theLong = *longPtr;
+	return (int32_t) SwizzleULong((const uint32_t*) longPtr);
 
-#if __LITTLE_ENDIAN__
-
-	Byte	b1 = theLong & 0xff;
-	Byte	b2 = (theLong & 0xff00) >> 8;
-	Byte	b3 = (theLong & 0xff0000) >> 16;
-	Byte	b4 = (theLong & 0xff000000) >> 24;
-
-	theLong = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-
-#endif
-
-	return(theLong);
 }
 
 
@@ -601,10 +579,10 @@ uint32_t	theLong = *longPtr;
 
 #if __LITTLE_ENDIAN__
 
-	Byte	b1 = theLong & 0xff;
-	Byte	b2 = (theLong & 0xff00) >> 8;
-	Byte	b3 = (theLong & 0xff0000) >> 16;
-	Byte	b4 = (theLong & 0xff000000) >> 24;
+	uint32_t	b1 = theLong & 0xff;
+	uint32_t	b2 = (theLong & 0xff00) >> 8;
+	uint32_t	b3 = (theLong & 0xff0000) >> 16;
+	uint32_t	b4 = (theLong & 0xff000000) >> 24;
 
 	theLong = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
 
@@ -620,26 +598,9 @@ uint32_t	theLong = *longPtr;
 float SwizzleFloat(const float *floatPtr)
 {
 float	*theFloat;
-uint32_t	bytes = SwizzleULong((uint32_t *)floatPtr);
+uint32_t	bytes = SwizzleULong((const uint32_t *)floatPtr);
 
 	theFloat = (float *)&bytes;
 
 	return(*theFloat);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -541,7 +541,7 @@ Boolean					hasAlpha;
 		{
 			uint32_t	pixel32 = texturePixels[i];
 			pixel32 &= 0x00ffffff;								// get RGBx and mask out alpha
-			pixel32 |= alphaBuffer[i] << 24;					// insert alpha
+			pixel32 |= ((uint32_t) alphaBuffer[i]) << 24;		// insert alpha
 			texturePixels[i] = pixel32; 						// save new RGBA
 		}
 

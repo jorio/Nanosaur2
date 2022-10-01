@@ -268,6 +268,7 @@ struct ObjNode
 	struct ObjNode	*ChainHead;			// a chain's head (link back to 1st obj in chain)
 
 	struct ObjNode	*ShadowNode;		// ptr to node's shadow (if any)
+	struct ObjNode	*TwitchNode;		// ptr to node's twitch driver (if any)
 
 	u_short			Slot;				// sort value
 	Byte			Genre;				// obj genre
@@ -284,6 +285,7 @@ struct ObjNode
 	void			(*MoveCall)(struct ObjNode *);			// pointer to object's move routine
 	void			(*SplineMoveCall)(struct ObjNode *);	// pointer to object's spline move routine
 	void			(*CustomDrawFunction)(struct ObjNode *);// pointer to object's custom draw function
+	void			(*Destructor)(struct ObjNode *);		// pointer to object's destructor function
 
 
 			/* PHYSICS */

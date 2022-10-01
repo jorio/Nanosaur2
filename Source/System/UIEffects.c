@@ -21,6 +21,10 @@ typedef struct
 } TwitchDriverData;
 //CheckSpecialDataStruct(TwitchDriverData);
 
+#define GetTwitchDriverData(node) ((TwitchDriverData*) (node)->Special)
+
+#define IsObjectBeingDeleted(node) ((node)->CType == INVALID_NODE_FLAG)
+
 int						gFreeTwitches = MAX_TWITCHES;
 static bool				gTwitchPtrPoolInitialized = false;
 static Twitch*			gTwitchPtrPool[MAX_TWITCHES];
@@ -461,9 +465,7 @@ static bool ApplyTwitch(ObjNode* puppet, const Twitch* fx, float timer)
 
 static void MoveTwitchDriver(ObjNode* driverNode)
 {
-	SOFTIMPME;
-#if 0
-	TwitchDriverData* driverData = GetSpecialData(driverNode, TwitchDriverData);
+	TwitchDriverData* driverData = GetTwitchDriverData(driverNode);
 	GAME_ASSERT(driverData->cookie == 'UIFX');
 
 	ObjNode* puppet = driverData->puppet;
@@ -541,7 +543,6 @@ static void MoveTwitchDriver(ObjNode* driverNode)
 			SetObjectVisible(puppet, anyEffectActive);
 		}
 	}
-#endif
 }
 
 #pragma mark - Twitch construction/destruction
@@ -557,30 +558,23 @@ static void DisposeEffectChain(TwitchDriverData* driverData)
 	driverData->chainLength = 0;
 }
 
-static void DestroyTwitchDriver(ObjNode* driver)
+static void DestroyTwitchDriver(ObjNode* driverNode)
 {
-	SOFTIMPME;
-#if 0
-	TwitchDriverData* driverData = GetSpecialData(driver, TwitchDriverData);
+	TwitchDriverData* driverData = GetTwitchDriverData(driverNode);
 
 	if (driverData->puppet
 		&& !IsObjectBeingDeleted(driverData->puppet)
-		&& driverData->puppet->TwitchNode == driver)
+		&& driverData->puppet->TwitchNode == driverNode)
 	{
 		driverData->puppet->TwitchNode = NULL;
 	}
 	driverData->puppet = NULL;
 
 	DisposeEffectChain(driverData);
-#endif
 }
 
 Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags)
 {
-	return NULL;
-
-	SOFTIMPME;
-#if 0
 	if (puppet == NULL)
 	{
 		return NULL;
@@ -595,7 +589,7 @@ Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags)
 	if (puppet->TwitchNode)
 	{
 		driverNode = puppet->TwitchNode;
-		driverData = GetSpecialData(driverNode, TwitchDriverData);
+		driverData = GetTwitchDriverData(driverNode);
 
 		GAME_ASSERT(puppet->TwitchNode == driverNode);
 		GAME_ASSERT(driverData->cookie == 'UIFX');
@@ -630,7 +624,7 @@ Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags)
 
 		driverNode = MakeNewObject(&def);
 		driverNode->Destructor = DestroyTwitchDriver;
-		driverData = GetSpecialData(driverNode, TwitchDriverData);
+		driverData = GetTwitchDriverData(driverNode);
 
 		driverData->cookie = 'UIFX';
 		driverData->puppet = puppet;
@@ -666,7 +660,6 @@ Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags)
 	}
 
 	return twitch;
-#endif
 }
 
 #pragma mark - Init

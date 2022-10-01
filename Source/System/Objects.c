@@ -1339,6 +1339,11 @@ int		i;
 #endif
 	}
 
+			/* CALL CUSTOM DESTRUCTOR */
+
+	if (theNode->Destructor)
+		theNode->Destructor(theNode);
+
 			/* RECURSIVE DELETE OF CHAIN NODE & SHADOW NODE */
 			//
 			// should do these first so that base node will have appropriate nextnode ptr
@@ -1351,6 +1356,9 @@ int		i;
 
 	if (theNode->ShadowNode)
 		DeleteObject(theNode->ShadowNode);
+
+//	if (theNode->TwitchNode)
+//		DeleteObject(theNode->TwitchNode);
 
 
 			/* SEE IF NEED TO FREE UP SPECIAL MEMORY */

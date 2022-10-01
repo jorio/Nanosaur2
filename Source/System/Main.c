@@ -11,6 +11,7 @@
 /****************************/
 
 #include "game.h"
+#include "uieffects.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -982,6 +983,7 @@ unsigned long	someLong;
 	InitTerrainManager();
 	InitSkeletonManager();
 	InitSoundTools();
+	InitTwitchSystem();
 
 
 			/* INIT MORE MY STUFF */

@@ -568,12 +568,19 @@ do_again:
 
 void DrawLoading(float percent)
 {
+	// Kill vsync so we don't waste 16ms before loading the next asset
+	int vsyncBackup = SDL_GL_GetSwapInterval();
+	SDL_GL_SetSwapInterval(0);
+
 	// Prevent the OS from thinking our process has locked up
 	DoSDLMaintenance();
 
+	// Draw thermometer
 	OGL_DrawScene(DrawLoading_Callback);
-
 	gLoadingThermoPercent = percent;
+
+	// Restore vsync setting
+	SDL_GL_SetSwapInterval(vsyncBackup);
 }
 
 

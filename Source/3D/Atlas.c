@@ -402,14 +402,22 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 
 	if (flags & kAtlasLoadFont)
 	{
-#if 0
-		// Parse kerning table
-		char* data = LoadTextFile(":system:kerning.txt", NULL);
-		GAME_ASSERT(data);
-		ParseKerningFile(atlas, data);
-		SafeDisposePtr(data);
-#endif
+		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.kerning.txt", fontName);
 
+		// Parse kerning table
+		char* data = LoadTextFile(pathBuf, NULL);
+
+		if (data != NULL)
+		{
+			ParseKerningFile(atlas, data);
+			SafeDisposePtr(data);
+		}
+		else
+		{
+#if _DEBUG
+			printf("Kerning not available for this font: %s\n", pathBuf);
+#endif
+		}
 	}
 
 	return atlas;

@@ -1565,7 +1565,8 @@ Ptr LoadDataFile(const char* path, long* outLength)
 	long readBytes = 0;
 
 	err = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
-	GAME_ASSERT_MESSAGE(!err, path);
+	if (err != noErr)
+		return NULL;
 
 	err = FSpOpenDF(&spec, fsRdPerm, &refNum);
 	GAME_ASSERT_MESSAGE(!err, path);

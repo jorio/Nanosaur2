@@ -88,11 +88,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		.03,								// drot
 		.5,									// delay to play effect
 		.narrationSound = EFFECT_STORY1,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH] =	"#9500\nIn the year 4122, a sole Nanosaur was\nsent 65 million years into the past.",
-			[LANGUAGE_FRENCH] =		"#9500\nEn l’an 4122, un Nanosaur solitaire fut envoyé\n65 millions d’années dans le passé.",
-		}
+		.subtitleKey = STR_STORY_1,
 	},
 
 
@@ -110,11 +106,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY2,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH]	=	"#10500\nHis mission was to find the unhatched eggs of\nancient dinosaur species and return them to the future.",
-			[LANGUAGE_FRENCH]	=	"#10500\nIl était chargé de trouver des œufs intacts de\ndinosaures préhistoriques et de les renvoyer dans le futur.",
-		},
+		.subtitleKey = STR_STORY_2,
 	},
 
 		/* THE MISSION WAS A SUCCESS */
@@ -131,11 +123,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		.05,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY3,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH]	= "#7000\n\nThe mission was a success.",
-			[LANGUAGE_FRENCH]	= "#7000\n\nLa mission fut accomplie.",
-		},
+		.subtitleKey = STR_STORY_3,
 	},
 
 			/* BUT BEFORE... */
@@ -152,11 +140,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		0,									// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY4,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH]	=	"#8000\nBut before the eggs could be hatched,\nthey were stolen by a group of rebel Nanosaurs.",
-			[LANGUAGE_FRENCH]	=	"#8000\nMais avant que les œufs n’éclosent,\nils furent volés par un groupe de Nanosaurs rebelles.",
-		},
+		.subtitleKey = STR_STORY_4,
 	},
 
 		/* THE EGGS WERE TAKEN TO... */
@@ -173,13 +157,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY5,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH]	=	"#6333\nThe rebels took the eggs to offworld bases\nwhere they planned on breeding the dinosaurs.\n"
-									"#6000\nTheir goal was to create warriors\nfor fighting their battle against Earth.",
-			[LANGUAGE_FRENCH]	=	"#6333\nLes rebelles emmenèrent les œufs dans une base lointaine\nd’où ils comptaient élever les dinosaures.\n"
-									"#6000\nIls voulaient créer des mercenaires\npour gagner leur bataille contre la Terre.",
-		},
+		.subtitleKey = STR_STORY_5,
 	},
 
 		/* BUT THE REBELS LEFT... */
@@ -196,11 +174,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.02,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY6,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH]	=	"#8000\nBut the rebels left one egg behind.\nWhen it hatched, a new Nanosaur was born.",
-			[LANGUAGE_FRENCH]	=	"#8000\nMais les rebelles laissèrent un œuf derrière eux.\nEn éclosant, un nouveau Nanosaur fut né.",
-		},
+		.subtitleKey = STR_STORY_6,
 	},
 
 
@@ -218,13 +192,7 @@ static SlideType gSlides[NUM_SLIDES] =
 		-.05,								// drot
 		1.0,								// delay to play effect
 		.narrationSound = EFFECT_STORY7,
-		.subtitles =
-		{
-			[LANGUAGE_ENGLISH] =	"#4750\nThis hatchling was sent on a mission\nto recover the stolen eggs . . .\n"
-									"#4000\n\n. . . and defeat the rebel forces.",
-			[LANGUAGE_FRENCH] =		"#4750\nCe nouveau-né se vit confier la mission\nde récupérer les œufs volés...\n"
-									"#4000\n\n...et de vaincre les forces rebelles.",
-		},
+		.subtitleKey = STR_STORY_7,
 	},
 
 
@@ -538,10 +506,7 @@ static void MoveSubtitle(ObjNode* theNode)
 
 static void MakeSubtitleObjects(int slideNum)
 {
-	const char* text = gSlides[slideNum].subtitles[gGamePrefs.language];
-
-	if (!text)
-		text = gSlides[slideNum].subtitles[LANGUAGE_ENGLISH];
+	const char* text = Localize(gSlides[slideNum].subtitleKey);
 
 	if (!text)
 		return;

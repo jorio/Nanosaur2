@@ -39,7 +39,7 @@ typedef struct
 	float	drot;
 	float	delayUntilEffect;
 	int		narrationSound;
-	const char* subtitles[NUM_LANGUAGES];
+	int		subtitleKey;
 }SlideType;
 
 #define	ZoomSpeed			SpecialF[0]

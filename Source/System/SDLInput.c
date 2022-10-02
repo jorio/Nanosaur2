@@ -159,11 +159,8 @@ static void ParseAltEnter(void)
 	if (IsKeyDown(SDL_SCANCODE_RETURN)
 		&& (IsKeyHeld(SDL_SCANCODE_LALT) || IsKeyHeld(SDL_SCANCODE_RALT)))
 	{
-		SOFTIMPME;
-#if 0
 		gGamePrefs.fullscreen = !gGamePrefs.fullscreen;
 		SetFullscreenMode(false);
-#endif
 
 		InvalidateAllInputs();
 	}

@@ -17,10 +17,10 @@ void DrawLoading(float percent);
 
 		/* MAIN MENU */
 
-
-
 void DoMainMenuScreen(void);
 ObjNode* MakeMouseCursorObject(void);
+
+void RegisterSettingsMenu(void);
 
 
 		/* INTRO STORY */

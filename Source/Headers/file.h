@@ -73,6 +73,9 @@ typedef struct
 	Boolean	lowRenderQuality;
 	Byte	language;
 
+	Boolean	fullscreen;
+	Boolean	cutsceneSubtitles;
+
 	Byte	splitScreenMode;
 
 	Byte	stereoGlassesMode;

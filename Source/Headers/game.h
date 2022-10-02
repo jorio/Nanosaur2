@@ -63,6 +63,7 @@
 #include "3dmath.h"
 #include "quadmesh.h"
 #include "atlas.h"
+#include "menu.h"
 
 #define IMPME DoFatalAlert("IMPLEMENT ME in %s", __func__)
 #define SOFTIMPME do { \

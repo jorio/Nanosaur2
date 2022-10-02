@@ -7,7 +7,6 @@
 /****************************/
 
 #include "game.h"
-#include "menu.h"
 #include "uieffects.h"
 
 #include <SDL.h>
@@ -89,6 +88,7 @@ typedef struct
 #define PlayNavigateEffect() PlayEffect_Parms(kSfxNavigate, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 #define PlayConfirmEffect() PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 #define PlayBackEffect() PlayEffect_Parms(kSfxBack, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
+#define PlayErrorEffect() PlayEffect_Parms(kSfxError, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 
 const int16_t kJoystickDeadZone_BindingThreshold = (75 * 32767 / 100);
 
@@ -716,7 +716,7 @@ static void GoBackInHistory(void)
 	}
 	else
 	{
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 	}
 }
 
@@ -1041,7 +1041,7 @@ static void NavigateCycler(const MenuItem* entry)
 		MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuSelect);
 		MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
 		MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		return;
 	}
 
@@ -1056,7 +1056,7 @@ static void NavigateCycler(const MenuItem* entry)
 			if ((index == 0 && delta < 0) ||
 				(index == GetCyclerNumChoices(entry)-1 && delta > 0))
 			{
-				PlayEffect(kSfxError);
+				PlayErrorEffect();
 				MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuWiggle);
 				MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
 				MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
@@ -1069,11 +1069,12 @@ static void NavigateCycler(const MenuItem* entry)
 				index = 0;
 
 			*entry->cycler.valuePtr = GetCyclerValueForIndex(entry, index);
-			PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME, FULL_CHANNEL_VOLUME, NORMAL_CHANNEL_RATE /2 + 4096 * index);
+//			PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE / 2 + 4096 * index);
+			PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE);
 		}
 		else
 		{
-			PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME, FULL_CHANNEL_VOLUME, NORMAL_CHANNEL_RATE * 2/3 + (RandomFloat2() * 0x3000));
+			PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE * 2/3 + (RandomFloat2() * 0x3000));
 		}
 
 		if (entry->callback)
@@ -1128,7 +1129,7 @@ enum
 		MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuSelect);
 		MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
 		MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		return;
 	}
 
@@ -1504,7 +1505,7 @@ static void AwaitKeyPress(void)
 
 	if (IsKeyDown(SDL_SCANCODE_ESCAPE))
 	{
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		goto updateText;
 	}
 
@@ -1539,7 +1540,7 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 	if (IsKeyDown(SDL_SCANCODE_ESCAPE)
 		|| SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START))
 	{
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		goto updateText;
 	}
 
@@ -1631,7 +1632,7 @@ static void AwaitMetaGamepadPress(void)
 		gNav->idleTime = 0;
 		MakePbText(gNav->menuRow, gNav->menuCol);	// update text after state changed back to Ready
 		RepositionArrows();
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		ReplaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_NO_GAMEPAD_DETECTED);
 	}
 }
@@ -1643,7 +1644,7 @@ static void AwaitMouseClick(void)
 		MakeText(GetMouseBindingName(gNav->menuRow), gNav->menuRow, 1, 0);
 		gNav->menuState = kMenuStateReady;
 		gNav->idleTime = 0;
-		PlayEffect(kSfxError);
+		PlayErrorEffect();
 		return;
 	}
 

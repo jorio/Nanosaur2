@@ -64,9 +64,18 @@ typedef enum LocStrID
 	STR_CONTINUE_WITHOUT_SAVING,
 
 	STR_LANGUAGE,
+	STR_GENERAL,
 	STR_CONTROLS,
 	STR_SOUND,
 	STR_GRAPHICS,
+
+	STR_KIDDIE_MODE,
+	STR_SUBTITLES,
+	STR_CROSSHAIRS,
+
+	STR_CROSSHAIRS_OFF,
+	STR_CROSSHAIRS_ON,
+
 	STR_FULLSCREEN_HINT,
 	STR_FULLSCREEN,
 	STR_ANTIALIASING,
@@ -149,6 +158,7 @@ typedef enum LocStrID
 	STR_KEYBINDING_DESCRIPTION_6,
 	STR_KEYBINDING_DESCRIPTION_7,
 	STR_KEYBINDING_DESCRIPTION_8,
+	STR_KEYBINDING_DESCRIPTION_9,
 
 	STR_STORY_1,
 	STR_STORY_2,
@@ -167,4 +177,5 @@ void DisposeLocalizedStrings(void);
 const char* Localize(LocStrID stringID);
 int LocalizeWithPlaceholder(LocStrID stringID, char* buf, size_t bufSize, const char* format, ...);
 
+bool IsNativeEnglishSystem(void);
 GameLanguageID GetBestLanguageIDFromSystemLocale(void);

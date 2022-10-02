@@ -11,7 +11,6 @@
 /****************************/
 
 #include "game.h"
-#include "menu.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -37,6 +36,8 @@ static const MenuItem gPauseMenuTree[] =
 	{ .id='paus' },
 
 	{kMIPick, STR_RESUME, .id='resu', .next='EXIT' },
+
+	{kMIPick, STR_SETTINGS, .next='sett' },
 
 	/*
 	{kMISpacer, .customHeight=.3f},
@@ -113,12 +114,6 @@ static const MenuItem gPauseMenuTree[] =
 
 /********************** DO PAUSED **************************/
 
-static void UpdatePausedMenuCallback(void)
-{
-	MoveObjects();
-	DoPlayerTerrainUpdate();							// need to call this to keep supertiles active
-}
-
 void DoPaused(void)
 {
 	gGamePaused = true;
@@ -133,8 +128,8 @@ void DoPaused(void)
 	style.startButtonExits = true;
 	style.exitCall = OnExitPause;
 	MakeMenu(gPauseMenuTree, &style);
+	RegisterSettingsMenu();
 }
-
 
 static void OnExitPause(int outcome)
 {

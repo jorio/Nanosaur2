@@ -506,6 +506,9 @@ static void MoveSubtitle(ObjNode* theNode)
 
 static void MakeSubtitleObjects(int slideNum)
 {
+	if (!gGamePrefs.cutsceneSubtitles)
+		return;
+
 	const char* text = Localize(gSlides[slideNum].subtitleKey);
 
 	if (!text)

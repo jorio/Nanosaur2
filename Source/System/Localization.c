@@ -136,6 +136,26 @@ fail:
 	return snprintf(buf, bufSize, "%s", localizedString);
 }
 
+bool IsNativeEnglishSystem(void)
+{
+	bool prefersEnglish = true;
+
+#if SDL_VERSION_ATLEAST(2,0,14)
+	SDL_Locale* localeList = SDL_GetPreferredLocales();
+
+	if (NULL != localeList
+		&& 0 != localeList[0].language
+		&& (0 != strncmp(localeList[0].language, kLanguageCodesISO639_1[LANGUAGE_ENGLISH], 2)))
+	{
+		prefersEnglish = false;
+	}
+
+	SDL_free(localeList);
+#endif
+
+	return prefersEnglish;
+}
+
 GameLanguageID GetBestLanguageIDFromSystemLocale(void)
 {
 	GameLanguageID languageID = LANGUAGE_ENGLISH;

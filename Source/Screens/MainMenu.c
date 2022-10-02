@@ -11,7 +11,6 @@
 /****************************/
 
 #include "game.h"
-#include "menu.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -112,6 +111,7 @@ void DoMainMenuScreen(void)
 			MenuStyle style = kDefaultMenuStyle;
 			style.yOffset = 302.5f;
 			MakeMenu(gMainMenuTree, &style);
+			RegisterSettingsMenu();
 		}
 
 		while (0 == gMenuOutcome)

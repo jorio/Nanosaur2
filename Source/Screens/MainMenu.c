@@ -105,18 +105,24 @@ void DoMainMenuScreen(void)
 
 		SetupMainMenuScreen();
 
-		MenuStyle style = kDefaultMenuStyle;
-		style.standardScale = (FONT_SCALE / 32.0f) * 0.5f;
-		style.rowHeight = LINE_SPACING;
-		style.yOffset = 302.5f;
-		style.fadeOutSceneOnExit = false;
+		{
+			MenuStyle style = kDefaultMenuStyle;
+			style.yOffset = 302.5f;
+			MakeMenu(gMainMenuTree, &style);
+		}
 
-		int outcome = StartMenu(gMainMenuTree, &style, MoveMainMenu, DrawObjects);
+		while (0 == gMenuOutcome)
+		{
+			DoSDLMaintenance();
+			CalcFramesPerSecond();
+			MoveObjects();
+			OGL_DrawScene(DrawObjects);
+		}
 
 		OGL_FadeOutScene(DrawObjects, NULL);
 		FreeMainMenuScreen();
 
-		ProcessMenuOutcome(outcome);
+		ProcessMenuOutcome(gMenuOutcome);
 	}
 }
 

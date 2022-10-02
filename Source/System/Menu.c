@@ -26,6 +26,9 @@
 
 static ObjNode* MakeText(const char* text, int row, int col, int flags);
 
+static void MoveMenuDriver(ObjNode* theNode);
+static void CleanUpMenuDriver(ObjNode* theNode);
+
 static const MenuItem* LookUpMenu(int menuID);
 static void LayOutMenu(int menuID);
 
@@ -106,9 +109,9 @@ const MenuStyle kDefaultMenuStyle =
 	.fadeInSpeed		= (1.0f / 0.3f),
 	.fadeOutSpeed		= (1.0f / 0.2f),
 	.asyncFadeOut		= true,
-	.fadeOutSceneOnExit	= true,
-	.standardScale		= .5f,
-	.rowHeight			= 40,
+	.fadeOutSceneOnExit	= false,
+	.standardScale		= (35 / (64/2.0)) / 2,		// Nanosaur 2 original value with old sprite system: 35
+	.rowHeight			= (35 * 1.1),				// Nanosaur 2 original value with old sprite system: 35*1.1
 	.uniformXExtent		= 0,
 	.startButtonExits	= false,
 	.isInteractive		= true,
@@ -188,6 +191,8 @@ static MenuNavigation* gNav = NULL;
 
 static float gTempInitialSweepFactor = 0;
 static bool gTempForceSwipeRTL = false;
+
+int gMenuOutcome = 0;
 
 /***********************************/
 /*    MENU NAVIGATION STRUCT       */
@@ -901,8 +906,10 @@ static void NavigateSettingEntriesMouseHover(void)
 
 			if (gNav->menuRow != row)
 			{
+				TwitchSelectionInOrOut(false);
 				gNav->menuRow = row;
 				PlayNavigateEffect();
+				TwitchSelectionInOrOut(true);
 			}
 
 			return;
@@ -2065,34 +2072,48 @@ static const MenuItem* LookUpMenu(int menuID)
 	return NULL;
 }
 
-// TODO: harmonize order of update/draw params with rest of game
-int StartMenu(
-		const MenuItem* menu,
-		const MenuStyle* style,
-		void (*update)(void),
-		void (*draw)(void))
+#pragma mark - Menu driver ObjNode
+
+ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style)
 {
 #if USE_SDL_CURSOR
-//	int cursorStateBeforeMenu = SDL_ShowCursor(-1);
-//	SDL_ShowCursor(1);
+	int cursorStateBeforeMenu = SDL_ShowCursor(-1);
+	SDL_ShowCursor(1);
 #endif
 
-		/* INITIALIZE MENU STATE */
+			/* CREATE MENU DRIVER */
+
+	NewObjectDefinitionType driverDef =
+	{
+		.coord = {0,0,0},
+		.scale = 1,
+		.slot = MENU_SLOT,
+		.genre = CUSTOM_GENRE,
+		.flags = STATUS_BIT_MOVEINPAUSE | STATUS_BIT_DONTCULL,
+		.moveCall = MoveMenuDriver,
+	};
+	ObjNode* driverNode = MakeNewObject(&driverDef);
+
+			/* INITIALIZE MENU STATE */
 
 	gNumMenusRegistered = 0;
 	RegisterMenu(menu);
 
 	InitMenuNavigation();
-	if (style)
-		memcpy(&gNav->style, style, sizeof(*style));
+
+	gMenuOutcome = 0;
+
 	gNav->menuState			= kMenuStateFadeIn;
 	gNav->menuFadeAlpha		= 0;
 	gNav->menuRow			= -1;
 
+	if (style)
+		memcpy(&gNav->style, style, sizeof(*style));
+
 	gTempInitialSweepFactor	= 0;
 	gTempForceSwipeRTL		= false;
 
-		/* LAY OUT MENU COMPONENTS */
+			/* LAY OUT MENU COMPONENTS */
 
 	gNav->darkenPane = nil;
 	if (gNav->style.darkenPaneOpacity > 0.0f)
@@ -2102,107 +2123,103 @@ int StartMenu(
 
 	LayOutMenu(menu->id);
 
-		/* SHOW IN ANIMATED LOOP */
+	return driverNode;
+}
 
-	CalcFramesPerSecond();
-	DoSDLMaintenance();
-
-	while (gNav->menuState != kMenuStateOff)
+static void MoveMenuDriver(ObjNode* theNode)
+{
+	if (gNav->menuState == kMenuStateOff)
 	{
-		DoSDLMaintenance();
-
-		gNav->idleTime += gFramesPerSecondFrac;
-
-		if (IsNeedDown(kNeed_UIStart, ANY_PLAYER)
-			&& gNav->style.startButtonExits
-			&& gNav->style.canBackOutOfRootMenu
-			&& gNav->menuState != kMenuStateAwaitingPadPress
-			&& gNav->menuState != kMenuStateAwaitingKeyPress
-			&& gNav->menuState != kMenuStateAwaitingMouseClick
-			)
-		{
-			gNav->menuState = kMenuStateFadeOut;
-		}
-
-		switch (gNav->menuState)
-		{
-			case kMenuStateFadeIn:
-				gNav->menuFadeAlpha += gFramesPerSecondFrac * gNav->style.fadeInSpeed;
-				if (gNav->menuFadeAlpha >= 1.0f)
-				{
-					gNav->menuFadeAlpha = 1.0f;
-					gNav->menuState = kMenuStateReady;
-				}
-				break;
-
-			case kMenuStateFadeOut:
-				if (gNav->style.asyncFadeOut)
-				{
-					gNav->menuState = kMenuStateOff;		// exit loop
-				}
-				else
-				{
-					gNav->menuFadeAlpha -= gFramesPerSecondFrac * gNav->style.fadeOutSpeed;
-					if (gNav->menuFadeAlpha <= 0.0f)
-					{
-						gNav->menuFadeAlpha = 0.0f;
-						gNav->menuState = kMenuStateOff;
-					}
-				}
-				break;
-
-			case kMenuStateReady:
-				if (gNav->style.isInteractive)
-				{
-					NavigateMenu();
-				}
-				else if (UserWantsOut())
-				{
-					GoBackInHistory();
-				}
-				break;
-
-			case kMenuStateAwaitingKeyPress:
-				AwaitKeyPress();
-				break;
-
-			case kMenuStateAwaitingPadPress:
-			{
-				AwaitMetaGamepadPress();
-				break;
-			}
-
-			case kMenuStateAwaitingMouseClick:
-				AwaitMouseClick();
-				break;
-
-			default:
-				break;
-		}
-
-			/* DRAW STUFF */
-
-		CalcFramesPerSecond();
-
-		if (update)
-			update();
-		else
-			MoveObjects();
-
-		OGL_DrawScene(draw);
+		return;
 	}
 
 
-		/* FADE OUT */
+	gNav->idleTime += gFramesPerSecondFrac;
+
+	if (IsNeedDown(kNeed_UIStart, ANY_PLAYER)
+		&& gNav->style.startButtonExits
+		&& gNav->style.canBackOutOfRootMenu
+		&& gNav->menuState != kMenuStateAwaitingPadPress
+		&& gNav->menuState != kMenuStateAwaitingKeyPress
+		&& gNav->menuState != kMenuStateAwaitingMouseClick)
+	{
+		gNav->menuState = kMenuStateFadeOut;
+	}
+
+	switch (gNav->menuState)
+	{
+		case kMenuStateFadeIn:
+			gNav->menuFadeAlpha += gFramesPerSecondFrac * gNav->style.fadeInSpeed;
+			if (gNav->menuFadeAlpha >= 1.0f)
+			{
+				gNav->menuFadeAlpha = 1.0f;
+				gNav->menuState = kMenuStateReady;
+			}
+			break;
+
+		case kMenuStateFadeOut:
+			if (gNav->style.asyncFadeOut)
+			{
+				gNav->menuState = kMenuStateOff;		// exit loop
+			}
+			else
+			{
+				gNav->menuFadeAlpha -= gFramesPerSecondFrac * gNav->style.fadeOutSpeed;
+				if (gNav->menuFadeAlpha <= 0.0f)
+				{
+					gNav->menuFadeAlpha = 0.0f;
+					gNav->menuState = kMenuStateOff;
+				}
+			}
+			break;
+
+		case kMenuStateReady:
+			if (gNav->style.isInteractive)
+			{
+				NavigateMenu();
+			}
+			else if (UserWantsOut())
+			{
+				GoBackInHistory();
+			}
+			break;
+
+		case kMenuStateAwaitingKeyPress:
+			AwaitKeyPress();
+			break;
+
+		case kMenuStateAwaitingPadPress:
+		{
+			AwaitMetaGamepadPress();
+			break;
+		}
+
+		case kMenuStateAwaitingMouseClick:
+			AwaitMouseClick();
+			break;
+
+		default:
+			break;
+	}
+
+	if (gNav->menuState == kMenuStateOff)
+	{
+		CleanUpMenuDriver(theNode);
+	}
+}
+
+static void CleanUpMenuDriver(ObjNode* theNode)
+{
+			/* FADE OUT */
 
 	if (gNav->style.fadeOutSceneOnExit)
 	{
-		OGL_FadeOutScene(draw, NULL);
+		OGL_FadeOutScene(DrawObjects, NULL);
 	}
 
 
 
-		/* CLEANUP */
+			/* CLEANUP */
 
 	if (gNav->style.asyncFadeOut)
 	{
@@ -2240,11 +2257,18 @@ int StartMenu(
 
 #if USE_SDL_CURSOR
 	SetStandardMouseCursor();
-//	SDL_ShowCursor(cursorStateBeforeMenu);
+	SDL_ShowCursor(cursorStateBeforeMenu);
 #endif
 
-	int finalPick = gNav->menuPick;
-	DisposeMenuNavigation();
+	// Save some stuff before deleting
+	void (*exitCall)(int) = gNav->style.exitCall;
+	gMenuOutcome = gNav->menuPick;
 
-	return finalPick;
+	DisposeMenuNavigation();
+	DeleteObject(theNode);
+
+	if (exitCall)
+	{
+		exitCall(gMenuOutcome);
+	}
 }

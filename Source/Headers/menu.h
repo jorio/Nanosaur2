@@ -53,7 +53,7 @@ typedef struct MenuItem
 {
 	MenuItemType			type;
 	LocStrID				text;
-	int32_t					id;			// value returned by StartMenu if exiting menu
+	int32_t					id;			// value stored in gMenuOutcome when exiting menu
 	int32_t					next;		// next menu, or one of 'EXIT', 'BACK' or 0 (no-op)
 
 	void					(*callback)(const struct MenuItem*);
@@ -98,17 +98,15 @@ typedef struct MenuStyle
 		bool			isInteractive : 1;
 		bool			canBackOutOfRootMenu : 1;
 	};
+
+	void			(*exitCall)(int);
 } MenuStyle;
 
 extern const MenuStyle kDefaultMenuStyle;
 
 void RegisterMenu(const MenuItem* menus);
 
-int StartMenu(
-		const MenuItem* menu,
-		const MenuStyle* style,
-		void (*updateRoutine)(void),
-		void (*backgroundDrawRoutine)(void));
+ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style);
 
 void LayoutCurrentMenuAgain(void);
 int GetCurrentMenu(void);

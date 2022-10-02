@@ -164,6 +164,7 @@ extern	float					gTerrainSuperTileUnitSizeFrac;
 extern	int						gGameWindowHeight;
 extern	int						gGameWindowWidth;
 extern	int						gMaxEnemies;
+extern	int						gMenuOutcome;
 extern	int						gNumEnemies;
 extern	int						gNumLineMarkers;
 extern	int						gNumLoopingEffects;

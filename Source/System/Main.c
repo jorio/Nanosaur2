@@ -587,6 +587,17 @@ float	fps;
 
 		DoSDLMaintenance();
 
+
+		if (gGamePaused)
+		{
+			MoveObjects();
+			CalcFramesPerSecond();
+			DoPlayerTerrainUpdate();
+			OGL_DrawScene(DrawLevelCallback);
+			continue;
+		}
+
+
 		for (int i = 0; i < gNumPlayers; i++)
 			UpdatePlayerSteering(i);
 
@@ -642,9 +653,7 @@ float	fps;
 
 		if (IsNeedDown(kNeed_UIPause, ANY_PLAYER))					// do regular pause mode
 		{
-			GrabMouse(false);
 			DoPaused();
-			GrabMouse(true);
 		}
 
 #if 0

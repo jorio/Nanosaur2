@@ -18,6 +18,9 @@
 /****************************/
 
 Boolean gGamePaused = false;
+static ObjNode* gMouseCursor = NULL;
+
+static void OnExitPause(int outcome);
 
 
 /****************************/
@@ -116,35 +119,33 @@ static void UpdatePausedMenuCallback(void)
 	DoPlayerTerrainUpdate();							// need to call this to keep supertiles active
 }
 
-
 void DoPaused(void)
 {
+	gGamePaused = true;
+	GrabMouse(false);
+//	PauseAllChannels(true);		//TODO
+
+	gMouseCursor = MakeMouseCursorObject();
+
 	MenuStyle style = kDefaultMenuStyle;
 	style.canBackOutOfRootMenu = true;
-	style.fadeOutSceneOnExit = false;
 	style.darkenPaneOpacity = .6f;
 	style.startButtonExits = true;
+	style.exitCall = OnExitPause;
+	MakeMenu(gPauseMenuTree, &style);
+}
 
-//	PauseAllChannels(true);
 
-	gGamePaused = true;
-//	gHideInfobar = true;
-
-	ObjNode* cursor = MakeMouseCursorObject();
-
-				/*************/
-				/* MAIN LOOP */
-				/*************/
-
-	CalcFramesPerSecond();
-	DoSDLMaintenance();
-
-	int outcome = StartMenu(gPauseMenuTree, &style, UpdatePausedMenuCallback, DrawObjects);
-
+static void OnExitPause(int outcome)
+{
 	gGamePaused = false;
-//	PauseAllChannels(false);
+	GrabMouse(true);
+//	PauseAllChannels(false);		// TODO
 
-	DeleteObject(cursor);
+	DeleteObject(gMouseCursor);
+	gMouseCursor = NULL;
+
+	InvalidateAllInputs();
 
 	switch (outcome)
 	{

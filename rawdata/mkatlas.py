@@ -33,6 +33,7 @@ parser.add_argument('--space-width', type=int, default=28)
 parser.add_argument('--char-spacing', type=int, default=0)
 parser.add_argument('--crop', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument('--padding', type=int, default=1)
+parser.add_argument('--y-offset', type=int, default=0)
 args = parser.parse_args()
 
 fontname = args.srcdir
@@ -109,7 +110,7 @@ for filename in sorted(os.listdir(fontname)):
 
         ascender = cy1 - baseline
         descender = cy2 - baseline
-        yoff = int(BASE_H + ascender)
+        yoff = int(BASE_H + ascender) + args.y_offset
         print(chr(codepoint), baseline, ascender, yoff)
         #yoff = ( BASE_H//2 + int(raw_image.height/2 - cy2) )
         yadv = raw_image.height  # perhaps BASE_H would be better here?  the game doesn't use yadv for fonts anyway
@@ -122,7 +123,7 @@ for filename in sorted(os.listdir(fontname)):
         xadv += CHAR_SPACING
     else:
         xoff = cx1
-        yoff = cy1
+        yoff = cy1 + args.y_offset
         xadv = raw_image.width
         yadv = raw_image.height
     

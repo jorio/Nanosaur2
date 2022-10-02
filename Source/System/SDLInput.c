@@ -328,12 +328,14 @@ void DoSDLMaintenance(void)
 
 				case SDL_MOUSEMOTION:
 					gMouseMotionNow = true;
+					gUserPrefersGamepad = false;
 #if MOUSE_SMOOTHING
 					MouseSmoothing_OnMouseMotion(&event.motion);
 #endif
 					break;
 
 				case SDL_MOUSEWHEEL:
+					gUserPrefersGamepad = false;
 					mouseWheelDelta += event.wheel.y;
 					mouseWheelDelta += event.wheel.x;
 					break;
@@ -673,6 +675,8 @@ static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex)
 		gControllers[controllerSlot].joystickInstance,
 		SDL_GameControllerName(gControllers[controllerSlot].controllerInstance));
 
+	gUserPrefersGamepad = true;
+
 	return gControllers[controllerSlot].controllerInstance;
 }
 
@@ -835,6 +839,10 @@ static void OnJoystickRemoved(SDL_JoystickID joystickInstanceID)
 
 	// Fill up any controller slots that are vacant
 	TryFillUpVacantControllerSlots();
+
+	// Disable gUserPrefersGamepad if there are no controllers connected
+	if (0 == GetNumControllers())
+		gUserPrefersGamepad = false;
 }
 
 #if REQUIRE_LOCK_MAPPING

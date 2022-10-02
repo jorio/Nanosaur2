@@ -368,6 +368,9 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 	gCursorCoord.y = theNode->Coord.x;
 
 	UpdateObjectTransforms(theNode);
+
+
+	SetObjectVisible(theNode, !gUserPrefersGamepad);
 }
 
 /********************* MAKE MOUSE CURSOR OBJECT *********************/

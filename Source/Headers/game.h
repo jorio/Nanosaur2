@@ -86,6 +86,7 @@ extern	Boolean					gPlayerIsDead[MAX_PLAYERS];
 extern	Boolean					gPlayingFromSavedGame;
 extern	Boolean					gSongPlayingFlag;
 extern	Boolean					gTimeDemo;
+extern	Boolean					gUserPrefersGamepad;
 extern	Boolean					gUsingVertexArrayRange;
 extern	Byte					**gMapSplitMode;
 extern	Byte					gActiveSplitScreenMode;

@@ -81,6 +81,7 @@ typedef struct
 	Boolean	cutsceneSubtitles;
 
 	Byte	splitScreenMode;
+	Boolean	force4x3HUD;
 
 	Byte	stereoGlassesMode;
 	Boolean	anaglyphColor;

@@ -130,6 +130,14 @@ static const MenuItem gSettingsMenuTree[] =
 ////			},
 ////		},
 //	},
+	{
+		kMICycler1, STR_HUD_POSITION,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.force4x3HUD,
+			.choices={ {STR_HUD_FULLSCREEN, 0}, {STR_HUD_4X3, 1} },
+		},
+	},
 	{kMISpacer, .customHeight=.5f },
 	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
 	{kMISpacer, .customHeight=.5f },

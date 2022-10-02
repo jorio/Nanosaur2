@@ -31,57 +31,59 @@ static void Infobar_DrawPlayerArrows(void);
 
 static void MoveLapMessage(ObjNode *theNode);
 
+static inline float AnchorLeft(float x);
+static inline float AnchorRight(float x);
+static inline float AnchorTop(float y);
+static inline float AnchorBottom(float y);
+
 
 
 /****************************/
 /*    CONSTANTS             */
 /****************************/
 
-
-#define MAP_SCALE	80.0f
-#define MAP_SCALE2	(MAP_SCALE * .8 * .5)
-#define	MAP_X		(665.0f - MAP_SCALE)
-#define	MAP_Y		((480 - MAP_SCALE * .6f))
+#define MAP_SCALE		80.0f
+#define MAP_SCALE2		(MAP_SCALE * .8 * .5)
+#define	MAP_X			AnchorRight(665.0f - MAP_SCALE)
+#define	MAP_Y			AnchorBottom((480 - MAP_SCALE * .6f))
 
 #define	LIVES_SCALE		25.0f
-#define	LIVES_X			0.0f
-#define	LIVES_Y			(457.5f - LIVES_SCALE * .6f)
+#define	LIVES_X			AnchorLeft(0.0f)
+#define	LIVES_Y			AnchorBottom(457.5f - LIVES_SCALE * .6f)
 
-#define	WEAPON_X		150.0f
-#define	WEAPON_Y		0
+#define	WEAPON_X		AnchorLeft(150.0f)
+#define	WEAPON_Y		AnchorTop(0)
 #define	WEAPON_SCALE	85.0f
-
 
 #define	HEALTH_SCALE	43.0f
 #define	HEALTH_SCALE2	(HEALTH_SCALE * .9f * .5f)					// smaller scale for the red meter sprite
-#define	HEALTH_X		(HEALTH_SCALE/2)
-#define	HEALTH_Y		(HEALTH_SCALE/2)
+#define	HEALTH_X		AnchorLeft(HEALTH_SCALE/2)
+#define	HEALTH_Y		AnchorTop(HEALTH_SCALE/2)
 
 #define	SHIELD_SCALE	HEALTH_SCALE
 #define SHIELD_SCALE2	HEALTH_SCALE2
 #define	SHIELD_X		(HEALTH_X + HEALTH_SCALE)
-#define	SHIELD_Y		HEALTH_Y
+#define	SHIELD_Y		(HEALTH_Y)
 
 #define	FUEL_SCALE		HEALTH_SCALE
 #define	FUEL_SCALE2		HEALTH_SCALE2
 #define	FUEL_X			(SHIELD_X + SHIELD_SCALE)
-#define	FUEL_Y			HEALTH_Y
+#define	FUEL_Y			(HEALTH_Y)
 
-#define	PLAYER_X		0.0f
-#define	PLAYER_Y		HEALTH_SCALE
+// TODO: Review this
+#define	PLAYER_X		AnchorLeft(0.0f)
+#define	PLAYER_Y		AnchorTop(HEALTH_SCALE)
 #define	PLAYER_SCALE	60.0f
 
-
-#define	EGGS_X			558.0f
-#define	EGGS_Y			0
+#define	EGGS_X			AnchorRight(558.0f)
+#define	EGGS_Y			AnchorTop(0)
 #define	EGGS_SCALE		14.0f
 
-#define	CAP_EGGS_X			520.0f
-#define	CAP_EGGS_Y			0
-#define	CAP_EGGS_SCALE		25.0f
+#define	CAP_EGGS_X		AnchorRight(520.0f)
+#define	CAP_EGGS_Y		AnchorTop(0)
+#define	CAP_EGGS_SCALE	25.0f
 
 #define ARROW_SCALE		37.5f
-
 
 #define	GUNSIGHT_SCALE	15.0f
 
@@ -113,6 +115,7 @@ static OGLPoint3D			gOHMPoints[4];
 
 
 			/* HEALTH */
+// TODO: We could refactor this to use QuadMesh.c
 
 static MOVertexArrayData	gHealthTriMesh;
 static MOTriangleIndecies	gHealthTriangles[2] = {{{0, 1, 2}}, {{2, 0, 3}}};
@@ -120,10 +123,10 @@ static OGLTextureCoord		gHealthuv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLTextureCoord		gHealthuv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gHealthPoints[4] =
 {
-	{HEALTH_X - HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0},
-	{HEALTH_X + HEALTH_SCALE2,	HEALTH_Y - HEALTH_SCALE2, 		0},
-	{HEALTH_X + HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2,	 	0},
-	{HEALTH_X - HEALTH_SCALE2,	HEALTH_Y + HEALTH_SCALE2, 		0},
+	{-HEALTH_SCALE2,	-HEALTH_SCALE2,		0},
+	{+HEALTH_SCALE2,	-HEALTH_SCALE2,		0},
+	{+HEALTH_SCALE2,	+HEALTH_SCALE2,		0},
+	{-HEALTH_SCALE2,	+HEALTH_SCALE2,		0},
 };
 
 
@@ -135,10 +138,10 @@ static OGLTextureCoord		gShielduv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLTextureCoord		gShielduv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gShieldPoints[4] =
 {
-	{SHIELD_X - SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0},
-	{SHIELD_X + SHIELD_SCALE2,	SHIELD_Y - SHIELD_SCALE2, 		0},
-	{SHIELD_X + SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2,	 	0},
-	{SHIELD_X - SHIELD_SCALE2,	SHIELD_Y + SHIELD_SCALE2, 		0},
+	{-SHIELD_SCALE2,	-SHIELD_SCALE2,		0},
+	{+SHIELD_SCALE2,	-SHIELD_SCALE2,		0},
+	{+SHIELD_SCALE2,	+SHIELD_SCALE2,		0},
+	{-SHIELD_SCALE2,	+SHIELD_SCALE2,		0},
 };
 
 
@@ -150,12 +153,32 @@ static OGLTextureCoord		gFueluv1[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLTextureCoord		gFueluv2[4] = {{0,1}, {1,1}, {1,0}, {0,0}};
 static OGLPoint3D			gFuelPoints[4] =
 {
-	{FUEL_X - FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0},
-	{FUEL_X + FUEL_SCALE2,	FUEL_Y - FUEL_SCALE2, 		0},
-	{FUEL_X + FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2,	 	0},
-	{FUEL_X - FUEL_SCALE2,	FUEL_Y + FUEL_SCALE2, 		0},
+	{-FUEL_SCALE2,		-FUEL_SCALE2,		0},
+	{+FUEL_SCALE2,		-FUEL_SCALE2,		0},
+	{+FUEL_SCALE2,		+FUEL_SCALE2,		0},
+	{-FUEL_SCALE2,		+FUEL_SCALE2,		0},
 };
 
+
+static inline float AnchorLeft(float x)
+{
+	return gGamePrefs.force4x3HUD ? x : (gLogicalRect.left + x);
+}
+
+static inline float AnchorRight(float x)
+{
+	return gGamePrefs.force4x3HUD ? x : (gLogicalRect.right - (640 - x));
+}
+
+static inline float AnchorTop(float y)
+{
+	return gGamePrefs.force4x3HUD ? y : (gLogicalRect.top + y);
+}
+
+static inline float AnchorBottom(float y)
+{
+	return gGamePrefs.force4x3HUD ? y : (gLogicalRect.bottom - (480 - y));
+}
 
 /********************* INIT INFOBAR ****************************/
 //
@@ -1022,22 +1045,27 @@ float				v;
 			/* DRAW IT */
 			/***********/
 
+	glPushMatrix();
+	glTranslatef(HEALTH_X, HEALTH_Y, 0);
+
+
 			/* DRAW SHADOW */
 
 	if (!gGamePrefs.lowRenderQuality)
-		DrawInfobarSprite_Centered(HEALTH_X + 2, HEALTH_Y + 2, HEALTH_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
+		DrawInfobarSprite_Centered(+2, +2, HEALTH_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
 	MO_DrawGeometry_VertexArray(&gHealthTriMesh);
 
 
 			/* DRAW FRAME OVERLAY */
 
-	DrawInfobarSprite_Centered(HEALTH_X, HEALTH_Y, HEALTH_SCALE, INFOBAR_SObjType_HealthFrame);
+	DrawInfobarSprite_Centered(0, 0, HEALTH_SCALE, INFOBAR_SObjType_HealthFrame);
 
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE);
-	DrawInfobarSprite_Centered(HEALTH_X, HEALTH_Y, HEALTH_SCALE, INFOBAR_SObjType_HealthShine);
+	DrawInfobarSprite_Centered(0, 0, HEALTH_SCALE, INFOBAR_SObjType_HealthShine);
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glPopMatrix();
 }
 
 
@@ -1068,11 +1096,14 @@ float				q;
 			/* DRAW IT */
 			/***********/
 
+	glPushMatrix();
+	glTranslatef(SHIELD_X, SHIELD_Y, 0);
+
 
 			/* DRAW SHADOW */
 
 	if (!gGamePrefs.lowRenderQuality)
-		DrawInfobarSprite_Centered(SHIELD_X + 2, SHIELD_Y + 2, SHIELD_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
+		DrawInfobarSprite_Centered(+2, +2, SHIELD_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
 
 	MO_DrawGeometry_VertexArray(&gShieldTriMesh);
@@ -1080,13 +1111,14 @@ float				q;
 
 			/* DRAW FRAME OVERLAY */
 
-	DrawInfobarSprite_Centered(SHIELD_X, SHIELD_Y, SHIELD_SCALE, INFOBAR_SObjType_ShieldFrame);
+	DrawInfobarSprite_Centered(0, 0, SHIELD_SCALE, INFOBAR_SObjType_ShieldFrame);
 
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE);
-	DrawInfobarSprite_Centered(SHIELD_X, SHIELD_Y, SHIELD_SCALE, INFOBAR_SObjType_HealthShine);
+	DrawInfobarSprite_Centered(0, 0, SHIELD_SCALE, INFOBAR_SObjType_HealthShine);
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
+	glPopMatrix();
 }
 
 
@@ -1115,10 +1147,13 @@ float				v;
 			/* DRAW IT */
 			/***********/
 
+	glPushMatrix();
+	glTranslatef(FUEL_X, FUEL_Y, 0);
+
 			/* DRAW SHADOW */
 
 	if (!gGamePrefs.lowRenderQuality)
-		DrawInfobarSprite_Centered(FUEL_X + 2, FUEL_Y + 2, FUEL_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
+		DrawInfobarSprite_Centered(+2, +2, FUEL_SCALE * 1.3, INFOBAR_SObjType_CircleShadow);
 
 
 	MO_DrawGeometry_VertexArray(&gFuelTriMesh);
@@ -1126,12 +1161,13 @@ float				v;
 
 			/* DRAW FRAME OVERLAY */
 
-	DrawInfobarSprite_Centered(FUEL_X, FUEL_Y, FUEL_SCALE, INFOBAR_SObjType_FuelFrame);
+	DrawInfobarSprite_Centered(0, 0, FUEL_SCALE, INFOBAR_SObjType_FuelFrame);
 
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE);
-	DrawInfobarSprite_Centered(FUEL_X, FUEL_Y, FUEL_SCALE, INFOBAR_SObjType_HealthShine);
+	DrawInfobarSprite_Centered(0, 0, FUEL_SCALE, INFOBAR_SObjType_HealthShine);
 	OGL_BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glPopMatrix();
 }
 
 

@@ -1025,6 +1025,6 @@ void GrabMouse(Boolean capture)
 {
 	SDL_SetWindowGrab(gSDLWindow, capture);
 	SDL_SetRelativeMouseMode(capture? SDL_TRUE: SDL_FALSE);
-	SDL_ShowCursor(capture? 0: 1);
+//	SDL_ShowCursor(capture? 0: 1);
 	SetMacLinearMouse(capture);
 }

@@ -113,8 +113,6 @@ void ToolBoxInit(void)
 	VerifySystem();
 	InitInput();
 
-	SDL_ShowCursor(0);
-
 			/********************/
 			/* INIT PREFERENCES */
 			/********************/
@@ -1004,7 +1002,11 @@ unsigned long	someLong;
 
 	GetDateTime ((unsigned long *)(&someLong));		// init random seed
 	SetMyRandomSeed(someLong);
+
+
+#if !_DEBUG
 	SDL_ShowCursor(0);
+#endif
 
 
 #if !SKIPFLUFF
@@ -1013,7 +1015,6 @@ unsigned long	someLong;
 	DoLegalScreen();
 
 	DoIntroStoryScreen();
-
 #endif
 
 

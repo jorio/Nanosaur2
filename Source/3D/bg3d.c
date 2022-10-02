@@ -1170,7 +1170,7 @@ setit:
 // Set the appropriate flags on a geometry's matrial to be a sphere map
 //
 
-void BG3D_SphereMapGeomteryMaterial(short group, short type, short geometryNum, u_short combineMode, u_short envMapNum)
+void BG3D_SphereMapGeomteryMaterial(short group, short type, short geometryNum, uint16_t combineMode, uint16_t envMapNum)
 {
 MOVertexArrayObject	*mo;
 
@@ -1216,7 +1216,7 @@ MOVertexArrayObject	*mo;
 
 /*************** SET SPHERE MAP INFO ON VERTEX ARRAY OBJECT *********************/
 
-void SetSphereMapInfoOnVertexArrayObject(MOVertexArrayObject *mo, u_short combineMode, u_short envMapNum)
+void SetSphereMapInfoOnVertexArrayObject(MOVertexArrayObject *mo, uint16_t combineMode, uint16_t envMapNum)
 {
 MOVertexArrayData	*va;
 MOMaterialObject	*mat;
@@ -1238,7 +1238,7 @@ MOMaterialObject	*mat;
 
 /******************* SET SPHERE MAP INFO ON VERTEX ARRAY DATA ********************/
 
-void SetSphereMapInfoOnVertexArrayData(MOVertexArrayData *va, u_short combineMode, u_short envMapNum)
+void SetSphereMapInfoOnVertexArrayData(MOVertexArrayData *va, uint16_t combineMode, uint16_t envMapNum)
 {
 MOMaterialObject	*mat;
 
@@ -1253,7 +1253,7 @@ MOMaterialObject	*mat;
 
 /******************* SET SPHERE MAP INFO ON MAPTERIAL OBJECT ********************/
 
-void SetSphereMapInfoOnMaterialObject(MOMaterialObject *mat, u_short combineMode, u_short envMapNum)
+void SetSphereMapInfoOnMaterialObject(MOMaterialObject *mat, uint16_t combineMode, uint16_t envMapNum)
 {
 
 

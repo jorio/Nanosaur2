@@ -911,7 +911,7 @@ Boolean		needNormals;
 
 				if (i > 0)
 				{
-					u_short	multiTextureCombine = data->materials[0]->objectData.multiTextureCombine;
+					uint16_t	multiTextureCombine = data->materials[0]->objectData.multiTextureCombine;
 					switch(multiTextureCombine)										// set combining info
 					{
 						case	MULTI_TEXTURE_COMBINE_MODULATE:
@@ -970,9 +970,9 @@ use_current:
 
 				if (materialFlags & BG3D_MATERIALFLAG_MULTITEXTURE)
 				{
-					u_short	multiTextureMode 	= gMostRecentMaterial->objectData.multiTextureMode;
-					u_short	multiTextureCombine = gMostRecentMaterial->objectData.multiTextureCombine;
-					u_short	envMapNum 			= gMostRecentMaterial->objectData.envMapNum;
+					uint16_t	multiTextureMode 	= gMostRecentMaterial->objectData.multiTextureMode;
+					uint16_t	multiTextureCombine = gMostRecentMaterial->objectData.multiTextureCombine;
+					uint16_t	envMapNum 			= gMostRecentMaterial->objectData.envMapNum;
 
 					if (envMapNum >= gNumSpritesInGroupList[SPRITE_GROUP_SPHEREMAPS])
 						DoFatalAlert("MO_DrawGeometry_VertexArray: illegal envMapNum");

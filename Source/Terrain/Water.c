@@ -310,7 +310,7 @@ float					y,centerX,centerZ;
 static void MakeWaterGeometry(void)
 {
 int						f;
-u_short					type, numNubs;
+uint16_t					type, numNubs;
 short					i;
 WaterDefType			*water;
 float					minX,minY,minZ,maxX,maxY,maxZ;

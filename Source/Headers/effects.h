@@ -31,7 +31,7 @@ typedef struct
 	Byte			isUsed[MAX_PARTICLES];
 
 	uint32_t			magicNum;
-	u_short			flags;
+	uint16_t			flags;
 	float			gravity;
 	float			magnetism;
 	float			baseScale;
@@ -188,7 +188,7 @@ void DeleteAllParticleGroups(void);
 short NewParticleGroup(NewParticleGroupDefType *def);
 Boolean AddParticleToGroup(const NewParticleDefType *def);
 Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum);
-Boolean ParticleHitObject(ObjNode *theNode, u_short inFlags);
+Boolean ParticleHitObject(ObjNode *theNode, uint16_t inFlags);
 void DisposeParticleSystem(void);
 
 void MakePuff(short numPuffs, OGLPoint3D *where, float scale, short texNum, GLint src, GLint dst, float decayRate);

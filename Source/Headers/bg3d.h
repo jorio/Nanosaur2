@@ -123,10 +123,10 @@ void ImportBG3D(FSSpec *spec, int groupNum, short varType);
 void DisposeBG3DContainer(int groupNum);
 void DisposeAllBG3DContainers(void);
 void BG3D_SetContainerMaterialFlags(short group, short type, short geometryNum, uint32_t flags);
-void BG3D_SphereMapGeomteryMaterial(short group, short type, short geometryNum, u_short combineMode, u_short envMapNum);
-void SetSphereMapInfoOnVertexArrayData(MOVertexArrayData *va, u_short combineMode, u_short envMapNum);
-void SetSphereMapInfoOnVertexArrayObject(MOVertexArrayObject *mo, u_short combineMode, u_short envMapNum);
-void SetSphereMapInfoOnMaterialObject(MOMaterialObject *mat, u_short combineMode, u_short envMapNum);
+void BG3D_SphereMapGeomteryMaterial(short group, short type, short geometryNum, uint16_t combineMode, uint16_t envMapNum);
+void SetSphereMapInfoOnVertexArrayData(MOVertexArrayData *va, uint16_t combineMode, uint16_t envMapNum);
+void SetSphereMapInfoOnVertexArrayObject(MOVertexArrayObject *mo, uint16_t combineMode, uint16_t envMapNum);
+void SetSphereMapInfoOnMaterialObject(MOMaterialObject *mat, uint16_t combineMode, uint16_t envMapNum);
 
 
 #endif

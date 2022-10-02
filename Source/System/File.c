@@ -76,7 +76,7 @@ typedef	struct
 
 typedef struct
 {
-	u_short			type;				// type of fence
+	uint16_t			type;				// type of fence
 	short			numNubs;			// # nubs in fence
 	int32_t			junk;			// handle to nub list
 	Rect			bBox;				// bounding box of fence area
@@ -234,7 +234,7 @@ OGLPoint3D				*pointPtr;
 	for (i=0; i < numJoints; i++)
 	{
 		File_BoneDefinitionType	*bonePtr;
-		u_short					*indexPtr;
+		uint16_t					*indexPtr;
 
 			/* READ BONE DATA */
 
@@ -256,11 +256,11 @@ OGLPoint3D				*pointPtr;
 
 			/* ALLOC THE POINT & NORMALS SUB-ARRAYS */
 
-		skeleton->Bones[i].pointList = (u_short *)AllocPtr(sizeof(u_short) * (int)skeleton->Bones[i].numPointsAttachedToBone);
+		skeleton->Bones[i].pointList = (uint16_t *)AllocPtr(sizeof(uint16_t) * (int)skeleton->Bones[i].numPointsAttachedToBone);
 		if (skeleton->Bones[i].pointList == nil)
 			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/pointList failed!");
 
-		skeleton->Bones[i].normalList = (u_short *)AllocPtr(sizeof(u_short) * (int)skeleton->Bones[i].numNormalsAttachedToBone);
+		skeleton->Bones[i].normalList = (uint16_t *)AllocPtr(sizeof(uint16_t) * (int)skeleton->Bones[i].numNormalsAttachedToBone);
 		if (skeleton->Bones[i].normalList == nil)
 			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/normalList failed!");
 
@@ -270,7 +270,7 @@ OGLPoint3D				*pointPtr;
 		if (hand == nil)
 			DoFatalAlert("Error reading BonP resource!");
 		HLock(hand);
-		indexPtr = (u_short *)(*hand);
+		indexPtr = (uint16_t *)(*hand);
 
 			/* COPY POINT INDEX ARRAY INTO BONE STRUCT */
 
@@ -285,7 +285,7 @@ OGLPoint3D				*pointPtr;
 		if (hand == nil)
 			DoFatalAlert("Error reading BonN resource!");
 		HLock(hand);
-		indexPtr = (u_short *)(*hand);
+		indexPtr = (uint16_t *)(*hand);
 
 			/* COPY NORMAL INDEX ARRAY INTO BONE STRUCT */
 

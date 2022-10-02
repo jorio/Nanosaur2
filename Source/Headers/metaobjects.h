@@ -81,9 +81,9 @@ typedef struct
 
 	uint32_t			flags;
 	OGLColorRGBA	diffuseColor;					// rgba diffuse color
-	u_short			multiTextureMode;				// sphere map, etc.
-	u_short			multiTextureCombine;			// blend, replace, etc.
-	u_short			envMapNum;						// texture # in env map list to use
+	uint16_t			multiTextureMode;				// sphere map, etc.
+	uint16_t			multiTextureCombine;			// blend, replace, etc.
+	uint16_t			envMapNum;						// texture # in env map list to use
 
 	uint32_t			numMipmaps;						// # texture mipmaps to use
 	uint32_t			width,height;					// dimensions of texture

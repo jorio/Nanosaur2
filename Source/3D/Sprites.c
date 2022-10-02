@@ -375,7 +375,7 @@ unsigned char *a = (unsigned char *)pixels;
 
 /**************** SET ALPHA IN 16BIT BUFFER *************************/
 
-void SetAlphaIn16BitBuffer(long w, long h, u_short *pixels)
+void SetAlphaIn16BitBuffer(long w, long h, uint16_t *pixels)
 {
 long	count, i;
 

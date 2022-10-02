@@ -218,7 +218,7 @@ float					sink;
 static void MakeFenceGeometry(void)
 {
 int						f, group, sprite;
-u_short					type;
+uint16_t					type;
 float					u,height,aspectRatio,textureUOff;
 long					i,numNubs,j;
 FenceDefType			*fence;

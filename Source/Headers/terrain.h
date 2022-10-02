@@ -77,8 +77,8 @@ typedef struct SuperTileMemoryType SuperTileMemoryType;
 
 typedef struct
 {
-	u_short		numItems;
-	u_short		itemIndex;
+	uint16_t		numItems;
+	uint16_t		itemIndex;
 }SuperTileItemIndexType;
 
 
@@ -106,9 +106,9 @@ enum
 
 typedef	struct
 {
-	u_short		supertileIndex;
-	u_char		statusFlags;
-	u_char		playerHereFlags;
+	uint16_t		supertileIndex;
+	uint8_t		statusFlags;
+	uint8_t		playerHereFlags;
 }SuperTileStatus;
 
 enum									// statusFlags

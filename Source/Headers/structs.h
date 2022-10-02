@@ -104,10 +104,10 @@ typedef struct
 	void				*ignored3;
 	unsigned char		ignored4[32];
 	OGLPoint3D			coord;							// absolute coord (not relative to parent!)
-	u_short				numPointsAttachedToBone;		// # vertices/points that this bone has
-	u_short				*pointList;						// indecies into gDecomposedPointList
-	u_short				numNormalsAttachedToBone;		// # vertex normals this bone has
-	u_short				*normalList;					// indecies into gDecomposedNormalsList
+	uint16_t				numPointsAttachedToBone;		// # vertices/points that this bone has
+	uint16_t				*pointList;						// indecies into gDecomposedPointList
+	uint16_t				numNormalsAttachedToBone;		// # vertex normals this bone has
+	uint16_t				*normalList;					// indecies into gDecomposedNormalsList
 }BoneDefinitionType;
 
 
@@ -239,9 +239,9 @@ typedef struct
 typedef struct
 {
 	uint32_t							x,y;
-	u_short							type;
+	uint16_t							type;
 	Byte							parm[4];
-	u_short							flags;
+	uint16_t							flags;
 
 	float							terrainY;						// calculated terrain Y at this init coord
 }TerrainItemEntryType;
@@ -268,7 +268,7 @@ struct ObjNode
 	struct ObjNode	*ShadowNode;		// ptr to node's shadow (if any)
 	struct ObjNode	*TwitchNode;		// ptr to node's twitch driver (if any)
 
-	u_short			Slot;				// sort value
+	uint16_t			Slot;				// sort value
 	Byte			Genre;				// obj genre
 	int				Type;				// obj type
 	int				Group;				// obj group
@@ -360,7 +360,7 @@ struct ObjNode
 
 	TerrainItemEntryType *TerrainItemPtr;		// if item was from terrain, then this pts to entry in array
 	SplineItemType 		*SplineItemPtr;			// if item was from spline, then this pts to entry in array
-	u_char				SplineNum;				// which spline this spline item is on
+	uint8_t				SplineNum;				// which spline this spline item is on
 	float				SplinePlacement;		// 0.0->.9999 for placement on spline
 	short				SplineObjectIndex;		// index into gSplineObjectList of this ObjNode
 

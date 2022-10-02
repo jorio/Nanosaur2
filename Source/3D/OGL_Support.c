@@ -17,6 +17,11 @@
 /*    PROTOTYPES            */
 /****************************/
 
+static PFNGLACTIVETEXTUREPROC gGlActiveTextureProc;
+static PFNGLCLIENTACTIVETEXTUREARBPROC gGlClientActiveTextureProc;
+#define glActiveTexture gGlActiveTextureProc
+#define glClientActiveTexture gGlClientActiveTextureProc
+
 static void OGL_CreateDrawContext(void);
 static void OGL_DisposeDrawContext(void);
 static void OGL_InitDrawContext(OGLSetupInputType *def);
@@ -377,6 +382,15 @@ GLint			maxTexSize;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
 	if (maxTexSize < 1024)
 		DoFatalAlert("Your video card cannot do 1024x1024 textures, so it is below the game's minimum system requirements.");
+
+			/* GET GL PROCEDURES */
+			// Necessary on Windows
+
+	gGlActiveTextureProc = SDL_GL_GetProcAddress("glActiveTexture");
+	GAME_ASSERT(gGlActiveTextureProc);
+
+	gGlClientActiveTextureProc = SDL_GL_GetProcAddress("glClientActiveTexture");
+	GAME_ASSERT(gGlClientActiveTextureProc);
 }
 
 /**************** OGL: NUKE DRAW CONTEXT *********************/
@@ -1321,12 +1335,12 @@ uint32_t   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
 	else
 	if (dataType == GL_UNSIGNED_SHORT_1_5_5_5_REV)
 	{
-		u_short	*pix16 = (u_short *)imageMemory;
+		uint16_t	*pix16 = (uint16_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_short	pix = pix16[x]; //SwizzleUShort(&pix16[x]);
+				uint16_t	pix = pix16[x]; //SwizzleUShort(&pix16[x]);
 
 				r = (float)((pix >> 10) & 0x1f) / 31.0f * .299f;
 				g = (float)((pix >> 5) & 0x1f) / 31.0f * .586f;
@@ -1505,12 +1519,12 @@ uint32_t	a;
 	else
 	if (dataType == GL_UNSIGNED_SHORT_1_5_5_5_REV)
 	{
-		u_short	*pix16 = (u_short *)imageMemory;
+		uint16_t	*pix16 = (uint16_t *)imageMemory;
 		for (y = 0; y < height; y++)
 		{
 			for (x = 0; x < width; x++)
 			{
-				u_short	pix = pix16[x]; //SwizzleUShort(&pix16[x]);
+				uint16_t	pix = pix16[x]; //SwizzleUShort(&pix16[x]);
 
 				r = ((pix >> 10) & 0x1f) << 3;			// load 5 bits per channel & convert to 8 bits
 				g = ((pix >> 5) & 0x1f) << 3;

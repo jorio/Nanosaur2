@@ -320,7 +320,7 @@ const SkeletonDefType		*currentSkeleton = gCurrentSkeleton;
 OGLMatrix4x4				*matPtr;
 const MOVertexArrayData		*localTriMeshes;
 Byte						buffNum;
-const u_short						*normalIndexList, *pointIndexList;
+const uint16_t						*normalIndexList, *pointIndexList;
 const OGLVector3D					*decomposedNormalsList;
 const DecomposedPointType	*decomposedPointList;
 

@@ -31,4 +31,4 @@ void BlendASprite(int group, int type);
 void SwizzleARGBtoBGRA(long w, long h, uint32_t *pixels);
 void SwizzleARGBtoRGBA(long w, long h, uint32_t *pixels);
 void SetAlphaInARGBBuffer(long w, long h, uint32_t *pixels);
-void SetAlphaIn16BitBuffer(long w, long h, u_short *pixels);
+void SetAlphaIn16BitBuffer(long w, long h, uint16_t *pixels);

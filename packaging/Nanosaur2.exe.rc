@@ -10,7 +10,7 @@
 //
 // IMPORTANT: The .ico should be UNCOMPRESSED, as a png-compressed .ico
 // may cause garbage AVs to flag the game as a false positive!
-IDI_ICON1 ICON DISCARDABLE "BillyFrontier.ico"
+IDI_ICON1 ICON DISCARDABLE "Nanosaur2.ico"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     PROJECT_VERSION_4_WORDS
@@ -23,12 +23,12 @@ BEGIN
         BLOCK "040904b0" // US English cp1252 (hex)
         BEGIN
             VALUE "CompanyName",        "Pangea Software, Inc."
-            VALUE "FileDescription",    "Billy Frontier"
+            VALUE "FileDescription",    "Nanosaur 2"
             VALUE "FileVersion",        PROJECT_VERSION
-            VALUE "InternalName",       "BillyFrontier"
-            VALUE "LegalCopyright",     "(C) 2003 Pangea Software, Inc. (C) 2022 Iliyas Jorio."
-            VALUE "OriginalFilename",   "BillyFrontier.exe"
-            VALUE "ProductName",        "Billy Frontier"
+            VALUE "InternalName",       "Nanosaur2"
+            VALUE "LegalCopyright",     "(C) 2004 Pangea Software, Inc. (C) 2022 Iliyas Jorio."
+            VALUE "OriginalFilename",   "Nanosaur2.exe"
+            VALUE "ProductName",        "Nanosaur 2"
             VALUE "ProductVersion",     PROJECT_VERSION
         END
     END

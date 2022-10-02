@@ -862,7 +862,7 @@ Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum)
 // INPUT:	inFlags = flags to check particle types against
 //
 
-Boolean ParticleHitObject(ObjNode *theNode, u_short inFlags)
+Boolean ParticleHitObject(ObjNode *theNode, uint16_t inFlags)
 {
 int		i,p;
 uint32_t	flags;

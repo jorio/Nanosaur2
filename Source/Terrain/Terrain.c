@@ -17,7 +17,7 @@
 static short GetFreeSuperTileMemory(void);
 static inline void ReleaseSuperTileObject(short superTileNum);
 static void CalcNewItemDeleteWindow(Byte playerNum);
-static u_short	BuildTerrainSuperTile(long	startCol, long startRow);
+static uint16_t	BuildTerrainSuperTile(long	startCol, long startRow);
 static void ReleaseAllSuperTiles(void);
 
 
@@ -56,7 +56,7 @@ float			**gVertexShading = nil;					// vertex shading grid
 
 MOMaterialObject	*gSuperTileTextureObjects[MAX_SUPERTILE_TEXTURES];
 
-//u_short			**gAttributeGrid = nil;
+//uint16_t			**gAttributeGrid = nil;
 
 long			gNumSuperTilesDeep,gNumSuperTilesWide;	  		// dimensions of terrain in terms of supertiles
 static int		gCurrentSuperTileRow[MAX_PLAYERS];

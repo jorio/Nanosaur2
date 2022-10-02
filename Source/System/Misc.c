@@ -141,9 +141,9 @@ unsigned long MyRandomLong(void)
 // THE RANGE *IS* INCLUSIVE OF MIN AND MAX
 //
 
-u_short	RandomRange(unsigned short min, unsigned short max)
+uint16_t	RandomRange(unsigned short min, unsigned short max)
 {
-u_short		qdRdm;											// treat return value as 0-65536
+uint16_t		qdRdm;											// treat return value as 0-65536
 uint32_t		range, t;
 
 	qdRdm = MyRandomLong();

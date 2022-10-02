@@ -906,6 +906,7 @@ static void NavigateSettingEntriesMouseHover(void)
 
 			if (gNav->menuRow != row)
 			{
+				gNav->idleTime = 0;
 				TwitchSelectionInOrOut(false);
 				gNav->menuRow = row;
 				PlayNavigateEffect();

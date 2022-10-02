@@ -34,7 +34,7 @@ static void ProcessMenuOutcome(int outcome);
 
 static const MenuItem gMainMenuTree[] =
 {
-	{ .id='titl' },
+	{ .id='root' },
 	{kMIPick, STR_PLAY_GAME,	.next='play', },
 	{kMIPick, STR_SETTINGS,		.next='sett', },
 	{kMIPick, STR_INFO,			.next='info', },
@@ -77,11 +77,12 @@ OGLPoint2D	gCursorCoord;						// screen coords based on 640x480 system
 
 static void MoveMainMenu(void)
 {
-	MoveObjects();
-
 			/* SEE IF DO SCREENSAVER */
+			//
+			// BEFORE updating the menu (Otherwise MoveObjects may delete it)
+			//
 
-	if (GetMenuIdleTime() > SCREENSAVER_DELAY)
+	if (GetCurrentMenu() == 'root' && GetMenuIdleTime() > SCREENSAVER_DELAY)
 	{
 		KillMenu('ssav');
 	}
@@ -89,6 +90,8 @@ static void MoveMainMenu(void)
 	{
 		KillMenu('demo');
 	}
+
+	MoveObjects();
 }
 
 
@@ -115,7 +118,7 @@ void DoMainMenuScreen(void)
 		{
 			DoSDLMaintenance();
 			CalcFramesPerSecond();
-			MoveObjects();
+			MoveMainMenu();
 			OGL_DrawScene(DrawObjects);
 		}
 

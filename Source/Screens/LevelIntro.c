@@ -10,6 +10,7 @@
 /****************************/
 
 #include "game.h"
+#include "menu.h"
 
 
 /****************************/
@@ -24,8 +25,7 @@ static void MoveLevelIntroNano(ObjNode *theNode);
 static void MakeLevelIntroWormNano(void);
 static void MoveIntroStarDome(ObjNode *theNode);
 static void MakeLevelIntroSaveSprites(void);
-static Boolean CheckSaveSelection(void);
-static void MoveSaveIcon(ObjNode *theNode);
+static void MovePressAnyKey(ObjNode* theNode);
 
 
 /****************************/
@@ -38,12 +38,7 @@ static void MoveSaveIcon(ObjNode *theNode);
 /*********************/
 
 static OGLPoint3D		gWormholeDeformPoints[30];
-
 static	Byte			gIntroMode;
-
-static	ObjNode			*gSaveObjs[2];
-static	Rect			gSaveIconRects[2];
-static	short			gSaveSelection;
 
 
 /********************** DO LEVEL INTRO SCREEN **************************/
@@ -61,8 +56,6 @@ float	timer = 5.0f;
 #endif
 
 	gIntroMode = mode;
-
-	gSaveSelection = -1;
 
 
 			/* SETUP */
@@ -98,6 +91,12 @@ float	timer = 5.0f;
 					break;
 
 			case	INTRO_MODE_SAVEGAME:
+					if (gMenuOutcome != 0)
+					{
+						bail = true;
+					}
+					SOFTIMPME;
+#if 0
 					if (CheckSaveSelection())
 					{
 						if (IsClickDown(SDL_BUTTON_LEFT))
@@ -105,6 +104,7 @@ float	timer = 5.0f;
 							bail = true;
 						}
 					}
+#endif
 					break;
 
 		}
@@ -118,10 +118,12 @@ float	timer = 5.0f;
 	OGL_FadeOutScene(DrawObjects, MoveObjects);
 
 
+#if 0
 			/* DO SAVE */
 
 	if (gSaveSelection == 0)
 		SaveGame();
+#endif
 
 
 			/* CLEANUP */
@@ -209,8 +211,8 @@ ObjNode	*newObj;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
-	LoadSpriteGroupFromFiles(SPRITE_GROUP_MAINMENU, 4, (const char*[]) {":sprites:save0.png", ":sprites:save1.png", ":sprites:pressanykey.png", ":sprites:nanologo.png"}, 0);
+	LoadSpriteGroupFromFiles(SPRITE_GROUP_MAINMENU, 1, (const char*[]) {":sprites:nanologo.png"}, 0);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 
 			/* LOAD SKELETONS */
@@ -285,34 +287,35 @@ ObjNode	*newObj;
 
 
 		case	INTRO_MODE_SCREENSAVER:
-
+			{
 					/* PRESS ANY KEY */
 
-				gNewObjectDefinition.group 		= SPRITE_GROUP_MAINMENU;
-				gNewObjectDefinition.type 		= MAINMENU_SObjType_PressAnyKey;
-				gNewObjectDefinition.coord.x 	= 640/2;
-				gNewObjectDefinition.coord.y 	= 450;
-				gNewObjectDefinition.coord.z 	= 0;
-				gNewObjectDefinition.flags 		= 0;
-				gNewObjectDefinition.slot 		= SPRITE_SLOT;
-				gNewObjectDefinition.moveCall 	= nil;
-				gNewObjectDefinition.rot 		= 0;
-				gNewObjectDefinition.scale 	    = 150.0;
-				newObj = MakeSpriteObject(&gNewObjectDefinition, true);
+				NewObjectDefinitionType textDef =
+				{
+					.coord		= {640/2, 450, 0},
+					.slot		= SPRITE_SLOT,
+					.moveCall	= MovePressAnyKey,
+					.scale		= 0.35f,
+				};
+				newObj = TextMesh_New(Localize(gUserPrefersGamepad? STR_PRESS_START: STR_PRESS_ANY_KEY), kTextMeshAlignCenter, &textDef);
 				newObj->ColorFilter.a = .6f;
 				newObj->AnaglyphZ = 6.0f;
 
 					/* NANO LOGO */
 
-				gNewObjectDefinition.type 		= MAINMENU_SObjType_NanoLogo;
-				gNewObjectDefinition.coord.x 	= 20;
-				gNewObjectDefinition.coord.y 	= 0;
-				gNewObjectDefinition.scale 	    = 150.0;
-				newObj = MakeSpriteObject(&gNewObjectDefinition, false);
+				NewObjectDefinitionType logoDef =
+				{
+					.group		= SPRITE_GROUP_MAINMENU,
+					.type		= MAINMENU_SObjType_NanoLogo,
+					.coord		= {20, 0, 0},
+					.slot		= SPRITE_SLOT,
+					.scale		= 150,
+				};
+				newObj = MakeSpriteObject(&logoDef, false);
 				newObj->AnaglyphZ = 6.0f;
 
 				break;
-
+			}
 	}
 }
 
@@ -413,6 +416,7 @@ static void FreeLevelIntroScreen(void)
 	FreeAllSkeletonFiles(-1);
 	InitSparkles();				// this will actually delete all the sparkles
 	DisposeAllSpriteGroups();
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
 
@@ -557,99 +561,31 @@ static float		waveX = 0, waveY = 1.0;
 
 static void MakeLevelIntroSaveSprites(void)
 {
-	float y = 375.0f;
+	static const MenuItem saveMenuTree[] =
+	{
+		{ .id='sav?'},
+		{ .type=kMIPick, .text=STR_SAVE_GAME, .id='save', .next='EXIT' },
+		{ .type=kMIPick, .text=STR_CONTINUE_WITHOUT_SAVING, .id='nosv', .next='EXIT' },
 
-			/* CURSOR */
+		{ .id=0 }
+	};
+
+
+	MenuStyle style = kDefaultMenuStyle;
+	style.yOffset = 400;
+	style.standardScale *= 0.75f;
+	style.rowHeight *= 0.75f;
+	MakeMenu(saveMenuTree, &style);
 
 	MakeMouseCursorObject();
-//	gMenuCursorObj->ColorFilter.a = .9f;
-//	gMenuCursorObj->AnaglyphZ = 2.5f;
-
-
-	memset(&gNewObjectDefinition, 0, sizeof(gNewObjectDefinition));
-	gNewObjectDefinition.slot = MENU_SLOT;
-	gNewObjectDefinition.flags = STATUS_BIT_MOVEINPAUSE;
-
-		/* MAKE SAVE ICON */
-
-	gNewObjectDefinition.group 		= SPRITE_GROUP_MAINMENU;
-	gNewObjectDefinition.type 		= MAINMENU_SObjType_SaveIcon;
-	gNewObjectDefinition.coord.x 	= 210;
-	gNewObjectDefinition.coord.y 	= y;
-	gNewObjectDefinition.moveCall 	= MoveSaveIcon;
-	gNewObjectDefinition.scale 	    = 80.0f;
-	gNewObjectDefinition.slot--;
-	gSaveObjs[0] = MakeSpriteObject(&gNewObjectDefinition, false);
-
-	gSaveObjs[0]->Kind = 0;
-
-	gSaveIconRects[0].top 		= gSaveObjs[0]->Coord.y;
-	gSaveIconRects[0].bottom 	= gSaveObjs[0]->Coord.y + gNewObjectDefinition.scale;
-	gSaveIconRects[0].left 		= gSaveObjs[0]->Coord.x;
-	gSaveIconRects[0].right 	= gSaveObjs[0]->Coord.x + gNewObjectDefinition.scale;;
-
-	gSaveObjs[0]->AnaglyphZ = 2.0f;
-
-
-		/* MAKE NO-SAVE ICON */
-
-	gNewObjectDefinition.type 		= MAINMENU_SObjType_NoSaveIcon;
-	gNewObjectDefinition.coord.x 	= 640.0f - gNewObjectDefinition.scale - 210.0f;
-	gSaveObjs[1] = MakeSpriteObject(&gNewObjectDefinition, false);
-
-	gSaveObjs[1]->Kind = 1;
-
-	gSaveIconRects[1].top 		= gSaveObjs[1]->Coord.y;
-	gSaveIconRects[1].bottom 	= gSaveObjs[1]->Coord.y + gNewObjectDefinition.scale;
-	gSaveIconRects[1].left 		= gSaveObjs[1]->Coord.x;
-	gSaveIconRects[1].right 	= gSaveObjs[1]->Coord.x + gNewObjectDefinition.scale;;
-
-	gSaveObjs[1]->AnaglyphZ = 2.0f;
-
-
 }
 
 
-/********************* MOVE SAVE ICON ***************************/
+/******************** MOVE PRESS ANY KEY TEXT *************************/
 
-static void MoveSaveIcon(ObjNode *theNode)
+static void MovePressAnyKey(ObjNode* theNode)
 {
-	if (theNode->Kind == gSaveSelection)
-	{
-		theNode->ColorFilter.a = 1.0;
-	}
-	else
-		theNode->ColorFilter.a = .6;
+	theNode->Timer += gFramesPerSecondFrac * 4.0f;
+	theNode->ColorFilter.a = 0.66f + sinf(theNode->Timer) * 0.33f;
 }
-
-
-/******************** CHECK SAVE SELECTION **************************/
-
-static Boolean CheckSaveSelection(void)
-{
-short	i;
-
-	for (i = 0; i < 2; i++)
-	{
-		if ((gCursorCoord.x > gSaveIconRects[i].left) &&
-			(gCursorCoord.x < gSaveIconRects[i].right) &&
-			(gCursorCoord.y < gSaveIconRects[i].bottom) &&
-			(gCursorCoord.y > gSaveIconRects[i].top))
-		{
-			gSaveSelection = i;
-			return(true);
-		}
-	}
-
-	gSaveSelection = -1;
-	return(false);
-}
-
-
-
-
-
-
-
-
 

@@ -189,8 +189,6 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
-
 	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 

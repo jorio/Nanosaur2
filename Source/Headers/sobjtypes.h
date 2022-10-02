@@ -247,14 +247,10 @@ enum
 
 enum
 {
-	MAINMENU_SObjType_Credits,
-
-	MAINMENU_SObjType_SaveIcon,
 	MAINMENU_SObjType_NoSaveIcon,
+	MAINMENU_SObjType_SaveIcon,
 	MAINMENU_SObjType_PressAnyKey,
-
 	MAINMENU_SObjType_NanoLogo
-
 };
 
 

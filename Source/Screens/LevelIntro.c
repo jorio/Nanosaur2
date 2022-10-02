@@ -210,7 +210,7 @@ ObjNode	*newObj;
 			/* LOAD SPRITES */
 
 	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_MAINMENU, ":sprites:mainmenu.sprites", 0);
+	LoadSpriteGroupFromFiles(SPRITE_GROUP_MAINMENU, 4, (const char*[]) {":sprites:save0.png", ":sprites:save1.png", ":sprites:pressanykey.png", ":sprites:nanologo.png"}, 0);
 
 
 			/* LOAD SKELETONS */
@@ -565,6 +565,10 @@ static void MakeLevelIntroSaveSprites(void)
 //	gMenuCursorObj->ColorFilter.a = .9f;
 //	gMenuCursorObj->AnaglyphZ = 2.5f;
 
+
+	memset(&gNewObjectDefinition, 0, sizeof(gNewObjectDefinition));
+	gNewObjectDefinition.slot = MENU_SLOT;
+	gNewObjectDefinition.flags = STATUS_BIT_MOVEINPAUSE;
 
 		/* MAKE SAVE ICON */
 

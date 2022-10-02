@@ -78,17 +78,16 @@ typedef struct
 
 #define kDefaultX			(640/2)
 
-#define kSfxNavigate		EFFECT_CHANGESELECT
-#define kSfxBack			EFFECT_GETPOW
 #define kSfxCycle			EFFECT_MENUSELECT
-#define kSfxError			EFFECT_BADSELECT
-#define kSfxDelete			EFFECT_TURRETEXPLOSION
-#define kSfxStartBinding	EFFECT_MENUSELECT
 
-#define PlayNavigateEffect() PlayEffect_Parms(kSfxNavigate, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
-#define PlayConfirmEffect() PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
-#define PlayBackEffect() PlayEffect_Parms(kSfxBack, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
-#define PlayErrorEffect() PlayEffect_Parms(kSfxError, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
+#define PlayEffectForMenu(x)		PlayEffect_Parms((x), FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
+#define PlayNavigateEffect()		PlayEffectForMenu(EFFECT_CHANGESELECT)
+#define PlayConfirmEffect()			PlayEffectForMenu(EFFECT_MENUSELECT)
+#define PlayBackEffect()			PlayEffectForMenu(EFFECT_CHANGEWEAPON)
+#define PlayErrorEffect()			PlayEffectForMenu(EFFECT_BADSELECT)
+#define PlayDeleteEffect()			PlayEffectForMenu(EFFECT_CRYSTALSHATTER)
+#define PlayStartBindingEffect()	PlayEffectForMenu(EFFECT_GRABEGG)
+#define PlayEndBindingEffect()		PlayEffectForMenu(EFFECT_MENUSELECT)
 
 const int16_t kJoystickDeadZone_BindingThreshold = (75 * 32767 / 100);
 
@@ -481,6 +480,24 @@ static ObjNode* MakePbText(int row, int btnNo)
 	return node;
 }
 
+static ObjNode* MakeMbText(int row)
+{
+	const char* mbName;
+
+	if (gNav->menuState == kMenuStateAwaitingMouseClick)
+	{
+		mbName = Localize(STR_CLICK);
+	}
+	else
+	{
+		mbName = GetMouseBindingName(row);
+	}
+
+	ObjNode* node = MakeText(mbName, row, 1, kTextMeshAllCaps | kTextMeshAlignLeft);
+	GetMenuNodeData(node)->col = 0;
+	return node;
+}
+
 static bool IsMenuItemSelectable(const MenuItem* mi)
 {
 	switch (mi->type)
@@ -536,8 +553,8 @@ static void TwitchSelectionInOrOut(bool scaleIn)
 
 
 	float s = GetMenuItemHeight(gNav->menuRow) * gNav->style.standardScale;
-	obj->Scale.x = s * (scaleIn? 1.15: 1);
-	obj->Scale.y = s * (scaleIn? 1.15: 1);
+	obj->Scale.x = s * (scaleIn? 1.1: 1);
+	obj->Scale.y = s * (scaleIn? 1.1: 1);
 
 	MakeTwitch(obj, (scaleIn ? kTwitchPreset_MenuSelect : kTwitchPreset_MenuDeselect) | kTwitchFlags_Chain);
 }
@@ -911,6 +928,7 @@ static void NavigateSettingEntriesMouseHover(void)
 				gNav->menuRow = row;
 				PlayNavigateEffect();
 				TwitchSelectionInOrOut(true);
+				RepositionArrows();
 			}
 
 			return;
@@ -1269,7 +1287,7 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		TwitchOutSelection();
 		gNav->idleTime = 0;
 		gGamePrefs.bindings[entry->inputNeed].key[keyNo] = 0;
-		PlayEffect(kSfxDelete);
+		PlayDeleteEffect();
 		MakeKbText(row, keyNo);
 		TwitchSelection();
 		RepositionArrows();
@@ -1280,7 +1298,7 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		|| IsKeyDown(SDL_SCANCODE_KP_ENTER)
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT)))
 	{
-		PlayEffect(kSfxStartBinding);
+		PlayStartBindingEffect();
 		InvalidateAllInputs();
 		gNav->idleTime = 0;
 		gNav->menuState = kMenuStateAwaitingKeyPress;
@@ -1339,7 +1357,7 @@ static void NavigatePadBinding(const MenuItem* entry)
 		TwitchOutSelection();
 		gNav->idleTime = 0;
 		gGamePrefs.bindings[entry->inputNeed].pad[btnNo].type = kInputTypeUnbound;
-		PlayEffect(kSfxDelete);
+		PlayDeleteEffect();
 		MakePbText(row, btnNo);
 		TwitchSelection();
 		return;
@@ -1354,7 +1372,7 @@ static void NavigatePadBinding(const MenuItem* entry)
 		// so we have to query SDL for a new button directly.
 		// AwaitMetaGamepadPress will wait for the user to let go of kNeed_UIConfirm.
 
-		PlayEffect(kSfxStartBinding);
+		PlayStartBindingEffect();
 
 		gNav->idleTime = 0;
 		gNav->menuState = kMenuStateAwaitingPadPress;
@@ -1372,30 +1390,36 @@ static void NavigatePadBinding(const MenuItem* entry)
 
 static void NavigateMouseBinding(const MenuItem* entry)
 {
-	SOFTIMPME;
+	int row = gNav->menuRow;
 
-#if 0 // TODO: review this if we bring back mouse input support
 	if (IsNeedDown(kNeed_UIDelete, ANY_PLAYER)
+		|| IsKeyDown(CLEAR_BINDING_SCANCODE)
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_MIDDLE)))
 	{
 		gNav->idleTime = 0;
 		gGamePrefs.bindings[entry->inputNeed].mouseButton = 0;
-		PlayEffect(kSfxDelete);
-		MakeText(Localize(STR_UNBOUND_PLACEHOLDER), gNav->menuRow, 1, 0);
+		PlayDeleteEffect();
+		MakeMbText(row);
+		TwitchSelection();
 		return;
 	}
 
 	if (IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
+		|| IsKeyDown(SDL_SCANCODE_KP_ENTER)
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT)))
 	{
+		PlayStartBindingEffect();
+
 		gNav->idleTime = 0;
+		gNav->menuState = kMenuStateAwaitingMouseClick;
+
+		MakeMbText(row);			// It'll show "PRESS!" because we're in MenuStateAwaitingMouseClick
+		RepositionArrows();
+		TwitchSelection();
 		InvalidateAllInputs();
 
-		gNav->menuState = kMenuStateAwaitingMouseClick;
-		MakeText(Localize(STR_CLICK), gNav->menuRow, 1, 0);
 		return;
 	}
-#endif
 }
 
 static void NavigateMenu(void)
@@ -1516,7 +1540,7 @@ static void AwaitKeyPress(void)
 			UnbindScancodeFromAllRemappableInputNeeds(scancode);
 			GetBindingAtRow(row)->key[keyNo] = scancode;
 
-			PlayEffect(kSfxCycle);
+			PlayEndBindingEffect();
 			goto updateText;
 		}
 	}
@@ -1548,6 +1572,7 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 
 	for (int8_t button = 0; button < SDL_CONTROLLER_BUTTON_MAX; button++)
 	{
+#if 0	// uncomment to prevent binding d-pad
 		switch (button)
 		{
 			case SDL_CONTROLLER_BUTTON_DPAD_UP:			// prevent binding those
@@ -1556,10 +1581,11 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 			case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
 				continue;
 		}
+#endif
 
 		if (SDL_GameControllerGetButton(controller, button))
 		{
-			PlayEffect(kSfxCycle);
+			PlayEndBindingEffect();
 			UnbindPadButtonFromAllRemappableInputNeeds(kInputTypeButton, button);
 			binding->pad[btnNo].type = kInputTypeButton;
 			binding->pad[btnNo].id = button;
@@ -1569,21 +1595,21 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 
 	for (int8_t axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++)
 	{
+#if 0	// uncomment to prevent binding LS/RS
 		switch (axis)
 		{
 			case SDL_CONTROLLER_AXIS_LEFTX:				// prevent binding those
 			case SDL_CONTROLLER_AXIS_LEFTY:
-#if 0
 			case SDL_CONTROLLER_AXIS_RIGHTX:
 			case SDL_CONTROLLER_AXIS_RIGHTY:
-#endif
 				continue;
 		}
+#endif
 
 		int16_t axisValue = SDL_GameControllerGetAxis(controller, axis);
 		if (abs(axisValue) > kJoystickDeadZone_BindingThreshold)
 		{
-			PlayEffect(kSfxCycle);
+			PlayEndBindingEffect();
 			int axisType = axisValue < 0 ? kInputTypeAxisMinus : kInputTypeAxisPlus;
 			UnbindPadButtonFromAllRemappableInputNeeds(axisType, axis);
 			binding->pad[btnNo].type = axisType;
@@ -1656,10 +1682,13 @@ static void AwaitMouseClick(void)
 		{
 			UnbindMouseButtonFromAllRemappableInputNeeds(mouseButton);
 			binding->mouseButton = mouseButton;
-			MakeText(GetMouseBindingName(gNav->menuRow), gNav->menuRow, 1, 0);
 			gNav->menuState = kMenuStateReady;
 			gNav->idleTime = 0;
-			PlayEffect(kSfxCycle);
+
+			MakeMbText(gNav->menuRow);
+			RepositionArrows();
+
+			PlayEndBindingEffect();
 			return;
 		}
 	}
@@ -1887,14 +1916,14 @@ static ObjNode* LayOutKeyBinding(int row)
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
-	label->Coord.x -= 256;
+	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
 		ObjNode* keyNode = MakeKbText(row, j);
-		keyNode->Coord.x = -50 + j * 170 ;
+		keyNode->Coord.x = 300 + j * 170 ;
 		keyNode->MoveCall = MoveControlBinding;
 		GetMenuNodeData(keyNode)->col = j;
 	}
@@ -1910,14 +1939,14 @@ static ObjNode* LayOutPadBinding(int row)
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
-	label->Coord.x -= 256;
+	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
 		ObjNode* keyNode = MakePbText(row, j);
-		keyNode->Coord.x = -50 + j * 170;
+		keyNode->Coord.x = 300 + j * 170;
 		keyNode->MoveCall = MoveControlBinding;
 		GetMenuNodeData(keyNode)->col = j;
 	}
@@ -1932,12 +1961,15 @@ static ObjNode* LayOutMouseBinding(int row)
 
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
-	ObjNode* label = MakeText(buf, row, 0, 0);
+	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
+	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
-	label->MoveCall = MoveAction;
+	label->MoveCall = MoveLabel;
 
-	ObjNode* keyNode = MakeText(GetMouseBindingName(row), row, 1, 0);
+	ObjNode* keyNode = MakeText(GetMouseBindingName(row), row, 1, kTextMeshAlignLeft);
+	keyNode->Coord.x = 300;
 	keyNode->MoveCall = MoveControlBinding;
+	GetMenuNodeData(keyNode)->col = 0;
 
 	return label;
 }

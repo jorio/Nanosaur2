@@ -14,7 +14,36 @@ static void OnPickLanguage(const MenuItem* mi)
 
 static void OnToggleFullscreen(const MenuItem* mi)
 {
+	(void) mi;
+
 	SetFullscreenMode(true);
+}
+
+static void OnPickResetKeyboardBindings(const MenuItem* mi)
+{
+	(void) mi;
+
+	ResetDefaultKeyboardBindings();
+	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
+	LayoutCurrentMenuAgain();
+}
+
+static void OnPickResetGamepadBindings(const MenuItem* mi)
+{
+	(void) mi;
+
+	ResetDefaultGamepadBindings();
+	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
+	LayoutCurrentMenuAgain();
+}
+
+static void OnPickResetMouseBindings(const MenuItem* mi)
+{
+	(void) mi;
+
+	ResetDefaultMouseBindings();
+	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
+	LayoutCurrentMenuAgain();
 }
 
 static const MenuItem gSettingsMenuTree[] =
@@ -110,17 +139,17 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='lang'},
-	{kMIPick, STR_ENGLISH,	.id=LANGUAGE_ENGLISH,	.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_FRENCH,	.id=LANGUAGE_FRENCH,	.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_GERMAN,	.id=LANGUAGE_GERMAN,	.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_SPANISH,	.id=LANGUAGE_SPANISH,	.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_ITALIAN,	.id=LANGUAGE_ITALIAN,	.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_DUTCH,	.id=LANGUAGE_DUTCH,		.callback=OnPickLanguage,	.next='BACK'},
-	{kMIPick, STR_SWEDISH,	.id=LANGUAGE_SWEDISH,	.callback=OnPickLanguage,	.next='BACK'},
+	{kMIPick, STR_ENGLISH,	.id=LANGUAGE_ENGLISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_FRENCH,	.id=LANGUAGE_FRENCH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_GERMAN,	.id=LANGUAGE_GERMAN,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_SPANISH,	.id=LANGUAGE_SPANISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_ITALIAN,	.id=LANGUAGE_ITALIAN,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_DUTCH,	.id=LANGUAGE_DUTCH,		.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
+	{kMIPick, STR_SWEDISH,	.id=LANGUAGE_SWEDISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id='keyb' },
-	{kMISpacer, .customHeight=.35f },
+//	{kMISpacer, .customHeight=.35f },
 	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.5f },
 	{kMISpacer, .customHeight=.4f },
 	{kMIKeyBinding, .inputNeed=kNeed_PitchUp },
@@ -129,15 +158,17 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIKeyBinding, .inputNeed=kNeed_YawRight },
 	{kMIKeyBinding, .inputNeed=kNeed_Jetpack },
 	{kMIKeyBinding, .inputNeed=kNeed_Fire },
+	{kMIKeyBinding, .inputNeed=kNeed_Drop },
 	{kMIKeyBinding, .inputNeed=kNeed_NextWeapon },
 	{kMIKeyBinding, .inputNeed=kNeed_PrevWeapon },
 	{kMIKeyBinding, .inputNeed=kNeed_CameraMode },
-//	{kMISpacer, .customHeight=.25f },
-//	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetKeyboardBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
+	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetKeyboardBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id='gpad' },
-	{kMISpacer, .customHeight=.35f },
+//	{kMISpacer, .customHeight=.35f },
 	{kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight=.5f },
 	{kMISpacer, .customHeight=.4f },
 	{kMIPadBinding, .inputNeed=kNeed_PitchUp },
@@ -146,24 +177,27 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPadBinding, .inputNeed=kNeed_YawRight },
 	{kMIPadBinding, .inputNeed=kNeed_Jetpack },
 	{kMIPadBinding, .inputNeed=kNeed_Fire },
+	{kMIPadBinding, .inputNeed=kNeed_Drop },
 	{kMIPadBinding, .inputNeed=kNeed_NextWeapon },
 	{kMIPadBinding, .inputNeed=kNeed_PrevWeapon },
 	{kMIPadBinding, .inputNeed=kNeed_CameraMode },
-//	{kMISpacer, .customHeight=.25f },
-//	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetKeyboardBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
+	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetGamepadBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id='mous' },
-	{kMISpacer, .customHeight=.35f },
-//	{kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight=.5f },
-//	{kMISpacer, .customHeight=.4f },
+//	{kMISpacer, .customHeight=.35f },
+//	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.5f },
 	{kMIMouseBinding, .inputNeed=kNeed_Jetpack },
 	{kMIMouseBinding, .inputNeed=kNeed_Fire },
+	{kMIMouseBinding, .inputNeed=kNeed_Drop },
 	{kMIMouseBinding, .inputNeed=kNeed_NextWeapon },
 	{kMIMouseBinding, .inputNeed=kNeed_PrevWeapon },
 	{kMIMouseBinding, .inputNeed=kNeed_CameraMode },
-//	{kMISpacer, .customHeight=.25f },
-//	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetKeyboardBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
+	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetMouseBindings, .customHeight=.5f },
+	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 

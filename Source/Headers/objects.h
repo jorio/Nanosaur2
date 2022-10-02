@@ -10,6 +10,7 @@
 #define	PLAYER_SLOT		50						// note:  draw any "OGL fenced" objects first for best performance (we want their fences ending asap)
 #define	ENEMY_SLOT		(PLAYER_SLOT+10)
 #define	SLOT_OF_DUMB	3000
+#define	BGPIC_SLOT		SLOT_OF_DUMB
 #define	SPRITE_SLOT		(SLOT_OF_DUMB+100)
 #define	FENCE_SLOT		(TERRAIN_SLOT+3)		// need to draw very early for alpha blending of other objects to look best
 #define	PARTICLE_SLOT	(SPRITE_SLOT-2)
@@ -121,3 +122,5 @@ ObjNode* GetNthChainedNode(ObjNode* start, int targetIndex, ObjNode** outPrevNod
 ObjNode* GetChainTailNode(ObjNode* start);
 void AppendNodeToChain(ObjNode* start, ObjNode* newTail);
 void UnchainNode(ObjNode* theNode);
+
+ObjNode* MakeBackgroundPictureObject(const char* imagePath);

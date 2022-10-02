@@ -1,7 +1,8 @@
 /****************************/
 /*   	MISCSCREENS.C	    */
-/* (c)2002 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2002 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -16,7 +17,6 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void DisplayPicture_Draw(void);
 static void DrawLoading_Callback(void);
 
 
@@ -30,15 +30,7 @@ static void DrawLoading_Callback(void);
 /*    VARIABLES      */
 /*********************/
 
-MOPictureObject 	*gBackgoundPicture = nil;
-
-OGLSetupOutputType	*gScreenViewInfoPtr = nil;
-
 float		gLoadingThermoPercent = 0;
-
-static Boolean		gLanguageChanged = false;
-
-static	Boolean		gDontShowDemoQuit = false;
 
 
 /********************** DISPLAY PICTURE **************************/
@@ -61,9 +53,7 @@ float	timeout = 40.0f;
 
 	viewDef.camera.hither 			= 10;
 	viewDef.camera.yon 				= 3000;
-	viewDef.view.clearColor.r 		= 1;
-	viewDef.view.clearColor.g 		= 1;
-	viewDef.view.clearColor.b		= 0;
+	viewDef.view.clearColor			= (OGLColorRGBA) {0,0,0,1};
 	viewDef.styles.useFog			= false;
 
 	OGL_SetupGameView(&viewDef);
@@ -72,9 +62,7 @@ float	timeout = 40.0f;
 
 			/* CREATE BACKGROUND OBJECT */
 
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, 0, (void*) path);
-	if (!gBackgoundPicture)
-		DoFatalAlert("DisplayPicture: MO_CreateNewObjectOfType failed");
+	MakeBackgroundPictureObject(path);
 
 
 
@@ -93,7 +81,7 @@ float	timeout = 40.0f;
 		{
 			CalcFramesPerSecond();
 			MoveObjects();
-			OGL_DrawScene(DisplayPicture_Draw);
+			OGL_DrawScene(DrawObjects);
 
 			DoSDLMaintenance();
 			if (UserWantsOut() || IsClickDown(SDL_BUTTON_LEFT))
@@ -107,30 +95,14 @@ float	timeout = 40.0f;
 
 			/* FADE OUT */
 
-	OGL_FadeOutScene(DisplayPicture_Draw, NULL);
+	OGL_FadeOutScene(DrawObjects, NULL);
 
 
 			/* CLEANUP */
 
 	DeleteAllObjects();
-	MO_DisposeObjectReference(gBackgoundPicture);
 	DisposeAllSpriteGroups();
-
-
-
-
 	OGL_DisposeGameView();
-
-
-}
-
-
-/***************** DISPLAY PICTURE: DRAW *******************/
-
-static void DisplayPicture_Draw(void)
-{
-	MO_DrawObject(gBackgoundPicture);
-	DrawObjects();
 }
 
 
@@ -636,13 +608,4 @@ float	w, x;
 
 
 }
-
-
-
-
-
-
-
-
-
 

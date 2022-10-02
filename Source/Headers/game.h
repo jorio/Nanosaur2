@@ -99,7 +99,6 @@ extern	GLuint					gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
 extern	LineMarkerDefType		gLineMarkerList[MAX_LINEMARKERS];
 extern	MOMaterialObject		*gMostRecentMaterial;
 extern	MOMaterialObject		*gSuperTileTextureObjects[MAX_SUPERTILE_TEXTURES];
-extern	MOPictureObject			*gBackgoundPicture;
 extern	MOVertexArrayData		gWaterTriMeshData[];
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	NewObjectDefinitionType	gNewObjectDefinition;

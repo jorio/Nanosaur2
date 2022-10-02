@@ -20,7 +20,6 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void ProcessMenuOutcome(int outcome);
-static void DrawMainMenuCallback(void);
 
 
 /****************************/
@@ -112,9 +111,9 @@ void DoMainMenuScreen(void)
 		style.yOffset = 302.5f;
 		style.fadeOutSceneOnExit = false;
 
-		int outcome = StartMenu(gMainMenuTree, &style, MoveMainMenu, DrawMainMenuCallback);
+		int outcome = StartMenu(gMainMenuTree, &style, MoveMainMenu, DrawObjects);
 
-		OGL_FadeOutScene(DrawMainMenuCallback, NULL);
+		OGL_FadeOutScene(DrawObjects, NULL);
 		FreeMainMenuScreen();
 
 		ProcessMenuOutcome(outcome);
@@ -192,9 +191,6 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 
-			/* CREATE BACKGROUND OBJECT */
-
-	gBackgoundPicture = MO_CreateNewObjectOfType(MO_TYPE_PICTURE, 0, ":images:menuback.jpg");
 
 
 
@@ -202,9 +198,8 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 			/* BUILD OBJECTS */
 			/*****************/
 
+	MakeBackgroundPictureObject(":images:menuback.jpg");
 	MakeMouseCursorObject();
-
-
 	MakeFadeEvent(true, 3.0);
 }
 
@@ -215,11 +210,6 @@ static void FreeMainMenuScreen(void)
 {
 	MyFlushEvents();
 	DeleteAllObjects();
-	if (gBackgoundPicture)
-	{
-		MO_DisposeObjectReference(gBackgoundPicture);
-		gBackgoundPicture = nil;
-	}
 	DisposeAllSpriteGroups();
 	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
@@ -335,19 +325,6 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 	}
 }
-
-
-
-/***************** DRAW MAINMENU CALLBACK *******************/
-
-static void DrawMainMenuCallback(void)
-{
-	if (gBackgoundPicture)
-		MO_DrawObject(gBackgoundPicture);
-
-	DrawObjects();
-}
-
 
 
 #pragma mark -

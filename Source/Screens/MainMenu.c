@@ -42,7 +42,7 @@ static const MenuItem gMainMenuTree[] =
 	{ .id='play' },
 	{kMIPick, STR_ADVENTURE,	.id='camp', .next='EXIT' },
 	{kMIPick, STR_NANO_VS_NANO,	.next='bttl' },
-	{kMIPick, STR_SAVED_GAMES,	.id='todo'},
+	{kMIPick, STR_SAVED_GAMES,	.next='load'},
 	{kMIPick, STR_BACK_SYMBOL,	.next='BACK' },
 
 	{ .id='info' },
@@ -112,6 +112,7 @@ void DoMainMenuScreen(void)
 			style.yOffset = 302.5f;
 			MakeMenu(gMainMenuTree, &style);
 			RegisterSettingsMenu();
+			RegisterFileScreen(FILESCREEN_MODE_LOAD);
 		}
 
 		while (0 == gMenuOutcome)
@@ -268,14 +269,27 @@ static void ProcessMenuOutcome(int outcome)
 			gPlayingFromSavedGame = false;
 			break;
 
-		case	'cont':										// CONTINUE SINGLE-PLAYER GAME
-			if (LoadSavedGame())
+		case	'lf#0':										// LOAD SINGLE-PLAYER FILE 0
+		case	'lf#1':										// LOAD SINGLE-PLAYER FILE 1
+		case	'lf#2':										// LOAD SINGLE-PLAYER FILE 2
+		case	'lf#3':										// LOAD SINGLE-PLAYER FILE 3
+		case	'lf#4':										// LOAD SINGLE-PLAYER FILE 4
+		case	'lf#5':										// LOAD SINGLE-PLAYER FILE 5
+		case	'lf#6':										// LOAD SINGLE-PLAYER FILE 6
+		case	'lf#7':										// LOAD SINGLE-PLAYER FILE 7
+		case	'lf#8':										// LOAD SINGLE-PLAYER FILE 8
+		case	'lf#9':										// LOAD SINGLE-PLAYER FILE 9
+		{
+			SaveGameType loaded = {0};
+			if (LoadSavedGame(outcome - 'lf#0', &loaded))
 			{
+				UseSaveGame(&loaded);
 				gPlayingFromSavedGame = true;
 				gNumPlayers = 1;
 				gPlayNow = true;
 			}
 			break;
+		}
 
 		case	'rac1':										// RACE 1
 			gNumPlayers = 2;

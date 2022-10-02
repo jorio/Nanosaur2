@@ -6,6 +6,13 @@
 
 #include "input.h"
 
+#define PREFS_FOLDER_NAME	"Nanosaur2"
+#define PREFS_MAGIC			"Nanosaur2 Prefs v0"
+#define PREFS_FILENAME		"Preferences"
+#define SAVEGAME_MAGIC		"Nanosaur2 Save v0"
+#define MAX_SAVE_FILES		5
+
+
 		/***********************/
 		/* RESOURCE STURCTURES */
 		/***********************/
@@ -64,10 +71,6 @@ typedef struct
 
 		/* PREFERENCES */
 
-#define PREFS_MAGIC "Nanosaur2 Prefs v0"
-#define PREFS_FILENAME "Preferences"
-#define PREFS_FOLDER_NAME "Nanosaur2"
-
 typedef struct
 {
 	Boolean	lowRenderQuality;
@@ -98,6 +101,21 @@ typedef struct
 }PrefsType;
 
 
+		/* SAVE GAME */
+
+typedef struct
+{
+	uint64_t	timestamp;
+	uint8_t		level;
+	uint8_t		numLives;
+	uint16_t	weaponQuantity[NUM_WEAPON_TYPES];
+	float		health;
+	float		jetpackFuel;
+	float		shieldPower;
+}SaveGameType;
+
+
+
 
 //=================================================
 
@@ -109,8 +127,9 @@ OSErr SavePrefs(void);
 void LoadPlayfield(FSSpec *specPtr);
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);
 
-Boolean SaveGame(void);
-Boolean LoadSavedGame(void);
+Boolean SaveGame(int fileSlot);
+Boolean LoadSavedGame(int fileSlot, SaveGameType* outData);
+void UseSaveGame(const SaveGameType* saveData);
 
 void LoadLevelArt(void);
 

@@ -1761,7 +1761,10 @@ static ObjNode* MakeText(const char* text, int row, int desiredCol, int textMesh
 
 static const char* GetMenuItemLabel(const MenuItem* entry)
 {
-	return Localize(entry->text);
+	if (entry->rawText)
+		return entry->rawText;
+	else
+		return Localize(entry->text);
 }
 
 static const char* GetCyclerValueText(int row)

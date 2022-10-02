@@ -10,6 +10,7 @@
 /* EXTERNALS   */
 /***************/
 
+#include <time.h>
 #include "game.h"
 #include "stb_image.h"
 
@@ -25,22 +26,6 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr);
 /****************************/
 
 #define	SKELETON_FILE_VERS_NUM	0x0110			// v1.1
-
-#define	SAVE_GAME_VERSION	0x0100		// 1.0
-
-		/* SAVE GAME */
-
-typedef struct
-{
-	uint32_t		version;
-	short		level;
-	short		numLives;
-	float		health;
-	float		jetpackFuel;
-	float		shieldPower;
-	short		weaponQuantity[NUM_WEAPON_TYPES];
-}SaveGameType;
-
 
 		/* PLAYFIELD HEADER */
 
@@ -1220,171 +1205,64 @@ AEDesc 				defaultLocation;
 // Returns true if saving was successful
 //
 
-Boolean SaveGame(void)
+Boolean SaveGame(int fileSlot)
 {
-SaveGameType	saveData;
-short			fRefNum;
-FSSpec			*specPtr;
-long			count, i;
-Boolean			success = false;
+	char path[256];
+	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
 
-	Enter2D();
-
-			/*************************/
 			/* CREATE SAVE GAME DATA */
-			/*************************/
-			//
-			// Swizzle as we save so that we always save Big-Endian
-			//
 
-	saveData.version		= SAVE_GAME_VERSION;				// save file version #
-	saveData.version = SwizzleULong(&saveData.version);
-
-	saveData.level			= SwizzleShort(&gLevelNum);						// save @ beginning of next level
-	saveData.numLives 		= SwizzleShort(&gPlayerInfo[0].numFreeLives);
-	saveData.health			= SwizzleFloat(&gPlayerInfo[0].health);
-	saveData.jetpackFuel	= SwizzleFloat(&gPlayerInfo[0].jetpackFuel);
-	saveData.shieldPower	= SwizzleFloat(&gPlayerInfo[0].shieldPower);
-	for (i = 0; i < NUM_WEAPON_TYPES; i++)
-		saveData.weaponQuantity[i]	= SwizzleShort(&gPlayerInfo[0].weaponQuantity[i]);
-
-
-		/*******************/
-		/* DO NAV SERVICES */
-		/*******************/
-
-	IMPME;
-#if 0
-	if (PutFileWithNavServices(&navReply, &gSavedGameSpec))
-		goto bail;
-	specPtr = &gSavedGameSpec;
-	if (navReply.replacing)										// see if delete old
-		FSpDelete(specPtr);
-
-
-				/* CREATE & OPEN THE REZ-FORK */
-
-	if (FSpCreate(specPtr, kGameID,'N2sv',nil) != noErr)
+	SaveGameType saveData =
 	{
-		DoAlert("Error creating Save file");
-		goto bail;
-	}
+		.timestamp		= time(NULL),
+		.level			= gLevelNum,						// save @ beginning of next level
+		.numLives 		= gPlayerInfo[0].numFreeLives,
+		.health			= gPlayerInfo[0].health,
+		.jetpackFuel	= gPlayerInfo[0].jetpackFuel,
+		.shieldPower	= gPlayerInfo[0].shieldPower,
+	};
 
-	FSpOpenDF(specPtr,fsRdWrPerm, &fRefNum);
-	if (fRefNum == -1)
-	{
-		DoAlert("Error opening Save file");
-		goto bail;
-	}
+	for (int i = 0; i < NUM_WEAPON_TYPES; i++)
+		saveData.weaponQuantity[i]	= gPlayerInfo[0].weaponQuantity[i];
 
-
-				/* WRITE TO FILE */
-
-	count = sizeof(SaveGameType);
-	if (FSWrite(fRefNum, &count, (Ptr)&saveData) != noErr)
-	{
-		DoAlert("Error writing Save file");
-		FSClose(fRefNum);
-		goto bail;
-	}
-
-			/* CLOSE FILE */
-
-	FSClose(fRefNum);
+			/* SAVE IT TO DISK */
 
 
-			/* CLEANUP NAV SERVICES */
-
-	NavCompleteSave(&navReply, kNavTranslateInPlace);
-
-	success = true;
-
-bail:
-	NavDisposeReply(&navReply);
-	HideCursor();
-	Exit2D();
-#endif
-	return(success);
+	return noErr == SaveUserDataFile(path, SAVEGAME_MAGIC, sizeof(SaveGameType), (Ptr) &saveData);
 }
 
 
 /***************************** LOAD SAVED GAME ********************************/
 
-Boolean LoadSavedGame(void)
+Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 {
-	SOFTIMPME;
-	return false;
+	char path[256];
+	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
 
-#if 0
-SaveGameType	saveData;
-short			fRefNum;
-long			count, i;
-Boolean			success = false;
-//short			oldSong;
+	SaveGameType scratch = {0};
 
-//	oldSong = gCurrentSong;							// turn off playing music to get around bug in OS X
-//	KillSong();
-
-	Enter2D();
-	MyFlushEvents();
-
-
-				/* GET FILE WITH NAVIGATION SERVICES */
-
-//	if (GetFileWithNavServices(&gSavedGameSpec) != noErr)
-//		goto bail;
-
-
-				/* OPEN THE REZ-FORK */
-
-	FSpOpenDF(&gSavedGameSpec,fsRdPerm, &fRefNum);
-	if (fRefNum == -1)
+	if (noErr != LoadUserDataFile(path, SAVEGAME_MAGIC, sizeof(SaveGameType), (Ptr) &scratch))
 	{
-		DoAlert("Error opening Save file");
-		goto bail;
+		return false;
 	}
 
-				/* READ FROM FILE */
-
-	count = sizeof(SaveGameType);
-	if (FSRead(fRefNum, &count, (Ptr) &saveData) != noErr)
-	{
-		DoAlert("Error reading Save file");
-		FSClose(fRefNum);
-		goto bail;
-	}
-
-			/* CLOSE FILE */
-
-	FSClose(fRefNum);
+	memcpy(outData, &scratch, sizeof(SaveGameType));
+	return true;
+}
 
 
-			/**********************/
-			/* USE SAVE GAME DATA */
-			/**********************/
+/********************** USE SAVED GAME DATA *****************************/
 
-	gLevelNum						= SwizzleShort(&saveData.level);
-	gPlayerInfo[0].numFreeLives 	= SwizzleShort(&saveData.numLives);
-	gPlayerInfo[0].health			= SwizzleFloat(&saveData.health);
-	gPlayerInfo[0].jetpackFuel		= SwizzleFloat(&saveData.jetpackFuel);
-	gPlayerInfo[0].shieldPower		= SwizzleFloat(&saveData.shieldPower);
+void UseSaveGame(const SaveGameType* saveData)
+{
+	gLevelNum						= saveData->level;
+	gPlayerInfo[0].numFreeLives 	= saveData->numLives;
+	gPlayerInfo[0].health			= saveData->health;
+	gPlayerInfo[0].jetpackFuel		= saveData->jetpackFuel;
+	gPlayerInfo[0].shieldPower		= saveData->shieldPower;
 
-	for (i = 0; i < NUM_WEAPON_TYPES; i++)
-		gPlayerInfo[0].weaponQuantity[i] = SwizzleShort(&saveData.weaponQuantity[i]);
-
-
-	success = true;
-
-
-bail:
-	Exit2D();
-	HideCursor();
-
-//	if (!success)								// user cancelled, so start song again before returning
-//		PlaySong(oldSong, true);
-
-	return(success);
-#endif
+	for (int i = 0; i < NUM_WEAPON_TYPES; i++)
+		gPlayerInfo[0].weaponQuantity[i] = saveData->weaponQuantity[i];
 }
 
 

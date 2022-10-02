@@ -53,6 +53,7 @@ typedef struct MenuItem
 {
 	MenuItemType			type;
 	LocStrID				text;
+	const char*				rawText;
 	int32_t					id;			// value stored in gMenuOutcome when exiting menu
 	int32_t					next;		// next menu, or one of 'EXIT', 'BACK' or 0 (no-op)
 

@@ -93,16 +93,6 @@ float	timer = 5.0f;
 					{
 						bail = true;
 					}
-					SOFTIMPME;
-#if 0
-					if (CheckSaveSelection())
-					{
-						if (IsClickDown(SDL_BUTTON_LEFT))
-						{
-							bail = true;
-						}
-					}
-#endif
 					break;
 
 		}
@@ -116,12 +106,27 @@ float	timer = 5.0f;
 	OGL_FadeOutScene(DrawObjects, MoveObjects);
 
 
-#if 0
 			/* DO SAVE */
 
-	if (gSaveSelection == 0)
-		SaveGame();
-#endif
+	switch (gMenuOutcome)
+	{
+		case 'sf#0':
+		case 'sf#1':
+		case 'sf#2':
+		case 'sf#3':
+		case 'sf#4':
+		case 'sf#5':
+		case 'sf#6':
+		case 'sf#7':
+		case 'sf#8':
+		case 'sf#9':
+			SaveGame(gMenuOutcome - 'sf#0');
+			break;
+
+		case 'dont':
+		default:
+			break;
+	}
 
 
 			/* CLEANUP */
@@ -561,8 +566,8 @@ static void MakeLevelIntroSaveSprites(void)
 {
 	static const MenuItem saveMenuTree[] =
 	{
-		{ .id='sav?'},
-		{ .type=kMIPick, .text=STR_SAVE_GAME, .id='save', .next='EXIT' },
+		{ .id='lvin'},
+		{ .type=kMIPick, .text=STR_SAVE_GAME, .next='save' },
 		{ .type=kMIPick, .text=STR_CONTINUE_WITHOUT_SAVING, .id='nosv', .next='EXIT' },
 
 		{ .id=0 }
@@ -574,6 +579,8 @@ static void MakeLevelIntroSaveSprites(void)
 	style.standardScale *= 0.75f;
 	style.rowHeight *= 0.75f;
 	MakeMenu(saveMenuTree, &style);
+
+	RegisterFileScreen(FILESCREEN_MODE_SAVE);
 
 	MakeMouseCursorObject();
 }

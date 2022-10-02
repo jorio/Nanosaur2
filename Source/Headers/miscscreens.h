@@ -66,3 +66,14 @@ void DoLevelIntroScreen(Byte mode);
 	/* WIN SCREEN */
 
 void DoWinScreen(void);
+
+
+	/* FILE SCREEN */
+
+enum
+{
+	FILESCREEN_MODE_LOAD,
+	FILESCREEN_MODE_SAVE,
+};
+
+void RegisterFileScreen(int fileScreenMode);

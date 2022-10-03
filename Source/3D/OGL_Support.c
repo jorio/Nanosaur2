@@ -1701,21 +1701,27 @@ OGLLightDefType	*lights;
 			/* SETUP STANDARD PERSPECTIVE CAMERA */
 	else
 	{
-		gluPerspective (OGLMath_RadiansToDegrees(gGameViewInfoPtr->fov[camNum]),	// fov
-						aspect,					// aspect
-						gGameViewInfoPtr->hither,	// hither
-						gGameViewInfoPtr->yon);		// yon
+		OGL_SetGluPerspectiveMatrix(
+				&gViewToFrustumMatrix,				// projection
+				gGameViewInfoPtr->fov[camNum],		// our version uses radians for the fov (unlike GLU)
+				aspect,
+				gGameViewInfoPtr->hither,
+				gGameViewInfoPtr->yon);
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(gViewToFrustumMatrix.value);
 	}
 
 			/* INIT MODELVIEW MATRIX */
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	placement = &gGameViewInfoPtr->cameraPlacement[camNum];
-	gluLookAt(placement->cameraLocation.x, placement->cameraLocation.y, placement->cameraLocation.z,
-			placement->pointOfInterest.x, placement->pointOfInterest.y, placement->pointOfInterest.z,
-			placement->upVector.x, placement->upVector.y, placement->upVector.z);
+	OGL_SetGluLookAtMatrix(
+			&gWorldToViewMatrix,		// modelview
+			&gGameViewInfoPtr->cameraPlacement[camNum].cameraLocation,
+			&gGameViewInfoPtr->cameraPlacement[camNum].pointOfInterest,
+			&gGameViewInfoPtr->cameraPlacement[camNum].upVector);
 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(gWorldToViewMatrix.value);
 
 		/* UPDATE LIGHT POSITIONS */
 

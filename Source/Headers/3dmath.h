@@ -2,8 +2,7 @@
 // 3DMath.h
 //
 
-#ifndef MATH_H
-#define MATH_H
+#pragma once
 
 #define OGLMath_RadiansToDegrees(x)	((float)((x) * 180.0f / PI))
 
@@ -484,6 +483,19 @@ double	dot, v1x, v2x, v1y, v2y, v1z, v2z;
 }
 
 
+/****************** OGLVECTOR3D CROSS NO PIN ******************/
+
+static inline void OGLVector3D_Cross_NoPin(const OGLVector3D* v1, const OGLVector3D* v2, OGLVector3D* result)
+{
+	float rx = (v1->y * v2->z) - (v1->z * v2->y);
+	float ry = (v1->z * v2->x) - (v1->x * v2->z);
+	float rz = (v1->x * v2->y) - (v1->y * v2->x);
+
+	result->x = rx;
+	result->y = ry;
+	result->z = rz;
+}
+
 /********************* VECTOR 3D SUBTRACT **********************/
 
 static inline void OGLVector3D_Subtract(OGLVector3D *v1, OGLVector3D *v2, OGLVector3D *newV);
@@ -522,16 +534,26 @@ static inline void OGLPoint3D_Subtract(const OGLPoint3D *v1, const OGLPoint3D *v
 		(_v2)->y = (_v1)->y * (_s);											\
 		(_v2)->z = (_v1)->z * (_s);
 
-#endif
 
+/************* GLU REPLACEMENTS ***********************/
 
+void OGL_SetGluPerspectiveMatrix(
+		OGLMatrix4x4* m,
+		float fov,
+		float aspect,
+		float hither,
+		float yon);
 
+void OGL_SetGluLookAtMatrix(
+		OGLMatrix4x4* m,
+		const OGLPoint3D* eye,
+		const OGLPoint3D* target,
+		const OGLVector3D* upDir);
 
-
-
-
-
-
-
-
-
+void OGL_GluUnProject(
+		const OGLPoint3D* winPt,
+		const OGLMatrix4x4* modelview,
+		const OGLMatrix4x4* projection,
+		const OGLPoint2D* vpOffset,
+		const OGLVector2D* vpSize,
+		OGLPoint3D* objPt);

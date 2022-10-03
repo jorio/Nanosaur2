@@ -20,11 +20,6 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_opengl_glext.h>
-#if !(__APPLE__)
-#include <GL/glu.h> //---TEMP
-#else
-#include <OpenGL/glu.h> //---TEMP
-#endif
 
 #include "globals.h"
 #include "structs.h"

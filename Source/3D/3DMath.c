@@ -3243,16 +3243,102 @@ double t1,t2,t3;
 }
 
 
+#pragma mark -
 
 
+/********************** FILL PROJECTION MATRIX ************************/
+//
+// Result equivalent to matrix produced by gluPerspective
+// Unlike the GLU version, fov is in RADIANS, not degrees!
+//
 
+void OGL_SetGluPerspectiveMatrix(
+		OGLMatrix4x4* m,
+		float fov,
+		float aspect,
+		float hither,
+		float yon)
+{
+	float cotan = 1.0f / tanf(fov/2.0f);
+	float depth = hither - yon;
 
+#define M m->value
+	M[M00] = cotan/aspect;	M[M01] = 0;			M[M02] = 0;						M[M03] = 0;
+	M[M10] = 0;				M[M11] = cotan;		M[M12] = 0;						M[M13] = 0;
+	M[M20] = 0;				M[M21] = 0;			M[M22] = (yon+hither)/depth;	M[M23] = 2*yon*hither/depth;
+	M[M30] = 0;				M[M31] = 0;			M[M32] = -1;					M[M33] = 0;
+#undef M
+}
 
+/********************** FILL LOOKAT MATRIX ************************/
+//
+// Result equivalent to matrix produced by gluLookAt
+//
 
+void OGL_SetGluLookAtMatrix(
+		OGLMatrix4x4* m,
+		const OGLPoint3D* eye,
+		const OGLPoint3D* target,
+		const OGLVector3D* upDir)
+{
+	// Forward = target - eye
+	OGLVector3D fwd;
+	fwd.x = target->x - eye->x;
+	fwd.y = target->y - eye->y;
+	fwd.z = target->z - eye->z;
+	OGLVector3D_Normalize(&fwd, &fwd);
 
+	// Side = forward x up
+	OGLVector3D side;
+	OGLVector3D_Cross_NoPin(&fwd, upDir, &side);
+	OGLVector3D_Normalize(&side, &side);
 
+	// Recompute up as: up = side x forward
+	OGLVector3D up;
+	OGLVector3D_Cross_NoPin(&side, &fwd, &up);
 
+	// Premultiply by translation to eye position
+	float tx = OGLVector3D_Dot_NoPin(&side,	(OGLVector3D*)eye);
+	float ty = OGLVector3D_Dot_NoPin(&up,	(OGLVector3D*)eye);
+	float tz = OGLVector3D_Dot_NoPin(&fwd,	(OGLVector3D*)eye);
 
+#define M m->value
+	M[M00] = side.x;	M[M01] = side.y;	M[M02] = side.z;	M[M03] = -tx;
+	M[M10] = up.x;		M[M11] = up.y;		M[M12] = up.z;		M[M13] = -ty;
+	M[M20] = -fwd.x;	M[M21] = -fwd.y;	M[M22] = -fwd.z;	M[M23] = tz;
+	M[M30] = 0;			M[M31] = 0;			M[M32] = 0;			M[M33] = 1;
+#undef M
+}
 
+/********************** UNPROJECT ************************/
+//
+// Result equivalent to point produced by gluUnProject
+//
 
+void OGL_GluUnProject(
+		const OGLPoint3D* winPt,
+		const OGLMatrix4x4* modelview,
+		const OGLMatrix4x4* projection,
+		const OGLPoint2D* vpOffset,
+		const OGLVector2D* vpSize,
+		OGLPoint3D* objPt)
+{
+	OGLMatrix4x4 m;
+	OGLPoint3D in;
 
+	OGLMatrix4x4_Multiply(modelview, projection, &m);
+	OGLMatrix4x4_Invert(&m, &m);
+
+	in = *winPt;
+
+	// Map x and y from window coordinates
+	in.x = (in.x - vpOffset->x) / vpSize->x;
+	in.y = (in.y - vpOffset->y) / vpSize->y;
+
+	// Map to range -1 to 1
+	in.x = in.x * 2 - 1;
+	in.y = in.y * 2 - 1;
+	in.z = in.z * 2 - 1;
+
+	OGLPoint3D_Transform(&in, &m, objPt);
+}

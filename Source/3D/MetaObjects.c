@@ -1305,7 +1305,7 @@ float			cellWidth, cellHeight, ratio, offset;
 
 			/* SET STATE */
 
-	SetInfobarSpriteState(-5);
+	SetInfobarSpriteState(-5, 1);
 
 			/* GET DIMENSIONAL DATA */
 

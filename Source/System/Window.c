@@ -232,7 +232,7 @@ static void DrawFadePane(ObjNode* theNode)
 	(void) theNode;
 
 	OGL_PushState();
-	SetInfobarSpriteState(0);
+	SetInfobarSpriteState(0, 1);
 
 	//glDisable(GL_TEXTURE_2D);
 	OGL_DisableTexture2D();

@@ -82,6 +82,7 @@ typedef struct
 
 	Byte	splitScreenMode;
 	Boolean	force4x3HUD;
+	Byte	hudScale;
 
 	Byte	stereoGlassesMode;
 	Boolean	anaglyphColor;

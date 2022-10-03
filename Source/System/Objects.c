@@ -844,7 +844,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					{
 						OGL_PushState();										// keep state
 
-						SetInfobarSpriteState(theNode->AnaglyphZ);
+						SetInfobarSpriteState(theNode->AnaglyphZ, 1);
 
 						theNode->SpriteMO->objectData.coord = theNode->Coord;	// update Meta Object's coord info
 						theNode->SpriteMO->objectData.scaleX = theNode->Scale.x;
@@ -861,7 +861,7 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 					if (theNode->BaseGroup)
 					{
 						OGL_PushState();	//--
-						SetInfobarSpriteState(theNode->AnaglyphZ);	//--
+						SetInfobarSpriteState(theNode->AnaglyphZ, 1);	//--
 
 						MO_DrawObject(theNode->BaseGroup);
 

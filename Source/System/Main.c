@@ -165,6 +165,9 @@ void InitDefaultPrefs(void)
 	gGamePrefs.showTargetingCrosshairs	= true;
 	gGamePrefs.kiddieMode				= false;
 
+	gGamePrefs.force4x3HUD				= false;
+	gGamePrefs.hudScale					= 100;
+
 	gGamePrefs.mouseSensitivityLevel	= DEFAULT_MOUSE_SENSITIVITY_LEVEL;
 
 	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");

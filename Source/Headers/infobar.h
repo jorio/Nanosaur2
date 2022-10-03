@@ -15,7 +15,7 @@ void DrawInfobarSprite3_Centered(float x, float y, float size, short texNum);
 void DrawInfobarSprite_Centered(float x, float y, float size, short texNum);
 void Infobar_DrawNumber(int number, float x, float y, float scale, int numDigits, Boolean showLeading);
 
-void SetInfobarSpriteState(float anaglyphZ);
+void SetInfobarSpriteState(float anaglyphZ, float zoom);
 
 ObjNode* ShowLapNum(short playerNum);
 ObjNode* ShowWinLose(short playerNum, Byte mode);

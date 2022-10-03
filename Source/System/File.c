@@ -1036,7 +1036,7 @@ Rect					toRect, srcRect;
 			// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
 			//
 
-		SetInfobarSpriteState(0);
+		SetInfobarSpriteState(0, 1);
 		MO_DrawMaterial(gSuperTileTextureObjects[i]);
 		glBegin(GL_TRIANGLES);
 		glVertex3f(0,1,0);

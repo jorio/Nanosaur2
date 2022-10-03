@@ -573,7 +573,7 @@ float	w, x;
 	if (gCurrentSplitScreenPane != 0)						// only show in player 1's pane
 		return;
 
-	SetInfobarSpriteState(0);
+	SetInfobarSpriteState(0, 1);
 
 	DrawInfobarSprite_Centered(640/2, THERMO_Y-6, 100, INFOBAR_SObjType_Loading);
 

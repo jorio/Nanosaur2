@@ -73,14 +73,6 @@ static const MenuItem gSettingsMenuTree[] =
 			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
 		},
 	},
-	{
-		kMICycler1, STR_CROSSHAIRS,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.showTargetingCrosshairs,
-			.choices={ {STR_CROSSHAIRS_OFF, 0}, {STR_CROSSHAIRS_ON, 1} },
-		},
-	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='ctrl'},
@@ -131,6 +123,14 @@ static const MenuItem gSettingsMenuTree[] =
 ////		},
 //	},
 	{
+		kMICycler1, STR_CROSSHAIRS,
+		.cycler=
+		{
+				.valuePtr=&gGamePrefs.showTargetingCrosshairs,
+				.choices={ {STR_CROSSHAIRS_OFF, 0}, {STR_CROSSHAIRS_ON, 1} },
+		},
+	},
+	{
 		kMICycler1, STR_HUD_POSITION,
 		.cycler=
 		{
@@ -138,9 +138,34 @@ static const MenuItem gSettingsMenuTree[] =
 			.choices={ {STR_HUD_FULLSCREEN, 0}, {STR_HUD_4X3, 1} },
 		},
 	},
-	{kMISpacer, .customHeight=.5f },
-	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
-	{kMISpacer, .customHeight=.5f },
+	{
+		kMICycler1, STR_HUD_SCALE,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.hudScale,
+			.choices={
+					{STR_HUD_SCALE_50, 50},
+					{STR_HUD_SCALE_60, 60},
+					{STR_HUD_SCALE_70, 70},
+					{STR_HUD_SCALE_80, 80},
+					{STR_HUD_SCALE_90, 90},
+					{STR_HUD_SCALE_100, 100},
+					{STR_HUD_SCALE_110, 110},
+					{STR_HUD_SCALE_120, 120},
+					{STR_HUD_SCALE_130, 130},
+					{STR_HUD_SCALE_140, 140},
+					{STR_HUD_SCALE_150, 150},
+					{STR_HUD_SCALE_160, 160},
+					{STR_HUD_SCALE_170, 170},
+					{STR_HUD_SCALE_180, 180},
+					{STR_HUD_SCALE_190, 190},
+					{STR_HUD_SCALE_200, 200},
+					},
+		},
+	},
+//	{kMISpacer, .customHeight=.5f },
+//	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
+//	{kMISpacer, .customHeight=.5f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='soun'},

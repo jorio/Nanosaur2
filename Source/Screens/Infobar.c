@@ -44,12 +44,12 @@ static inline float AnchorBottom(float y);
 
 #define MAP_SCALE		80.0f
 #define MAP_SCALE2		(MAP_SCALE * .8 * .5)
-#define	MAP_X			AnchorRight(665.0f - MAP_SCALE)
-#define	MAP_Y			AnchorBottom((480 - MAP_SCALE * .6f))
+#define	MAP_X			AnchorRight(MAP_SCALE - 25)
+#define	MAP_Y			AnchorBottom(MAP_SCALE * .6f)
 
 #define	LIVES_SCALE		25.0f
 #define	LIVES_X			AnchorLeft(0.0f)
-#define	LIVES_Y			AnchorBottom(457.5f - LIVES_SCALE * .6f)
+#define	LIVES_Y			AnchorBottom(LIVES_SCALE * .6f + 22.5)
 
 #define	WEAPON_X		AnchorLeft(150.0f)
 #define	WEAPON_Y		AnchorTop(0)
@@ -75,11 +75,11 @@ static inline float AnchorBottom(float y);
 #define	PLAYER_Y		AnchorTop(HEALTH_SCALE)
 #define	PLAYER_SCALE	60.0f
 
-#define	EGGS_X			AnchorRight(558.0f)
+#define	EGGS_X			AnchorRight(82)
 #define	EGGS_Y			AnchorTop(0)
 #define	EGGS_SCALE		14.0f
 
-#define	CAP_EGGS_X		AnchorRight(520.0f)
+#define	CAP_EGGS_X		AnchorRight(120)
 #define	CAP_EGGS_Y		AnchorTop(0)
 #define	CAP_EGGS_SCALE	25.0f
 
@@ -95,11 +95,10 @@ static inline float AnchorBottom(float y);
 /*    VARIABLES      */
 /*********************/
 
-OGLRect gLogicalRect;
+OGLRect			gLogicalRect;
+float			g640x480Scaling = 1;
 
 Boolean			gHideInfobar = false;
-
-ObjNode			*gFinalPlaceObj = nil;
 
 
 
@@ -167,7 +166,7 @@ static inline float AnchorLeft(float x)
 
 static inline float AnchorRight(float x)
 {
-	return gGamePrefs.force4x3HUD ? x : (gLogicalRect.right - (640 - x));
+	return gGamePrefs.force4x3HUD ? (640 * g640x480Scaling - x) : (gLogicalRect.right - x);
 }
 
 static inline float AnchorTop(float y)
@@ -177,8 +176,19 @@ static inline float AnchorTop(float y)
 
 static inline float AnchorBottom(float y)
 {
-	return gGamePrefs.force4x3HUD ? y : (gLogicalRect.bottom - (480 - y));
+	return gGamePrefs.force4x3HUD ? (480 * g640x480Scaling - y) : (gLogicalRect.bottom - y);
 }
+
+static inline float AnchorCenterX(float x)
+{
+	return x + (640 * g640x480Scaling) * 0.5f;
+}
+
+static inline float AnchorCenterY(float y)
+{
+	return y + (480 * g640x480Scaling) * 0.5f;
+}
+
 
 /********************* INIT INFOBAR ****************************/
 //
@@ -386,7 +396,7 @@ void DisposeInfobar(void)
 // anaglyphZ:  +5...-5  where + values are in front of screen, and - values are in back
 //
 
-void SetInfobarSpriteState(float anaglyphZ)
+void SetInfobarSpriteState(float anaglyphZ, float zoom)
 {
 	OGL_DisableLighting();
 	OGL_DisableCullFace();
@@ -406,12 +416,19 @@ void SetInfobarSpriteState(float anaglyphZ)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
+	int dontcare;
 	int drawableW = 1;
 	int drawableH = 1;
-	SDL_GL_GetDrawableSize(gSDLWindow, &drawableW, &drawableH);
+	//SDL_GL_GetDrawableSize(gSDLWindow, &drawableW, &drawableH);
+	OGL_GetCurrentViewport(&dontcare, &dontcare, &drawableW, &drawableH, gCurrentSplitScreenPane);
 
 	float referenceW = 640;
 	float referenceH = 480;
+
+	g640x480Scaling = 1.0f / zoom;
+	referenceW *= g640x480Scaling;
+	referenceH *= g640x480Scaling;
+
 	float referenceAR = referenceW / referenceH;
 
 	float logicalW;
@@ -479,7 +496,9 @@ void DrawInfobar(ObjNode *theNode)
 
 	OGL_PushState();
 
-	SetInfobarSpriteState(INFOBAR_ANAGLYPHZ_Z);
+	float zoom = 1;
+	zoom = (float)gGamePrefs.hudScale * 0.01f;
+	SetInfobarSpriteState(INFOBAR_ANAGLYPHZ_Z, zoom);
 
 
 
@@ -1230,12 +1249,14 @@ float	x,y;
 
 static void Infobar_DrawPlayerLabels(void)
 {
+	// Source port note: this is useless information and it takes up valuable real estate
+#if 0
 	if (gNumPlayers < 2)										// only draw if more than 1 player
 		return;
 
 
 	DrawInfobarSprite(PLAYER_X, PLAYER_Y, PLAYER_SCALE, INFOBAR_SObjType_Player1 + gCurrentSplitScreenPane);
-
+#endif
 }
 
 
@@ -1328,22 +1349,11 @@ float   scale;
 	n = gRaceReadySetGoTimer + 1;
 	if (n >= 0)
 	{
-		scale = 135.0f;
+		int icon	= n == 2 ? INFOBAR_SObjType_Ready
+					: n == 1 ? INFOBAR_SObjType_Set
+					: INFOBAR_SObjType_Go;
 
-		switch(n)
-		{
-			case	2:
-					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Ready);
-					break;
-
-			case	1:
-					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Set);
-					break;
-
-			case	0:
-					DrawInfobarSprite_Centered(640/2, 322.5f, scale, INFOBAR_SObjType_Go);
-					break;
-		}
+		DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorBottom(157.5f), 135, icon);
 	}
 
 
@@ -1352,7 +1362,8 @@ float   scale;
 	scale = 60.0f;
 
 	place = gPlayerInfo[playerNum].place;
-	DrawInfobarSprite(300, 0, scale, INFOBAR_SObjType_Place1+place);
+	//DrawInfobarSprite(AnchorCenterX(-20), AnchorTop(0), scale, INFOBAR_SObjType_Place1+place);
+	DrawInfobarSprite(PLAYER_X, PLAYER_Y, scale, INFOBAR_SObjType_Place1+place);
 
 
 
@@ -1364,7 +1375,7 @@ float   scale;
 		if (lapNum < 0)
 			lapNum = 0;
 
-		DrawInfobarSprite(640.0f - scale, 0, scale, INFOBAR_SObjType_Lap1+lapNum);
+		DrawInfobarSprite(AnchorRight(scale), AnchorTop(0), scale, INFOBAR_SObjType_Lap1+lapNum);
 	}
 
 			/* DRAW WRONG WAY */
@@ -1372,7 +1383,7 @@ float   scale;
 	if (gPlayerInfo[playerNum].wrongWay)
 	{
 		gGlobalTransparency = .6;
-		DrawInfobarSprite_Centered(640/2, 480/2, 80, INFOBAR_SObjType_WrongWay);
+		DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorCenterY(0), 80, INFOBAR_SObjType_WrongWay);
 		gGlobalTransparency = 1.0;
 	}
 }
@@ -1397,12 +1408,14 @@ ObjNode	*newObj;
 	if (lapNum <= 0)
 		return NULL;
 
+	// TODO: deferred-draw sprites don't honor current 2D viewport scaling!
+
 	NewObjectDefinitionType def =
 	{
 		.group		= SPRITE_GROUP_INFOBAR,
 		.type		= lapNum == 1 ? INFOBAR_SObjType_Lap2Message : INFOBAR_SObjType_FinalLapMessage,
-		.coord		= {640/2, 315, 0},
-		.flags		= STATUS_BIT_ONLYSHOWTHISPLAYER,
+		.coord		= {AnchorCenterX(0), AnchorCenterY(75), 0},
+		.flags		= STATUS_BIT_ONLYSHOWTHISPLAYER | STATUS_BIT_MOVEINPAUSE,
 		.slot		= SPRITE_SLOT,
 		.moveCall 	= MoveLapMessage,
 		.rot		= 0,
@@ -1419,9 +1432,16 @@ ObjNode	*newObj;
 
 static void MoveLapMessage(ObjNode *theNode)
 {
-	theNode->ColorFilter.a -= gFramesPerSecondFrac;
-	if (theNode->ColorFilter.a <= 0.0f)
-		DeleteObject(theNode);
+	theNode->Coord.x = AnchorCenterX(0);
+	theNode->Coord.y = AnchorCenterY(75);
+	UpdateObjectTransforms(theNode);
+
+	if (!gGamePaused)
+	{
+		theNode->ColorFilter.a -= gFramesPerSecondFrac;
+		if (theNode->ColorFilter.a <= 0.0f)
+			DeleteObject(theNode);
+	}
 }
 
 
@@ -1457,9 +1477,11 @@ int spriteNum;
 				return NULL;
 	}
 
+	// TODO: deferred-draw sprites don't honor current 2D viewport scaling!
+
 	NewObjectDefinitionType def =
 	{
-		.coord		= {640/2, 400, 0},
+		.coord		= {AnchorCenterX(0), AnchorBottom(80), 0},
 		.flags		= STATUS_BIT_ONLYSHOWTHISPLAYER,
 		.slot		= SPRITE_SLOT,
 		.moveCall	= nil,
@@ -1516,11 +1538,11 @@ float		dot, cross;
 		cross = OGLVector2D_Cross(&v, &v2);								// sign of cross tells us which side
 		if (cross > 0.0f)
 		{
-			DrawInfobarSprite(0, 480/2, ARROW_SCALE, INFOBAR_SObjType_LeftArrow);
+			DrawInfobarSprite(AnchorLeft(0), AnchorCenterY(0), ARROW_SCALE, INFOBAR_SObjType_LeftArrow);
 		}
 		else
 		{
-			DrawInfobarSprite(640-ARROW_SCALE, 480/2, ARROW_SCALE, INFOBAR_SObjType_RightArrow);
+			DrawInfobarSprite(AnchorRight(ARROW_SCALE), AnchorCenterY(0), ARROW_SCALE, INFOBAR_SObjType_RightArrow);
 		}
 		gGlobalTransparency = 1.0f;
 	}

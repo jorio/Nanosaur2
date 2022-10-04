@@ -355,7 +355,7 @@ static void SetMetaObjectToPicture(MOPictureObject *pictObj, const char* path)
 	/***************************/
 
 //	matData.drawContext		= gAGLContext;
-	matData.setupInfo		= gGameViewInfoPtr;
+//	matData.setupInfo		= gGameViewInfoPtr;
 	matData.flags			= BG3D_MATERIALFLAG_TEXTURED|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_CLAMP_V;
 	matData.diffuseColor	= (OGLColorRGBA) {1,1,1,1};
 	matData.numMipmaps		= 1;
@@ -568,7 +568,7 @@ Rect		r;
 					/* CREATE A TEXTURE OBJECT */
 					/***************************/
 
-			matData.setupInfo		= setupInfo;
+//			matData.setupInfo		= setupInfo;
 			matData.flags			= BG3D_MATERIALFLAG_TEXTURED|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_CLAMP_V;
 			matData.diffuseColor.r	= 1;
 			matData.diffuseColor.g	= 1;
@@ -1174,8 +1174,8 @@ uint32_t				matFlags;
 
 	if (matFlags & BG3D_MATERIALFLAG_TEXTURED)
 	{
-		if (matData->setupInfo != gGameViewInfoPtr)						// make sure texture is loaded for this draw context
-			DoFatalAlert("MO_DrawMaterial: texture is not assigned to this draw context");
+//		if (matData->setupInfo != gGameViewInfoPtr)						// make sure texture is loaded for this draw context
+//			DoFatalAlert("MO_DrawMaterial: texture is not assigned to this draw context");
 
 
 				/* ACTIVATE MATERIAL */
@@ -2207,7 +2207,7 @@ Rect			r;
 
 			/* CREATE NEW TEXTURE OBJECT */
 
-	matData.setupInfo		= setupInfo;
+//	matData.setupInfo		= setupInfo;
 	matData.flags			= BG3D_MATERIALFLAG_TEXTURED;
 	matData.diffuseColor.r	= 1;
 	matData.diffuseColor.g	= 1;
@@ -2499,7 +2499,7 @@ MOMaterialObject	*obj;
 
 		/* INIT NEW MATERIAL DATA */
 
-	data.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
+//	data.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
 	data.flags 					= BG3D_MATERIALFLAG_TEXTURED;
 	data.width					= width;
 	data.height					= height;

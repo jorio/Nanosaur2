@@ -80,7 +80,7 @@ ObjNode* MakeQuadMeshObject(NewObjectDefinitionType* newObjDef, int quadCapacity
 	{
 		MOMaterialData matData =
 		{
-			.setupInfo			= gGameViewInfoPtr,
+//			.setupInfo			= gGameViewInfoPtr,
 			.flags				= 0,		// not textured
 			.numMipmaps			= 0,
 			.diffuseColor		= (OGLColorRGBA) {1, 1, 1, 1},

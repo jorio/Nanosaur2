@@ -793,7 +793,6 @@ static void CleanupLevel(void)
 	DisposeInfobar();
 	DisposeParticleSystem();
 	DisposeAllSpriteGroups();
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	DisposeContrails();
 
@@ -1005,6 +1004,11 @@ unsigned long	someLong;
 
 	GetDateTime ((unsigned long *)(&someLong));		// init random seed
 	SetMyRandomSeed(someLong);
+
+
+			/* LOAD FONT FOR ENTIRE GAME */
+
+	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 
 #if !_DEBUG

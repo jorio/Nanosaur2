@@ -117,6 +117,7 @@ const MenuStyle kDefaultMenuStyle =
 	.canBackOutOfRootMenu	= false,
 	.textSlot			= MENU_SLOT,
 	.yOffset			= 480/2,
+	.fontAtlas			= SPRITE_GROUP_FONT,
 
 	.highlightColor		= {1.0f, 1.0f, 1.0f, 1.0f},
 	.arrowColor			= {0.7f, 0.7f, 0.7f, 1.0f},
@@ -220,6 +221,7 @@ static void InitMenuNavigation(void)
 	{
 		.scale = 1,
 		.slot = nav->style.textSlot,
+		.group = nav->style.fontAtlas,
 		.flags = STATUS_BIT_OVERLAYPANE | STATUS_BIT_MOVEINPAUSE,
 	};
 	nav->arrowObjects[0] = TextMesh_New("<", 0, &arrowDef);
@@ -1742,6 +1744,7 @@ static ObjNode* MakeText(const char* text, int row, int desiredCol, int textMesh
 		{
 			.coord = (OGLPoint3D) { kDefaultX, gNav->menuRowYs[row], 0 },
 			.scale = GetMenuItemHeight(row) * gNav->style.standardScale,
+			.group = gNav->style.fontAtlas,
 			.slot = gNav->style.textSlot + desiredCol,  // chained node must be after their parent!
 			.flags = STATUS_BIT_MOVEINPAUSE | STATUS_BIT_OVERLAYPANE,
 		};

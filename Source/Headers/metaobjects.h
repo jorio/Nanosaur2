@@ -77,7 +77,7 @@ typedef struct
 
 typedef struct
 {
-	OGLSetupOutputType *setupInfo;					// materials are draw context relative, so remember which context we're using now
+//	OGLSetupOutputType *setupInfo;					// materials are draw context relative, so remember which context we're using now
 
 	uint32_t			flags;
 	OGLColorRGBA	diffuseColor;					// rgba diffuse color

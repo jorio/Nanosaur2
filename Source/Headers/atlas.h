@@ -90,4 +90,5 @@ void Atlas_DrawString2(
 
 void LoadSpriteAtlas(int groupNum, const char* atlasName, int flags);
 void DisposeSpriteAtlas(int groupNum);
+void DisposeAllSpriteAtlases(void);
 const AtlasGlyph* GetAtlasSpriteInfo(int groupNum, int spriteNum);

@@ -310,7 +310,7 @@ uint32_t				flags;
 
 		/* INIT NEW MATERIAL DATA */
 
-	data.setupInfo				= gBG3D_CurrentDrawContext;		// remember which draw context this material is assigned to
+//	data.setupInfo				= gBG3D_CurrentDrawContext;		// remember which draw context this material is assigned to
 	data.flags 					= flags;
 	data.multiTextureMode		= MULTI_TEXTURE_MODE_REFLECTIONSPHERE;
 	data.multiTextureCombine	= MULTI_TEXTURE_COMBINE_MODULATE;

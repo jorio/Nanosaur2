@@ -215,7 +215,6 @@ ObjNode	*newObj;
 			/* LOAD SPRITES */
 
 	LoadSpriteGroupFromFiles(SPRITE_GROUP_MAINMENU, 1, (const char*[]) {":sprites:nanologo.png"}, 0);
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
 
 
 			/* LOAD SKELETONS */
@@ -419,10 +418,8 @@ static void FreeLevelIntroScreen(void)
 	FreeAllSkeletonFiles(-1);
 	InitSparkles();				// this will actually delete all the sparkles
 	DisposeAllSpriteGroups();
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
-
 }
 
 #pragma mark -

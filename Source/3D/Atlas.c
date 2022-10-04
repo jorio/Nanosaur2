@@ -318,6 +318,14 @@ void DisposeSpriteAtlas(int groupNum)
 	}
 }
 
+void DisposeAllSpriteAtlases(void)
+{
+	for (int i = 0; i < MAX_SPRITE_GROUPS; i++)
+	{
+		DisposeSpriteAtlas(i);
+	}
+}
+
 Atlas* Atlas_Load(const char* fontName, int flags)
 {
 	Atlas* atlas = AllocPtrClear(sizeof(Atlas));
@@ -361,7 +369,7 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 		GAME_ASSERT_MESSAGE(!atlas->material, "atlas material already created");
 		MOMaterialData matData;
 		memset(&matData, 0, sizeof(matData));
-		matData.setupInfo		= gGameViewInfoPtr;
+//		matData.setupInfo		= gGameViewInfoPtr;
 		matData.flags			= BG3D_MATERIALFLAG_ALWAYSBLEND | BG3D_MATERIALFLAG_TEXTURED | BG3D_MATERIALFLAG_CLAMP_U | BG3D_MATERIALFLAG_CLAMP_V;
 		matData.diffuseColor	= (OGLColorRGBA) {1, 1, 1, 1};
 		matData.numMipmaps		= 1;
@@ -703,7 +711,7 @@ static OGLRect GetExtentsFromMetrics(const TextMetrics* metrics)
 
 void TextMesh_Update(const char* text, int flags, ObjNode* textNode)
 {
-	const Atlas* font = gAtlases[SPRITE_GROUP_FONT];
+	const Atlas* font = gAtlases[textNode->Group];
 	GAME_ASSERT(font);
 
 	//-----------------------------------
@@ -761,7 +769,6 @@ ObjNode *TextMesh_NewEmpty(int capacity, NewObjectDefinitionType* newObjDef)
 	newObjDef->genre = TEXTMESH_GENRE;
 	newObjDef->flags |= STATUS_BITS_FOR_2D;
 
-	SOFTIMPME;
 #if 0
 	// Fall back to 2D projection if standard projection (3D) is set
 	if (!newObjDef->projection)
@@ -770,8 +777,9 @@ ObjNode *TextMesh_NewEmpty(int capacity, NewObjectDefinitionType* newObjDef)
 	}
 #endif
 
-	GAME_ASSERT(gAtlases[SPRITE_GROUP_FONT]);
-	MOMaterialObject* material = gAtlases[SPRITE_GROUP_FONT]->material;
+	int fontAtlasNum = newObjDef->group;
+	GAME_ASSERT(gAtlases[fontAtlasNum]);
+	MOMaterialObject* material = gAtlases[fontAtlasNum]->material;
 
 	// Create mesh object
 	return MakeQuadMeshObject(newObjDef, capacity, material);

@@ -241,11 +241,18 @@ Byte					b;
 		group = gFenceTexture[type][0];						// get sprite info
 		sprite = gFenceTexture[type][1];
 
-		aspectRatio = gSpriteGroupList[group][sprite].aspectRatio;	// get aspect ratio
+		if (group == SPRITE_GROUP_NULL)
+		{
+			aspectRatio = 1;
+			gFenceMaterials[f] = NULL;
+		}
+		else
+		{
+			aspectRatio = gSpriteGroupList[group][sprite].aspectRatio;	// get aspect ratio
+			gFenceMaterials[f] = gSpriteGroupList[group][sprite].materialObject;	// keep illegal ref to the material
+		}
 
 		textureUOff = 1.0f / height * aspectRatio;			// calc UV offset
-
-		gFenceMaterials[f] = gSpriteGroupList[group][sprite].materialObject;	// keep illegal ref to the material
 
 
 					/***************************/

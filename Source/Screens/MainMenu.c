@@ -190,20 +190,6 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 	InitSparkles();
 
 
-				/************/
-				/* LOAD ART */
-				/************/
-
-
-
-			/* LOAD SPRITES */
-
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
-
-
-
-
-
 			/*****************/
 			/* BUILD OBJECTS */
 			/*****************/
@@ -221,7 +207,6 @@ static void FreeMainMenuScreen(void)
 	MyFlushEvents();
 	DeleteAllObjects();
 	DisposeAllSpriteGroups();
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
 }

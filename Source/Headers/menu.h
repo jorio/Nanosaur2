@@ -86,6 +86,7 @@ typedef struct MenuStyle
 	float			uniformXExtent;
 	short			textSlot;
 	float			yOffset;
+	int				fontAtlas;
 
 	OGLColorRGBA	labelColor;
 	OGLColorRGBA	idleColor;

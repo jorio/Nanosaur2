@@ -310,7 +310,7 @@ OGLSetupInputType	viewDef;
 	};
 
 	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, introSlides, 0);
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
+	LoadSpriteAtlas(SPRITE_GROUP_FONT2, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 
@@ -332,7 +332,7 @@ static void FreeIntroStoryScreen(void)
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
 	DisposeAllSpriteGroups();
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT);	// TODO: hacky -- sprite groups & atlas numbers overlap
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT2);
 	DisposeAllBG3DContainers();
 	DisposeTerrain();
 	DisposeSoundBank(SOUND_BANK_NARRATION);
@@ -556,7 +556,7 @@ static void MakeSubtitleObjects(int slideNum)
 				.coord = {640/2, 480-60 + 22*subRow, 0},
 				.scale = 35 * 0.5f,
 				.slot = SPRITE_SLOT,
-				.group = SPRITE_GROUP_FONT,
+				.group = SPRITE_GROUP_FONT2,
 				.flags = STATUS_BIT_HIDDEN,
 			};
 

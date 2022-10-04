@@ -1013,7 +1013,7 @@ Rect					toRect, srcRect;
 												 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
 
 
-		matData.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
+//		matData.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
 		matData.flags 					= 	BG3D_MATERIALFLAG_CLAMP_U|
 											BG3D_MATERIALFLAG_CLAMP_V|
 											BG3D_MATERIALFLAG_TEXTURED;

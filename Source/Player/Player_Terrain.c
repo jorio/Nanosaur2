@@ -1072,7 +1072,6 @@ short	playerNum = player->PlayerNum;
 static void CheckPlayerActionControls(ObjNode *player)
 {
 short	playerNum = player->PlayerNum;
-short	n;
 
 			/* SEE IF CONTROL IS ALLOWED RIGHT NOW */
 

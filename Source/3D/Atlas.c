@@ -369,7 +369,6 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 		GAME_ASSERT_MESSAGE(!atlas->material, "atlas material already created");
 		MOMaterialData matData;
 		memset(&matData, 0, sizeof(matData));
-//		matData.setupInfo		= gGameViewInfoPtr;
 		matData.flags			= BG3D_MATERIALFLAG_ALWAYSBLEND | BG3D_MATERIALFLAG_TEXTURED | BG3D_MATERIALFLAG_CLAMP_U | BG3D_MATERIALFLAG_CLAMP_V;
 		matData.diffuseColor	= (OGLColorRGBA) {1, 1, 1, 1};
 		matData.numMipmaps		= 1;

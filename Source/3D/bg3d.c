@@ -49,7 +49,6 @@ static void ReadBoundingBox(short refNum);
 /*    VARIABLES      */
 /*********************/
 
-static OGLSetupOutputType	*gBG3D_CurrentDrawContext = nil;
 static int					gBG3D_GroupStackIndex;
 static MOGroupObject		*gBG3D_GroupStack[BG3D_GROUP_STACK_SIZE];
 static MOGroupObject		*gBG3D_CurrentGroup;
@@ -105,7 +104,6 @@ MOGroupData			*data;
 
 			/* INIT SOME VARIABLES */
 
-	gBG3D_CurrentDrawContext	= gGameViewInfoPtr;
 	gBG3D_CurrentMaterialObj 	= nil;
 	gBG3D_CurrentGeometryObj	= nil;
 	gBG3D_GroupStackIndex		= 0;			// init the group stack
@@ -310,7 +308,6 @@ uint32_t				flags;
 
 		/* INIT NEW MATERIAL DATA */
 
-//	data.setupInfo				= gBG3D_CurrentDrawContext;		// remember which draw context this material is assigned to
 	data.flags 					= flags;
 	data.multiTextureMode		= MULTI_TEXTURE_MODE_REFLECTIONSPHERE;
 	data.multiTextureCombine	= MULTI_TEXTURE_COMBINE_MODULATE;
@@ -456,7 +453,6 @@ long					count,i, w, h;
 uint32_t 					*texturePixels;
 Ptr	 					jpegBuffer;
 MOMaterialData			*data;
-OSErr					iErr;
 Boolean					hasAlpha;
 
 			/* GET PTR TO CURRENT MATERIAL */

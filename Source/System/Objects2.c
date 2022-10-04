@@ -721,7 +721,7 @@ uint32_t		clipCodeAND;			// Clip test for entire object
 		maxY = bBox->max.y;
 		maxZ = bBox->max.z;
 
-		clipCodeAND = ~0;
+		clipCodeAND = ~0u;
 
 		for (i = 0; i < 8; i++)
 		{
@@ -731,6 +731,7 @@ uint32_t		clipCodeAND;			// Clip test for entire object
 
 			switch (i)							// load current bbox corner in IX,IY,IZ
 			{
+				default:
 				case	0:	lX = minX;	lY = minY;	lZ = minZ;	break;
 				case	1:	lX = minX;	lY = minY;	lZ = maxZ;	break;
 				case	2:	lX = minX;	lY = maxY;	lZ = minZ;	break;

@@ -120,7 +120,6 @@ void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, 
 
 		MOMaterialData	matData =
 		{
-//			.setupInfo		= gGameViewInfoPtr,
 			.flags			= BG3D_MATERIALFLAG_TEXTURED
 								| BG3D_MATERIALFLAG_ALWAYSBLEND		// assume all files have alpha
 								| BG3D_MATERIALFLAG_UPRIGHT_V,		// unlike .sprites files, standalone image files aren't flipped vertically
@@ -281,7 +280,6 @@ MOMaterialData	matData;
 				/* CREATE NEW TEXTURE OBJECT */
 				/*****************************/
 
-//		matData.setupInfo		= gGameViewInfoPtr;
 		matData.flags			= BG3D_MATERIALFLAG_TEXTURED;
 		if (hasAlpha)
 			matData.flags		|= BG3D_MATERIALFLAG_ALWAYSBLEND;

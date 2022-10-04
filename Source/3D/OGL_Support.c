@@ -268,14 +268,12 @@ short	i;
 
 				/* PASS BACK INFO */
 
-//	outputPtr->drawContext 		= gAGLContext;
 	gGameViewInfoPtr->clip				= setupDefPtr->view.clip;
 	gGameViewInfoPtr->hither			= setupDefPtr->camera.hither;	// remember hither/yon
 	gGameViewInfoPtr->yon				= setupDefPtr->camera.yon;
 	gGameViewInfoPtr->useFog			= setupDefPtr->styles.useFog;
 	gGameViewInfoPtr->clearBackBuffer	= setupDefPtr->view.clearBackBuffer;
 	gGameViewInfoPtr->clearColor		= setupDefPtr->view.clearColor;
-//	gGameViewInfoPtr->windowAspectRatio = (float)gGameWindowHeight / (float)gGameWindowWidth;
 
 	gGameViewInfoPtr->isActive = true;									// it's now an active structure
 
@@ -384,10 +382,10 @@ GLint			maxTexSize;
 			/* GET GL PROCEDURES */
 			// Necessary on Windows
 
-	gGlActiveTextureProc = SDL_GL_GetProcAddress("glActiveTexture");
+	gGlActiveTextureProc = (PFNGLACTIVETEXTUREPROC) SDL_GL_GetProcAddress("glActiveTexture");
 	GAME_ASSERT(gGlActiveTextureProc);
 
-	gGlClientActiveTextureProc = SDL_GL_GetProcAddress("glClientActiveTexture");
+	gGlClientActiveTextureProc = (PFNGLCLIENTACTIVETEXTUREARBPROC) SDL_GL_GetProcAddress("glClientActiveTexture");
 	GAME_ASSERT(gGlClientActiveTextureProc);
 }
 
@@ -691,8 +689,6 @@ void OGL_DrawScene(void (*drawRoutine)(void))
 
 	if (!gGameViewInfoPtr->isActive)
 		DoFatalAlert("OGL_DrawScene isActive == false");
-
-//  	aglSetCurrentContext(setupInfo->drawContext);			// make context active
 
 
 			/* INIT SOME STUFF */
@@ -1658,7 +1654,6 @@ void OGL_UpdateCameraFromToUp(OGLPoint3D *from, OGLPoint3D *to, const OGLVector3
 void OGL_Camera_SetPlacementAndUpdateMatrices(int camNum)
 {
 float	aspect;
-OGLCameraPlacement	*placement;
 int		temp, w, h, i;
 OGLLightDefType	*lights;
 
@@ -1753,96 +1748,6 @@ OGLLightDefType	*lights;
 
 
 #pragma mark -
-
-
-/**************** OGL BUFFER TO GWORLD ***********************/
-
-GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel)
-{
-	IMPME;
-	return NULL;
-#if 0
-Rect			r;
-GWorldPtr		gworld;
-PixMapHandle	gworldPixmap;
-long			gworldRowBytes,x,y,pixmapRowbytes;
-Ptr				gworldPixelPtr;
-unsigned long	*pix32Src,*pix32Dest;
-unsigned short	*pix16Src,*pix16Dest;
-OSErr			iErr;
-long			pixelSize;
-
-			/* CREATE GWORLD TO DRAW INTO */
-
-	switch(bytesPerPixel)
-	{
-		case	2:
-				pixelSize = 16;
-				break;
-
-		case	4:
-				pixelSize = 32;
-				break;
-
-		default:
-				return(nil);
-	}
-
-	SetRect(&r,0,0,width,height);
-	iErr = NewGWorld(&gworld,pixelSize, &r, nil, nil, 0);
-	if (iErr)
-		DoFatalAlert("OGL_BufferToGWorld: NewGWorld failed!");
-
-	DoLockPixels(gworld);
-
-	gworldPixmap = GetGWorldPixMap(gworld);
-	LockPixels(gworldPixmap);
-
-	gworldRowBytes = (**gworldPixmap).rowBytes & 0x3fff;					// get GWorld's rowbytes
-	gworldPixelPtr = GetPixBaseAddr(gworldPixmap);							// get ptr to pixels
-
-	pixmapRowbytes = width * bytesPerPixel;
-
-
-			/* WRITE DATA INTO GWORLD */
-
-	switch(pixelSize)
-	{
-		case	32:
-				pix32Src = (unsigned long *)buffer;							// get 32bit pointers
-				pix32Dest = (unsigned long *)gworldPixelPtr;
-				for (y = 0; y <  height; y++)
-				{
-					for (x = 0; x < width; x++)
-						pix32Dest[x] = pix32Src[x];
-
-					pix32Dest += gworldRowBytes/4;							// next dest row
-					pix32Src += pixmapRowbytes/4;
-				}
-				break;
-
-		case	16:
-				pix16Src = (unsigned short *)buffer;						// get 16bit pointers
-				pix16Dest = (unsigned short *)gworldPixelPtr;
-				for (y = 0; y <  height; y++)
-				{
-					for (x = 0; x < width; x++)
-						pix16Dest[x] = pix16Src[x];
-
-					pix16Dest += gworldRowBytes/2;							// next dest row
-					pix16Src += pixmapRowbytes/2;
-				}
-				break;
-
-
-		default:
-				DoFatalAlert("OGL_BufferToGWorld: Only 32/16 bit textures supported right now.");
-
-	}
-
-	return(gworld);
-#endif
-}
 
 
 /******************** OGL: CHECK ERROR ********************/

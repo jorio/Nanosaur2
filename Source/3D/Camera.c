@@ -103,7 +103,6 @@ float			dx,dy,length;
 OGLVector3D		axis,lookAtVector,sunVector;
 static OGLColorRGBA	transColor = {1,1,1,1};
 int				px,py,pw,ph;
-float			oneOverAspect;
 
 	if (!gDrawLensFlare)
 		return;

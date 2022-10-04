@@ -227,9 +227,7 @@ typedef struct
 typedef struct
 {
 	Boolean					isActive;
-//	AGLContext				drawContext;
 	Rect					clip;				// not pane size, but clip:  left = amount to clip off left
-//	float					windowAspectRatio;
 
 	OGLLightDefType			lightList;
 	OGLCameraPlacement		cameraPlacement[MAX_SPLITSCREENS];	// 2 cameras, one for each viewport/player
@@ -296,7 +294,6 @@ GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destF
 							GLint srcFormat, GLint dataType, Boolean textureInRAM);
 GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight);
 void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels);
-GWorldPtr OGL_BufferToGWorld(Ptr buffer, int width, int height, int bytesPerPixel);
 GLenum OGL_CheckError_Impl(const char* file, int line);
 #define OGL_CheckError() OGL_CheckError_Impl(__FILE__, __LINE__)
 void OGL_GetCurrentViewport(int *x, int *y, int *w, int *h, Byte whichPane);

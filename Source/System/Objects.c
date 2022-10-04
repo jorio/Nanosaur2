@@ -513,7 +513,6 @@ Boolean			noZWrites = false;
 Boolean			texWrap = false;
 Boolean			clipAlpha= false;
 float			cameraX, cameraZ;
-int				i;
 Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw context is being drawn
 
 

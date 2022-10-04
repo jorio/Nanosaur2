@@ -553,9 +553,6 @@ float					yScale;
 short					fRefNum;
 OSErr					iErr;
 Ptr						textureBuffer32 = nil;
-Ptr						textureBuffer16 = nil;
-GWorldPtr				buffGWorld = nil;
-Rect					toRect, srcRect;
 
 #if 0
 			/* USE 16-BIT IF IN LOW-QUALITY RENDER MODES OR LOW ON VRAM */
@@ -960,9 +957,8 @@ Rect					toRect, srcRect;
 	for (i = 0; i < gNumUniqueSuperTiles; i++)
 	{
 		int32_t					dataSize;
-		long					descSize;
 		MOMaterialData			matData;
-		Ptr						tempBuff, imageDataPtr;
+		Ptr						tempBuff;
 
 
 				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
@@ -1013,7 +1009,6 @@ Rect					toRect, srcRect;
 												 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
 
 
-//		matData.setupInfo				= gGameViewInfoPtr;							// remember which draw context this material is assigned to
 		matData.flags 					= 	BG3D_MATERIALFLAG_CLAMP_U|
 											BG3D_MATERIALFLAG_CLAMP_V|
 											BG3D_MATERIALFLAG_TEXTURED;

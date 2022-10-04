@@ -265,7 +265,6 @@ void DoIntroStoryScreen(void)
 
 static void SetupIntroStoryScreen(void)
 {
-FSSpec				spec;
 OGLSetupInputType	viewDef;
 
 
@@ -521,8 +520,6 @@ static void MakeSubtitleObjects(int slideNum)
 	int subRow = 0;
 	float subDuration = 0;
 	float subDelay = 0;
-
-	int textFrame = 0;
 
 	while (cursor && *cursor)
 	{

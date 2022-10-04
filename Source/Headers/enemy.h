@@ -37,13 +37,13 @@ enum
 
 			/* ENEMY */
 
-ObjNode *MakeEnemySkeleton(Byte skeletonType, short animNum, float x, float z, float scale, float rot, void *moveCall);
+ObjNode *MakeEnemySkeleton(Byte skeletonType, short animNum, float x, float z, float scale, float rot, void (*moveCall)(ObjNode*));
 extern	void DeleteEnemy(ObjNode *theEnemy);
 Boolean DoEnemyCollisionDetect(ObjNode *theEnemy, uint32_t ctype, Boolean useBBoxBottom);
 void EnemyTouchedPlayer(ObjNode *enemy, ObjNode *player);
 extern	void UpdateEnemy(ObjNode *theNode);
 extern	void InitEnemyManager(void);
-void DetachEnemyFromSpline(ObjNode *theNode, void *moveCall);
+void DetachEnemyFromSpline(ObjNode *theNode, void (*moveCall)(ObjNode*));
 ObjNode *FindClosestEnemy(OGLPoint3D *pt, float *dist);
 Boolean	IsWaterInFrontOfEnemy(float r);
 void MoveEnemySkipChunk(ObjNode *chunk);

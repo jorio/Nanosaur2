@@ -111,9 +111,7 @@ void DoWinScreen(void)
 
 static void SetupWinScreen(void)
 {
-FSSpec				spec;
 OGLSetupInputType	viewDef;
-short				i;
 
 
 			/**************/

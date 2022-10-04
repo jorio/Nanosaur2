@@ -2610,20 +2610,20 @@ OGLMatrix4x4	m2,*m;
 	maxY = bBox->max.y;
 	maxZ = bBox->max.z;
 
-	clipCodeAND = ~0;
+	clipCodeAND = ~0u;
 
 	for (i = 0; i < 8; i++)
 	{
 		switch (i)									// load current bbox corner in IX,IY,IZ
 		{
 			case	0:	lX = minX;	lY = minY;	lZ = minZ;	break;
-			case	1:							lZ = maxZ;	break;
-			case	2:				lY = maxY;	lZ = minZ;	break;
-			case	3:							lZ = maxZ;	break;
+			case	1:	lX = minX;	lY = minY;	lZ = maxZ;	break;
+			case	2:	lX = minX;	lY = maxY;	lZ = minZ;	break;
+			case	3:	lX = minX;	lY = maxY;	lZ = maxZ;	break;
 			case	4:	lX = maxX;	lY = minY;	lZ = minZ;	break;
-			case	5:							lZ = maxZ;	break;
-			case	6:				lY = maxY;	lZ = minZ;	break;
-			default:							lZ = maxZ;
+			case	5:	lX = maxX;	lY = minY;	lZ = maxZ;	break;
+			case	6:	lX = maxX;	lY = maxY;	lZ = minZ;	break;
+			default:	lX = maxX;	lY = maxY;	lZ = maxZ;
 		}
 
 		hW = lX * m30 + lY * m31 + lZ * m32 + m33;

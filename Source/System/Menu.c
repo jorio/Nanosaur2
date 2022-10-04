@@ -868,7 +868,6 @@ static void NavigateSettingEntriesMouseHover(void)
 
 	float g2DLogicalWidth = 640;	//TODO----TEMP
 	float g2DLogicalHeight = 480;
-	int MAX_MENU_COLS = 4;
 
 	int ww, wh;
 	SDL_GetWindowSize(gSDLWindow, &ww, &wh);

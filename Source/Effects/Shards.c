@@ -226,7 +226,7 @@ long				i,t;
 float				boomForce = gBoomForce;
 OGLPoint3D			origin;
 
-	if (gShardMode & SHARD_MODE_FROMORIGIN)
+//	if (gShardMode & SHARD_MODE_FROMORIGIN)
 	{
 		origin.x = gShardSrcObj->Coord.x + (gShardSrcObj->LocalBBox.max.x + gShardSrcObj->LocalBBox.min.x) * .5f;		// set origin to center of object's bbox
 		origin.y = gShardSrcObj->Coord.y + (gShardSrcObj->LocalBBox.max.y + gShardSrcObj->LocalBBox.min.y) * .5f;

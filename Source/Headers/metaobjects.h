@@ -77,8 +77,6 @@ typedef struct
 
 typedef struct
 {
-//	OGLSetupOutputType *setupInfo;					// materials are draw context relative, so remember which context we're using now
-
 	uint32_t			flags;
 	OGLColorRGBA	diffuseColor;					// rgba diffuse color
 	uint16_t			multiTextureMode;				// sphere map, etc.
@@ -238,12 +236,8 @@ void MO_DisposeObjectReference(MetaObjectPtr obj);
 void MO_DuplicateVertexArrayData(MOVertexArrayData *inData, MOVertexArrayData *outData, short varType);
 void MO_DeleteObjectInfo_Geometry_VertexArray(MOVertexArrayData *data);
 void MO_CalcBoundingBox(MetaObjectPtr object, OGLBoundingBox *bBox, OGLMatrix4x4 *m);
-MOMaterialObject *MO_GetTextureFromFile(FSSpec *spec, int destPixelFormat);
 void MO_CalcBoundingSphere(MetaObjectPtr object, float *bSphere);
 
 void MO_DrawSprite(const MOSpriteObject *spriteObj);
 void MO_VertexArray_OffsetUVs(MetaObjectPtr object, float du, float dv);
 void MO_Object_OffsetUVs(MetaObjectPtr object, float du, float dv);
-void MO_Geometry_OffserUVs(short group, short type, short geometryNum, float du, float dv);
-MOMaterialObject *MO_LoadTextureObjectFromFile(FSSpec *spec, Boolean useAlpha, Boolean textureInRAM);
-MOMaterialObject *MO_CreateTextureObjectFromARGBBuffer(int width, int height, Ptr buffer, Boolean textureInRAM1);

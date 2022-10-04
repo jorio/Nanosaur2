@@ -150,7 +150,6 @@ static const EffectType gEffectsTable[NUM_EFFECTS] =
 void InitSoundTools(void)
 {
 OSErr			iErr;
-FSSpec			spec;
 
 
 	gNumLoopingEffects = 0;
@@ -166,8 +165,6 @@ FSSpec			spec;
 	for (gMaxChannels = 0; gMaxChannels < MAX_CHANNELS; gMaxChannels++)
 	{
 			/* NEW SOUND CHANNEL */
-
-		SndCommand 		mySndCmd;
 
 		iErr = SndNewChannel(&gSndChannel[gMaxChannels], sampledSynth, initStereo, nil);
 		if (iErr)												// if err, stop allocating channels

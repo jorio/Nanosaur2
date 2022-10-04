@@ -433,7 +433,6 @@ static void MoveEgg_Carried(ObjNode *egg)
 {
 short			playerNum = egg->PlayerNum;								// which player # is carrying this egg?
 ObjNode			*player = gPlayerInfo[playerNum].objNode;				// get holding player obj
-short			n;
 ObjNode			*wormhole;
 
 

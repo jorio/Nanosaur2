@@ -290,12 +290,11 @@ void Exit2D(void)
 
 #pragma mark -
 
+#if 0
 /********************* DO SCREEN MODE DIALOG *************************/
 
 void DoScreenModeDialog(void)
 {
-	SOFTIMPME;
-#if 0
 Byte			oldStereo = gGamePrefs.stereoGlassesMode;
 OSErr			err;
 EventHandlerRef	ref;
@@ -532,11 +531,8 @@ do_it:
 
 	CalcVRAMAfterBuffers();
 	SavePrefs();
-#endif
 }
 
-
-#if 0
 /****************** DO SCREEN MODE DIALOG EVENT HANDLER *************************/
 //
 // main window event handling

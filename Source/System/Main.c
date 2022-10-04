@@ -134,8 +134,6 @@ void ToolBoxInit(void)
 
 //	DoAnaglyphCalibrationDialog	();	//---------
 
-	DoScreenModeDialog();
-
 	MyFlushEvents();
 }
 

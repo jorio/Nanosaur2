@@ -16,8 +16,6 @@ ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed);
 
 void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void));
 
-void DoScreenModeDialog(void);
-
 void Enter2D(void);
 void Exit2D(void);
 

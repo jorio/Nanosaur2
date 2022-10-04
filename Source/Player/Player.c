@@ -1218,6 +1218,12 @@ void UpdatePlayerSteering(int playerNum)
 			pitch = mousePitch;
 	}
 
+	/* INVERT PITCH IF REQUESTED */
+
+	if (gGamePrefs.invertVerticalSteering)
+		pitch = -pitch;
+
+	/* EXPOSE VALUES TO GAME */
 
 	playerInfo->analogControlX = yaw;
 	playerInfo->analogControlZ = pitch;

@@ -79,6 +79,14 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
 	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
+	{
+		kMICycler1, STR_VERTICAL_STEERING,
+		.cycler =
+		{
+			.valuePtr=&gGamePrefs.invertVerticalSteering,
+			.choices = { {STR_NORMAL, 0}, {STR_INVERTED, 1} },
+		}
+	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='graf'},

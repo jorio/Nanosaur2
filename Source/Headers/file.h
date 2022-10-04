@@ -78,6 +78,7 @@ typedef struct
 
 	Byte	monitorNum;
 	Boolean	fullscreen;
+	Byte	antialiasingLevel;
 	Boolean	cutsceneSubtitles;
 
 	Byte	splitScreenMode;
@@ -95,8 +96,7 @@ typedef struct
 
 	Boolean kiddieMode;
 
-	Byte	antialiasingLevel;
-
+	Boolean	invertVerticalSteering;
 	Byte	mouseSensitivityLevel;
 
 	InputBinding	bindings[NUM_CONTROL_NEEDS];

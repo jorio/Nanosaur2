@@ -386,6 +386,8 @@ int				i;
 static int		sampIndex = 0;
 static float	sampleList[16] = {60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60};
 
+	Microseconds(&currTime);
+
 //wait:
 	if (gTimeDemo)
 	{
@@ -394,7 +396,6 @@ static float	sampleList[16] = {60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60};
 	else
 	{
 #if 1
-		Microseconds(&currTime);
 		deltaTime = currTime.lo - time.lo;
 
 		if (deltaTime == 0)

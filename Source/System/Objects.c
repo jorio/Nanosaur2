@@ -27,7 +27,7 @@ static void CreateDummyInitObject(void);
 /*    CONSTANTS             */
 /****************************/
 
-#define	OBJ_DEL_Q_SIZE	200
+#define	OBJ_DEL_Q_SIZE	500
 
 #define MAX_OBJECTS		2500
 

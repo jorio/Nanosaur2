@@ -169,7 +169,7 @@ FSSpec			spec;
 
 		SndCommand 		mySndCmd;
 
-		iErr = SndNewChannel(&gSndChannel[gMaxChannels],sampledSynth,initMono+initNoInterp,nil);//NewSndCallBackUPP(CallBackFn));
+		iErr = SndNewChannel(&gSndChannel[gMaxChannels], sampledSynth, initStereo, nil);
 		if (iErr)												// if err, stop allocating channels
 			break;
 

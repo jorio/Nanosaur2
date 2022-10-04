@@ -74,8 +74,6 @@ Byte					gAnaglyphGreyTable[255];
 
 SDL_GLContext			gAGLContext = nil;
 
-static GLuint 			gFontList;
-
 
 OGLMatrix4x4	gViewToFrustumMatrix,gWorldToViewMatrix,gWorldToFrustumMatrix, gLocalToViewMatrix, gLocalToFrustumMatrix;
 OGLMatrix4x4	gWorldToWindowMatrix[MAX_SPLITSCREENS],gFrustumToWindowMatrix[MAX_SPLITSCREENS];
@@ -2195,13 +2193,6 @@ void OGL_BlendFunc(GLenum sfactor, GLenum dfactor)
 
 static void OGL_InitFont(void)
 {
-	gFontList = glGenLists(256);
-
-//    if (!aglUseFont(gAGLContext, kFontIDMonaco, bold, 9, 0, 256, gFontList))
-//	{
-//		DoAlert("OGL_InitFont: aglUseFont failed");
-//		DoFatalAlert("OpenGL could not locate the font 'Monaco' which is one of the default MacOS system fonts.  You should reinstall OS X to get this font back since it is needed by the operating system.");
-//	}
 }
 
 
@@ -2209,8 +2200,6 @@ static void OGL_InitFont(void)
 
 static void OGL_FreeFont(void)
 {
-	glDeleteLists(gFontList, 256);
-
 }
 
 /**************** OGL_DRAW STRING ********************/
@@ -2223,33 +2212,25 @@ void OGL_DrawString(const char* s, GLint x, GLint y)
 	glLoadIdentity();
 	glMatrixMode (GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, 640, 0, 480, -10.0, 10.0);
+	glOrtho(0, 640, 480, 0, -10.0, 10.0);
 
 	glDisable(GL_LIGHTING);
 
-	OGL_DisableTexture2D();
+//	OGL_DisableTexture2D();
 	OGL_SetColor4f(1,1,1,1);
-	glRasterPos2i(x, 480-y);
 
-	glListBase(gFontList);
-	glCallLists(s[0], GL_UNSIGNED_BYTE, &s[1]);
+	Atlas_DrawString(SPRITE_GROUP_FONT, s, x, y, 0.25f, kTextMeshAlignLeft | kTextMeshAllCaps);
 
 	OGL_PopState();
-
 }
 
 /**************** OGL_DRAW FLOAT ********************/
 
 void OGL_DrawFloat(float f, GLint x, GLint y)
 {
-	SOFTIMPME;
-
-#if 0
-Str255	s;
-
-	FloatToString(f,s);
-	OGL_DrawString(s,x,y);
-#endif
+	char s[16];
+	snprintf(s, sizeof(s), "%f", f);
+	OGL_DrawString(s, x, y);
 }
 
 
@@ -2258,12 +2239,9 @@ Str255	s;
 
 void OGL_DrawInt(int f, GLint x, GLint y)
 {
-
-Str255	s;
-
-	NumToString(f,s);
-	OGL_DrawString(s,x,y);
-
+	char s[16];
+	snprintf(s, sizeof(s), "%d", f);
+	OGL_DrawString(s, x, y);
 }
 
 #pragma mark -

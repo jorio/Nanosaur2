@@ -854,19 +854,22 @@ do_anaglyph:
 	{
 		int		y = 100;
 
-		OGL_DrawString("fps:", 20,y);
+		OGL_DrawString("fps:", 10,y);
 		OGL_DrawInt(gFramesPerSecond+.5f, 50,y);
 		y += 15;
 
-		OGL_DrawString("#tri:", 20,y);
+		OGL_DrawString("#tri:", 10,y);
 		OGL_DrawInt(gPolysThisFrame, 50,y);
 		y += 15;
 
-		OGL_DrawString("#RAM:", 20,y);
-		OGL_DrawInt(gRAMAlloced, 50,y);
+		OGL_DrawString("KB:", 10,y);
+		OGL_DrawInt(gRAMAlloced/1024, 50,y);
 		y += 15;
 
 
+		OGL_DrawString("PTRS:", 10,y);
+		OGL_DrawInt(gNumPointers, 50,y);
+		y += 15;
 
 #if 0
 

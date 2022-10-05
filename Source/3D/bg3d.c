@@ -519,6 +519,7 @@ Boolean					hasAlpha;
 			/************************/
 
 	DecompressQTImage(jpegBuffer, textureHeader.bufferSize, (Ptr) texturePixels, w, h);
+	SafeDisposePtr(jpegBuffer);
 
 		/***************************************/
 		/* READ IN ALPHA CHANNEL IF IT HAS ONE */

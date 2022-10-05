@@ -221,31 +221,6 @@ void InitMyRandomSeed(void)
 #pragma mark -
 
 
-/****************** ALLOC HANDLE ********************/
-
-Handle	AllocHandle(long size)
-{
-Handle	hand;
-OSErr	err;
-
-	hand = NewHandle(size);							// alloc in APPL
-	if (hand == nil)
-	{
-		DoAlert("AllocHandle: using temp mem");
-		hand = TempNewHandle(size,&err);			// try TEMP mem
-		if (hand == nil)
-		{
-			DoAlert("AllocHandle: failed!");
-			return(nil);
-		}
-		else
-			return(hand);
-	}
-	return(hand);
-
-}
-
-
 
 /****************** ALLOC PTR ********************/
 

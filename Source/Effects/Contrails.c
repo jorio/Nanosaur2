@@ -113,13 +113,6 @@ ObjNode				*obj;
 	obj->CustomDrawFunction = DrawContrails;
 
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_CONTRAILS1;
-
-
-			/* UPDATE SONG */
-
-//	if (gSongMovie)
-//		MoviesTask(gSongMovie, 0);
-
 }
 
 
@@ -127,8 +120,21 @@ ObjNode				*obj;
 
 void DisposeContrails(void)
 {
+	for (int i = 0; i < MAX_CONTRAILS; i++)
+	{
+		for (int b = 0; b < 2; b++)
+		{
+			MOVertexArrayData* mesh = &gContrails[i].meshData[b];
 
+			OGL_FreeVertexArrayMemory(mesh->points, mesh->VARtype);
+			OGL_FreeVertexArrayMemory(mesh->colorsFloat, mesh->VARtype);
+			OGL_FreeVertexArrayMemory(mesh->triangles, mesh->VARtype);
 
+			mesh->points = NULL;
+			mesh->colorsFloat = NULL;
+			mesh->triangles = NULL;
+		}
+	}
 }
 
 

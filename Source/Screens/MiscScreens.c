@@ -540,6 +540,12 @@ do_again:
 
 void DrawLoading(float percent)
 {
+	if (percent > 0.75f)
+	{
+		MakeFadeEvent(false, 0.0001);
+		gGammaFadeFrac = 1.0f - (percent - 0.75f) / 0.25f;
+	}
+
 	// Kill vsync so we don't waste 16ms before loading the next asset
 	int vsyncBackup = SDL_GL_GetSwapInterval();
 	SDL_GL_SetSwapInterval(0);
@@ -606,6 +612,27 @@ float	w, x;
 
 	OGL_SetColor4f(1,1,1,1);
 
+	float fadeOpacity = 0;
+	if (gLoadingThermoPercent < 0.1f)
+	{
+		fadeOpacity = 1.0f - (gLoadingThermoPercent / 0.1f);
+	}
+	else
+	{
+		float fadeoutStart = 0.9f;
+		float fadeoutEnd = 1.0f;
+		if (gLoadingThermoPercent > fadeoutStart)
+		{
+			fadeOpacity = (gLoadingThermoPercent - fadeoutStart) / (fadeoutEnd - fadeoutStart);
+		}
+	}
 
+	{
+		OGL_SetColor4f(0,0,0, fadeOpacity>1? 1: fadeOpacity);
+		glBegin(GL_QUADS);
+		glVertex2f(0,0);		glVertex2f(640,0);
+		glVertex2f(640,480);	glVertex2f(0,480);
+		glEnd();
+	}
 }
 

@@ -78,7 +78,7 @@ typedef struct
 
 #define kDefaultX			(640/2)
 
-#define kSfxCycle			EFFECT_MENUSELECT
+#define kSfxCycle			EFFECT_GRABEGG
 
 #define PlayEffectForMenu(x)		PlayEffect_Parms((x), FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 #define PlayNavigateEffect()		PlayEffectForMenu(EFFECT_CHANGESELECT)
@@ -1532,7 +1532,9 @@ static void AwaitKeyPress(void)
 	GAME_ASSERT(keyNo >= 0);
 	GAME_ASSERT(keyNo < MAX_USER_BINDINGS_PER_NEED);
 
-	if (IsKeyDown(SDL_SCANCODE_ESCAPE))
+	if (IsKeyDown(SDL_SCANCODE_ESCAPE)
+		|| IsClickDown(SDL_BUTTON_LEFT)
+		|| IsClickDown(SDL_BUTTON_RIGHT))
 	{
 		PlayErrorEffect();
 		goto updateText;
@@ -1567,7 +1569,9 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 	GAME_ASSERT(btnNo < MAX_USER_BINDINGS_PER_NEED);
 
 	if (IsKeyDown(SDL_SCANCODE_ESCAPE)
-		|| SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START))
+		|| SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START)
+		|| IsClickDown(SDL_BUTTON_LEFT)
+		|| IsClickDown(SDL_BUTTON_RIGHT))
 	{
 		PlayErrorEffect();
 		goto updateText;
@@ -1668,15 +1672,12 @@ static void AwaitMetaGamepadPress(void)
 	}
 }
 
-static void AwaitMouseClick(void)
+static bool AwaitMouseClick(void)
 {
 	if (IsKeyDown(SDL_SCANCODE_ESCAPE))
 	{
-		MakeText(GetMouseBindingName(gNav->menuRow), gNav->menuRow, 1, 0);
-		gNav->menuState = kMenuStateReady;
-		gNav->idleTime = 0;
 		PlayErrorEffect();
-		return;
+		goto updateText;
 	}
 
 	InputBinding* binding = GetBindingAtRow(gNav->menuRow);
@@ -1687,16 +1688,20 @@ static void AwaitMouseClick(void)
 		{
 			UnbindMouseButtonFromAllRemappableInputNeeds(mouseButton);
 			binding->mouseButton = mouseButton;
-			gNav->menuState = kMenuStateReady;
-			gNav->idleTime = 0;
-
-			MakeMbText(gNav->menuRow);
-			RepositionArrows();
-
 			PlayEndBindingEffect();
-			return;
+			goto updateText;
 		}
 	}
+
+	return false;
+
+updateText:
+	gNav->menuState = kMenuStateReady;
+	gNav->idleTime = 0;
+	MakeMbText(gNav->menuRow);		// update text after state changed back to Ready
+	RepositionArrows();
+//	ReplaceMenuText(STR_CONFIGURE_MOUSE_HELP_CANCEL, STR_CONFIGURE_MOUSE_HELP);
+	return true;
 }
 
 /****************************/

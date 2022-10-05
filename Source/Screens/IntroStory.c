@@ -347,6 +347,23 @@ static void FreeIntroStoryScreen(void)
 
 /**************** BUILD SLIDE SHOW OBJECTS ********************/
 
+
+static void DrawBottomGradient(ObjNode* theNode)
+{
+	OGL_PushState();
+	SetInfobarSpriteState(0, 1);
+	OGL_DisableTexture2D();
+	OGL_EnableBlend();
+
+	float y = 320;
+	glBegin(GL_QUADS);
+	glColor4f(0,0,0,0); glVertex2f(gLogicalRect.left, y); glVertex2f(gLogicalRect.right, y);
+	glColor4f(0,0,0,1); glVertex2f(gLogicalRect.right, gLogicalRect.bottom); glVertex2f(gLogicalRect.left, gLogicalRect.bottom);
+	glEnd();
+	OGL_PopState();
+}
+
+
 static void BuildSlideShowObjects(void)
 {
 ObjNode	*slideObj;
@@ -391,6 +408,20 @@ ObjNode	*slideObj;
 		slideObj->EffectTimer = gSlides[i].delayUntilEffect;
 
 		slideObj->AnaglyphZ = -10;						// make appear deep in the monitor
+	}
+
+
+	if (gGamePrefs.cutsceneSubtitles)
+	{
+		NewObjectDefinitionType gradientDef =
+		{
+			.genre		= CUSTOM_GENRE,
+			.coord		= {0, 0, 0},
+			.slot		= SPRITE_SLOT,
+			.scale		= 1,
+			.drawCall	= DrawBottomGradient,
+		};
+		MakeNewObject(&gradientDef);
 	}
 }
 

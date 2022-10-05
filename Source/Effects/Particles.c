@@ -85,16 +85,16 @@ void InitParticleSystem(void)
 		// The particles need to be drawn after the fences object, but before any sprite or font objects.
 		//
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT;
-	gNewObjectDefinition.moveCall 	= MoveParticleGroups;
-	gNewObjectDefinition.scale 		= 1;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|
-									STATUS_BIT_GLOW;
-
-	ObjNode* obj = MakeNewObject(&gNewObjectDefinition);
-	obj->CustomDrawFunction = DrawParticleGroups;
-
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= PARTICLE_SLOT,
+		.scale		= 1,
+		.flags		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_GLOW,
+		.moveCall	= MoveParticleGroups,
+		.drawCall	= DrawParticleGroups,
+	};
+	ObjNode* obj = MakeNewObject(&def);
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_PARTICLES1;
 }
 
@@ -1541,17 +1541,20 @@ ObjNode *MakeSmoker(float  x, float z, int kind)
 {
 ObjNode	*newObj;
 
-	gNewObjectDefinition.genre		= EVENT_GENRE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= FindHighestCollisionAtXZ(x,z, CTYPE_TERRAIN | CTYPE_WATER);
-	gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB+10;
-	gNewObjectDefinition.moveCall 	= MoveSmoker;
-	newObj = MakeNewObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.genre		= EVENT_GENRE,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y	= FindHighestCollisionAtXZ(x,z, CTYPE_TERRAIN | CTYPE_WATER),
+		.flags		= STATUS_BIT_DONTCULL,
+		.slot		= SLOT_OF_DUMB+10,
+		.moveCall	= MoveSmoker,
+		.scale		= 1,
+	};
 
+	newObj = MakeNewObject(&def);
 	newObj->Kind = kind;								// save smoke kind
-
 	return(newObj);
 }
 
@@ -1761,25 +1764,23 @@ short	i;
 
 Boolean AddFlame(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
-
 				/* MAKE CUSTOM OBJECT */
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= WATER_SLOT + 1;
-	gNewObjectDefinition.moveCall 	= MoveFlame;
-	gNewObjectDefinition.coord.x	= x;
-	gNewObjectDefinition.coord.z	= z;
-	gNewObjectDefinition.coord.y 	= FindHighestCollisionAtXZ(x,z, CTYPE_TERRAIN | CTYPE_WATER);
-	gNewObjectDefinition.scale 		= 1.0f + RandomFloat() * .8f;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES |
-									 STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot 		= WATER_SLOT + 1,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y 	= FindHighestCollisionAtXZ(x,z, CTYPE_TERRAIN | CTYPE_WATER),
+		.scale		= 1.0f + RandomFloat() * .8f,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES | STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP,
+		.moveCall 	= MoveFlame,
+		.drawCall	= DrawFlame,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
-	newObj->CustomDrawFunction = DrawFlame;
-
+	ObjNode* newObj = MakeNewObject(&def);
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
-
 	newObj->FlameFrame = RandomRange(0, 10);						// start on random frame
 	newObj->FlameSpeed = 20.0f + RandomFloat() * 2.0f;				// set anim speed
 	newObj->Timer = 0;
@@ -1877,26 +1878,21 @@ float	s;
 
 ObjNode *MakeFireRing(float x, float y, float z)
 {
-ObjNode	*newObj;
-
 				/* MAKE CUSTOM OBJECT */
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT + 2;
-	gNewObjectDefinition.moveCall 	= MoveFireRing;
-	gNewObjectDefinition.coord.x	= x;
-	gNewObjectDefinition.coord.y	= y;
-	gNewObjectDefinition.coord.z	= z;
-	gNewObjectDefinition.scale 		= 100.0f;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES |
-									STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= PARTICLE_SLOT + 2,
+		.coord		= {x,y,z},
+		.scale		= 100.0f,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES | STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP,
+		.moveCall	= MoveFireRing,
+		.drawCall	= DrawFireRing,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
-	newObj->CustomDrawFunction = DrawFireRing;
-
+	ObjNode* newObj = MakeNewObject(&def);
 	newObj->ColorFilter.a = 1.5f;
-
-
 	return(newObj);													// item was added
 }
 

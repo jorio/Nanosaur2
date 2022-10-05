@@ -878,12 +878,15 @@ float			x,z,placement;
 
 				/* MAKE DUMMY SPLINE TRACKER OBJECT */
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= 0;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= 0;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot 		= 0,
+		.moveCall 	= nil,
+		.flags 		= 0,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
+	newObj = MakeNewObject(&def);
 
 
 				/* SET SPLINE INFO */

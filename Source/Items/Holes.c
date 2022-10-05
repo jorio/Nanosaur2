@@ -52,16 +52,19 @@ enum
 
 Boolean AddHole(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.genre		= EVENT_GENRE,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y	= itemPtr->terrainY,
+		.flags		= 0,
+		.scale		= 1,
+		.slot		= SLOT_OF_DUMB + 50,
+		.moveCall 	= MoveHole,
+	};
 
-	gNewObjectDefinition.genre = EVENT_GENRE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 50;
-	gNewObjectDefinition.moveCall 	= MoveHole;
-	newObj = MakeNewObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -229,15 +232,18 @@ OGLPoint3D  nubs[5];
 			/* MAKE WORM OBJECT */
 			/********************/
 
-	gNewObjectDefinition.type 		= SKELETON_TYPE_WORM;
-	gNewObjectDefinition.animNum 	= 0;
-	gNewObjectDefinition.scale 		= 6.0;
-	gNewObjectDefinition.coord		= hole->Coord;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 491;
-	gNewObjectDefinition.moveCall 	= MoveHoleWorm;
-	gNewObjectDefinition.rot 		= 0;
-	worm = MakeNewSkeletonObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.type 		= SKELETON_TYPE_WORM,
+		.animNum 	= 0,
+		.scale 		= 6.0,
+		.coord		= hole->Coord,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 491,
+		.moveCall 	= MoveHoleWorm,
+		.rot 		= 0,
+	};
+	worm = MakeNewSkeletonObject(&def);
 
 	worm->Skeleton->JointsAreGlobal = true;
 

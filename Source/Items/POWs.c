@@ -60,7 +60,6 @@ enum
 
 Boolean AddWeaponPOW(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *membrane;
 short	weaponType = itemPtr->parm[0];
 
 	if (weaponType == WEAPON_TYPE_SONICSCREAM)			// since this in an infinite weapon, don't need POW's
@@ -70,17 +69,21 @@ short	weaponType = itemPtr->parm[0];
 				/* MAKE FRAME */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_POWFrame;
-	gNewObjectDefinition.scale 		= POW_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + POW_Y_OFF;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 55;
-	gNewObjectDefinition.moveCall 	= MovePOW;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_POWFrame,
+		.scale 		= POW_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY + POW_Y_OFF,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= PLAYER_SLOT + 55,
+		.moveCall 	= MovePOW,
+		.rot 		= RandomFloat()*PI2,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -122,11 +125,11 @@ short	weaponType = itemPtr->parm[0];
 		/* MAKE MEMBRANE */
 		/*****************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_BlasterPOWMembrane + weaponType;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_NOFOG;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 3;
-	gNewObjectDefinition.moveCall 	= nil;
-	membrane = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_BlasterPOWMembrane + weaponType;
+	def.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_NOFOG;
+	def.slot		= SLOT_OF_DUMB + 3;
+	def.moveCall 	= nil;
+	ObjNode* membrane = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = membrane;
 
@@ -273,23 +276,24 @@ short	weaponType, playerNum, quan;
 
 Boolean AddHealthPOW(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *membrane;
-
 				/**************/
 				/* MAKE FRAME */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_HealthPOWFrame;
-	gNewObjectDefinition.scale 		= POW_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + POW_Y_OFF;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 55;
-	gNewObjectDefinition.moveCall 	= MovePOW;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_HealthPOWFrame,
+		.scale 		= POW_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY + POW_Y_OFF,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= PLAYER_SLOT + 55,
+		.moveCall 	= MovePOW,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 	newObj->Mode				= POW_MODE_NORMAL;
@@ -307,11 +311,11 @@ ObjNode	*newObj, *membrane;
 		/* MAKE MEMBRANE */
 		/*****************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_HealthPOWMembrane;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING  | STATUS_BIT_NOFOG;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 3;
-	gNewObjectDefinition.moveCall 	= nil;
-	membrane = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_HealthPOWMembrane;
+	def.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING  | STATUS_BIT_NOFOG;
+	def.slot		= SLOT_OF_DUMB + 3;
+	def.moveCall 	= nil;
+	ObjNode* membrane = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = membrane;
 
@@ -360,23 +364,24 @@ short	playerNum;
 
 Boolean AddFuelPOW(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *membrane;
-
 				/**************/
 				/* MAKE FRAME */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_POWFrame;
-	gNewObjectDefinition.scale 		= POW_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + POW_Y_OFF;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 55;
-	gNewObjectDefinition.moveCall 	= MovePOW;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_POWFrame,
+		.scale 		= POW_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY + POW_Y_OFF,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= PLAYER_SLOT + 55,
+		.moveCall 	= MovePOW,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 	newObj->Mode				= POW_MODE_NORMAL;
@@ -394,11 +399,11 @@ ObjNode	*newObj, *membrane;
 		/* MAKE MEMBRANE */
 		/*****************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_FuelPOWMembrane;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 3;
-	gNewObjectDefinition.moveCall 	= nil;
-	membrane = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_FuelPOWMembrane;
+	def.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG;
+	def.slot		= SLOT_OF_DUMB + 3;
+	def.moveCall 	= nil;
+	ObjNode* membrane = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = membrane;
 
@@ -450,23 +455,24 @@ short	playerNum;
 
 Boolean AddShieldPOW(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *membrane;
-
 				/**************/
 				/* MAKE FRAME */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_POWFrame;
-	gNewObjectDefinition.scale 		= POW_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + POW_Y_OFF;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 55;
-	gNewObjectDefinition.moveCall 	= MovePOW;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_POWFrame,
+		.scale 		= POW_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY + POW_Y_OFF,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= PLAYER_SLOT + 55,
+		.moveCall 	= MovePOW,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 	newObj->Mode				= POW_MODE_NORMAL;
@@ -484,11 +490,11 @@ ObjNode	*newObj, *membrane;
 		/* MAKE MEMBRANE */
 		/*****************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_ShieldPOWMembrane;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 3;
-	gNewObjectDefinition.moveCall 	= nil;
-	membrane = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_ShieldPOWMembrane;
+	def.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG;
+	def.slot		= SLOT_OF_DUMB + 3;
+	def.moveCall 	= nil;
+	ObjNode* membrane = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = membrane;
 
@@ -544,23 +550,24 @@ short	playerNum;
 
 Boolean AddFreeLifePOW(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *membrane;
-
 				/**************/
 				/* MAKE FRAME */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_POWFrame;
-	gNewObjectDefinition.scale 		= POW_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + POW_Y_OFF;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 55;
-	gNewObjectDefinition.moveCall 	= MovePOW;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_POWFrame,
+		.scale 		= POW_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY + POW_Y_OFF,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= PLAYER_SLOT + 55,
+		.moveCall 	= MovePOW,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -577,11 +584,11 @@ ObjNode	*newObj, *membrane;
 		/* MAKE MEMBRANE */
 		/*****************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_FreeLifePOWMembrane;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING  | STATUS_BIT_NOFOG;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 3;
-	gNewObjectDefinition.moveCall 	= nil;
-	membrane = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_FreeLifePOWMembrane;
+	def.flags 		|= STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING  | STATUS_BIT_NOFOG;
+	def.slot		= SLOT_OF_DUMB + 3;
+	def.moveCall 	= nil;
+	ObjNode* membrane = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = membrane;
 

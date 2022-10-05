@@ -189,17 +189,20 @@ ObjNode	*slideObj;
 
 	for (i = 0; i < NUM_SLIDES; i++)
 	{
-		gNewObjectDefinition.group 		= SPRITE_GROUP_INTROSTORY;
-		gNewObjectDefinition.type 		= gSlides[i].spriteNum;
-		gNewObjectDefinition.coord.x 	= 640.0f * gSlides[i].x;
-		gNewObjectDefinition.coord.y 	= 480.0f * gSlides[i].y;
-		gNewObjectDefinition.coord.z 	= 0;
-		gNewObjectDefinition.flags 		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZBUFFER;
-		gNewObjectDefinition.slot 		= SPRITE_SLOT - i;
-		gNewObjectDefinition.moveCall 	= MoveSlide;
-		gNewObjectDefinition.rot 		= gSlides[i].rotz;
-		gNewObjectDefinition.scale 	    = gSlides[i].scale;
-		slideObj = MakeSpriteObject(&gNewObjectDefinition, true);
+		NewObjectDefinitionType def =
+		{
+			.group 		= SPRITE_GROUP_INTROSTORY,
+			.type 		= gSlides[i].spriteNum,
+			.coord.x 	= 640.0f * gSlides[i].x,
+			.coord.y 	= 480.0f * gSlides[i].y,
+			.coord.z 	= 0,
+			.flags 		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZBUFFER,
+			.slot 		= SPRITE_SLOT - i,
+			.moveCall 	= MoveSlide,
+			.rot 		= gSlides[i].rotz,
+			.scale 	    = gSlides[i].scale,
+		};
+		slideObj = MakeSpriteObject(&def, true);
 
 		slideObj->Kind = i;
 

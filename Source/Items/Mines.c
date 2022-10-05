@@ -100,17 +100,22 @@ long	h = itemPtr->parm[0];
 				/* MAKE BASE  */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= typeB;
-	gNewObjectDefinition.scale 		= AIRMINE_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB - 200;
-	gNewObjectDefinition.moveCall 	= MoveAirMine;
-	gNewObjectDefinition.rot 		= 0;
-	base = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= typeB,
+		.scale 		= AIRMINE_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= SLOT_OF_DUMB - 200,
+		.moveCall 	= MoveAirMine,
+		.rot 		= 0,
+	};
+
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale);
+
+	base = MakeNewDisplayGroupObject(&def);
 
 	base->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -125,13 +130,13 @@ long	h = itemPtr->parm[0];
 				/* MAKE CHAIN */
 				/**************/
 
-	gNewObjectDefinition.type 		= typeC;
-	gNewObjectDefinition.coord.y 	-= chainOff;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= RandomFloat() * PI2;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED;
-	chain = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= typeC;
+	def.coord.y 	-= chainOff;
+	def.slot++;
+	def.moveCall 	= nil;
+	def.rot 		= RandomFloat() * PI2;
+	def.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED;
+	chain = MakeNewDisplayGroupObject(&def);
 
 	chain->WobbleX = RandomFloat() * PI2;
 
@@ -144,10 +149,10 @@ long	h = itemPtr->parm[0];
 				/* MAKE MINE */
 				/*************/
 
-	gNewObjectDefinition.type 		= typeM;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	mine = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= typeM;
+	def.slot++;
+	def.flags 		= gAutoFadeStatusBits;
+	mine = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -415,12 +420,15 @@ ObjNode *base = chain->ChainHead;
 		ObjNode	*flare;
 		float	dx,dy,dz;
 
-		gNewObjectDefinition.genre		= CUSTOM_GENRE;
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB + 20;
-		gNewObjectDefinition.moveCall 	= MoveAirMineFlareBall;
-		gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL;
+		NewObjectDefinitionType def =
+		{
+			.genre		= CUSTOM_GENRE,
+			.slot 		= SLOT_OF_DUMB + 20,
+			.moveCall 	= MoveAirMineFlareBall,
+			.flags 		= STATUS_BIT_DONTCULL,
+		};
 
-		flare = MakeNewObject(&gNewObjectDefinition);
+		flare = MakeNewObject(&def);
 
 				/* SET RANDOM TRAJECTORY */
 

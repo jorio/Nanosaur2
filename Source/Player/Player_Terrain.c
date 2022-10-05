@@ -104,23 +104,25 @@ short	j,i;
 		/* MAKE SKELETON */
 		/*****************/
 
-	gNewObjectDefinition.type 		= SKELETON_TYPE_PLAYER;
-	gNewObjectDefinition.animNum	= PLAYER_ANIM_FLAP;
-	gNewObjectDefinition.coord.x 	= where->x;
-	gNewObjectDefinition.coord.z 	= where->z;
-	gNewObjectDefinition.coord.y 	= FindHighestCollisionAtXZ(where->x,where->z, CTYPE_MISC|CTYPE_TERRAIN) + 500;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits |STATUS_BIT_NOTEXTUREWRAP|STATUS_BIT_ROTXZY;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT;
-	gNewObjectDefinition.moveCall	= MovePlayer;
-	gNewObjectDefinition.rot 		= rotY;
-	gNewObjectDefinition.scale 		= PLAYER_DEFAULT_SCALE;
+	NewObjectDefinitionType def =
+	{
+		.type 		= SKELETON_TYPE_PLAYER,
+		.animNum	= PLAYER_ANIM_FLAP,
+		.coord.x	= where->x,
+		.coord.z	= where->z,
+		.coord.y	= FindHighestCollisionAtXZ(where->x,where->z, CTYPE_MISC|CTYPE_TERRAIN) + 500,
+		.flags		= gAutoFadeStatusBits |STATUS_BIT_NOTEXTUREWRAP|STATUS_BIT_ROTXZY,
+		.slot		= PLAYER_SLOT,
+		.moveCall	= MovePlayer,
+		.drawCall	= DrawPlayer,
+		.rot		= rotY,
+		.scale		= PLAYER_DEFAULT_SCALE,
+	};
 
-	newObj = MakeNewSkeletonObject(&gNewObjectDefinition);
-
-	newObj->CustomDrawFunction = DrawPlayer;
-
-
+	newObj = MakeNewSkeletonObject(&def);
 	newObj->PlayerNum = playerNum;
+
+	def.drawCall = NULL;		// clear draw call for jetpack et al.
 
 
 
@@ -154,23 +156,24 @@ short	j,i;
 		/* MAKE JETPACK  */
 		/*****************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_PLAYER;
-	gNewObjectDefinition.type 		= PLAYER_ObjType_JetPack;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= MovePlayerJetpack;
-	jetpack = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.group 		= MODEL_GROUP_PLAYER;
+	def.type 		= PLAYER_ObjType_JetPack;
+	def.flags 		= gAutoFadeStatusBits;
+	def.slot++;
+	def.moveCall 	= MovePlayerJetpack;
+	def.drawCall 	= nil;
+	jetpack = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = jetpack;
 	jetpack->ChainHead = newObj;
 
 		/* BLUE THING */
 
-	gNewObjectDefinition.type 		= PLAYER_ObjType_JetPackBlue;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	blue = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= PLAYER_ObjType_JetPackBlue;
+	def.flags 		= gAutoFadeStatusBits | STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING;
+	def.slot++;
+	def.moveCall 	= nil;
+	blue = MakeNewDisplayGroupObject(&def);
 
 	blue->ColorFilter.a = .99;
 	jetpack->ChainNode = blue;

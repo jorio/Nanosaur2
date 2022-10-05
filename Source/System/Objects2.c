@@ -356,24 +356,24 @@ void CalcNewTargetOffsets(ObjNode *theNode, float scale)
 
 ObjNode	*AttachShadowToObject(ObjNode *theNode, int shadowType, float scaleX, float scaleZ, Boolean checkBlockers)
 {
-ObjNode	*shadowObj;
+	float x = theNode->Coord.x;
+	float z = theNode->Coord.z;
+	float y = GetTerrainY(x, z) + SHADOW_Y_OFF;
 
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.coord		= {x,y,z},
+		.scale		= scaleX,
+		.rot		= theNode->Rot.y,
+		.flags		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|gAutoFadeStatusBits,
+		.slot		=  (theNode->Slot >= SLOT_OF_DUMB+1) ? (theNode->Slot+1) : (SLOT_OF_DUMB+1),	// shadow *must* be after parent!
+		.moveCall	= nil,
+		.drawCall	= DrawShadow,
+	};
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.coord.x 	= theNode->Coord.x;
-	gNewObjectDefinition.coord.z 	= theNode->Coord.z;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(gNewObjectDefinition.coord.x, gNewObjectDefinition.coord.z) + SHADOW_Y_OFF;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|gAutoFadeStatusBits;
+	ObjNode* shadowObj = MakeNewObject(&def);
 
-	if (theNode->Slot >= SLOT_OF_DUMB+1)					// shadow *must* be after parent!
-		gNewObjectDefinition.slot 	= theNode->Slot+1;
-	else
-		gNewObjectDefinition.slot 	= SLOT_OF_DUMB+1;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= theNode->Rot.y;
-	gNewObjectDefinition.scale 		= scaleX;
-
-	shadowObj = MakeNewObject(&gNewObjectDefinition);
 	if (shadowObj == nil)
 		return(nil);
 
@@ -381,11 +381,7 @@ ObjNode	*shadowObj;
 
 	shadowObj->ShadowScaleX = scaleX;							// need to remeber scales for update
 	shadowObj->ShadowScaleZ = scaleZ;
-
 	shadowObj->CheckForBlockers = checkBlockers;
-
-	shadowObj->CustomDrawFunction = DrawShadow;
-
 	shadowObj->Kind = shadowType;							// remember the shadow type
 
 	return(shadowObj);
@@ -401,32 +397,30 @@ ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, int shadowType, float scal
 {
 ObjNode	*shadowObj;
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.coord.x 	= theNode->Coord.x;
-	gNewObjectDefinition.coord.z 	= theNode->Coord.z;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(gNewObjectDefinition.coord.x, gNewObjectDefinition.coord.z) + SHADOW_Y_OFF;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|gAutoFadeStatusBits;
+	float x = theNode->Coord.x;
+	float z = theNode->Coord.z;
+	float y = GetTerrainY(x, z) + SHADOW_Y_OFF;
 
-	if (theNode->Slot >= SLOT_OF_DUMB+1)					// shadow *must* be after parent!
-		gNewObjectDefinition.slot 	= theNode->Slot+1;
-	else
-		gNewObjectDefinition.slot 	= SLOT_OF_DUMB+1;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= theNode->Rot.y;
-	gNewObjectDefinition.scale 		= scaleX;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.coord		= { x,y,z },
+		.flags		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|gAutoFadeStatusBits,
+		.slot		= (theNode->Slot >= SLOT_OF_DUMB+1) ? (theNode->Slot+1) : (SLOT_OF_DUMB+1),					// shadow *must* be after parent!
+		.moveCall	= nil,
+		.drawCall	= DrawShadow,
+		.rot		= theNode->Rot.y,
+		.scale		= scaleX,
+	};
 
-	shadowObj = MakeNewObject(&gNewObjectDefinition);
+	shadowObj = MakeNewObject(&def);
 
 	theNode->ShadowNode = shadowObj;
 
-	shadowObj->CustomDrawFunction = DrawShadow;
-
 	shadowObj->Kind = shadowType;							// remember the shadow type
-
 	shadowObj->Scale.x = scaleX;
 	shadowObj->Scale.z = scaleZ;
 	RotateOnTerrain(shadowObj, SHADOW_Y_OFF, nil);							// set transform matrix
-
 
 	return(shadowObj);
 }

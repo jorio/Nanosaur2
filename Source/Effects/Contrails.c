@@ -103,15 +103,16 @@ ObjNode				*obj;
 		/* CREATE OBJECT FOR DRAWING */
 		/*****************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= CONTRAIL_SLOT;
-	gNewObjectDefinition.moveCall 	= MoveContrails;
-	gNewObjectDefinition.scale 		= 1;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOLIGHTING | STATUS_BIT_DOUBLESIDED | STATUS_BIT_DONTCULL | STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW;
-
-	obj = MakeNewObject(&gNewObjectDefinition);
-	obj->CustomDrawFunction = DrawContrails;
-
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= CONTRAIL_SLOT,
+		.flags		= STATUS_BIT_NOLIGHTING | STATUS_BIT_DOUBLESIDED | STATUS_BIT_DONTCULL | STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW,
+		.scale		= 1,
+		.moveCall	= MoveContrails,
+		.drawCall	= DrawContrails,
+	};
+	obj = MakeNewObject(&def);
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_CONTRAILS1;
 }
 

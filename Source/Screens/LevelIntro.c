@@ -230,24 +230,23 @@ ObjNode	*newObj;
 			/* MAKE WORMHOLE */
 			/*****************/
 
-	gNewObjectDefinition.type 		= SKELETON_TYPE_BONUSWORMHOLE;
-	gNewObjectDefinition.animNum	= 0;
-	gNewObjectDefinition.coord.x 	= 0.0f;
-	gNewObjectDefinition.coord.y 	= 0;
-	gNewObjectDefinition.coord.z 	= 0;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL|STATUS_BIT_DOUBLESIDED|STATUS_BIT_UVTRANSFORM|STATUS_BIT_GLOW|
-									STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot 		= 100;
-	gNewObjectDefinition.moveCall	= MoveLevelIntroWorm;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= 26.0;
+	NewObjectDefinitionType wormholeDef =
+	{
+		.type		= SKELETON_TYPE_BONUSWORMHOLE,
+		.animNum	= 0,
+		.coord.x	= 0.0f,
+		.coord.y	= 0,
+		.coord.z	= 0,
+		.flags		= STATUS_BIT_DONTCULL | STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING,
+		.slot		= 100,
+		.moveCall	= MoveLevelIntroWorm,
+		.rot		= 0,
+		.scale		= 26,
+	};
 
-	newObj = MakeNewSkeletonObject(&gNewObjectDefinition);
-
+	newObj = MakeNewSkeletonObject(&wormholeDef);
 	newObj->Skeleton->JointsAreGlobal = true;
-
 	UpdateObjectTransforms(newObj);
-
 	UpdateLevelIntroWormJoints(newObj);
 
 	PlayEffect_Parms(EFFECT_WORMHOLE, FULL_CHANNEL_VOLUME/2, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
@@ -323,15 +322,18 @@ short	i, j;
 
 			/* MAKE SKELETON */
 
-	gNewObjectDefinition.type 		= SKELETON_TYPE_PLAYER;
-	gNewObjectDefinition.animNum	= PLAYER_ANIM_FLAP;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_USEALIGNMENTMATRIX;
-	gNewObjectDefinition.slot 		= 200;
-	gNewObjectDefinition.moveCall	= MoveLevelIntroNano;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= .6;
+	NewObjectDefinitionType def =
+	{
+		.type		= SKELETON_TYPE_PLAYER,
+		.animNum	= PLAYER_ANIM_FLAP,
+		.flags		= STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_USEALIGNMENTMATRIX,
+		.slot		= 200,
+		.moveCall	= MoveLevelIntroNano,
+		.rot		= 0,
+		.scale		= .6,
+	};
 
-	newObj = MakeNewSkeletonObject(&gNewObjectDefinition);
+	newObj = MakeNewSkeletonObject(&def);
 
 	newObj->Skeleton->AnimSpeed = 2.0f;
 
@@ -342,23 +344,23 @@ short	i, j;
 		/* MAKE JETPACK  */
 		/*****************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_PLAYER;
-	gNewObjectDefinition.type 		= PLAYER_ObjType_JetPack;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= MovePlayerJetpack;
-	jetpack = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.group 		= MODEL_GROUP_PLAYER;
+	def.type 		= PLAYER_ObjType_JetPack;
+	def.flags 		= 0;
+	def.slot		= SLOT_OF_DUMB;
+	def.moveCall 	= MovePlayerJetpack;
+	jetpack = MakeNewDisplayGroupObject(&def);
 
 	newObj->ChainNode = jetpack;
 	jetpack->ChainHead = newObj;
 
 		/* BLUE THING */
 
-	gNewObjectDefinition.type 		= PLAYER_ObjType_JetPackBlue;
-	gNewObjectDefinition.flags 		= 0 | STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB + 1;
-	gNewObjectDefinition.moveCall 	= nil;
-	blue = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= PLAYER_ObjType_JetPackBlue;
+	def.flags 		= STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING;
+	def.slot		= SLOT_OF_DUMB + 1;
+	def.moveCall 	= nil;
+	blue = MakeNewDisplayGroupObject(&def);
 
 	blue->ColorFilter.a = .99;
 	jetpack->ChainNode = blue;

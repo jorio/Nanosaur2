@@ -2131,7 +2131,7 @@ ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style)
 		.coord = {0,0,0},
 		.scale = 1,
 		.slot = MENU_SLOT,
-		.genre = CUSTOM_GENRE,
+		.genre = EVENT_GENRE,
 		.flags = STATUS_BIT_MOVEINPAUSE | STATUS_BIT_DONTCULL,
 		.moveCall = MoveMenuDriver,
 	};

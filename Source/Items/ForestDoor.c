@@ -86,17 +86,20 @@ short			type;
 				/* MAKE DAM WALL */
 				/*****************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= type;
-	gNewObjectDefinition.scale 		= DAMDOOR_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot 		= 176;
-	gNewObjectDefinition.moveCall 	= MoveForestDoor;
-	gNewObjectDefinition.rot 		= rot;
-	wall = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_LEVELSPECIFIC,
+		.type		= type,
+		.scale		= DAMDOOR_SCALE,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y	= itemPtr->terrainY,
+		.flags		= 0,
+		.slot		= 176,
+		.moveCall	= MoveForestDoor,
+		.rot		= rot,
+	};
+	wall = MakeNewDisplayGroupObject(&def);
 
 	wall->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -116,13 +119,13 @@ short			type;
 				/* MAKE DOOR */
 				/*************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_ForestDoor_Door;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_ROTZXY;
-	gNewObjectDefinition.coord.y 	= wall->Coord.y + DAMDOOR_SCALE * 70.0f;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	door = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.group 		= MODEL_GROUP_GLOBAL;
+	def.type 		= GLOBAL_ObjType_ForestDoor_Door;
+	def.flags 		|= STATUS_BIT_ROTZXY;
+	def.coord.y 	= wall->Coord.y + DAMDOOR_SCALE * 70.0f;
+	def.slot++;
+	def.moveCall 	= nil;
+	door = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -142,10 +145,10 @@ short			type;
 				/* MAKE RING */
 				/*************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_ForestDoor_Ring;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_GLOW  | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_UVTRANSFORM;
-	gNewObjectDefinition.slot		= SLOT_OF_DUMB-1;
-	ring = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_ForestDoor_Ring;
+	def.flags 		|= STATUS_BIT_GLOW  | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_UVTRANSFORM;
+	def.slot		= SLOT_OF_DUMB-1;
+	ring = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -218,17 +221,20 @@ Boolean				keyDestroyed = itemPtr->flags & ITEM_FLAGS_USER1;
 					/* MAKE KEY HOLDER */
 					/*******************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_ForestDoor_KeyHolder;
-	gNewObjectDefinition.scale 		= DAMDOOR_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 209;
-	gNewObjectDefinition.moveCall 	= MoveForestDoorKey;
-	gNewObjectDefinition.rot 		= rot;
-	keyHolder = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_ForestDoor_KeyHolder,
+		.scale 		= DAMDOOR_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 209,
+		.moveCall 	= MoveForestDoorKey,
+		.rot 		= rot,
+	};
+	keyHolder = MakeNewDisplayGroupObject(&def);
 
 	keyHolder->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -257,10 +263,10 @@ Boolean				keyDestroyed = itemPtr->flags & ITEM_FLAGS_USER1;
 	{
 		keyHolder->CType |= CTYPE_AUTOTARGETWEAPON;					// make keyholder auto-target
 
-		gNewObjectDefinition.type 		= GLOBAL_ObjType_ForestDoor_Key;
-		gNewObjectDefinition.slot++;
-		gNewObjectDefinition.moveCall 	= nil;
-		key = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		def.type 		= GLOBAL_ObjType_ForestDoor_Key;
+		def.slot++;
+		def.moveCall 	= nil;
+		key = MakeNewDisplayGroupObject(&def);
 
 
 				/* SET COLLISION STUFF */

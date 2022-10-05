@@ -391,7 +391,6 @@ setthis:
 
 static void ShootBlaster(ObjNode *player)
 {
-ObjNode	*newObj;
 OGLPoint3D	where;
 OGLVector3D	aim;
 short		i;
@@ -402,16 +401,18 @@ short		i;
 				/* CREATE WEAPON OBJECT */
 				/************************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_BlasterBullet;
-	gNewObjectDefinition.coord		= where;
-	gNewObjectDefinition.flags 		= STATUS_BIT_USEALIGNMENTMATRIX|STATUS_BIT_GLOW|STATUS_BIT_NOZWRITES|
-										STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOTEXTUREWRAP|STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot 		= WATER_SLOT + 1;
-	gNewObjectDefinition.moveCall 	= MoveBlasterBullet;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= 4.0;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_WEAPONS,
+		.type 		= WEAPONS_ObjType_BlasterBullet,
+		.coord		= where,
+		.flags 		= STATUS_BIT_USEALIGNMENTMATRIX|STATUS_BIT_GLOW|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOTEXTUREWRAP|STATUS_BIT_NOLIGHTING,
+		.slot 		= WATER_SLOT + 1,
+		.moveCall 	= MoveBlasterBullet,
+		.rot 		= 0,
+		.scale 		= 4,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Kind = WEAPON_TYPE_BLASTER;
 	newObj->PlayerNum = player->PlayerNum;					// remember which player shot this
@@ -706,7 +707,6 @@ OGLVector3D				delta,v;
 
 static void ShootClusterShot(ObjNode *player)
 {
-ObjNode	*newObj;
 OGLPoint3D	where;
 OGLVector3D	aim;
 
@@ -716,15 +716,18 @@ OGLVector3D	aim;
 				/* CREATE BULLET OBJECT */
 				/************************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_ClusterBullet;
-	gNewObjectDefinition.coord		= where;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot 		= 628;
-	gNewObjectDefinition.moveCall 	= MoveClusterBullet;
-	gNewObjectDefinition.rot 		= RandomFloat() * PI2;
-	gNewObjectDefinition.scale 		= .9;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_WEAPONS,
+		.type 		= WEAPONS_ObjType_ClusterBullet,
+		.coord		= where,
+		.flags 		= 0,
+		.slot 		= 628,
+		.moveCall 	= MoveClusterBullet,
+		.rot 		= RandomFloat() * PI2,
+		.scale 		= .9,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Kind = WEAPON_TYPE_CLUSTERSHOT;
 	newObj->PlayerNum = player->PlayerNum;					// remember which player shot this
@@ -766,7 +769,6 @@ OGLVector3D	aim;
 
 static void FragmentClusterShot(ObjNode *parentShot)
 {
-ObjNode	*newObj;
 short	i;
 float		zrot,yrot;
 OGLMatrix4x4	m;
@@ -780,15 +782,19 @@ OGLVector3D	aim;
 					/* CREATE BULLET OBJECT */
 					/************************/
 
-		gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-		gNewObjectDefinition.type 		= WEAPONS_ObjType_ClusterBullet;
-		gNewObjectDefinition.coord		= parentShot->Coord;
-		gNewObjectDefinition.flags 		= 0;
-		gNewObjectDefinition.slot 		= 628;
-		gNewObjectDefinition.moveCall 	= MoveClusterBullet;
-		gNewObjectDefinition.rot 		= RandomFloat() * PI2;
-		gNewObjectDefinition.scale 		= .9;
-		newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		NewObjectDefinitionType def =
+		{
+			.group 		= MODEL_GROUP_WEAPONS,
+			.type 		= WEAPONS_ObjType_ClusterBullet,
+			.coord		= parentShot->Coord,
+			.flags 		= 0,
+			.slot 		= 628,
+			.moveCall 	= MoveClusterBullet,
+			.rot 		= RandomFloat() * PI2,
+			.scale 		= .9,
+		};
+
+		ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 		newObj->Kind = WEAPON_TYPE_CLUSTERSHOT;
 		newObj->PlayerNum = parentShot->PlayerNum;			// remember which player shot this
@@ -960,7 +966,6 @@ short	i;
 
 static void ShootHeatSeeker(ObjNode *player)
 {
-ObjNode	*newObj, *targetObj;
 OGLPoint3D	where;
 OGLVector3D	aim;
 short		i, playerNum = player->PlayerNum;
@@ -972,15 +977,19 @@ float		speed;
 				/* CREATE BULLET OBJECT */
 				/************************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_HeatSeekerBullet;
-	gNewObjectDefinition.coord		= where;
-	gNewObjectDefinition.flags 		= STATUS_BIT_USEALIGNMENTMATRIX;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 100;
-	gNewObjectDefinition.moveCall 	= MoveHeatSeekerBullet;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= .7;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_WEAPONS,
+		.type 		= WEAPONS_ObjType_HeatSeekerBullet,
+		.coord		= where,
+		.flags 		= STATUS_BIT_USEALIGNMENTMATRIX,
+		.slot 		= PLAYER_SLOT + 100,
+		.moveCall 	= MoveHeatSeekerBullet,
+		.rot 		= 0,
+		.scale 		= .7,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Kind = WEAPON_TYPE_HEATSEEKER;
 	newObj->PlayerNum = playerNum;								// remember which player shot this
@@ -1010,7 +1019,7 @@ float		speed;
 
 			/* SET AUTO-TARGETING */
 
-	targetObj = gPlayerInfo[playerNum].crosshairTargetObj;						// get object which crosshairs are targeting now
+	ObjNode* targetObj = gPlayerInfo[playerNum].crosshairTargetObj;						// get object which crosshairs are targeting now
 	if (targetObj != nil)
 	{
 		if (gPlayerInfo[playerNum].crosshairTargetCookie != targetObj->Cookie)	// make sure cookie still matches
@@ -1510,13 +1519,17 @@ short   p = player->PlayerNum;
 				/* CREATE BULLET OBJECT */
 				/************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB+10;
-	gNewObjectDefinition.coord		= where;
-	gNewObjectDefinition.moveCall 	= MoveSonicScream;
-	gNewObjectDefinition.flags 		= 0;
+	NewObjectDefinitionType def =
+	{
+		.genre		= EVENT_GENRE,
+		.slot		= SLOT_OF_DUMB+10,
+		.coord		= where,
+		.moveCall	= MoveSonicScream,
+		.flags		= 0,
+		.scale		= 1,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
+	newObj = MakeNewObject(&def);
 
 
 	newObj->Kind = WEAPON_TYPE_SONICSCREAM;
@@ -1727,7 +1740,6 @@ kill_bullet:
 
 static void ShootBomb(ObjNode *player)
 {
-ObjNode		*newObj;
 OGLPoint3D	where;
 OGLVector3D	aim;
 short		playerNum = player->PlayerNum;
@@ -1739,15 +1751,19 @@ float		speed;
 				/* CREATE BOMB OBJECT */
 				/**********************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_Bomb;
-	gNewObjectDefinition.coord		= where;
-	gNewObjectDefinition.flags 		= 0;
-	gNewObjectDefinition.slot 		= PLAYER_SLOT + 100;
-	gNewObjectDefinition.moveCall 	= MovePlayerBomb;
-	gNewObjectDefinition.rot 		= player->Rot.y;
-	gNewObjectDefinition.scale 		= .3;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_WEAPONS,
+		.type 		= WEAPONS_ObjType_Bomb,
+		.coord		= where,
+		.flags 		= 0,
+		.slot 		= PLAYER_SLOT + 100,
+		.moveCall 	= MovePlayerBomb,
+		.rot 		= player->Rot.y,
+		.scale 		= .3,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Kind 		= WEAPON_TYPE_BOMB;
 	newObj->PlayerNum 	= playerNum;								// remember which player shot this
@@ -2079,24 +2095,22 @@ float					x,y,z;
 
 static ObjNode *MakeBombShockwave(OGLPoint3D *where)
 {
-ObjNode					*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_WEAPONS,
+		.type		= WEAPONS_ObjType_BombShockwave,
+		.coord		= *where,
+		.flags		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_NOLIGHTING,
+		.slot		= SLOT_OF_DUMB + 40,
+		.moveCall	= MoveBombShockwave,
+		.rot		= 0,
+		.scale		= 1.0,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_BombShockwave;
-	gNewObjectDefinition.coord		= *where;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB + 40;
-	gNewObjectDefinition.moveCall 	= MoveBombShockwave;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= 1.0;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
-
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 	newObj->ColorFilter.a = .8;
-
 	newObj->Damage = 1.0f;
-
 	return(newObj);
-
 }
 
 

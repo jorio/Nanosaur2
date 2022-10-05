@@ -177,10 +177,10 @@ ObjNode	*thisNodePtr;
 		.flags = 0,
 		.slot = FADEPANE_SLOT,
 		.moveCall = MoveFadePane,
+		.drawCall = DrawFadePane,
 		.scale = 1,
 	};
 	newObj = MakeNewObject(&def);
-	newObj->CustomDrawFunction = DrawFadePane;
 
 	newObj->Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut;
 	newObj->FaderFrameCounter = 0;
@@ -259,9 +259,9 @@ static void DrawFadePane(ObjNode* theNode)
 
 void Enter2D(void)
 {
+	GrabMouse(false);
 	SDL_ShowCursor(1);
 	MyFlushEvents();
-
 }
 
 

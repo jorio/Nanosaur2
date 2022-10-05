@@ -283,14 +283,17 @@ float					y,centerX,centerZ;
 		/* CREATE DUMMY CUSTOM OBJECT TO CAUSE WATER DRAWING AT THE DESIRED TIME */
 		/*************************************************************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= WATER_SLOT;
-	gNewObjectDefinition.moveCall 	= MoveWater;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= WATER_SLOT,
+		.moveCall	= MoveWater,
+		.drawCall	= DrawWater,
+		.flags		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL,
+		.scale		= 1,
+	};
 
-	obj = MakeNewObject(&gNewObjectDefinition);
-	obj->CustomDrawFunction = DrawWater;
-
+	obj = MakeNewObject(&def);
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_USER_WATER;
 
 
@@ -721,13 +724,16 @@ int		i;
 
 	if (gRippleEventObj == nil)
 	{
-		gNewObjectDefinition.genre		= EVENT_GENRE;
-		gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG;
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB+1;
-		gNewObjectDefinition.moveCall 	= MoveRippleEvent;
-		gRippleEventObj = MakeNewObject(&gNewObjectDefinition);
-
-		gRippleEventObj->CustomDrawFunction = DrawRipples;
+		NewObjectDefinitionType def =
+		{
+			.genre		= EVENT_GENRE,
+			.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG,
+			.slot		= SLOT_OF_DUMB+1,
+			.scale		= 1,
+			.moveCall 	= MoveRippleEvent,
+			.drawCall	= DrawRipples,
+		};
+		gRippleEventObj = MakeNewObject(&def);
 	}
 
 		/**********************/
@@ -781,13 +787,17 @@ long	i, j;
 
 	if (gRippleEventObj == nil)
 	{
-		gNewObjectDefinition.genre		= EVENT_GENRE;
-		gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG;
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB+11;
-		gNewObjectDefinition.moveCall 	= MoveRippleEvent;
-		gRippleEventObj = MakeNewObject(&gNewObjectDefinition);
+		NewObjectDefinitionType def =
+		{
+			.genre		= EVENT_GENRE,
+			.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG,
+			.slot		= SLOT_OF_DUMB+11,
+			.scale		= 1,
+			.moveCall	= MoveRippleEvent,
+			.drawCall	= DrawRipples,
+		};
+		gRippleEventObj = MakeNewObject(&def);
 
-		gRippleEventObj->CustomDrawFunction = DrawRipples;
 	}
 
 

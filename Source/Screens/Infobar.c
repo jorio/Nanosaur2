@@ -204,15 +204,18 @@ ObjNode		*newObj;
 		/* CREATE DUMMY OBJECT */
 		/***********************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= INFOBAR_SLOT;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL|STATUS_BIT_NOZBUFFER|
-									STATUS_BIT_NOFOG;
-
-	newObj = MakeNewObject(&gNewObjectDefinition);
-	newObj->CustomDrawFunction = DrawInfobar;
-
+	{
+		NewObjectDefinitionType def =
+		{
+			.genre		= CUSTOM_GENRE,
+			.slot		= INFOBAR_SLOT,
+			.moveCall	= nil,
+			.drawCall	= DrawInfobar,
+			.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_DONTCULL | STATUS_BIT_NOZBUFFER | STATUS_BIT_NOFOG,
+			.scale		= 1,
+		};
+		MakeNewObject(&def);
+	}
 
 
 		/********************************************/
@@ -226,13 +229,16 @@ ObjNode		*newObj;
 
 	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 	{
-		gNewObjectDefinition.genre		= CUSTOM_GENRE;
-		gNewObjectDefinition.slot 		= PARTICLE_SLOT-1;
-		gNewObjectDefinition.moveCall 	= nil;
-		gNewObjectDefinition.flags 		= STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL|	STATUS_BIT_NOFOG;
-
-		newObj = MakeNewObject(&gNewObjectDefinition);
-		newObj->CustomDrawFunction = DrawAnaglyphCrosshairs;
+		NewObjectDefinitionType def =
+		{
+			.genre		= CUSTOM_GENRE,
+			.slot		= PARTICLE_SLOT-1,
+			.moveCall	= nil,
+			.drawCall	= DrawAnaglyphCrosshairs,
+			.flags		= STATUS_BIT_NOLIGHTING | STATUS_BIT_DONTCULL | STATUS_BIT_NOFOG,
+			.scale		= 1,
+		};
+		MakeNewObject(&def);
 	}
 
 

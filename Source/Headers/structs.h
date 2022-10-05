@@ -402,5 +402,6 @@ typedef struct
 	unsigned long	flags;
 	short			slot;
 	void			(*moveCall)(ObjNode *);
+	void			(*drawCall)(ObjNode *);
 	float			rot,scale;
 }NewObjectDefinitionType;

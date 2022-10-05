@@ -94,24 +94,25 @@ void UpdateEnemy(ObjNode *theNode)
 
 ObjNode *MakeEnemySkeleton(Byte skeletonType, short animNum, float x, float z, float scale, float rot, void (*moveCall)(ObjNode*))
 {
-ObjNode	*newObj;
-
 			/****************************/
 			/* MAKE NEW SKELETON OBJECT */
 			/****************************/
 
-	gNewObjectDefinition.type 		= skeletonType;
-	gNewObjectDefinition.animNum 	= animNum;							// assume default anim is #0
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(x,z);
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= ENEMY_SLOT + skeletonType;
-	gNewObjectDefinition.moveCall 	= moveCall;
-	gNewObjectDefinition.rot 		= rot;
-	gNewObjectDefinition.scale 		= scale;
+	NewObjectDefinitionType def =
+	{
+		.type		= skeletonType,
+		.animNum	= animNum,
+		.coord.x	= x,
+		.coord.y	= GetTerrainY(x,z),
+		.coord.z	= z,
+		.flags		= gAutoFadeStatusBits,
+		.slot		= ENEMY_SLOT + skeletonType,
+		.moveCall	= moveCall,
+		.rot		= rot,
+		.scale		= scale,
+	};
 
-	newObj = MakeNewSkeletonObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewSkeletonObject(&def);
 
 
 

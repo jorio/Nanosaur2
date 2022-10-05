@@ -42,8 +42,6 @@ ObjNode		*gFirstNodePtr = nil;
 ObjNode		*gCurrentNode,*gMostRecentlyAddedNode,*gNextNode;
 
 
-NewObjectDefinitionType	gNewObjectDefinition;
-
 OGLPoint3D	gCoord;
 OGLVector3D	gDelta;
 
@@ -146,6 +144,11 @@ ObjNode	*newNodePtr;
 long	slot,i;
 unsigned long flags = newObjDef->flags;
 
+#if _DEBUG
+	if (newObjDef->scale == 0)
+		DoAlert("newObjDef->scale == 0, are you sure?");
+#endif
+
 			/************************/
 			/* FIND NEW FREE OBJECT */
 			/************************/
@@ -192,6 +195,7 @@ got_it:
 	newNodePtr->Type 		= newObjDef->type;
 	newNodePtr->Group 		= newObjDef->group;
 	newNodePtr->MoveCall 	= newObjDef->moveCall;
+	newNodePtr->CustomDrawFunction = newObjDef->drawCall;
 
 	if (flags & STATUS_BIT_ONSPLINE)
 		newNodePtr->SplineMoveCall = newObjDef->moveCall;				// save spline move routine

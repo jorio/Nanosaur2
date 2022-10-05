@@ -64,25 +64,20 @@ void InitItemsManager(void)
 
 void CreateCyclorama(void)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_LEVELSPECIFIC,
+		.type		= 0,								// cyc is always 1st model in level bg3d files
+		.coord		= {0,0,0},
+		.flags		= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG, //|STATUS_BIT_NOZWRITES;
+		.slot		= TERRAIN_SLOT+1,					// draw after terrain for better performance since terrain blocks much of the pixels
+		.moveCall	= nil,
+		.drawCall	= DrawCyclorama,
+		.rot		= 0,
+		.scale		= gGameViewInfoPtr->yon * .01,
+	};
 
-	gNewObjectDefinition.group	= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 	= 0;								// cyc is always 1st model in level bg3d files
-	gNewObjectDefinition.coord.x = 0;
-	gNewObjectDefinition.coord.y = 0;
-	gNewObjectDefinition.coord.z = 0;
-	gNewObjectDefinition.flags 	= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG; //|STATUS_BIT_NOZWRITES;
-	gNewObjectDefinition.slot 	= TERRAIN_SLOT+1;					// draw after terrain for better performance since terrain blocks much of the pixels
-	gNewObjectDefinition.moveCall = nil;
-	gNewObjectDefinition.rot 	= 0;
-	gNewObjectDefinition.scale 	= gGameViewInfoPtr->yon * .01;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
-
-	newObj->CustomDrawFunction = DrawCyclorama;
-
-//	newObj->ColorFilter.r =
-//	newObj->ColorFilter.g =
-//	newObj->ColorFilter.b = .8;
+	MakeNewDisplayGroupObject(&def);
 }
 
 
@@ -118,29 +113,26 @@ OGLPoint3D cameraCoord = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPa
 
 static void CreateCloudLayer(void)
 {
-ObjNode	*newObj;
-
 	if (gGamePrefs.lowRenderQuality)			// don't do cloulds in low-quality mode
 		return;
 
-	gNewObjectDefinition.group	= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 	= LEVEL1_ObjType_CloudGrid;
-	gNewObjectDefinition.coord.x = 0;
-	gNewObjectDefinition.coord.y = 0;
-	gNewObjectDefinition.coord.z = 0;
-	gNewObjectDefinition.flags 	= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|
-									STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES;
-	gNewObjectDefinition.slot 	= TERRAIN_SLOT+2;					 // draw after sky dome
-	gNewObjectDefinition.moveCall = MoveCloudLayer;
-	gNewObjectDefinition.rot 	= 0;
-	gNewObjectDefinition.scale 	= gGameViewInfoPtr->yon * .85f;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_LEVELSPECIFIC,
+		.type		= LEVEL1_ObjType_CloudGrid,
+		.coord		= {0,0,0},
+		.flags		= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG| STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES,
+		.slot		= TERRAIN_SLOT+2,					 // draw after sky dome
+		.rot		= 0,
+		.scale		= gGameViewInfoPtr->yon * .85f,
+		.moveCall	= MoveCloudLayer,
+		.drawCall	= DrawCloudLayer,
+	};
 
-	newObj->CustomDrawFunction = DrawCloudLayer;
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TextureTransformU =
 	newObj->TextureTransformV = 0;
-
 }
 
 
@@ -206,7 +198,6 @@ OGLPoint3D cameraCoord = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPa
 
 Boolean AddRock(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
 short	base;
 long	rot = itemPtr->parm[1];
 
@@ -229,21 +220,21 @@ long	rot = itemPtr->parm[1];
 				return(false);
 	}
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= base + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 2.0 + RandomFloat2() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale) -
-									 gObjectGroupBBoxList[gNewObjectDefinition.group][gNewObjectDefinition.type].min.y;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 491;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	if (rot == 0)
-		gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	else
-		gNewObjectDefinition.rot 	= (float)(rot-1) * (PI2/8.0f);
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= base + itemPtr->parm[0],
+		.scale 		= 2.0 + RandomFloat2() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 491,
+		.moveCall 	= MoveStaticObject,
+		.rot		= (rot == 0) ? (RandomFloat()*PI2) : ((float)(rot-1) * (PI2/8.0f)),
+	};
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale) - gObjectGroupBBoxList[def.group][def.type].min.y;
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -263,20 +254,22 @@ long	rot = itemPtr->parm[1];
 
 Boolean AddRiverRock(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_RiverRock1 + itemPtr->parm[0],
+		.scale 		= 2.0 + RandomFloat2() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 491,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_RiverRock1 + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 2.0 + RandomFloat2() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale) -
-									 gObjectGroupBBoxList[gNewObjectDefinition.group][gNewObjectDefinition.type].min.y;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 491;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale) - gObjectGroupBBoxList[def.group][def.type].min.y;
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -300,21 +293,22 @@ ObjNode	*newObj;
 
 Boolean AddGasMound(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_GasMound1 + itemPtr->parm[0],
+		.scale 		= 3.0 + RandomFloat2() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 197,
+		.moveCall 	= MoveGasMound,
+		.rot 		= RandomFloat()*PI2,
+	};
 
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale) - gObjectGroupBBoxList[def.group][def.type].min.y;
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_GasMound1 + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 3.0 + RandomFloat2() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale) -
-									 gObjectGroupBBoxList[gNewObjectDefinition.group][gNewObjectDefinition.type].min.y;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 197;
-	gNewObjectDefinition.moveCall 	= MoveGasMound;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -475,21 +469,22 @@ Boolean DoTrig_MiscSmackableObject(ObjNode *trigger, ObjNode *theNode)
 
 Boolean AddAsteroid(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL3_ObjType_Asteroid_Cracked + itemPtr->parm[0],
+		.scale 		= 4.0 + RandomFloat2() * 1.0f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 197,
+		.moveCall 	= nil,
+		.rot 		= RandomFloat()*PI2,
+	};
 
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale) - gObjectGroupBBoxList[def.group][def.type].min.y;
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL3_ObjType_Asteroid_Cracked + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 4.0 + RandomFloat2() * 1.0f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale) -
-									 gObjectGroupBBoxList[gNewObjectDefinition.group][gNewObjectDefinition.type].min.y;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 197;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 

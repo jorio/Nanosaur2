@@ -84,13 +84,11 @@ OGLPoint3D	*ribPts;
 OGLVector3D	*normals;
 MOTriangleIndecies	*tris;
 float	u,v;
-ObjNode	*newObj;
 
 	gNumDustDevils = 0;											// none build yet
 
 	for (d = 0; d < MAX_DEVILS; d++)
 		gDustDevilIsUsed[d] = false;							// this one is available
-
 
 
 			/*********************/
@@ -101,15 +99,18 @@ ObjNode	*newObj;
 			// went to draw all the dirt devils.
 			//
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT-1;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL | STATUS_BIT_NOZWRITES;
-
-	newObj = MakeNewObject(&gNewObjectDefinition);
-
-	newObj->CustomDrawFunction = DrawDustDevils;
-
+	{
+		NewObjectDefinitionType def =
+		{
+			.genre		= CUSTOM_GENRE,
+			.slot		= PARTICLE_SLOT-1,
+			.moveCall	= nil,
+			.drawCall	= DrawDustDevils,
+			.flags		= STATUS_BIT_DONTCULL | STATUS_BIT_NOZWRITES,
+			.scale		= 1,
+		};
+		MakeNewObject(&def);
+	}
 
 			/****************************/
 			/* CREATE RIB OFFSET TABLES */
@@ -350,15 +351,19 @@ long	devilNum;
 
 			/* MAKE CUSTOM OBJECT */
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT-1;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(x,z);
-	gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL | STATUS_BIT_HIDDEN;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= PARTICLE_SLOT-1,
+		.moveCall 	= nil,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y	= GetTerrainY(x,z),
+		.flags		= STATUS_BIT_DONTCULL | STATUS_BIT_HIDDEN,
+		.scale		= 1,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
+	newObj = MakeNewObject(&def);
 
 	newObj->Mode = devilNum;
 

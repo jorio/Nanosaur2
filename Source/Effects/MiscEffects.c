@@ -59,18 +59,19 @@ void InitEffects(void)
 
 ObjNode *MakeShockwaveRing(OGLPoint3D *coord, float scale)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_ShockwaveRing,
+		.scale 		= scale,
+		.coord		= *coord,
+		.flags 		= STATUS_BIT_GLOW | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_NOZWRITES,
+		.slot 		= SLOT_OF_DUMB + 20,
+		.moveCall 	= MoveShockwaveRing,
+		.rot 		= RandomFloat()*PI2,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_ShockwaveRing;
-	gNewObjectDefinition.scale 		= scale;
-	gNewObjectDefinition.coord		= *coord;
-	gNewObjectDefinition.flags 		= STATUS_BIT_GLOW | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOTEXTUREWRAP |
-									STATUS_BIT_NOZWRITES;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB + 20;
-	gNewObjectDefinition.moveCall 	= MoveShockwaveRing;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Rot.x = RandomFloat() * PI2;
 	newObj->Rot.z = RandomFloat() * PI2;

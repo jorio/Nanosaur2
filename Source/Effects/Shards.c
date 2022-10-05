@@ -62,27 +62,25 @@ static 	ObjNode		*gShardSrcObj;
 
 void InitShardSystem(void)
 {
-int	i;
-ObjNode	*newObj;
-
 	gNumShards = 0;
 
-	for (i = 0; i < MAX_SHARDS; i++)
+	for (int i = 0; i < MAX_SHARDS; i++)
 		gShards[i].isUsed = false;
 
 
 
 			/* MAKE DUMMY OBJECT */
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT-1;
-	gNewObjectDefinition.moveCall 	= MoveShards;
-	gNewObjectDefinition.scale 		= 1;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED; //|STATUS_BIT_NOLIGHTING;
-
-	newObj = MakeNewObject(&gNewObjectDefinition);
-	newObj->CustomDrawFunction = DrawShards;
-
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= PARTICLE_SLOT-1,
+		.scale		= 1,
+		.flags		= STATUS_BIT_DOUBLESIDED, //|STATUS_BIT_NOLIGHTING;
+		.moveCall	= MoveShards,
+		.drawCall	= DrawShards,
+	};
+	MakeNewObject(&def);
 }
 
 

@@ -45,13 +45,9 @@ short			gNumActiveConfettiGroups = 0;
 
 void InitConfettiManager(void)
 {
-short	i;
-ObjNode	*obj;
-
-
 			/* INIT GROUP ARRAY */
 
-	for (i = 0; i < MAX_CONFETTI_GROUPS; i++)
+	for (int i = 0; i < MAX_CONFETTI_GROUPS; i++)
 		gConfettiGroups[i] = nil;
 
 	gNumActiveConfettiGroups = 0;
@@ -64,15 +60,17 @@ ObjNode	*obj;
 		// The confettis need to be drawn after the fences object, but before any sprite or font objects.
 		//
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= CONFETTI_SLOT;
-	gNewObjectDefinition.moveCall 	= MoveConfettiGroups;
-	gNewObjectDefinition.scale 		= 1;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_DONTCULL;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= CONFETTI_SLOT,
+		.scale		= 1,
+		.flags		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_DONTCULL,
+		.moveCall	= MoveConfettiGroups,
+		.drawCall	= DrawConfettiGroups,
+	};
 
-	obj = MakeNewObject(&gNewObjectDefinition);
-	obj->CustomDrawFunction = DrawConfettiGroups;
-
+	MakeNewObject(&def);
 }
 
 

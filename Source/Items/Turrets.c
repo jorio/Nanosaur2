@@ -93,17 +93,20 @@ short	typeB, typeT, typeW, typeG;
 				/* MAKE BASE */
 				/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= typeB;
-	gNewObjectDefinition.scale 		= TOWER_TURRET_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 331;
-	gNewObjectDefinition.moveCall 	= MoveTowerTurret;
-	gNewObjectDefinition.rot 		= RandomFloat() * PI2;
-	base = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= typeB,
+		.scale 		= TOWER_TURRET_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 331,
+		.moveCall 	= MoveTowerTurret,
+		.rot 		= RandomFloat() * PI2,
+	};
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale);
+	base = MakeNewDisplayGroupObject(&def);
 
 	base->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -120,10 +123,10 @@ short	typeB, typeT, typeW, typeG;
 				/* MAKE TURRET */
 				/***************/
 
-	gNewObjectDefinition.type 		= typeT;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	turret = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= typeT;
+	def.slot++;
+	def.moveCall 	= nil;
+	turret = MakeNewDisplayGroupObject(&def);
 
 	turret->CType 			= CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON;
 	turret->CBits			= CBITS_ALLSOLID;
@@ -145,10 +148,10 @@ short	typeB, typeT, typeW, typeG;
 				/* MAKE WHEEL  */
 				/***************/
 
-	gNewObjectDefinition.type 		= typeW;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_ROTZXY;
-	wheel = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= typeW;
+	def.slot++;
+	def.flags 		|= STATUS_BIT_ROTZXY;
+	wheel = MakeNewDisplayGroupObject(&def);
 
 	wheel->CType 			= CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON;
 
@@ -160,10 +163,10 @@ short	typeB, typeT, typeW, typeG;
 				/* MAKE GUN */
 				/************/
 
-	gNewObjectDefinition.type 		= typeG;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot++;
-	gun = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= typeG;
+	def.flags 		= gAutoFadeStatusBits;
+	def.slot++;
+	gun = MakeNewDisplayGroupObject(&def);
 
 	gun->CType 			= CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON;
 
@@ -175,11 +178,11 @@ short	typeB, typeT, typeW, typeG;
 				/* MAKE LENS */
 				/*************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_TowerTurret_Lens;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.flags 		|= STATUS_BIT_GLOW;
-	lens = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.group 		= MODEL_GROUP_GLOBAL;
+	def.type 		= GLOBAL_ObjType_TowerTurret_Lens;
+	def.slot 		= SLOT_OF_DUMB;
+	def.flags 		|= STATUS_BIT_GLOW;
+	lens = MakeNewDisplayGroupObject(&def);
 
 	gun->ChainNode = lens;
 	lens->ChainHead = gun;
@@ -476,7 +479,6 @@ static void ShootTurretGun(ObjNode *gun)
 int			i;
 OGLPoint3D	muzzleCoord;
 OGLVector3D	muzzleVector;
-ObjNode	*newObj;
 
 	gun->ShootTimer = .3f;											// reset delay
 
@@ -518,16 +520,19 @@ ObjNode	*newObj;
 
 				/* MAKE OBJECT */
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_TowerTurret_TurretBullet;
-	gNewObjectDefinition.coord		= muzzleCoord;
-	gNewObjectDefinition.flags 		= STATUS_BIT_USEALIGNMENTMATRIX|STATUS_BIT_GLOW|STATUS_BIT_NOZWRITES|
-									STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOTEXTUREWRAP;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB-1;
-	gNewObjectDefinition.moveCall 	= MoveTurretBullet;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= 3.0;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_GLOBAL,
+		.type		= GLOBAL_ObjType_TowerTurret_TurretBullet,
+		.coord		= muzzleCoord,
+		.flags		= STATUS_BIT_USEALIGNMENTMATRIX|STATUS_BIT_GLOW|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOTEXTUREWRAP,
+		.slot		= SLOT_OF_DUMB-1,
+		.moveCall	= MoveTurretBullet,
+		.rot		= 0,
+		.scale		= 3,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 
 	newObj->Kind = WEAPON_TYPE_BLASTER;

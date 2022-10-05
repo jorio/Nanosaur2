@@ -189,14 +189,17 @@ float					sink;
 		// The fences need to be drawn after the Cyc object, but before any sprite or font objects.
 		//
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= FENCE_SLOT;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL|STATUS_BIT_CLIPALPHA6;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= FENCE_SLOT,
+		.moveCall	= nil,
+		.drawCall	= DrawFences,
+		.flags		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_DONTCULL|STATUS_BIT_CLIPALPHA6,
+		.scale		= 1,
+	};
 
-	gFenceObj = MakeNewObject(&gNewObjectDefinition);
-	gFenceObj->CustomDrawFunction = DrawFences;
-
+	gFenceObj = MakeNewObject(&def);
 	gFenceObj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_USER_FENCES;
 
 

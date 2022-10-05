@@ -99,7 +99,6 @@ extern	MOMaterialObject		*gMostRecentMaterial;
 extern	MOMaterialObject		*gSuperTileTextureObjects[MAX_SUPERTILE_TEXTURES];
 extern	MOVertexArrayData		gWaterTriMeshData[];
 extern	MetaObjectPtr			gBG3DGroupList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
-extern	NewObjectDefinitionType	gNewObjectDefinition;
 extern	OGLBoundingBox			gObjectGroupBBoxList[MAX_BG3D_GROUPS][MAX_OBJECTS_IN_GROUP];
 extern	OGLBoundingBox			gWaterBBox[];
 extern	OGLColorRGB				gGlobalColorFilter;

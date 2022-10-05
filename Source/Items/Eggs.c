@@ -102,18 +102,20 @@ short	eggColor = itemPtr->parm[0];
 		/* MAKE NEST */
 		/*************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_Nest;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= MoveNest;
-	gNewObjectDefinition.scale 		= EGG_SCALE;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-
-	nest = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_Nest,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.slot 		= SLOT_OF_DUMB,
+		.moveCall 	= MoveNest,
+		.scale 		= EGG_SCALE,
+		.flags 		= gAutoFadeStatusBits,
+		.rot 		= RandomFloat()*PI2,
+	};
+	nest = MakeNewDisplayGroupObject(&def);
 
 	nest->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -123,10 +125,10 @@ short	eggColor = itemPtr->parm[0];
 				/* MAKE EGG */
 				/************/
 
-		gNewObjectDefinition.type 		= GLOBAL_ObjType_RedEgg + eggColor;
-		gNewObjectDefinition.slot++;
-		gNewObjectDefinition.moveCall 	= MoveEgg_NotCarried;
-		egg = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		def.type 		= GLOBAL_ObjType_RedEgg + eggColor;
+		def.slot++;
+		def.moveCall 	= MoveEgg_NotCarried;
+		egg = MakeNewDisplayGroupObject(&def);
 
 		egg->What = WHAT_EGG;
 
@@ -170,12 +172,11 @@ short	eggColor = itemPtr->parm[0];
 				/* MAKE BEAM */
 				/*************/
 
-		gNewObjectDefinition.type 		= GLOBAL_ObjType_EggBeam;
-		gNewObjectDefinition.flags 		|= STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING |
-										STATUS_BIT_NOFOG;
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB+50;
-		gNewObjectDefinition.moveCall 	= nil;
-		beam = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		def.type 		= GLOBAL_ObjType_EggBeam;
+		def.flags 		|= STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG;
+		def.slot 		= SLOT_OF_DUMB+50;
+		def.moveCall 	= nil;
+		beam = MakeNewDisplayGroupObject(&def);
 
 //		beam->ColorFilter.a = .2f;
 

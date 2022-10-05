@@ -47,18 +47,21 @@ ObjNode	*base, *crystal;
 			/*************/
 			/* MAKE BASE */
 			/*************/
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL2_ObjType_Crystal1Base + itemPtr->parm[0],
+		.scale 		= 1.5f + RandomFloat2() * .5f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= SLOT_OF_DUMB-50,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_Crystal1Base + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.5f + RandomFloat2() * .5f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB-50;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	base = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	base = MakeNewDisplayGroupObject(&def);
 
 	base->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -73,10 +76,10 @@ ObjNode	*base, *crystal;
 				/* MAKE CRYSTAL */
 				/****************/
 
-		gNewObjectDefinition.type 		= LEVEL2_ObjType_Crystal1 + itemPtr->parm[0];
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB-3;
-		gNewObjectDefinition.moveCall 	= nil;
-		crystal = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		def.type 		= LEVEL2_ObjType_Crystal1 + itemPtr->parm[0];
+		def.slot 		= SLOT_OF_DUMB-3;
+		def.moveCall 	= nil;
+		crystal = MakeNewDisplayGroupObject(&def);
 
 
 				/* SET COLLISION STUFF */
@@ -116,7 +119,6 @@ ObjNode	*base, *crystal;
 static Boolean CrystalHitByWeaponCallback(ObjNode *bullet, ObjNode *crystal, OGLPoint3D *hitCoord, OGLVector3D *hitTriangleNormal)
 {
 ObjNode	*base = crystal->ChainHead;
-ObjNode					*newObj;
 long					pg,i;
 OGLVector3D				d;
 OGLPoint3D				pt;
@@ -181,15 +183,19 @@ NewParticleDefType		newParticleDef;
 
 			/* SHOCKWAVE */
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-	gNewObjectDefinition.type 		= WEAPONS_ObjType_BombShockwave;
-	gNewObjectDefinition.coord		= base->Coord;
-	gNewObjectDefinition.flags 		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_NOLIGHTING;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB + 40;
-	gNewObjectDefinition.moveCall 	= MoveCrystalShockwave;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= 1.0;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_WEAPONS,
+		.type 		= WEAPONS_ObjType_BombShockwave,
+		.coord		= base->Coord,
+		.flags 		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|STATUS_BIT_NOLIGHTING,
+		.slot 		= SLOT_OF_DUMB + 40,
+		.moveCall 	= MoveCrystalShockwave,
+		.rot 		= 0,
+		.scale 		= 1.0,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->ColorFilter.a = .8;
 

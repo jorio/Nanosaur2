@@ -939,23 +939,24 @@ ObjNode	*shield, *player = gPlayerInfo[playerNum].objNode;
 
 	if (gPlayerInfo[playerNum].shieldObj == nil)
 	{
-		gNewObjectDefinition.group 		= MODEL_GROUP_WEAPONS;
-		gNewObjectDefinition.type 		= WEAPONS_ObjType_Shield;
-		gNewObjectDefinition.scale 		= player->BoundingSphereRadius * 1.1f;
-		gNewObjectDefinition.coord	 	= player->Coord;
-		gNewObjectDefinition.flags 		= STATUS_BIT_GLOW | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_ROTXZY |
-										STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOFOG;
-		gNewObjectDefinition.slot 		= SLOT_OF_DUMB-1;
-		gNewObjectDefinition.moveCall 	= nil;
-		gNewObjectDefinition.rot 		= 0;
-		shield = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+		NewObjectDefinitionType def =
+		{
+			.group		= MODEL_GROUP_WEAPONS,
+			.type		= WEAPONS_ObjType_Shield,
+			.scale		= player->BoundingSphereRadius * 1.1f,
+			.coord		= player->Coord,
+			.flags		= STATUS_BIT_GLOW | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_ROTXZY | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOFOG,
+			.slot		= SLOT_OF_DUMB-1,
+			.moveCall	= nil,
+			.drawCall	= DrawPlayerShield,
+			.rot 		= 0,
+		};
+
+		shield = MakeNewDisplayGroupObject(&def);
 
 		shield->PlayerNum = playerNum;
-
 		shield->CType = CTYPE_WEAPONTEST | CTYPE_MISC | CTYPE_PLAYERSHIELD;
 		shield->HitByWeaponHandler 	= PlayerShieldHitByWeaponCallback;
-
-		shield->CustomDrawFunction = DrawPlayerShield;
 
 		gPlayerInfo[playerNum].shieldObj = shield;
 

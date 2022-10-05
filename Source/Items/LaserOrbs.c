@@ -79,23 +79,24 @@ ObjNode	*newObj;
 
 static ObjNode *MakeLaserOrb(float  x, float z)
 {
-ObjNode	*newObj, *green, *laser;
-
 				/*************/
 				/* MAKE BODY */
 				/*************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_LaserOrb;
-	gNewObjectDefinition.scale 		= LASER_ORB_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(x,z);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB-2;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.rot 		= RandomFloat() * PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_LaserOrb,
+		.scale 		= LASER_ORB_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= GetTerrainY(x,z),
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= SLOT_OF_DUMB-2,
+		.moveCall 	= nil,
+		.rot 		= RandomFloat() * PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Health 	= .4f;
 	newObj->Mode	= ORB_MODE_SEEKING;
@@ -117,10 +118,10 @@ ObjNode	*newObj, *green, *laser;
 			/* MAKE GREEN THING */
 			/********************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_LaserOrbGreen;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_UVTRANSFORM;
-	gNewObjectDefinition.slot++;
-	green = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_LaserOrbGreen;
+	def.flags 		= gAutoFadeStatusBits | STATUS_BIT_UVTRANSFORM;
+	def.slot++;
+	ObjNode* green = MakeNewDisplayGroupObject(&def);
 
 	green->CType 				= CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON;
 	green->CBits				= CBITS_ALLSOLID;
@@ -139,15 +140,14 @@ ObjNode	*newObj, *green, *laser;
 			/* MAKE DUMMY OBJECT FOR DRAWING LASER BEAM */
 			/********************************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= PARTICLE_SLOT + 2;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_DONTCULL|STATUS_BIT_GLOW|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|
-									STATUS_BIT_NOZWRITES;
+	def.genre		= CUSTOM_GENRE;
+	def.slot		= PARTICLE_SLOT + 2;
+	def.moveCall	= nil;
+	def.drawCall	= DrawOrbLaserBeam;
+	def.flags		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_DONTCULL|STATUS_BIT_GLOW|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|STATUS_BIT_NOZWRITES;
 
-	laser = MakeNewObject(&gNewObjectDefinition);
-	laser->CustomDrawFunction = DrawOrbLaserBeam;
-
+	ObjNode* laser = MakeNewObject(&def);
+	def.drawCall = NULL;
 
 	newObj->ChainNode = green;
 	green->ChainHead = newObj;

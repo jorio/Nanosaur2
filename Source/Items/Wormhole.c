@@ -137,24 +137,25 @@ ObjNode	*newObj;
 			/* MAKE NEW SKELETON OBJECT */
 			/****************************/
 
-	gNewObjectDefinition.type 		= SKELETON_TYPE_WORMHOLE;
-	gNewObjectDefinition.animNum 	= 0;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY + 1300.0f;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM |
-									STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= MoveEggWormhole;
-	gNewObjectDefinition.rot 		= (float)itemPtr->parm[0] * (PI2/8);
-	gNewObjectDefinition.scale 		= EGG_WORMHOLE_SIZE;
-	newObj = MakeNewSkeletonObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.type		= SKELETON_TYPE_WORMHOLE,
+		.animNum	= 0,
+		.coord.x	= x,
+		.coord.y	= itemPtr->terrainY + 1300.0f,
+		.coord.z	= z,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW,
+		.slot		= SLOT_OF_DUMB,
+		.moveCall	= MoveEggWormhole,
+		.drawCall	= DrawWormhole,
+		.rot		= (float)itemPtr->parm[0] * (PI2/8),
+		.scale		= EGG_WORMHOLE_SIZE,
+	};
+
+	newObj = MakeNewSkeletonObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;						// keep ptr to item list
-
 	newObj->PlayerNum = itemPtr->parm[1];					// remember this for capture the flag modes
-
-	newObj->CustomDrawFunction = DrawWormhole;
 	newObj->What = WHAT_EGGWORMHOLE;
 
 	newObj->Rot.x = .8f;
@@ -314,36 +315,33 @@ next:
 
 ObjNode *MakeEntryWormhole(short playerNum)
 {
-ObjNode	*newObj, *player;
-float	x,z;
+	float x = gPlayerInfo[playerNum].coord.x;
+	float z = gPlayerInfo[playerNum].coord.z;
 
-	x = gPlayerInfo[playerNum].coord.x;
-	z = gPlayerInfo[playerNum].coord.z;
-
-	player = gPlayerInfo[playerNum].objNode;
+	ObjNode* player = gPlayerInfo[playerNum].objNode;
 
 			/*******************/
 			/* MAKE NEW OBJECT */
 			/*******************/
 
-	gNewObjectDefinition.group		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_EntryWormhole;								// cyc is always 1st model in level bg3d files
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(x,z) + MAX_ALTITUDE_DIFF;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM |
-									STATUS_BIT_NOZWRITES  | STATUS_BIT_GLOW;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= MoveEntryWormhole;
-	gNewObjectDefinition.rot 		= player->Rot.y;
-	gNewObjectDefinition.scale 		= PLAYER_WORMHOLE_SIZE;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_GLOBAL,
+		.type		= GLOBAL_ObjType_EntryWormhole,
+		.coord.x	= x,
+		.coord.y	= GetTerrainY(x,z) + MAX_ALTITUDE_DIFF,
+		.coord.z	= z,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOZWRITES  | STATUS_BIT_GLOW,
+		.slot		= SLOT_OF_DUMB,
+		.moveCall	= MoveEntryWormhole,
+		.drawCall	= DrawWormhole,
+		.rot		= player->Rot.y,
+		.scale		= PLAYER_WORMHOLE_SIZE,
+	};
 
-	newObj->CustomDrawFunction = DrawWormhole;
-
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->Rot.x = PI/5;
-
 	UpdateObjectTransforms(newObj);
 
 	newObj->Health = 3.0f;									// set life of wormhole before start to fade out
@@ -481,26 +479,25 @@ static void MakeExitWormhole(float x, float z)
 			/* MAKE NEW OBJECT */
 			/*******************/
 
-	gNewObjectDefinition.group		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_EntryWormhole;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.y 	= GetTerrainY(x,z) + MAX_ALTITUDE_DIFF;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM |	STATUS_BIT_NOZWRITES  |
-									 STATUS_BIT_GLOW;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= MoveExitWormhole;
-	gNewObjectDefinition.rot 		= 0;
-	gNewObjectDefinition.scale 		= .001f;									// start shrunken
-	gExitWormhole = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_GLOBAL,
+		.type		= GLOBAL_ObjType_EntryWormhole,
+		.coord.x	= x,
+		.coord.y	= GetTerrainY(x,z) + MAX_ALTITUDE_DIFF,
+		.coord.z	= z,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM |	STATUS_BIT_NOZWRITES  | STATUS_BIT_GLOW,
+		.slot		= SLOT_OF_DUMB,
+		.moveCall	= MoveExitWormhole,
+		.drawCall	= DrawWormhole,
+		.rot		= 0,
+		.scale		= .001f,									// start shrunken
+	};
 
-	gExitWormhole->CustomDrawFunction = DrawWormhole;
+	gExitWormhole = MakeNewDisplayGroupObject(&def);
 
 	gExitWormhole->Rot.x = PI/8;
-
-
 	UpdateObjectTransforms(gExitWormhole);
-
 
 	PlayEffect_Parms3D(EFFECT_WORMHOLEAPPEAR, &gExitWormhole->Coord, NORMAL_CHANNEL_RATE, 2.0);
 }

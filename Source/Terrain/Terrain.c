@@ -183,16 +183,17 @@ ObjNode	*obj;
 		/* CREATE DUMMY CUSTOM OBJECT TO CAUSE TERRAIN DRAWING AT THE DESIRED TIME */
 		/*************************************************************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= TERRAIN_SLOT;
-	gNewObjectDefinition.moveCall 	= nil;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOTEXTUREWRAP;
-
-	obj = MakeNewObject(&gNewObjectDefinition);
-	obj->CustomDrawFunction = DrawTerrain;
-
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= TERRAIN_SLOT,
+		.moveCall	= nil,
+		.drawCall	= DrawTerrain,
+		.flags		= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOTEXTUREWRAP,
+		.scale		= 1,
+	};
+	obj = MakeNewObject(&def);
 	obj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_TERRAIN;
-
 }
 
 

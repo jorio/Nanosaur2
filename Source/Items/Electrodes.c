@@ -87,17 +87,22 @@ ObjNode	*pole, *topbot, *middle;
 				/* MAKE POLE */
 				/*************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_GLOBAL;
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_Electrode_Pole;
-	gNewObjectDefinition.scale 		= ELECTRODE_SCALE;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, gNewObjectDefinition.scale);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 161;
-	gNewObjectDefinition.moveCall 	= MoveElectrode;
-	gNewObjectDefinition.rot 		= 0;
-	pole = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_GLOBAL,
+		.type 		= GLOBAL_ObjType_Electrode_Pole,
+		.scale 		= ELECTRODE_SCALE,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 161,
+		.moveCall 	= MoveElectrode,
+		.rot 		= 0,
+	};
+
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, def.scale),
+
+	pole = MakeNewDisplayGroupObject(&def);
 
 	pole->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -140,10 +145,10 @@ ObjNode	*pole, *topbot, *middle;
 				/* MAKE TOP & BOTTOM */
 				/*********************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_Electrode_TopBottom;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	topbot = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_Electrode_TopBottom;
+	def.slot++;
+	def.moveCall 	= nil;
+	topbot = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -159,9 +164,9 @@ ObjNode	*pole, *topbot, *middle;
 				/* MAKE MIDDLE */
 				/***************/
 
-	gNewObjectDefinition.type 		= GLOBAL_ObjType_Electrode_Middle;
-	gNewObjectDefinition.slot++;
-	middle = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= GLOBAL_ObjType_Electrode_Middle;
+	def.slot++;
+	middle = MakeNewDisplayGroupObject(&def);
 
 	middle->CType 				= CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST;
 	middle->TriggerCallback 	= DoTrig_Electrode;
@@ -522,19 +527,19 @@ short		i;
 		/* CREATE DUMMY CUSTOM OBJECT TO CAUSE ZAP DRAWING AT THE DESIRED TIME */
 		/***********************************************************************/
 
-	gNewObjectDefinition.genre		= CUSTOM_GENRE;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB + 80;
-	gNewObjectDefinition.moveCall 	= MoveZaps;
-	gNewObjectDefinition.flags 		= STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOZWRITES|STATUS_BIT_NOFOG|
-										STATUS_BIT_DONTCULL | STATUS_BIT_GLOW;
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.slot		= SLOT_OF_DUMB + 80,
+		.flags		= STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES | STATUS_BIT_NOFOG | STATUS_BIT_DONTCULL | STATUS_BIT_GLOW,
+		.moveCall	= MoveZaps,
+		.drawCall	= DrawZaps,
+		.scale		= 1,
+	};
 
-	newObj = MakeNewObject(&gNewObjectDefinition);
-	newObj->CustomDrawFunction = DrawZaps;
-
+	newObj = MakeNewObject(&def);
 	newObj->VertexArrayMode = VERTEX_ARRAY_RANGE_TYPE_ZAPS1;
-
 	newObj->Damage = 1.0f;
-
 }
 
 

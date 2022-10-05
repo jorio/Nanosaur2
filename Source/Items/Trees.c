@@ -45,19 +45,20 @@ static void MakeLeafConfetti(float x, float y, float z, short texture, short qua
 
 Boolean AddBirchTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
-
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_Tree_Birch_HighRed + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY; //GetTerrainY(x,z);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_Tree_Birch_HighRed + itemPtr->parm[0],
+		.scale 		= 1.2 + RandomFloat() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY, //GetTerrainY(x,z),
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -86,19 +87,20 @@ ObjNode	*newObj;
 
 Boolean AddPineTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
-
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_Tree_Pine_HighDead + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;	//GetTerrainY(x,z);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 588;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_Tree_Pine_HighDead + itemPtr->parm[0],
+		.scale 		= 1.2 + RandomFloat() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,	//GetTerrainY(x,z),
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 588,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -127,19 +129,22 @@ ObjNode	*newObj;
 
 Boolean AddFallenTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_FallenTree,
+		.scale 		= 1.7,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 511,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= (float)itemPtr->parm[0] * (PI2/8),
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_FallenTree;
-	gNewObjectDefinition.scale 		= 1.7;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= GetMinTerrainY(x,z, gNewObjectDefinition.group, gNewObjectDefinition.type, 1.0);
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 511;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= (float)itemPtr->parm[0] * (PI2/8);
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.coord.y 	= GetMinTerrainY(x,z, def.group, def.type, 1.0);
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -162,17 +167,21 @@ Boolean AddTreeStump(TerrainItemEntryType *itemPtr, float  x, float z)
 {
 ObjNode	*newObj;
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_TreeStump;
-	gNewObjectDefinition.scale 		= 1.3;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 491;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group		= MODEL_GROUP_LEVELSPECIFIC,
+		.type		= LEVEL1_ObjType_TreeStump,
+		.scale		= 1.3,
+		.coord.x	= x,
+		.coord.z	= z,
+		.coord.y	= itemPtr->terrainY,
+		.flags		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot		= 491,
+		.moveCall	= MoveStaticObject,
+		.rot		= RandomFloat()*PI2,
+	};
+
+	newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -241,19 +250,21 @@ static Boolean DoTrig_Canopy(ObjNode *grass, ObjNode *player)
 
 Boolean AddSmallTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_SmallTree,
+		.scale 		= 1.0 + RandomFloat() * .2f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 620,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_SmallTree;
-	gNewObjectDefinition.scale 		= 1.0 + RandomFloat() * .2f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 620;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -529,17 +540,21 @@ float	rot = (float)itemPtr->parm[1] * (PI2/8.0);
 					/* MAKE TRUNK */
 					/**************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_BentPine1_Trunk + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat2() * .2f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 444;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= rot;
-	trunk = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL1_ObjType_BentPine1_Trunk + itemPtr->parm[0],
+		.scale 		= 1.2 + RandomFloat2() * .2f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 444,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= rot,
+	};
+
+	trunk = MakeNewDisplayGroupObject(&def);
 
 	trunk->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -555,11 +570,11 @@ float	rot = (float)itemPtr->parm[1] * (PI2/8.0);
 					/* MAKE LEAVES */
 					/**************/
 
-	gNewObjectDefinition.type 		= LEVEL1_ObjType_BentPine1_Leaves + itemPtr->parm[0];
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= SLOT_OF_DUMB;
-	gNewObjectDefinition.moveCall 	= nil;
-	leaves = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= LEVEL1_ObjType_BentPine1_Leaves + itemPtr->parm[0];
+	def.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
+	def.slot 		= SLOT_OF_DUMB;
+	def.moveCall 	= nil;
+	leaves = MakeNewDisplayGroupObject(&def);
 
 	trunk->ChainNode = leaves;
 
@@ -575,7 +590,6 @@ float	rot = (float)itemPtr->parm[1] * (PI2/8.0);
 
 Boolean AddDesertTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *canopy;
 short	type = itemPtr->parm[0];
 long	rot = itemPtr->parm[1];
 
@@ -586,20 +600,21 @@ long	rot = itemPtr->parm[1];
 				/* MAKE SOLID TRUNK */
 				/********************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_Tree1 + type;
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	if (rot == 0)
-		gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	else
-		gNewObjectDefinition.rot 	= (float)(rot-1) * (PI2/8.0f);
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL2_ObjType_Tree1 + type,
+		.scale 		= 1.2 + RandomFloat() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.rot		= (rot==0) ? (RandomFloat()*PI2) : ((float)(rot-1) * (PI2/8.0f)),
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall 	= MoveStaticObject,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -618,10 +633,10 @@ long	rot = itemPtr->parm[1];
 				/* MAKE NON-SOLID CANOPY */
 				/*************************/
 
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_Tree1_Canopy + type;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	canopy = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= LEVEL2_ObjType_Tree1_Canopy + type;
+	def.slot++;
+	def.moveCall 	= nil;
+	ObjNode* canopy = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -641,7 +656,6 @@ long	rot = itemPtr->parm[1];
 
 Boolean AddPalmTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj, *canopy;
 short	type = itemPtr->parm[0];
 long	rot = itemPtr->parm[1];
 
@@ -649,20 +663,21 @@ long	rot = itemPtr->parm[1];
 				/* MAKE SOLID TRUNK */
 				/********************/
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_PalmTree1 + type;
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	if (rot == 0)
-		gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	else
-		gNewObjectDefinition.rot 	= (float)(rot-1) * (PI2/8.0f);
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL2_ObjType_PalmTree1 + type,
+		.scale 		= 1.2 + RandomFloat() * .3f,
+		.rot		= (rot == 0) ? (RandomFloat()*PI2) : ((float)(rot-1) * (PI2/8.0f)),
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall 	= MoveStaticObject,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -681,10 +696,10 @@ long	rot = itemPtr->parm[1];
 				/* MAKE NON-SOLID CANOPY */
 				/*************************/
 
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_PalmTree1_Canopy + type;
-	gNewObjectDefinition.slot++;
-	gNewObjectDefinition.moveCall 	= nil;
-	canopy = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	def.type 		= LEVEL2_ObjType_PalmTree1_Canopy + type;
+	def.slot++;
+	def.moveCall 	= nil;
+	ObjNode* canopy = MakeNewDisplayGroupObject(&def);
 
 			/* SET COLLISION STUFF */
 
@@ -705,20 +720,23 @@ long	rot = itemPtr->parm[1];
 
 Boolean AddBurntDesertTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
 short	type = itemPtr->parm[0];
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL2_ObjType_BurntTree1 + type;
-	gNewObjectDefinition.scale 		= 1.2f + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL2_ObjType_BurntTree1 + type,
+		.scale 		= 1.2f + RandomFloat() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall 	= MoveStaticObject,
+		.rot		= RandomFloat()*PI2,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -740,20 +758,23 @@ short	type = itemPtr->parm[0];
 
 Boolean AddHydraTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
 short	type = itemPtr->parm[0];
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL3_ObjType_HydraTree_Small + type;
-	gNewObjectDefinition.scale 		= 1.5f + RandomFloat() * .5f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL3_ObjType_HydraTree_Small + type,
+		.scale 		= 1.5f + RandomFloat() * .5f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall 	= MoveStaticObject,
+		.rot		= RandomFloat()*PI2,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -774,20 +795,23 @@ short	type = itemPtr->parm[0];
 
 Boolean AddOddTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
 short	type = itemPtr->parm[0];
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL3_ObjType_OddTree_Small + type;
-	gNewObjectDefinition.scale 		= 1.3f + RandomFloat() * .3f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6;
-	gNewObjectDefinition.slot 		= 501;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 	= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL3_ObjType_OddTree_Small + type,
+		.scale 		= 1.3f + RandomFloat() * .3f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits | STATUS_BIT_CLIPALPHA6,
+		.slot 		= 501,
+		.moveCall	= MoveStaticObject,
+		.rot		= RandomFloat()*PI2,
+	};
+
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -811,21 +835,25 @@ Boolean AddSwampFallenTree(TerrainItemEntryType *itemPtr, float  x, float z)
 {
 ObjNode	*trunk;
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL3_ObjType_FallenTree1 + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.2 + RandomFloat2() * .2f;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 444;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	if (itemPtr->parm[1] > 0)
-		gNewObjectDefinition.rot 		= (float)(itemPtr->parm[1]-1) * (PI2/8.0);
-	else
-		gNewObjectDefinition.rot 		= RandomFloat() * PI2;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL3_ObjType_FallenTree1 + itemPtr->parm[0],
+		.scale 		= 1.2 + RandomFloat2() * .2f,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 444,
+		.moveCall 	= MoveStaticObject,
+	};
 
-	trunk = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	if (itemPtr->parm[1] > 0)
+		def.rot 		= (float)(itemPtr->parm[1]-1) * (PI2/8.0);
+	else
+		def.rot 		= RandomFloat() * PI2;
+
+	trunk = MakeNewDisplayGroupObject(&def);
 
 	trunk->TerrainItemPtr = itemPtr;								// keep ptr to item list
 
@@ -875,19 +903,21 @@ short   p = player->PlayerNum;
 
 Boolean AddSwampStump(TerrainItemEntryType *itemPtr, float  x, float z)
 {
-ObjNode	*newObj;
+	NewObjectDefinitionType def =
+	{
+		.group 		= MODEL_GROUP_LEVELSPECIFIC,
+		.type 		= LEVEL3_ObjType_Stump1 + itemPtr->parm[0],
+		.scale 		= 1.3,
+		.coord.x 	= x,
+		.coord.z 	= z,
+		.coord.y 	= itemPtr->terrainY,
+		.flags 		= gAutoFadeStatusBits,
+		.slot 		= 380,
+		.moveCall 	= MoveStaticObject,
+		.rot 		= RandomFloat()*PI2,
+	};
 
-	gNewObjectDefinition.group 		= MODEL_GROUP_LEVELSPECIFIC;
-	gNewObjectDefinition.type 		= LEVEL3_ObjType_Stump1 + itemPtr->parm[0];
-	gNewObjectDefinition.scale 		= 1.3;
-	gNewObjectDefinition.coord.x 	= x;
-	gNewObjectDefinition.coord.z 	= z;
-	gNewObjectDefinition.coord.y 	= itemPtr->terrainY;
-	gNewObjectDefinition.flags 		= gAutoFadeStatusBits;
-	gNewObjectDefinition.slot 		= 380;
-	gNewObjectDefinition.moveCall 	= MoveStaticObject;
-	gNewObjectDefinition.rot 		= RandomFloat()*PI2;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
+	ObjNode* newObj = MakeNewDisplayGroupObject(&def);
 
 	newObj->TerrainItemPtr = itemPtr;								// keep ptr to item list
 

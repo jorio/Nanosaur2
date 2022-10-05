@@ -25,13 +25,39 @@ static void MakeLevelIntroWormNano(void);
 static void MakeLevelIntroStarDome(void);
 static void MoveIntroStarDome(ObjNode *theNode);
 static void MakeLevelIntroSaveSprites(void);
+static void SetupScreensaverObjects(void);
+static void SetupCreditsObjects(void);
 static void MovePressAnyKey(ObjNode* theNode);
+static void MoveCreditsLine(ObjNode* theNode);
+static void DrawBottomGradient(ObjNode* theNode);
 
 
 /****************************/
 /*    CONSTANTS             */
 /****************************/
 
+#define kCreditLineDuration		3.5f
+#define kCreditLinePause		0.5f
+#define kCreditFirstDelay		1.0f
+#define kCreditFadeInTime		0.2f
+#define kCreditFadeOutTime		0.3f
+
+static struct
+{
+	const char* role;
+	const char* name;
+}
+kCreditsText[] =
+{
+	{ "PROGRAMMING & DESIGN", "B\vRIAN\r G\vREENSTONE\r" },
+	{ "ART & DESIGN", "S\vCOTT\r H\vARPER\r" },
+	{ "MUSIC", "A\vLEKSANDER\r D\vIMITRIJEVIC\r" },
+	{ "ANIMATION", "P\vETER\r G\vREENSTONE\r" },
+	{ "ILLUSTRATOR", "R\vICH\r B\vONK\r" },
+	{ "COLORIST", "B\vEN\r P\vRENEVOST\r" },
+	{ "ADDITIONAL PROGRAMMING", "I\vLIYAS\r J\vORIO\r" },
+	{ 0 },
+};
 
 /*********************/
 /*    VARIABLES      */
@@ -79,10 +105,10 @@ float	timer = 5.0f;
 		switch(gIntroMode)
 		{
 			case	INTRO_MODE_SCREENSAVER:
+			case	INTRO_MODE_CREDITS:
 					if (UserWantsOut())
 						bail = true;
 					break;
-
 
 			case	INTRO_MODE_NOSAVE:
 					timer -= gFramesPerSecondFrac;
@@ -249,7 +275,8 @@ ObjNode	*newObj;
 	UpdateObjectTransforms(newObj);
 	UpdateLevelIntroWormJoints(newObj);
 
-	PlayEffect_Parms(EFFECT_WORMHOLE, FULL_CHANNEL_VOLUME/2, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
+	if (gIntroMode != INTRO_MODE_SCREENSAVER && gIntroMode != INTRO_MODE_CREDITS)
+		PlayEffect_Parms(EFFECT_WORMHOLE, FULL_CHANNEL_VOLUME/2, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
 
 
 			/***************/
@@ -276,37 +303,13 @@ ObjNode	*newObj;
 				MakeLevelIntroSaveSprites();
 				break;
 
-
 		case	INTRO_MODE_SCREENSAVER:
-			{
-					/* PRESS ANY KEY */
-
-				NewObjectDefinitionType textDef =
-				{
-					.coord		= {640/2, 450, 0},
-					.slot		= SPRITE_SLOT,
-					.moveCall	= MovePressAnyKey,
-					.scale		= 0.35f,
-				};
-				newObj = TextMesh_New(Localize(gUserPrefersGamepad? STR_PRESS_START: STR_PRESS_ANY_KEY), kTextMeshAlignCenter, &textDef);
-				newObj->ColorFilter.a = .6f;
-				newObj->AnaglyphZ = 6.0f;
-
-					/* NANO LOGO */
-
-				NewObjectDefinitionType logoDef =
-				{
-					.group		= SPRITE_GROUP_MAINMENU,
-					.type		= MAINMENU_SObjType_NanoLogo,
-					.coord		= {20, 0, 0},
-					.slot		= SPRITE_SLOT,
-					.scale		= 150,
-				};
-				newObj = MakeSpriteObject(&logoDef, false);
-				newObj->AnaglyphZ = 6.0f;
-
+				SetupScreensaverObjects();
 				break;
-			}
+
+		case	INTRO_MODE_CREDITS:
+				SetupCreditsObjects();
+				break;
 	}
 }
 
@@ -623,6 +626,108 @@ static void MakeLevelIntroSaveSprites(void)
 	MakeMouseCursorObject();
 }
 
+/************************ MAKE SCREENSAVER OBJECTS ************************/
+
+static void SetupScreensaverObjects(void)
+{
+	ObjNode* newObj;
+
+			/* PRESS ANY KEY */
+
+	NewObjectDefinitionType textDef =
+	{
+		.group		= SPRITE_GROUP_FONT,
+		.coord		= {640/2, 450, 0},
+		.slot		= SPRITE_SLOT,
+		.moveCall	= MovePressAnyKey,
+		.scale		= 0.35f,
+	};
+	newObj = TextMesh_New(Localize(gUserPrefersGamepad? STR_PRESS_START: STR_PRESS_ANY_KEY), kTextMeshAlignCenter, &textDef);
+	newObj->ColorFilter.a = .6f;
+	newObj->AnaglyphZ = 6.0f;
+
+			/* NANO LOGO */
+
+	NewObjectDefinitionType logoDef =
+	{
+		.group		= SPRITE_GROUP_MAINMENU,
+		.type		= MAINMENU_SObjType_NanoLogo,
+		.coord		= {20, 0, 0},
+		.slot		= SPRITE_SLOT,
+		.scale		= 150,
+	};
+	newObj = MakeSpriteObject(&logoDef, false);
+	newObj->AnaglyphZ = 6.0f;
+}
+
+/************************ MAKE CREDITS OBJECTS ************************/
+
+static void SetupCreditsObjects(void)
+{
+		/* MAKE GRADIENT SO TEXT IS MORE READABLE */
+
+	NewObjectDefinitionType gradientDef =
+	{
+		.genre		= CUSTOM_GENRE,
+		.coord		= {0, 0, 0},
+		.slot		= 150,		// between wormhole and nano
+		.scale		= 1,
+		.drawCall	= DrawBottomGradient,
+	};
+	MakeNewObject(&gradientDef);
+
+		/* MAKE TEXT */
+
+	float delay = kCreditFirstDelay;
+
+	for (int i = 0; kCreditsText[i].role; i++)
+	{
+		NewObjectDefinitionType textDef =
+		{
+			.group		= SPRITE_GROUP_FONT,
+			.coord		= {640/2, 400, 0},
+			.slot		= SPRITE_SLOT,
+			.scale		= 0.5f,
+			.moveCall	= MoveCreditsLine,
+		};
+
+		ObjNode* objs[2];
+
+		objs[0] = TextMesh_New(kCreditsText[i].role, kTextMeshAlignCenter, &textDef);
+		objs[0]->AnaglyphZ = 6.0f;
+
+		textDef.coord.y += 32;
+		textDef.scale = 0.7f;
+		objs[1] = TextMesh_New(kCreditsText[i].name, kTextMeshAlignCenter, &textDef);
+		objs[1]->AnaglyphZ = 6.0f;
+
+		for (int j = 0; j < 2; j++)
+		{
+			objs[j]->ColorFilter.a = 0;
+			objs[j]->Timer = -delay;
+		}
+
+		delay += kCreditLineDuration + kCreditLinePause;
+	}
+
+		/* MAKE END LOGO */
+
+	NewObjectDefinitionType logoDef =
+	{
+		.group		= SPRITE_GROUP_MAINMENU,
+		.type		= MAINMENU_SObjType_NanoLogo,
+		.coord		= {640/2, 400+15, 0},
+		.slot		= SPRITE_SLOT,
+		.scale		= 250,
+		.moveCall	= MoveCreditsLine,
+	};
+	ObjNode* logo = MakeSpriteObject(&logoDef, true);
+	logo->AnaglyphZ = 6.0f;
+	logo->Timer = -delay;
+	logo->Flag[0] = true;
+	logo->ColorFilter.a = 0;
+}
+
 
 /******************** MOVE PRESS ANY KEY TEXT *************************/
 
@@ -632,3 +737,62 @@ static void MovePressAnyKey(ObjNode* theNode)
 	theNode->ColorFilter.a = 0.66f + sinf(theNode->Timer) * 0.33f;
 }
 
+
+/******************** MOVE CREDITS LINE *************************/
+
+static void MoveCreditsLine(ObjNode* theNode)
+{
+	theNode->Timer += gFramesPerSecondFrac;
+	float t = theNode->Timer;
+
+	Boolean liveForever = theNode->Flag[0];
+
+	if (t <= 0.0f)
+	{
+		SetObjectVisible(theNode, false);
+	}
+	else if (!liveForever && t >= kCreditLineDuration)
+	{
+		DeleteObject(theNode);
+		return;
+	}
+	else
+	{
+		SetObjectVisible(theNode, true);
+
+		float a;
+		if (t < kCreditFadeInTime)
+		{
+			a = t / kCreditFadeInTime;
+		}
+		else if (!liveForever && t > kCreditLineDuration - kCreditFadeOutTime)
+		{
+			a = 1 - (t - kCreditLineDuration + kCreditFadeOutTime) / kCreditFadeOutTime;
+		}
+		else
+		{
+			a = 1;
+		}
+
+		theNode->ColorFilter.a = a;
+	}
+}
+
+/******************** MOVE CREDITS LINE *************************/
+
+static void DrawBottomGradient(ObjNode* theNode)
+{
+	(void) theNode;
+
+	OGL_PushState();
+	SetInfobarSpriteState(0, 1);
+	OGL_DisableTexture2D();
+	OGL_EnableBlend();
+
+	float y = 200;
+	glBegin(GL_QUADS);
+	glColor4f(0,0,0,0); glVertex2f(gLogicalRect.left, y); glVertex2f(gLogicalRect.right, y);
+	glColor4f(0,0,0,1); glVertex2f(gLogicalRect.right, gLogicalRect.bottom); glVertex2f(gLogicalRect.left, gLogicalRect.bottom);
+	glEnd();
+	OGL_PopState();
+}

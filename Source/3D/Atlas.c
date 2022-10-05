@@ -21,7 +21,7 @@
 
 #define MAX_IMMEDIATEMODE_QUADS		1024
 
-#define SUBSCRIPT_SCALE				0.66f
+#define SUBSCRIPT_SCALE				0.8f
 
 enum
 {

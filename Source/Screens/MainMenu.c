@@ -237,7 +237,7 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 
 		case	'cred':										// CREDITS
-			DisplayPicture(":images:credits.jpg");
+			DoLevelIntroScreen(INTRO_MODE_CREDITS);
 			break;
 
 		case	'demo':										// TIME DEMO (BENCHMARK)
@@ -344,7 +344,6 @@ static void ProcessMenuOutcome(int outcome)
 
 static void MoveMouseCursorObject(ObjNode *theNode)
 {
-	extern OGLRect gLogicalRect;
 
 
 			/*****************************/

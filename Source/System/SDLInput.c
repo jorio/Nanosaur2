@@ -167,7 +167,7 @@ static void ParseAltEnter(void)
 
 }
 
-static void UpdateMouseButtonStates(int mouseWheelDelta)
+static void UpdateMouseButtonStates(int mouseWheelDeltaX, int mouseWheelDeltaY)
 {
 	uint32_t mouseButtons = SDL_GetMouseState(NULL, NULL);
 
@@ -178,8 +178,10 @@ static void UpdateMouseButtonStates(int mouseWheelDelta)
 	}
 
 	// Fake buttons for mouse wheel up/down
-	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELUP], mouseWheelDelta > 0);
-	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELDOWN], mouseWheelDelta < 0);
+	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELUP], mouseWheelDeltaX > 0);
+	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELDOWN], mouseWheelDeltaX < 0);
+	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELLEFT], mouseWheelDeltaY < 0);
+	UpdateKeyState(&gMouseButtonStates[SDL_BUTTON_WHEELRIGHT], mouseWheelDeltaY > 0);
 }
 
 static void UpdateInputNeeds(void)
@@ -286,7 +288,8 @@ void DoSDLMaintenance(void)
 {
 	gTextInput[0] = '\0';
 	gMouseMotionNow = false;
-	int mouseWheelDelta = 0;
+	int mouseWheelDeltaX = 0;
+	int mouseWheelDeltaY = 0;
 
 			/**********************/
 			/* DO SDL MAINTENANCE */
@@ -336,8 +339,8 @@ void DoSDLMaintenance(void)
 
 				case SDL_MOUSEWHEEL:
 					gUserPrefersGamepad = false;
-					mouseWheelDelta += event.wheel.y;
-					mouseWheelDelta += event.wheel.x;
+					mouseWheelDeltaX += event.wheel.y;
+					mouseWheelDeltaY += event.wheel.x;
 					break;
 
 				case SDL_CONTROLLERDEVICEADDED:
@@ -376,7 +379,7 @@ void DoSDLMaintenance(void)
 	ParseAltEnter();
 
 	// Refresh the state of each mouse button
-	UpdateMouseButtonStates(mouseWheelDelta);
+	UpdateMouseButtonStates(mouseWheelDeltaX, mouseWheelDeltaY);
 
 	// Refresh the state of each input need
 	UpdateInputNeeds();

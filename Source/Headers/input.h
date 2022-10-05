@@ -13,7 +13,9 @@
 #define MAX_BINDINGS_PER_NEED				4
 
 #define NUM_SUPPORTED_MOUSE_BUTTONS			31
-#define NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL	(NUM_SUPPORTED_MOUSE_BUTTONS-2)
+#define NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL	(NUM_SUPPORTED_MOUSE_BUTTONS-4)		// make room for fake buttons below
+#define SDL_BUTTON_WHEELLEFT				(NUM_SUPPORTED_MOUSE_BUTTONS-4)		// make wheelup look like it's a button
+#define SDL_BUTTON_WHEELRIGHT				(NUM_SUPPORTED_MOUSE_BUTTONS-3)		// make wheelup look like it's a button
 #define SDL_BUTTON_WHEELUP					(NUM_SUPPORTED_MOUSE_BUTTONS-2)		// make wheelup look like it's a button
 #define SDL_BUTTON_WHEELDOWN				(NUM_SUPPORTED_MOUSE_BUTTONS-1)		// make wheeldown look like it's a button
 

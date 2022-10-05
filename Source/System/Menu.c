@@ -440,6 +440,8 @@ static const char* GetMouseBindingName(int row)
 		case SDL_BUTTON_RIGHT:			return Localize(STR_MOUSE_BUTTON_RIGHT);
 		case SDL_BUTTON_WHEELUP:		return Localize(STR_MOUSE_WHEEL_UP);
 		case SDL_BUTTON_WHEELDOWN:		return Localize(STR_MOUSE_WHEEL_DOWN);
+		case SDL_BUTTON_WHEELLEFT:		return Localize(STR_MOUSE_WHEEL_LEFT);
+		case SDL_BUTTON_WHEELRIGHT:		return Localize(STR_MOUSE_WHEEL_RIGHT);
 		default:
 			snprintf(buf, bufSize, "%s %d", Localize(STR_BUTTON), binding->mouseButton);
 			return buf;
@@ -1043,6 +1045,7 @@ static void NavigateCycler(const MenuItem* entry)
 		|| IsNeedDown(kNeed_UIPrev, ANY_PLAYER)
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_RIGHT))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELDOWN))
+		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELLEFT))
 		)
 	{
 		delta = -1;
@@ -1051,6 +1054,7 @@ static void NavigateCycler(const MenuItem* entry)
 		|| IsNeedDown(kNeed_UINext, ANY_PLAYER)
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELUP))
+		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELRIGHT))
 		)
 	{
 		delta = 1;

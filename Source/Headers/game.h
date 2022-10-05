@@ -113,6 +113,7 @@ extern	OGLMatrix4x4			gWorldToWindowMatrix[MAX_SPLITSCREENS];
 extern	OGLPoint2D				gCursorCoord;
 extern	OGLPoint3D				gBestCheckpointCoord[MAX_PLAYERS];
 extern	OGLPoint3D				gCoord;
+extern	OGLRect					gLogicalRect;
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLVector3D				gDelta;
 extern	OGLVector3D				gRecentTerrainNormal;

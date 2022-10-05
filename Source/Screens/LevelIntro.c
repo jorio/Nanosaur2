@@ -1,7 +1,8 @@
 /****************************/
-/*   	LEVEL INTRO SCREEN.C		*/
-/* (c)2003 Pangea Software  */
+/*   LEVEL INTRO SCREEN.C   */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -21,6 +22,7 @@ static void MoveLevelIntroWorm(ObjNode *theNode);
 static void UpdateLevelIntroWormJoints(ObjNode *theNode);
 static void MoveLevelIntroNano(ObjNode *theNode);
 static void MakeLevelIntroWormNano(void);
+static void MakeLevelIntroStarDome(void);
 static void MoveIntroStarDome(ObjNode *theNode);
 static void MakeLevelIntroSaveSprites(void);
 static void MovePressAnyKey(ObjNode* theNode);
@@ -258,23 +260,11 @@ ObjNode	*newObj;
 	MakeLevelIntroWormNano();
 
 
-
 			/******************/
 			/* MAKE STAR DOME */
 			/******************/
 
-	gNewObjectDefinition.group	= MODEL_GROUP_LEVELINTRO;
-	gNewObjectDefinition.type 	= LEVELINTRO_ObjType_StarDome;
-	gNewObjectDefinition.coord.x = 0;
-	gNewObjectDefinition.coord.y = 0;
-	gNewObjectDefinition.coord.z = -5500;
-	gNewObjectDefinition.flags 	= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOZBUFFER;
-	gNewObjectDefinition.slot 	= 0;
-	gNewObjectDefinition.moveCall = MoveIntroStarDome;
-	gNewObjectDefinition.rot 	= 0;
-	gNewObjectDefinition.scale 	= 12;
-	newObj = MakeNewDisplayGroupObject(&gNewObjectDefinition);
-
+	MakeLevelIntroStarDome();
 
 
 			/*********************/
@@ -406,6 +396,55 @@ short	i, j;
 
 }
 
+
+/******************* MAKE LEVEL INTRO STAR DOME **********************/
+
+static void MakeLevelIntroStarDome(void)
+{
+	int width = 0;
+	int height = 0;
+	GLuint textureName = OGL_TextureMap_LoadImageFile(":sprites:stardome.jpg", &width, &height);
+	MOMaterialData matData =
+	{
+		.flags				= BG3D_MATERIALFLAG_TEXTURED,
+		.diffuseColor		= {1,1,1,1},
+		.numMipmaps			= 1,
+		.width				= width,
+		.height				= height,
+		.pixelSrcFormat		= GL_UNSIGNED_INT_8_8_8_8_REV,
+		.pixelDstFormat		= GL_RGBA8,
+		.texturePixels[0]	= nil,											// we're going to preload
+		.textureName[0] 	= textureName,
+	};
+	MOMaterialObject* matRef = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);//MO_GetNewReference(matData);
+
+	NewObjectDefinitionType def =
+	{
+		.genre	= QUADMESH_GENRE,
+		.coord.x = 0,
+		.coord.y = 0,
+		.coord.z = -5500,
+		.flags 	= STATUS_BIT_DONTCULL|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|STATUS_BIT_DOUBLESIDED|STATUS_BIT_NOZBUFFER,
+		.slot 	= 0,
+		.moveCall = MoveIntroStarDome,
+		.rot 	= 0,
+		.scale 	= 10000,
+	};
+	ObjNode* stardome = MakeQuadMeshObject(&def, 1, matRef);
+	MOVertexArrayData* stardomeVAD = GetQuadMeshWithin(stardome);
+	stardomeVAD->numPoints = 4;
+	stardomeVAD->numTriangles = 2;
+	stardomeVAD->points[0] = (OGLPoint3D) {-1, -1, 0};
+	stardomeVAD->points[1] = (OGLPoint3D) { 1, -1, 0};
+	stardomeVAD->points[2] = (OGLPoint3D) { 1,  1, 0};
+	stardomeVAD->points[3] = (OGLPoint3D) {-1,  1, 0};
+	stardomeVAD->uvs[0][0] = (OGLTextureCoord) {0, 0};
+	stardomeVAD->uvs[0][1] = (OGLTextureCoord) {6, 0};
+	stardomeVAD->uvs[0][2] = (OGLTextureCoord) {6, 6};
+	stardomeVAD->uvs[0][3] = (OGLTextureCoord) {0, 6};
+
+	MO_DisposeObjectReference(matRef);
+}
 
 
 /********************** FREE LEVEL INTRO SCREEN **********************/

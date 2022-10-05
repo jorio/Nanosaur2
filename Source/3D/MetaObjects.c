@@ -872,7 +872,7 @@ go_here:
 		OGL_CheckError();
 	}
 
-	gPolysThisFrame += data->numPoints;					// inc poly counter
+	gPolysThisFrame += data->numTriangles;					// inc poly counter
 
 
 			/* CLEANUP */

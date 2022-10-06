@@ -1608,7 +1608,7 @@ Boolean		lockedOn;
 		SetLookAtMatrixAndTranslate(&m, &up, coord, &gPlayerInfo[playerNum].coord);
 
 		glPushMatrix();
-		glMultMatrixf((GLfloat *)&m);
+		glMultMatrixf(m.value);
 
 
 					/* DRAW LARGE */

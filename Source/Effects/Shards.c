@@ -465,7 +465,7 @@ long	i;
 					/* SET MATRIX */
 
 			glPushMatrix();
-			glMultMatrixf((GLfloat *)&gShards[i].matrix);
+			glMultMatrixf(gShards[i].matrix.value);
 
 
 					/* DRAW THE TRIANGLE */

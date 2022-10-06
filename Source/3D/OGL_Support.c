@@ -542,7 +542,7 @@ OGLStyleDefType *styleDefPtr = &setupDefPtr->styles;
 		glFogf(GL_FOG_DENSITY, styleDefPtr->fogDensity);
 		glFogf(GL_FOG_START, styleDefPtr->fogStart);
 		glFogf(GL_FOG_END, styleDefPtr->fogEnd);
-		glFogfv(GL_FOG_COLOR, (float *)&setupDefPtr->view.clearColor);
+		glFogfv(GL_FOG_COLOR, &setupDefPtr->view.clearColor.r);
 		gMyState_Fog = false;
 		OGL_EnableFog();
 	}
@@ -1736,9 +1736,9 @@ OGLLightDefType	*lights;
 
 			/* GET VARIOUS CAMERA MATRICES */
 
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *)&gWorldToViewMatrix);
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *)&gLocalToViewMatrix);
-	glGetFloatv(GL_PROJECTION_MATRIX, (GLfloat *)&gViewToFrustumMatrix);
+	glGetFloatv(GL_MODELVIEW_MATRIX, gWorldToViewMatrix.value);
+	glGetFloatv(GL_MODELVIEW_MATRIX, gLocalToViewMatrix.value);
+	glGetFloatv(GL_PROJECTION_MATRIX, gViewToFrustumMatrix.value);
 	OGLMatrix4x4_Multiply(&gLocalToViewMatrix, &gViewToFrustumMatrix, &gLocalToFrustumMatrix);
 	OGLMatrix4x4_Multiply(&gWorldToViewMatrix, &gViewToFrustumMatrix, &gWorldToFrustumMatrix);
 

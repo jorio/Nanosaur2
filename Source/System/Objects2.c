@@ -575,7 +575,7 @@ int	shadowType = theNode->Kind;
 
 			/* SUBMIT THE MATRIX */
 
-	glMultMatrixf((GLfloat *)&theNode->BaseTransformMatrix);
+	glMultMatrixf(theNode->BaseTransformMatrix.value);
 
 
 			/* SUBMIT SHADOW TEXTURE */
@@ -963,7 +963,7 @@ MOTriangleIndecies	*tris;
 
 				/* GET THE TRANSFORM MATRIX WE'VE BUILT */
 
-	glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *)&localToWorld);
+	glGetFloatv(GL_MODELVIEW_MATRIX, localToWorld.value);
 
 				/* TRANSFORM EACH POINT INTO THE BUFFER */
 

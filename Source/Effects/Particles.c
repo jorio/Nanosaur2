@@ -1862,10 +1862,10 @@ float	s;
 			/* DRAW QUAD */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,.99);	glVertex3fv((GLfloat *)&frame[0]);
-	glTexCoord2f(.99,.99);	glVertex3fv((GLfloat *)&frame[1]);
-	glTexCoord2f(.99,0);	glVertex3fv((GLfloat *)&frame[2]);
-	glTexCoord2f(0,0);		glVertex3fv((GLfloat *)&frame[3]);
+	glTexCoord2f(0,.99);	glVertex3fv(&frame[0].x);
+	glTexCoord2f(.99,.99);	glVertex3fv(&frame[1].x);
+	glTexCoord2f(.99,0);	glVertex3fv(&frame[2].x);
+	glTexCoord2f(0,0);		glVertex3fv(&frame[3].x);
 	glEnd();
 
 	gGlobalColorFilter.r =gGlobalColorFilter.g = gGlobalColorFilter.b = 1;
@@ -1958,10 +1958,10 @@ float		x,y,z,s;
 			/* DRAW QUAD */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,.99);	glVertex3fv((GLfloat *)&verts[0]);
-	glTexCoord2f(.99,.99);	glVertex3fv((GLfloat *)&verts[1]);
-	glTexCoord2f(.99,0);	glVertex3fv((GLfloat *)&verts[2]);
-	glTexCoord2f(0,0);		glVertex3fv((GLfloat *)&verts[3]);
+	glTexCoord2f(0,.99);	glVertex3fv(&verts[0].x);
+	glTexCoord2f(.99,.99);	glVertex3fv(&verts[1].x);
+	glTexCoord2f(.99,0);	glVertex3fv(&verts[2].x);
+	glTexCoord2f(0,0);		glVertex3fv(&verts[3].x);
 	glEnd();
 
 	gGlobalTransparency = 1.0f;

@@ -63,10 +63,11 @@ typedef struct
 //	float		incrementCooldown;
 //	int			nIncrements;
 } MenuNodeData;
+_Static_assert(sizeof(MenuNodeData) <= MAX_SPECIAL_DATA_BYTES, "MenuNodeData doesn't fit in special area");
 //CheckSpecialDataStruct(MenuNodeData);
 
 //#define GetMenuNodeData(node) GetSpecialData(node, MenuNodeData)
-#define GetMenuNodeData(node) ((MenuNodeData*) (node)->Special)
+#define GetMenuNodeData(node) ((MenuNodeData*) (node)->SpecialPadding)
 
 /****************************/
 /*    CONSTANTS             */

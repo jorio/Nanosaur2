@@ -912,7 +912,7 @@ static void DrawPlayer(ObjNode *theNode)
 				SetLookAtMatrixAndTranslate(&m, &gUp, &theNode->Coord, &gPlayerInfo[gCurrentSplitScreenPane].camera.cameraLocation);
 
 				OGL_PushState();
-				glMultMatrixf((GLfloat *)&m);
+				glMultMatrixf(m.value);
 
 				MO_DrawMaterial(gSpriteGroupList[SPRITE_GROUP_INFOBAR][INFOBAR_SObjType_GunSight_OuterRing].materialObject);		// activate material
 

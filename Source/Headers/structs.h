@@ -33,6 +33,8 @@
 
 #define	MAX_MESHES_IN_MODEL		10					// max # of different meshes in a single ObjNode model / BG3D model
 
+#define MAX_SPECIAL_DATA_BYTES	64
+
 			/*********************/
 			/* SPLINE STRUCTURES */
 			/*********************/
@@ -329,11 +331,19 @@ struct ObjNode
 
 			/* SPECS */
 
-	signed char		Flag[6];
-	long			Special[6];
-	float			SpecialF[6];
-	void*			SpecialPtr[6];
-	OGLVector3D		SpecialV[3];
+	union
+	{
+		struct
+		{
+			void*	SpecialPtr[6];
+			long	Special[6];
+			float	SpecialF[6];
+			int8_t	Flag[6];
+		};
+
+		char		SpecialPadding[MAX_SPECIAL_DATA_BYTES];
+	};
+
 	float			Timer;				// misc use timer
 
 	float			Health;				// health 0..1

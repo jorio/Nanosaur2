@@ -571,10 +571,10 @@ ObjNode	*orb = beam->ChainHead->ChainHead;
 
 		glBegin(GL_QUADS);
 
-		glTexCoord2fv((GLfloat *)&uv[0]);	glVertex3fv((GLfloat *)&p[0]);
-		glTexCoord2fv((GLfloat *)&uv[1]);	glVertex3fv((GLfloat *)&p[1]);
-		glTexCoord2fv((GLfloat *)&uv[2]);	glVertex3fv((GLfloat *)&p[2]);
-		glTexCoord2fv((GLfloat *)&uv[3]);	glVertex3fv((GLfloat *)&p[3]);
+		glTexCoord2fv(&uv[0].u);	glVertex3fv(&p[0].x);
+		glTexCoord2fv(&uv[1].u);	glVertex3fv(&p[1].x);
+		glTexCoord2fv(&uv[2].u);	glVertex3fv(&p[2].x);
+		glTexCoord2fv(&uv[3].u);	glVertex3fv(&p[3].x);
 
 		glEnd();
 
@@ -600,10 +600,10 @@ ObjNode	*orb = beam->ChainHead->ChainHead;
 
 		glBegin(GL_QUADS);
 
-		glTexCoord2fv((GLfloat *)&uv[0]);	glVertex3fv((GLfloat *)&p[0]);
-		glTexCoord2fv((GLfloat *)&uv[1]);	glVertex3fv((GLfloat *)&p[1]);
-		glTexCoord2fv((GLfloat *)&uv[2]);	glVertex3fv((GLfloat *)&p[2]);
-		glTexCoord2fv((GLfloat *)&uv[3]);	glVertex3fv((GLfloat *)&p[3]);
+		glTexCoord2fv(&uv[0].u);	glVertex3fv(&p[0].x);
+		glTexCoord2fv(&uv[1].u);	glVertex3fv(&p[1].x);
+		glTexCoord2fv(&uv[2].u);	glVertex3fv(&p[2].x);
+		glTexCoord2fv(&uv[3].u);	glVertex3fv(&p[3].x);
 
 		glEnd();
 

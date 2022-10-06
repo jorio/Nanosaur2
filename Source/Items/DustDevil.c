@@ -438,7 +438,7 @@ ObjNode	*theNode;
 					/* TRANSLATE */
 
 		OGLMatrix4x4_SetTranslate(&m, theNode->Coord.x, theNode->Coord.y, theNode->Coord.z);
-		glMultMatrixf((GLfloat *)&m);
+		glMultMatrixf(m.value);
 
 					/* SCALE DOWN AND DRAW INNER SHELL */
 
@@ -448,10 +448,10 @@ ObjNode	*theNode;
 			OGL_SetColor4f(1,1,1,.5);
 
 			OGLMatrix4x4_SetScale(&m, .8, 1, .8);
-			glMultMatrixf((GLfloat *)&m);
+			glMultMatrixf(m.value);
 
 			OGLMatrix4x4_SetRotate_Y(&m, PI);
-			glMultMatrixf((GLfloat *)&m);
+			glMultMatrixf(m.value);
 
 			MO_DrawGeometry_VertexArray(mesh);
 

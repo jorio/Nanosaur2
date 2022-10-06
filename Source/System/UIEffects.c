@@ -19,9 +19,9 @@ typedef struct
 	bool				deletePuppetOnCompletion;
 	bool				hideDuringDelay;
 } TwitchDriverData;
-//CheckSpecialDataStruct(TwitchDriverData);
+_Static_assert(sizeof(TwitchDriverData) <= MAX_SPECIAL_DATA_BYTES, "TwitchDriverData doesn't fit in special area");
 
-#define GetTwitchDriverData(node) ((TwitchDriverData*) (node)->Special)
+#define GetTwitchDriverData(node) ((TwitchDriverData*) (node)->SpecialPadding)
 
 #define IsObjectBeingDeleted(node) ((node)->CType == INVALID_NODE_FLAG)
 

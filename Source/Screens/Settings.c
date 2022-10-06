@@ -230,6 +230,27 @@ static const MenuItem gSettingsMenuTree[] =
 	{ .id='mous' },
 //	{kMISpacer, .customHeight=.35f },
 //	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.5f },
+	{
+		kMICycler1, STR_MOUSE_SENSITIVITY,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.mouseSensitivityLevel,
+			.choices=
+			{
+				{STR_MOUSE_SENSITIVITY_1, 1},
+				{STR_MOUSE_SENSITIVITY_2, 2},
+				{STR_MOUSE_SENSITIVITY_3, 3},
+				{STR_MOUSE_SENSITIVITY_4, 4},
+				{STR_MOUSE_SENSITIVITY_5, 5},
+				{STR_MOUSE_SENSITIVITY_6, 6},
+				{STR_MOUSE_SENSITIVITY_7, 7},
+				{STR_MOUSE_SENSITIVITY_8, 8},
+				{STR_MOUSE_SENSITIVITY_9, 9},
+				{STR_MOUSE_SENSITIVITY_10, 10},
+			},
+		},
+	},
+	{kMISpacer, .customHeight=.25f },
 	{kMIMouseBinding, .inputNeed=kNeed_Fire },
 	{kMIMouseBinding, .inputNeed=kNeed_Jetpack },
 	{kMIMouseBinding, .inputNeed=kNeed_Drop },

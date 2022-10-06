@@ -1191,12 +1191,12 @@ void UpdatePlayerSteering(int playerNum)
 
 	if (playerNum == 0)
 	{
-		const float mouseSensitivityFrac = (float)gGamePrefs.mouseSensitivityLevel * (1.0f / NUM_MOUSE_SENSITIVITY_LEVELS);
+		const float mouseSensitivityFrac = (float)(gGamePrefs.mouseSensitivityLevel) * (1.0f / NUM_MOUSE_SENSITIVITY_LEVELS);
 
 		OGLVector2D mouseDelta = GetMouseDelta();
 
 		//float mult = 0.015f;	// original
-		float mult = 0.05f * mouseSensitivityFrac;
+		float mult = 0.07f * mouseSensitivityFrac;
 
 		float mouseYaw   = mouseDelta.x * mult;				// scale down deltas for our use
 		float mousePitch = mouseDelta.y * mult;

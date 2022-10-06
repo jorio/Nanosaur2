@@ -19,7 +19,7 @@
 #define SDL_BUTTON_WHEELUP					(NUM_SUPPORTED_MOUSE_BUTTONS-2)		// make wheelup look like it's a button
 #define SDL_BUTTON_WHEELDOWN				(NUM_SUPPORTED_MOUSE_BUTTONS-1)		// make wheeldown look like it's a button
 
-#define NUM_MOUSE_SENSITIVITY_LEVELS		8
+#define NUM_MOUSE_SENSITIVITY_LEVELS		10
 #define DEFAULT_MOUSE_SENSITIVITY_LEVEL		(NUM_MOUSE_SENSITIVITY_LEVELS/2)
 
 enum

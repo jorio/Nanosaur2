@@ -80,6 +80,7 @@ extern	Boolean					gMuteMusicFlag;
 extern	Boolean					gMyState_Lighting;
 extern	Boolean					gPlayerIsDead[MAX_PLAYERS];
 extern	Boolean					gPlayingFromSavedGame;
+extern	Boolean					gSkipLevelIntro;
 extern	Boolean					gSongPlayingFlag;
 extern	Boolean					gTimeDemo;
 extern	Boolean					gUserPrefersGamepad;

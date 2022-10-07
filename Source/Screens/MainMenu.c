@@ -19,6 +19,7 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void ProcessMenuOutcome(int outcome);
+static void CheckForLevelCheat(const MenuItem* mi);
 
 
 /****************************/
@@ -31,7 +32,9 @@ static void ProcessMenuOutcome(int outcome);
 #define	LINE_SPACING	(FONT_SCALE * 1.1f)
 #define	CURSOR_SCALE	35.0f
 
-static const MenuItem gMainMenuTree[] =
+// This menu tree MUST NOT BE CONST because CheckForLevelCheat needs to change
+// a specific MenuItem's .next on the fly!
+static MenuItem gMainMenuTree[] =
 {
 	{ .id='root' },
 	{kMIPick, STR_PLAY_GAME,	.next='play', },
@@ -40,7 +43,7 @@ static const MenuItem gMainMenuTree[] =
 	{kMIPick, STR_QUIT,			.id='quit', .next='EXIT', },
 
 	{ .id='play' },
-	{kMIPick, STR_ADVENTURE,	.id='camp', .next='EXIT' },
+	{kMIPick, STR_ADVENTURE,	.next='EXIT', .id='adve', .callback=CheckForLevelCheat},
 	{kMIPick, STR_NANO_VS_NANO,	.next='bttl' },
 	{kMIPick, STR_SAVED_GAMES,	.next='load'},
 	{kMIPick, STR_BACK_SYMBOL,	.next='BACK' },
@@ -57,6 +60,13 @@ static const MenuItem gMainMenuTree[] =
 	{kMIPick, STR_BATTLE2,			.id='bat2',	.next='EXIT' },
 	{kMIPick, STR_CAPTURE1,			.id='cap1',	.next='EXIT' },
 	{kMIPick, STR_CAPTURE2,			.id='cap2',	.next='EXIT' },
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{ .id='chea' },
+	{kMILabel, .rawText="CHEAT MENU!", .customHeight=2},
+	{kMIPick, .rawText="LEVEL 1",	.id='cht1',	.next='EXIT' },
+	{kMIPick, .rawText="LEVEL 2",	.id='cht2',	.next='EXIT' },
+	{kMIPick, .rawText="LEVEL 3",	.id='cht3',	.next='EXIT' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id=0 }
@@ -110,6 +120,7 @@ void DoMainMenuScreen(void)
 		{
 			MenuStyle style = kDefaultMenuStyle;
 			style.yOffset = 302.5f;
+			style.standardScale *= 0.8f;
 			MakeMenu(gMainMenuTree, &style);
 			RegisterSettingsMenu();
 			RegisterFileScreen(FILESCREEN_MODE_LOAD);
@@ -242,16 +253,29 @@ static void ProcessMenuOutcome(int outcome)
 
 		case	'demo':										// TIME DEMO (BENCHMARK)
 			gTimeDemo = true;
+			gSkipLevelIntro = true;
 			gNumPlayers = 1;
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
+			gLevelNum = LEVEL_NUM_ADVENTURE3;
 			SDL_GL_SetSwapInterval(0);						// no vsync for time demo
 			break;
 
-		case	'camp':										// SINGLE-PLAYER ADVENTURE CAMPAIGN
+		case	'adve':										// SINGLE-PLAYER ADVENTURE CAMPAIGN
 			gNumPlayers = 1;
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
+			gLevelNum = LEVEL_NUM_ADVENTURE1;
+			break;
+
+		case	'cht1':
+		case	'cht2':
+		case	'cht3':
+			gNumPlayers = 1;
+			gPlayNow = true;
+			gPlayingFromSavedGame = false;
+			gSkipLevelIntro = true;
+			gLevelNum = LEVEL_NUM_ADVENTURE1 + (outcome - 'cht1');
 			break;
 
 		case	'lf#0':										// LOAD SINGLE-PLAYER FILE 0
@@ -277,49 +301,28 @@ static void ProcessMenuOutcome(int outcome)
 		}
 
 		case	'rac1':										// RACE 1
-			gNumPlayers = 2;
-			gVSMode = VS_MODE_RACE;
-			gLevelNum = LEVEL_NUM_RACE1;
-			gPlayNow = true;
-			gPlayingFromSavedGame = false;
-			break;
-
 		case	'rac2':										// RACE 2
 			gNumPlayers = 2;
 			gVSMode = VS_MODE_RACE;
-			gLevelNum = LEVEL_NUM_RACE2;
+			gLevelNum = LEVEL_NUM_RACE1 + (outcome - 'rac1');
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
 			break;
 
 		case	'bat1':										// BATTLE 1
-			gNumPlayers = 2;
-			gVSMode = VS_MODE_BATTLE;
-			gLevelNum = LEVEL_NUM_BATTLE1;
-			gPlayNow = true;
-			gPlayingFromSavedGame = false;
-			break;
-
 		case	'bat2':										// BATTLE 2
 			gNumPlayers = 2;
 			gVSMode = VS_MODE_BATTLE;
-			gLevelNum = LEVEL_NUM_BATTLE2;
+			gLevelNum = LEVEL_NUM_BATTLE1 + (outcome - 'bat1');
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
 			break;
 
 		case	'cap1':										// CAPTURE THE FLAG 1
-			gNumPlayers = 2;
-			gVSMode = VS_MODE_CAPTURETHEFLAG;
-			gLevelNum = LEVEL_NUM_FLAG1;
-			gPlayNow = true;
-			gPlayingFromSavedGame = false;
-			break;
-
 		case	'cap2':										// CAPTURE THE FLAG 2
 			gNumPlayers = 2;
 			gVSMode = VS_MODE_CAPTURETHEFLAG;
-			gLevelNum = LEVEL_NUM_FLAG2;
+			gLevelNum = LEVEL_NUM_FLAG1 + (outcome - 'cap1');
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
 			break;
@@ -396,4 +399,19 @@ ObjNode* MakeMouseCursorObject(void)
 	cursor->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
 
 	return cursor;
+}
+
+
+/********* CHECK FOR LEVEL CHEAT KEY AS PLAYER ENTERS ADVENTURE *********/
+
+static void CheckForLevelCheat(const MenuItem* mi)
+{
+	if (IsKeyHeld(SDL_SCANCODE_F10))
+	{
+		((MenuItem*) mi)->next = 'chea';
+	}
+	else
+	{
+		((MenuItem*) mi)->next = 'EXIT';
+	}
 }

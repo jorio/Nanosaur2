@@ -119,53 +119,12 @@ void DoLegalScreen(void)
 
 #pragma mark -
 
-
-/********************* DO LEVEL CHEAT DIALOG **********************/
-
-Boolean DoLevelCheatDialog(void)
-{
-	SDL_MessageBoxButtonData buttons[3] =
-	{
-		{.buttonid = 0, .text = "1", .flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT},
-		{.buttonid = 1, .text = "LEVEL 2",},
-		{.buttonid = 2, .text = "LEVEL 3",},
-	};
-
-	SDL_MessageBoxData box =
-	{
-		.title = "LEVEL CHEAT DIALOG",
-		.message = "Pick a level",
-		.numbuttons = 3,
-		.buttons = buttons
-	};
-
-	Enter2D();
-
-	int button = 0;
-	int rc = SDL_ShowMessageBox(&box, &button);
-
-	Exit2D();
-
-	if (rc == 0)
-	{
-		gLevelNum = button;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-
-#pragma mark -
-
+#if 0
 /********************** DO GAME SETTINGS DIALOG ************************/
 
 void DoGameOptionsDialog(void)
 {
 	SOFTIMPME;
-#if 0
 OSErr			err;
 EventTypeSpec	list[] = { { kEventClassCommand,  kEventProcessCommand } };
 WindowRef 		dialogWindow = nil;
@@ -344,11 +303,9 @@ do_again:
 	CalcFramesPerSecond();				// reset this so things dont go crazy when we return
 	CalcFramesPerSecond();
 
-#endif
 }
 
 
-#if 0
 /****************** DO GAME SETTINGS DIALOG EVENT HANDLER *************************/
 
 static pascal OSStatus DoGameSettingsDialog_EventHandler(EventHandlerCallRef myHandler, EventRef event, void* userData)
@@ -395,10 +352,8 @@ HICommand 			command;
 
     return (result);
 }
-#endif
 
 
-#if 0
 
 /********************* DO GAME SETTINGS DIALOG *********************/
 

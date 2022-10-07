@@ -8,9 +8,6 @@ void DisplayPicture(const char* path);
 void DoPaused(void);
 
 void DoLegalScreen(void);
-Boolean DoLevelCheatDialog(void);
-void DoGameOptionsDialog(void);
-
 
 void DrawLoading(float percent);
 

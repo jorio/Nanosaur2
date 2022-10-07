@@ -62,6 +62,7 @@ Boolean				gPlayingFromSavedGame 	= false;
 Boolean				gGameOver 				= false;
 Boolean				gLevelCompleted 		= false;
 float				gLevelCompletedCoolDownTimer = 0;
+Boolean				gSkipLevelIntro			= false;
 
 short				gLevelNum;
 short				gVSMode = VS_MODE_NONE;						// nano vs. nano mode
@@ -183,9 +184,6 @@ void InitDefaultPrefs(void)
 
 static void PlayGame_Adventure(void)
 {
-
-
-
 			/* GAME INITIALIZATION */
 
 	InitPlayerInfo_Game();					// init player info for entire game
@@ -195,18 +193,6 @@ static void PlayGame_Adventure(void)
 			/* PLAY THRU LEVELS SEQUENTIALLY */
 			/*********************************/
 
-	if (!gPlayingFromSavedGame)				// start on Level 0 if not loading from saved game
-	{
-		gLevelNum = LEVEL_NUM_ADVENTURE1;
-
-		if (IsKeyActive(SDL_SCANCODE_F10))	// see if do Level cheat
-			DoLevelCheatDialog();
-	}
-
-	if (gTimeDemo)
-	{
-		gLevelNum = LEVEL_NUM_ADVENTURE3;
-	}
 
 	for (;gLevelNum <= LEVEL_NUM_ADVENTURE3; gLevelNum++)
 	{
@@ -214,13 +200,14 @@ static void PlayGame_Adventure(void)
 
 		PlaySong(gLevelSongs[gLevelNum], true);
 
-		if (!gTimeDemo)
+		if (!gSkipLevelIntro)
 		{
 			if ((gLevelNum == 0) || gPlayingFromSavedGame)
 				DoLevelIntroScreen(INTRO_MODE_NOSAVE);
 			else
 				DoLevelIntroScreen(INTRO_MODE_SAVEGAME);
 		}
+		gSkipLevelIntro = false;			// reset skip flag
 
 		MyFlushEvents();
 
@@ -680,6 +667,7 @@ float	fps;
 			&& IsKeyDown(SDL_SCANCODE_F10))								// see if skip level
 		{
 			gLevelCompleted = true;
+			gSkipLevelIntro = true;
 		}
 
 

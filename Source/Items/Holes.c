@@ -382,14 +382,13 @@ float				scale;
 			//			The dummy joint isn't part of the worm - it's just a "leader".
 			//
 
+	OGLPoint3D prevCoord = {0,0,0};
+
 	for (jointNum = -1; jointNum < numJoints; jointNum++)
 	{
-		OGLPoint3D		coord,prevCoord;
-
-
 				/* GET COORDS OF THIS SEGMENT */
 
-		coord = gCustomSplines[splineNum].splinePoints[splineIndex];
+		OGLPoint3D coord = gCustomSplines[splineNum].splinePoints[splineIndex];
 
 		splineIndex -= 6.0f * scale;										// prepare for next segment's index
 		if (splineIndex < 0)

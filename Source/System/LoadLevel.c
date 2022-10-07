@@ -77,6 +77,9 @@ void LoadLevelArt(void)
 FSSpec	spec;
 short	i;
 
+	UnsignedWide timeStartLoad;
+	Microseconds(&timeStartLoad);
+
 	gLoadingThermoPercent = 0;
 
 	glClearColor(0,0,0,0);						// clear to black for loading screen
@@ -212,6 +215,10 @@ short	i;
 
 	}
 
+	UnsignedWide timeEndLoad;
+	Microseconds(&timeEndLoad);
+
+	printf("%s: %d ms\n", __func__, (timeEndLoad.lo - timeStartLoad.lo) / 1000);
 }
 
 

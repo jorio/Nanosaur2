@@ -25,15 +25,9 @@
 /****************************/
 
 
-#define MAX_CUSTOM_SPLINES		40
-
-
-
 /*********************/
 /*    VARIABLES      */
 /*********************/
-
-static  long	gNumCustomSplines = 0;
 
 CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 
@@ -42,11 +36,7 @@ CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 
 void InitSplineManager(void)
 {
-short   i;
-
-	gNumCustomSplines = 0;
-
-	for (i = 0; i < MAX_CUSTOM_SPLINES; i++)
+	for (int i = 0; i < MAX_CUSTOM_SPLINES; i++)
 	{
 		gCustomSplines[i].isUsed = false;
 		gCustomSplines[i].splinePoints = nil;
@@ -58,9 +48,7 @@ short   i;
 
 void FreeAllCustomSplines(void)
 {
-short   i;
-
-	for (i = 0; i < MAX_CUSTOM_SPLINES; i++)
+	for (int i = 0; i < MAX_CUSTOM_SPLINES; i++)
 	{
 		FreeACustomSpline(i);
 	}

@@ -71,7 +71,7 @@ void RegisterFileScreen(int fileScreenMode)
 
 	gFileMenu[menuIndex++].id = 0;		// end sentinel
 
-	GAME_ASSERT(menuIndex <= sizeof(gFileMenu)/sizeof(gFileMenu[0]));
+	GAME_ASSERT(menuIndex <= (int) (sizeof(gFileMenu)/sizeof(gFileMenu[0])));
 
 	RegisterMenu(gFileMenu);
 }

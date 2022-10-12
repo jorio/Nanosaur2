@@ -426,6 +426,7 @@ ObjNode *base = chain->ChainHead;
 			.slot 		= SLOT_OF_DUMB + 20,
 			.moveCall 	= MoveAirMineFlareBall,
 			.flags 		= STATUS_BIT_DONTCULL,
+			.scale		= 1,
 		};
 
 		flare = MakeNewObject(&def);

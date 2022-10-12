@@ -3,6 +3,9 @@
 //
 
 
+#define MAX_CUSTOM_SPLINES		40
+
+
 typedef struct
 {
 	Boolean			isUsed;
@@ -10,7 +13,7 @@ typedef struct
 	OGLPoint3D		*splinePoints;
 }CustomSplineType;
 
-extern  CustomSplineType	gCustomSplines[];
+extern  CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 
 
 //=================

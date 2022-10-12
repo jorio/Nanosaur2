@@ -418,11 +418,8 @@ float				scale;
 
 static void SpewDirtFromHole(ObjNode *theNode)
 {
-int		i;
 float	fps = gFramesPerSecondFrac;
 int		particleGroup,magicNum;
-NewParticleGroupDefType	groupDef;
-NewParticleDefType	newParticleDef;
 OGLVector3D			d;
 OGLPoint3D			p;
 
@@ -436,20 +433,22 @@ OGLPoint3D			p;
 
 		if ((particleGroup == -1) || (!VerifyParticleGroupMagicNum(particleGroup, magicNum)))
 		{
-
 			theNode->ParticleMagicNum = magicNum = MyRandomLong();			// generate a random magic num
 
-			groupDef.magicNum				= magicNum;
-			groupDef.type					= PARTICLE_TYPE_FALLINGSPARKS;
-			groupDef.flags					= PARTICLE_FLAGS_BOUNCE;
-			groupDef.gravity				= 2000;
-			groupDef.magnetism				= 0;
-			groupDef.baseScale				= 70.0f;
-			groupDef.decayRate				=  .9;
-			groupDef.fadeRate				= .5;
-			groupDef.particleTextureNum		= PARTICLE_SObjType_SwampDirt;
-			groupDef.srcBlend				= GL_SRC_ALPHA;
-			groupDef.dstBlend				= GL_ONE_MINUS_SRC_ALPHA;
+			NewParticleGroupDefType groupDef =
+			{
+				.magicNum				= magicNum,
+				.type					= PARTICLE_TYPE_FALLINGSPARKS,
+				.flags					= PARTICLE_FLAGS_BOUNCE,
+				.gravity				= 2000,
+				.magnetism				= 0,
+				.baseScale				= 70.0f,
+				.decayRate				=  .9,
+				.fadeRate				= .5,
+				.particleTextureNum		= PARTICLE_SObjType_SwampDirt,
+				.srcBlend				= GL_SRC_ALPHA,
+				.dstBlend				= GL_ONE_MINUS_SRC_ALPHA,
+			};
 			theNode->ParticleGroup = particleGroup = NewParticleGroup(&groupDef);
 		}
 
@@ -461,7 +460,7 @@ OGLPoint3D			p;
 			y = theNode->Coord.y;
 			z = theNode->Coord.z;
 
-			for (i = 0; i < 4; i++)
+			for (int i = 0; i < 4; i++)
 			{
 				p.x = x + RandomFloat2() * 160.0f;
 				p.y = y;
@@ -471,13 +470,17 @@ OGLPoint3D			p;
 				d.y = 900.0f + RandomFloat() * 300.0f;
 				d.z = RandomFloat2() * 450.0f;
 
-				newParticleDef.groupNum		= particleGroup;
-				newParticleDef.where		= &p;
-				newParticleDef.delta		= &d;
-				newParticleDef.scale		= RandomFloat() * 1.5f + 1.0f;
-				newParticleDef.rotZ			= RandomFloat() * PI2;
-				newParticleDef.rotDZ		= RandomFloat2() * 5.0f;
-				newParticleDef.alpha		= 1.0;
+				NewParticleDefType	newParticleDef =
+				{
+					.groupNum	= particleGroup,
+					.where		= &p,
+					.delta		= &d,
+					.scale		= RandomFloat() * 1.5f + 1.0f,
+					.rotZ		= RandomFloat() * PI2,
+					.rotDZ		= RandomFloat2() * 5.0f,
+					.alpha		= 1.0,
+				};
+
 				if (AddParticleToGroup(&newParticleDef))
 				{
 					theNode->ParticleGroup = -1;
@@ -487,24 +490,5 @@ OGLPoint3D			p;
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

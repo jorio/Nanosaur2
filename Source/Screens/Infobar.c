@@ -532,14 +532,14 @@ void DrawInfobar(ObjNode *theNode)
 
 				if (gPlayerIsDead[0] && (gPlayerInfo[0].numFreeLives <= 0))
 				{
-					DrawInfobarSprite_Centered(640/2, 480/2, 200, INFOBAR_SObjType_GameOver);
+					DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorCenterY(0), 200, INFOBAR_SObjType_GameOver);
 
 				}
 						/* ENTER WORMHOLE */
 				else
 				if (gOpenPlayerWormhole && (!gCameraInExitMode))
 				{
-					DrawInfobarSprite_Centered(640/2, 480*2/3, 150, INFOBAR_SObjType_EnterWormhole);
+					DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorCenterY(80), 150, INFOBAR_SObjType_EnterWormhole);
 				}
 				break;
 

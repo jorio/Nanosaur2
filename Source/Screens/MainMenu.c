@@ -366,7 +366,7 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 	theNode->Coord.y = (float)my * screenToPaneY + gLogicalRect.top;
 
 	gCursorCoord.x = theNode->Coord.x;
-	gCursorCoord.y = theNode->Coord.x;
+	gCursorCoord.y = theNode->Coord.y;
 
 	UpdateObjectTransforms(theNode);
 

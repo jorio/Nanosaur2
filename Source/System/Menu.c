@@ -856,27 +856,14 @@ static void NavigateSettingEntriesVertically(int delta)
 
 static void NavigateSettingEntriesMouseHover(void)
 {
-	static int pMxRaw = -1, pMyRaw = -1;
+	static OGLPoint2D cursor = { -1, -1 };
 
-	int mxRaw, myRaw;
-	SDL_GetMouseState(&mxRaw, &myRaw);
-
-	if (mxRaw == pMxRaw && myRaw == pMyRaw)
+	if (cursor.x == gCursorCoord.x && cursor.y == gCursorCoord.y)
 	{
 		return;
 	}
 
-	pMxRaw = mxRaw;
-	pMyRaw = myRaw;
-
-	float g2DLogicalWidth = 640;	//TODO----TEMP
-	float g2DLogicalHeight = 480;
-
-	int ww, wh;
-	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
-
-	float mx = (mxRaw /*- ww/2.0f*/) * g2DLogicalWidth / ww;
-	float my = (myRaw /*- wh/2.0f*/) * g2DLogicalHeight / wh;
+	cursor = gCursorCoord;
 
 	gNav->mouseHoverValid = false;
 	gNav->mouseHoverColumn = -1;
@@ -895,29 +882,25 @@ static void NavigateSettingEntriesMouseHover(void)
 		ObjNode* textNode = gNav->menuObjects[row];
 		for (int col = 0; textNode; col++, textNode=textNode->ChainNode)
 		{
-			//ObjNode* textNode = gNav->menuObjects[row][col];
-			//if (!textNode)
-			//	continue;
-
 			OGLRect extents = TextMesh_GetExtents(textNode);
 			if (extents.top		< fullExtents.top	) fullExtents.top		= extents.top;
 			if (extents.left	< fullExtents.left	) fullExtents.left		= extents.left;
 			if (extents.bottom	> fullExtents.bottom) fullExtents.bottom	= extents.bottom;
 			if (extents.right	> fullExtents.right	) fullExtents.right		= extents.right;
 
-			if (my >= extents.top
-				&& my <= extents.bottom
-				&& mx >= extents.left - 10
-				&& mx <= extents.right + 10)
+			if (cursor.y >= extents.top
+				&& cursor.y <= extents.bottom
+				&& cursor.x >= extents.left - 10
+				&& cursor.x <= extents.right + 10)
 			{
 				gNav->mouseHoverColumn = col;
 			}
 		}
 
-		if (my >= fullExtents.top &&
-			my <= fullExtents.bottom &&
-			mx >= fullExtents.left - 10 &&
-			mx <= fullExtents.right + 10)
+		if (cursor.y >= fullExtents.top &&
+			cursor.y <= fullExtents.bottom &&
+			cursor.x >= fullExtents.left - 10 &&
+			cursor.x <= fullExtents.right + 10)
 		{
 			gNav->mouseHoverValid = true;
 

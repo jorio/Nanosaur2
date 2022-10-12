@@ -33,7 +33,6 @@ static void ReadNormalArray(short refNum);
 static void ReadUVArray(short refNum);
 static void ReadVertexColorArray(short refNum);
 static void ReadTriangleArray(short refNum);
-static void PreLoadTextureMaterials(void);
 static void ReadBoundingBox(short refNum);
 
 
@@ -123,13 +122,6 @@ MOGroupData			*data;
 			/* CLOSE FILE */
 
 	FSClose(refNum);
-
-
-		/*********************************************/
-		/* PRELOAD ALL TEXTURE MATERIALS INTO OPENGL */
-		/*********************************************/
-
-	PreLoadTextureMaterials();
 
 
 			/********************/
@@ -404,17 +396,13 @@ MOMaterialData	*data;
 
 			/* COPY BASIC INFO */
 
+	GAME_ASSERT(data->numMipmaps < MO_MAX_MIPMAPS);		// see if overflow
+
 	if (data->numMipmaps == 0)					// see if this is the first texture
 	{
 		data->width 			= textureHeader.width;
 		data->height	 		= textureHeader.height;
-		data->pixelSrcFormat 	= textureHeader.srcPixelFormat;		// internal format
-		data->pixelDstFormat 	= textureHeader.dstPixelFormat;		// vram format
 	}
-	else
-	if (data->numMipmaps >= MO_MAX_MIPMAPS)		// see if overflow
-		DoFatalAlert("ReadMaterialTextureMap: mipmap overflow!");
-
 
 		/***************************/
 		/* READ THE TEXTURE PIXELS */
@@ -432,10 +420,40 @@ MOMaterialData	*data;
 		/* ASSIGN PIXELS TO CURRENT MATERIAL */
 
 	i = data->numMipmaps++;						// increment the mipmap count
-	data->texturePixels[i] = texturePixels;		// set ptr to pixelmap
 
-//	SwizzleARGBtoBGRA(data->width,data->height, (uint32_t *)texturePixels);
+	int w = textureHeader.width;
+	int h = textureHeader.height;
 
+		/********************/
+		/* LOAD INTO OPENGL */
+		/********************/
+
+	switch (textureHeader.srcPixelFormat)
+	{
+		// Source port note: most BG3Ds in Nanosaur 2 use JPEG textures;
+		// the few that don't use JPEG always use GL_RGBA in practice.
+		case GL_RGBA:
+			data->textureName[i] = OGL_TextureMap_Load(texturePixels, w, h, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+			break;
+
+		// Just in case we want to import models from other games or whatever...
+		case GL_UNSIGNED_SHORT_1_5_5_5_REV:		// 16-bit packed pixel
+		case GL_UNSIGNED_INT_8_8_8_8_REV:		// ARGB (standard Mac)
+			// pass on format as dataType
+			data->textureName[i] = OGL_TextureMap_Load(texturePixels, w, h, GL_RGBA, GL_RGBA, textureHeader.srcPixelFormat);
+			break;
+
+		default:
+			DoFatalAlert("Unsupported BG3D srcPixelFormat 0x%04x", textureHeader.srcPixelFormat);
+	}
+
+		/* DISPOSE ORIGINAL PIXELS */
+		//
+		// OpenGL now has its own copy of the texture,
+		// so we don't need ours anymore.
+		//
+
+	SafeDisposePtr(texturePixels);
 }
 
 
@@ -449,16 +467,13 @@ MOMaterialData	*data;
 static void ReadMaterialJPEGTextureMap(short refNum)
 {
 BG3DJPEGTextureHeader	textureHeader;
-long					count,i, w, h;
-uint32_t 					*texturePixels;
-Ptr	 					jpegBuffer;
+long					count, w, h;
 MOMaterialData			*data;
 Boolean					hasAlpha;
 
 			/* GET PTR TO CURRENT MATERIAL */
 
-	if (gBG3D_CurrentMaterialObj == nil)
-		DoFatalAlert("ReadMaterialTextureMap: gBG3D_CurrentMaterialObj == nil");
+	GAME_ASSERT(gBG3D_CurrentMaterialObj);
 
 	data = &gBG3D_CurrentMaterialObj->objectData; 	// get ptr to material data
 
@@ -482,44 +497,39 @@ Boolean					hasAlpha;
 
 			/* COPY BASIC INFO */
 
+	GAME_ASSERT(data->numMipmaps < MO_MAX_MIPMAPS);			// see if overflow
+
 	if (data->numMipmaps == 0)								// see if this is the first texture
 	{
 		data->width 			= w;
 		data->height	 		= h;
-		data->pixelSrcFormat 	= GL_UNSIGNED_INT_8_8_8_8_REV;		// the JPEG will get decompressed to this
-		data->pixelDstFormat 	= GL_RGBA8;					// vram format
 	}
-	else
-	if (data->numMipmaps >= MO_MAX_MIPMAPS)					// see if overflow
-		DoFatalAlert("ReadMaterialTextureMap: mipmap overflow!");
 
 
 		/**********************/
 		/* READ THE JPEG DATA */
 		/**********************/
 
-		/* ALLOC BUFFER FOR JPEG DATA */
+	Ptr textureRGBA = NULL;
 
-	count = textureHeader.bufferSize;						// get size of JPEG buffer to load
-	jpegBuffer = AllocPtr(count);							// alloc memory for buffer
-	if (jpegBuffer == nil)
-		DoFatalAlert("ReadMaterialJPEGTextureMap: AllocPtr failed");
+	{
+			/* ALLOC BUFFER FOR JPEG DATA */
 
-	FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
+		count = textureHeader.bufferSize;						// get size of JPEG buffer to load
+		Ptr jpegBuffer = AllocPtr(count);						// alloc memory for buffer
+		GAME_ASSERT(jpegBuffer);
 
+		FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
 
-		/* ALLOC BUFFER & GWORLD FOR THE DECOMPRESSED TEXTURE */
+				/************************/
+				/* DECOMPRESS THE IMAGE */
+				/************************/
 
-	texturePixels = AllocPtr(w * h * 4);					// JPEG textures always decompress to 32-bit ARGB
-	if (texturePixels == nil)
-		DoFatalAlert("ReadMaterialJPEGTextureMap: AllocPtr failed");
+		textureRGBA = DecompressQTImage(jpegBuffer, textureHeader.bufferSize, w, h);
+		GAME_ASSERT(textureRGBA);
 
-			/************************/
-			/* DECOMPRESS THE IMAGE */
-			/************************/
-
-	DecompressQTImage(jpegBuffer, textureHeader.bufferSize, (Ptr) texturePixels, w, h);
-	SafeDisposePtr(jpegBuffer);
+		SafeDisposePtr(jpegBuffer);
+	}
 
 		/***************************************/
 		/* READ IN ALPHA CHANNEL IF IT HAS ONE */
@@ -527,32 +537,27 @@ Boolean					hasAlpha;
 
 	if (hasAlpha)
 	{
-		uint8_t	*alphaBuffer;
-
 		count = w * h;
-		alphaBuffer = AllocPtr(count);
+		Ptr alphaBuffer = AllocPtr(count);			// alloc buffer for alpha channel
+		FSRead(refNum, &count, alphaBuffer);		// read alpha buffer
 
-		FSRead(refNum, &count, (Ptr) alphaBuffer);		// read alpha buffer
-
-		for (i = 0; i < count; i++)
+		Ptr textureAlpha = textureRGBA + 3;
+		for (int p = 0; p < count; p++)
 		{
-			uint32_t	pixel32 = texturePixels[i];
-			pixel32 &= 0x00ffffff;								// get RGBx and mask out alpha
-			pixel32 |= ((uint32_t) alphaBuffer[i]) << 24;		// insert alpha
-			texturePixels[i] = pixel32; 						// save new RGBA
+			*textureAlpha = alphaBuffer[p];
+			textureAlpha += 4;
 		}
 
 		SafeDisposePtr(alphaBuffer);
 	}
 
-
-
 		/*************************************/
 		/* ASSIGN PIXELS TO CURRENT MATERIAL */
 		/*************************************/
 
-	i = data->numMipmaps++;						// increment the mipmap count
-	data->texturePixels[i] = texturePixels;		// set ptr to pixelmap
+	int i = data->numMipmaps++;						// increment the mipmap count
+	data->textureName[i] = OGL_TextureMap_Load(textureRGBA, w, h, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);		// load GL texture
+	SafeDisposePtr(textureRGBA);
 }
 
 
@@ -951,95 +956,6 @@ MOGroupObject	*rootGroup;
 	gBG3D_CurrentGroup 				= rootGroup;
 
 }
-
-
-
-/***************** PRELOAD TEXTURE MATERIALS ***********************/
-//
-// Called when we're done importing the file.  It scans all of the materials
-// that were loaded and uploads all of the textures to OpenGL.  Then it draws a single
-// dummy triangle using any textured materials to cause the texture to get pre-loaded
-// into VRAM.
-//
-// Additionally, it deletes our local copy of the texture since we've passed it off to OpenGL
-//
-
-static void PreLoadTextureMaterials(void)
-{
-int					i, num,w,h;
-MOMaterialObject	*mat;
-MOMaterialData		*matData;
-void				*pixels;
-
-	num = gBG3D_CurrentContainer->numMaterials;
-
-
-	for (i = 0; i < num; i++)
-	{
-		mat = gBG3D_CurrentContainer->materials[i];
-		matData = &mat->objectData;
-
-		if (matData->numMipmaps > 0)							// see if has textures
-		{
-
-				/* GET TEXTURE INFO */
-
-			pixels 		= matData->texturePixels[0];			// get ptr to pixel buffer
-			w 			= matData->width;						// get width
-			h 			= matData->height;						// get height
-
-
-				/********************/
-				/* LOAD INTO OPENGL */
-				/********************/
-
-					/* DATA IS 16-BIT PACKED PIXEL FORMAT */
-
-			if (matData->pixelSrcFormat == GL_UNSIGNED_SHORT_1_5_5_5_REV)
-				matData->textureName[0] = OGL_TextureMap_Load(pixels, w, h, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, false); // load 16 as 16
-
-
-					/* DATA IS ARGB (STANDARD MAC) FORMAT */
-			else
-			if (matData->pixelSrcFormat == GL_UNSIGNED_INT_8_8_8_8_REV)
-				matData->textureName[0] = OGL_TextureMap_Load(pixels, w, h, GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
-
-
-					/* USE IT AS IT IS - PROBABLY OGL RGBA */
-			else
-				matData->textureName[0] = OGL_TextureMap_Load( pixels, w, h, matData->pixelDstFormat, matData->pixelSrcFormat, GL_UNSIGNED_BYTE, false);
-
-
-			/* DISPOSE ORIGINAL PIXELS */
-			//
-			// OpenGL now has its own copy of the texture,
-			// so we don't need ours anymore.
-			//
-
-			SafeDisposePtr(pixels);
-			matData->texturePixels[0] = nil;
-
-
-					/********************/
-					/* PRE-LOAD TO VRAM */
-					/********************/
-					//
-					// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
-					//
-
-			MO_DrawMaterial(mat);
-			glBegin(GL_TRIANGLES);
-			glVertex3f(0,0,0);
-			glVertex3f(0,0,0);
-			glVertex3f(0,0,0);
-			glEnd();
-
-		}
-
-	}
-}
-
-
 
 
 #pragma mark -

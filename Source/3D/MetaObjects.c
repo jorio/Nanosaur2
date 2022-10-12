@@ -359,11 +359,7 @@ static void SetMetaObjectToPicture(MOPictureObject *pictObj, const char* path)
 	matData.numMipmaps		= 1;
 	matData.width			= width;
 	matData.height			= height;
-	matData.pixelSrcFormat	= GL_RGBA;
-	matData.pixelDstFormat 	= GL_RGBA;//destPixelFormat;
-	matData.texturePixels[0]= nil;						// we're going to preload
 	matData.textureName[0]	= textureName;
-
 	picData->material		= MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);
 	OGL_CheckError();
 }

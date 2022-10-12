@@ -1099,16 +1099,9 @@ int	t,b,l,r;
 //
 
 GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat,
-							GLint srcFormat, GLint dataType, Boolean textureInRAM)
+							GLint srcFormat, GLint dataType)
 {
 GLuint	textureName;
-
-
-
-				/* KEEP ANY SONG GOING SMOOTHLY */
-
-//	if (gSongMovie)
-//		MoviesTask(gSongMovie, 0);
 
 
 	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
@@ -1122,66 +1115,35 @@ GLuint	textureName;
 			/* GET A UNIQUE TEXTURE NAME & INITIALIZE IT */
 
 	glGenTextures(1, &textureName);
-	if (OGL_CheckError())
-		DoFatalAlert("OGL_TextureMap_Load: glGenTextures failed!");
+	OGL_CheckError();
 
 	glBindTexture(GL_TEXTURE_2D, textureName);				// this is now the currently active texture
-	if (OGL_CheckError())
-		DoFatalAlert("OGL_TextureMap_Load: glBindTexture failed!");
+	OGL_CheckError();
 
 
 				/* LOAD TEXTURE AND/OR MIPMAPS */
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 #if 0
-	if (0)
-	{
-		GLint	error;
-
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		error = gluBuild2DMipmaps(GL_TEXTURE_2D,
-							destFormat,								// format in OpenGL
-							width,									// width in pixels
-							height,									// height in pixels
-							srcFormat,								// what my format is
-							dataType,								// size of each r,g,b
-							imageMemory);							// pointer to the actual texture pixels
-
-		if (error)
-		{
-			DoFatalAlert("OGL_TextureMap_Load: gluBuild2DMipmaps failed! %d", error);
-		}
-	}
-	else
+	if (textureInRAM)
+		glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
 #endif
 
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
- 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-#if 1
-		GAME_ASSERT_MESSAGE(!textureInRAM, "GL_UNPACK_CLIENT_STORAGE_APPLE is unsupported");
-#else
-		if (textureInRAM)
-			glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
-#endif
-
-		glTexImage2D(GL_TEXTURE_2D,
-					0,										// mipmap level
-					destFormat,								// format in OpenGL
-					width,									// width in pixels
-					height,									// height in pixels
-					0,										// border
-					srcFormat,								// what my format is
-					dataType,								// size of each r,g,b
-					imageMemory);							// pointer to the actual texture pixels
-	}
+	glTexImage2D(GL_TEXTURE_2D,
+				0,										// mipmap level
+				destFormat,								// format in OpenGL
+				width,									// width in pixels
+				height,									// height in pixels
+				0,										// border
+				srcFormat,								// what my format is
+				dataType,								// size of each r,g,b
+				imageMemory);							// pointer to the actual texture pixels
 
 			/* SEE IF RAN OUT OF MEMORY WHILE COPYING TO OPENGL */
 
-	if (OGL_CheckError())
-		DoFatalAlert("OGL_TextureMap_Load: glTexImage2D failed!");
+	OGL_CheckError();
 
 
 				/* SET THIS TEXTURE AS CURRENTLY ACTIVE FOR DRAWING */
@@ -1236,14 +1198,14 @@ Ptr						imageFileData = nil;
 			height,
 			GL_RGBA,
 			internalFormat,
-			GL_UNSIGNED_BYTE,
-			false);
+			GL_UNSIGNED_BYTE);
+
 	OGL_CheckError();
 
 			/* CLEAN UP */
 
-	//DisposePtr((Ptr) pixelData);
-	free(pixelData);  // TODO: define STBI_MALLOC/STBI_REALLOC/STBI_FREE in stb_image.c?
+	SafeDisposePtr(pixelData);
+	pixelData = NULL;
 
 	if (outWidth)
 		*outWidth = width;

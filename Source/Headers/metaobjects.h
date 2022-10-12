@@ -77,17 +77,14 @@ typedef struct
 
 typedef struct
 {
-	uint32_t			flags;
+	uint32_t		flags;
 	OGLColorRGBA	diffuseColor;					// rgba diffuse color
-	uint16_t			multiTextureMode;				// sphere map, etc.
-	uint16_t			multiTextureCombine;			// blend, replace, etc.
-	uint16_t			envMapNum;						// texture # in env map list to use
+	uint16_t		multiTextureMode;				// sphere map, etc.
+	uint16_t		multiTextureCombine;			// blend, replace, etc.
+	uint16_t		envMapNum;						// texture # in env map list to use
 
-	uint32_t			numMipmaps;						// # texture mipmaps to use
-	uint32_t			width,height;					// dimensions of texture
-	GLint			pixelSrcFormat;					// OGL format (GL_RGBA, etc.) for src pixels
-	GLint			pixelDstFormat;					// OGL format (GL_RGBA, etc.) for VRAM
-	void			*texturePixels[MO_MAX_MIPMAPS]; // ptr to texture pixels for each mipmap
+	uint32_t		numMipmaps;						// # texture mipmaps to use
+	uint32_t		width,height;					// dimensions of texture
 	GLuint			textureName[MO_MAX_MIPMAPS]; 	// texture name assigned by OpenGL
 }MOMaterialData;
 

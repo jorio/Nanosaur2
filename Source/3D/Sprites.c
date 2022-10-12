@@ -126,10 +126,7 @@ void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, 
 			.diffuseColor	= {1, 1, 1, 1},
 			.width			= width,
 			.height			= height,
-			.pixelSrcFormat	= GL_UNSIGNED_BYTE,						// see OGL_TextureMap_LoadImageFile
-			.pixelDstFormat	= GL_RGBA,								// see OGL_TextureMap_LoadImageFile
 			.numMipmaps		= 1,
-			.texturePixels	= {NULL},								// we've preloaded the texture
 			.textureName	= {textureName},
 		};
 
@@ -159,7 +156,6 @@ void LoadSpriteGroup(int groupNum, const char* fileName, int flags)
 short			refNum;
 int				w,h;
 long			count;
-MOMaterialData	matData;
 
 	(void) flags;
 
@@ -191,7 +187,6 @@ MOMaterialData	matData;
 
 	for (int i = 0; i < numSprites; i++)
 	{
-		uint32_t *buffer;
 		uint32_t	hasAlpha;
 
 			/* READ WIDTH/HEIGHT, ASPECT RATIO */
@@ -223,6 +218,8 @@ MOMaterialData	matData;
 				/* READ COMPRESSED JPEG TEXTURE */
 				/********************************/
 
+		Ptr textureRGBA = NULL;
+
 		{
 			Ptr			jpegBuffer;
 			int32_t		dataSize;
@@ -239,76 +236,55 @@ MOMaterialData	matData;
 			jpegBuffer = AllocPtr(count);							// alloc memory for jpeg buffer
 			FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
 
-					/* ALLOCATE PIXEL BUFFER & GWORLD */
-
-			buffer = AllocPtr(w * h * 4);
-
-			DecompressQTImage(jpegBuffer, dataSize, (Ptr) buffer, w, h);
+			textureRGBA = DecompressQTImage(jpegBuffer, dataSize, w, h);
+			GAME_ASSERT(textureRGBA);
 
 			SafeDisposePtr(jpegBuffer);
-			jpegBuffer = NULL;
-
+		}
 
 			/**********************/
 			/* READ ALPHA CHANNEL */
 			/**********************/
 
-			if (hasAlpha)
+		if (hasAlpha)
+		{
+			count = w * h;
+			Ptr alphaBuffer = AllocPtr(count);				// alloc buffer for alpha channel
+			FSRead(refNum, &count, alphaBuffer);			// read alpha channel
+
+			Ptr textureAlpha = textureRGBA + 3;
+			for (int p = 0; p < count; p++)
 			{
-				uint8_t *alphaBuffer;
-
-				count = w * h;
-
-				alphaBuffer = AllocPtr(count);						// alloc buffer for alpha channel
-
-				FSRead(refNum, &count, (Ptr) alphaBuffer);			// read alpha channel
-
-				for (int j = 0; j < count; j++)
-				{
-					uint32_t	pixel = buffer[j];
-
-					pixel  &= 0x00ffffff;						// mask out alpha
-					pixel |= (uint32_t)alphaBuffer[j] << 24;
-					buffer[j] =pixel;							// insert alpha
-				}
-
-				SafeDisposePtr(alphaBuffer);
+				*textureAlpha = alphaBuffer[p];
+				textureAlpha += 4;
 			}
+
+			SafeDisposePtr(alphaBuffer);
 		}
 
 				/*****************************/
 				/* CREATE NEW TEXTURE OBJECT */
 				/*****************************/
 
-		matData.flags			= BG3D_MATERIALFLAG_TEXTURED;
+		MOMaterialData matData =
+		{
+			.flags			= BG3D_MATERIALFLAG_TEXTURED,
+			.diffuseColor	= {1,1,1,1},
+			.numMipmaps		= 1,
+			.width			= gSpriteGroupList[groupNum][i].width,
+			.height			= gSpriteGroupList[groupNum][i].height,
+			.textureName	= {OGL_TextureMap_Load(textureRGBA, matData.width, matData.height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE)},
+		};
+
 		if (hasAlpha)
 			matData.flags		|= BG3D_MATERIALFLAG_ALWAYSBLEND;
-		matData.diffuseColor.r	= 1;
-		matData.diffuseColor.g	= 1;
-		matData.diffuseColor.b	= 1;
-		matData.diffuseColor.a	= 1;
-
-		matData.numMipmaps		= 1;
-		w = matData.width		= gSpriteGroupList[groupNum][i].width;
-		h = matData.height		= gSpriteGroupList[groupNum][i].height;
-
-		matData.pixelSrcFormat	= GL_UNSIGNED_INT_8_8_8_8_REV;
-		matData.pixelDstFormat	= GL_RGBA8;
-
-		matData.texturePixels[0]= nil;											// we're going to preload
-
-
-		matData.textureName[0] 	= OGL_TextureMap_Load(buffer, matData.width, matData.height, GL_RGBA8,
-													 GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
-
 
 		gSpriteGroupList[groupNum][i].materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);
 
 		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
 
 
-		SafeDisposePtr((Ptr)buffer);														// free the buffer
-
+		SafeDisposePtr(textureRGBA);
 	}
 
 

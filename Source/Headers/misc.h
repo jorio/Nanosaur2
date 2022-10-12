@@ -7,10 +7,14 @@
 void	DoAlert(const char* format, ...);
 POMME_NORETURN void DoFatalAlert(const char* format, ...);
 POMME_NORETURN void CleanQuit(void);
+
+void* AllocPtr(long size);
+void* AllocPtrClear(long size);
+void* ReallocPtr(void* ptr, long size);
+void SafeDisposePtr(void* ptr);
+
 extern	void SetMyRandomSeed(unsigned long seed);
 extern	unsigned long MyRandomLong(void);
-extern	void *AllocPtr(long size);
-void *AllocPtrClear(long size);
 extern	void InitMyRandomSeed(void);
 extern	void VerifySystem(void);
 extern	float RandomFloat(void);
@@ -20,7 +24,6 @@ void CalcFramesPerSecond(void);
 Boolean IsPowerOf2(int num);
 float RandomFloat2(void);
 
-void SafeDisposePtr(void *ptr);
 void MyFlushEvents(void);
 
 Boolean WeAreFrontProcess(void);

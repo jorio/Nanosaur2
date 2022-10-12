@@ -416,9 +416,6 @@ static void MakeLevelIntroStarDome(void)
 		.numMipmaps			= 1,
 		.width				= width,
 		.height				= height,
-		.pixelSrcFormat		= GL_UNSIGNED_INT_8_8_8_8_REV,
-		.pixelDstFormat		= GL_RGBA8,
-		.texturePixels[0]	= nil,											// we're going to preload
 		.textureName[0] 	= textureName,
 	};
 	MOMaterialObject* matRef = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);//MO_GetNewReference(matData);

@@ -552,7 +552,6 @@ long					size;
 float					yScale;
 short					fRefNum;
 OSErr					iErr;
-Ptr						textureBuffer32 = nil;
 
 #if 0
 			/* USE 16-BIT IF IN LOW-QUALITY RENDER MODES OR LOW ON VRAM */
@@ -944,9 +943,6 @@ Ptr						textureBuffer32 = nil;
 	texSize = SUPERTILE_TEXMAP_SIZE;
 
 
-	textureBuffer32 = AllocPtr(texSize * texSize * 4);		// alloc for 32bit pixels
-
-
 				/* OPEN THE DATA FORK */
 
 	iErr = FSpOpenDF(specPtr, fsRdPerm, &fRefNum);
@@ -958,7 +954,6 @@ Ptr						textureBuffer32 = nil;
 	{
 		int32_t					dataSize;
 		MOMaterialData			matData;
-		Ptr						tempBuff;
 
 
 				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
@@ -970,62 +965,44 @@ Ptr						textureBuffer32 = nil;
 
 		dataSize = SwizzleLong(&dataSize);
 
-		tempBuff = AllocPtr(dataSize);
+		Ptr jpegBuffer = AllocPtr(dataSize);
 
 
 				/* READ THE IMAGE DESC DATA + THE COMPRESSED IMAGE DATA */
 
 		size = dataSize;
-		iErr = FSRead(fRefNum, &size, tempBuff);
+		iErr = FSRead(fRefNum, &size, jpegBuffer);
 		if (iErr)
 			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
 
 
 				/* DECOMPRESS THE IMAGE */
 
-		DecompressQTImage(
-				tempBuff,
-				dataSize,
-				textureBuffer32,
-				texSize,
-				texSize
-		);
-		SafeDisposePtr(tempBuff);													// free the temp buff
-		tempBuff = nil;
-
-
-//		SetAlphaInARGBBuffer(texSize, texSize, (uint32_t *)textureBuffer32);
-//		SwizzleARGBtoBGRA(texSize,texSize, (uint32_t *)textureBuffer32);
-
-
+		Ptr textureBuffer = DecompressQTImage(jpegBuffer, dataSize, texSize, texSize);
+		SafeDisposePtr(jpegBuffer);
+		jpegBuffer = NULL;
 
 				/**************************/
 				/* CREATE MATERIAL OBJECT */
 				/**************************/
 
-		matData.pixelSrcFormat 	= GL_UNSIGNED_INT_8_8_8_8_REV;
-		matData.pixelDstFormat 	= GL_RGBA8;
-		matData.textureName[0] 	= OGL_TextureMap_Load(textureBuffer32, texSize, texSize,
-												 GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false);
-
+		matData.textureName[0] = OGL_TextureMap_Load(textureBuffer, texSize, texSize, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+		SafeDisposePtr(textureBuffer);
+		textureBuffer = NULL;
 
 		matData.flags 					= 	BG3D_MATERIALFLAG_CLAMP_U|
 											BG3D_MATERIALFLAG_CLAMP_V|
 											BG3D_MATERIALFLAG_TEXTURED;
-
 		matData.multiTextureMode		= MULTI_TEXTURE_MODE_REFLECTIONSPHERE;
 		matData.multiTextureCombine		= MULTI_TEXTURE_COMBINE_ADD;
-		matData.diffuseColor.r			= 1;
-		matData.diffuseColor.g			= 1;
-		matData.diffuseColor.b			= 1;
-		matData.diffuseColor.a			= 1;
+		matData.diffuseColor			= (OGLColorRGBA) {1,1,1,1};
 		matData.numMipmaps				= 1;										// 1 texture
 		matData.width					= texSize;
 		matData.height					= texSize;
-		matData.texturePixels[0] 		= nil;										// the original pixels are gone (or will be soon)
 		gSuperTileTextureObjects[i] 	= MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);		// create the new object
 
 
+#if 0
 			/* PRE-LOAD */
 			//
 			// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
@@ -1038,6 +1015,7 @@ Ptr						textureBuffer32 = nil;
 		glVertex3f(0,0,0);
 		glVertex3f(1,0,0);
 		glEnd();
+#endif
 
 
 			/* UPDATE LOADING THERMOMETER */
@@ -1052,9 +1030,6 @@ Ptr						textureBuffer32 = nil;
 			/* CLOSE THE FILE */
 
 	FSClose(fRefNum);
-
-	if (textureBuffer32)
-		SafeDisposePtr(textureBuffer32);
 }
 
 
@@ -1615,14 +1590,8 @@ char* CSVIterator(char** csvCursor, bool* eolOut)
 	return columnStart;
 }
 
-
-
-void DecompressQTImage(
-		const char* data,
-		int dataSize,
-		char* outputBuffer,
-		int w,
-		int h)
+// Caller is responsible for freeing the pointer!
+Ptr DecompressQTImage(const char* data, int dataSize, int w, int h)
 {
 	// The beginning of the buffer is an ImageDescription record.
 	// The first int is an offset to the actual data.
@@ -1648,19 +1617,5 @@ void DecompressQTImage(
 	GAME_ASSERT(actualW == w);
 	GAME_ASSERT(actualH == h);
 
-	uint8_t* out = (uint8_t*) outputBuffer;
-	for (int p = 0; p < 4*w*h; p += 4)
-	{
-		uint8_t r = pixelData[p+0];
-		uint8_t g = pixelData[p+1];
-		uint8_t b = pixelData[p+2];
-		uint8_t a = pixelData[p+3];
-		out[p+0] = b;
-		out[p+1] = g;
-		out[p+2] = r;
-		out[p+3] = a;
-	}
-
-	free(pixelData);
-	pixelData = NULL;
+	return (Ptr) pixelData;
 }

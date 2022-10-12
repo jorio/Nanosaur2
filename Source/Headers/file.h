@@ -142,9 +142,4 @@ char* LoadTextFile(const char* path, long* outLength);
 
 char* CSVIterator(char** csvCursor, bool* eolOut);
 
-void DecompressQTImage(
-		const char* data,
-		int dataSize,
-		char* outputBuffer,
-		int expectedWidth,
-		int expectedHeight);
+Ptr DecompressQTImage(const char* data, int dataSize, int expectedWidth, int expectedHeight);

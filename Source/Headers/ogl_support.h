@@ -290,8 +290,7 @@ void OGL_MoveCameraFrom(float fromDX, float fromDY, float fromDZ, Byte camNum);
 void OGL_UpdateCameraFromToUp(OGLPoint3D *from, OGLPoint3D *to, const OGLVector3D *up, int camNum);
 void OGL_Camera_SetPlacementAndUpdateMatrices(int camNum);
 void OGL_Texture_SetOpenGLTexture(GLuint textureName);
-GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat,
-							GLint srcFormat, GLint dataType, Boolean textureInRAM);
+GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat, GLint srcFormat, GLint dataType);
 GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight);
 void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels);
 GLenum OGL_CheckError_Impl(const char* file, int line);

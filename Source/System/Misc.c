@@ -278,7 +278,7 @@ void* ReallocPtr(void* initialPtr, long newSize)
 		return AllocPtr(newSize);
 	}
 
-	Ptr p = initialPtr - PTRCOOKIE_SIZE;		// back up pointer to cookie
+	Ptr p = ((Ptr)initialPtr) - PTRCOOKIE_SIZE;	// back up pointer to cookie
 	newSize += PTRCOOKIE_SIZE;					// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
 	p = realloc(p, newSize);					// reallocate it
@@ -308,7 +308,7 @@ void SafeDisposePtr(void *ptr)
 		return;
 	}
 
-	Ptr p = ptr - PTRCOOKIE_SIZE;					// back up to pt to cookie
+	Ptr p = ((Ptr)ptr) - PTRCOOKIE_SIZE;			// back up to pt to cookie
 
 	uint32_t* cookiePtr = (uint32_t *)p;
 	GAME_ASSERT(cookiePtr[0] == 'FACE');

@@ -166,7 +166,6 @@ extern	int						gMaxEnemies;
 extern	int						gMenuOutcome;
 extern	int						gNumEnemies;
 extern	int						gNumLineMarkers;
-extern	int						gNumLoopingEffects;
 extern	int						gNumObjectNodes;
 extern	int						gNumObjectsInBG3DGroupList[MAX_BG3D_GROUPS];
 extern	int						gNumPointers;

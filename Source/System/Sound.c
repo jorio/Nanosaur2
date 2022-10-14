@@ -75,10 +75,6 @@ static short				gMaxChannels = 0;
 static short				gMostRecentChannel = -1;
 
 Boolean						gSongPlayingFlag = false;
-Boolean						gLoopSongFlag = true;
-Boolean						gAllowAudioKeys = true;
-
-int							gNumLoopingEffects;
 
 Boolean				gMuteMusicFlag = false;
 short				gCurrentSong = -1;
@@ -152,8 +148,6 @@ void InitSoundTools(void)
 OSErr			iErr;
 
 
-	gNumLoopingEffects = 0;
-
 	gMaxChannels = 0;
 	gMostRecentChannel = -1;
 
@@ -169,8 +163,6 @@ OSErr			iErr;
 		iErr = SndNewChannel(&gSndChannel[gMaxChannels], sampledSynth, initStereo, nil);
 		if (iErr)												// if err, stop allocating channels
 			break;
-
-		gChannelInfo[gMaxChannels].isLooping = false;
 	}
 
 		/* SONG CHANNEL */
@@ -345,12 +337,6 @@ short		c = *channelNum;
 
 	*channelNum = -1;
 
-	if (gChannelInfo[c].isLooping)
-	{
-		gNumLoopingEffects--;
-		gChannelInfo[c].isLooping = false;
-	}
-
 	gChannelInfo[c].effectNum = -1;
 }
 
@@ -417,7 +403,6 @@ short	musicFileRefNum;
 		/* ZAP ANY EXISTING SONG */
 
 	gCurrentSong 	= songNum;
-	gLoopSongFlag 	= loopFlag;
 	KillSong();
 
 			/******************************/
@@ -629,7 +614,6 @@ uint32_t			leftVol, rightVol;
 
 Boolean Update3DSoundChannel(short effectNum, short *channel, OGLPoint3D *where)
 {
-SCStatus		theStatus;
 uint32_t			leftVol,rightVol;
 short			c;
 
@@ -649,15 +633,11 @@ short			c;
 
 			/* SEE IF SOUND HAS COMPLETED */
 
-	if (!gChannelInfo[c].isLooping)										// loopers wont complete, duh.
+	if (!IsEffectChannelPlaying(c))
 	{
-		SndChannelStatus(gSndChannel[c],sizeof(SCStatus),&theStatus);	// get channel info
-		if (!theStatus.scChannelBusy)									// see if channel not busy
-		{
-			StopAChannel(channel);							// make sure it's really stopped (OS X sound manager bug)
-			return(true);
-		}
+		return(true);
 	}
+
 
 			/* UPDATE THE THING */
 
@@ -893,11 +873,10 @@ SoundHeaderPtr   sndPtr;
 	SndDoImmediate(chanPtr, &mySndCmd);
 
 
-
-    		/* SEE IF THIS IS A LOOPING EFFECT */
-
-	SOFTIMPME;
 #if 0
+    		/* SEE IF THIS IS A LOOPING EFFECT */
+			// Source port note: unnecessary
+
     sndPtr = (SoundHeaderPtr)(((Ptr)*gSndHandles[bankNum][soundNum])+gSndOffsets[bankNum][soundNum]);
     loopStart = sndPtr->loopStart;
     loopEnd = sndPtr->loopEnd;
@@ -1047,24 +1026,19 @@ SCStatus	theStatus;
 
 	do
 	{
-		if (gChannelInfo[theChan].isLooping)				// see if this channel is playing a looping effect
-			goto next;
+		myErr = SndChannelStatus(gSndChannel[theChan], sizeof(SCStatus), &theStatus);	// get channel info
 
-		myErr = SndChannelStatus(gSndChannel[theChan],sizeof(SCStatus),&theStatus);	// get channel info
-		if (myErr)
-			goto next;
-
-		if (theStatus.scChannelBusy)					// see if channel busy
-			goto next;
-
-		gMostRecentChannel = theChan;
-		return(theChan);
-
-next:
-		theChan++;										// try next channel
-		if (theChan >= gMaxChannels)
-			theChan = 0;
-
+		if (!myErr && !theStatus.scChannelBusy)			// error-free and not playing anything, pick this one
+		{
+			gMostRecentChannel = theChan;
+			return theChan;
+		}
+		else
+		{
+			theChan++;									// try next channel
+			if (theChan >= gMaxChannels)
+				theChan = 0;
+		}
 	}while(theChan != startChan);
 
 			/* NO FREE CHANNELS */
@@ -1081,4 +1055,19 @@ SCStatus	theStatus;
 
 	SndChannelStatus(gSndChannel[chanNum],sizeof(SCStatus),&theStatus);	// get channel info
 	return (theStatus.scChannelBusy);
+}
+
+
+/*************** PAUSE ALL SOUND CHANNELS **************/
+
+void PauseAllChannels(Boolean pause)
+{
+	SndCommand cmd = { .cmd = pause ? pommePausePlaybackCmd : pommeResumePlaybackCmd };
+
+	for (int c = 0; c < gMaxChannels; c++)
+	{
+		SndDoImmediate(gSndChannel[c], &cmd);
+	}
+
+	SndDoImmediate(gMusicChannel, &cmd);
 }

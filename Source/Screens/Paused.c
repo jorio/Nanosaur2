@@ -118,7 +118,7 @@ void DoPaused(void)
 {
 	gGamePaused = true;
 	GrabMouse(false);
-//	PauseAllChannels(true);		//TODO
+	PauseAllChannels(true);
 
 	gMouseCursor = MakeMouseCursorObject();
 
@@ -135,7 +135,7 @@ static void OnExitPause(int outcome)
 {
 	gGamePaused = false;
 	GrabMouse(true);
-//	PauseAllChannels(false);		// TODO
+	PauseAllChannels(false);
 
 	DeleteObject(gMouseCursor);
 	gMouseCursor = NULL;

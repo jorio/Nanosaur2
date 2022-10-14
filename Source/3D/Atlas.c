@@ -905,7 +905,6 @@ void Atlas_DrawString2(
 
 	OGL_PushState();								// keep state
 
-	SOFTIMPME;
 #if 0
 	if (!(flags & kTextMeshKeepCurrentProjection))
 	{

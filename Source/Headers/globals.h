@@ -156,9 +156,9 @@ enum
 	STATUS_BIT_ROTXZY		=	(1<<9),		// set if want to do x->z->y ordered rotation
 	STATUS_BIT_ROTYZX		=	(1<<10),
 	STATUS_BIT_ROTZXY		= 	(1<<11),
-	STATUS_BIT_ISCULLED1	=	(1<<12),	// set if culling function deemed it culled for pane 1
-	STATUS_BIT_ISCULLED2	=	(1<<13),	// set if culling function deemed it culled for pane 2
-	STATUS_BIT_OVERLAYPANE	=	(1<<14),
+	STATUS_BIT_USEALIGNMENTMATRIX=(1<<12),	// use AlignmentMatrix instead of Rot x,y,z for object alignment
+	STATUS_BIT_MOVEINPAUSE	=	(1<<13),	// call objnode's move call even when game is paused
+	STATUS_BIT_ONLYSHOWTHISPLAYER=(1<<14),	// set if only draw this object for this PlayerNum
 	STATUS_BIT_CLIPALPHA6 	=	(1<<15), 	// set if want to not draw pixels with alpha <= .6
 	STATUS_BIT_NOLIGHTING	=	(1<<16),	// used when want to render object will NULL shading (no lighting)
 	STATUS_BIT_NOZBUFFER	=	(1<<17),	// set when want to turn off z buffer
@@ -170,11 +170,10 @@ enum
 	STATUS_BIT_REVERSESPLINE =	(1<<23),	// if going reverse direction on spline
 	STATUS_BIT_GLOW			=	(1<<24),			// use additive blending for glow effect
 	STATUS_BIT_AIMATCAMERA	=	(1<<25),		// if need to aim at player's camera (for sprite billboards)
-	STATUS_BIT_USEALIGNMENTMATRIX =  (1<<26),	// use AlignmentMatrix instead of Rot x,y,z for object alignment
-	STATUS_BIT_UVTRANSFORM	=	(1<<27),		// do uv transform on object when drawing
-	STATUS_BIT_MOVEINPAUSE	=	(1<<28),
-	STATUS_BIT_ONLYSHOWTHISPLAYER	= 	(1<<29),	// set if only draw this object for this PlayerNum
-	STATUS_BIT_NOSHOWTHISPLAYER = (1<<30)			// opposite of STATUS_BIT_ONLYSHOWTHISPLAYER
+	STATUS_BIT_UVTRANSFORM	=	(1<<26),		// do uv transform on object when drawing
+	STATUS_BIT_ISCULLED1	=	(1<<27),	// set if culling function deemed it culled for pane 1
+	STATUS_BIT_ISCULLED2	=	(1<<28),	// set if culling function deemed it culled for pane 2
+	STATUS_BIT_ISCULLED3	=	(1<<29),	// set if culling function deemed it culled for pane 3 (fullscreen overlay in 2P games)
 };
 
 #define STATUS_BITS_FOR_2D \

@@ -76,7 +76,7 @@ SDL_GLContext			gAGLContext = nil;
 
 
 OGLMatrix4x4	gViewToFrustumMatrix,gWorldToViewMatrix,gWorldToFrustumMatrix, gLocalToViewMatrix, gLocalToFrustumMatrix;
-OGLMatrix4x4	gWorldToWindowMatrix[MAX_SPLITSCREENS],gFrustumToWindowMatrix[MAX_SPLITSCREENS];
+OGLMatrix4x4	gWorldToWindowMatrix[MAX_VIEWPORTS],gFrustumToWindowMatrix[MAX_VIEWPORTS];
 
 Byte			gCurrentSplitScreenPane = 0;
 Byte			gActiveSplitScreenMode 	= SPLITSCREEN_MODE_NONE;		// currently active split mode
@@ -279,7 +279,7 @@ short	i;
 
 	gGameViewInfoPtr->lightList = setupDefPtr->lights;					// copy lights
 
-	for (i = 0; i < MAX_SPLITSCREENS; i++)
+	for (i = 0; i < MAX_VIEWPORTS; i++)
 	{
 		gGameViewInfoPtr->fov[i] = setupDefPtr->camera.fov;				// each camera will have its own fov so we can change it for special effects
 		OGL_UpdateCameraFromTo(&setupDefPtr->camera.from[i], &setupDefPtr->camera.to[i], i);
@@ -780,7 +780,9 @@ do_anaglyph:
 				/* DRAW EACH SPLIT-SCREEN PANE IF ANY */
 				/**************************************/
 
-	for (gCurrentSplitScreenPane = 0; gCurrentSplitScreenPane < gNumPlayers; gCurrentSplitScreenPane++)
+	int numPasses = gNumPlayers + 1;
+
+	for (gCurrentSplitScreenPane = 0; gCurrentSplitScreenPane < numPasses; gCurrentSplitScreenPane++)
 	{
 				/* OFFSET ANAGLYPH CAMERAS */
 
@@ -1044,6 +1046,14 @@ int	t,b,l,r;
 	l = gGameViewInfoPtr->clip.left;
 	r = gGameViewInfoPtr->clip.right;
 
+	if (whichPane >= GetOverlayPaneNumber())
+	{
+		*x = l;
+		*y = t;
+		*w = gGameWindowWidth-l-r;
+		*h = gGameWindowHeight-t-b;
+	}
+	else
 	switch(gActiveSplitScreenMode)
 	{
 		case	SPLITSCREEN_MODE_NONE:
@@ -1578,7 +1588,7 @@ void OGL_UpdateCameraFromTo(OGLPoint3D *from, OGLPoint3D *to, int camNum)
 {
 static const OGLVector3D up = {0,1,0};
 
-	if ((camNum < 0) || (camNum >= MAX_SPLITSCREENS))
+	if ((camNum < 0) || (camNum >= MAX_VIEWPORTS))
 		DoFatalAlert("OGL_UpdateCameraFromTo: illegal camNum");
 
 	gGameViewInfoPtr->cameraPlacement[camNum].upVector				= up;
@@ -1598,7 +1608,7 @@ static const OGLVector3D up = {0,1,0};
 
 void OGL_UpdateCameraFromToUp(OGLPoint3D *from, OGLPoint3D *to, const OGLVector3D *up, int camNum)
 {
-	if ((camNum < 0) || (camNum >= MAX_SPLITSCREENS))
+	if ((camNum < 0) || (camNum >= MAX_VIEWPORTS))
 		DoFatalAlert("OGL_UpdateCameraFromToUp: illegal camNum");
 
 	gGameViewInfoPtr->cameraPlacement[camNum].upVector 		= *up;

@@ -536,6 +536,9 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 	cameraX = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.x;
 	cameraZ = gGameViewInfoPtr->cameraPlacement[gCurrentSplitScreenPane].cameraLocation.z;
 
+
+	bool isOverlayPane = gCurrentSplitScreenPane == GetOverlayPaneNumber();
+
 			/***********************/
 			/* MAIN NODE TASK LOOP */
 			/***********************/
@@ -552,10 +555,9 @@ Byte			playerNum = gCurrentSplitScreenPane;			// get the player # who's draw con
 				goto next;
 		}
 		else
-		if (statusBits & STATUS_BIT_NOSHOWTHISPLAYER)			// see if dont show for current player's draw context
+		if (isOverlayPane)										// if drawing overlay pane, only look at nodes explicitly setting STATUS_BIT_ONLYSHOWTHISPLAYER
 		{
-			if (theNode->PlayerNum == playerNum)
-				goto next;
+			goto next;
 		}
 
 
@@ -1900,3 +1902,11 @@ void UnchainNode(ObjNode* theNode)
 	}
 }
 
+
+#pragma mark - Overlay pane
+
+void SendNodeToOverlayPane(ObjNode* theNode)
+{
+	theNode->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;
+	theNode->PlayerNum = GetOverlayPaneNumber();
+}

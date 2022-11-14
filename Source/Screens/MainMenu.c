@@ -398,6 +398,8 @@ ObjNode* MakeMouseCursorObject(void)
 	ObjNode* cursor = MakeSpriteObject(&def, false);
 	cursor->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
 
+	SendNodeToOverlayPane(cursor);
+
 	return cursor;
 }
 

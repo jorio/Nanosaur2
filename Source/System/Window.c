@@ -198,6 +198,10 @@ ObjNode	*thisNodePtr;
 		newObj->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;
 		newObj->PlayerNum = 1;
 	}
+	else
+	{
+		SendNodeToOverlayPane(newObj);
+	}
 
 	return newObj;
 }

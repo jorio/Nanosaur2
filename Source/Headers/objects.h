@@ -124,3 +124,5 @@ void AppendNodeToChain(ObjNode* start, ObjNode* newTail);
 void UnchainNode(ObjNode* theNode);
 
 ObjNode* MakeBackgroundPictureObject(const char* imagePath);
+
+void SendNodeToOverlayPane(ObjNode* theNode);

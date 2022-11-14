@@ -5,6 +5,7 @@
 #pragma once
 
 #define	MAX_SPLITSCREENS	2
+#define	MAX_VIEWPORTS		(MAX_SPLITSCREENS+1)
 
 #define	MAX_FILL_LIGHTS		4
 
@@ -192,9 +193,9 @@ typedef	struct
 
 typedef struct
 {
-	OGLPoint3D				from[MAX_SPLITSCREENS];			// 2 cameras, one for each viewport/player
-	OGLPoint3D				to[MAX_SPLITSCREENS];
-	OGLVector3D				up[MAX_SPLITSCREENS];
+	OGLPoint3D				from[MAX_VIEWPORTS];			// 2 cameras, one for each viewport/player
+	OGLPoint3D				to[MAX_VIEWPORTS];
+	OGLVector3D				up[MAX_VIEWPORTS];
 	float					hither;
 	float					yon;
 	float					fov;
@@ -230,8 +231,8 @@ typedef struct
 	Rect					clip;				// not pane size, but clip:  left = amount to clip off left
 
 	OGLLightDefType			lightList;
-	OGLCameraPlacement		cameraPlacement[MAX_SPLITSCREENS];	// 2 cameras, one for each viewport/player
-	float					fov[MAX_SPLITSCREENS],hither,yon;
+	OGLCameraPlacement		cameraPlacement[MAX_VIEWPORTS];	// 2 cameras, one for each viewport/player
+	float					fov[MAX_VIEWPORTS],hither,yon;
 	Boolean					useFog;
 	Boolean					clearBackBuffer;
 	OGLColorRGBA			clearColor;
@@ -330,3 +331,5 @@ void ReleaseVertexArrayRangeMemory(Byte type);
 
 
 void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean doChannelBalancing);
+
+#define GetOverlayPaneNumber() (gNumPlayers)

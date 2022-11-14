@@ -109,7 +109,7 @@ extern	OGLMatrix4x4			gLocalToViewMatrix;
 extern	OGLMatrix4x4			gViewToFrustumMatrix;
 extern	OGLMatrix4x4			gWorldToFrustumMatrix;
 extern	OGLMatrix4x4			gWorldToViewMatrix;
-extern	OGLMatrix4x4			gWorldToWindowMatrix[MAX_SPLITSCREENS];
+extern	OGLMatrix4x4			gWorldToWindowMatrix[MAX_VIEWPORTS];
 extern	OGLPoint2D				gCursorCoord;
 extern	OGLPoint3D				gBestCheckpointCoord[MAX_PLAYERS];
 extern	OGLPoint3D				gCoord;

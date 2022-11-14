@@ -223,13 +223,16 @@ static void InitMenuNavigation(void)
 		.scale = 1,
 		.slot = nav->style.textSlot,
 		.group = nav->style.fontAtlas,
-		.flags = STATUS_BIT_OVERLAYPANE | STATUS_BIT_MOVEINPAUSE,
+		.flags = STATUS_BIT_MOVEINPAUSE,
 	};
 	nav->arrowObjects[0] = TextMesh_New("<", 0, &arrowDef);
 	nav->arrowObjects[1] = TextMesh_New(">", 0, &arrowDef);
 
 	nav->arrowObjects[0]->ColorFilter = nav->style.arrowColor;
 	nav->arrowObjects[1]->ColorFilter = nav->style.arrowColor;
+
+	SendNodeToOverlayPane(nav->arrowObjects[0]);
+	SendNodeToOverlayPane(nav->arrowObjects[1]);
 }
 
 static void DisposeMenuNavigation(void)
@@ -620,7 +623,7 @@ static ObjNode* MakeDarkenPane(void)
 	NewObjectDefinitionType def =
 	{
 		.genre = CUSTOM_GENRE,
-		.flags = STATUS_BITS_FOR_2D | STATUS_BIT_MOVEINPAUSE | STATUS_BIT_OVERLAYPANE,
+		.flags = STATUS_BITS_FOR_2D | STATUS_BIT_MOVEINPAUSE,
 		.slot = gNav->style.textSlot-1,
 		.scale = EPS,
 		.group = SPRITE_GROUP_INFOBAR,
@@ -631,6 +634,7 @@ static ObjNode* MakeDarkenPane(void)
 
 	pane = MakeSpriteObject(&def);
 	pane->ColorFilter = (OGLColorRGBA) {0, 0, 0, gNav->style.darkenPaneOpacity};
+	SendNodeToOverlayPane(pane);
 
 	return pane;
 #endif
@@ -1738,10 +1742,12 @@ static ObjNode* MakeText(const char* text, int row, int desiredCol, int textMesh
 			.scale = GetMenuItemHeight(row) * gNav->style.standardScale,
 			.group = gNav->style.fontAtlas,
 			.slot = gNav->style.textSlot + desiredCol,  // chained node must be after their parent!
-			.flags = STATUS_BIT_MOVEINPAUSE | STATUS_BIT_OVERLAYPANE,
+			.flags = STATUS_BIT_MOVEINPAUSE,
 		};
 
 		node = TextMesh_New(text, textMeshFlags, &def);
+
+		SendNodeToOverlayPane(node);
 
 		if (pNode)
 		{

@@ -49,14 +49,6 @@ static void OnPickResetMouseBindings(const MenuItem* mi)
 static const MenuItem gSettingsMenuTree[] =
 {
 	{ .id='sett' },
-	{kMIPick, STR_GENERAL,			.next='gnrl'},
-	{kMIPick, STR_CONTROLS,			.next='ctrl'},
-	{kMIPick, STR_GRAPHICS,			.next='graf'},
-	{kMIPick, STR_SOUND,			.next='soun'},
-	{kMIPick, STR_LANGUAGE,			.next='lang' },
-	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
-
-	{.id='gnrl'},
 	{
 		kMICycler1, STR_KIDDIE_MODE,
 		.cycler=
@@ -65,14 +57,10 @@ static const MenuItem gSettingsMenuTree[] =
 			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
 		}
 	},
-	{
-		kMICycler1, STR_SUBTITLES,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.cutsceneSubtitles,
-			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
-		},
-	},
+	{kMIPick, STR_CONTROLS,			.next='ctrl'},
+	{kMIPick, STR_GRAPHICS,			.next='graf'},
+	{kMIPick, STR_SOUND,			.next='soun'},
+	{kMIPick, STR_LANGUAGE,			.next='lang' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='ctrl'},

@@ -50,6 +50,7 @@ static MenuItem gMainMenuTree[] =
 
 	{ .id='info' },
 	{kMIPick, STR_STORY,			.id='intr',	.next='EXIT' },
+	{kMIPick, STR_STORY_SUBTITLED,	.id='ints',	.next='EXIT' },
 	{kMIPick, STR_CREDITS,			.id='cred',	.next='EXIT' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
@@ -244,6 +245,20 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 
 		case	'intr':										// STORY
+			if (gGamePrefs.cutsceneSubtitles)
+			{
+				gGamePrefs.cutsceneSubtitles = false;
+				SavePrefs();
+			}
+			DoIntroStoryScreen();
+			break;
+
+		case	'ints':
+			if (!gGamePrefs.cutsceneSubtitles)
+			{
+				gGamePrefs.cutsceneSubtitles = true;
+				SavePrefs();
+			}
 			DoIntroStoryScreen();
 			break;
 

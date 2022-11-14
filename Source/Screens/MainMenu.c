@@ -386,7 +386,19 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 	UpdateObjectTransforms(theNode);
 
 
-	SetObjectVisible(theNode, !gUserPrefersGamepad);
+	Boolean visible = SetObjectVisible(theNode, !gUserPrefersGamepad);
+
+	if (visible)
+	{
+		// Fade in to prevent jarring cursor warp when exiting mouse grab mode
+		theNode->ColorFilter.a += 4.0f * gFramesPerSecondFrac;
+		if (theNode->ColorFilter.a >= 1)
+			theNode->ColorFilter.a = 1;
+	}
+	else
+	{
+		theNode->ColorFilter.a = 0;
+	}
 }
 
 /********************* MAKE MOUSE CURSOR OBJECT *********************/
@@ -412,6 +424,7 @@ ObjNode* MakeMouseCursorObject(void)
 
 	ObjNode* cursor = MakeSpriteObject(&def, false);
 	cursor->AnaglyphZ = MENU_TEXT_ANAGLYPH_Z + .5f;
+	cursor->ColorFilter.a = 0;
 
 	SendNodeToOverlayPane(cursor);
 

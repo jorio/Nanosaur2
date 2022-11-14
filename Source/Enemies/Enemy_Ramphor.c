@@ -492,7 +492,7 @@ float					x,y,z;
 	}
 
 
-	PlayEffect3D(EFFECT_PLANECRASH, &gCoord);
+	PlayEffect_Parms3D(EFFECT_PLANECRASH, &gCoord, NORMAL_CHANNEL_RATE, 0.5f);
 
 	DeleteEnemy(theNode);
 }

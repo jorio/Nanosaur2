@@ -804,7 +804,7 @@ float					x,y,z;
 	else
 		gDeathTimer[playerNum] = gPlayerInfo[playerNum].invincibilityTimer = 3.0f;
 
-	PlayEffect3D(EFFECT_PLANECRASH, &gCoord);
+	PlayEffect_Parms3D(EFFECT_PLANECRASH, &gCoord, NORMAL_CHANNEL_RATE, 0.5f);
 }
 
 

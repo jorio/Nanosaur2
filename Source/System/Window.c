@@ -148,41 +148,48 @@ ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed)
 	return NULL;
 #endif
 
-ObjNode	*newObj;
-ObjNode	*thisNodePtr;
+ObjNode	*newObj = NULL;
 
 	Boolean fadeIn = fadeFlags & kFadeFlags_In;
 
 		/* SCAN FOR OLD FADE EVENTS STILL IN LIST */
 
-	thisNodePtr = gFirstNodePtr;
-
-	while (thisNodePtr)
+	for (ObjNode *node = gFirstNodePtr; node != NULL; node = node->NextNode)
 	{
-		if (thisNodePtr->MoveCall == MoveFadePane)
+		if (node->MoveCall == MoveFadePane)
 		{
-			thisNodePtr->Mode = fadeIn;									// set new mode
-			thisNodePtr->Speed = fadeSpeed;
-			return thisNodePtr;
+			newObj = node;
+			break;
 		}
-		thisNodePtr = thisNodePtr->NextNode;							// next node
 	}
 
 
-		/* MAKE NEW FADE EVENT */
+
+	if (newObj != NULL)
+	{
+			/* RECYCLE OLD FADE EVENT */
+
+		newObj->StatusBits = STATUS_BIT_DONTCULL;    // reset status bits in case NOMOVE was set
+	}
+	else
+	{
+			/* MAKE NEW FADE EVENT */
+
+		NewObjectDefinitionType def =
+		{
+			.genre = CUSTOM_GENRE,
+			.flags = STATUS_BIT_DONTCULL,
+			.slot = FADEPANE_SLOT,
+			.moveCall = MoveFadePane,
+			.drawCall = DrawFadePane,
+			.scale = 1,
+		};
+
+		newObj = MakeNewObject(&def);
+	}
+
 
 	gGammaFadeFrac = fadeIn? 0: 1;
-
-	NewObjectDefinitionType def =
-	{
-		.genre = CUSTOM_GENRE,
-		.flags = STATUS_BIT_DONTCULL,
-		.slot = FADEPANE_SLOT,
-		.moveCall = MoveFadePane,
-		.drawCall = DrawFadePane,
-		.scale = 1,
-	};
-	newObj = MakeNewObject(&def);
 
 	newObj->Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut;
 	newObj->FaderFrameCounter = 0;
@@ -236,7 +243,7 @@ float	speed = theNode->Speed * fps;
 		{
 			gGammaFadeFrac = 0;
 			theNode->Mode = kFaderMode_Done;
-			theNode->MoveCall = NULL;			// DON'T nuke the fader pane if fading out -- but don't run this again
+			theNode->StatusBits |= STATUS_BIT_NOMOVE;	// DON'T nuke the fader pane if fading out -- but don't run this again
 		}
 	}
 }

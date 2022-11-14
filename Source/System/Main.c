@@ -621,16 +621,16 @@ float	fps;
 				gDeathTimer[i] -= fps;
 				if (gDeathTimer[i] <= 0.0f)							// is it time to reincarnate player?
 				{
-					if (gNumPlayers == 1)							// if only 1 player, then do nice fade in/out for reincarnation
+					const float fadeOutSpeed = 4.0f;
+
+					if (oldTimer > 0.0f)							// if just now crossed zero then start fade
 					{
-						if (oldTimer > 0.0f)						// if just now crossed zero then start fade
-							MakeFadeEvent(kFadeFlags_Out | (i << kFadeFlags_P1), 4.0);
-						else
-						if (gGammaFadeFrac <= 0.0f)					// once fully faded out reset player @ checkpoint
-							ResetPlayerAtBestCheckpoint(i);
+						MakeFadeEvent(kFadeFlags_Out | (kFadeFlags_P1<<i), fadeOutSpeed);
 					}
-					else
-						ResetPlayerAtBestCheckpoint(i);				// multiple players, so just reset player now
+					else if (gDeathTimer[i] < -(1.0f / fadeOutSpeed))	// once fully faded out reset player @ checkpoint
+					{
+						ResetPlayerAtBestCheckpoint(i);
+					}
 				}
 			}
 		}

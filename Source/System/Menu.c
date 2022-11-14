@@ -1242,10 +1242,19 @@ static void NavigateKeyBinding(const MenuItem* entry)
 	int keyNo = gNav->menuCol;
 	int row = gNav->menuRow;
 
-#if 0 // TODO: review this if we ever bring back mouse support in menus
-	if (gNav->mouseHoverValid && (gNav->mouseHoverColumn == 1 || gNav->mouseHoverColumn == 2))
-		gNav->keyColumn = gNav->mouseHoverColumn - 1;
-#endif
+	if (gNav->mouseHoverValid
+		&& (gNav->mouseHoverColumn == 1 || gNav->mouseHoverColumn == 2)
+		&& (keyNo != gNav->mouseHoverColumn - 1))
+	{
+		keyNo = gNav->mouseHoverColumn - 1;
+		TwitchOutSelection();
+		gNav->idleTime = 0;
+		gNav->menuCol = keyNo;
+		PlayNavigateEffect();
+		TwitchSelection();
+		RepositionArrows();
+		return;
+	}
 
 	if (IsNeedDown(kNeed_UILeft, ANY_PLAYER) || IsNeedDown(kNeed_UIPrev, ANY_PLAYER))
 	{
@@ -1312,10 +1321,19 @@ static void NavigatePadBinding(const MenuItem* entry)
 	int btnNo = gNav->menuCol;
 	int row = gNav->menuRow;
 
-#if 0 // TODO: review this if we ever bring back mouse support in menus
-	if (gNav->mouseHoverValid && (gNav->mouseHoverColumn == 1 || gNav->mouseHoverColumn == 2))
-		gNav->padColumn = gNav->mouseHoverColumn - 1;
-#endif
+	if (gNav->mouseHoverValid
+		&& (gNav->mouseHoverColumn == 1 || gNav->mouseHoverColumn == 2)
+		&& (btnNo != gNav->mouseHoverColumn - 1))
+	{
+		btnNo = gNav->mouseHoverColumn - 1;
+		TwitchOutSelection();
+		gNav->idleTime = 0;
+		gNav->menuCol = btnNo;
+		PlayNavigateEffect();
+		TwitchSelection();
+		RepositionArrows();
+		return;
+	}
 
 	if (IsNeedDown(kNeed_UILeft, ANY_PLAYER) || IsNeedDown(kNeed_UIPrev, ANY_PLAYER))
 	{

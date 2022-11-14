@@ -222,7 +222,7 @@ void DoIntroStoryScreen(void)
 			/* SETUP */
 
 	SetupIntroStoryScreen();
-	MakeFadeEvent(true, 2.0);
+	MakeFadeEvent(kFadeFlags_In, 2.0);
 
 	PlaySong(SONG_INTRO, true);
 

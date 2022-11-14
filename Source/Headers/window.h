@@ -11,8 +11,16 @@
 
 //==================================================
 
+enum
+{
+	kFadeFlags_Out		= 0x00,
+	kFadeFlags_In		= 0x01,
+	kFadeFlags_P1		= 0x10,
+	kFadeFlags_P2		= 0x20,
+};
+
 extern void	InitWindowStuff(void);
-ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed);
+ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed);
 
 void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void));
 

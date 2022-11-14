@@ -87,7 +87,7 @@ float	timer = 5.0f;
 			/* SETUP */
 
 	SetupLevelIntroScreen();
-	MakeFadeEvent(true, 1.5);
+	MakeFadeEvent(kFadeFlags_In, 1.5);
 
 
 			/*************/

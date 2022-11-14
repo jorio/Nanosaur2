@@ -91,7 +91,7 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 	}
 #endif
 
-	ObjNode* fader = MakeFadeEvent(false, 3.0f);
+	ObjNode* fader = MakeFadeEvent(kFadeFlags_Out, 3.0f);
 
 	long pFaderFrameCount = fader->FaderFrameCounter;
 
@@ -138,7 +138,7 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 // INPUT:	fadeIn = true if want fade IN, otherwise fade OUT.
 //
 
-ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed)
+ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed)
 {
 #if SKIPFLUFF
 	if (fadeIn)
@@ -150,6 +150,8 @@ ObjNode* MakeFadeEvent(Boolean fadeIn, float fadeSpeed)
 
 ObjNode	*newObj;
 ObjNode	*thisNodePtr;
+
+	Boolean fadeIn = fadeFlags & kFadeFlags_In;
 
 		/* SCAN FOR OLD FADE EVENTS STILL IN LIST */
 
@@ -174,7 +176,7 @@ ObjNode	*thisNodePtr;
 	NewObjectDefinitionType def =
 	{
 		.genre = CUSTOM_GENRE,
-		.flags = 0,
+		.flags = STATUS_BIT_DONTCULL,
 		.slot = FADEPANE_SLOT,
 		.moveCall = MoveFadePane,
 		.drawCall = DrawFadePane,
@@ -185,6 +187,17 @@ ObjNode	*thisNodePtr;
 	newObj->Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut;
 	newObj->FaderFrameCounter = 0;
 	newObj->Speed = fadeSpeed;
+
+	if (fadeFlags & kFadeFlags_P1)
+	{
+		newObj->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;
+		newObj->PlayerNum = 0;
+	}
+	else if (fadeFlags & kFadeFlags_P2)
+	{
+		newObj->StatusBits |= STATUS_BIT_ONLYSHOWTHISPLAYER;
+		newObj->PlayerNum = 1;
+	}
 
 	return newObj;
 }
@@ -229,8 +242,6 @@ float	speed = theNode->Speed * fps;
 
 static void DrawFadePane(ObjNode* theNode)
 {
-	(void) theNode;
-
 	OGL_PushState();
 	SetInfobarSpriteState(0, 1);
 

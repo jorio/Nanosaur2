@@ -555,7 +555,7 @@ float	fps;
 	CalcFramesPerSecond();
 	CalcFramesPerSecond();
 
-	MakeFadeEvent(true, 1.0);
+	MakeFadeEvent(kFadeFlags_In, 1.0);
 
 	if (gTimeDemo)
 	{
@@ -624,7 +624,7 @@ float	fps;
 					if (gNumPlayers == 1)							// if only 1 player, then do nice fade in/out for reincarnation
 					{
 						if (oldTimer > 0.0f)						// if just now crossed zero then start fade
-							MakeFadeEvent(false, 4.0);
+							MakeFadeEvent(kFadeFlags_Out | (i << kFadeFlags_P1), 4.0);
 						else
 						if (gGammaFadeFrac <= 0.0f)					// once fully faded out reset player @ checkpoint
 							ResetPlayerAtBestCheckpoint(i);
@@ -689,7 +689,7 @@ float	fps;
 
 	GrabMouse(false);
 
-	if (gGammaFadeFrac > 0)											// only fade out if we haven't called MakeFadeEvent(false) already
+	if (gGammaFadeFrac > 0)											// only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
 	{
 		OGL_FadeOutScene(DrawLevelCallback, DoPlayerTerrainUpdate);
 	}

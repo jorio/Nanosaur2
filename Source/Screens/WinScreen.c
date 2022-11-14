@@ -75,7 +75,7 @@ void DoWinScreen(void)
 			/* SETUP */
 
 	SetupWinScreen();
-	MakeFadeEvent(true, 2.0);
+	MakeFadeEvent(kFadeFlags_In, 2.0);
 
 	PlaySong(SONG_WIN, false);
 

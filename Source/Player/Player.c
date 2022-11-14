@@ -523,7 +523,7 @@ ObjNode	*player = gPlayerInfo[playerNum].objNode;
 	InitCamera_Terrain(playerNum);
 
 
-	MakeFadeEvent(true, 3.0);
+	MakeFadeEvent(kFadeFlags_In | (kFadeFlags_P1 << playerNum), 3.0);
 
 }
 

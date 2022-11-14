@@ -71,7 +71,7 @@ float	timeout = 40.0f;
 		/***********/
 
 
-	MakeFadeEvent(true, 2.0);
+	MakeFadeEvent(kFadeFlags_In, 2.0);
 	DoSDLMaintenance();
 	CalcFramesPerSecond();
 
@@ -497,7 +497,7 @@ void DrawLoading(float percent)
 {
 	if (percent > 0.75f)
 	{
-		MakeFadeEvent(false, 0.0001);
+		MakeFadeEvent(kFadeFlags_Out, 0.0001);
 		gGammaFadeFrac = 1.0f - (percent - 0.75f) / 0.25f;
 	}
 

@@ -940,7 +940,8 @@ static void NavigatePick(const MenuItem* entry)
 			|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
 			)
 	{
-		PlayConfirmEffect();
+		if (entry->next != 'BACK')
+			PlayConfirmEffect();
 
 		gNav->idleTime = 0;
 		gNav->menuPick = entry->id;

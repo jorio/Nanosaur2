@@ -1346,20 +1346,23 @@ float	x,y;
 
 static void Infobar_DrawRaceInfo(void)
 {
-short	n, lapNum;
+short	lapNum;
 short	place,playerNum = gCurrentSplitScreenPane;
 float   scale;
 
 			/* DRAW READY-SET-GO */
 
-	n = gRaceReadySetGoTimer + 1;
-	if (n >= 0)
+	short readySetGoIcon;
+	switch ((int) (gRaceReadySetGoTimer + 1))
 	{
-		int icon	= n == 2 ? INFOBAR_SObjType_Ready
-					: n == 1 ? INFOBAR_SObjType_Set
-					: INFOBAR_SObjType_Go;
-
-		DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorBottom(157.5f), 135, icon);
+		case 2: readySetGoIcon = INFOBAR_SObjType_Ready; break;
+		case 1: readySetGoIcon = INFOBAR_SObjType_Set; break;
+		case 0: readySetGoIcon = INFOBAR_SObjType_Go; break;
+		default: readySetGoIcon = -1;
+	}
+	if (readySetGoIcon != -1)
+	{
+		DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorBottom(157.5f), 135, readySetGoIcon);
 	}
 
 

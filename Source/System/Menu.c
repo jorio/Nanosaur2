@@ -1641,7 +1641,7 @@ updateText:
 	gNav->idleTime = 0;
 	MakePbText(row, btnNo);		// update text after state changed back to Ready
 	RepositionArrows();
-	ReplaceMenuText(STR_CONFIGURE_GAMEPAD_HELP_CANCEL, STR_CONFIGURE_GAMEPAD_HELP);
+	ReplaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP);
 	return true;
 }
 

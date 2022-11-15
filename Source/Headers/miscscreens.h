@@ -75,3 +75,5 @@ enum
 };
 
 void RegisterFileScreen(int fileScreenMode);
+
+Boolean DoLocalGatherScreen(void);

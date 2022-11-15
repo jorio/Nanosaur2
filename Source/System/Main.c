@@ -1035,7 +1035,15 @@ unsigned long	someLong;
 		if (gVSMode == VS_MODE_NONE)
 			PlayGame_Adventure();
 		else
+		{
+			if (DoLocalGatherScreen())
+			{
+				gVSMode = VS_MODE_NONE;
+				gNumPlayers = 1;
+				continue;
+			}
 			PlayGame_Versus();
+		}
 	}
 
 }

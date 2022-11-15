@@ -22,6 +22,30 @@ static ObjNode* gMouseCursor = NULL;
 static void OnExitPause(int outcome);
 
 
+
+/****************************/
+/*    CALLBACKS             */
+/****************************/
+
+/****************** TOGGLE SPLIT-SCREEN MODE ********************/
+
+int ShouldDisplaySplitscreenModeCycler(const MenuItem* mi)
+{
+	if (gNumPlayers >= 2)
+		return 0;
+	else
+		return kMILayoutFlagHidden | kMILayoutFlagDisabled;
+}
+
+void OnToggleSplitscreenMode(const MenuItem* mi)
+{
+	gActiveSplitScreenMode = gGamePrefs.splitScreenMode;
+//	SetDefaultCameraModeForAllPlayers();
+//	UpdateCameras(false, true);
+	UpdateCameras();
+}
+
+
 /****************************/
 /*    CONSTANTS             */
 /****************************/
@@ -37,71 +61,32 @@ static const MenuItem gPauseMenuTree[] =
 
 	{kMIPick, STR_RESUME, .id='resu', .next='EXIT' },
 
-	{kMIPick, STR_SETTINGS, .next='sett' },
-
-	/*
 	{kMISpacer, .customHeight=.3f},
 
 	// 2P split-screen mode chooser
 	{
 		.type = kMICycler1,
 		.text = STR_SPLITSCREEN_MODE,
-		.id = 2,	// ShouldDisplaySplitscreenModeCycler looks at this ID to know it's meant for 2P
 		.getLayoutFlags = ShouldDisplaySplitscreenModeCycler,
 		.callback = OnToggleSplitscreenMode,
 		.cycler =
 		{
-			.valuePtr = &gGamePrefs.splitScreenMode2P,
+			.valuePtr = &gGamePrefs.splitScreenMode,
 			.choices =
 			{
-				{ .text = STR_SPLITSCREEN_HORIZ, .value = SPLITSCREEN_MODE_2P_TALL },
-				{ .text = STR_SPLITSCREEN_VERT, .value = SPLITSCREEN_MODE_2P_WIDE },
+				{ .text = STR_SPLITSCREEN_HORIZ, .value = SPLITSCREEN_MODE_HORIZ },
+				{ .text = STR_SPLITSCREEN_VERT, .value = SPLITSCREEN_MODE_VERT },
 			},
 		},
 	},
 
-	// 3P split-screen mode chooser
-	{
-		.type = kMICycler1,
-		.text = STR_SPLITSCREEN_MODE,
-		.id = 3,	// ShouldDisplaySplitscreenModeCycler looks at this ID to know it's meant for 3P
-		.getLayoutFlags = ShouldDisplaySplitscreenModeCycler,
-		.callback = OnToggleSplitscreenMode,
-		.cycler =
-		{
-			.valuePtr = &gGamePrefs.splitScreenMode3P,
-			.choices =
-			{
-				{ .text = STR_SPLITSCREEN_HORIZ, .value = SPLITSCREEN_MODE_3P_TALL },
-				{ .text = STR_SPLITSCREEN_VERT, .value = SPLITSCREEN_MODE_3P_WIDE },
-			},
-		},
-	},
-
-	// Race timer
-	{
-		.type = kMICycler1,
-		.text = STR_RACE_TIMER,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.raceTimer,
-			.choices=
-			{
-					{STR_RACE_TIMER_HIDDEN, 0},
-					{STR_RACE_TIMER_SIMPLE, 1},
-					{STR_RACE_TIMER_DETAILED, 2},
-			},
-		},
-	},
-
-	{kMIPick, STR_SETTINGS, .callback=RegisterSettingsMenu, .next='sett' },
+	{kMIPick, STR_SETTINGS, .next='sett' },
 
 	{kMISpacer, .customHeight=.3f},
-	*/
 
 	{kMIPick, STR_RETIRE, .id='bail', .next='EXIT' },
 
-	{kMIPick, STR_QUIT, .id='quit', .next='EXIT' },
+//	{kMIPick, STR_QUIT, .id='quit', .next='EXIT' },
 
 	{ 0 },
 };

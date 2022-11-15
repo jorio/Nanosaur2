@@ -118,12 +118,12 @@ const MenuStyle kDefaultMenuStyle =
 	.canBackOutOfRootMenu	= false,
 	.textSlot			= MENU_SLOT,
 	.yOffset			= 480/2,
-	.fontAtlas			= SPRITE_GROUP_FONT,
+	.fontAtlas			= SPRITE_GROUP_FONT1,
 
 	.highlightColor		= {1.0f, 1.0f, 1.0f, 1.0f},
 	.arrowColor			= {0.7f, 0.7f, 0.7f, 1.0f},
 	.idleColor			= {0.7f, 0.6f, 0.6f, 1.0f},
-	.labelColor			= {0.35f, 0.35f, 0.35f, 1.0f},
+	.labelColor			= {1.0f, 1.0f, 1.0f, 1.0f},
 };
 
 typedef struct
@@ -1877,9 +1877,14 @@ static ObjNode* LayOutLabel(int row)
 {
 	const MenuItem* entry = &gNav->menu[row];
 
+	int atlasBackup = gNav->style.fontAtlas;
+	gNav->style.fontAtlas = SPRITE_GROUP_FONT2;
+
 	ObjNode* label = MakeText(GetMenuItemLabel(entry), row, 0, 0);
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
+
+	gNav->style.fontAtlas = atlasBackup;
 
 	return label;
 }
@@ -1979,10 +1984,15 @@ static ObjNode* LayOutKeyBinding(int row)
 
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
+	int atlasBackup = gNav->style.fontAtlas;
+	gNav->style.fontAtlas = SPRITE_GROUP_FONT2;
+
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
+
+	gNav->style.fontAtlas = atlasBackup;
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
@@ -2002,10 +2012,15 @@ static ObjNode* LayOutPadBinding(int row)
 
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
+	int atlasBackup = gNav->style.fontAtlas;
+	gNav->style.fontAtlas = SPRITE_GROUP_FONT2;
+
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
+
+	gNav->style.fontAtlas = atlasBackup;
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
@@ -2025,10 +2040,15 @@ static ObjNode* LayOutMouseBinding(int row)
 
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
+	int atlasBackup = gNav->style.fontAtlas;
+	gNav->style.fontAtlas = SPRITE_GROUP_FONT2;
+
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
+
+	gNav->style.fontAtlas = atlasBackup;
 
 	ObjNode* keyNode = MakeText(GetMouseBindingName(row), row, 1, kTextMeshAlignLeft);
 	keyNode->Coord.x = 300;

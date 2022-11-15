@@ -999,7 +999,8 @@ unsigned long	someLong;
 
 			/* LOAD FONT FOR ENTIRE GAME */
 
-	LoadSpriteAtlas(SPRITE_GROUP_FONT, "font", kAtlasLoadFont);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT1, "font", kAtlasLoadFont);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT2, "font", kAtlasLoadFont | kAtlasLoadAltSkin1);
 
 
 #if !_DEBUG

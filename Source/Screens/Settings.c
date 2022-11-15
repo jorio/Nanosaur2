@@ -101,7 +101,7 @@ static void OnChangeMSAA(const MenuItem* mi)
 
 	NewObjectDefinitionType def =
 	{
-		.group = SPRITE_GROUP_FONT,
+		.group = SPRITE_GROUP_FONT2,
 		.coord = {320, 450, 0},
 		.scale = 0.2f,
 		.slot = SPRITE_SLOT,

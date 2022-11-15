@@ -352,7 +352,14 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 	snprintf(atlas->name, sizeof(atlas->name), "%s", fontName);
 
 	char pathBuf[256];
-	snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.png", fontName);
+	if (flags & kAtlasLoadAltSkin1)
+	{
+		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.alt1.png", fontName);
+	}
+	else
+	{
+		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.png", fontName);
+	}
 #if _DEBUG
 	printf("Atlas_Load: %s\n", pathBuf);
 #endif

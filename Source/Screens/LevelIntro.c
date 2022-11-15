@@ -633,7 +633,7 @@ static void SetupScreensaverObjects(void)
 
 	NewObjectDefinitionType textDef =
 	{
-		.group		= SPRITE_GROUP_FONT,
+		.group		= SPRITE_GROUP_FONT1,
 		.coord		= {640/2, 450, 0},
 		.slot		= SPRITE_SLOT,
 		.moveCall	= MovePressAnyKey,
@@ -681,7 +681,7 @@ static void SetupCreditsObjects(void)
 	{
 		NewObjectDefinitionType textDef =
 		{
-			.group		= SPRITE_GROUP_FONT,
+			.group		= SPRITE_GROUP_FONT1,
 			.coord		= {640/2, 400, 0},
 			.slot		= SPRITE_SLOT,
 			.scale		= 0.5f,

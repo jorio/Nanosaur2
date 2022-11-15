@@ -2099,7 +2099,7 @@ void OGL_DrawString(const char* s, GLint x, GLint y)
 //	OGL_DisableTexture2D();
 	OGL_SetColor4f(1,1,1,1);
 
-	Atlas_DrawString(SPRITE_GROUP_FONT, s, x, y, 0.25f, kTextMeshAlignLeft | kTextMeshAllCaps);
+	Atlas_DrawString(SPRITE_GROUP_FONT1, s, x, y, 0.25f, kTextMeshAlignLeft | kTextMeshAllCaps);
 
 	OGL_PopState();
 }

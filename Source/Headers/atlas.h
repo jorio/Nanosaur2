@@ -25,6 +25,7 @@ enum
 {
 	kAtlasLoadAsSingleSprite	= 1,
 	kAtlasLoadFont				= 2,
+	kAtlasLoadAltSkin1			= 4,
 };
 
 typedef struct

@@ -5,6 +5,7 @@
 
 
 #include "game.h"
+#include "uieffects.h"
 
 static void OnPickLanguage(const MenuItem* mi)
 {
@@ -44,6 +45,77 @@ static void OnPickResetMouseBindings(const MenuItem* mi)
 	ResetDefaultMouseBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
 	LayoutCurrentMenuAgain();
+}
+
+static int ShouldDisplayMSAA(const MenuItem* mi)
+{
+#if __APPLE__
+	// macOS's OpenGL driver doesn't seem to handle MSAA very well,
+	// so don't expose the option unless the game was started with MSAA.
+
+	if (gCurrentAntialiasingLevel)
+	{
+		return 0;
+	}
+	else
+	{
+		return kMILayoutFlagHidden;
+	}
+#else
+	return 0;
+#endif
+}
+
+static void MoveMSAAWarning(ObjNode* theNode)
+{
+	if (GetCurrentMenu() != 'graf')
+	{
+		DeleteObject(theNode);
+	}
+}
+
+static void OnChangeMSAA(const MenuItem* mi)
+{
+	const long msaaWarningCookie = 'msaa';
+
+	ObjNode* msaaWarning = NULL;
+	for (ObjNode* o = gFirstNodePtr; o != NULL; o = o->NextNode)
+	{
+		if (o->MoveCall == MoveMSAAWarning)
+		{
+			msaaWarning = o;
+			break;
+		}
+	}
+
+	if (gCurrentAntialiasingLevel == gGamePrefs.antialiasingLevel)
+	{
+		if (msaaWarning != NULL)
+			DeleteObject(msaaWarning);
+		return;
+	}
+	else if (msaaWarning != NULL)
+	{
+		return;
+	}
+
+	NewObjectDefinitionType def =
+	{
+		.group = SPRITE_GROUP_FONT,
+		.coord = {320, 450, 0},
+		.scale = 0.2f,
+		.slot = SPRITE_SLOT,
+		.flags = STATUS_BIT_MOVEINPAUSE,
+		.moveCall = MoveMSAAWarning,
+	};
+
+	msaaWarning = TextMesh_New(Localize(STR_ANTIALIASING_CHANGE_WARNING), 0, &def);
+	msaaWarning->ColorFilter = (OGLColorRGBA){ 1, 0, 0, 1 };
+	msaaWarning->Special[0] = msaaWarningCookie;
+
+	SendNodeToOverlayPane(msaaWarning);
+
+	MakeTwitch(msaaWarning, kTwitchPreset_MenuSelect);
 }
 
 static const MenuItem gSettingsMenuTree[] =
@@ -102,22 +174,6 @@ static const MenuItem gSettingsMenuTree[] =
 ////			},
 ////		},
 //	},
-//	{
-//		kMICycler1, STR_ANTIALIASING,
-////		.callback = OnChangeMSAA,
-////		.getLayoutFlags = ShouldDisplayMSAA,
-////		.cycler =
-////		{
-////			.valuePtr = &gGamePrefs.antialiasingLevel,
-////			.choices =
-////			{
-////				{STR_OFF, 0},
-////				{STR_MSAA_2X, 1},
-////				{STR_MSAA_4X, 2},
-////				{STR_MSAA_8X, 3},
-////			},
-////		},
-//	},
 	{
 		kMICycler1, STR_CROSSHAIRS,
 		.cycler=
@@ -157,6 +213,22 @@ static const MenuItem gSettingsMenuTree[] =
 					{STR_HUD_SCALE_190, 190},
 					{STR_HUD_SCALE_200, 200},
 					},
+		},
+	},
+	{
+		kMICycler1, STR_ANTIALIASING,
+		.callback = OnChangeMSAA,
+		.getLayoutFlags = ShouldDisplayMSAA,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.antialiasingLevel,
+			.choices =
+			{
+				{STR_OFF, 0},
+				{STR_MSAA_2X, 1},
+				{STR_MSAA_4X, 2},
+				{STR_MSAA_8X, 3},
+			},
 		},
 	},
 //	{kMISpacer, .customHeight=.5f },

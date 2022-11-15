@@ -160,6 +160,7 @@ extern	float					gTargetMaxSpeed[MAX_PLAYERS];
 extern	float					gTerrainPolygonSize;
 extern	float					gTerrainSuperTileUnitSize;
 extern	float					gTerrainSuperTileUnitSizeFrac;
+extern	int						gCurrentAntialiasingLevel;
 extern	int						gGameWindowHeight;
 extern	int						gGameWindowWidth;
 extern	int						gMaxEnemies;

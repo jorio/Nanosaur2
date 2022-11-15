@@ -122,6 +122,8 @@ void ToolBoxInit(void)
 	InitDefaultPrefs();
 	LoadPrefs();
 
+	SetFullscreenMode(true);
+
 
 
 			/* BOOT OGL */

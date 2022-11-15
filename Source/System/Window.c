@@ -140,6 +140,9 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 
 ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed)
 {
+ObjNode	*newObj = NULL;
+Boolean fadeIn = fadeFlags & kFadeFlags_In;
+
 #if SKIPFLUFF
 	if (fadeIn)
 		gGammaFadeFrac = 1;
@@ -147,10 +150,6 @@ ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed)
 		gGammaFadeFrac = 0;
 	return NULL;
 #endif
-
-ObjNode	*newObj = NULL;
-
-	Boolean fadeIn = fadeFlags & kFadeFlags_In;
 
 		/* SCAN FOR OLD FADE EVENTS STILL IN LIST */
 

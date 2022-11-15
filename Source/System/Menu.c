@@ -19,6 +19,9 @@
 
 #define USE_SDL_CURSOR 0
 
+#define CYCLER_ARROW_PADDING 80
+#define CYCLER_ARROW_INSET 30
+
 /****************************/
 /*    PROTOTYPES            */
 /****************************/
@@ -64,9 +67,6 @@ typedef struct
 //	int			nIncrements;
 } MenuNodeData;
 _Static_assert(sizeof(MenuNodeData) <= MAX_SPECIAL_DATA_BYTES, "MenuNodeData doesn't fit in special area");
-//CheckSpecialDataStruct(MenuNodeData);
-
-//#define GetMenuNodeData(node) GetSpecialData(node, MenuNodeData)
 #define GetMenuNodeData(node) ((MenuNodeData*) (node)->SpecialPadding)
 
 /****************************/
@@ -175,6 +175,7 @@ typedef struct
 	} history[MAX_STACK_LENGTH];
 	int					historyPos;
 
+	bool				mouseControl;
 	bool				mouseHoverValid;
 	int					mouseHoverColumn;
 #if USE_SDL_CURSOR
@@ -186,6 +187,8 @@ typedef struct
 
 	ObjNode*			arrowObjects[2];
 	ObjNode*			darkenPane;
+
+	signed char			mouseArrowHoverState;
 } MenuNavigation;
 
 static MenuNavigation* gNav = NULL;
@@ -212,6 +215,7 @@ static void InitMenuNavigation(void)
 	nav->menuPick = -1;
 	nav->menuState = kMenuStateOff;
 	nav->mouseHoverColumn = -1;
+	nav->mouseControl = true;
 
 #if USE_SDL_CURSOR
 	nav->standardCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
@@ -225,14 +229,13 @@ static void InitMenuNavigation(void)
 		.group = nav->style.fontAtlas,
 		.flags = STATUS_BIT_MOVEINPAUSE,
 	};
-	nav->arrowObjects[0] = TextMesh_New("<", 0, &arrowDef);
-	nav->arrowObjects[1] = TextMesh_New(">", 0, &arrowDef);
 
-	nav->arrowObjects[0]->ColorFilter = nav->style.arrowColor;
-	nav->arrowObjects[1]->ColorFilter = nav->style.arrowColor;
-
-	SendNodeToOverlayPane(nav->arrowObjects[0]);
-	SendNodeToOverlayPane(nav->arrowObjects[1]);
+	for (int i = 0; i < 2; i++)
+	{
+		nav->arrowObjects[i] = TextMesh_New(i == 0 ? "<" : ">", 0, &arrowDef);
+		nav->arrowObjects[i]->ColorFilter = nav->style.arrowColor;
+		SendNodeToOverlayPane(nav->arrowObjects[i]);
+	}
 }
 
 static void DisposeMenuNavigation(void)
@@ -746,7 +749,7 @@ static void GoBackInHistory(void)
 	}
 }
 
-static void RepositionArrows(void)
+static void UpdateArrows(void)
 {
 	ObjNode* snapTo = NULL;
 	ObjNode* chainRoot = GetCurrentMenuItemObject();
@@ -795,31 +798,71 @@ static void RepositionArrows(void)
 			break;
 	}
 
-	if (snapTo)
-	{
-		OGLRect extents = TextMesh_GetExtents(snapTo);
-
-		float spacing = 45 * snapTo->Scale.x;
-
-		for (int i = 0; i < 2; i++)
-		{
-			ObjNode* arrowObj = gNav->arrowObjects[i];
-			SetObjectVisible(arrowObj, true);
-
-			arrowObj->Coord.x = i==0? extents.left - spacing: extents.right + spacing;
-			arrowObj->Coord.y = snapTo->Coord.y;
-			arrowObj->Scale = snapTo->Scale;
-			UpdateObjectTransforms(arrowObj);
-
-			arrowObj->ColorFilter.a = visible[i] ? 1 : 0;//0.25f;
-		}
-	}
-	else
+	// If no objnode to snap arrows to, hide them and bail
+	if (!snapTo)
 	{
 		for (int i = 0; i < 2; i++)
 		{
 			SetObjectVisible(gNav->arrowObjects[i], false);
 		}
+		return;
+	}
+
+	OGLRect extents = TextMesh_GetExtents(snapTo);
+
+	float spacing = 45 * snapTo->Scale.x;
+
+	for (int i = 0; i < 2; i++)
+	{
+		ObjNode* arrowObj = gNav->arrowObjects[i];
+		SetObjectVisible(arrowObj, true);
+
+		arrowObj->Coord.x = i==0? extents.left - spacing: extents.right + spacing;
+		arrowObj->Coord.y = snapTo->Coord.y;
+		arrowObj->Scale = snapTo->Scale;
+
+		arrowObj->ColorFilter.a = visible[i] ? 1 : 0;
+	}
+
+	if (entry->type == kMICycler1)
+	{
+		gNav->arrowObjects[0]->Coord.x += CYCLER_ARROW_INSET;
+		gNav->arrowObjects[1]->Coord.x -= CYCLER_ARROW_INSET;
+
+		float mid = extents.left + 0.5f * (extents.right - extents.left);
+
+		float s = snapTo->Scale.x;
+		float s1 = s * 0.7f;
+		float s2 = s * 1.3f;
+
+		if (!gNav->mouseHoverValid || !gNav->mouseControl)
+		{
+			gNav->arrowObjects[0]->Scale = (OGLVector3D){ s, s, s };
+			gNav->arrowObjects[1]->Scale = (OGLVector3D){ s, s, s };
+			gNav->mouseArrowHoverState = 0;
+		}
+		else if (gCursorCoord.x < mid)
+		{
+			gNav->arrowObjects[0]->ColorFilter.a = 1;		// override alpha (don't hide arrows if mouse control)
+			gNav->arrowObjects[1]->ColorFilter.a = 1;
+			gNav->arrowObjects[0]->Scale = (OGLVector3D){ s2, s2, s2 };
+			gNav->arrowObjects[1]->Scale = (OGLVector3D){ s1, s1, s1 };
+			gNav->mouseArrowHoverState = -1;
+		}
+		else
+		{
+			gNav->arrowObjects[0]->ColorFilter.a = 1;		// override alpha (don't hide arrows if mouse control)
+			gNav->arrowObjects[1]->ColorFilter.a = 1;
+			gNav->arrowObjects[0]->Scale = (OGLVector3D){ s1, s1, s1 };
+			gNav->arrowObjects[1]->Scale = (OGLVector3D){ s2, s2, s2 };
+			gNav->mouseArrowHoverState = 1;
+		}
+	}
+
+	// Finally, update object transforms
+	for (int i = 0; i < 2; i++)
+	{
+		UpdateObjectTransforms(gNav->arrowObjects[i]);
 	}
 }
 
@@ -853,9 +896,6 @@ static void NavigateSettingEntriesVertically(int delta)
 		PlayNavigateEffect();
 		TwitchSelection();
 	}
-
-	// Reposition arrows
-	RepositionArrows();
 }
 
 static void NavigateSettingEntriesMouseHover(void)
@@ -864,11 +904,13 @@ static void NavigateSettingEntriesMouseHover(void)
 
 	if (cursor.x == gCursorCoord.x && cursor.y == gCursorCoord.y)
 	{
+		// Mouse didn't move from last time
 		return;
 	}
 
 	cursor = gCursorCoord;
 
+	gNav->mouseControl = true;
 	gNav->mouseHoverValid = false;
 	gNav->mouseHoverColumn = -1;
 
@@ -919,7 +961,6 @@ static void NavigateSettingEntriesMouseHover(void)
 				gNav->menuRow = row;
 				PlayNavigateEffect();
 				TwitchSelectionInOrOut(true);
-				RepositionArrows();
 			}
 
 			return;
@@ -935,11 +976,12 @@ static void NavigateSettingEntriesMouseHover(void)
 
 static void NavigatePick(const MenuItem* entry)
 {
-	if (IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
-//			|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
-			|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
-			)
+	bool validClick = (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT));
+
+	if (IsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || validClick)
 	{
+		gNav->mouseControl = validClick;		// exit mouse control if didn't get click
+
 		if (entry->next != 'BACK')
 			PlayConfirmEffect();
 
@@ -1029,27 +1071,38 @@ static Byte GetCyclerValueForIndex(const MenuItem* entry, int index)
 static void NavigateCycler(const MenuItem* entry)
 {
 	int delta = 0;
+	bool allowWrap = false;
 
-	if (IsNeedDown(kNeed_UILeft, ANY_PLAYER)
+	if (gNav->mouseHoverValid
+		&& gNav->mouseArrowHoverState != 0
+		&& (IsClickDown(SDL_BUTTON_LEFT) || IsClickDown(SDL_BUTTON_RIGHT)))
+	{
+		delta = gNav->mouseArrowHoverState * (IsClickDown(SDL_BUTTON_LEFT)? 1: -1);
+		allowWrap = true;
+		gNav->mouseControl = true;
+	}
+	else if (IsNeedDown(kNeed_UILeft, ANY_PLAYER)
 		|| IsNeedDown(kNeed_UIPrev, ANY_PLAYER)
-		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_RIGHT))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELDOWN))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELLEFT))
 		)
 	{
 		delta = -1;
+		gNav->mouseControl = false;
 	}
 	else if (IsNeedDown(kNeed_UIRight, ANY_PLAYER)
 		|| IsNeedDown(kNeed_UINext, ANY_PLAYER)
-		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_LEFT))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELUP))
 		|| (gNav->mouseHoverValid && IsClickDown(SDL_BUTTON_WHEELRIGHT))
 		)
 	{
 		delta = 1;
+		gNav->mouseControl = false;
 	}
 	else if (IsNeedDown(kNeed_UIConfirm, ANY_PLAYER))
 	{
+		gNav->mouseControl = false;
+
 		MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuSelect);
 		MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
 		MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
@@ -1065,14 +1118,17 @@ static void NavigateCycler(const MenuItem* entry)
 		{
 			int index = GetValueIndexInCycler(entry, *entry->cycler.valuePtr);
 
-			if ((index == 0 && delta < 0) ||
-				(index == GetCyclerNumChoices(entry)-1 && delta > 0))
+			if (!allowWrap)
 			{
-				PlayErrorEffect();
-				MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuWiggle);
-				MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
-				MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
-				return;
+				if ((index == 0 && delta < 0) ||
+					(index == GetCyclerNumChoices(entry)-1 && delta > 0))
+				{
+					PlayErrorEffect();
+					MakeTwitch(GetCurrentMenuItemObject(), kTwitchPreset_MenuWiggle);
+					MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
+					MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
+					return;
+				}
 			}
 
 			if (index >= 0)
@@ -1100,8 +1156,6 @@ static void NavigateCycler(const MenuItem* entry)
 			LayOutCycler1(gNav->menuRow);
 		else
 			LayOutCycler2ValueText(gNav->menuRow);
-
-		RepositionArrows();
 
 		if (delta < 0)
 			MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_DisplaceLTR);
@@ -1207,7 +1261,6 @@ enum
 		gTempForceSwipeRTL = false;
 
 		// Adjust arrows
-		RepositionArrows();
 		if (delta < 0)
 			MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_DisplaceLTR);
 		else
@@ -1253,7 +1306,6 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		gNav->menuCol = keyNo;
 		PlayNavigateEffect();
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1266,7 +1318,6 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		PlayNavigateEffect();
 		gNav->mouseHoverValid = false;
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1279,7 +1330,6 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		PlayNavigateEffect();
 		gNav->mouseHoverValid = false;
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1293,7 +1343,6 @@ static void NavigateKeyBinding(const MenuItem* entry)
 		PlayDeleteEffect();
 		MakeKbText(row, keyNo);
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1308,7 +1357,6 @@ static void NavigateKeyBinding(const MenuItem* entry)
 
 		MakeKbText(row, keyNo);		// It'll show "PRESS!" because we're in kMenuStateAwaitingKeyPress
 		TwitchSelection();
-		RepositionArrows();
 
 		// Change subtitle to help message
 		ReplaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP_CANCEL);
@@ -1332,7 +1380,6 @@ static void NavigatePadBinding(const MenuItem* entry)
 		gNav->menuCol = btnNo;
 		PlayNavigateEffect();
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1345,7 +1392,6 @@ static void NavigatePadBinding(const MenuItem* entry)
 		gNav->mouseHoverValid = false;
 		PlayNavigateEffect();
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1358,7 +1404,6 @@ static void NavigatePadBinding(const MenuItem* entry)
 		gNav->mouseHoverValid = false;
 		PlayNavigateEffect();
 		TwitchSelection();
-		RepositionArrows();
 		return;
 	}
 
@@ -1390,7 +1435,6 @@ static void NavigatePadBinding(const MenuItem* entry)
 		gNav->menuState = kMenuStateAwaitingPadPress;
 
 		MakePbText(row, btnNo);			// It'll show "PRESS!" because we're in MenuStateAwaitingPadPress
-		RepositionArrows();
 		TwitchSelection();
 
 		// Change subtitle to help message
@@ -1426,7 +1470,6 @@ static void NavigateMouseBinding(const MenuItem* entry)
 		gNav->menuState = kMenuStateAwaitingMouseClick;
 
 		MakeMbText(row);			// It'll show "PRESS!" because we're in MenuStateAwaitingMouseClick
-		RepositionArrows();
 		TwitchSelection();
 		InvalidateAllInputs();
 
@@ -1449,11 +1492,13 @@ static void NavigateMenu(void)
 	{
 		NavigateSettingEntriesVertically(-1);
 		SaveSelectedRowInHistory();
+		gNav->mouseControl = false;
 	}
 	else if (IsNeedDown(kNeed_UIDown, ANY_PLAYER))
 	{
 		NavigateSettingEntriesVertically(1);
 		SaveSelectedRowInHistory();
+		gNav->mouseControl = false;
 	}
 	else
 	{
@@ -1564,7 +1609,7 @@ updateText:
 	gNav->menuState = kMenuStateReady;
 	gNav->idleTime = 0;
 	MakeKbText(row, keyNo);		// update text after state changed back to Ready
-	RepositionArrows();
+//	();
 	ReplaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP);
 }
 
@@ -1640,7 +1685,6 @@ updateText:
 	gNav->menuState = kMenuStateReady;
 	gNav->idleTime = 0;
 	MakePbText(row, btnNo);		// update text after state changed back to Ready
-	RepositionArrows();
 	ReplaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP);
 	return true;
 }
@@ -1673,7 +1717,6 @@ static void AwaitMetaGamepadPress(void)
 		gNav->menuState = kMenuStateReady;
 		gNav->idleTime = 0;
 		MakePbText(gNav->menuRow, gNav->menuCol);	// update text after state changed back to Ready
-		RepositionArrows();
 		PlayErrorEffect();
 		ReplaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_NO_GAMEPAD_DETECTED);
 	}
@@ -1706,7 +1749,6 @@ updateText:
 	gNav->menuState = kMenuStateReady;
 	gNav->idleTime = 0;
 	MakeMbText(gNav->menuRow);		// update text after state changed back to Ready
-	RepositionArrows();
 //	ReplaceMenuText(STR_CONFIGURE_MOUSE_HELP_CANCEL, STR_CONFIGURE_MOUSE_HELP);
 	return true;
 }
@@ -1893,6 +1935,8 @@ static ObjNode* LayOutCycler1(int row)
 
 	ObjNode* node = MakeText(buf, row, 0, 0);
 	node->MoveCall = MoveAction;
+	node->LeftOff -= CYCLER_ARROW_PADDING;
+	node->RightOff += CYCLER_ARROW_PADDING;
 
 	return node;
 }
@@ -2079,7 +2123,6 @@ static void LayOutMenu(int menuID)
 	}
 
 	TwitchSelection();
-	RepositionArrows();
 }
 
 void LayoutCurrentMenuAgain(void)
@@ -2190,7 +2233,6 @@ static void MoveMenuDriver(ObjNode* theNode)
 		return;
 	}
 
-
 	gNav->idleTime += gFramesPerSecondFrac;
 
 	if (IsNeedDown(kNeed_UIStart, ANY_PLAYER)
@@ -2258,6 +2300,8 @@ static void MoveMenuDriver(ObjNode* theNode)
 		default:
 			break;
 	}
+
+	UpdateArrows();
 
 	if (gNav->menuState == kMenuStateOff)
 	{

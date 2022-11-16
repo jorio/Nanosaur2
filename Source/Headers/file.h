@@ -78,6 +78,7 @@ typedef struct
 
 	Byte	monitorNum;
 	Boolean	fullscreen;
+	Boolean	vsync;
 	Byte	antialiasingLevel;
 	Boolean	cutsceneSubtitles;
 

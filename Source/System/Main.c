@@ -150,6 +150,7 @@ void InitDefaultPrefs(void)
 		/* DETERMINE WHAT LANGUAGE IS ON THIS MACHINE */
 
 	gGamePrefs.fullscreen				= true;
+	gGamePrefs.vsync					= true;
 
 	gGamePrefs.language				= GetBestLanguageIDFromSystemLocale();
 	gGamePrefs.cutsceneSubtitles	= !IsNativeEnglishSystem();		// enable subtitles if user's native language isn't English

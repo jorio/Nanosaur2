@@ -47,6 +47,12 @@ static void OnPickResetMouseBindings(const MenuItem* mi)
 	LayoutCurrentMenuAgain();
 }
 
+static void OnChangeVSync(const MenuItem* mi)
+{
+	(void) mi;
+	SDL_GL_SetSwapInterval(gGamePrefs.vsync);
+}
+
 static int ShouldDisplayMSAA(const MenuItem* mi)
 {
 #if __APPLE__
@@ -214,6 +220,19 @@ static const MenuItem gSettingsMenuTree[] =
 					{STR_HUD_SCALE_200, 200},
 					},
 		},
+	},
+	{
+		kMICycler1, STR_VSYNC,
+		.callback = OnChangeVSync,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.vsync,
+			.choices =
+			{
+				{STR_OFF, 0},
+				{STR_ON, 1},
+			},
+		}
 	},
 	{
 		kMICycler1, STR_ANTIALIASING,

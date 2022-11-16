@@ -1,7 +1,8 @@
 /****************************/
 /*      MISC ROUTINES       */
-/* (c)2003 Pangea Software  */
 /* By Brian Greenstone      */
+/* (c)2003 Pangea Software  */
+/* (c)2022 Iliyas Jorio     */
 /****************************/
 
 
@@ -19,7 +20,7 @@
 /*    CONSTANTS             */
 /****************************/
 
-#define	MAX_FPS				190
+#define	MAX_FPS				300		// mac original was 190
 #define	DEFAULT_FPS			13
 
 #define	PTRCOOKIE_SIZE		16
@@ -373,16 +374,15 @@ int				i;
 static int		sampIndex = 0;
 static float	sampleList[16] = {60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60};
 
+wait:
 	Microseconds(&currTime);
 
-//wait:
 	if (gTimeDemo)
 	{
 		fps = 40;
 	}
 	else
 	{
-#if 1
 		deltaTime = currTime.lo - time.lo;
 
 		if (deltaTime == 0)
@@ -394,23 +394,22 @@ static float	sampleList[16] = {60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60};
 			fps = 1000000.0f / deltaTime;
 
 			if (fps < DEFAULT_FPS)					// (avoid divide by 0's later)
+			{
 				fps = DEFAULT_FPS;
+			}
+			else if (fps > MAX_FPS)					// limit to avoid issue
+			{
+				if (fps - MAX_FPS > 1000)			// try to sneak in some sleep if we have 1 ms to spare
+				{
+					SDL_Delay(1);
+				}
+				goto wait;
+			}
 		}
 
 #if _DEBUG
 		if (GetKeyState(SDL_SCANCODE_KP_PLUS))		// debug speed-up with KP_PLUS
 			fps = DEFAULT_FPS;
-#endif
-#else
-		currTime = UpTime();
-
-		deltaTime = SubAbsoluteFromAbsolute(currTime, time);
-		nano = AbsoluteToNanoseconds(deltaTime);
-
-		fps = (float)kSecondScale / (float)nano.lo;
-
-		if (fps > MAX_FPS)				// limit to avoid issues
-			goto wait;
 #endif
 	}
 

@@ -27,7 +27,6 @@ static void UpdateCamera_FirstPerson(short i);
 /****************************/
 
 
-#define	NUM_FLARE_TYPES		4
 #define	NUM_FLARES			6
 
 #define	CAMERA_DEFAULT_DIST_FROM_ME		280.0f
@@ -90,6 +89,23 @@ static const Byte	gFlareImageTable[]=
 	PARTICLE_SObjType_LensFlare1
 };
 
+
+/************** GET FOV DEPENDING ON SPLITSCREEN MODE ****************/
+
+float GetSplitscreenPaneFOV(void)
+{
+	if (gVSMode == VS_MODE_NONE)										// set FOV differently for multiplayer
+	{
+		return 1.15f;
+	}
+	else
+	{
+		if (gGamePrefs.splitScreenMode == SPLITSCREEN_MODE_HORIZ)		// smaller FOV for wide panes
+			return 0.7f;
+		else
+			return 1.1f;
+	}
+}
 
 /*********************** DRAW LENS FLARE ***************************/
 
@@ -412,10 +428,6 @@ const OGLPoint3D	noseOff = {0, 0, -600};
 		oldPointOfInterestX = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.x;
 		oldPointOfInterestY = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.y;
 		oldPointOfInterestZ = gGameViewInfoPtr->cameraPlacement[playerNum].pointOfInterest.z;
-
-		//myX = gPlayerInfo[playerNum].coord.x;
-		//myY = gPlayerInfo[playerNum].coord.y + playerObj->BottomOff;
-		//myZ = gPlayerInfo[playerNum].coord.z;
 
 
 				/**********************/

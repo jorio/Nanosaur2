@@ -13,11 +13,11 @@ enum
 		/* EXTERNS */
 
 extern	Boolean		gCameraInDeathDiveMode[], gCameraInExitMode;
-extern	float		gAnaglyphSeparationTweak;
 extern  Byte		gCameraMode[];
 
 //================================
 
+float GetSplitscreenPaneFOV(void);
 
 void UpdateCameras(void);
 void InitCamera_Terrain(short playerNum);

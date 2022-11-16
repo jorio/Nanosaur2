@@ -31,6 +31,8 @@ static void OnExitPause(int outcome);
 
 int ShouldDisplaySplitscreenModeCycler(const MenuItem* mi)
 {
+	(void) mi;
+
 	if (gNumPlayers >= 2)
 		return 0;
 	else
@@ -39,12 +41,15 @@ int ShouldDisplaySplitscreenModeCycler(const MenuItem* mi)
 
 void OnToggleSplitscreenMode(const MenuItem* mi)
 {
-	gActiveSplitScreenMode = gGamePrefs.splitScreenMode;
-//	SetDefaultCameraModeForAllPlayers();
-//	UpdateCameras(false, true);
-	UpdateCameras();
-}
+	(void) mi;
 
+	gActiveSplitScreenMode = gGamePrefs.splitScreenMode;
+
+	for (int i = 0; i < gNumPlayers; i++)		// smaller FOV for wide panes
+	{
+		gGameViewInfoPtr->fov[i] = GetSplitscreenPaneFOV();
+	}
+}
 
 /****************************/
 /*    CONSTANTS             */

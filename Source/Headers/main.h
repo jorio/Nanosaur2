@@ -32,8 +32,6 @@ enum
 };
 
 
-#define		HORIZ_PANE_FOV		.7
-#define		VERT_PANE_FOV		1.1
 
 
 //=================================================

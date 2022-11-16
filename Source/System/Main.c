@@ -344,16 +344,7 @@ OGLSetupInputType	viewDef;
 	OGL_NewViewDef(&viewDef);
 
 	viewDef.camera.hither 			= 20;
-	if (gVSMode == VS_MODE_NONE)										// set FOV differently for multiplayer
-		viewDef.camera.fov 				= 1.15;
-	else
-	{
-		if (gGamePrefs.splitScreenMode == SPLITSCREEN_MODE_HORIZ)			// smaller FOV for wide panes
-			viewDef.camera.fov 				= HORIZ_PANE_FOV;
-		else
-			viewDef.camera.fov 				= VERT_PANE_FOV;
-	}
-
+	viewDef.camera.fov 				= GetSplitscreenPaneFOV();
 	viewDef.view.clearBackBuffer	= false;	//true;
 	viewDef.camera.yon 				= (gSuperTileActiveRange * SUPERTILE_SIZE * gTerrainPolygonSize) * .95f;
 

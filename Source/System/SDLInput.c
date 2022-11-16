@@ -451,7 +451,7 @@ int GetNeedState(int needID, int playerID)
 #if REQUIRE_LOCK_MAPPING
 	if (gNumLocalPlayers <= 1 || controller->fallbackToKeyboard)
 #else
-	if (playerID == 0)
+	if (playerID == KBMFallbackPlayer())
 #endif
 	{
 		return gNeedStates[needID];
@@ -478,7 +478,7 @@ float GetNeedAnalogValue(int needID, int playerID)
 #if REQUIRE_LOCK_MAPPING
 	if (gNumLocalPlayers <= 1 || controller->fallbackToKeyboard)
 #else
-	if (playerID == 0)
+	if (playerID == KBMFallbackPlayer())
 #endif
 	{
 		if (gNeedStates[needID] & KEYSTATE_ACTIVE_BIT)

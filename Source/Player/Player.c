@@ -1187,9 +1187,9 @@ void UpdatePlayerSteering(int playerNum)
 	float pitch		= GetNeedAnalogSteering(kNeed_PitchUp, kNeed_PitchDown, playerNum);
 	float yaw		= GetNeedAnalogSteering(kNeed_YawLeft, kNeed_YawRight, playerNum);
 
-	/* AND FINALLY SEE IF MOUSE DELTAS ARE BEST (FOR PLAYER 1 ONLY) */
+	/* AND FINALLY SEE IF MOUSE DELTAS ARE BEST (FOR KB/M FALLBACK PLAYER ONLY) */
 
-	if (playerNum == 0)
+	if (playerNum == KBMFallbackPlayer())
 	{
 		const float mouseSensitivityFrac = (float)(gGamePrefs.mouseSensitivityLevel) * (1.0f / NUM_MOUSE_SENSITIVITY_LEVELS);
 

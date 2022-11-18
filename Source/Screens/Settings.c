@@ -127,59 +127,22 @@ static void OnChangeMSAA(const MenuItem* mi)
 static const MenuItem gSettingsMenuTree[] =
 {
 	{ .id='sett' },
-	{
-		kMICycler1, STR_KIDDIE_MODE,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.kiddieMode,
-			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
-		}
-	},
+	{kMIPick, STR_GENERAL,			.next='gene'},
 	{kMIPick, STR_CONTROLS,			.next='ctrl'},
 	{kMIPick, STR_GRAPHICS,			.next='graf'},
 	{kMIPick, STR_SOUND,			.next='soun'},
 	{kMIPick, STR_LANGUAGE,			.next='lang' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
-	{.id='ctrl'},
-	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
-	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
-	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
+	{ .id='gene' },
 	{
-		kMICycler1, STR_VERTICAL_STEERING,
-		.cycler =
-		{
-			.valuePtr=&gGamePrefs.invertVerticalSteering,
-			.choices = { {STR_NORMAL, 0}, {STR_INVERTED, 1} },
-		}
-	},
-	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
-
-	{.id='graf'},
-	{
-		kMICycler1, STR_FULLSCREEN,
-		.callback=OnToggleFullscreen,
+		kMICycler1, STR_DIFFICULTY,
 		.cycler=
 		{
-			.valuePtr=&gGamePrefs.fullscreen,
-			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
-		},
+			.valuePtr=&gGamePrefs.kiddieMode,
+			.choices={ {STR_NORMAL_DIFFICULTY, 0}, {STR_KIDDIE_MODE, 1} },
+		}
 	},
-//	{
-//		kMICycler1, STR_PREFERRED_DISPLAY,
-////		.callback = OnToggleFullscreen,
-////		.getLayoutFlags = ShouldDisplayMonitorCycler,
-////		.cycler =
-////		{
-////			.valuePtr = &gGamePrefs.monitorNum,
-////			.isDynamicallyGenerated = true,
-////			.generator =
-////			{
-////				.generateNumChoices = GetNumDisplays,
-////				.generateChoiceString = GetDisplayName,
-////			},
-////		},
-//	},
 	{
 		kMICycler1, STR_CROSSHAIRS,
 		.cycler=
@@ -221,6 +184,47 @@ static const MenuItem gSettingsMenuTree[] =
 					},
 		},
 	},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{.id='ctrl'},
+	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
+	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
+	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
+	{
+		kMICycler1, STR_VERTICAL_STEERING,
+		.cycler =
+		{
+			.valuePtr=&gGamePrefs.invertVerticalSteering,
+			.choices = { {STR_NORMAL, 0}, {STR_INVERTED, 1} },
+		}
+	},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{.id='graf'},
+	{
+		kMICycler1, STR_FULLSCREEN,
+		.callback=OnToggleFullscreen,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.fullscreen,
+			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
+		},
+	},
+//	{
+//		kMICycler1, STR_PREFERRED_DISPLAY,
+////		.callback = OnToggleFullscreen,
+////		.getLayoutFlags = ShouldDisplayMonitorCycler,
+////		.cycler =
+////		{
+////			.valuePtr = &gGamePrefs.monitorNum,
+////			.isDynamicallyGenerated = true,
+////			.generator =
+////			{
+////				.generateNumChoices = GetNumDisplays,
+////				.generateChoiceString = GetDisplayName,
+////			},
+////		},
+//	},
 	{
 		kMICycler1, STR_VSYNC,
 		.callback = OnChangeVSync,

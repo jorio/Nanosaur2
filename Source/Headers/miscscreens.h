@@ -4,7 +4,6 @@
 
 #pragma once
 
-void DisplayPicture(const char* path);
 void DoPaused(void);
 
 void DoLegalScreen(void);

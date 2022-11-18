@@ -11,6 +11,7 @@
 /****************************/
 
 #include "game.h"
+#include "version.h"
 
 
 /****************************/
@@ -33,19 +34,15 @@ static void DrawLoading_Callback(void);
 float		gLoadingThermoPercent = 0;
 
 
-/********************** DISPLAY PICTURE **************************/
-//
-// Displays a picture using OpenGL until the user clicks the mouse or presses any key.
-// If showAndBail == true, then show it and bail out
-//
 
-void DisplayPicture(const char* path)
+/************** DO LEGAL SCREEN *********************/
+
+void DoLegalScreen(void)
 {
-OGLSetupInputType	viewDef;
-float	timeout = 40.0f;
+	OGLSetupInputType	viewDef;
+	float	timeout = 40.0f;
 
 	gNumPlayers = 1;									// make sure don't do split-screen
-
 
 			/* SETUP VIEW */
 
@@ -59,38 +56,69 @@ float	timeout = 40.0f;
 	OGL_SetupGameView(&viewDef);
 
 
+			/* BUILD OBJECTS */
 
-			/* CREATE BACKGROUND OBJECT */
+	LoadSpriteAtlas(SPRITE_GROUP_FONT3, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
 
-	MakeBackgroundPictureObject(path);
+	NewObjectDefinitionType textDef =
+	{
+		.scale = 0.2f,
+		.group = SPRITE_GROUP_FONT3,
+		.coord = {320,240-120,0},
+	};
 
 
+	const char* legalStrings[] =
+	{
+		"Nanosaur II:  Hatchling",
+		"\v" PROJECT_VERSION "\r",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"www.pangeasoft.net",
+		"jorio.itch.io/nanosaur2",
+		"\v\u00A9 2004-2008 Pangea Software, Inc.  Nanosaur is a registered trademark of Pangea Software, Inc.\r",
+		NULL
+	};
 
-		/***********/
-		/* SHOW IT */
-		/***********/
+	for (int i = 0; legalStrings[i]; i++)
+	{
+		if (legalStrings[i][0] != '\0')
+		{
+			ObjNode* textNode = TextMesh_New(legalStrings[i], 0, &textDef);
+			textNode->ColorFilter = (OGLColorRGBA) {1,1,0,1};
+		}
 
+		textDef.coord.y += 20;
+	}
 
 	MakeFadeEvent(kFadeFlags_In, 2.0);
+
 	DoSDLMaintenance();
 	CalcFramesPerSecond();
 
-					/* MAIN LOOP */
 
-		while (1)
-		{
-			CalcFramesPerSecond();
-			MoveObjects();
-			OGL_DrawScene(DrawObjects);
+			/* MAIN LOOP */
 
-			DoSDLMaintenance();
-			if (UserWantsOut() || IsClickDown(SDL_BUTTON_LEFT))
-				break;
+	while (1)
+	{
+		CalcFramesPerSecond();
+		MoveObjects();
+		OGL_DrawScene(DrawObjects);
 
-			timeout -= gFramesPerSecondFrac;
-			if (timeout < 0.0f)
-				break;
-		}
+		DoSDLMaintenance();
+		if (UserWantsOut() || IsClickDown(SDL_BUTTON_LEFT))
+			break;
+
+		timeout -= gFramesPerSecondFrac;
+		if (timeout < 0.0f)
+			break;
+	}
 
 
 			/* FADE OUT */
@@ -103,16 +131,6 @@ float	timeout = 40.0f;
 	DeleteAllObjects();
 	DisposeAllSpriteGroups();
 	OGL_DisposeGameView();
-}
-
-
-#pragma mark -
-
-/************** DO LEGAL SCREEN *********************/
-
-void DoLegalScreen(void)
-{
-	DisplayPicture(":images:legal.png");
 }
 
 

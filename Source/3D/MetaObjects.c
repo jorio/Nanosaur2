@@ -1037,9 +1037,7 @@ const OGLMatrix4x4		*m;
 
 void MO_DrawPicture(const MOPictureObject *picObj)
 {
-float			x,y,z;
 const MOPictureData	*picData = &picObj->objectData;
-float			cellWidth, cellHeight;
 
 	OGL_PushState();
 
@@ -1047,27 +1045,36 @@ float			cellWidth, cellHeight;
 
 	SetInfobarSpriteState(-5, 1);
 
-			/* GET DIMENSIONAL DATA */
-
-	cellWidth = 640.0f;
-	cellHeight = 480.0f;
-
 			/* CENTER VERTICALLY */
 
-//	ratio = (float)picData->fullHeight / (float)picData->fullWidth;
-//	offset = gCurrentAspectRatio / ratio - 1.0f;
-	y = 0; //240.0f * offset;
-	x = 0;
-	z = 0;
+	float width = 640.0f;
+	float height = 480.0f;
+
+	float x = -width/2;
+	float y = -height/2;
+	float z = 0;
+
+	float currentAR = (1.0f/gCurrentPaneAspectRatio);
+	float targetAR = 640.0f/480.0f;
+
+	float scale = currentAR / targetAR;
+	scale = GAME_CLAMP(scale, 1, 3);
+
+	float yOffset = (scale-1) * 0.333f;		// apply small offset to keep nano within frame
+
+	glTranslatef(-x, -y + yOffset*height, 0);
+	glScalef(scale, scale, 1);
 
 			/* ACTIVATE THE MATERIAL */
 
 	MO_DrawMaterial(picData->material);		// submit material #0
 
+			/* DRAW QUAD */
+
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex3f(x, y + cellHeight,z);
-	glTexCoord2f(1,1);	glVertex3f(x + cellWidth, y + cellHeight,z);
-	glTexCoord2f(1,0);	glVertex3f(x + cellWidth, y,z);
+	glTexCoord2f(0,1);	glVertex3f(x, y + height,z);
+	glTexCoord2f(1,1);	glVertex3f(x + width, y + height,z);
+	glTexCoord2f(1,0);	glVertex3f(x + width, y, z);
 	glTexCoord2f(0,0);	glVertex3f(x, y, z);
 	glEnd();
 

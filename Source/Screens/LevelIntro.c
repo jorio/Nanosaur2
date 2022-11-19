@@ -679,7 +679,7 @@ static void SetupCreditsObjects(void)
 	{
 		NewObjectDefinitionType textDef =
 		{
-			.group		= SPRITE_GROUP_FONT1,
+			.group		= SPRITE_GROUP_FONT2,
 			.coord		= {640/2, 400, 0},
 			.slot		= SPRITE_SLOT,
 			.scale		= 0.5f,
@@ -690,7 +690,9 @@ static void SetupCreditsObjects(void)
 
 		objs[0] = TextMesh_New(kCreditsText[i].role, kTextMeshAlignCenter, &textDef);
 		objs[0]->AnaglyphZ = 6.0f;
+		objs[0]->ColorFilter = (OGLColorRGBA) {1,0.6,0.2,1};
 
+		textDef.group = SPRITE_GROUP_FONT1;
 		textDef.coord.y += 32;
 		textDef.scale = 0.7f;
 		objs[1] = TextMesh_New(kCreditsText[i].name, kTextMeshAlignCenter, &textDef);

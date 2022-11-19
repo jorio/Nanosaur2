@@ -87,9 +87,9 @@ typedef struct
 	Byte	hudScale;
 
 	Byte	stereoGlassesMode;
-	short	anaglyphCalibrationRed;
-	short	anaglyphCalibrationGreen;
-	short	anaglyphCalibrationBlue;
+	Byte	anaglyphCalibrationRed;
+	Byte	anaglyphCalibrationGreen;
+	Byte	anaglyphCalibrationBlue;
 	Boolean doAnaglyphChannelBalancing;
 
 	Boolean	showTargetingCrosshairs;

@@ -124,6 +124,20 @@ static void OnChangeMSAA(const MenuItem* mi)
 	MakeTwitch(msaaWarning, kTwitchPreset_MenuSelect);
 }
 
+#define ANAGLYPH_CALIBRATION_CYCLER_ARRAY \
+{ \
+	{STR_MOUSE_SENSITIVITY_1,  0x00}, \
+	{STR_MOUSE_SENSITIVITY_2,  0x1C}, \
+	{STR_MOUSE_SENSITIVITY_3,  0x38}, \
+	{STR_MOUSE_SENSITIVITY_4,  0x55}, \
+	{STR_MOUSE_SENSITIVITY_5,  0x71}, \
+	{STR_MOUSE_SENSITIVITY_6,  0x84}, \
+	{STR_MOUSE_SENSITIVITY_7,  0xA0}, \
+	{STR_MOUSE_SENSITIVITY_8,  0xBC}, \
+	{STR_MOUSE_SENSITIVITY_9,  0xD8}, \
+	{STR_MOUSE_SENSITIVITY_10, 0xFF}, \
+}
+
 static const MenuItem gSettingsMenuTree[] =
 {
 	{ .id='sett' },
@@ -254,6 +268,13 @@ static const MenuItem gSettingsMenuTree[] =
 			},
 		},
 	},
+	{kMIPick, .rawText="CONFIGURE 3D GLASSES",		.next='anag'},
+//	{kMISpacer, .customHeight=.5f },
+//	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
+//	{kMISpacer, .customHeight=.5f },
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{.id='anag'},
 	{
 		kMICycler1, STR_3D_GLASSES,
 		.cycler =
@@ -268,9 +289,46 @@ static const MenuItem gSettingsMenuTree[] =
 			},
 		},
 	},
-//	{kMISpacer, .customHeight=.5f },
-//	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
-//	{kMISpacer, .customHeight=.5f },
+	{
+		kMICycler1,
+		.rawText = "CHANNEL BALANCING",
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.doAnaglyphChannelBalancing,
+			.choices =
+			{
+				{STR_OFF, 0},
+				{STR_ON, 1},
+			},
+		},
+	},
+	{
+		kMICycler1,
+		.rawText = "R",
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationRed,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
+	{
+		kMICycler1,
+		.rawText = "G",
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationGreen,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
+	{
+		kMICycler1,
+		.rawText = "B",
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationBlue,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='soun'},

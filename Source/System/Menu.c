@@ -1933,7 +1933,7 @@ static ObjNode* LayOutCycler1(int row)
 
 	const MenuItem* entry = &gNav->menu[row];
 
-	if (entry->text == STR_NULL)
+	if (entry->text == STR_NULL && entry->rawText == NULL)
 		snprintf(buf, bufSize, "%s", GetCyclerValueText(row));
 	else
 		snprintf(buf, bufSize, "%s: %s", GetMenuItemLabel(entry), GetCyclerValueText(row));

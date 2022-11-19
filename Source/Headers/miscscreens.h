@@ -16,6 +16,8 @@ void DrawLoading(float percent);
 void DoMainMenuScreen(void);
 ObjNode* MakeMouseCursorObject(void);
 
+void BuildMainMenuObjects(void);
+
 void RegisterSettingsMenu(void);
 
 
@@ -76,3 +78,13 @@ enum
 void RegisterFileScreen(int fileScreenMode);
 
 Boolean DoLocalGatherScreen(void);
+
+	/* ANAGLYPH CALIBRATION */
+
+#include "menu.h"
+
+void DisposeAnaglyphCalibrationScreen(void);
+void SetUpAnaglyphCalibrationScreen(const MenuItem* mi);
+void OnChangeAnaglyphSetting(const MenuItem* mi);
+int GetAnaglyphDisplayFlags(const MenuItem* mi);
+int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi);

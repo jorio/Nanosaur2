@@ -80,10 +80,12 @@ static MenuItem gMainMenuTree[] =
 /*    VARIABLES      */
 /*********************/
 
-static Boolean	gPlayNow = false;
+Boolean	gPlayNow = false;
 
 OGLPoint2D	gCursorCoord;						// screen coords based on 640x480 system
 
+static ObjNode* gMainMenuBackground = NULL;
+static ObjNode* gMainMenuMouseCursor = NULL;
 
 
 /********************** MAIN MENU MOVE CALLBACK **************************/
@@ -145,6 +147,28 @@ void DoMainMenuScreen(void)
 	}
 }
 
+/********************* BUILD MAIN MENU OBJECTS **********************/
+//
+// We need to expose this to AnaglyphCalibration.c so the background texture
+// always reflects the current anaglyph settings
+//
+
+void BuildMainMenuObjects(void)
+{
+	if (gMainMenuBackground)
+	{
+		DeleteObject(gMainMenuBackground);
+	}
+
+	if (gMainMenuMouseCursor)
+	{
+		DisposeSpriteGroup(SPRITE_GROUP_CURSOR);
+		DeleteObject(gMainMenuMouseCursor);
+	}
+
+	gMainMenuBackground = MakeBackgroundPictureObject(":images:menuback.jpg");
+	gMainMenuMouseCursor = MakeMouseCursorObject();
+}
 
 
 /********************* SETUP MAINMENU SCREEN **********************/
@@ -209,8 +233,7 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 			/* BUILD OBJECTS */
 			/*****************/
 
-	MakeBackgroundPictureObject(":images:menuback.jpg");
-	MakeMouseCursorObject();
+	BuildMainMenuObjects();
 	MakeFadeEvent(kFadeFlags_In, 3.0);
 }
 
@@ -220,7 +243,11 @@ static const OGLVector3D	fillDirection2 = { .3, .8, 1.0 };
 static void FreeMainMenuScreen(void)
 {
 	MyFlushEvents();
+
 	DeleteAllObjects();
+	gMainMenuMouseCursor = NULL;
+	gMainMenuBackground = NULL;
+
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();

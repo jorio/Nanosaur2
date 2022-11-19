@@ -119,9 +119,16 @@ HUD SCALE,TAILLE DE L'ATH
 2*
 ,,,,,,
 3D GLASSES,LUNETTES 3D,3D-BRILLE,GAFAS 3D,OCCHIALI 3D,3D-GLASÖGON,3D-BRIL
-ANAGLYPH [COLOR],ANAGLYPHES [COULEUR]
-ANAGLYPH [B&W],ANAGLYPHES [N&B]
-SHUTTER,À OBTURATION
+CALIBRATE 3D GLASSES,CALIBRER LUNETTES 3D,,,,,
+3D MODE,MODE 3D,,,,,
+DISABLED,DÉSACTIVÉ,,,,,
+ANAGLYPH COLOR,ANAGLYPHE COULEUR,,,,,
+ANAGLYPH B&W,ANAGLYPHE N&B,,,,,
+SHUTTER,À OBTURATION,,,,,
+CHANNEL BALANCING,ÉQUILIBRAGE CANAUX,,,,,
+R,R,,,,,
+G,V,,,,,
+B,B,,,,,
 ,,,,,,
 MUSIC VOLUME,VOLUME MUSIQUE,MUSIKLAUTSTÄRKE,VOLUMEN MÚSICA,VOLUME MUSICA,MUSIKVOLYM,MUZIEKVOLUME
 EFFECTS VOLUME,VOLUME BRUITAGES,EFFEKTLAUTSTÄRKE,VOLUMEN EFECTOS,VOLUME EFFETTI,EFFEKTVOLYM,VOLUME GELUIDSEFFECTEN
@@ -298,3 +305,27 @@ OPPURE PREMI [INVIO] SE UNO DI VOI
 DESIDERA PRENDERE LA TASTIERA.","KOPPLA IN 1 HANDKONTROLL TILL,
 ELLER TRYCK PÅ [ENTER] OM NÅGON
 AV ER VILL TA TANGENTBORDET.",
+,,,,,,
+While wearing your anaglyph glasses...,"Chaussez vos lunettes anaglyphes, puis...",,,,,
+"Adjust 'R' and 'B' until the white box in the
+test image looks about the same brightness
+in both your left and right eyes.","Ajustez 'R' et 'B' jusqu’à ce que le carré blanc
+dans la mire ci-contre apparaisse à la même
+luminosité pour vos deux yeux.",,,,,
+"Adjust 'G' until the green pattern is as dark
+as possible in the left eye, yet you still see
+good color balance in the background scene.","Ajustez 'V' jusqu’à ce que le motif vert soit aussi
+sombre que possible dans votre œil gauche, tout
+en maintenant un bon équilibre des couleurs dans
+la scène en arrière-plan.",,,,,
+"To improve the balance between the left
+and right eyes at the cost of some color
+vibrance, you can turn on Channel Balancing.","Pour améliorer l’équilibre entre l’œil gauche et
+le droit, vous pouvez activer Équilibrage Canaux,
+mais les couleurs seront moins vives.",,,,,
+,,,,,,
+"SORRY, 3D GLASSES CAN
+ONLY BE CALIBRATED
+FROM THE MAIN MENU.","DÉSOLÉ, LA CALIBRATION DES
+LUNETTES 3D N'EST POSSIBLE
+QUE DEPUIS LE MENU PRINCIPAL.",,,,,

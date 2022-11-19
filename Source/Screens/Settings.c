@@ -6,6 +6,22 @@
 
 #include "game.h"
 #include "uieffects.h"
+#include "miscscreens.h"
+
+static int DisableMenuEntryInGame(const MenuItem* mi)
+{
+	return gPlayNow ? kMILayoutFlagDisabled : 0;
+}
+
+static int HideMenuEntryInGame(const MenuItem* mi)
+{
+	return gPlayNow ? kMILayoutFlagHidden : 0;
+}
+
+static int ShowMenuEntryInGameOnly(const MenuItem* mi)
+{
+	return gPlayNow ? 0 : kMILayoutFlagHidden;
+}
 
 static void OnPickLanguage(const MenuItem* mi)
 {
@@ -140,6 +156,9 @@ static void OnChangeMSAA(const MenuItem* mi)
 
 static const MenuItem gSettingsMenuTree[] =
 {
+	//-------------------------------------------------------------------------
+	// SETTINGS ROOT MENU
+
 	{ .id='sett' },
 	{kMIPick, STR_GENERAL,			.next='gene'},
 	{kMIPick, STR_CONTROLS,			.next='ctrl'},
@@ -148,9 +167,13 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_LANGUAGE,			.next='lang' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
+	//-------------------------------------------------------------------------
+	// GENERAL
+
 	{ .id='gene' },
 	{
 		kMICycler1, STR_DIFFICULTY,
+		.getLayoutFlags=DisableMenuEntryInGame,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.kiddieMode,
@@ -200,6 +223,9 @@ static const MenuItem gSettingsMenuTree[] =
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
+	//-------------------------------------------------------------------------
+	// CONTROLS
+
 	{.id='ctrl'},
 	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
@@ -213,6 +239,9 @@ static const MenuItem gSettingsMenuTree[] =
 		}
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// GRAPHICS
 
 	{.id='graf'},
 	{
@@ -268,21 +297,45 @@ static const MenuItem gSettingsMenuTree[] =
 			},
 		},
 	},
-	{kMIPick, .rawText="CONFIGURE 3D GLASSES",		.next='anag'},
+	{
+		kMIPick,
+		STR_3D_GLASSES_CALIBRATE,
+		.getLayoutFlags=HideMenuEntryInGame,
+		.callback=SetUpAnaglyphCalibrationScreen,
+		.next='cali'
+	},
+	{
+		kMIPick,
+		STR_3D_GLASSES_CALIBRATE,
+		.getLayoutFlags=ShowMenuEntryInGameOnly,
+		.next='calx'
+	},
 //	{kMISpacer, .customHeight=.5f },
 //	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
 //	{kMISpacer, .customHeight=.5f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
-	{.id='anag'},
+	//-------------------------------------------------------------------------
+	// IN-GAME ANAGLYPH CALIBRATION
+
+	{.id='calx'},
+	{kMILabel, STR_NO_ANAGLYPH_CALIBRATION_IN_GAME, .customHeight=1.0f},
+	{kMISpacer, .customHeight=3},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// ANAGLYPH CALIBRATION
+
+	{.id='cali'},
 	{
-		kMICycler1, STR_3D_GLASSES,
+		kMICycler1, STR_3D_GLASSES_MODE,
+		.callback = OnChangeAnaglyphSetting,
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.stereoGlassesMode,
 			.choices =
 			{
-				{STR_OFF, STEREO_GLASSES_MODE_OFF},
+				{STR_3D_GLASSES_DISABLED, STEREO_GLASSES_MODE_OFF},
 				{STR_3D_GLASSES_ANAGLYPH_COLOR, STEREO_GLASSES_MODE_ANAGLYPH_COLOR},
 				{STR_3D_GLASSES_ANAGLYPH_MONO, STEREO_GLASSES_MODE_ANAGLYPH_MONO},
 //				{STR_3D_GLASSES_SHUTTER, STEREO_GLASSES_MODE_SHUTTER},
@@ -291,20 +344,9 @@ static const MenuItem gSettingsMenuTree[] =
 	},
 	{
 		kMICycler1,
-		.rawText = "CHANNEL BALANCING",
-		.cycler =
-		{
-			.valuePtr = &gGamePrefs.doAnaglyphChannelBalancing,
-			.choices =
-			{
-				{STR_OFF, 0},
-				{STR_ON, 1},
-			},
-		},
-	},
-	{
-		kMICycler1,
-		.rawText = "R",
+		.text = STR_3D_GLASSES_R,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationRed,
@@ -313,7 +355,9 @@ static const MenuItem gSettingsMenuTree[] =
 	},
 	{
 		kMICycler1,
-		.rawText = "G",
+		.text = STR_3D_GLASSES_G,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationGreen,
@@ -322,17 +366,41 @@ static const MenuItem gSettingsMenuTree[] =
 	},
 	{
 		kMICycler1,
-		.rawText = "B",
+		.text = STR_3D_GLASSES_B,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationBlue,
 			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
 		},
 	},
+	{
+		kMICycler1,
+		.text = STR_3D_GLASSES_CHANNEL_BALANCING,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.doAnaglyphChannelBalancing,
+			.choices =
+			{
+					{STR_OFF, 0},
+					{STR_ON, 1},
+			},
+		},
+	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+	{kMISpacer, .customHeight=8},
+
+	//-------------------------------------------------------------------------
+	// AUDIO
 
 	{.id='soun'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// LANGUAGE
 
 	{.id='lang'},
 	{kMIPick, STR_ENGLISH,	.id=LANGUAGE_ENGLISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
@@ -343,6 +411,9 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_DUTCH,	.id=LANGUAGE_DUTCH,		.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
 	{kMIPick, STR_SWEDISH,	.id=LANGUAGE_SWEDISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// KEYBOARD
 
 	{ .id='keyb' },
 //	{kMISpacer, .customHeight=.35f },
@@ -363,6 +434,9 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
+	//-------------------------------------------------------------------------
+	// GAMEPAD
+
 	{ .id='gpad' },
 //	{kMISpacer, .customHeight=.35f },
 	{kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight=.5f },
@@ -381,6 +455,9 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_RESET_KEYBINDINGS, .callback=OnPickResetGamepadBindings, .customHeight=.5f },
 	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// MOUSE
 
 	{ .id='mous' },
 //	{kMISpacer, .customHeight=.35f },
@@ -417,8 +494,8 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
-
-
+	//-------------------------------------------------------------------------
+	// END SENTINEL
 
 	{ .id=0 }
 };

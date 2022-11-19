@@ -106,9 +106,6 @@ void ToolBoxInit(void)
 {
 	MyFlushEvents();
 
-			/* CHECK PREFERENCES FOLDER */
-
-
 		/* FIRST VERIFY SYSTEM BEFORE GOING TOO FAR */
 
 	VerifySystem();
@@ -129,15 +126,6 @@ void ToolBoxInit(void)
 			/* BOOT OGL */
 
 	OGL_Boot();
-
-
-			/*********************************/
-			/* DO BOOT CHECK FOR SCREEN MODE */
-			/*********************************/
-
-//	DoAnaglyphCalibrationDialog	();	//---------
-
-	MyFlushEvents();
 }
 
 
@@ -947,6 +935,25 @@ ObjNode	*player = gPlayerInfo[0].objNode;
 
 #pragma mark -
 
+
+/****** LOAD/DISPOSE FONT USED THROUGHOUT THE GAME *****/
+
+void LoadGlobalAssets(void)
+{
+	LoadSpriteAtlas(SPRITE_GROUP_FONT1, "font", kAtlasLoadFont);
+	LoadSpriteAtlas(SPRITE_GROUP_FONT2, "font", kAtlasLoadFont | kAtlasLoadAltSkin1);
+}
+
+void DisposeGlobalAssets(void)
+{
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT1);
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT2);
+}
+
+
+#pragma mark -
+
+
 /************************************************************/
 /******************** PROGRAM MAIN ENTRY  *******************/
 /************************************************************/
@@ -987,8 +994,7 @@ unsigned long	someLong;
 
 			/* LOAD FONT FOR ENTIRE GAME */
 
-	LoadSpriteAtlas(SPRITE_GROUP_FONT1, "font", kAtlasLoadFont);
-	LoadSpriteAtlas(SPRITE_GROUP_FONT2, "font", kAtlasLoadFont | kAtlasLoadAltSkin1);
+	LoadGlobalAssets();
 
 
 #if !_DEBUG

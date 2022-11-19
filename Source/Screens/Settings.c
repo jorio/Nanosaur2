@@ -254,6 +254,20 @@ static const MenuItem gSettingsMenuTree[] =
 			},
 		},
 	},
+	{
+		kMICycler1, STR_3D_GLASSES,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.stereoGlassesMode,
+			.choices =
+			{
+				{STR_OFF, STEREO_GLASSES_MODE_OFF},
+				{STR_3D_GLASSES_ANAGLYPH_COLOR, STEREO_GLASSES_MODE_ANAGLYPH_COLOR},
+				{STR_3D_GLASSES_ANAGLYPH_MONO, STEREO_GLASSES_MODE_ANAGLYPH_MONO},
+//				{STR_3D_GLASSES_SHUTTER, STEREO_GLASSES_MODE_SHUTTER},
+			},
+		},
+	},
 //	{kMISpacer, .customHeight=.5f },
 //	{kMILabel, STR_FULLSCREEN_HINT, .customHeight=.5f },
 //	{kMISpacer, .customHeight=.5f },

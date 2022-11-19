@@ -1909,9 +1909,6 @@ static ObjNode* LayOutPick(int row)
 	ObjNode* obj = MakeText(GetMenuItemLabel(entry), row, 0, 0);
 	obj->MoveCall = MoveAction;
 
-	MenuNodeData* data = GetMenuNodeData(obj);
-	data->muted = !IsMenuItemSelectable(entry);
-
 	return obj;
 }
 
@@ -2131,7 +2128,13 @@ static void LayOutMenu(int menuID)
 
 		if (cls->layOutCallback)
 		{
-			cls->layOutCallback(row);
+			ObjNode* node = cls->layOutCallback(row);
+
+			// Make translucent if item disabled
+			if (GetLayoutFlags(entry) & kMILayoutFlagDisabled)
+			{
+				GetMenuNodeData(node)->muted = true;
+			}
 		}
 
 		y += GetMenuItemHeight(row) * gNav->style.rowHeight;

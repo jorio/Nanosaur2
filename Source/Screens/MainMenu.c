@@ -57,10 +57,13 @@ static MenuItem gMainMenuTree[] =
 	{ .id='bttl' },
 	{kMIPick, STR_RACE1,			.id='rac1',	.next='EXIT' },
 	{kMIPick, STR_RACE2,			.id='rac2',	.next='EXIT' },
+	{kMISpacer, .customHeight=.3f},
 	{kMIPick, STR_BATTLE1,			.id='bat1',	.next='EXIT' },
 	{kMIPick, STR_BATTLE2,			.id='bat2',	.next='EXIT' },
+	{kMISpacer, .customHeight=.3f},
 	{kMIPick, STR_CAPTURE1,			.id='cap1',	.next='EXIT' },
 	{kMIPick, STR_CAPTURE2,			.id='cap2',	.next='EXIT' },
+	{kMISpacer, .customHeight=.3f},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id='chea' },

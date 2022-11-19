@@ -301,7 +301,7 @@ void LoadSpriteAtlas(int groupNum, const char* atlasName, int flags)
 		else
 		{
 			// Make room for new atlas
-			DisposeSpriteGroup(groupNum);
+			DisposeSpriteAtlas(groupNum);
 		}
 	}
 

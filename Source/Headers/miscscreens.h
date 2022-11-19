@@ -81,10 +81,8 @@ Boolean DoLocalGatherScreen(void);
 
 	/* ANAGLYPH CALIBRATION */
 
-#include "menu.h"
-
 void DisposeAnaglyphCalibrationScreen(void);
-void SetUpAnaglyphCalibrationScreen(const MenuItem* mi);
-void OnChangeAnaglyphSetting(const MenuItem* mi);
-int GetAnaglyphDisplayFlags(const MenuItem* mi);
-int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi);
+void SetUpAnaglyphCalibrationScreen(void);
+void OnChangeAnaglyphSetting(void);
+int GetAnaglyphDisplayFlags(void);
+int GetAnaglyphDisplayFlags_ColorOnly(void);

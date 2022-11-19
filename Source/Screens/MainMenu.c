@@ -19,7 +19,7 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void ProcessMenuOutcome(int outcome);
-static void CheckForLevelCheat(const MenuItem* mi);
+static void CheckForLevelCheat(void);
 
 
 /****************************/
@@ -464,14 +464,24 @@ ObjNode* MakeMouseCursorObject(void)
 
 /********* CHECK FOR LEVEL CHEAT KEY AS PLAYER ENTERS ADVENTURE *********/
 
-static void CheckForLevelCheat(const MenuItem* mi)
+static void CheckForLevelCheat(void)
 {
-	if (IsKeyHeld(SDL_SCANCODE_F10))
+			/* SCAN FOR 'ADVENTURE' MENU ITEM */
+
+	for (int i = 0; !IsMenuTreeEndSentinel(&gMainMenuTree[i]); i++)
 	{
-		((MenuItem*) mi)->next = 'chea';
-	}
-	else
-	{
-		((MenuItem*) mi)->next = 'EXIT';
+		if (gMainMenuTree[i].id == 'adve')
+		{
+			if (IsKeyHeld(SDL_SCANCODE_F10))
+			{
+				gMainMenuTree[i].next = 'chea';
+			}
+			else
+			{
+				gMainMenuTree[i].next = 'EXIT';
+			}
+
+			break;
+		}
 	}
 }

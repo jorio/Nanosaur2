@@ -57,8 +57,8 @@ typedef struct MenuItem
 	int32_t					id;			// value stored in gMenuOutcome when exiting menu
 	int32_t					next;		// next menu, or one of 'EXIT', 'BACK' or 0 (no-op)
 
-	void					(*callback)(const struct MenuItem*);
-	int						(*getLayoutFlags)(const struct MenuItem*);
+	void					(*callback)(void);
+	int						(*getLayoutFlags)(void);
 
 	union
 	{
@@ -112,6 +112,8 @@ ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style);
 
 void LayoutCurrentMenuAgain(void);
 int GetCurrentMenu(void);
+int GetCurrentMenuItemID(void);
 ObjNode* GetCurrentMenuItemObject(void);
 float GetMenuIdleTime(void);
 void KillMenu(int returnCode);
+bool IsMenuTreeEndSentinel(const MenuItem* menuItem);

@@ -309,12 +309,25 @@ static void SetHandMouseCursor(void)
 }
 #endif
 
+int GetCurrentMenuItemID(void)
+{
+	if (gNav->menuRow < 0)
+		return -1;
+
+	return gNav->menu[gNav->menuRow].id;
+}
+
 ObjNode* GetCurrentMenuItemObject(void)
 {
 	if (gNav->menuRow < 0)
 		return NULL;
 
 	return gNav->menuObjects[gNav->menuRow];
+}
+
+bool IsMenuTreeEndSentinel(const MenuItem* menuItem)
+{
+	return menuItem->id == 0 && menuItem->type == kMISENTINEL;
 }
 
 /****************************/
@@ -336,7 +349,7 @@ static const char* FourccToString(int fourCC)
 static int GetLayoutFlags(const MenuItem* mi)
 {
 	if (mi->getLayoutFlags)
-		return mi->getLayoutFlags(mi);
+		return mi->getLayoutFlags();
 	else
 		return 0;
 }
@@ -990,7 +1003,7 @@ static void NavigatePick(const MenuItem* entry)
 
 		if (entry->callback)
 		{
-			entry->callback(entry);
+			entry->callback();
 		}
 
 		switch (entry->next)
@@ -1147,7 +1160,7 @@ static void NavigateCycler(const MenuItem* entry)
 
 		if (entry->callback)
 		{
-			entry->callback(entry);
+			entry->callback();
 		}
 
 		gTempForceSwipeRTL = (delta == -1);

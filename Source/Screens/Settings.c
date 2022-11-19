@@ -8,68 +8,59 @@
 #include "uieffects.h"
 #include "miscscreens.h"
 
-static int DisableMenuEntryInGame(const MenuItem* mi)
+static int DisableMenuEntryInGame(void)
 {
 	return gPlayNow ? kMILayoutFlagDisabled : 0;
 }
 
-static int HideMenuEntryInGame(const MenuItem* mi)
+static int HideMenuEntryInGame(void)
 {
 	return gPlayNow ? kMILayoutFlagHidden : 0;
 }
 
-static int ShowMenuEntryInGameOnly(const MenuItem* mi)
+static int ShowMenuEntryInGameOnly(void)
 {
 	return gPlayNow ? 0 : kMILayoutFlagHidden;
 }
 
-static void OnPickLanguage(const MenuItem* mi)
+static void OnPickLanguage(void)
 {
-	gGamePrefs.language = mi->id;
+	gGamePrefs.language = GetCurrentMenuItemID();
 	LoadLocalizedStrings(gGamePrefs.language);
 }
 
-static void OnToggleFullscreen(const MenuItem* mi)
+static void OnToggleFullscreen(void)
 {
-	(void) mi;
-
 	SetFullscreenMode(true);
 }
 
-static void OnPickResetKeyboardBindings(const MenuItem* mi)
+static void OnPickResetKeyboardBindings(void)
 {
-	(void) mi;
-
 	ResetDefaultKeyboardBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
 	LayoutCurrentMenuAgain();
 }
 
-static void OnPickResetGamepadBindings(const MenuItem* mi)
+static void OnPickResetGamepadBindings(void)
 {
-	(void) mi;
-
 	ResetDefaultGamepadBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
 	LayoutCurrentMenuAgain();
 }
 
-static void OnPickResetMouseBindings(const MenuItem* mi)
+static void OnPickResetMouseBindings(void)
 {
-	(void) mi;
-
 	ResetDefaultMouseBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
 	LayoutCurrentMenuAgain();
 }
 
-static void OnChangeVSync(const MenuItem* mi)
+static void OnChangeVSync(void)
 {
-	(void) mi;
 	SDL_GL_SetSwapInterval(gGamePrefs.vsync);
 }
 
-static int ShouldDisplayMSAA(const MenuItem* mi)
+static int ShouldDisplayMSAA(void)
 {
 #if __APPLE__
 	// macOS's OpenGL driver doesn't seem to handle MSAA very well,
@@ -96,7 +87,7 @@ static void MoveMSAAWarning(ObjNode* theNode)
 	}
 }
 
-static void OnChangeMSAA(const MenuItem* mi)
+static void OnChangeMSAA(void)
 {
 	const long msaaWarningCookie = 'msaa';
 

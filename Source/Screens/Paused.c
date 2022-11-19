@@ -29,20 +29,16 @@ static void OnExitPause(int outcome);
 
 /****************** TOGGLE SPLIT-SCREEN MODE ********************/
 
-int ShouldDisplaySplitscreenModeCycler(const MenuItem* mi)
+static int ShouldDisplaySplitscreenModeCycler(void)
 {
-	(void) mi;
-
 	if (gNumPlayers >= 2)
 		return 0;
 	else
 		return kMILayoutFlagHidden | kMILayoutFlagDisabled;
 }
 
-void OnToggleSplitscreenMode(const MenuItem* mi)
+static void OnToggleSplitscreenMode(void)
 {
-	(void) mi;
-
 	gActiveSplitScreenMode = gGamePrefs.splitScreenMode;
 
 	for (int i = 0; i < gNumPlayers; i++)		// smaller FOV for wide panes

@@ -24,10 +24,8 @@ static void MoveAnaglyphScreenHeadObject(ObjNode* theNode)
 	}
 }
 
-void SetUpAnaglyphCalibrationScreen(const MenuItem* mi)
+void SetUpAnaglyphCalibrationScreen(void)
 {
-	(void) mi;
-
 			/* NUKE AND RELOAD TEXTURES SO THE CURRENT ANAGLYPH FILTER APPLIES TO THEM */
 
 	DisposeAnaglyphCalibrationScreen();
@@ -107,7 +105,7 @@ void SetUpAnaglyphCalibrationScreen(const MenuItem* mi)
 	AppendNodeToChain(anaglyphScreenHead, sampleImage);
 }
 
-void OnChangeAnaglyphSetting(const MenuItem* mi)
+void OnChangeAnaglyphSetting(void)
 {
 	gAnaglyphPass = 0;
 	for (int i = 0; i < 4; i++)
@@ -117,11 +115,11 @@ void OnChangeAnaglyphSetting(const MenuItem* mi)
 		SDL_GL_SwapWindow(gSDLWindow);
 	}
 
-	SetUpAnaglyphCalibrationScreen(mi);
+	SetUpAnaglyphCalibrationScreen();
 	LayoutCurrentMenuAgain();
 }
 
-int GetAnaglyphDisplayFlags(const MenuItem* mi)
+int GetAnaglyphDisplayFlags(void)
 {
 	if (IsStereoAnaglyph())
 		return 0;
@@ -129,7 +127,7 @@ int GetAnaglyphDisplayFlags(const MenuItem* mi)
 		return kMILayoutFlagHidden;
 }
 
-int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi)
+int GetAnaglyphDisplayFlags_ColorOnly(void)
 {
 	if (IsStereoAnaglyphColor())
 		return 0;

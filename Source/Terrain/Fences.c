@@ -220,16 +220,14 @@ float					sink;
 
 static void MakeFenceGeometry(void)
 {
-int						f, group, sprite;
-uint16_t					type;
+uint16_t				type;
 float					u,height,aspectRatio,textureUOff;
-long					i,numNubs,j;
+int						numNubs;
 FenceDefType			*fence;
 OGLPoint3D				*nubs;
 float					minX,minY,minZ,maxX,maxY,maxZ;
-Byte					b;
 
-	for (f = 0; f < gNumFences; f++)
+	for (int f = 0; f < gNumFences; f++)
 	{
 				/******************/
 				/* GET FENCE INFO */
@@ -241,8 +239,8 @@ Byte					b;
 		type = fence->type;									// get fence type
 		height = gFenceHeight[type];						// get fence height
 
-		group = gFenceTexture[type][0];						// get sprite info
-		sprite = gFenceTexture[type][1];
+		int group = gFenceTexture[type][0];					// get sprite info
+		int sprite = gFenceTexture[type][1];
 
 		if (group == SPRITE_GROUP_NULL)
 		{
@@ -262,7 +260,7 @@ Byte					b;
 					/* SET VERTEX ARRAY HEADER */
 					/***************************/
 
-		for (b = 0; b < 2; b++)								// make geometry for each double-buffer
+		for (int b = 0; b < 2; b++)							// make geometry for each double-buffer
 		{
 			gFenceTriMeshData[f][b].VARtype					= VERTEX_ARRAY_RANGE_TYPE_USER_FENCES + b;
 
@@ -279,7 +277,7 @@ Byte					b;
 
 					/* BUILD TRIANGLE INFO */
 
-			for (i = j = 0; i < MAX_NUBS_IN_FENCE; i++, j+=2)
+			for (int i = 0, j = 0; i < MAX_NUBS_IN_FENCE; i++, j+=2)
 			{
 				gFenceVertexArrays[b].fenceTriangles[f][j].vertexIndices[0] = 1 + j;
 				gFenceVertexArrays[b].fenceTriangles[f][j].vertexIndices[1] = 0 + j;
@@ -293,12 +291,9 @@ Byte					b;
 
 					/* INIT VERTEX COLORS */
 
-			for (i = 0; i < (MAX_NUBS_IN_FENCE*2); i++)
+			for (int i = 0; i < (MAX_NUBS_IN_FENCE*2); i++)
 			{
-				gFenceVertexArrays[b].fenceColors[f][i].a =
-				gFenceVertexArrays[b].fenceColors[f][i].r =
-				gFenceVertexArrays[b].fenceColors[f][i].g =
-				gFenceVertexArrays[b].fenceColors[f][i].b = 1.0f;
+				gFenceVertexArrays[b].fenceColors[f][i] = (OGLColorRGBA) {1,1,1,1};
 			}
 
 
@@ -310,7 +305,7 @@ Byte					b;
 			minX = minY = minZ = -maxX;
 
 			u = 0;
-			for (i = j = 0; i < numNubs; i++, j+=2)
+			for (int i = 0, j = 0; i < numNubs; i++, j+=2)
 			{
 				float		x,y,z,y2;
 

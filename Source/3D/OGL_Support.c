@@ -865,7 +865,7 @@ do_anaglyph:
 		y += 15;
 
 		OGL_DrawString("KB:", 10,y);
-		OGL_DrawInt(gRAMAlloced/1024, 50,y);
+		OGL_DrawInt((int) (gRAMAlloced/1024), 50,y);
 		y += 15;
 
 
@@ -960,8 +960,6 @@ do_anaglyph:
 
 static void DrawBlueLine(GLint window_width, GLint window_height)
 {
-unsigned long buffer;
-
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 
 	glDisable(GL_ALPHA_TEST);
@@ -979,7 +977,7 @@ unsigned long buffer;
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 
-	for(buffer = GL_BACK_LEFT; buffer <= GL_BACK_RIGHT; buffer++)
+	for (GLenum buffer = GL_BACK_LEFT; buffer <= GL_BACK_RIGHT; buffer++)
 	{
 		GLint matrixMode;
 		GLint vp[4];
@@ -1179,7 +1177,7 @@ Ptr						imageFileData = nil;
 	imageFileData = LoadDataFile(path, &imageFileLength);
 	GAME_ASSERT(imageFileData);
 
-	pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) imageFileData, imageFileLength, &width, &height, NULL, 4);
+	pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) imageFileData, (int) imageFileLength, &width, &height, NULL, 4);
 	GAME_ASSERT(pixelData);
 
 	SafeDisposePtr(imageFileData);
@@ -1351,7 +1349,7 @@ uint32_t   blueCal =  gGamePrefs.anaglyphCalibrationBlue;
 
 void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean allowChannelBalancing)
 {
-long	r,g,b;
+uint32_t	r,g,b;
 float	d;
 float   lumR, lumGB, ratio;
 

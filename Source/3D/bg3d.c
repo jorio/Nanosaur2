@@ -467,7 +467,9 @@ MOMaterialData	*data;
 static void ReadMaterialJPEGTextureMap(short refNum)
 {
 BG3DJPEGTextureHeader	textureHeader;
-long					count, w, h;
+long					count;
+int						w;
+int						h;
 MOMaterialData			*data;
 Boolean					hasAlpha;
 

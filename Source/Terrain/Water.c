@@ -511,10 +511,9 @@ short	i;
 
 static void DrawWater(ObjNode *theNode)
 {
-long	f, i;
 long	prevType = -1;
-#pragma unused (theNode)
 
+	(void) theNode;
 
 			/*******************/
 			/* DRAW EACH WATER */
@@ -522,7 +521,7 @@ long	prevType = -1;
 
 	gNumWaterDrawn = 0;
 
-	for (f = 0; f < gNumWaterPatches; f++)
+	for (int f = 0; f < gNumWaterPatches; f++)
 	{
 		long	waterType = gWaterList[f].type;
 
@@ -571,7 +570,7 @@ long	prevType = -1;
 		/* RESTORE ALL TEXTURE MATRICES */
 
 	glMatrixMode(GL_TEXTURE);					// set texture matrix
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		OGL_ActiveTextureUnit(GL_TEXTURE0 + i);
 		glLoadIdentity();

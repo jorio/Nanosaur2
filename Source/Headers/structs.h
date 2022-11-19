@@ -175,16 +175,14 @@ typedef struct
 
 	BoneDefinitionType	*Bones;							// data which describes bone heirarachy
 
-	long				numDecomposedTriMeshes;			// # trimeshes in skeleton
+	int					numDecomposedTriMeshes;			// # trimeshes in skeleton
 	MOVertexArrayData	decomposedTriMeshes[MAX_DECOMPOSED_TRIMESHES];	// array of triMeshData
 
-	long				numDecomposedPoints;			// # shared points in skeleton
+	int					numDecomposedPoints;			// # shared points in skeleton
 	DecomposedPointType	*decomposedPointList;			// array of shared points
 
-	short				numDecomposedNormals ;			// # shared normal vectors
+	int					numDecomposedNormals;			// # shared normal vectors
 	OGLVector3D			*decomposedNormalsList;			// array of shared normals
-
-
 }SkeletonDefType;
 
 
@@ -385,7 +383,7 @@ struct ObjNode
 
 	short				EffectChannel;					// effect sound channel index (-1 = none)
 	short				ParticleGroup;
-	uint32_t				ParticleMagicNum;
+	uint32_t			ParticleMagicNum;
 	float				ParticleTimer;
 
 	short				Sparkles[MAX_NODE_SPARKLES];	// indecies into sparkles list
@@ -409,7 +407,7 @@ typedef struct
 {
 	Byte			genre,group,type,animNum;
 	OGLPoint3D		coord;
-	unsigned long	flags;
+	uint32_t		flags;
 	short			slot;
 	void			(*moveCall)(ObjNode *);
 	void			(*drawCall)(ObjNode *);

@@ -142,7 +142,7 @@ ObjNode	*MakeNewObject(NewObjectDefinitionType *newObjDef)
 {
 ObjNode	*newNodePtr;
 long	slot,i;
-unsigned long flags = newObjDef->flags;
+uint32_t flags = newObjDef->flags;
 
 #if _DEBUG
 	if (newObjDef->scale == 0)

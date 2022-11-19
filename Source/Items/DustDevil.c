@@ -20,7 +20,7 @@
 static ObjNode *MakeDustDevil(float  x, float z);
 
 static void DrawDustDevils(ObjNode *theNode);
-static long FindFreeDustDevilSlot(void);
+static int FindFreeDustDevilSlot(void);
 static void MoveDustDevil(ObjNode *theNode);
 
 static void MakeDustDevilDust(ObjNode *theNode);
@@ -77,17 +77,15 @@ static	OGLPoint3D		gRibOffset[NUM_RIBS][NUM_POINTS_PER_RIB];
 
 void InitDustDevilMemory(void)
 {
-long	d,seg, j, i, q, b;
 float	rot,scale;
 OGLVector3D		ribNormals[NUM_RIBS][NUM_POINTS_PER_RIB];
 OGLPoint3D	*ribPts;
 OGLVector3D	*normals;
 MOTriangleIndecies	*tris;
-float	u,v;
 
 	gNumDustDevils = 0;											// none build yet
 
-	for (d = 0; d < MAX_DEVILS; d++)
+	for (int d = 0; d < MAX_DEVILS; d++)
 		gDustDevilIsUsed[d] = false;							// this one is available
 
 
@@ -118,10 +116,10 @@ float	u,v;
 
 	scale = 200.0f;
 
-	for (seg = 0; seg < NUM_RIBS; seg++)
+	for (int seg = 0; seg < NUM_RIBS; seg++)
 	{
 		rot = 0;
-		for (j = 0; j < NUM_POINTS_PER_RIB; j++)
+		for (int j = 0; j < NUM_POINTS_PER_RIB; j++)
 		{
 			ribNormals[seg][j].x = -sin(rot);
 			ribNormals[seg][j].z = cos(rot);
@@ -150,7 +148,7 @@ float	u,v;
 
 
 
-	for (b = 0; b < 2; b++)										// make geometry for each double-buffer
+	for (int b = 0; b < 2; b++)									// make geometry for each double-buffer
 	{
 		MOVertexArrayData	*mesh = &gDustDevilMeshes[b];		// point to trimesh data
 
@@ -179,27 +177,29 @@ float	u,v;
 					/* INIT UV ARRAY */
 					/*****************/
 
-		v = 0;
-		i = 0;
-		for (seg = 0; seg < NUM_DEVIL_SEGMENTS; seg++)
 		{
-			u = 0;
-			for (j = 0; j < NUM_POINTS_PER_RIB; j++)
+			float v = 0;
+			int i = 0;
+			for (int seg = 0; seg < NUM_DEVIL_SEGMENTS; seg++)
 			{
-				q = i+j;
+				float u = 0;
+				for (int j = 0; j < NUM_POINTS_PER_RIB; j++)
+				{
+					int q = i+j;
 
-				gDustDevilVertexArrays[b].uvs[q].u 						= u;						// bottom rib
-				gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].u 	= u;						// top rib
+					gDustDevilVertexArrays[b].uvs[q].u 						= u;						// bottom rib
+					gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].u 	= u;						// top rib
 
-				gDustDevilVertexArrays[b].uvs[q].v 						= v;
-				gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].v 	= v + 1.0f / (float)NUM_DEVIL_SEGMENTS;
+					gDustDevilVertexArrays[b].uvs[q].v 						= v;
+					gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].v 	= v + 1.0f / (float)NUM_DEVIL_SEGMENTS;
 
-				u += 1.0f / (float)(NUM_POINTS_PER_RIB-1);
+					u += 1.0f / (float)(NUM_POINTS_PER_RIB-1);
+				}
+
+				i += NUM_POINTS_PER_SEGMENT;
+
+				v += 1.0f / (float)NUM_DEVIL_SEGMENTS;
 			}
-
-			i += NUM_POINTS_PER_SEGMENT;
-
-			v += 1.0f / (float)NUM_DEVIL_SEGMENTS;
 		}
 
 
@@ -210,7 +210,7 @@ float	u,v;
 
 		ribPts = &gDustDevilVertexArrays[b].points[0];
 
-		for (i = 0; i < NUM_DEVIL_SEGMENTS; i++)
+		for (int i = 0; i < NUM_DEVIL_SEGMENTS; i++)
 		{
 					/* SET LOWER RIB POINTS */
 
@@ -231,7 +231,7 @@ float	u,v;
 
 		normals =  &gDustDevilVertexArrays[b].normals[0];
 
-		for (i = 0; i < NUM_DEVIL_SEGMENTS; i++)
+		for (int i = 0; i < NUM_DEVIL_SEGMENTS; i++)
 		{
 					/* SET LOWER RIB POINTS */
 
@@ -252,13 +252,13 @@ float	u,v;
 
 		tris =  &gDustDevilVertexArrays[b].triangles[0];
 
-		for (seg = 0; seg < NUM_DEVIL_SEGMENTS; seg++)
+		for (int seg = 0; seg < NUM_DEVIL_SEGMENTS; seg++)
 		{
-			long	pointNum = seg * NUM_POINTS_PER_SEGMENT;
+			int	pointNum = seg * NUM_POINTS_PER_SEGMENT;
 
-			for (j = 0; j < (NUM_POINTS_PER_RIB-1); j++)
+			for (int j = 0; j < (NUM_POINTS_PER_RIB-1); j++)
 			{
-				long	j2 = j + 1;
+				int	j2 = j + 1;
 
 				tris->vertexIndices[0] = pointNum + j;
 				tris->vertexIndices[1] = pointNum + j + NUM_POINTS_PER_RIB;
@@ -340,7 +340,7 @@ ObjNode	*newObj;
 static ObjNode *MakeDustDevil(float  x, float z)
 {
 ObjNode	*newObj;
-long	devilNum;
+int	devilNum;
 
 			/* FIND FREE SLOT */
 
@@ -378,18 +378,15 @@ long	devilNum;
 
 /********************** FIND FREE DUST DEVIL SLOT ***********************/
 
-static long FindFreeDustDevilSlot(void)
+static int FindFreeDustDevilSlot(void)
 {
-long	i;
-
-	for (i = 0; i < MAX_DEVILS; i++)
+	for (int i = 0; i < MAX_DEVILS; i++)
 	{
 		if (gDustDevilIsUsed[i] == false)
 		{
 			gDustDevilIsUsed[i] = true;
 			return(i);
 		}
-
 	}
 
 	return(-1);

@@ -47,7 +47,7 @@ static void FreeZap(short zapNum);
 typedef struct
 {
 	Boolean		isUsed;
-	long		numEndpoints;
+	int			numEndpoints;
 	float		alpha;
 
 	short		endpointSparkles[2];
@@ -550,9 +550,9 @@ short		i;
 
 static void AllocateZapGeometry(short zapSlot)
 {
-long	numEndpoints = gZaps[zapSlot].numEndpoints;
-long	numVerts = numEndpoints * 2;
-long	numTriangles = numVerts - 2;
+int		numEndpoints = gZaps[zapSlot].numEndpoints;
+int		numVerts = numEndpoints * 2;
+int		numTriangles = numVerts - 2;
 short	i, p, t, b;
 float	u;
 MOVertexArrayData	*triMesh;

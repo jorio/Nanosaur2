@@ -204,7 +204,7 @@ typedef struct
 typedef	struct
 {
 	OGLColorRGBA		ambientColor;
-	long				numFillLights;
+	int					numFillLights;
 	OGLVector3D			fillDirection[MAX_FILL_LIGHTS];
 	OGLColorRGBA		fillColor[MAX_FILL_LIGHTS];
 }OGLLightDefType;

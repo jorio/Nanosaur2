@@ -406,13 +406,12 @@ OGLVector3D	*delta;
 static void DrawConfettiGroups(ObjNode *theNode)
 {
 float				scale,baseScale;
-long				g,p,n,i;
 OGLColorRGBA		*vertexColors;
 MOVertexArrayData	*geoData;
 OGLPoint3D		v[4];
 OGLBoundingBox	bbox;
 
-#pragma unused(theNode)
+	(void) theNode;
 
 	v[0].z = 												// init z's to 0
 	v[1].z =
@@ -427,10 +426,9 @@ OGLBoundingBox	bbox;
 
 	OGL_SetColor4f(1,1,1,1);										// full white & alpha to start with
 
-	for (g = 0; g < MAX_CONFETTI_GROUPS; g++)
+	for (int g = 0; g < MAX_CONFETTI_GROUPS; g++)
 	{
 		float	minX,minY,minZ,maxX,maxY,maxZ;
-		int		temp;
 
 		if (gConfettiGroups[g])
 		{
@@ -445,7 +443,8 @@ OGLBoundingBox	bbox;
 			minX = minY = minZ = 100000000;									// init bbox
 			maxX = maxY = maxZ = -minX;
 
-			for (p = n = 0; p < MAX_CONFETTIS; p++)
+			int n = 0;
+			for (int p = 0; p < MAX_CONFETTIS; p++)
 			{
 				OGLMatrix4x4	m;
 
@@ -480,7 +479,7 @@ OGLBoundingBox	bbox;
 
 							/* UPDATE BBOX */
 
-				for (i = 0; i < 4; i++)
+				for (int i = 0; i < 4; i++)
 				{
 					int j = n*4+i;
 
@@ -500,8 +499,8 @@ OGLBoundingBox	bbox;
 
 					/* UPDATE COLOR/TRANSPARENCY */
 
-				temp = n*4;
-				for (i = temp; i < (temp+4); i++)
+				int temp = n*4;
+				for (int i = temp; i < (temp+4); i++)
 				{
 					vertexColors[i].r =
 					vertexColors[i].g =

@@ -13,11 +13,12 @@ void* AllocPtrClear(long size);
 void* ReallocPtr(void* ptr, long size);
 void SafeDisposePtr(void* ptr);
 
-extern	void SetMyRandomSeed(unsigned long seed);
-extern	unsigned long MyRandomLong(void);
-extern	void InitMyRandomSeed(void);
-extern	void VerifySystem(void);
-extern	float RandomFloat(void);
+void VerifySystem(void);
+
+void SetMyRandomSeed(uint32_t seed);
+uint32_t MyRandomLong(void);
+void InitMyRandomSeed(void);
+float RandomFloat(void);
 uint16_t	RandomRange(unsigned short min, unsigned short max);
 extern	void RegulateSpeed(short fps);
 void CalcFramesPerSecond(void);

@@ -295,7 +295,7 @@ OGLPoint3D				*pointPtr;
 	HLock(hand);
 	pointPtr = (OGLPoint3D *)*hand;
 
-	i = GetHandleSize(hand) / sizeof(OGLPoint3D);
+	i = (int) (GetHandleSize(hand) / sizeof(OGLPoint3D));
 	if (i != skeleton->numDecomposedPoints)
 		DoFatalAlert("# of points in Reference Model has changed!");
 	else

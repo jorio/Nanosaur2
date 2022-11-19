@@ -608,7 +608,6 @@ short		buffNum, varMode;
 static void UpdateParticleGroupsGeometry(void)
 {
 float				scale,baseScale;
-long				g,p,n,i, buffNum;
 OGLColorRGBA		*vertexColors;
 MOVertexArrayData	*geoData;
 OGLPoint3D			v[4],*coord;
@@ -617,7 +616,7 @@ const OGLPoint3D	*camCoords;
 short				paneNum;
 
 
-	buffNum = gGameViewInfoPtr->frameCount & 1;				// which VAR buffer to use?
+	int buffNum = gGameViewInfoPtr->frameCount & 1;			// which VAR buffer to use?
 
 
 	v[0].z = 												// init z's to 0
@@ -640,10 +639,9 @@ short				paneNum;
 					/* UPDATE EACH PARTICLE GROUP */
 					/******************************/
 
-		for (g = 0; g < MAX_PARTICLE_GROUPS; g++)
+		for (int g = 0; g < MAX_PARTICLE_GROUPS; g++)
 		{
 			float	minX,minY,minZ,maxX,maxY,maxZ;
-			int		temp;
 			uint32_t	allAim;
 
 			if (gParticleGroups[g])
@@ -665,7 +663,8 @@ short				paneNum;
 				minX = minY = minZ = 100000000;									// init bbox
 				maxX = maxY = maxZ = -minX;
 
-				for (p = n = 0; p < MAX_PARTICLES; p++)
+				int n = 0;
+				for (int p = 0; p < MAX_PARTICLES; p++)
 				{
 					float			rot;
 					OGLMatrix4x4	m;
@@ -718,7 +717,7 @@ short				paneNum;
 
 								/* UPDATE BBOX */
 
-					for (i = 0; i < 4; i++)
+					for (int i = 0; i < 4; i++)
 					{
 						int j = n*4+i;
 
@@ -738,8 +737,8 @@ short				paneNum;
 
 						/* UPDATE COLOR/TRANSPARENCY */
 
-					temp = n*4;
-					for (i = temp; i < (temp+4); i++)
+					int temp = n*4;
+					for (int i = temp; i < (temp+4); i++)
 					{
 						vertexColors[i].r =
 						vertexColors[i].g =
@@ -1325,7 +1324,8 @@ void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke,
 {
 int		i;
 float	fps = gFramesPerSecondFrac;
-int		particleGroup,magicNum;
+int		particleGroup;
+uint32_t magicNum;
 NewParticleGroupDefType	groupDef;
 NewParticleDefType	newParticleDef;
 OGLVector3D			d;

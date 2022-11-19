@@ -131,7 +131,7 @@ static Boolean	beenHere = false;
 //		without the 0xffff at the end.
 //
 
-unsigned long MyRandomLong(void)
+uint32_t MyRandomLong(void)
 {
   return gSeed2 ^= (((gSeed1 ^= (gSeed2>>5)*1568397607UL)>>7)+
                    (gSeed0 = (gSeed0+1)*3141592621UL))*2435386481UL;
@@ -201,7 +201,7 @@ float	f;
 
 /**************** SET MY RANDOM SEED *******************/
 
-void SetMyRandomSeed(unsigned long seed)
+void SetMyRandomSeed(uint32_t seed)
 {
 	gSeed0 = seed;
 	gSeed1 = 0;
@@ -227,6 +227,7 @@ void InitMyRandomSeed(void)
 void *AllocPtr(long size)
 {
 	GAME_ASSERT(size >= 0);
+	GAME_ASSERT(size <= 0x7FFFFFFF);
 
 	size += PTRCOOKIE_SIZE;						// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 	Ptr p = malloc(size);
@@ -234,7 +235,7 @@ void *AllocPtr(long size)
 
 	uint32_t* cookiePtr = (uint32_t *)p;
 	cookiePtr[0] = 'FACE';
-	cookiePtr[1] = size;
+	cookiePtr[1] = (uint32_t) size;
 	cookiePtr[2] = 'PTR3';
 	cookiePtr[3] = 'PTR4';
 
@@ -250,6 +251,7 @@ void *AllocPtr(long size)
 void *AllocPtrClear(long size)
 {
 	GAME_ASSERT(size >= 0);
+	GAME_ASSERT(size <= 0x7FFFFFFF);
 
 	size += PTRCOOKIE_SIZE;						// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 	Ptr p = calloc(1, size);
@@ -257,7 +259,7 @@ void *AllocPtrClear(long size)
 
 	uint32_t* cookiePtr = (uint32_t *)p;
 	cookiePtr[0] = 'FACE';
-	cookiePtr[1] = size;
+	cookiePtr[1] = (uint32_t) size;
 	cookiePtr[2] = 'PTC3';
 	cookiePtr[3] = 'PTC4';
 
@@ -273,6 +275,7 @@ void *AllocPtrClear(long size)
 void* ReallocPtr(void* initialPtr, long newSize)
 {
 	GAME_ASSERT(newSize >= 0);
+	GAME_ASSERT(newSize <= 0x7FFFFFFF);
 
 	if (initialPtr == NULL)
 	{
@@ -292,7 +295,7 @@ void* ReallocPtr(void* initialPtr, long newSize)
 	gRAMAlloced += newSize - initialSize;
 
 	cookiePtr[0] = 'FACE';						// rewrite cookie
-	cookiePtr[1] = newSize;
+	cookiePtr[1] = (uint32_t) newSize;
 	cookiePtr[2] = 'REA3';
 	cookiePtr[3] = 'REA4';
 

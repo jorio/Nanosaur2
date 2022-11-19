@@ -986,7 +986,7 @@ unsigned long	someLong;
 	InitObjectManager();
 
 	GetDateTime ((unsigned long *)(&someLong));		// init random seed
-	SetMyRandomSeed(someLong);
+	SetMyRandomSeed((uint32_t) someLong);
 
 
 			/* LOAD FONT FOR ENTIRE GAME */

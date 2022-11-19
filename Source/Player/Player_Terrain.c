@@ -807,9 +807,9 @@ short	playerNum = theNode->PlayerNum;
 
 static void MakePlayerSmoke(ObjNode *theNode)
 {
-int		i;
 float	fps = gFramesPerSecondFrac;
-int		particleGroup,magicNum;
+int		particleGroup;
+uint32_t magicNum;
 NewParticleGroupDefType	groupDef;
 NewParticleDefType	newParticleDef;
 OGLVector3D			d;
@@ -848,7 +848,7 @@ OGLPoint3D			p;
 			float   y = gCoord.y;
 			float   z = gCoord.z;
 
-			for (i = 0; i < 2; i++)
+			for (int i = 0; i < 2; i++)
 			{
 				p.x = x + RandomFloat2() * 20.0f;
 				p.y = y + RandomFloat2() * 20.0f;

@@ -826,13 +826,13 @@ Boolean		hit;
 
 	if (allowBBoxTests)
 	{
-		gridX1 = (long)lineSeg->p1.x / GRID_SIZE;
-		gridY1 = (long)lineSeg->p1.y / GRID_SIZE;
-		gridZ1 = (long)lineSeg->p1.z / GRID_SIZE;
+		gridX1 = (int)lineSeg->p1.x / GRID_SIZE;
+		gridY1 = (int)lineSeg->p1.y / GRID_SIZE;
+		gridZ1 = (int)lineSeg->p1.z / GRID_SIZE;
 
-		gridX2 = (long)lineSeg->p2.x / GRID_SIZE;
-		gridY2 = (long)lineSeg->p2.y / GRID_SIZE;
-		gridZ2 = (long)lineSeg->p2.z / GRID_SIZE;
+		gridX2 = (int)lineSeg->p2.x / GRID_SIZE;
+		gridY2 = (int)lineSeg->p2.y / GRID_SIZE;
+		gridZ2 = (int)lineSeg->p2.z / GRID_SIZE;
 	}
 
 			/* CALCULATE THE LINE SEGMENT VECTOR */

@@ -454,21 +454,23 @@ void SetInfobarSpriteState(float anaglyphZ, float zoom)
 		logicalH = referenceW / drawableAR;
 	}
 
-	gLogicalRect.left	= (referenceW - logicalW) * 0.5f;
-	gLogicalRect.top	= (referenceH - logicalH) * 0.5f;
-	gLogicalRect.right	= gLogicalRect.left + logicalW;
-	gLogicalRect.bottom	= gLogicalRect.top + logicalH;
+	float left		= (referenceW - logicalW) * 0.5f;
+	float top		= (referenceH - logicalH) * 0.5f;
+	float right		= left + logicalW;
+	float bottom	= top + logicalH;
+
+	gLogicalRect = (OGLRect) {.left=left, .top=top, .right=right, .bottom=bottom};
 
 	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 	{
 		if (gAnaglyphPass == 0)
-			glOrtho(-anaglyphZ, 640-anaglyphZ, 640.0f * gCurrentPaneAspectRatio, 0, 0, 1);
+			glOrtho(left-anaglyphZ, right-anaglyphZ, bottom, top, 0, 1);
 		else
-			glOrtho(anaglyphZ, 640+anaglyphZ, 640.0f * gCurrentPaneAspectRatio, 0, 0, 1);
+			glOrtho(left+anaglyphZ, right+anaglyphZ, bottom, top, 0, 1);
 	}
 	else
 	{
-		glOrtho(gLogicalRect.left, gLogicalRect.right, gLogicalRect.bottom, gLogicalRect.top, 0, 1);
+		glOrtho(left, right, bottom, top, 0, 1);
 	}
 
 	glMatrixMode(GL_MODELVIEW);

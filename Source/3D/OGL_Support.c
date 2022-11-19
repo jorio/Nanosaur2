@@ -422,32 +422,24 @@ OGLViewDefType *viewDefPtr = &def->view;
 		// The NTSC luminance standard where grayscale = .299r + .587g + .114b
 		//
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+	if (IsStereoAnaglyphColor())
 	{
-		if (gGamePrefs.anaglyphColor)
-		{
-			uint32_t r = viewDefPtr->clearColor.r * 255.0f;
-			uint32_t g = viewDefPtr->clearColor.g * 255.0f;
-			uint32_t b = viewDefPtr->clearColor.b * 255.0f;
+		uint32_t r = (uint32_t) (viewDefPtr->clearColor.r * 255.0f);
+		uint32_t g = (uint32_t) (viewDefPtr->clearColor.g * 255.0f);
+		uint32_t b = (uint32_t) (viewDefPtr->clearColor.b * 255.0f);
 
-			ColorBalanceRGBForAnaglyph(&r, &g, &b, true);
+		ColorBalanceRGBForAnaglyph(&r, &g, &b, true);
 
-			viewDefPtr->clearColor.r = (float)r / 255.0f;
-			viewDefPtr->clearColor.g = (float)g / 255.0f;
-			viewDefPtr->clearColor.b = (float)b / 255.0f;
+		viewDefPtr->clearColor = (OGLColorRGBA) { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f };
+	}
+	else if (IsStereoAnaglyphMono())
+	{
+		float	f;
+		f = viewDefPtr->clearColor.r * .299f;
+		f += viewDefPtr->clearColor.g * .587f;
+		f += viewDefPtr->clearColor.b * .114f;
 
-		}
-		else
-		{
-			float	f;
-			f = viewDefPtr->clearColor.r * .299;
-			f += viewDefPtr->clearColor.g * .587;
-			f += viewDefPtr->clearColor.b * .114;
-
-			viewDefPtr->clearColor.r =
-			viewDefPtr->clearColor.g =
-			viewDefPtr->clearColor.b = f;
-		}
+		viewDefPtr->clearColor = (OGLColorRGBA) {f, f, f, 1.0f};
 	}
 
 		/* CLEAR ALL BUFFERS TO BLACK */
@@ -565,9 +557,8 @@ OGLStyleDefType *styleDefPtr = &setupDefPtr->styles;
 static void ClearAllBuffersToBlack(void)
 {
 	glClearColor(0,0,0,1);
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
+	if (IsStereoShutter())
 	{
-
 		glDrawBuffer(GL_BACK_LEFT);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_BACK_RIGHT);
@@ -578,7 +569,6 @@ static void ClearAllBuffersToBlack(void)
 		glDrawBuffer(GL_BACK_RIGHT);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		SDL_GL_SwapWindow(gSDLWindow);
-
 		OGL_CheckError();
 	}
 	else
@@ -693,7 +683,7 @@ void OGL_DrawScene(void (*drawRoutine)(void))
 
 			/* INIT SOME STUFF */
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		gAnaglyphPass = 0;
 		PrepAnaglyphCameras();
@@ -716,7 +706,7 @@ do_shutter:
 
 			/* SET BUFFER FOR SHUTTER GLASSES */
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
+	if (IsStereoShutter())
 	{
 		if (gAnaglyphPass == 0)
 			glDrawBuffer(GL_BACK_LEFT);
@@ -731,20 +721,18 @@ do_shutter:
 				/* CLEAR BUFFERS */
 				/*****************/
 
-	if (gGameViewInfoPtr->clearBackBuffer || (gDebugMode == 3) || (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH))
+	if (gGameViewInfoPtr->clearBackBuffer || (gDebugMode == 3) || (IsStereoAnaglyph()))
 	{
-		if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
-		{
 				/* MAKE SURE GREEN CHANNEL IS CLEAR */
 				//
 				// Bringing up dialogs can write into green channel, so always be sure it's clear
 				//
 
-			if (gGamePrefs.anaglyphColor)
-				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);		// make sure clearing Red/Green/Blue channels
-			else
-				glColorMask(GL_TRUE, GL_FALSE, GL_TRUE, GL_TRUE);		// make sure clearing Red/Blue channels
-		}
+		if (IsStereoAnaglyphColor())
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);		// make sure clearing Red/Green/Blue channels
+		else if (IsStereoAnaglyphMono())
+			glColorMask(GL_TRUE, GL_FALSE, GL_TRUE, GL_TRUE);		// make sure clearing Red/Blue channels
+
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	}
 	else
@@ -757,7 +745,7 @@ do_shutter:
 
 do_anaglyph:
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+	if (IsStereoAnaglyph())
 	{
 				/* SET COLOR MASK */
 
@@ -767,13 +755,12 @@ do_anaglyph:
 		}
 		else
 		{
-			if (gGamePrefs.anaglyphColor)
+			if (IsStereoAnaglyphColor())
 				glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
 			else
 				glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_TRUE);
 			glClear(GL_DEPTH_BUFFER_BIT);
 		}
-
 	}
 
 				/**************************************/
@@ -786,7 +773,7 @@ do_anaglyph:
 	{
 				/* OFFSET ANAGLYPH CAMERAS */
 
-		if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+		if (IsStereo())
 			CalcAnaglyphCameraOffset(gCurrentSplitScreenPane, gAnaglyphPass);
 
 
@@ -814,14 +801,14 @@ do_anaglyph:
 			/* SEE IF DO ANOTHER ANAGLYPH PASS */
 			/***********************************/
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		gAnaglyphPass++;
 		if (gAnaglyphPass == 1)
 		{
-			if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)		// anaglyph doesn't need to clear the backbuffer on the 2nd pass
+			if (IsStereoAnaglyph())		// anaglyph doesn't need to clear the backbuffer on the 2nd pass
 				goto do_anaglyph;
-			else																	// but shutters have separate buffers so they do need to clear the buffers
+			else						// but shutters have separate buffers so they do need to clear the buffers
 				goto do_shutter;
 		}
 	}
@@ -934,7 +921,7 @@ do_anaglyph:
 			/* END RENDER */
 			/**************/
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
+	if (IsStereoShutter())
 		DrawBlueLine(gGameWindowWidth, gGameWindowHeight);
 
 
@@ -948,7 +935,7 @@ do_anaglyph:
 		gGameViewInfoPtr->frameCount++;						// inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
 	}
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 		RestoreCamerasFromAnaglyph();
 
 }
@@ -1112,13 +1099,10 @@ GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destF
 GLuint	textureName;
 
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
-	{
-		if (gGamePrefs.anaglyphColor)
-			ConvertTextureToColorAnaglyph(imageMemory, width, height, srcFormat, dataType);
-		else
-			ConvertTextureToGrey(imageMemory, width, height, srcFormat, dataType);
-	}
+	if (IsStereoAnaglyphColor())
+		ConvertTextureToColorAnaglyph(imageMemory, width, height, srcFormat, dataType);
+	else if (IsStereoAnaglyphMono())
+		ConvertTextureToGrey(imageMemory, width, height, srcFormat, dataType);
 
 			/* GET A UNIQUE TEXTURE NAME & INITIALIZE IT */
 
@@ -1642,7 +1626,7 @@ OGLLightDefType	*lights;
 
 			/* SETUP FOR ANAGLYPH STEREO 3D CAMERA */
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		float	left, right;
 		float	halfFOV = gGameViewInfoPtr->fov[camNum] * .5f;

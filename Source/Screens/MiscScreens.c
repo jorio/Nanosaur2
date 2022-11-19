@@ -572,7 +572,7 @@ float	w, x;
 	w = gLoadingThermoPercent * THERMO_WIDTH;
 	x = THERMO_LEFT + w;
 
-	if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+	if (IsStereoAnaglyph())
 		OGL_SetColor4f(.3,.3,.2,1);
 	else
 		OGL_SetColor4f(.8,0,0,1);

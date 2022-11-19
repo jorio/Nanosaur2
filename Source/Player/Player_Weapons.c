@@ -131,7 +131,7 @@ uint32_t				ctype;
 			/* SET CROSSHAIR COORDS */
 			/************************/
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 		f = 800.0f;
 	else
 		f = 1000.0f;
@@ -146,7 +146,7 @@ uint32_t				ctype;
 
 		gPlayerInfo[p].crosshairCoord[i] = coord;
 
-		if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+		if (IsStereo())
 			dist = 500.0f;
 		else
 			dist = 5000.0f;

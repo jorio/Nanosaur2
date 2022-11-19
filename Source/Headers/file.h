@@ -87,7 +87,6 @@ typedef struct
 	Byte	hudScale;
 
 	Byte	stereoGlassesMode;
-	Boolean	anaglyphColor;
 	short	anaglyphCalibrationRed;
 	short	anaglyphCalibrationGreen;
 	short	anaglyphCalibrationBlue;
@@ -102,6 +101,7 @@ typedef struct
 
 	InputBinding	bindings[NUM_CONTROL_NEEDS];
 }PrefsType;
+
 
 
 		/* SAVE GAME */
@@ -126,6 +126,12 @@ SkeletonDefType *LoadSkeletonFile(short skeletonType);
 OSErr InitPrefsFolder(Boolean createIt);
 OSErr LoadPrefs(void);
 OSErr SavePrefs(void);
+
+#define IsStereoAnaglyphColor() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_COLOR)
+#define IsStereoAnaglyphMono() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_MONO)
+#define IsStereoAnaglyph() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_COLOR || gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_MONO)
+#define IsStereoShutter() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
+#define IsStereo() (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 
 void LoadPlayfield(FSSpec *specPtr);
 OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);

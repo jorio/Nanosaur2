@@ -207,16 +207,14 @@ ObjNode	*newObj;
 
 			/* INIT ANAGLYPH INFO */
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		gAnaglyphFocallength	= 300.0f;
 		gAnaglyphEyeSeparation 	= 20.0f;
 
-		if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+		if (IsStereoAnaglyph())
 		{
-			viewDef.lights.ambientColor.r = .8;
-			viewDef.lights.ambientColor.g = .8;
-			viewDef.lights.ambientColor.b = .8;
+			viewDef.lights.ambientColor = (OGLColorRGBA) {.8f, .8f, .8f, 1.0f};
 		}
 	}
 

@@ -158,7 +158,6 @@ void InitDefaultPrefs(void)
 	gGamePrefs.lowRenderQuality		= false;
 	gGamePrefs.splitScreenMode		= SPLITSCREEN_MODE_VERT;
 	gGamePrefs.stereoGlassesMode	= STEREO_GLASSES_MODE_OFF;
-	gGamePrefs.anaglyphColor		= true;
 	gGamePrefs.anaglyphCalibrationRed = DEFAULT_ANAGLYPH_R;
 	gGamePrefs.anaglyphCalibrationGreen = DEFAULT_ANAGLYPH_G;
 	gGamePrefs.anaglyphCalibrationBlue = DEFAULT_ANAGLYPH_B;
@@ -427,19 +426,16 @@ OGLSetupInputType	viewDef;
 			/* SET ANAGLYPH INFO */
 			/*********************/
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		gAnaglyphFocallength	= 200.0f;
 		gAnaglyphEyeSeparation 	= 35.0f;
 
-		if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH)
+		if (IsStereoAnaglyphMono())
 		{
-			if (!gGamePrefs.anaglyphColor)
-			{
-				viewDef.lights.ambientColor.r 		+= .1f;					// make a little brighter
-				viewDef.lights.ambientColor.g 		+= .1f;
-				viewDef.lights.ambientColor.b 		+= .1f;
-			}
+			viewDef.lights.ambientColor.r 		+= .1f;					// make a little brighter
+			viewDef.lights.ambientColor.g 		+= .1f;
+			viewDef.lights.ambientColor.b 		+= .1f;
 		}
 	}
 
@@ -721,7 +717,7 @@ static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFP
 static void DrawLevelCallback(void)
 {
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		Byte	p = gCurrentSplitScreenPane;			// get the player # who's draw context is being drawn
 
@@ -730,7 +726,7 @@ static void DrawLevelCallback(void)
 		switch(gCameraMode[p])
 		{
 			case	CAMERA_MODE_NORMAL:
-					if (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
+					if (IsStereoShutter())
 					{
 						gAnaglyphFocallength	= 280.0f;
 						gAnaglyphEyeSeparation 	= 45.0f;

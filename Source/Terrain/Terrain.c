@@ -1069,7 +1069,7 @@ Boolean			superTileVisible;
 
 				/* ASSUME SUPERTILES WILL BE UNUSED ON NEXT FRAME */
 
-			if ((gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_OFF) || (gAnaglyphPass > 0))
+			if (!IsStereo() || (gAnaglyphPass > 0))
 				gSuperTileStatusGrid[r][c].statusFlags &= ~SUPERTILE_IS_USED_THIS_FRAME;			// clear the isUsed bit
 
 		}

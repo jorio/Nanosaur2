@@ -298,7 +298,7 @@ void Exit2D(void)
 #if 0
 		/* BE SURE GREEN CHANNEL IS CLEAR FOR ANAGLYPH */
 
-	if (gAGLContext && (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH))
+	if (gAGLContext && IsStereoAnaglyph())
 	{
 		glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_FALSE);			// turn on green only
 		glClearColor(0,0,0,0);										// clear to 0's

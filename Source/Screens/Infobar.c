@@ -227,7 +227,7 @@ ObjNode		*newObj;
 		//
 
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		NewObjectDefinitionType def =
 		{
@@ -461,7 +461,7 @@ void SetInfobarSpriteState(float anaglyphZ, float zoom)
 
 	gLogicalRect = (OGLRect) {.left=left, .top=top, .right=right, .bottom=bottom};
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 	{
 		if (gAnaglyphPass == 0)
 			glOrtho(left-anaglyphZ, right-anaglyphZ, bottom, top, 0, 1);
@@ -1711,7 +1711,7 @@ float		scale;
 	if (gCameraInExitMode)
 		return;
 
-	if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+	if (IsStereo())
 		return;
 
 	if (gCameraMode[playerNum] == CAMERA_MODE_FIRSTPERSON)			// don't draw in 1st person camera

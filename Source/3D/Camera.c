@@ -540,7 +540,7 @@ const OGLPoint3D	noseOff = {0, 0, -600};
 
 		gPlayerInfo[playerNum].camera.cameraAim = v;
 
-		if (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)		// exaggerate z-rot in anaglyph mode
+		if (IsStereo())														// exaggerate z-rot in anaglyph mode
 			OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj->Rot.z * .3f);
 		else
 			OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj->Rot.z * .2f);

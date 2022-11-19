@@ -81,8 +81,4 @@ Boolean DoLocalGatherScreen(void);
 
 	/* ANAGLYPH CALIBRATION */
 
-void DisposeAnaglyphCalibrationScreen(void);
 void SetUpAnaglyphCalibrationScreen(void);
-void OnChangeAnaglyphSetting(void);
-int GetAnaglyphDisplayFlags(void);
-int GetAnaglyphDisplayFlags_ColorOnly(void);

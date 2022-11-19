@@ -1,31 +1,165 @@
+/*******************************/
+/* ANAGLYPH CALIBRATION SCREEN */
+/* (c)2022 Iliyas Jorio        */
+/*******************************/
+
+
+/****************************/
+/*    EXTERNALS             */
+/****************************/
+
 #include "game.h"
+
+
+/****************************/
+/*    PROTOTYPES            */
+/****************************/
+
+// Make sure that the default values are covered, otherwise
+// the Cycler may display an error message!
+// (DEFAULT_ANAGLYPH_R, DEFAULT_ANAGLYPH_G, DEFAULT_ANAGLYPH_B)
+#define ANAGLYPH_CALIBRATION_CYCLER_ARRAY \
+{ \
+	{STR_MOUSE_SENSITIVITY_1,  0x00}, \
+	{STR_MOUSE_SENSITIVITY_2,  0x1C}, \
+	{STR_MOUSE_SENSITIVITY_3,  0x38}, \
+	{STR_MOUSE_SENSITIVITY_4,  0x55}, \
+	{STR_MOUSE_SENSITIVITY_5,  0x71}, \
+	{STR_MOUSE_SENSITIVITY_6,  0x84}, \
+	{STR_MOUSE_SENSITIVITY_7,  0xA0}, \
+	{STR_MOUSE_SENSITIVITY_8,  0xBC}, \
+	{STR_MOUSE_SENSITIVITY_9,  0xD8}, \
+	{STR_MOUSE_SENSITIVITY_10, 0xFF}, \
+}
+
+static void OnChangeAnaglyphSetting(void);
+static int GetAnaglyphDisplayFlags(void);
+static int GetAnaglyphDisplayFlags_ColorOnly(void);
+static void DisposeAnaglyphCalibrationScreen(void);
+static void MoveAnaglyphScreenHeadObject(ObjNode* theNode);
+static void ResetAnaglyphSettings(void);
+static int ShouldShowResetAnaglyphSettings(void);
+
+
+/****************************/
+/*    VARIABLES             */
+/****************************/
 
 static ObjNode* gAnaglyphScreenHead = NULL;
 
-void DisposeAnaglyphCalibrationScreen(void)
+static const MenuItem gInGameAnaglyphMenu[] =
 {
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT3);
-	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
+	{.id='cali'},
+	{kMILabel, STR_NO_ANAGLYPH_CALIBRATION_IN_GAME, .customHeight=1.0f},
+	{kMISpacer, .customHeight=3},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
-	if (gAnaglyphScreenHead)
-	{
-		DeleteObject(gAnaglyphScreenHead);
-		gAnaglyphScreenHead = NULL;
-	}
-}
+	//-------------------------------------------------------------------------
+	// END SENTINEL
 
-static void MoveAnaglyphScreenHeadObject(ObjNode* theNode)
+	{ .id=0 }
+};
+
+static const MenuItem gAnaglyphMenu[] =
 {
-	(void) theNode;
-
-	if (GetCurrentMenu() != 'cali')
+	{.id='cali'},
 	{
-		DisposeAnaglyphCalibrationScreen();
-	}
-}
+		kMICycler1, STR_3D_GLASSES_MODE,
+		.callback = OnChangeAnaglyphSetting,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.stereoGlassesMode,
+			.choices =
+			{
+				{STR_3D_GLASSES_DISABLED, STEREO_GLASSES_MODE_OFF},
+				{STR_3D_GLASSES_ANAGLYPH_COLOR, STEREO_GLASSES_MODE_ANAGLYPH_COLOR},
+				{STR_3D_GLASSES_ANAGLYPH_MONO, STEREO_GLASSES_MODE_ANAGLYPH_MONO},
+//				{STR_3D_GLASSES_SHUTTER, STEREO_GLASSES_MODE_SHUTTER},
+			},
+		},
+	},
+	{
+		kMICycler1,
+		.text = STR_3D_GLASSES_R,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationRed,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
+	{
+		kMICycler1,
+		.text = STR_3D_GLASSES_G,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationGreen,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
+	{
+		kMICycler1,
+		.text = STR_3D_GLASSES_B,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.anaglyphCalibrationBlue,
+			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+		},
+	},
+	{
+		kMICycler1,
+		.text = STR_3D_GLASSES_CHANNEL_BALANCING,
+		.callback = SetUpAnaglyphCalibrationScreen,
+		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.doAnaglyphChannelBalancing,
+			.choices =
+			{
+					{STR_OFF, 0},
+					{STR_ON, 1},
+			},
+		},
+	},
+	{
+		kMIPick,
+		STR_RESTORE_DEFAULT_CONFIG,
+		.getLayoutFlags=ShouldShowResetAnaglyphSettings,
+		.callback=ResetAnaglyphSettings,
+		.customHeight=.7f
+	},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+	{kMISpacer, .customHeight=8},
+
+
+	//-------------------------------------------------------------------------
+	// END SENTINEL
+
+	{ .id=0 }
+};
+
+
+/******** SET UP ANAGLYPH CALIBRATION SCREEN *********/
 
 void SetUpAnaglyphCalibrationScreen(void)
 {
+			/* REGISTER MENU */
+
+	if (gPlayNow)
+	{
+		RegisterMenu(gInGameAnaglyphMenu);		// can't show actual menu in-game
+		return;
+	}
+	else
+	{
+		RegisterMenu(gAnaglyphMenu);
+	}
+
 			/* NUKE AND RELOAD TEXTURES SO THE CURRENT ANAGLYPH FILTER APPLIES TO THEM */
 
 	DisposeAnaglyphCalibrationScreen();
@@ -105,7 +239,12 @@ void SetUpAnaglyphCalibrationScreen(void)
 	AppendNodeToChain(anaglyphScreenHead, sampleImage);
 }
 
-void OnChangeAnaglyphSetting(void)
+
+/****************************/
+/*    CALLBACKS             */
+/****************************/
+
+static void OnChangeAnaglyphSetting(void)
 {
 	gAnaglyphPass = 0;
 	for (int i = 0; i < 4; i++)
@@ -119,7 +258,7 @@ void OnChangeAnaglyphSetting(void)
 	LayoutCurrentMenuAgain();
 }
 
-int GetAnaglyphDisplayFlags(void)
+static int GetAnaglyphDisplayFlags(void)
 {
 	if (IsStereoAnaglyph())
 		return 0;
@@ -127,10 +266,47 @@ int GetAnaglyphDisplayFlags(void)
 		return kMILayoutFlagHidden;
 }
 
-int GetAnaglyphDisplayFlags_ColorOnly(void)
+static int GetAnaglyphDisplayFlags_ColorOnly(void)
 {
 	if (IsStereoAnaglyphColor())
 		return 0;
 	else
 		return kMILayoutFlagHidden;
+}
+
+static void DisposeAnaglyphCalibrationScreen(void)
+{
+	DisposeSpriteAtlas(SPRITE_GROUP_FONT3);
+	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
+
+	if (gAnaglyphScreenHead)
+	{
+		DeleteObject(gAnaglyphScreenHead);
+		gAnaglyphScreenHead = NULL;
+	}
+}
+
+static void MoveAnaglyphScreenHeadObject(ObjNode* theNode)
+{
+	(void) theNode;
+
+	if (GetCurrentMenu() != 'cali')
+	{
+		DisposeAnaglyphCalibrationScreen();
+	}
+}
+
+static void ResetAnaglyphSettings(void)
+{
+	gGamePrefs.doAnaglyphChannelBalancing = true;
+	gGamePrefs.anaglyphCalibrationRed = DEFAULT_ANAGLYPH_R;
+	gGamePrefs.anaglyphCalibrationGreen = DEFAULT_ANAGLYPH_G;
+	gGamePrefs.anaglyphCalibrationBlue = DEFAULT_ANAGLYPH_B;
+	SetUpAnaglyphCalibrationScreen();
+	LayoutCurrentMenuAgain();
+}
+
+static int ShouldShowResetAnaglyphSettings(void)
+{
+	return IsStereo() ? 0 : kMILayoutFlagHidden;
 }

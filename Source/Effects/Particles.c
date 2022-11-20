@@ -272,14 +272,10 @@ MOTriangleIndecies		*t;
 					uv = vertexArrayData.uvs[0];
 					for (j=0; j < (MAX_PARTICLES*4); j+=4)
 					{
-						uv[j].u = 0;									// upper left
-						uv[j].v = 1;
-						uv[j+1].u = 0;									// lower left
-						uv[j+1].v = 0;
-						uv[j+2].u = 1;									// lower right
-						uv[j+2].v = 0;
-						uv[j+3].u = 1;									// upper right
-						uv[j+3].v = 1;
+						uv[j+0] = (OGLTextureCoord) {0, 0};				// upper left
+						uv[j+1] = (OGLTextureCoord) {0, 1};				// lower left
+						uv[j+2] = (OGLTextureCoord) {1, 1};				// lower right
+						uv[j+3] = (OGLTextureCoord) {1, 0};				// upper right
 					}
 
 							/* INIT TRIANGLE ARRAYS */
@@ -1861,10 +1857,10 @@ float	s;
 			/* DRAW QUAD */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,.99);	glVertex3fv(&frame[0].x);
-	glTexCoord2f(.99,.99);	glVertex3fv(&frame[1].x);
-	glTexCoord2f(.99,0);	glVertex3fv(&frame[2].x);
-	glTexCoord2f(0,0);		glVertex3fv(&frame[3].x);
+	glTexCoord2f(0,0);			glVertex3fv(&frame[0].x);
+	glTexCoord2f(.99f,0);		glVertex3fv(&frame[1].x);
+	glTexCoord2f(.99f,.99f);	glVertex3fv(&frame[2].x);
+	glTexCoord2f(0,.99f);		glVertex3fv(&frame[3].x);
 	glEnd();
 
 	gGlobalColorFilter.r =gGlobalColorFilter.g = gGlobalColorFilter.b = 1;

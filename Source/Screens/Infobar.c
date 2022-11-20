@@ -566,10 +566,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 		y);
-	glTexCoord2f(1,1);	glVertex2f(x+size, 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+size,  y+(size*aspect));
-	glTexCoord2f(0,0);	glVertex2f(x,		y+(size*aspect));
+	glTexCoord2f(0,0);	glVertex2f(x, 		y);
+	glTexCoord2f(1,0);	glVertex2f(x+size, 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+size,  y+(size*aspect));
+	glTexCoord2f(0,1);	glVertex2f(x,		y+(size*aspect));
 	glEnd();
 }
 
@@ -597,10 +597,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 		y);
-	glTexCoord2f(1,1);	glVertex2f(x+size, 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+size,  y+(size*aspect));
-	glTexCoord2f(0,0);	glVertex2f(x,		y+(size*aspect));
+	glTexCoord2f(0,0);	glVertex2f(x, 		y);
+	glTexCoord2f(1,0);	glVertex2f(x+size, 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+size,  y+(size*aspect));
+	glTexCoord2f(0,1);	glVertex2f(x,		y+(size*aspect));
 	glEnd();
 }
 
@@ -625,10 +625,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 		y);
-	glTexCoord2f(1,1);	glVertex2f(x+size, 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+size,  y+(size*aspect));
-	glTexCoord2f(0,0);	glVertex2f(x,		y+(size*aspect));
+	glTexCoord2f(0,0);	glVertex2f(x, 		y);
+	glTexCoord2f(1,0);	glVertex2f(x+size, 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+size,  y+(size*aspect));
+	glTexCoord2f(0,1);	glVertex2f(x,		y+(size*aspect));
 	glEnd();
 }
 
@@ -653,10 +653,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 					y);
-	glTexCoord2f(1,1);	glVertex2f(x+(size*aspect), 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+(size*aspect),		y+size);
-	glTexCoord2f(0,0);	glVertex2f(x,					y+size);
+	glTexCoord2f(0,0);	glVertex2f(x, 					y);
+	glTexCoord2f(1,0);	glVertex2f(x+(size*aspect), 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+(size*aspect),		y+size);
+	glTexCoord2f(0,1);	glVertex2f(x,					y+size);
 	glEnd();
 }
 
@@ -680,10 +680,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 					y);
-	glTexCoord2f(1,1);	glVertex2f(x+(size*aspect), 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+(size*aspect),		y+size);
-	glTexCoord2f(0,0);	glVertex2f(x,					y+size);
+	glTexCoord2f(0,0);	glVertex2f(x, 					y);
+	glTexCoord2f(1,0);	glVertex2f(x+(size*aspect), 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+(size*aspect),		y+size);
+	glTexCoord2f(0,1);	glVertex2f(x,					y+size);
 	glEnd();
 }
 
@@ -716,10 +716,10 @@ float				aspect;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(x, 		y);
-	glTexCoord2f(1,1);	glVertex2f(x+size, 	y);
-	glTexCoord2f(1,0);	glVertex2f(x+size,  y+(size*aspect));
-	glTexCoord2f(0,0);	glVertex2f(x,		y+(size*aspect));
+	glTexCoord2f(0,0);	glVertex2f(x, 		y);
+	glTexCoord2f(1,0);	glVertex2f(x+size, 	y);
+	glTexCoord2f(1,1);	glVertex2f(x+size,  y+(size*aspect));
+	glTexCoord2f(0,1);	glVertex2f(x,		y+(size*aspect));
 	glEnd();
 }
 
@@ -758,10 +758,10 @@ OGLMatrix3x3		m;
 			/* DRAW IT */
 
 	glBegin(GL_QUADS);
-	glTexCoord2f(0,1);	glVertex2f(p[0].x + x, p[0].y + y);
-	glTexCoord2f(1,1);	glVertex2f(p[1].x + x, p[1].y + y);
-	glTexCoord2f(1,0);	glVertex2f(p[2].x + x, p[2].y + y);
-	glTexCoord2f(0,0);	glVertex2f(p[3].x + x, p[3].y + y);
+	glTexCoord2f(0,0);	glVertex2f(p[0].x + x, p[0].y + y);
+	glTexCoord2f(1,0);	glVertex2f(p[1].x + x, p[1].y + y);
+	glTexCoord2f(1,1);	glVertex2f(p[2].x + x, p[2].y + y);
+	glTexCoord2f(0,1);	glVertex2f(p[3].x + x, p[3].y + y);
 	glEnd();
 }
 
@@ -873,7 +873,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.00011;
 
 				topEdge -= 911.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.00011);
+				v = topEdge * 0.00011f;
 				break;
 
 
@@ -884,7 +884,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.0001057;
 
 				topEdge -= 275.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.0001057);
+				v = topEdge * 0.0001057f;
 				break;
 
 		case	LEVEL_NUM_ADVENTURE3:
@@ -894,7 +894,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.0001029;
 
 				topEdge -= 192.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.0001029);
+				v = topEdge * 0.0001029f;
 				break;
 
 		case	LEVEL_NUM_RACE1:
@@ -904,7 +904,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.0001463;
 
 				topEdge -= 317.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.0001463);
+				v = topEdge * 0.0001463f;
 				break;
 
 
@@ -915,7 +915,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.000148853;			// 1.0 / pixel width
 
 				topEdge -= 329.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.000148853);
+				v = topEdge * 0.000148853f;
 				break;
 
 		case	LEVEL_NUM_FLAG1:
@@ -925,7 +925,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * 0.0001999;
 
 				topEdge -= 809.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * 0.0001999);
+				v = topEdge * 0.0001999f;
 				break;
 
 		case	LEVEL_NUM_FLAG2:
@@ -935,7 +935,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * .0002735;
 
 				topEdge -= 728;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * .0002735);
+				v = topEdge * .0002735f;
 				break;
 
 
@@ -947,7 +947,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * .000371;
 
 				topEdge -= 1328.0;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * .000371);
+				v = topEdge * .000371f;
 				break;
 
 		case	LEVEL_NUM_BATTLE2:
@@ -957,7 +957,7 @@ double				leftEdge, topEdge;
 				u = leftEdge * .00054585;
 
 				topEdge -= 1692.0f;											// offset by the cropped black-space amount
-				v = 1.0 - (topEdge * .00054585);
+				v = topEdge * .00054585f;
 				break;
 
 
@@ -1017,20 +1017,16 @@ static void Infobar_DrawHealth(void)
 {
 float				v;
 
-
-
-
 			/******************/
 			/* CALC UV COORDS */
 			/******************/
 
-	v = (1.0f - gPlayerInfo[gCurrentSplitScreenPane].health) * .5f;
+	v = gPlayerInfo[gCurrentSplitScreenPane].health * .5f;
 
-			/* SET U'S FOR SCROLLING OF HEALTH BAR */
+			/* SET V'S FOR SCROLLING OF HEALTH BAR */
 
-	gHealthuv1[0].v = gHealthuv1[1].v = v + .5;
-	gHealthuv1[2].v = gHealthuv1[3].v = v;
-
+	gHealthuv1[0].v = gHealthuv1[1].v = v;
+	gHealthuv1[2].v = gHealthuv1[3].v = v + .5f;
 
 
 
@@ -1075,12 +1071,12 @@ float				q;
 			/* CALC UV COORDS */
 			/******************/
 
-	v = (1.0f - q) * .5f;
+	v = q * .5f;
 
-			/* SET U'S FOR SCROLLING OF SHIELD BAR */
+			/* SET V'S FOR SCROLLING OF SHIELD BAR */
 
-	gShielduv1[0].v = gShielduv1[1].v = v + .5;
-	gShielduv1[2].v = gShielduv1[3].v = v;
+	gShielduv1[0].v = gShielduv1[1].v = v;
+	gShielduv1[2].v = gShielduv1[3].v = v + .5f;
 
 
 
@@ -1126,12 +1122,12 @@ float				v;
 			/* CALC UV COORDS */
 			/******************/
 
-	v = (1.0f - gPlayerInfo[gCurrentSplitScreenPane].jetpackFuel) * .5f;
+	v = gPlayerInfo[gCurrentSplitScreenPane].jetpackFuel * .5f;
 
-			/* SET U'S FOR SCROLLING OF FUEL BAR */
+			/* SET V'S FOR SCROLLING OF FUEL BAR */
 
-	gFueluv1[0].v = gFueluv1[1].v = v + .5;
-	gFueluv1[2].v = gFueluv1[3].v = v;
+	gFueluv1[0].v = gFueluv1[1].v = v;
+	gFueluv1[2].v = gFueluv1[3].v = v + .5f;
 
 
 

@@ -118,8 +118,7 @@ static SpriteType LoadSpriteFromDualImage(const char* path)
 	MOMaterialData matData =
 	{
 		.flags			= BG3D_MATERIALFLAG_TEXTURED
-							| (hasAlpha? BG3D_MATERIALFLAG_ALWAYSBLEND: 0)
-							| BG3D_MATERIALFLAG_UPRIGHT_V,		// unlike .sprites files, standalone image files aren't flipped vertically
+							| (hasAlpha? BG3D_MATERIALFLAG_ALWAYSBLEND: 0),
 		.diffuseColor	= {1, 1, 1, 1},
 		.width			= width,
 		.height			= height,
@@ -276,8 +275,6 @@ MOMaterialObject	*m;
 		DoFatalAlert("BlendAllSpritesInGroup: this group is empty");
 
 
-			/* DISPOSE OF ALL LOADED OPENGL TEXTURENAMES */
-
 	for (i = 0; i < n; i++)
 	{
 		m = gSpriteGroupList[group][i].materialObject; 				// get material object ptr
@@ -301,8 +298,6 @@ MOMaterialObject	*m;
 	if (type >= gNumSpritesInGroupList[group])
 		DoFatalAlert("BlendASprite: illegal type");
 
-
-			/* DISPOSE OF ALL LOADED OPENGL TEXTURENAMES */
 
 	m = gSpriteGroupList[group][type].materialObject; 				// get material object ptr
 	if (m == nil)

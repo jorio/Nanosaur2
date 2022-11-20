@@ -344,8 +344,8 @@ float					minX,minY,minZ,maxX,maxY,maxZ;
 					u += OGLPoint3D_Distance(&gFenceVertexArrays[b].fencePoints[f][j], &gFenceVertexArrays[b].fencePoints[f][j-2]) * textureUOff;
 				}
 
-				gFenceVertexArrays[b].fenceUVs[f][j].v 	= 0;									// bottom
-				gFenceVertexArrays[b].fenceUVs[f][j+1].v 	= 1.0;									// top
+				gFenceVertexArrays[b].fenceUVs[f][j].v		= 1;									// bottom
+				gFenceVertexArrays[b].fenceUVs[f][j+1].v	= 0;									// top
 				gFenceVertexArrays[b].fenceUVs[f][j].u 	= gFenceVertexArrays[b].fenceUVs[f][j+1].u = u;
 			}
 		}

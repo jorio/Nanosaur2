@@ -190,8 +190,8 @@ MOTriangleIndecies	*tris;
 					gDustDevilVertexArrays[b].uvs[q].u 						= u;						// bottom rib
 					gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].u 	= u;						// top rib
 
-					gDustDevilVertexArrays[b].uvs[q].v 						= v;
-					gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].v 	= v + 1.0f / (float)NUM_DEVIL_SEGMENTS;
+					gDustDevilVertexArrays[b].uvs[q].v 						= 1-v;
+					gDustDevilVertexArrays[b].uvs[q+NUM_POINTS_PER_RIB].v 	= 1-(v + 1.0f / (float)NUM_DEVIL_SEGMENTS);
 
 					u += 1.0f / (float)(NUM_POINTS_PER_RIB-1);
 				}

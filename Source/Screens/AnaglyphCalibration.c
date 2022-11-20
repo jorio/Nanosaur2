@@ -184,7 +184,44 @@ void SetUpAnaglyphCalibrationScreen(void)
 	ObjNode* anaglyphScreenHead = MakeNewObject(&headSentinelDef);
 	gAnaglyphScreenHead = anaglyphScreenHead;
 
+
+			/* MAKE TEST PATTERN */
+
+	NewObjectDefinitionType imageDef =
+	{
+		.group		= SPRITE_GROUP_LEVELSPECIFIC,
+		.type		= 0,		// 0th image in sprite group
+		.coord		= {500,380,0},
+		.slot		= SPRITE_SLOT+1,
+		.scale		= 250,
+	};
+
+	if (IsStereo())
+	{
+		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:calibration000", 0);
+	}
+	else
+	{
+		imageDef.scale = 350;
+		imageDef.coord = (OGLPoint3D) {320, 350, 0};
+		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:glasses", 0);
+	}
+
+	ObjNode* sampleImage = MakeSpriteObject(&imageDef, true);
+	sampleImage->AnaglyphZ = 4.0f;
+
+	AppendNodeToChain(anaglyphScreenHead, sampleImage);
+
+
 			/* MAKE HELP BLURB */
+
+	NewObjectDefinitionType blurbDef =
+	{
+		.group		= ATLAS_GROUP_FONT3,
+		.scale		= 0.18f,
+		.slot		= SPRITE_SLOT+2,
+		.coord		= {10, 470, 0},
+	};
 
 	char blurb[1024];
 
@@ -209,34 +246,12 @@ void SetUpAnaglyphCalibrationScreen(void)
 	}
 	else
 	{
-		snprintf(blurb, sizeof(blurb), "\n");
+		snprintf(blurb, sizeof(blurb), "%s", Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES));
+		blurbDef.coord = (OGLPoint3D) {320, 470, 0};
 	}
 
-	NewObjectDefinitionType blurbDef =
-	{
-		.group = ATLAS_GROUP_FONT3,
-		.scale = 0.18f,
-		.slot = SPRITE_SLOT+1,
-		.coord = {10, 470, 0},
-	};
-	ObjNode* blurbNode = TextMesh_New(blurb, kTextMeshAlignLeft | kTextMeshAlignBottom, &blurbDef);
+	ObjNode* blurbNode = TextMesh_New(blurb, (IsStereo()?kTextMeshAlignLeft:kTextMeshAlignCenter) | kTextMeshAlignBottom, &blurbDef);
 	AppendNodeToChain(anaglyphScreenHead, blurbNode);
-
-			/* MAKE TEST PATTERN */
-
-	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:calibration000", 0);
-	NewObjectDefinitionType def =
-	{
-		.group		= SPRITE_GROUP_LEVELSPECIFIC,
-		.type		= 0,		// 0th image in sprite group
-		.coord		= {500,380,0},
-		.slot		= SPRITE_SLOT+2,
-		.scale		= 250,
-	};
-
-	ObjNode* sampleImage = MakeSpriteObject(&def, true);
-	sampleImage->AnaglyphZ = 4.0f;
-	AppendNodeToChain(anaglyphScreenHead, sampleImage);
 }
 
 

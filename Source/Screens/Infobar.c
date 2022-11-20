@@ -42,6 +42,8 @@ static inline float AnchorBottom(float y);
 /*    CONSTANTS             */
 /****************************/
 
+#define SPLITSCREEN_DIVIDER_THICKNESS 1
+
 #define MAP_SCALE		80.0f
 #define MAP_SCALE2		(MAP_SCALE * .8 * .5)
 #define	MAP_X			AnchorRight(MAP_SCALE - 25)
@@ -190,6 +192,78 @@ static inline float AnchorCenterY(float y)
 }
 
 
+#pragma mark - Pane divider
+
+/********************* PANE DIVIDER MESH **************************/
+
+
+static void DrawPaneDivider(ObjNode* theNode)
+{
+	if (gActiveSplitScreenMode == SPLITSCREEN_MODE_NONE)
+		return;
+
+	OGL_PushState();
+
+	SetInfobarSpriteState(0, 1);
+	OGL_EnableCullFace();
+	OGL_DisableTexture2D();
+
+	float overlayLogicalWidth = gLogicalRect.right-gLogicalRect.left;
+	float overlayLogicalHeight = gLogicalRect.bottom-gLogicalRect.top;
+
+	float halfThickness = (SPLITSCREEN_DIVIDER_THICKNESS + 1.0f) / 2.0f;
+	float halfLW = overlayLogicalWidth * 0.5f + 10;
+	float halfLH = overlayLogicalHeight * 0.5f + 10;
+
+	glColor4fv(&theNode->ColorFilter.r);
+	glTranslatef(640/2, 480/2, 0);
+	glBegin(GL_QUADS);
+
+	switch (gActiveSplitScreenMode)
+	{
+		case	SPLITSCREEN_MODE_HORIZ:
+			glVertex2f(-halfLW, -halfThickness);
+			glVertex2f(-halfLW, +halfThickness);
+			glVertex2f(+halfLW, +halfThickness);
+			glVertex2f(+halfLW, -halfThickness);
+			break;
+
+		case	SPLITSCREEN_MODE_VERT:
+			glVertex2f(-halfThickness, -halfLH);
+			glVertex2f(-halfThickness, +halfLH);
+			glVertex2f(+halfThickness, +halfLH);
+			glVertex2f(+halfThickness, -halfLH);
+			break;
+	}
+
+	glEnd();
+
+	OGL_PopState();
+}
+
+
+static ObjNode* MakePaneDivider(void)
+{
+	NewObjectDefinitionType def =
+	{
+		.genre		= CUSTOM_GENRE,
+		.scale		= 1,
+		.slot		= PANEDIVIDER_SLOT,
+		.flags		= STATUS_BITS_FOR_2D | STATUS_BIT_MOVEINPAUSE,
+		.drawCall	= DrawPaneDivider,
+		.coord		= {640/2, 480/2, 0},
+	};
+	ObjNode* paneDivider = MakeNewObject(&def);
+	paneDivider->ColorFilter = (OGLColorRGBA) {0,0,0,1};
+	SendNodeToOverlayPane(paneDivider);
+	return paneDivider;
+}
+
+
+
+#pragma mark - Init
+
+
 /********************* INIT INFOBAR ****************************/
 //
 // Called at beginning of level
@@ -199,6 +273,12 @@ void InitInfobar(void)
 {
 MOMaterialObject	*mo;
 ObjNode		*newObj;
+
+
+		/* CREATE PANE DIVIDER FOR MULTIPLAYER */
+
+	MakePaneDivider();
+
 
 		/***********************/
 		/* CREATE DUMMY OBJECT */

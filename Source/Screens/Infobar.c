@@ -1370,10 +1370,10 @@ float	x,y;
 
 	else
 	{
-		short   numBars = gPlayerInfo[gCurrentSplitScreenPane].weaponCharge * 9.0f;
-		short   i;
+		// ceiling: start drawing the first bar as soon as the input is hit
+		int numBars = (int) ceilf(gPlayerInfo[gCurrentSplitScreenPane].weaponCharge * 9.0f);
 
-		for (i = 0; i < numBars; i++)
+		for (int i = 0; i < numBars; i++)
 		{
 			DrawInfobarSprite(x, y, WEAPON_SCALE * .1, INFOBAR_SObjType_SSBar);
 			x += WEAPON_SCALE * .05f;

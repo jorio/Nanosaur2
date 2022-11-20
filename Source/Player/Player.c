@@ -290,7 +290,9 @@ void KillPlayer(short playerNum, Byte deathType, OGLPoint3D *where)
 {
 ObjNode	*player = gPlayerInfo[playerNum].objNode;
 
-			/* MAKE SURE STOPPED WEAPON CHARGE SFX */
+			/* MAKE SURE STOPPED CHARGE/JETPACK */
+
+	gPlayerInfo[playerNum].weaponCharge = 0;
 
 	StopAChannel(&gPlayerInfo[playerNum].weaponChargeChannel);
 

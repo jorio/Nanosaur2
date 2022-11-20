@@ -1,4 +1,4 @@
-import sys, os, struct, io
+import sys, os, struct, io, subprocess
 from PIL import Image
 
 def funpack(file, format):
@@ -6,7 +6,7 @@ def funpack(file, format):
     blob = file.read(length)
     return struct.unpack(format, blob)
 
-COMBINE = True
+COMBINE = False
 inpath = sys.argv[1]
 outpath = sys.argv[2]
 
@@ -37,9 +37,15 @@ with open(inpath, 'rb') as file:
 
         os.makedirs(outpath, exist_ok=True)
         if not COMBINE:
-            open(os.path.join(outpath, F"{basename}{i:03}_color.jpg"), "wb").write(jpegdata)
+            jpegpath_temp = os.path.join(outpath, F"{basename}{i:03}_temp.jpg")
+            jpegpath = os.path.join(outpath, F"{basename}{i:03}.jpg")
+            pngpath = os.path.join(outpath, F"{basename}{i:03}.png")
+            open(jpegpath_temp, "wb").write(jpegdata)
+            subprocess.run(["jpegtran", "-flip", "vertical", "-outfile", jpegpath, jpegpath_temp], check=True)
+            os.unlink(jpegpath_temp)
             if maskimage:
-                maskimage.save(os.path.join(outpath, F"{basename}{i:03}_mask.png"))
+                maskimage = maskimage.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+                maskimage.save(os.path.join(outpath, F"{basename}{i:03}.png"))
         else:
             if hasalpha:
                 colorimage.putalpha(maskimage)

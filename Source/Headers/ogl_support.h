@@ -239,6 +239,8 @@ typedef struct
 	OGLColorRGBA			clearColor;
 
 	long					frameCount;
+
+	Boolean					fadeSound;
 }OGLSetupOutputType;
 
 

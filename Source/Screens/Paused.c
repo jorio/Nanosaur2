@@ -136,10 +136,12 @@ static void OnExitPause(int outcome)
 			break;
 
 		case	'bail':								// EXIT
+			gGameViewInfoPtr->fadeSound = true;
 			gGameOver = true;
 			break;
 
 		case	'quit':								// QUIT
+			gGameViewInfoPtr->fadeSound = true;
 			CleanQuit();
 			break;
 	}

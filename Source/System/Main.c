@@ -159,6 +159,9 @@ void InitDefaultPrefs(void)
 
 	gGamePrefs.mouseSensitivityLevel	= DEFAULT_MOUSE_SENSITIVITY_LEVEL;
 
+	gGamePrefs.musicVolumePercent	= 60;			// careful to set these two volumes to one of the
+	gGamePrefs.sfxVolumePercent		= 60;			// the predefined values allowed in the settings menu
+
 	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");
 	memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));
 }
@@ -228,7 +231,6 @@ static void PlayGame_Adventure(void)
 
 		if (gGameOver)									// bail out if game has ended
 		{
-//			DoLoseScreen();
 			break;
 		}
 
@@ -669,6 +671,7 @@ float	fps;
 
 	if (gGammaFadeFrac > 0)											// only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
 	{
+		gGameViewInfoPtr->fadeSound = true;
 		OGL_FadeOutScene(DrawLevelCallback, DoPlayerTerrainUpdate);
 	}
 

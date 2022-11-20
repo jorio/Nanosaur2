@@ -286,6 +286,9 @@ short	i;
 	}
 
 	gGameViewInfoPtr->frameCount = 0;									// init frame counter
+
+	gGameViewInfoPtr->fadeSound = false;								// by default, don't fade out sound when exiting scene
+
 }
 
 

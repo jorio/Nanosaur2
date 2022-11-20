@@ -290,6 +290,40 @@ static const MenuItem gSettingsMenuTree[] =
 	// AUDIO
 
 	{.id='soun'},
+	{
+		kMICycler1, STR_MUSIC,
+		.callback=UpdateGlobalVolume,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.musicVolumePercent,
+			.choices=
+			{
+				{STR_VOLUME_000, 0},
+				{STR_VOLUME_020, 20},
+				{STR_VOLUME_040, 40},
+				{STR_VOLUME_060, 60},
+				{STR_VOLUME_080, 80},
+				{STR_VOLUME_100, 100},
+			}
+		},
+	},
+	{
+		kMICycler1, STR_SFX,
+		.callback=UpdateGlobalVolume,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.sfxVolumePercent,
+			.choices=
+			{
+				{STR_VOLUME_000, 0},
+				{STR_VOLUME_020, 20},
+				{STR_VOLUME_040, 40},
+				{STR_VOLUME_060, 60},
+				{STR_VOLUME_080, 80},
+				{STR_VOLUME_100, 100},
+			}
+		},
+	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------

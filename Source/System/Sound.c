@@ -19,15 +19,11 @@
 
 static short FindSilentChannel(void);
 static void Calc3DEffectVolume(short effectNum, OGLPoint3D *where, float volAdjust, uint32_t *leftVolOut, uint32_t *rightVolOut);
-static void UpdateGlobalVolume(void);
 
 
 /****************************/
 /*    CONSTANTS             */
 /****************************/
-
-
-#define FloatToFixed16(a)      ((Fixed)((float)(a) * 0x000100L))		// convert float to 16bit fixed pt
 
 
 #define		MAX_CHANNELS			40
@@ -55,7 +51,8 @@ typedef struct
 /*     VARIABLES      */
 /**********************/
 
-float						gGlobalVolume = 1.0;
+static float				gGlobalVolumeFade = 1.0f;						// multiplier applied to sfx/song volumes (changes during fade out)
+static float				gEffectsVolume = FULL_EFFECTS_VOLUME;
 static float				gMusicVolume = FULL_SONG_VOLUME;
 static float				gMusicVolumeTweak = 1.0f;
 
@@ -832,8 +829,8 @@ SoundHeaderPtr   sndPtr;
 		return(-1);
 	}
 
-	lv2 = (float)leftVolume * gGlobalVolume;							// amplify by global volume
-	rv2 = (float)rightVolume * gGlobalVolume;
+	lv2 = (float)leftVolume * gEffectsVolume;							// amplify by global volume
+	rv2 = (float)rightVolume * gEffectsVolume;
 
 
 					/* GET IT GOING */
@@ -913,42 +910,35 @@ SoundHeaderPtr   sndPtr;
 // all of the sounds with the correct volume.
 //
 
-static void UpdateGlobalVolume(void)
+void UpdateGlobalVolume(void)
 {
-int		c;
+	gEffectsVolume = FULL_EFFECTS_VOLUME * (0.01f * gGamePrefs.sfxVolumePercent) * gGlobalVolumeFade;
 
 			/* ADJUST VOLUMES OF ALL CHANNELS REGARDLESS IF THEY ARE PLAYING OR NOT */
 
-	for (c = 0; c < gMaxChannels; c++)
+	for (int c = 0; c < gMaxChannels; c++)
 	{
 		ChangeChannelVolume(c, gChannelInfo[c].leftVolume, gChannelInfo[c].rightVolume);
 	}
 
-	SOFTIMPME;
-#if 0
+
 			/* UPDATE SONG VOLUME */
 
-	if (gSongPlayingFlag)
+	// First, resume song playback if it was paused -- e.g. when we're adjusting the volume via pause menu
+	SndCommand cmd1 = { .cmd = pommeResumePlaybackCmd };
+	SndDoImmediate(gMusicChannel, &cmd1);
+
+	// Now update song channel volume
+	gMusicVolume = FULL_SONG_VOLUME * (0.01f * gGamePrefs.musicVolumePercent) * gGlobalVolumeFade;
+	uint32_t lv2 = kFullVolume * gMusicVolumeTweak * gMusicVolume;
+	uint32_t rv2 = kFullVolume * gMusicVolumeTweak * gMusicVolume;
+	SndCommand cmd2 =
 	{
-		gInQuicktimeFunction = true;				// dont allow song task to start anything new
-		while(gInMoviesTask);			// DONT DO ANYTHING WHILE IN THE SONG TASK!!
-
-		SetMovieVolume(gSongMovie, FloatToFixed16(gGlobalVolume) * gSongVolumeTweaks[gCurrentSong]);
-
-		gInQuicktimeFunction = false;
-	}
-
-			/* UPDATE STREAMING AUDIO VOLUME */
-
-	for (c = 0; c < MAX_AUDIO_STREAMS; c++)
-	{
-		if (gStreamingFileFlag[c])
-		{
-			SetMovieVolume(gStreamingAudioMovie[c], FloatToFixed16(gGlobalVolume) * gStreamingAudioVolume[c]);
-		}
-	}
-#endif
-
+		.cmd = volumeCmd,
+		.param1 = 0,
+		.param2 = (rv2 << 16) | lv2,
+	};
+	SndDoImmediate(gMusicChannel, &cmd2);
 }
 
 /*************** CHANGE CHANNEL VOLUME **************/
@@ -965,8 +955,8 @@ uint32_t			lv2,rv2;
 	if (channel < 0)									// make sure it's valid
 		return;
 
-	lv2 = leftVol * gGlobalVolume;						// amplify by global volume
-	rv2 = rightVol * gGlobalVolume;
+	lv2 = leftVol * gEffectsVolume;						// amplify by global volume
+	rv2 = rightVol * gEffectsVolume;
 
 	chanPtr = gSndChannel[channel];						// get the actual channel ptr
 
@@ -1070,4 +1060,15 @@ void PauseAllChannels(Boolean pause)
 	}
 
 	SndDoImmediate(gMusicChannel, &cmd);
+}
+
+#pragma mark -
+
+/********************** GLOBAL VOLUME FADE ***************************/
+
+
+void FadeSound(float loudness)
+{
+	gGlobalVolumeFade = loudness;
+	UpdateGlobalVolume();
 }

@@ -121,15 +121,13 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void))
 	DoSDLMaintenance();
 	OGL_DrawScene(drawCall);
 
-#if 0
-	if (gGameView->fadeSound)
+	if (gGameViewInfoPtr->fadeSound)
 	{
 		FadeSound(0);
 		KillSong();
 		StopAllEffectChannels();
 		FadeSound(1);		// restore sound volume for new playback
 	}
-#endif
 }
 
 
@@ -244,6 +242,12 @@ float	speed = theNode->Speed * fps;
 			theNode->Mode = kFaderMode_Done;
 			theNode->StatusBits |= STATUS_BIT_NOMOVE;	// DON'T nuke the fader pane if fading out -- but don't run this again
 		}
+	}
+
+
+	if (gGameViewInfoPtr->fadeSound)
+	{
+		FadeSound(gGammaFadeFrac);
 	}
 }
 

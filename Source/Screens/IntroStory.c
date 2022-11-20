@@ -235,7 +235,10 @@ void DoIntroStoryScreen(void)
 		CalcFramesPerSecond();
 		DoSDLMaintenance();
 		if (UserWantsOut())
+		{
+			gGameViewInfoPtr->fadeSound = true;
 			break;
+		}
 
 
 				/* MOVE */

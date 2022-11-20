@@ -99,6 +99,9 @@ typedef struct
 	Boolean	invertVerticalSteering;
 	Byte	mouseSensitivityLevel;
 
+	Byte	musicVolumePercent;
+	Byte	sfxVolumePercent;
+
 	InputBinding	bindings[NUM_CONTROL_NEEDS];
 }PrefsType;
 

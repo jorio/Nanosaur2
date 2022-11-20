@@ -140,6 +140,29 @@ void DoMainMenuScreen(void)
 			OGL_DrawScene(DrawObjects);
 		}
 
+		// Decide whether to fade out the music
+		switch (gMenuOutcome)
+		{
+			case 'cred':
+			case 'ssav':
+				gGameViewInfoPtr->fadeSound = false;
+				break;
+
+			case 'rac1':
+			case 'rac2':
+			case 'bat1':
+			case 'bat2':
+			case 'cap1':
+			case 'cap2':
+				// entering multiplayer; fade sound if we're gonna skip LocalGather
+				gGameViewInfoPtr->fadeSound = GetNumControllers() >= gNumPlayers;
+				break;
+
+			default:
+				gGameViewInfoPtr->fadeSound = true;
+				break;
+		}
+
 		OGL_FadeOutScene(DrawObjects, NULL);
 		FreeMainMenuScreen();
 

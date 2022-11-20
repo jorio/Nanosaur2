@@ -733,7 +733,7 @@ short	i;
 			/* UPDATE SOUND EFFECT WHILE WE'RE HERE */
 
 		if (orb->EffectChannel == -1)
-			orb->EffectChannel = PlayEffect_Parms3D(EFFECT_LASERBEAM, &gPlayerInfo[orb->PlayerNum].coord, NORMAL_CHANNEL_RATE * 4/5, .9);
+			orb->EffectChannel = PlayEffect_Parms3D(EFFECT_LASERBEAM, &gPlayerInfo[orb->PlayerNum].coord, NORMAL_CHANNEL_RATE * 4/5, 0.5f);
 		else
 			Update3DSoundChannel(EFFECT_LASERBEAM, &orb->EffectChannel, &gPlayerInfo[orb->PlayerNum].coord);
 

@@ -596,44 +596,68 @@ static void TwitchOutSelection(void)
 /****************************/
 /*    DARKEN PANE           */
 /****************************/
-#pragma mark - Move calls
+#pragma mark - Darken pane
+
+static void DrawDarkenPane(ObjNode* node)
+{
+	OGL_PushState();
+
+	SetInfobarSpriteState(0, 1);
+	OGL_DisableTexture2D();
+	OGL_EnableBlend();
+	OGL_EnableCullFace();
+
+	glBegin(GL_QUADS);
+
+	float s = node->Scale.y;//node->SpecialF[2];
+
+	float menuTop = node->Coord.y - s /2 ;
+	float menuBottom = node->Coord.y + s /2;
+	float taper = 16;
+
+	OGLColorRGBA c = node->ColorFilter;
+
+	glColor4f(c.r,c.g,c.b,0);
+	glVertex2f(gLogicalRect.right, menuTop-taper);
+	glVertex2f(gLogicalRect.left, menuTop-taper);
+	glColor4f(c.r,c.g,c.b,c.a);
+	glVertex2f(gLogicalRect.left, menuTop);
+	glVertex2f(gLogicalRect.right, menuTop);
+
+	glVertex2f(gLogicalRect.right, menuTop);
+	glVertex2f(gLogicalRect.left, menuTop);
+	glVertex2f(gLogicalRect.left, menuBottom);
+	glVertex2f(gLogicalRect.right, menuBottom);
+
+	glVertex2f(gLogicalRect.right, menuBottom);
+	glVertex2f(gLogicalRect.left, menuBottom);
+	glColor4f(c.r,c.g,c.b,0);
+	glVertex2f(gLogicalRect.left, menuBottom+taper);
+	glVertex2f(gLogicalRect.right, menuBottom+taper);
+
+	glEnd();
+
+	OGL_PopState();
+}
 
 static void MoveDarkenPane(ObjNode* node)
 {
-	SOFTIMPME;
-
-#if 0
-	node->Scale.x = gGameViewInfoPtr->panes[GetOverlayPaneNumber()].logicalWidth * (1.0f / 4.0f);
-	UpdateObjectTransforms(node);
-#endif
+	float t = node->Timer + gFramesPerSecondFrac * 5;
+	if (t > 1)
+		t = 1;
+	node->Scale.y = node->SpecialF[0]*(1-t) + node->SpecialF[1]*t;
+	node->Timer = t;
 }
 
 static void RescaleDarkenPane(ObjNode* node, float totalHeight)
 {
-	SOFTIMPME;
-
-#if 0
-	float prevScale = node->Scale.y;
-	float newScale = 1.3f * totalHeight / GetSpriteInfo(SPRITE_GROUP_INFOBAR, INFOBAR_SObjType_OverlayBackground)->yadv;
-
-	node->Coord.y = gNav->style.yOffset;
-	node->Scale.y = newScale;
-	UpdateObjectTransforms(gNav->darkenPane);
-
-	Twitch* scaleEffect = MakeTwitch(gNav->darkenPane, kTwitchPreset_MenuDarkenPaneResize);
-	if (scaleEffect)
-	{
-		scaleEffect->amplitude = prevScale/newScale;
-	}
-#endif
+	node->SpecialF[0] = node->SpecialF[1];
+	node->SpecialF[1] = totalHeight;
+	node->Timer = 0;
 }
 
 static ObjNode* MakeDarkenPane(void)
 {
-	SOFTIMPME;
-	return NULL;
-
-#if 0
 	ObjNode* pane;
 
 	NewObjectDefinitionType def =
@@ -641,19 +665,18 @@ static ObjNode* MakeDarkenPane(void)
 		.genre = CUSTOM_GENRE,
 		.flags = STATUS_BITS_FOR_2D | STATUS_BIT_MOVEINPAUSE,
 		.slot = gNav->style.textSlot-1,
-		.scale = EPS,
-		.group = SPRITE_GROUP_INFOBAR,
-		.type = INFOBAR_SObjType_OverlayBackground,
-		.coord = {0, gNav->style.yOffset, 0},
+		.scale = 1,
+		.coord = {640/2, gNav->style.yOffset, 0},
 		.moveCall = MoveDarkenPane,
+		.drawCall = DrawDarkenPane,
 	};
 
-	pane = MakeSpriteObject(&def);
+	pane = MakeNewObject(&def);
+	pane->Scale.y = EPS;
 	pane->ColorFilter = (OGLColorRGBA) {0, 0, 0, gNav->style.darkenPaneOpacity};
 	SendNodeToOverlayPane(pane);
 
 	return pane;
-#endif
 }
 
 /****************************/
@@ -2362,9 +2385,10 @@ static void CleanUpMenuDriver(ObjNode* theNode)
 	{
 		if (gNav->darkenPane)
 		{
-			gNav->darkenPane->MoveCall = nil;
+			RescaleDarkenPane(gNav->darkenPane, EPS);
+			//gNav->darkenPane->MoveCall = nil;
 			MakeTwitch(gNav->darkenPane, kTwitchPreset_MenuFadeOut | kTwitchFlags_KillPuppet);
-			MakeTwitch(gNav->darkenPane, kTwitchPreset_MenuDarkenPaneVanish | kTwitchFlags_Chain);
+			//MakeTwitch(gNav->darkenPane, kTwitchPreset_MenuDarkenPaneVanish | kTwitchFlags_Chain);
 		}
 
 		for (int row = 0; row < MAX_MENU_ROWS; row++)

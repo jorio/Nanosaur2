@@ -237,7 +237,7 @@ static int DoLocalGatherControls(void)
 		}
 		else
 		{
-			PlayEffect(EFFECT_BADSELECT);
+			PlayEffect_Parms(EFFECT_BADSELECT, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE);
 			MakeTwitch(gGatherPrompt, kTwitchPreset_PadlockWiggle);
 		}
 	}
@@ -246,7 +246,7 @@ static int DoLocalGatherControls(void)
 		// User pressed [A] on gamepad
 		if (gNumControllersMissing > 0)
 		{
-			PlayEffect(EFFECT_BADSELECT);
+			PlayEffect_Parms(EFFECT_BADSELECT, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE);
 			MakeTwitch(gGatherPrompt, kTwitchPreset_PadlockWiggle);
 		}
 	}

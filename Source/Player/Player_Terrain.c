@@ -816,7 +816,7 @@ short	playerNum = theNode->PlayerNum;
 static void MakePlayerSmoke(ObjNode *theNode)
 {
 float	fps = gFramesPerSecondFrac;
-int		particleGroup;
+long	particleGroup;
 uint32_t magicNum;
 NewParticleGroupDefType	groupDef;
 NewParticleDefType	newParticleDef;
@@ -829,7 +829,7 @@ OGLPoint3D			p;
 		theNode->SmokeTimer += .02f;										// reset timer
 
 		particleGroup 	= theNode->SmokeParticleGroup;
-		magicNum 		= theNode->SmokeParticleMagic;
+		magicNum 		= (uint32_t) theNode->SmokeParticleMagic;
 
 		if ((particleGroup == -1) || (!VerifyParticleGroupMagicNum(particleGroup, magicNum)))
 		{

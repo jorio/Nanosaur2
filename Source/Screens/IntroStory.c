@@ -294,7 +294,7 @@ OGLSetupInputType	viewDef;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroupFromSeries(SPRITE_GROUP_LEVELSPECIFIC, NUM_SLIDES, "intro");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_LEVELSPECIFIC, NUM_SLIDES, "story");
 	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);

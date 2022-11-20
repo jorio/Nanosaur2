@@ -45,28 +45,28 @@ FenceDefType	*gFenceList = nil;
 
 static const short			gFenceTexture[NUM_FENCE_TYPES][2] =
 {
-	{SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_PineTree},		// pine trees
-	{0,	0},															// invisible enemy blocker
+	[FENCE_TYPE_PINETREES]				= {SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_PineTree},
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= {0,	0},
 };
 
 
 static const float			gFenceHeight[NUM_FENCE_TYPES] =
 {
-	MAX_ALTITUDE_DIFF + 100.0f,	// pine trees
-	300,					// invisible enemy blocker
+	[FENCE_TYPE_PINETREES]				= MAX_ALTITUDE_DIFF + 100.0f,
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= 300,
 };
 
 
 static const float			gFenceSink[NUM_FENCE_TYPES] =
 {
-	FENCE_SINK_FACTOR,					// pine trees
-	FENCE_SINK_FACTOR,					// invisible enemy blocker
+	[FENCE_TYPE_PINETREES]				= FENCE_SINK_FACTOR,
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= FENCE_SINK_FACTOR,
 };
 
 static const Boolean			gFenceIsLit[NUM_FENCE_TYPES] =
 {
-	true,					// pine trees
-	false,					// invisible enemy blocker
+	[FENCE_TYPE_PINETREES]				= true,					// pine trees
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= false,					// invisible enemy blocker
 };
 
 static MOMaterialObject			*gFenceMaterials[MAX_FENCES];				// illegal refs to material for each fence in terrain

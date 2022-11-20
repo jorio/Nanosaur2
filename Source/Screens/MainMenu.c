@@ -166,7 +166,7 @@ void BuildMainMenuObjects(void)
 		DeleteObject(gMainMenuMouseCursor);
 	}
 
-	gMainMenuBackground = MakeBackgroundPictureObject(":images:menuback.jpg");
+	gMainMenuBackground = MakeBackgroundPictureObject(":sprites:menu:menuback");
 	gMainMenuMouseCursor = MakeMouseCursorObject();
 }
 
@@ -437,13 +437,13 @@ ObjNode* MakeMouseCursorObject(void)
 {
 	if (gNumSpritesInGroupList[SPRITE_GROUP_CURSOR] == 0)
 	{
-		LoadSpriteGroupFromFiles(SPRITE_GROUP_CURSOR, 1, (const char*[]) {":sprites:cursor.png"}, 0);
+		LoadSpriteGroupFromFile(SPRITE_GROUP_CURSOR, ":sprites:menu:cursor", 0);
 	}
 
 	NewObjectDefinitionType def =
 	{
 		.group		= SPRITE_GROUP_CURSOR,
-		.type		= CURSOR_SObjType_ArrowCursor,
+		.type		= 0,					// the only sprite in the group
 		.coord		= {0,0,0},
 		.flags		= STATUS_BIT_MOVEINPAUSE,
 		.slot		= CURSOR_SLOT,			// make sure this is the last sprite drawn

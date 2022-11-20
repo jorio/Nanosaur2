@@ -176,7 +176,7 @@ extern	int						gNumTerrainItems;
 extern	int						gNumWorldCalcsThisFrame;
 extern	int						gPolysThisFrame;
 extern	int 					gSuperTileActiveRange;
-extern	int32_t					gNumSpritesInGroupList[MAX_SPRITE_GROUPS];
+extern	int						gNumSpritesInGroupList[MAX_SPRITE_GROUPS];
 extern	long					gNumSplines;
 extern	long					gNumSuperTilesDeep;
 extern	long					gNumSuperTilesWide;

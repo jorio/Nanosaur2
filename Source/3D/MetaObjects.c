@@ -347,7 +347,7 @@ static void SetMetaObjectToPicture(MOPictureObject *pictObj, const char* path)
 
 	/* LOAD PICTURE FILE */
 
-	GLuint textureName = OGL_TextureMap_LoadImageFile(path, &width, &height);
+	GLuint textureName = OGL_TextureMap_LoadImageFile(path, &width, &height, NULL);
 	OGL_CheckError();
 
 	/***************************/

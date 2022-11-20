@@ -148,7 +148,15 @@ short	j,i;
 			/* SET OVERRIDE TEXTURE FOR PLAYER 2 */
 
 	if (playerNum > 0)
-		newObj->Skeleton->overrideTexture[0] = gSpriteGroupList[SPRITE_GROUP_GLOBAL][GLOBAL_SObjType_Player2Skin].materialObject;
+	{
+		if (0 == gNumSpritesInGroupList[SPRITE_GROUP_P2SKIN])
+		{
+			LoadSpriteGroupFromFile(SPRITE_GROUP_P2SKIN, ":sprites:textures:player2", 0);
+		}
+
+		newObj->Skeleton->overrideTexture[0] = gSpriteGroupList[SPRITE_GROUP_P2SKIN][0].materialObject;
+	}
+
 
 
 

@@ -58,12 +58,12 @@ void DoLegalScreen(void)
 
 			/* BUILD OBJECTS */
 
-	LoadSpriteAtlas(SPRITE_GROUP_FONT3, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
 
 	NewObjectDefinitionType textDef =
 	{
 		.scale = 0.2f,
-		.group = SPRITE_GROUP_FONT3,
+		.group = ATLAS_GROUP_FONT3,
 		.coord = {320,240-120,0},
 	};
 

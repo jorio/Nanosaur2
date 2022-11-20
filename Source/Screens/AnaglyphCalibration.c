@@ -169,7 +169,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	BuildMainMenuObjects();		// rebuild background image
 
-	LoadSpriteAtlas(SPRITE_GROUP_FONT3, "subtitlefont", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
 
 			/* CREATE HEAD SENTINEL - ALL ANAGLYPH CALIB OBJECTS WILL BE CHAINED TO IT */
 
@@ -214,7 +214,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	NewObjectDefinitionType blurbDef =
 	{
-		.group = SPRITE_GROUP_FONT3,
+		.group = ATLAS_GROUP_FONT3,
 		.scale = 0.18f,
 		.slot = SPRITE_SLOT+1,
 		.coord = {10, 470, 0},
@@ -224,7 +224,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 			/* MAKE TEST PATTERN */
 
-	LoadSpriteGroupFromFiles(SPRITE_GROUP_LEVELSPECIFIC, 1, (const char*[]) {":images:calibration1.png"}, 0);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:calibration000", 0);
 	NewObjectDefinitionType def =
 	{
 		.group		= SPRITE_GROUP_LEVELSPECIFIC,
@@ -276,7 +276,7 @@ static int GetAnaglyphDisplayFlags_ColorOnly(void)
 
 static void DisposeAnaglyphCalibrationScreen(void)
 {
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT3);
+	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
 	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
 
 	if (gAnaglyphScreenHead)

@@ -1148,65 +1148,105 @@ GLuint	textureName;
 
 /***************** OGL TEXTUREMAP LOAD FROM PNG/JPG **********************/
 
-GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight)
+GLuint OGL_TextureMap_LoadImageFile(const char* partialPath, int* outWidth, int* outHeight, int* outHasAlpha)
 {
-uint8_t*				pixelData = nil;
-int						width;
-int						height;
-long					imageFileLength = 0;
-Ptr						imageFileData = nil;
+	FSSpec dummySpec;
+	char path[64];
+	bool jpgExists = false;
+	bool pngExists = false;
+	uint8_t* colorPixels = NULL;
+	int width = 0;
+	int height = 0;
+	GLuint textureName = 0;
 
-				/* LOAD PICTURE FILE */
-
-	imageFileData = LoadDataFile(path, &imageFileLength);
-	GAME_ASSERT(imageFileData);
-
-	pixelData = (uint8_t*) stbi_load_from_memory((const stbi_uc*) imageFileData, (int) imageFileLength, &width, &height, NULL, 4);
-	GAME_ASSERT(pixelData);
-
-	SafeDisposePtr(imageFileData);
-	imageFileData = NULL;
-
-			/* PRE-PROCESS IMAGE */
-
-	int internalFormat = GL_RGBA;
-
-#if 0
-	if (flags & kLoadTextureFlags_KeepOriginalAlpha)
+	// Try to load a JPEG file first.
+	snprintf(path, sizeof(path), "%s.jpg", partialPath);
+	jpgExists = noErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec);
+	if (jpgExists)
 	{
-		internalFormat = GL_RGBA;
+		long jpgLength;
+		Ptr jpgData = LoadDataFile(path, &jpgLength);
+		GAME_ASSERT(jpgData);
+
+		colorPixels = (uint8_t*) stbi_load_from_memory((const stbi_uc*) jpgData, (int) jpgLength, &width, &height, NULL, 4);
+		GAME_ASSERT(colorPixels);
+
+		SafeDisposePtr(jpgData);
 	}
-	else
+
+	// Now try to load the PNG version of the same image.
+	// If we've already loaded a JPEG, the PNG is used as an alpha mask.
+	// Otherwise, load the PNG as an RGBA image.
+	snprintf(path, sizeof(path), "%s.png", partialPath);
+	pngExists = noErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec);
+	if (pngExists)
 	{
-		internalFormat = GL_RGB;
+		long pngLength;
+		Ptr pngData = LoadDataFile(path, &pngLength);
+		GAME_ASSERT(pngData);
+
+		if (!colorPixels)
+		{
+			// We haven't loaded a JPEG, so the PNG will serve as an RGBA image.
+			colorPixels = (uint8_t*) stbi_load_from_memory((const stbi_uc*) pngData, (int) pngLength, &width, &height, NULL, 4);
+			GAME_ASSERT(colorPixels);
+		}
+		else
+		{
+			int alphaWidth = 0;
+			int alphaHeight = 0;
+
+			// Load PNG as alpha
+			uint8_t* alphaPixels = (uint8_t*) stbi_load_from_memory((const stbi_uc*) pngData, (int) pngLength, &alphaWidth, &alphaHeight, NULL, 1);
+
+			GAME_ASSERT(alphaPixels);
+
+			// Apply alpha channel to existing colorPixels
+			GAME_ASSERT(colorPixels);			// we must have read colors from the JPEG file prior
+
+			if (alphaWidth != width || alphaHeight != height)
+			{
+				DoFatalAlert("%s: PNG mask dimensions must match JPEG file: %s", __func__, path);
+			}
+
+			// Merge alpha into color pixels
+			for (int a = 0, c = 3; a < width * height; a++, c += 4)
+			{
+				colorPixels[c] = alphaPixels[a];
+			}
+
+			SafeDisposePtr(alphaPixels);
+		}
+
+		SafeDisposePtr(pngData);
 	}
-#endif
 
-			/* LOAD TEXTURE */
+	// See if texture file was missing
+	if (!colorPixels)
+	{
+		DoFatalAlert("%s: Texture file missing: %s\n", __func__, partialPath);
+	}
 
-	GLuint glTextureName = OGL_TextureMap_Load(
-			pixelData,
+	// Load colorPixels as OpenGL texture
+	textureName = OGL_TextureMap_Load(
+			colorPixels,
 			width,
 			height,
 			GL_RGBA,
-			internalFormat,
+			GL_RGBA,
 			GL_UNSIGNED_BYTE);
 
 	OGL_CheckError();
+	GAME_ASSERT(textureName);
 
-			/* CLEAN UP */
+	SafeDisposePtr(colorPixels);
 
-	SafeDisposePtr(pixelData);
-	pixelData = NULL;
+	if (outWidth) *outWidth = width;
+	if (outHeight) *outHeight = height;
+	if (outHasAlpha) *outHasAlpha = pngExists;
 
-	if (outWidth)
-		*outWidth = width;
-	if (outHeight)
-		*outHeight = height;
-
-	return glTextureName;
+	return textureName;
 }
-
 
 
 /******************** CONVERT TEXTURE TO GREY **********************/
@@ -2077,11 +2117,12 @@ void OGL_DrawString(const char* s, GLint x, GLint y)
 	glOrtho(0, 640, 480, 0, -10.0, 10.0);
 
 	glDisable(GL_LIGHTING);
+	glEnable(GL_COLOR_MATERIAL);
 
 //	OGL_DisableTexture2D();
 	OGL_SetColor4f(1,1,1,1);
 
-	Atlas_DrawString(SPRITE_GROUP_FONT1, s, x, y, 0.25f, kTextMeshAlignLeft | kTextMeshAllCaps);
+	Atlas_DrawString(ATLAS_GROUP_FONT2, s, x, y, 0.25f, kTextMeshAlignLeft | kTextMeshAllCaps);
 
 	OGL_PopState();
 }

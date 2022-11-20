@@ -197,7 +197,7 @@ static void SetupLocalGatherScreen(void)
 					.scale = 0.4f,
 					.coord = {640/2, 480/2, 0},
 					.slot = SPRITE_SLOT,
-					.group = SPRITE_GROUP_FONT2
+					.group = ATLAS_GROUP_FONT2
 			};
 
 	gGatherPrompt = TextMesh_NewEmpty(256, &def2);

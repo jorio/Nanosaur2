@@ -246,48 +246,14 @@ ObjNode		*newObj;
 		/* LOAD OVERHEAD MAP */
 		/*********************/
 
-	switch(gLevelNum)
+	if (gNumSpritesInGroupList[SPRITE_GROUP_OVERHEADMAP] != 0)
 	{
-		case	LEVEL_NUM_ADVENTURE1:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL1_SObjType_OHM].materialObject;		// get illegal ref to texture
-				break;
-
-		case	LEVEL_NUM_ADVENTURE2:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL2_SObjType_OHM].materialObject;
-				break;
-
-		case	LEVEL_NUM_ADVENTURE3:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL3_SObjType_OHM].materialObject;
-				break;
-
-		case	LEVEL_NUM_RACE1:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL3_SObjType_RaceOHM].materialObject;
-				break;
-
-		case	LEVEL_NUM_RACE2:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL2_SObjType_Race2OHM].materialObject;
-				break;
-
-		case	LEVEL_NUM_FLAG1:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL3_SObjType_FlagOHM].materialObject;
-				break;
-		case	LEVEL_NUM_FLAG2:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL1_SObjType_FlagOHM].materialObject;
-				break;
-
-		case	LEVEL_NUM_BATTLE1:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL1_SObjType_BattleOHM].materialObject;
-				break;
-		case	LEVEL_NUM_BATTLE2:
-				gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_LEVELSPECIFIC][LEVEL2_SObjType_Battle2OHM].materialObject;
-				break;
-
-
-
-
-		default:
-				gOverheadMapMaterial = nil;
-				goto no_ohm;
+		gOverheadMapMaterial = gSpriteGroupList[SPRITE_GROUP_OVERHEADMAP]->materialObject;		// get illegal ref to texture
+	}
+	else
+	{
+		gOverheadMapMaterial = nil;
+		goto no_ohm;
 	}
 
 		/* SET TO BE MULTI-TEXTURE FOR MASKING */

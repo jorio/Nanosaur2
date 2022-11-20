@@ -26,47 +26,37 @@
 /*     VARIABLES      */
 /**********************/
 
-static const char*	terrainFiles[NUM_LEVELS] =
+static const int kLevelBiomes[NUM_LEVELS] =
 {
-	":terrain:Level1.ter",
-	":terrain:Level2.ter",
-	":terrain:Level3.ter",
-
-	":terrain:race1.ter",
-	":terrain:race2.ter",
-	":terrain:battle1.ter",
-	":terrain:battle2.ter",
-	":terrain:flag1.ter",
-	":terrain:flag2.ter",
+	[LEVEL_NUM_ADVENTURE1]	= BIOME_FOREST,
+	[LEVEL_NUM_ADVENTURE2]	= BIOME_DESERT,
+	[LEVEL_NUM_ADVENTURE3]	= BIOME_SWAMP,
+	[LEVEL_NUM_RACE1]		= BIOME_SWAMP,
+	[LEVEL_NUM_RACE2]		= BIOME_DESERT,
+	[LEVEL_NUM_BATTLE1]		= BIOME_FOREST,
+	[LEVEL_NUM_BATTLE2]		= BIOME_DESERT,
+	[LEVEL_NUM_FLAG1]		= BIOME_SWAMP,
+	[LEVEL_NUM_FLAG2]		= BIOME_FOREST,
 };
 
-static const char*	levelModelFiles[NUM_LEVELS] =
+static const char* kLevelNames[NUM_LEVELS] =
 {
-	":models:Level1.bg3d",
-	":models:Level2.bg3d",
-	":models:Level3.bg3d",
-
-	":models:Level3.bg3d",			// race 1:  swamp
-	":models:Level2.bg3d",			// race 2:  desert
-	":models:Level1.bg3d",			// battle 1: forest
-	":models:Level2.bg3d",			// battle 2: desert
-	":models:Level3.bg3d",			// flag 1:  swamp
-	":models:Level1.bg3d",			// flag 2: forest
-
+	[LEVEL_NUM_ADVENTURE1]	= "level1",
+	[LEVEL_NUM_ADVENTURE2]	= "level2",
+	[LEVEL_NUM_ADVENTURE3]	= "level3",
+	[LEVEL_NUM_RACE1]		= "race1",
+	[LEVEL_NUM_RACE2]		= "race2",
+	[LEVEL_NUM_BATTLE1]		= "battle1",
+	[LEVEL_NUM_BATTLE2]		= "battle2",
+	[LEVEL_NUM_FLAG1]		= "flag1",
+	[LEVEL_NUM_FLAG2]		= "flag2",
 };
 
-static const char*	levelSpriteFiles[NUM_LEVELS] =
+static const char*	kBiomeNames[NUM_BIOMES] =
 {
-	":sprites:Level1.sprites",
-	":sprites:Level2.sprites",
-	":sprites:Level3.sprites",
-
-	":sprites:Level3.sprites",			// race 1:  swamp
-	":sprites:Level2.sprites",
-	":sprites:Level1.sprites",			// battle 1: forest
-	":sprites:Level2.sprites",
-	":sprites:Level3.sprites",			// flag 1:  swamp
-	":sprites:Level1.sprites",			// flag 2:  forest
+	[BIOME_FOREST]			= "forest",
+	[BIOME_DESERT]			= "desert",
+	[BIOME_SWAMP]			= "swamp",
 };
 
 
@@ -75,7 +65,9 @@ static const char*	levelSpriteFiles[NUM_LEVELS] =
 void LoadLevelArt(void)
 {
 FSSpec	spec;
-short	i;
+char	path[256];
+
+	const int currentBiome = kLevelBiomes[gLevelNum];
 
 	UnsignedWide timeStartLoad;
 	Microseconds(&timeStartLoad);
@@ -113,14 +105,14 @@ short	i;
 
 			/* LOAD LEVEL SPECIFIC BG3D GEOMETRY */
 
-	if (levelModelFiles[gLevelNum][0] > 0)
 	{
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, levelModelFiles[gLevelNum], &spec);
+		snprintf(path, sizeof(path), ":models:%s.bg3d", kBiomeNames[currentBiome]);
+		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		ImportBG3D(&spec, MODEL_GROUP_LEVELSPECIFIC,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 	}
 
 
-	for (i = 0; i < NUM_EGG_TYPES; i++)
+	for (int i = 0; i < NUM_EGG_TYPES; i++)
 	{
 		BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_GLOBAL, GLOBAL_ObjType_RedEgg + i,
 									-1, MULTI_TEXTURE_COMBINE_ADD, SPHEREMAP_SObjType_Satin);
@@ -137,14 +129,31 @@ short	i;
 			/* LOAD SPRITES */
 			/****************/
 
-	if (levelSpriteFiles[gLevelNum][0] > 0)
+	switch (currentBiome)
 	{
-		LoadSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC, levelSpriteFiles[gLevelNum], 0);
+		case BIOME_FOREST:
+			LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:textures:pinefence", 0);
+			break;
+
+		case BIOME_DESERT:
+			LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:textures:dustdevil", 0);
+			break;
+
+		default:
+			break;
 	}
 
-	LoadSpriteGroup(SPRITE_GROUP_INFOBAR, ":sprites:infobar.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_GLOBAL, ":sprites:global.sprites", 0);
-	LoadSpriteGroup(SPRITE_GROUP_SPHEREMAPS, ":sprites:spheremap.sprites", 0);
+
+			/* LOAD OVERHEAD MAP */
+	{
+		snprintf(path, sizeof(path), ":sprites:maps:%s", kLevelNames[gLevelNum]);
+		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
+		LoadSpriteGroupFromFile(SPRITE_GROUP_OVERHEADMAP, path, 0);
+	}
+
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_INFOBAR,		INFOBAR_SObjType_COUNT,		"infobar");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_GLOBAL,		GLOBAL_SObjType_COUNT,		"global");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_SPHEREMAPS,	SPHEREMAP_SObjType_COUNT,	"spheremap");
 
 
 			/* DRAW THE LOADING TEXT AND THERMO */
@@ -167,9 +176,9 @@ short	i;
 			/* LOAD TERRAIN */
 			/****************/
 
-	if (terrainFiles[gLevelNum][0] > 0)
 	{
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, terrainFiles[gLevelNum], &spec);
+		snprintf(path, sizeof(path), ":terrain:%s.ter", kLevelNames[gLevelNum]);
+		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadPlayfield(&spec);
 	}
 
@@ -181,38 +190,29 @@ short	i;
 
 
 			/***************************/
-			/* DO LEVEL SPECIFIC STUFF */
+			/* DO BIOME SPECIFIC STUFF */
 			/***************************/
 
-	switch(gLevelNum)
+	switch (currentBiome)
 	{
-		case	LEVEL_NUM_ADVENTURE1:
-		case	LEVEL_NUM_FLAG2:
-		case	LEVEL_NUM_BATTLE1:
+		case	BIOME_FOREST: //LEVEL_NUM_ADVENTURE1, LEVEL_NUM_BATTLE1, LEVEL_NUM_FLAG2
 				BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_LEVELSPECIFIC, LEVEL1_ObjType_AirMine_Mine,
 												-1, MULTI_TEXTURE_COMBINE_ADD, SPHEREMAP_SObjType_Satin);
 				break;
 
-		case	LEVEL_NUM_ADVENTURE2:
-		case	LEVEL_NUM_BATTLE2:
-		case	LEVEL_NUM_RACE2:
+		case	BIOME_DESERT: //LEVEL_NUM_ADVENTURE2, LEVEL_NUM_RACE2, LEVEL_NUM_BATTLE2
 				BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_LEVELSPECIFIC, LEVEL2_ObjType_AirMine_Mine,
 												-1, MULTI_TEXTURE_COMBINE_ADD, SPHEREMAP_SObjType_Satin);
 
 				BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_LEVELSPECIFIC, LEVEL2_ObjType_Crystal1,
 												-1, MULTI_TEXTURE_COMBINE_ADD, SPHEREMAP_SObjType_Sheen);
-
-
 				break;
 
 
-		case	LEVEL_NUM_ADVENTURE3:
-		case	LEVEL_NUM_RACE1:
-		case	LEVEL_NUM_FLAG1:
+		case	BIOME_SWAMP: //LEVEL_NUM_ADVENTURE3, LEVEL_NUM_RACE1, LEVEL_NUM_FLAG1
 				LoadASkeleton(SKELETON_TYPE_WORM);
 				LoadASkeleton(SKELETON_TYPE_RAMPHOR);
 				break;
-
 	}
 
 	UnsignedWide timeEndLoad;

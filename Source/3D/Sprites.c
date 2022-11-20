@@ -29,7 +29,7 @@
 /*********************/
 
 SpriteType	*gSpriteGroupList[MAX_SPRITE_GROUPS];
-int32_t		gNumSpritesInGroupList[MAX_SPRITE_GROUPS];		// note:  this must be int32_t's since that's what we read from the sprite file!
+int gNumSpritesInGroupList[MAX_SPRITE_GROUPS];
 
 
 
@@ -61,7 +61,7 @@ int	i;
 }
 
 
-/************************** DISPOSE BG3D *****************************/
+/************************** DISPOSE SPRITE GROUP *****************************/
 
 void DisposeSpriteGroup(int groupNum)
 {
@@ -101,271 +101,65 @@ void AllocSpriteGroup(int groupNum, int capacity)
 }
 
 
-/************** LOAD SPRITE GROUP FROM IMAGE FILES ********************/
+/************** LOAD SPRITETYPE FROM IMAGE FILE ********************/
 
-void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, int flags)
+static SpriteType LoadSpriteFromDualImage(const char* path)
+{
+		/* LOAD TEXTURE FROM IMAGE FILE */
+
+	int width = 0;
+	int height = 0;
+	int hasAlpha = 0;
+	GLuint textureName = OGL_TextureMap_LoadImageFile(path, &width, &height, &hasAlpha);
+	GAME_ASSERT(textureName);
+
+		/* SET UP MATERIAL */
+
+	MOMaterialData matData =
+	{
+		.flags			= BG3D_MATERIALFLAG_TEXTURED
+							| (hasAlpha? BG3D_MATERIALFLAG_ALWAYSBLEND: 0)
+							| BG3D_MATERIALFLAG_UPRIGHT_V,		// unlike .sprites files, standalone image files aren't flipped vertically
+		.diffuseColor	= {1, 1, 1, 1},
+		.width			= width,
+		.height			= height,
+		.numMipmaps		= 1,
+		.textureName	= {textureName},
+	};
+
+	return (SpriteType)
+	{
+		.width = matData.width,
+		.height = matData.height,
+		.aspectRatio = (float)matData.height / (float)matData.height,
+		.materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData),
+	};
+}
+
+/**************** LOAD SPRITE GROUP FROM SINGLE FILE **********************/
+
+void LoadSpriteGroupFromFile(int groupNum, const char* path, int flags)
+{
+	AllocSpriteGroup(groupNum, 1);
+	gSpriteGroupList[groupNum][0] = LoadSpriteFromDualImage(path);
+	GAME_ASSERT(gSpriteGroupList[groupNum][0].materialObject);
+}
+
+/**************** LOAD SPRITE GROUP FROM SEQUENCE OF IMAGE FILES **********************/
+
+void LoadSpriteGroupFromSeries(int groupNum, int numSprites, const char* seriesName)
 {
 	AllocSpriteGroup(groupNum, numSprites);
 
-	for (int i = 0; i < numSprites; i++)
+	for (int i = 0; i < gNumSpritesInGroupList[groupNum]; i++)
 	{
-			/* LOAD TEXTURE FROM IMAGE FILE */
+		char path[64];
+		snprintf(path, sizeof(path), ":sprites:%s:%s%03d", seriesName, seriesName, i);
 
-		int width = 0;
-		int height = 0;
-		GLuint textureName = OGL_TextureMap_LoadImageFile(paths[i], &width, &height);
-		GAME_ASSERT(textureName);
-
-			/* SET UP MATERIAL */
-
-		MOMaterialData	matData =
-		{
-			.flags			= BG3D_MATERIALFLAG_TEXTURED
-								| BG3D_MATERIALFLAG_ALWAYSBLEND		// assume all files have alpha
-								| BG3D_MATERIALFLAG_UPRIGHT_V,		// unlike .sprites files, standalone image files aren't flipped vertically
-			.diffuseColor	= {1, 1, 1, 1},
-			.width			= width,
-			.height			= height,
-			.numMipmaps		= 1,
-			.textureName	= {textureName},
-		};
-
-			/* SET SPRITE INFO */
-
-		gSpriteGroupList[groupNum][i] = (SpriteType)
-		{
-			.width = width,
-			.height = height,
-			.aspectRatio = (float)height / (float)width,
-			.materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData),
-		};
-
+		gSpriteGroupList[groupNum][i] = LoadSpriteFromDualImage(path);
 		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
 	}
 }
-
-
-/********************** LOAD SPRITE FILE **************************/
-//
-// NOTE:  	All sprite files must be imported AFTER the draw context has been created,
-//			because all imported textures are named with OpenGL and loaded into OpenGL!
-//
-
-void LoadSpriteGroup(int groupNum, const char* fileName, int flags)
-{
-short			refNum;
-int				w,h;
-long			count;
-
-	(void) flags;
-
-
-		/* OPEN THE FILE */
-
-	FSSpec spec;
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, fileName, &spec);
-
-	if (FSpOpenDF(&spec, fsRdPerm, &refNum) != noErr)
-		DoFatalAlert("LoadSpriteGroup: FSpOpenDF failed");
-
-		/* READ # SPRITES IN THIS FILE */
-
-	int32_t numSprites = 0;
-	count = sizeof(numSprites);
-	FSRead(refNum, &count, (Ptr) &numSprites);
-
-	numSprites = SwizzleLong(&numSprites);
-
-		/* ALLOCATE MEMORY FOR SPRITE RECORDS */
-
-	AllocSpriteGroup(groupNum, numSprites);
-
-
-			/********************/
-			/* READ EACH SPRITE */
-			/********************/
-
-	for (int i = 0; i < numSprites; i++)
-	{
-		uint32_t	hasAlpha;
-
-			/* READ WIDTH/HEIGHT, ASPECT RATIO */
-
-		count = sizeof(int32_t);
-		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].width);
-		gSpriteGroupList[groupNum][i].width = SwizzleLong(&gSpriteGroupList[groupNum][i].width);
-
-		count = sizeof(int32_t);
-		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].height);
-		gSpriteGroupList[groupNum][i].height = SwizzleLong(&gSpriteGroupList[groupNum][i].height);
-
-		count = sizeof(float);
-		FSRead(refNum, &count, (Ptr) &gSpriteGroupList[groupNum][i].aspectRatio);
-		gSpriteGroupList[groupNum][i].aspectRatio = SwizzleFloat(&gSpriteGroupList[groupNum][i].aspectRatio);
-
-		w = gSpriteGroupList[groupNum][i].width;
-		h = gSpriteGroupList[groupNum][i].height;
-
-
-				/* READ HAS-ALPHA FLAG */
-
-		count = sizeof(hasAlpha);
-		FSRead(refNum, &count, (Ptr) &hasAlpha);
-		hasAlpha = SwizzleULong(&hasAlpha);
-
-
-				/********************************/
-				/* READ COMPRESSED JPEG TEXTURE */
-				/********************************/
-
-		Ptr textureRGBA = NULL;
-
-		{
-			Ptr			jpegBuffer;
-			int32_t		dataSize;
-
-				/* READ JPEG DATA SIZE */
-
-			count = sizeof(dataSize);
-			FSRead(refNum, &count, (Ptr) &dataSize);
-			dataSize = SwizzleLong(&dataSize);			// swizzle
-
-				/* READ JPEG DATA */
-
-			count = dataSize;
-			jpegBuffer = AllocPtr(count);							// alloc memory for jpeg buffer
-			FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
-
-			textureRGBA = DecompressQTImage(jpegBuffer, dataSize, w, h);
-			GAME_ASSERT(textureRGBA);
-
-			SafeDisposePtr(jpegBuffer);
-		}
-
-			/**********************/
-			/* READ ALPHA CHANNEL */
-			/**********************/
-
-		if (hasAlpha)
-		{
-			count = w * h;
-			Ptr alphaBuffer = AllocPtr(count);				// alloc buffer for alpha channel
-			FSRead(refNum, &count, alphaBuffer);			// read alpha channel
-
-			Ptr textureAlpha = textureRGBA + 3;
-			for (int p = 0; p < count; p++)
-			{
-				*textureAlpha = alphaBuffer[p];
-				textureAlpha += 4;
-			}
-
-			SafeDisposePtr(alphaBuffer);
-		}
-
-				/*****************************/
-				/* CREATE NEW TEXTURE OBJECT */
-				/*****************************/
-
-		MOMaterialData matData =
-		{
-			.flags			= BG3D_MATERIALFLAG_TEXTURED,
-			.diffuseColor	= {1,1,1,1},
-			.numMipmaps		= 1,
-			.width			= gSpriteGroupList[groupNum][i].width,
-			.height			= gSpriteGroupList[groupNum][i].height,
-			.textureName	= {OGL_TextureMap_Load(textureRGBA, matData.width, matData.height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE)},
-		};
-
-		if (hasAlpha)
-			matData.flags		|= BG3D_MATERIALFLAG_ALWAYSBLEND;
-
-		gSpriteGroupList[groupNum][i].materialObject = MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);
-
-		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
-
-
-		SafeDisposePtr(textureRGBA);
-	}
-
-
-
-		/* CLOSE FILE */
-
-	FSClose(refNum);
-}
-
-
-/**************** SWIZZLE AGB TO RGBA *************************/
-
-void SwizzleARGBtoRGBA(long w, long h, uint32_t *pixels)
-{
-long	count, i;
-
-	count = w * h;
-
-	for (i = 0; i < count; i++)
-	{
-		uint32_t	pixel32;
-
-		pixel32 = pixels[i] << 8;				// get 32-bit ARGB pixel and shift up a byte to make RGBA
-		pixel32 |= 0xff;						// set alpha to 0xff
-
-		pixels[i] = pixel32;					// save it back out as RGBA
-	}
-}
-
-
-/**************** SWIZZLE ARGB TO BGRA *************************/
-
-void SwizzleARGBtoBGRA(long w, long h, uint32_t *pixels)
-{
-long	count, i;
-
-	count = w * h;
-
-	for (i = 0; i < count; i++)
-	{
-		pixels[i] = SwizzleULong(&pixels[i]);
-	}
-}
-
-
-/**************** SET ALPHA IN ARGB BUFFER *************************/
-
-void SetAlphaInARGBBuffer(long w, long h, uint32_t *pixels)
-{
-long	count, i;
-unsigned char *a = (unsigned char *)pixels;
-
-	count = w * h;
-
-	for (i = 0; i < count; i++)
-	{
-		*a =  0xff;
-		a += 4;
-	}
-}
-
-
-/**************** SET ALPHA IN 16BIT BUFFER *************************/
-
-void SetAlphaIn16BitBuffer(long w, long h, uint16_t *pixels)
-{
-long	count, i;
-
-	count = w * h;
-
-	for (i = 0; i < count; i++)
-	{
-#if __BIG_ENDIAN__
-		pixels[i] |= 0x8000;
-#else
-		pixels[i] = SwizzleUShort(&pixels[i]);
-		pixels[i] |= 0x8000;
-#endif
-	}
-}
-
 
 
 

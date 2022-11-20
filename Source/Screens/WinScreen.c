@@ -141,12 +141,7 @@ OGLSetupInputType	viewDef;
 
 			/* LOAD SPRITES */
 
-	static const char* winSlides[NUM_SLIDES] =
-	{
-		":images:win.jpg",
-	};
-
-	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, winSlides, 0);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:win", 0);
 
 
 
@@ -191,7 +186,7 @@ ObjNode	*slideObj;
 	{
 		NewObjectDefinitionType def =
 		{
-			.group 		= SPRITE_GROUP_INTROSTORY,
+			.group 		= SPRITE_GROUP_LEVELSPECIFIC,
 			.type 		= gSlides[i].spriteNum,
 			.coord.x 	= 640.0f * gSlides[i].x,
 			.coord.y 	= 480.0f * gSlides[i].y,

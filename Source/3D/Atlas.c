@@ -54,7 +54,7 @@ typedef struct
 static OGLPoint3D gImmediateModePoints[MAX_IMMEDIATEMODE_QUADS * 4];
 static OGLTextureCoord gImmediateModeUVs[MAX_IMMEDIATEMODE_QUADS * 4];
 
-Atlas*					gAtlases[MAX_SPRITE_GROUPS];
+Atlas*					gAtlases[MAX_ATLASES];
 
 #pragma mark -
 
@@ -320,7 +320,7 @@ void DisposeSpriteAtlas(int groupNum)
 
 void DisposeAllSpriteAtlases(void)
 {
-	for (int i = 0; i < MAX_SPRITE_GROUPS; i++)
+	for (int i = 0; i < MAX_ATLASES; i++)
 	{
 		DisposeSpriteAtlas(i);
 	}
@@ -354,11 +354,11 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 	char pathBuf[256];
 	if (flags & kAtlasLoadAltSkin1)
 	{
-		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.alt1.png", fontName);
+		snprintf(pathBuf, sizeof(pathBuf), "%s.alt1", fontName);
 	}
 	else
 	{
-		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.png", fontName);
+		snprintf(pathBuf, sizeof(pathBuf), "%s", fontName);
 	}
 #if _DEBUG
 	printf("Atlas_Load: %s\n", pathBuf);
@@ -368,7 +368,7 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 		// Create font material
 		const char* texturePath = pathBuf;
 		GLuint textureName = 0;
-		textureName = OGL_TextureMap_LoadImageFile(texturePath, &atlas->textureWidth, &atlas->textureHeight);
+		textureName = OGL_TextureMap_LoadImageFile(texturePath, &atlas->textureWidth, &atlas->textureHeight, NULL);
 
 		GAME_ASSERT(atlas->textureWidth != 0);
 		GAME_ASSERT(atlas->textureHeight != 0);
@@ -854,7 +854,7 @@ void TextMesh_DrawExtents(ObjNode* textNode)
 
 void Atlas_ImmediateDraw(int groupNum, const char* text, uint32_t flags)
 {
-	GAME_ASSERT((size_t)groupNum < (size_t)MAX_SPRITE_GROUPS);
+	GAME_ASSERT((size_t)groupNum < (size_t)MAX_ATLASES);
 
 	const Atlas* font = gAtlases[groupNum];
 	GAME_ASSERT(font);

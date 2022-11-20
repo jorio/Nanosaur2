@@ -73,8 +73,7 @@ void InitParticleSystem(void)
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroup(SPRITE_GROUP_PARTICLES, ":sprites:particle.sprites", 0);
-
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_PARTICLES, PARTICLE_SObjType_COUNT, "particle");
 	BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES);
 
 

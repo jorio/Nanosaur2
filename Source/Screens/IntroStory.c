@@ -38,9 +38,8 @@ enum
 	INTROSTORY_SObjType_Image6,
 	INTROSTORY_SObjType_Image7,
 	INTROSTORY_SObjType_NanoLogo,
+	NUM_SLIDES
 };
-
-#define	NUM_SLIDES	9
 
 #define	SLIDE_FADE_RATE	.8f
 
@@ -295,21 +294,8 @@ OGLSetupInputType	viewDef;
 
 			/* LOAD SPRITES */
 
-	static const char* introSlides[NUM_SLIDES] =
-	{
-		":images:intro0.jpg",
-		":images:intro1.jpg",
-		":images:intro2.jpg",
-		":images:intro3.jpg",
-		":images:intro4.jpg",
-		":images:intro5.jpg",
-		":images:intro6.jpg",
-		":images:intro7.jpg",
-		":images:intro8.jpg",
-	};
-
-	LoadSpriteGroupFromFiles(SPRITE_GROUP_INTROSTORY, NUM_SLIDES, introSlides, 0);
-	LoadSpriteAtlas(SPRITE_GROUP_FONT3, "subtitlefont", kAtlasLoadFont);		// TODO: hacky -- sprite groups & atlas numbers overlap
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_LEVELSPECIFIC, NUM_SLIDES, "intro");
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 
@@ -331,7 +317,7 @@ static void FreeIntroStoryScreen(void)
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
 	DisposeAllSpriteGroups();
-	DisposeSpriteAtlas(SPRITE_GROUP_FONT3);
+	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
 	DisposeAllBG3DContainers();
 	DisposeTerrain();
 	DisposeSoundBank(SOUND_BANK_NARRATION);
@@ -373,7 +359,7 @@ ObjNode	*slideObj;
 	{
 		NewObjectDefinitionType def =
 		{
-			.group 		= SPRITE_GROUP_INTROSTORY,
+			.group 		= SPRITE_GROUP_LEVELSPECIFIC,
 			.type 		= gSlides[i].spriteNum,
 			.coord.x 	= 640.0f * gSlides[i].x,
 			.coord.y 	= 480.0f * gSlides[i].y,
@@ -588,7 +574,7 @@ static void MakeSubtitleObjects(int slideNum)
 				.coord = {640/2, 480-60 + 22*subRow, 0},
 				.scale = 35 * 0.5f,
 				.slot = SPRITE_SLOT,
-				.group = SPRITE_GROUP_FONT3,
+				.group = ATLAS_GROUP_FONT3,
 				.flags = STATUS_BIT_HIDDEN,
 			};
 

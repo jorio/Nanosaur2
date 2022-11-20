@@ -21,6 +21,15 @@ enum
 };
 
 
+enum
+{
+	BIOME_FOREST,
+	BIOME_DESERT,
+	BIOME_SWAMP,
+	NUM_BIOMES
+};
+
+
   	/* NANO VS. NANO MODES */
 
 enum

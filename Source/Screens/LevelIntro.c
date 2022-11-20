@@ -240,7 +240,7 @@ ObjNode	*newObj;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroupFromFiles(SPRITE_GROUP_MAINMENU, 1, (const char*[]) {":sprites:nanologo.png"}, 0);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:menu:nanologo", 0);
 
 
 			/* LOAD SKELETONS */
@@ -406,7 +406,7 @@ static void MakeLevelIntroStarDome(void)
 {
 	int width = 0;
 	int height = 0;
-	GLuint textureName = OGL_TextureMap_LoadImageFile(":sprites:stardome.jpg", &width, &height);
+	GLuint textureName = OGL_TextureMap_LoadImageFile(":sprites:textures:stardome", &width, &height, NULL);
 	MOMaterialData matData =
 	{
 		.flags				= BG3D_MATERIALFLAG_TEXTURED,
@@ -631,7 +631,7 @@ static void SetupScreensaverObjects(void)
 
 	NewObjectDefinitionType textDef =
 	{
-		.group		= SPRITE_GROUP_FONT1,
+		.group		= ATLAS_GROUP_FONT1,
 		.coord		= {640/2, 450, 0},
 		.slot		= SPRITE_SLOT,
 		.moveCall	= MovePressAnyKey,
@@ -645,7 +645,7 @@ static void SetupScreensaverObjects(void)
 
 	NewObjectDefinitionType logoDef =
 	{
-		.group		= SPRITE_GROUP_MAINMENU,
+		.group		= SPRITE_GROUP_LEVELSPECIFIC,
 		.type		= MAINMENU_SObjType_NanoLogo,
 		.coord		= {20, 0, 0},
 		.slot		= SPRITE_SLOT,
@@ -679,7 +679,7 @@ static void SetupCreditsObjects(void)
 	{
 		NewObjectDefinitionType textDef =
 		{
-			.group		= SPRITE_GROUP_FONT2,
+			.group		= ATLAS_GROUP_FONT2,
 			.coord		= {640/2, 400, 0},
 			.slot		= SPRITE_SLOT,
 			.scale		= 0.5f,
@@ -692,7 +692,7 @@ static void SetupCreditsObjects(void)
 		objs[0]->AnaglyphZ = 6.0f;
 		objs[0]->ColorFilter = (OGLColorRGBA) {1,0.6,0.2,1};
 
-		textDef.group = SPRITE_GROUP_FONT1;
+		textDef.group = ATLAS_GROUP_FONT1;
 		textDef.coord.y += 32;
 		textDef.scale = 0.7f;
 		objs[1] = TextMesh_New(kCreditsText[i].name, kTextMeshAlignCenter, &textDef);
@@ -711,7 +711,7 @@ static void SetupCreditsObjects(void)
 
 	NewObjectDefinitionType logoDef =
 	{
-		.group		= SPRITE_GROUP_MAINMENU,
+		.group		= SPRITE_GROUP_LEVELSPECIFIC,
 		.type		= MAINMENU_SObjType_NanoLogo,
 		.coord		= {640/2, 400+15, 0},
 		.slot		= SPRITE_SLOT,

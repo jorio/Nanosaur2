@@ -114,7 +114,7 @@ static void OnChangeMSAA(void)
 
 	NewObjectDefinitionType def =
 	{
-		.group = SPRITE_GROUP_FONT2,
+		.group = ATLAS_GROUP_FONT1,
 		.coord = {320, 450, 0},
 		.scale = 0.2f,
 		.slot = SPRITE_SLOT,

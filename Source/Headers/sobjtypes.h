@@ -5,18 +5,24 @@
 
 enum
 {
+	ATLAS_GROUP_NULL				=	0,
+	ATLAS_GROUP_FONT1				,
+	ATLAS_GROUP_FONT2				,
+	ATLAS_GROUP_FONT3				,
+	MAX_ATLASES
+};
+
+enum
+{
 	SPRITE_GROUP_NULL				=	0,
-	SPRITE_GROUP_SPHEREMAPS 		= 	1,
-	SPRITE_GROUP_INFOBAR			=	2,
-	SPRITE_GROUP_CURSOR				=	3,
-	SPRITE_GROUP_PARTICLES			=	4,
-	SPRITE_GROUP_INTROSTORY			=	5,
-	SPRITE_GROUP_MAINMENU			=	6,
-	SPRITE_GROUP_GLOBAL				= 	7,
-	SPRITE_GROUP_FONT1				= 	8,
-	SPRITE_GROUP_FONT2				= 	9,
-	SPRITE_GROUP_FONT3				= 	10,
-	SPRITE_GROUP_LEVELSPECIFIC		= 	11,
+	SPRITE_GROUP_SPHEREMAPS 		,
+	SPRITE_GROUP_INFOBAR			,
+	SPRITE_GROUP_CURSOR				,
+	SPRITE_GROUP_PARTICLES			,
+	SPRITE_GROUP_GLOBAL				,
+	SPRITE_GROUP_LEVELSPECIFIC		,
+	SPRITE_GROUP_OVERHEADMAP		,
+	SPRITE_GROUP_P2SKIN				,
 	MAX_SPRITE_GROUPS
 };
 
@@ -28,16 +34,12 @@ enum
 	GLOBAL_SObjType_Shadow_CircularDark,
 	GLOBAL_SObjType_Shadow_Square,
 	GLOBAL_SObjType_Shadow_Nano,
-
 	GLOBAL_SObjType_WaterRipple,
-
 	GLOBAL_SObjType_GreenWater,
 	GLOBAL_SObjType_BlueWater,
 	GLOBAL_SObjType_LavaWater,
-
-	GLOBAL_SObjType_Player2Skin,
-
-	GLOBAL_SObjType_LaserOrbBeam
+	GLOBAL_SObjType_LaserOrbBeam,
+	GLOBAL_SObjType_COUNT,
 
 };
 
@@ -57,7 +59,8 @@ enum
 	SPHEREMAP_SObjType_DarkYosemite,
 	SPHEREMAP_SObjType_Red,
 	SPHEREMAP_SObjType_Tundra,
-	SPHEREMAP_SObjType_SheenAlpha
+	SPHEREMAP_SObjType_SheenAlpha,
+	SPHEREMAP_SObjType_COUNT,
 };
 
 
@@ -118,16 +121,9 @@ enum
 	PARTICLE_SObjType_Flame9,
 	PARTICLE_SObjType_Flame10,
 
-	PARTICLE_SObjType_FireRing
+	PARTICLE_SObjType_FireRing,
+	PARTICLE_SObjType_COUNT,
 
-};
-
-
-/******************* DIALOG SOBJTYPES *************************/
-
-enum
-{
-	CURSOR_SObjType_ArrowCursor
 };
 
 
@@ -172,11 +168,9 @@ enum
 
 	INFOBAR_SObjType_Player1,
 	INFOBAR_SObjType_Player2,
-
 	INFOBAR_SObjType_YouWin,
 	INFOBAR_SObjType_YouLose,
 	INFOBAR_SObjType_YouDraw,
-
 	INFOBAR_SObjType_Ready,
 	INFOBAR_SObjType_Set,
 	INFOBAR_SObjType_Go,
@@ -210,40 +204,23 @@ enum
 	INFOBAR_SObjType_EnterWormhole,
 
 	INFOBAR_SObjType_LeftArrow,
-	INFOBAR_SObjType_RightArrow
+	INFOBAR_SObjType_RightArrow,
+
+	INFOBAR_SObjType_COUNT
 };
 
 
-/******************* LEVEL 1 *************************/
+/******************* BIOME SPECIFIC *************************/
 
 enum
 {
 	LEVEL1_SObjType_Fence_PineTree,
-	LEVEL1_SObjType_OHM,
-	LEVEL1_SObjType_BattleOHM,
-	LEVEL1_SObjType_FlagOHM
 };
-
-
-/******************* LEVEL 2 *************************/
 
 enum
 {
 	LEVEL2_SObjType_DustDevil,
-	LEVEL2_SObjType_OHM,
-	LEVEL2_SObjType_Race2OHM,
-	LEVEL2_SObjType_Battle2OHM
 };
-
-/******************* LEVEL 3 *************************/
-
-enum
-{
-	LEVEL3_SObjType_OHM,
-	LEVEL3_SObjType_RaceOHM,
-	LEVEL3_SObjType_FlagOHM
-};
-
 
 
 /***************** MAIN MENU *************************/

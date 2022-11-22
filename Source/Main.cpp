@@ -162,6 +162,8 @@ static void GetInitialWindowSize(int display, int& width, int& height)
 
 static void Boot()
 {
+	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+
 	// Start our "machine"
 	Pomme::Init();
 

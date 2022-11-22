@@ -28,13 +28,13 @@ game_ver            = "2.1.0"
 
 source_check        = "Source/Enemies/Enemy_Ramphor.c"  # some file that's likely to be from the game's source tree
 
-sdl_ver             = "2.24.2"
+sdl_ver             = "2.26.0"
 appimagetool_ver    = "13"
 
 lib_hashes = {  # sha-256
-    "SDL2-2.24.2.tar.gz":            "b35ef0a802b09d90ed3add0dcac0e95820804202914f5bb7b0feb710f1a1329f",
-    "SDL2-2.24.2.dmg":               "d2cce6d818ed16d9126a673ce64258458c64363544cb3113c46504781914c80e",
-    "SDL2-devel-2.24.2-VC.zip":      "fae7f8f1661fc1fb3ece7b58eca3b2aaeb2ed000a0b7766f859ae12511efd11f",
+    "SDL2-2.26.0.dmg":               "3ba2fb0a2e83060bf17e29381c230fed160503b00eccb747210eda149b321067",
+    "SDL2-2.26.0.tar.gz":            "8000d7169febce93c84b6bdf376631f8179132fd69f7015d4dadb8b9c2bdb295",
+    "SDL2-devel-2.26.0-VC.zip":      "3dd66b8ebd32fc2110fbffccc82ffb6b9838de382aff641a38a66a64d480f5f9",
     "appimagetool-x86_64.AppImage":  "df3baf5ca5facbecfc2f3fa6713c29ab9cefa8fd8c1eac5d283b79cab33e4acb", # appimagetool v13
     "appimagetool-aarch64.AppImage": "334e77beb67fc1e71856c29d5f3f324ca77b0fde7a840fdd14bd3b88c25c341f",
 }

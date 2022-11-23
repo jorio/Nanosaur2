@@ -239,7 +239,7 @@ def copy_documentation(proj, appdir, full=True):
     shutil.copy(F"LICENSE.md", F"{appdir}/License.txt")
 
     if full:
-        shutil.copy("Instructions.pdf", appdir)
+        shutil.copytree("docs", f"{appdir}/Documentation")
 
 def package_windows(proj: Project):
     release_config = proj.build_configs[0]

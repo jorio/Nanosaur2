@@ -647,7 +647,7 @@ float	fps;
 			&& IsKeyDown(SDL_SCANCODE_F10))								// see if skip level
 		{
 			gLevelCompleted = true;
-			gSkipLevelIntro = true;
+//			gSkipLevelIntro = true;
 		}
 
 

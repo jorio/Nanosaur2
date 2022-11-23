@@ -51,6 +51,7 @@ long			gTerrainUnitWidth,gTerrainUnitDepth;			// width & depth of terrain in wor
 
 long			gNumUniqueSuperTiles;
 short		 	**gSuperTileTextureGrid = nil;			// 2d array
+Ptr				*gSuperTilePixelBuffers = nil;			// temporary pixel buffers used to assemble seamless textures - freed after terrain is loaded
 
 float			**gVertexShading = nil;					// vertex shading grid
 
@@ -421,13 +422,24 @@ int	u,v,i,j;
 
 				/* SET UV & COLOR VALUES */
 
+#if HQ_TERRAIN
+		const float seamlessTexmapSize	= (2.0f + SUPERTILE_TEXMAP_SIZE);
+		const float seamlessUVScale		= SUPERTILE_TEXMAP_SIZE / seamlessTexmapSize;
+		const float seamlessUVTranslate	= 1.0f / seamlessTexmapSize;
+#endif
+
 		j = 0;
 		for (v = 0; v <= SUPERTILE_SIZE; v++)
 		{
 			for (u = 0; u <= SUPERTILE_SIZE; u++)
 			{
 				uvPtr[j].u = (float)u / (float)SUPERTILE_SIZE;		// sets uv's 0.0 -> 1.0 for single texture map
-				uvPtr[j].v = 1.0f - ((float)v / (float)SUPERTILE_SIZE);
+				uvPtr[j].v = (float)v / (float)SUPERTILE_SIZE;
+
+#if HQ_TERRAIN
+				uvPtr[j].u = (uvPtr[j].u * seamlessUVScale) + seamlessUVTranslate;
+				uvPtr[j].v = (uvPtr[j].v * seamlessUVScale) + seamlessUVTranslate;
+#endif
 
 				j++;
 			}

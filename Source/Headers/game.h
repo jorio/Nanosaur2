@@ -3,8 +3,8 @@
 
 		/* MY BUILD OPTIONS */
 
-#define	OEM				1
 #define	VERTEXARRAYRANGES	0
+#define	HQ_TERRAIN			1		// seamless terrain texturing. Requires NPOT texture support.
 
 #if !defined(__LITTLE_ENDIAN__) && !(__BIG_ENDIAN__)
 #define __LITTLE_ENDIAN__ 1
@@ -124,6 +124,7 @@ extern	ObjNode					*gFirstNodePtr;
 extern	ParticleGroupType		*gParticleGroups[MAX_PARTICLE_GROUPS];
 extern	PlayerInfoType			gPlayerInfo[MAX_PLAYERS];
 extern	PrefsType				gGamePrefs;
+extern	Ptr						*gSuperTilePixelBuffers;			// temporary pixel buffers used to assemble seamless textures - freed after terrain is loaded
 extern	SDL_GLContext			gAGLContext;
 extern	SDL_Window*				gSDLWindow;
 extern	SparkleType				gSparkles[MAX_SPARKLES];

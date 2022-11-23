@@ -141,6 +141,24 @@ void DoLegalScreen(void)
 
 void DrawLoading(float percent)
 {
+	static uint64_t lastUpdateTicks = 0;
+
+	// Prevent the OS from thinking our process has locked up
+	DoSDLMaintenance();
+
+#if SDL_VERSION_ATLEAST(2,0,18)
+	uint64_t nowTicks = SDL_GetTicks64();
+#else
+	uint64_t nowTicks = SDL_GetTicks();
+#endif
+	if (percent > 0
+		&& percent < 1
+		&& nowTicks - lastUpdateTicks < 30)
+	{
+		return;
+	}
+	lastUpdateTicks = nowTicks;
+
 	if (percent > 0.75f)
 	{
 		MakeFadeEvent(kFadeFlags_Out, 0.0001);
@@ -151,10 +169,9 @@ void DrawLoading(float percent)
 	int vsyncBackup = SDL_GL_GetSwapInterval();
 	SDL_GL_SetSwapInterval(0);
 
-	// Prevent the OS from thinking our process has locked up
-	DoSDLMaintenance();
 
 	// Draw thermometer
+	glClear(GL_COLOR_BUFFER_BIT);
 	OGL_DrawScene(DrawLoading_Callback);
 	gLoadingThermoPercent = percent;
 

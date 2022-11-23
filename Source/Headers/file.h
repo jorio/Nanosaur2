@@ -137,14 +137,15 @@ OSErr SavePrefs(void);
 #define IsStereo() (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 
 void LoadPlayfield(FSSpec *specPtr);
-OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth);
 
 Boolean SaveGame(int fileSlot);
 Boolean LoadSavedGame(int fileSlot, SaveGameType* outData);
 void UseSaveGame(const SaveGameType* saveData);
 
 void LoadLevelArt(void);
-MOMaterialObject* LoadSuperTileTexture(short fRefNum);
+Ptr LoadSuperTilePixelBuffer(short fRefNum);
+MOMaterialObject* LoadSuperTileTexture(Ptr pixelBuffer, int texSize);
+void AssembleSeamlessSuperTileTexture(int row, int col, Ptr canvas);
 
 OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
 OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);

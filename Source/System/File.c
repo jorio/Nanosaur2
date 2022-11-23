@@ -433,87 +433,6 @@ OSErr SavePrefs(void)
 
 #pragma mark -
 
-
-
-
-/**************** DRAW PICTURE INTO GWORLD ***********************/
-//
-// Uses Quicktime to load any kind of picture format file and draws
-// it into the GWorld
-//
-//
-// INPUT: myFSSpec = spec of image file
-//
-// OUTPUT:	theGWorld = gworld contining the drawn image.
-//
-
-OSErr DrawPictureIntoGWorld(FSSpec *myFSSpec, GWorldPtr *theGWorld, short depth)
-{
-	SOFTIMPME;
-	return unimpErr;
-#if 0
-OSErr						iErr;
-GraphicsImportComponent		gi;
-Rect						r;
-ComponentResult				result;
-
-
-			/* PREP IMPORTER COMPONENT */
-
-	result = GetGraphicsImporterForFile(myFSSpec, &gi);		// load importer for this image file
-	if (result != noErr)
-	{
-		DoAlert("DrawPictureIntoGWorld: GetGraphicsImporterForFile failed!  One of Quicktime's importer components is missing.  You should reinstall OS X to fix this.");
-		return(result);
-	}
-	if (GraphicsImportGetBoundsRect(gi, &r) != noErr)		// get dimensions of image
-		DoFatalAlert("DrawPictureIntoGWorld: GraphicsImportGetBoundsRect failed!");
-
-
-			/* MAKE GWORLD */
-
-	iErr = NewGWorld(theGWorld, depth, &r, nil, nil, 0);					// try app mem
-	if (iErr)
-	{
-		DoAlert("DrawPictureIntoGWorld: using temp mem");
-		iErr = NewGWorld(theGWorld, depth, &r, nil, nil, useTempMem);		// try sys mem
-		if (iErr)
-		{
-			DoAlert("DrawPictureIntoGWorld: MakeMyGWorld failed");
-			return(1);
-		}
-	}
-
-//	if (depth == 32)
-//	{
-//		hPixMap = GetGWorldPixMap(*theGWorld);				// get gworld's pixmap
-//		(**hPixMap).cmpCount = 4;							// we want full 4-component argb (defaults to only rgb)
-//	}
-
-
-			/* DRAW INTO THE GWORLD */
-
-	DoLockPixels(*theGWorld);
-	GraphicsImportSetGWorld(gi, *theGWorld, nil);			// set the gworld to draw image into
-	GraphicsImportSetQuality(gi,codecLosslessQuality);		// set import quality
-
-	result = GraphicsImportDraw(gi);						// draw into gworld
-	CloseComponent(gi);										// cleanup
-	if (result != noErr)
-	{
-		DoAlert("DrawPictureIntoGWorld: GraphicsImportDraw failed!");
-		ShowSystemErr(result);
-		DisposeGWorld (*theGWorld);
-		*theGWorld= nil;
-		return(result);
-	}
-	return(noErr);
-#endif
-}
-
-
-#pragma mark -
-
 /******************* LOAD PLAYFIELD *******************/
 
 void LoadPlayfield(FSSpec *specPtr)
@@ -547,7 +466,6 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr)
 {
 Handle					hand;
 PlayfieldHeaderType		**header;
-int						row,col,j,i,texSize;
 long					size;
 float					yScale;
 short					fRefNum;
@@ -630,11 +548,40 @@ OSErr					iErr;
 	{
 		short *src = (short *)*hand;
 
-		for (row = 0; row < gNumSuperTilesDeep; row++)
-			for (col = 0; col < gNumSuperTilesWide; col++)
+#if _DEBUG
+		int* stNumUses = AllocPtrClear(gNumUniqueSuperTiles * sizeof(int));
+#endif
+
+		for (int row = 0; row < gNumSuperTilesDeep; row++)
+		{
+			for (int col = 0; col < gNumSuperTilesWide; col++)
 			{
-				gSuperTileTextureGrid[row][col] = SwizzleShort(src++);
+				short stId = SwizzleShort(src++);
+				gSuperTileTextureGrid[row][col] = stId;
+
+#if _DEBUG
+				if (stId != -1)
+				{
+					printf("%03d ", stId);
+					stNumUses[stId]++;
+					GAME_ASSERT(stNumUses[stId] == 1);  // make sure it's only used ONCE
+				}
+				else
+				{
+					printf("--- ");
+				}
+#endif
 			}
+
+#if _DEBUG
+			printf("\n");
+#endif
+		}
+
+#if _DEBUG
+		SafeDisposePtr(stNumUses);
+#endif
+
 		ReleaseResource(hand);
 	}
 
@@ -652,11 +599,13 @@ OSErr					iErr;
 	else
 	{
 		float *src = (float *)*hand;
-		for (row = 0; row <= gTerrainTileDepth; row++)
-			for (col = 0; col <= gTerrainTileWidth; col++)
+		for (int row = 0; row <= gTerrainTileDepth; row++)
+		{
+			for (int col = 0; col <= gTerrainTileWidth; col++)
 			{
 				gMapYCoordsOriginal[row][col] = gMapYCoords[row][col] = SwizzleFloat(src++) * yScale;
 			}
+		}
 		ReleaseResource(hand);
 	}
 
@@ -680,7 +629,7 @@ OSErr					iErr;
 
 		gMasterItemList = AllocPtr(sizeof(TerrainItemEntryType) * gNumTerrainItems);			// alloc array of items
 
-		for (i = 0; i < gNumTerrainItems; i++)
+		for (int i = 0; i < gNumTerrainItems; i++)
 		{
 			gMasterItemList[i].x = SwizzleULong(&rezItems[i].x) * gMapToUnitValue;								// convert coordinates
 			gMasterItemList[i].y = SwizzleULong(&rezItems[i].y) * gMapToUnitValue;
@@ -711,7 +660,7 @@ OSErr					iErr;
 
 		gSplineList = AllocPtr(sizeof(SplineDefType) * gNumSplines);				// allocate memory for spline data
 
-		for (i = 0; i < gNumSplines; i++)
+		for (int i = 0; i < gNumSplines; i++)
 		{
 			gSplineList[i].numNubs = SwizzleShort(&splinePtr[i].numNubs);
 			gSplineList[i].numPoints = SwizzleLong(&splinePtr[i].numPoints);
@@ -736,7 +685,7 @@ OSErr					iErr;
 
 			/* READ SPLINE POINT LIST */
 
-	for (i = 0; i < gNumSplines; i++)
+	for (int i = 0; i < gNumSplines; i++)
 	{
 		SplineDefType	*spline = &gSplineList[i];									// point to Nth spline
 
@@ -747,7 +696,7 @@ OSErr					iErr;
 
 			spline->pointList = AllocPtr(sizeof(SplinePointType) * spline->numPoints);	// alloc memory for point list
 
-			for (j = 0; j < spline->numPoints; j++)			// swizzle
+			for (int j = 0; j < spline->numPoints; j++)			// swizzle
 			{
 				spline->pointList[j].x = SwizzleFloat(&ptList[j].x);
 				spline->pointList[j].z = SwizzleFloat(&ptList[j].z);
@@ -761,7 +710,7 @@ OSErr					iErr;
 
 			/* READ SPLINE ITEM LIST */
 
-	for (i = 0; i < gNumSplines; i++)
+	for (int i = 0; i < gNumSplines; i++)
 	{
 		SplineDefType	*spline = &gSplineList[i];									// point to Nth spline
 
@@ -772,7 +721,7 @@ OSErr					iErr;
 
 			spline->itemList = AllocPtr(sizeof(SplineItemType) * spline->numItems);	// alloc memory for item list
 
-			for (j = 0; j < spline->numItems; j++)			// swizzle
+			for (int j = 0; j < spline->numItems; j++)			// swizzle
 			{
 				spline->itemList[j].placement = SwizzleFloat(&itemList[j].placement);
 				spline->itemList[j].type	= SwizzleUShort(&itemList[j].type);
@@ -801,7 +750,7 @@ OSErr					iErr;
 
 		inData = (FileFenceDefType *)*hand;								// get ptr to input fence list
 
-		for (i = 0; i < gNumFences; i++)								// copy data from rez to new list
+		for (int i = 0; i < gNumFences; i++)								// copy data from rez to new list
 		{
 			gFenceList[i].type 		= SwizzleUShort(&inData[i].type);
 			gFenceList[i].numNubs 	= SwizzleShort(&inData[i].numNubs);
@@ -816,7 +765,7 @@ OSErr					iErr;
 
 			/* READ FENCE NUB LIST */
 
-	for (i = 0; i < gNumFences; i++)
+	for (int i = 0; i < gNumFences; i++)
 	{
 		hand = GetResource('FnNb',1000+i);					// get rez
 		HLock(hand);
@@ -830,7 +779,7 @@ OSErr					iErr;
 
 
 
-			for (j = 0; j < gFenceList[i].numNubs; j++)		// convert x,z to x,y,z
+			for (int j = 0; j < gFenceList[i].numNubs; j++)		// convert x,z to x,y,z
 			{
 				gFenceList[i].nubList[j].x = SwizzleLong(&fileFencePoints[j].x);
 				gFenceList[i].nubList[j].z = SwizzleLong(&fileFencePoints[j].z);
@@ -858,7 +807,7 @@ OSErr					iErr;
 		gWaterListHandle = (WaterDefType **)hand;
 		gWaterList = *gWaterListHandle;
 
-		for (i = 0; i < gNumWaterPatches; i++)						// swizzle
+		for (int i = 0; i < gNumWaterPatches; i++)						// swizzle
 		{
 			gWaterList[i].type = SwizzleUShort(&gWaterList[i].type);
 			gWaterList[i].flags = SwizzleULong(&gWaterList[i].flags);
@@ -873,7 +822,7 @@ OSErr					iErr;
 			gWaterList[i].bBox.left = SwizzleShort(&gWaterList[i].bBox.left);
 			gWaterList[i].bBox.right = SwizzleShort(&gWaterList[i].bBox.right);
 
-			for (j = 0; j < gWaterList[i].numNubs; j++)
+			for (int j = 0; j < gWaterList[i].numNubs; j++)
 			{
 				gWaterList[i].nubList[j].x = SwizzleFloat(&gWaterList[i].nubList[j].x);
 				gWaterList[i].nubList[j].y = SwizzleFloat(&gWaterList[i].nubList[j].y);
@@ -904,7 +853,7 @@ OSErr					iErr;
 
 						/* CONVERT COORDINATES */
 
-			for (i = 0; i < gNumLineMarkers; i++)
+			for (int i = 0; i < gNumLineMarkers; i++)
 			{
 				LineMarkerDefType	*lm = &gLineMarkerList[i];
 
@@ -945,15 +894,88 @@ OSErr					iErr;
 		DoFatalAlert("ReadDataFromPlayfieldFile: FSpOpenDF failed!");
 
 
-	for (i = 0; i < gNumUniqueSuperTiles; i++)
+#if !(HQ_TERRAIN)
+
+	for (int i = 0; i < gNumUniqueSuperTiles; i++)
 	{
-		gSuperTileTextureObjects[i] = LoadSuperTileTexture(fRefNum);
+		Ptr superTilePixels = LoadSuperTilePixelBuffer(fRefNum);
+		gSuperTileTextureObjects[i] = LoadSuperTileTexture(superTilePixels, SUPERTILE_TEXMAP_SIZE);
+
+		SafeDisposePtr(superTilePixels);
 
 			/* UPDATE LOADING THERMOMETER */
 
-		if ((i & 0x3) == 0)
-			DrawLoading((float)i / (float)(gNumUniqueSuperTiles));
+		DrawLoading(i / (float)gNumUniqueSuperTiles);
 	}
+
+#else
+
+	GAME_ASSERT_MESSAGE(gSuperTilePixelBuffers == NULL, "gSuperTilePixelBuffers already allocated!");
+	gSuperTilePixelBuffers = AllocPtrClear(sizeof(Ptr) * gNumUniqueSuperTiles);
+
+	Ptr seamlessTextureCanvas = AllocPtrClear(4 * (SUPERTILE_TEXMAP_SIZE+2) * (SUPERTILE_TEXMAP_SIZE+2));
+
+	for (int row = 0; row < gNumSuperTilesDeep + 4; row++)		// go 4 rows beyond terrain height so all 3 passes can run to completion
+	{
+		// We could do the three passes below separately, but weaving them in a single for loop
+		// lets us keep memory pressure low while assembling the seamless textures.
+
+		int rowPass1 = row;		// 1st pass: load JPEG images
+		int rowPass2 = row - 2;	// 2nd pass: assemble seamless textures (2 rows behind, b/c need data from 1 row below + 1 column across)
+		int rowPass3 = row - 4;	// 3rd pass: free up memory (4 rows behind)
+
+		for (int col = 0; col < gNumSuperTilesWide; col++)
+		{
+			// 1st pass: load JPEG textures
+			if (0 <= rowPass1 && rowPass1 < gNumSuperTilesDeep)
+			{
+				short stId = gSuperTileTextureGrid[rowPass1][col];
+				if (stId >= 0)
+				{
+					gSuperTilePixelBuffers[stId] = LoadSuperTilePixelBuffer(fRefNum);
+
+					// Update loading screen here
+					DrawLoading(stId/(float)(gNumUniqueSuperTiles));
+				}
+			}
+
+			// 2nd pass: assemble seamless textures
+			if (0 <= rowPass2 && rowPass2 < gNumSuperTilesDeep)
+			{
+				short stId = gSuperTileTextureGrid[rowPass2][col];
+				if (stId >= 0)
+				{
+					AssembleSeamlessSuperTileTexture(rowPass2, col, seamlessTextureCanvas);
+					gSuperTileTextureObjects[stId] = LoadSuperTileTexture(seamlessTextureCanvas, 2+SUPERTILE_TEXMAP_SIZE);
+				}
+			}
+
+			// 3rd pass: free up pixel buffers from rows that we won't need to look at again
+			if (0 <= rowPass3 && rowPass3 < gNumSuperTilesDeep)
+			{
+				short stId = gSuperTileTextureGrid[rowPass3][col];
+				if (stId >= 0)
+				{
+					SafeDisposePtr(gSuperTilePixelBuffers[stId]);
+					gSuperTilePixelBuffers[stId] = NULL;
+				}
+			}
+		}
+	}
+
+	SafeDisposePtr(seamlessTextureCanvas);
+	seamlessTextureCanvas = NULL;
+
+	// Check that we have all the textures we need and that we freed all temporary images
+	for (int i = 0; i < gNumUniqueSuperTiles; i++)
+	{
+		GAME_ASSERT_MESSAGE(gSuperTileTextureObjects[i], "2nd pass incomplete: not all textures were loaded");
+		GAME_ASSERT_MESSAGE(!gSuperTilePixelBuffers[i], "3rd pass incomplete: not all buffers were freed");
+	}
+
+	SafeDisposePtr(gSuperTilePixelBuffers);
+	gSuperTilePixelBuffers = NULL;
+#endif
 
 	DrawLoading(1.0);
 
@@ -966,7 +988,7 @@ OSErr					iErr;
 
 /********************* LOAD A SINGLE SUPERTILE TEXTURE *********************/
 
-MOMaterialObject* LoadSuperTileTexture(short fRefNum)
+Ptr LoadSuperTilePixelBuffer(short fRefNum)
 {
 	int texSize = SUPERTILE_TEXMAP_SIZE;
 	// if (gLowRam) texSize /= 4;
@@ -998,12 +1020,125 @@ MOMaterialObject* LoadSuperTileTexture(short fRefNum)
 	SafeDisposePtr(jpegBuffer);
 	jpegBuffer = NULL;
 
+				/* FLIP IT VERTICALLY */
+				//
+				// Texture pixel rows are stored bottom-up in the .ter file.
+				// We could just flip the V's, but it's easier to reason
+				// about top-down images when we're stitching together the
+				// seamless textures.
+				//
+
+	int rowBytes = texSize*4;
+	Ptr topRowPixelsCopy = AllocPtrClear(rowBytes);
+
+	int topRow = 0;
+	int bottomRow = texSize-1;
+	while (topRow < bottomRow)
+	{
+		Ptr topRowPixels = textureBuffer + topRow * rowBytes;
+		Ptr bottomRowPixels = textureBuffer + bottomRow * rowBytes;
+
+		memcpy(topRowPixelsCopy, topRowPixels, rowBytes);
+		memcpy(topRowPixels, bottomRowPixels, rowBytes);
+		memcpy(bottomRowPixels, topRowPixelsCopy, rowBytes);
+
+		topRow++;
+		bottomRow--;
+	}
+
+	SafeDisposePtr(topRowPixelsCopy);
+
+	return textureBuffer;
+}
+
+static void Blit32(
+		const char*			src,
+		int					srcWidth,
+		int					srcHeight,
+		int					srcRectX,
+		int					srcRectY,
+		int					srcRectWidth,
+		int					srcRectHeight,
+		char*				dst,
+		int 				dstWidth,
+		int 				dstHeight,
+		int					dstRectX,
+		int					dstRectY
+		)
+{
+	if (!src)
+		return;
+
+	const int bpp = 4;
+
+	src += bpp * (srcRectX + srcWidth*srcRectY);
+	dst += bpp * (dstRectX + dstWidth*dstRectY);
+
+	for (int row = 0; row < srcRectHeight; row++)
+	{
+		memcpy(dst, src, bpp * srcRectWidth);
+		src += bpp * srcWidth;
+		dst += bpp * dstWidth;
+	}
+}
+
+static Ptr GetSuperTileImage(int row, int col)
+{
+	if (row < 0 || row > gNumSuperTilesDeep-1		// row out of bounds
+		|| col < 0 || col > gNumSuperTilesWide-1)	// column out of bounds
+	{
+		return NULL;
+	}
+
+	short superTileId = gSuperTileTextureGrid[row][col];
+
+	if (superTileId < 0)							// blank texture
+	{
+		return NULL;
+	}
+
+	Ptr image = gSuperTilePixelBuffers[superTileId];
+	GAME_ASSERT(image);
+
+	return image;
+}
+
+void AssembleSeamlessSuperTileTexture(int row, int col, Ptr canvas)
+{
+	GAME_ASSERT(GetSuperTileImage(row, col));	// make sure we're not trying to do assemble a blank texture
+
+	const int tw = SUPERTILE_TEXMAP_SIZE;		// supertile width & height
+	const int th = SUPERTILE_TEXMAP_SIZE;
+	const int cw = tw + 2;						// canvas width & height
+	const int ch = th + 2;
+
+	// Clear canvas to black
+	memset(canvas, 0, cw * ch * 4);				// *4 => 32-bit RBGA
+
+	// Blit supertile image to middle of canvas
+	Blit32(GetSuperTileImage(row, col), tw, th, 0, 0, tw, th, canvas, cw, ch, 1, 1);
+
+	// Stitch edges from neighboring supertiles on each side
+	//     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
+	Blit32(GetSuperTileImage(row-1, col  ), tw, th,    0, th-1, tw,  1, canvas, cw, ch,    1,    0);
+	Blit32(GetSuperTileImage(row+1, col  ), tw, th,    0,    0, tw,  1, canvas, cw, ch,    1, ch-1);
+	Blit32(GetSuperTileImage(row  , col-1), tw, th, tw-1,    0,  1, th, canvas, cw, ch,    0,    1);
+	Blit32(GetSuperTileImage(row  , col+1), tw, th,    0,    0,  1, th, canvas, cw, ch, cw-1,    1);
+
+	// Copy 1px corners from diagonal neighbors
+	//     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
+	Blit32(GetSuperTileImage(row-1, col+1), tw, th,    0, th-1,  1,  1, canvas, cw, ch, cw-1,    0);
+	Blit32(GetSuperTileImage(row-1, col-1), tw, th, tw-1, th-1,  1,  1, canvas, cw, ch,    0,    0);
+	Blit32(GetSuperTileImage(row+1, col-1), tw, th, tw-1,    0,  1,  1, canvas, cw, ch,    0, ch-1);
+	Blit32(GetSuperTileImage(row+1, col+1), tw, th,    0,    0,  1,  1, canvas, cw, ch, cw-1, ch-1);
+}
+
+
+MOMaterialObject* LoadSuperTileTexture(Ptr textureBuffer, int texSize)
+{
 				/* LOAD GL TEXTURE */
 
 	GLuint textureName = OGL_TextureMap_Load(textureBuffer, texSize, texSize, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
-
-	SafeDisposePtr(textureBuffer);
-	textureBuffer = NULL;
 
 				/**************************/
 				/* CREATE MATERIAL OBJECT */

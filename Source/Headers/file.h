@@ -144,6 +144,7 @@ Boolean LoadSavedGame(int fileSlot, SaveGameType* outData);
 void UseSaveGame(const SaveGameType* saveData);
 
 void LoadLevelArt(void);
+MOMaterialObject* LoadSuperTileTexture(short fRefNum);
 
 OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
 OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);

@@ -936,11 +936,6 @@ OSErr					iErr;
 		/* READ SUPERTILE IMAGE DATA FROM DATA FORK */
 		/********************************************/
 
-				/* ALLOC BUFFERS */
-//	if (gLowRAM)
-//		texSize = SUPERTILE_TEXMAP_SIZE / 4;
-//	else
-	texSize = SUPERTILE_TEXMAP_SIZE;
 
 
 				/* OPEN THE DATA FORK */
@@ -952,71 +947,7 @@ OSErr					iErr;
 
 	for (i = 0; i < gNumUniqueSuperTiles; i++)
 	{
-		int32_t					dataSize;
-		MOMaterialData			matData;
-
-
-				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
-
-		size = sizeof(int32_t);
-		iErr = FSRead(fRefNum, &size, (Ptr) &dataSize);
-		if (iErr)
-			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
-
-		dataSize = SwizzleLong(&dataSize);
-
-		Ptr jpegBuffer = AllocPtr(dataSize);
-
-
-				/* READ THE IMAGE DESC DATA + THE COMPRESSED IMAGE DATA */
-
-		size = dataSize;
-		iErr = FSRead(fRefNum, &size, jpegBuffer);
-		if (iErr)
-			DoFatalAlert("ReadDataFromPlayfieldFile: FSRead failed!");
-
-
-				/* DECOMPRESS THE IMAGE */
-
-		Ptr textureBuffer = DecompressQTImage(jpegBuffer, dataSize, texSize, texSize);
-		SafeDisposePtr(jpegBuffer);
-		jpegBuffer = NULL;
-
-				/**************************/
-				/* CREATE MATERIAL OBJECT */
-				/**************************/
-
-		matData.textureName[0] = OGL_TextureMap_Load(textureBuffer, texSize, texSize, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
-		SafeDisposePtr(textureBuffer);
-		textureBuffer = NULL;
-
-		matData.flags 					= 	BG3D_MATERIALFLAG_CLAMP_U|
-											BG3D_MATERIALFLAG_CLAMP_V|
-											BG3D_MATERIALFLAG_TEXTURED;
-		matData.multiTextureMode		= MULTI_TEXTURE_MODE_REFLECTIONSPHERE;
-		matData.multiTextureCombine		= MULTI_TEXTURE_COMBINE_ADD;
-		matData.diffuseColor			= (OGLColorRGBA) {1,1,1,1};
-		matData.numMipmaps				= 1;										// 1 texture
-		matData.width					= texSize;
-		matData.height					= texSize;
-		gSuperTileTextureObjects[i] 	= MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);		// create the new object
-
-
-#if 0
-			/* PRE-LOAD */
-			//
-			// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
-			//
-
-		SetInfobarSpriteState(0, 1);
-		MO_DrawMaterial(gSuperTileTextureObjects[i]);
-		glBegin(GL_TRIANGLES);
-		glVertex3f(0,1,0);
-		glVertex3f(0,0,0);
-		glVertex3f(1,0,0);
-		glEnd();
-#endif
-
+		gSuperTileTextureObjects[i] = LoadSuperTileTexture(fRefNum);
 
 			/* UPDATE LOADING THERMOMETER */
 
@@ -1030,6 +961,83 @@ OSErr					iErr;
 			/* CLOSE THE FILE */
 
 	FSClose(fRefNum);
+}
+
+
+/********************* LOAD A SINGLE SUPERTILE TEXTURE *********************/
+
+MOMaterialObject* LoadSuperTileTexture(short fRefNum)
+{
+	int texSize = SUPERTILE_TEXMAP_SIZE;
+	// if (gLowRam) texSize /= 4;
+
+				/* READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE */
+
+	int32_t dataSize = 0;
+	
+	long size = sizeof(int32_t);
+	OSErr iErr = FSRead(fRefNum, &size, (Ptr) &dataSize);
+	GAME_ASSERT(!iErr);
+
+	dataSize = SwizzleLong(&dataSize);
+
+				/* ALLOCATE JPEG BUFFER */
+
+	Ptr jpegBuffer = AllocPtr(dataSize);
+
+				/* READ THE IMAGE DESC DATA + THE COMPRESSED IMAGE DATA */
+
+	size = dataSize;
+	iErr = FSRead(fRefNum, &size, jpegBuffer);
+	GAME_ASSERT(!iErr);
+
+				/* DECOMPRESS THE IMAGE */
+
+	Ptr textureBuffer = DecompressQTImage(jpegBuffer, dataSize, texSize, texSize);
+
+	SafeDisposePtr(jpegBuffer);
+	jpegBuffer = NULL;
+
+				/* LOAD GL TEXTURE */
+
+	GLuint textureName = OGL_TextureMap_Load(textureBuffer, texSize, texSize, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+
+	SafeDisposePtr(textureBuffer);
+	textureBuffer = NULL;
+
+				/**************************/
+				/* CREATE MATERIAL OBJECT */
+				/**************************/
+
+	MOMaterialData matData =
+	{
+		.flags					= BG3D_MATERIALFLAG_CLAMP_U | BG3D_MATERIALFLAG_CLAMP_V | BG3D_MATERIALFLAG_TEXTURED,
+		.multiTextureMode		= MULTI_TEXTURE_MODE_REFLECTIONSPHERE,
+		.multiTextureCombine	= MULTI_TEXTURE_COMBINE_ADD,
+		.diffuseColor			= {1,1,1,1},
+		.numMipmaps				= 1,														// 1 texture
+		.width					= texSize,
+		.height					= texSize,
+		.textureName			= {textureName},
+	};
+
+	return (MOMaterialObject*) MO_CreateNewObjectOfType(MO_TYPE_MATERIAL, 0, &matData);		// create the new object
+
+
+#if 0
+			/* PRE-LOAD */
+			//
+			// By drawing a phony triangle using this texture we can get it pre-loaded into VRAM.
+			//
+
+	SetInfobarSpriteState(0, 1);
+	MO_DrawMaterial(superTileMaterialObject);
+	glBegin(GL_TRIANGLES);
+	glVertex3f(0,1,0);
+	glVertex3f(0,0,0);
+	glVertex3f(1,0,0);
+	glEnd();
+#endif
 }
 
 

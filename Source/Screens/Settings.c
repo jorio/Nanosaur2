@@ -32,8 +32,12 @@ static void OnEnterSettingsMenu(void)
 
 static void OnPickLanguage(void)
 {
-	gGamePrefs.language = GetCurrentMenuItemID();
-	LoadLocalizedStrings(gGamePrefs.language);
+	int language = GetCurrentMenuItemID();
+
+	gGamePrefs.language = language;
+	gGamePrefs.cutsceneSubtitles = (language != LANGUAGE_ENGLISH) || (!IsNativeEnglishSystem());
+
+	LoadLocalizedStrings(language);
 }
 
 static void OnToggleFullscreen(void)

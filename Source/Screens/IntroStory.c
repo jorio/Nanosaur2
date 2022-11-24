@@ -482,7 +482,8 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 		theNode->EffectTimer -= fps;
 		if (theNode->EffectTimer <= 0.0f)				// is it time to play it?
 		{
-			PlayEffect(gSlides[slideNum].narrationSound);
+			int volume = FULL_CHANNEL_VOLUME*133/100;
+			PlayEffect_Parms(gSlides[slideNum].narrationSound, volume, volume, NORMAL_CHANNEL_RATE);
 			theNode->HasPlayedEffect = true;
 
 			MakeSubtitleObjects(slideNum);

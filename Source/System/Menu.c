@@ -2093,13 +2093,18 @@ static ObjNode* LayOutMouseBinding(int row)
 
 static void LayOutMenu(int menuID)
 {
-	const MenuItem* menu = LookUpMenu(menuID);
+	const MenuItem* menuStartSentinel = LookUpMenu(menuID);
+	GAME_ASSERT(menuStartSentinel->id == menuID);
+	GAME_ASSERT(menuStartSentinel->type == kMISENTINEL);
 
-	if (!menu)
+	if (!menuStartSentinel)
 	{
 		DoFatalAlert("Menu not registered: '%s'", FourccToString(menuID));
 		return;
 	}
+
+	// Get first item in menu
+	const MenuItem* menu = menuStartSentinel+1;
 
 	// Remember we've been in this menu
 	gNav->history[gNav->historyPos].menuID = menuID;
@@ -2182,6 +2187,13 @@ static void LayOutMenu(int menuID)
 	}
 
 	TwitchSelection();
+
+	// Now that the contents of the menu have been laid out,
+	// call start sentinel's callback, if any
+	if (menuStartSentinel->callback)
+	{
+		menuStartSentinel->callback();
+	}
 }
 
 void LayoutCurrentMenuAgain(void)
@@ -2225,7 +2237,7 @@ static const MenuItem* LookUpMenu(int menuID)
 	for (int i = 0; i < gNumMenusRegistered; i++)
 	{
 		if (gMenuRegistry[i]->id == menuID)
-			return gMenuRegistry[i] + 1;
+			return gMenuRegistry[i];
 	}
 
 	return NULL;

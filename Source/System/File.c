@@ -75,6 +75,8 @@ typedef struct
 /**********************/
 
 
+static	PrefsType gDiskShadowPrefs;
+
 float	g3DTileSize, g3DMinY, g3DMaxY;
 
 
@@ -417,6 +419,8 @@ OSErr LoadPrefs(void)
 		InitDefaultPrefs();
 	}
 
+	memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
+
 	return iErr;
 }
 
@@ -426,6 +430,13 @@ OSErr LoadPrefs(void)
 
 OSErr SavePrefs(void)
 {
+	if (0 == memcmp(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType)))
+	{
+		return noErr;
+	}
+
+	memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
+
 	return SaveUserDataFile(PREFS_FILENAME, PREFS_MAGIC, sizeof(gGamePrefs), (Ptr) &gGamePrefs);
 }
 

@@ -27,10 +27,6 @@ float RandomFloat2(void);
 
 void MyFlushEvents(void);
 
-Boolean WeAreFrontProcess(void);
-OSErr LoadOurPrefs(void);
-void SaveOurPrefs(void);
-
 int16_t SwizzleShort(const int16_t *shortPtr);
 int32_t SwizzleLong(const int32_t *longPtr);
 float SwizzleFloat(const float *floatPtr);

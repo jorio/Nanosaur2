@@ -298,20 +298,14 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 
 		case	'intr':										// STORY
-			if (gGamePrefs.cutsceneSubtitles)
-			{
-				gGamePrefs.cutsceneSubtitles = false;
-				SavePrefs();
-			}
+			gGamePrefs.cutsceneSubtitles = false;
+			SavePrefs();
 			DoIntroStoryScreen();
 			break;
 
 		case	'ints':
-			if (!gGamePrefs.cutsceneSubtitles)
-			{
-				gGamePrefs.cutsceneSubtitles = true;
-				SavePrefs();
-			}
+			gGamePrefs.cutsceneSubtitles = true;
+			SavePrefs();
 			DoIntroStoryScreen();
 			break;
 

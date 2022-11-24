@@ -119,6 +119,8 @@ void DoPaused(void)
 
 static void OnExitPause(int outcome)
 {
+	SavePrefs();									// save prefs in case user touched them
+
 	gGamePaused = false;
 	GrabMouse(true);
 	PauseAllChannels(false);

@@ -502,30 +502,6 @@ void MyFlushEvents(void)
 
 #pragma mark -
 
-
-/************************* WE ARE FRONT PROCESS ******************************/
-
-Boolean WeAreFrontProcess(void)
-{
-	SOFTIMPME;
-	return true;
-#if 0
-ProcessSerialNumber	frontProcess, myProcess;
-Boolean				same;
-
-	GetFrontProcess(&frontProcess); 					// get the front process
-	MacGetCurrentProcess(&myProcess);					// get the current process
-
-	SameProcess(&frontProcess, &myProcess, &same);		// if they're the same then we're in front
-
-	return(same);
-#endif
-}
-
-
-#pragma mark -
-
-
 /********************* SWIZZLE SHORT **************************/
 
 int16_t SwizzleShort(const int16_t *shortPtr)

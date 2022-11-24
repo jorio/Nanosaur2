@@ -23,6 +23,13 @@ static int ShowMenuEntryInGameOnly(void)
 	return gPlayNow ? 0 : kMILayoutFlagHidden;
 }
 
+static void OnEnterSettingsMenu(void)
+{
+	// When re-entering the settings root menu, save the prefs in case the user touched any settings
+	// (SavePrefs is smart and won't actually hit the disk if the prefs didn't change)
+	SavePrefs();
+}
+
 static void OnPickLanguage(void)
 {
 	gGamePrefs.language = GetCurrentMenuItemID();
@@ -137,7 +144,7 @@ static const MenuItem gSettingsMenuTree[] =
 	//-------------------------------------------------------------------------
 	// SETTINGS ROOT MENU
 
-	{ .id='sett' },
+	{ .id='sett', .callback=OnEnterSettingsMenu},
 	{kMIPick, STR_GENERAL,			.next='gene'},
 	{kMIPick, STR_CONTROLS,			.next='ctrl'},
 	{kMIPick, STR_GRAPHICS,			.next='graf'},

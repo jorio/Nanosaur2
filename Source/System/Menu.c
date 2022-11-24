@@ -280,6 +280,11 @@ float GetMenuIdleTime(void)
 	return gNav->idleTime;
 }
 
+bool IsMenuMouseControlled(void)
+{
+	return gNav? gNav->mouseControl: false;
+}
+
 void KillMenu(int returnCode)
 {
 	if (gNav->menuState == kMenuStateReady)

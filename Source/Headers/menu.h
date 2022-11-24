@@ -113,6 +113,7 @@ ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style);
 void LayoutCurrentMenuAgain(void);
 int GetCurrentMenu(void);
 int GetCurrentMenuItemID(void);
+bool IsMenuMouseControlled(void);
 ObjNode* GetCurrentMenuItemObject(void);
 float GetMenuIdleTime(void);
 void KillMenu(int returnCode);

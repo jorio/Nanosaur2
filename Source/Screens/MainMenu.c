@@ -432,19 +432,21 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 
 	UpdateObjectTransforms(theNode);
 
-
-	Boolean visible = SetObjectVisible(theNode, !gUserPrefersGamepad);
+	//Boolean visible = !gUserPrefersGamepad;
+	Boolean visible = !gUserPrefersGamepad && IsMenuMouseControlled();
 
 	if (visible)
 	{
 		// Fade in to prevent jarring cursor warp when exiting mouse grab mode
-		theNode->ColorFilter.a += 4.0f * gFramesPerSecondFrac;
-		if (theNode->ColorFilter.a >= 1)
+		theNode->ColorFilter.a += 8.0f * gFramesPerSecondFrac;
+		if (theNode->ColorFilter.a > 1)
 			theNode->ColorFilter.a = 1;
 	}
 	else
 	{
-		theNode->ColorFilter.a = 0;
+		theNode->ColorFilter.a -= 4.0f * gFramesPerSecondFrac;
+		if (theNode->ColorFilter.a < 0)
+			theNode->ColorFilter.a = 0;
 	}
 }
 

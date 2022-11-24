@@ -762,6 +762,7 @@ static void CleanupLevel(void)
 	DisposeAllSpriteGroups();
 	DisposeAllBG3DContainers();
 	DisposeContrails();
+	FreeAllZaps();
 
 	OGL_DisposeGameView();	// do this last!
 

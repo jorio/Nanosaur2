@@ -132,6 +132,7 @@ Boolean AddForestDoorKey(TerrainItemEntryType *itemPtr, float  x, float z);
 
 Boolean AddElectrode(TerrainItemEntryType *itemPtr, float  x, float z);
 void InitZaps(void);
+void FreeAllZaps(void);
 
 
 		/* POWS */

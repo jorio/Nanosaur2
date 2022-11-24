@@ -53,7 +53,6 @@ typedef struct
 	short		endpointSparkles[2];
 
 	OGLPoint3D	endpointCoords[MAX_ZAP_ENDPOINTS];
-	OGLVector3D	endpointDeltas[MAX_ZAP_ENDPOINTS];
 
 	MOVertexArrayData	triMesh[2];								// double-buffered VAR trimeshes
 }ZapType;
@@ -71,7 +70,6 @@ typedef struct
 
 
 
-static	short			gNumZaps = 0;
 static	ZapType			gZaps[MAX_ZAPS];
 
 static	short			gZapBuffer = 0;								// which VAR double buffer? 0 or 1
@@ -517,8 +515,6 @@ short		i;
 
 	gZapBuffer = 0;
 
-	gNumZaps = 0;
-
 	for (i = 0; i < MAX_ZAPS; i++)
 		gZaps[i].isUsed = false;				// all slots are free
 
@@ -542,6 +538,19 @@ short		i;
 	newObj->Damage = 1.0f;
 }
 
+
+/********************* FREE ALL ZAPS **************************/
+
+void FreeAllZaps(void)
+{
+	for (short i = 0; i < MAX_ZAPS; i++)
+	{
+		if (gZaps[i].isUsed)
+		{
+			FreeZap(i);
+		}
+	}
+}
 
 /********************* ALLOCATE ZAP GEOMETRY **************************/
 //
@@ -756,24 +765,25 @@ short	i;
 
 static void FreeZap(short zapNum)
 {
-MOVertexArrayData	*triMesh;
-short	b, i;
+	GAME_ASSERT_MESSAGE(gZaps[zapNum].isUsed, "Zap already freed");
 
-	for (b = 0; b < 2; b++)
+	for (int b = 0; b < 2; b++)
 	{
-		triMesh = &gZaps[zapNum].triMesh[b];
+		MOVertexArrayData* triMesh = &gZaps[zapNum].triMesh[b];
 
 		OGL_FreeVertexArrayMemory(triMesh->points, VERTEX_ARRAY_RANGE_TYPE_ZAPS1+b);
 		OGL_FreeVertexArrayMemory(triMesh->uvs[0], VERTEX_ARRAY_RANGE_TYPE_ZAPS1+b);
 		OGL_FreeVertexArrayMemory(triMesh->triangles, VERTEX_ARRAY_RANGE_TYPE_ZAPS1+b);
 
-
+		triMesh->points = NULL;
+		triMesh->uvs[0] = NULL;
+		triMesh->triangles = NULL;
 	}
 
 
 		/* FREE SPARKLES */
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		if (gZaps[zapNum].endpointSparkles[i] != -1)
 		{

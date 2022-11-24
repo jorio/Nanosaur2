@@ -27,9 +27,9 @@ static void CreateDummyInitObject(void);
 /*    CONSTANTS             */
 /****************************/
 
-#define	OBJ_DEL_Q_SIZE	500
+#define	OBJ_DEL_Q_SIZE	1500
 
-#define MAX_OBJECTS		2500
+#define MAX_OBJECTS		5000
 
 /**********************/
 /*     VARIABLES      */
@@ -51,6 +51,7 @@ ObjNode		*gObjectDeleteQueue[OBJ_DEL_Q_SIZE];
 float		gAutoFadeStartDist,gAutoFadeEndDist,gAutoFadeRange_Frac;
 
 int			gNumObjectNodes;
+int			gNumObjectNodesPeak = 0;
 
 static  ObjNode *gClearedObj;
 
@@ -232,6 +233,17 @@ got_it:
 	AttachObject(newNodePtr, false);
 
 	gNumObjectNodes++;
+
+	if (gNumObjectNodes > gNumObjectNodesPeak)
+	{
+		gNumObjectNodesPeak = gNumObjectNodes;
+#if _DEBUG
+		if (gNumObjectNodesPeak > MAX_OBJECTS)
+		{
+			printf("[%d] WARNING: New object count peak: %d. Consider raising MAX_OBJECTS!\n", gGameFrameNum, gNumObjectNodesPeak);
+		}
+#endif
+	}
 
 
 				/* CLEANUP */

@@ -699,7 +699,12 @@ float	fps;
 
 static void ShowTimeDemoResults(int numFrames, float numSeconds, float averageFPS)
 {
-	DoAlert("%s:\nFrames: %d\nTime: %f\nAverage FPS: %f", __func__, numFrames, numSeconds, averageFPS);
+	DoAlert("%s:\n"
+			"Frames: %d\n"
+			"Time: %f\n"
+			"Average FPS: %f\n"
+			"Peak #Objs: %d",
+			__func__, numFrames, numSeconds, averageFPS, gNumObjectNodesPeak);
 }
 
 
@@ -854,6 +859,7 @@ float			x,z,placement;
 		.slot 		= 0,
 		.moveCall 	= nil,
 		.flags 		= 0,
+		.scale		= 1,
 	};
 
 	newObj = MakeNewObject(&def);

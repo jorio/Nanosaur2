@@ -259,20 +259,17 @@ static void DrawFadePane(ObjNode* theNode)
 	OGL_PushState();
 	SetInfobarSpriteState(0, 1);
 
-	//glDisable(GL_TEXTURE_2D);
 	OGL_DisableTexture2D();
 
-	OGL_SetColor4f(0, 0, 0, 1.0f - gGammaFadeFrac);// (GLfloat*)&theNode->ColorFilter);
 	OGL_EnableBlend();
+	OGL_SetColor4f(0, 0, 0, 1.0f - gGammaFadeFrac);
 
 	glBegin(GL_QUADS);
-	glVertex3f(-1000, -1000, 0);
-	glVertex3f( 1000, -1000, 0);
-	glVertex3f( 1000,  1000, 0);
-	glVertex3f(-1000,  1000, 0);
+	glVertex3f(gLogicalRect.right, gLogicalRect.top, 0);
+	glVertex3f(gLogicalRect.left, gLogicalRect.top, 0);
+	glVertex3f(gLogicalRect.left, gLogicalRect.bottom, 0);
+	glVertex3f(gLogicalRect.right, gLogicalRect.bottom, 0);
 	glEnd();
-
-//	glDisable(GL_BLEND);
 
 	OGL_PopState();
 }

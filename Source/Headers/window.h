@@ -27,6 +27,4 @@ void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void));
 void Enter2D(void);
 void Exit2D(void);
 
-void DoAnaglyphCalibrationDialog(void);
-
 void SetFullscreenMode(bool enforceDisplayPref);

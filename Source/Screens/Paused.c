@@ -51,10 +51,17 @@ static void OnToggleSplitscreenMode(void)
 /*    CONSTANTS             */
 /****************************/
 
-#define	PAUSED_FONT_SCALE	30.0f
-#define	PAUSED_LINE_SPACING	(PAUSED_FONT_SCALE * 1.1f)
-
 #define	PAUSED_TEXT_ANAGLYPH_Z	5.0f
+
+static const MenuItem gReallyQuitMenuTree[] =
+{
+	{ .id='rlyq' },
+	{kMILabel, .text=STR_REALLY_QUIT, .customHeight=1},
+	{kMISpacer, .customHeight=0.5f},
+	{kMIPick, STR_RESUME, .id='resu', .next='EXIT' },
+	{kMIPick, STR_QUIT, .id='quit', .next='EXIT' },
+	{0},
+};
 
 static const MenuItem gPauseMenuTree[] =
 {
@@ -114,6 +121,23 @@ void DoPaused(void)
 	style.startButtonExits = true;
 	style.exitCall = OnExitPause;
 	MakeMenu(gPauseMenuTree, &style);
+	RegisterSettingsMenu();
+}
+
+void DoReallyQuit(void)
+{
+	gGamePaused = true;
+	GrabMouse(false);
+	PauseAllChannels(true);
+
+	gMouseCursor = MakeMouseCursorObject();
+
+	MenuStyle style = kDefaultMenuStyle;
+	style.canBackOutOfRootMenu = true;
+	style.darkenPaneOpacity = .6f;
+	style.startButtonExits = true;
+	style.exitCall = OnExitPause;
+	MakeMenu(gReallyQuitMenuTree, &style);
 	RegisterSettingsMenu();
 }
 

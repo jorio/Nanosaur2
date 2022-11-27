@@ -44,7 +44,8 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                            <menuItem title="Quit" keyEquivalent="q" id="4sb-4s-VLi">
+                            <menuItem title="Quit" id="4sb-4s-VLi">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="terminate:" target="-1" id="Te7-pn-YzF"/>
                                 </connections>

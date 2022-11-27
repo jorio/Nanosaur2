@@ -5,6 +5,7 @@
 #pragma once
 
 void DoPaused(void);
+void DoReallyQuit(void);
 
 void DoLegalScreen(void);
 

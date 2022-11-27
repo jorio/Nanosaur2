@@ -154,8 +154,13 @@ static void UpdateRawKeyboardStates(void)
 		UpdateKeyState(&gKeyboardStates[i], false);
 }
 
-static void ParseAltEnter(void)
+static void ProcessSystemKeyChords(void)
 {
+	if ((gGamePaused || !gPlayNow) && IsCmdQDown())
+	{
+		CleanQuit();
+	}
+
 	if (IsKeyDown(SDL_SCANCODE_RETURN)
 		&& (IsKeyHeld(SDL_SCANCODE_LALT) || IsKeyHeld(SDL_SCANCODE_RALT)))
 	{
@@ -310,64 +315,50 @@ void DoSDLMaintenance(void)
 				return;
 
 			case SDL_WINDOWEVENT:
-				switch (event.window.event)
+				if (event.window.event == SDL_WINDOWEVENT_CLOSE)
 				{
-					case SDL_WINDOWEVENT_CLOSE:
-						CleanQuit();	// throws Pomme::QuitRequest
-						return;
-
-					/*
-					case SDL_WINDOWEVENT_RESIZED:
-						QD3D_OnWindowResized(event.window.data1, event.window.data2);
-						break;
-					*/
+					CleanQuit();		// throws Pomme::QuitRequest
 				}
 				break;
 
-				case SDL_TEXTINPUT:
-					memcpy(gTextInput, event.text.text, sizeof(gTextInput));
-					_Static_assert(sizeof(gTextInput) == sizeof(event.text.text), "size mismatch: gTextInput/event.text.text");
-					break;
+			case SDL_KEYDOWN:
+				gUserPrefersGamepad = false;
+				break;
 
-				case SDL_MOUSEMOTION:
-					gMouseMotionNow = true;
-					gUserPrefersGamepad = false;
+			case SDL_TEXTINPUT:
+				memcpy(gTextInput, event.text.text, sizeof(gTextInput));
+				_Static_assert(sizeof(gTextInput) == sizeof(event.text.text), "size mismatch: gTextInput/event.text.text");
+				break;
+
+			case SDL_MOUSEMOTION:
+				gMouseMotionNow = true;
+				gUserPrefersGamepad = false;
 #if MOUSE_SMOOTHING
-					MouseSmoothing_OnMouseMotion(&event.motion);
+				MouseSmoothing_OnMouseMotion(&event.motion);
 #endif
-					break;
+				break;
 
-				case SDL_MOUSEWHEEL:
-					gUserPrefersGamepad = false;
-					mouseWheelDeltaX += event.wheel.y;
-					mouseWheelDeltaY += event.wheel.x;
-					break;
+			case SDL_MOUSEWHEEL:
+				gUserPrefersGamepad = false;
+				mouseWheelDeltaX += event.wheel.y;
+				mouseWheelDeltaY += event.wheel.x;
+				break;
 
-				case SDL_CONTROLLERDEVICEADDED:
-					// event.cdevice.which is the joystick's DEVICE INDEX (not an instance id!)
-					TryOpenControllerFromJoystick(event.cdevice.which);
-					break;
+			case SDL_CONTROLLERDEVICEADDED:
+				// event.cdevice.which is the joystick's DEVICE INDEX (not an instance id!)
+				TryOpenControllerFromJoystick(event.cdevice.which);
+				break;
 
-				case SDL_CONTROLLERDEVICEREMOVED:
-					// event.cdevice.which is the joystick's UNIQUE INSTANCE ID (not an index!)
-					OnJoystickRemoved(event.cdevice.which);
-					break;
+			case SDL_CONTROLLERDEVICEREMOVED:
+				// event.cdevice.which is the joystick's UNIQUE INSTANCE ID (not an index!)
+				OnJoystickRemoved(event.cdevice.which);
+				break;
 
-				/*
-				case SDL_CONTROLLERDEVICEREMAPPED:
-					printf("C-Device remapped! %d\n", event.cdevice.which);
-					break;
-				*/
-
-				case SDL_KEYDOWN:
-					gUserPrefersGamepad = false;
-					break;
-
-				case SDL_CONTROLLERBUTTONDOWN:
-				case SDL_CONTROLLERBUTTONUP:
-				case SDL_JOYBUTTONDOWN:
-					gUserPrefersGamepad = true;
-					break;
+			case SDL_CONTROLLERBUTTONDOWN:
+			case SDL_CONTROLLERBUTTONUP:
+			case SDL_JOYBUTTONDOWN:
+				gUserPrefersGamepad = true;
+				break;
 		}
 	}
 
@@ -375,8 +366,9 @@ void DoSDLMaintenance(void)
 	// Refresh the state of each individual keyboard key
 	UpdateRawKeyboardStates();
 
-	// On ALT+ENTER, toggle fullscreen, and ignore ENTER until keyup
-	ParseAltEnter();
+	// On ALT+ENTER, toggle fullscreen, and ignore ENTER until keyup.
+	// Also, on macOS, process Cmd+Q.
+	ProcessSystemKeyChords();
 
 	// Refresh the state of each mouse button
 	UpdateMouseButtonStates(mouseWheelDeltaX, mouseWheelDeltaY);
@@ -512,6 +504,17 @@ Boolean UserWantsOut(void)
 		|| IsNeedDown(kNeed_UIPause, ANY_PLAYER)
 //		|| GetNewClickState(SDL_BUTTON_LEFT)
         ;
+}
+
+Boolean IsCmdQDown(void)
+{
+#if __APPLE__
+	return (IsKeyHeld(SDL_SCANCODE_LGUI) || IsKeyHeld(SDL_SCANCODE_RGUI))
+		&& IsKeyDown(SDL_GetScancodeFromKey(SDLK_q));
+#else
+	// On non-macOS systems, alt-f4 is handled by the system
+	return false;
+#endif
 }
 
 Boolean IsCheatKeyComboDown(void)

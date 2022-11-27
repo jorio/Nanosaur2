@@ -4,9 +4,6 @@
 
 #pragma once
 
-
-		/* NEEDS */
-
 #define ANY_PLAYER (-1)
 
 #define MAX_USER_BINDINGS_PER_NEED			2
@@ -88,25 +85,6 @@ enum
 
 //============================================================================================
 
-#if 0
-
-void InitInput(void);
-void UpdateInput(void);
-Boolean GetNewKeyState(unsigned short key);
-Boolean GetKeyState(unsigned short key);
-Boolean AreAnyNewKeysPressed(void);
-void UpdateKeyMap(void);
-
-
-void ShutdownHID(void);
-
-void DoInputConfigDialog(void);
-
-void BuildHIDControlSettings(HIDControlSettingsType *settings);
-void RestoreHIDControlSettings(HIDControlSettingsType *settings);
-#endif
-
-
 void InitInput(void);
 void InvalidateAllInputs(void);
 void InvalidateNeedState(int need);
@@ -134,6 +112,7 @@ float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID
 OGLVector2D GetAnalogSteering(int playerID);
 
 Boolean UserWantsOut(void);
+Boolean IsCmdQDown(void);
 Boolean IsCheatKeyComboDown(void);
 
 void DoSDLMaintenance(void);

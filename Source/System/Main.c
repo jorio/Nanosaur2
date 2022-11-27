@@ -625,6 +625,13 @@ float	fps;
 			DoPaused();
 		}
 
+#if __APPLE__
+		if (IsCmdQDown())
+		{
+			DoReallyQuit();
+		}
+#endif
+
 #if 0
 		if (GetNewKeyState(KEY_F15))								// do screen-saver-safe paused mode
 		{

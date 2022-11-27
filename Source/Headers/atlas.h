@@ -19,6 +19,7 @@ enum
 	kTextMeshGlow						= 1<<5,
 	kTextMeshKeepCurrentProjection		= 1<<6,
 	kTextMeshAllCaps					= 1<<7,
+	kTextMeshSmallCaps					= 1<<8,
 };
 
 enum
@@ -26,6 +27,7 @@ enum
 	kAtlasLoadAsSingleSprite	= 1,
 	kAtlasLoadFont				= 2,
 	kAtlasLoadAltSkin1			= 4,
+	kAtlasLoadFontIsUpperCaseOnly	= 8,
 };
 
 typedef struct
@@ -60,6 +62,7 @@ typedef struct Atlas
 	uint8_t* kernTracking;
 
 	bool isASCIIFont;
+	bool isASCIIFontUpperCaseOnly;
 } Atlas;
 
 Atlas* Atlas_Load(const char* atlasName, int flags);

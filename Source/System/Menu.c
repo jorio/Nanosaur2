@@ -232,7 +232,7 @@ static void InitMenuNavigation(void)
 
 	for (int i = 0; i < 2; i++)
 	{
-		nav->arrowObjects[i] = TextMesh_New(i == 0 ? "<" : ">", 0, &arrowDef);
+		nav->arrowObjects[i] = TextMesh_New(i == 0 ? "(" : ")", 0, &arrowDef);
 		nav->arrowObjects[i]->ColorFilter = nav->style.arrowColor;
 		SendNodeToOverlayPane(nav->arrowObjects[i]);
 	}
@@ -486,7 +486,7 @@ static ObjNode* MakeKbText(int row, int keyNo)
 		kbName = GetKeyBindingName(row, keyNo);
 	}
 
-	ObjNode* node = MakeText(kbName, row, 1+keyNo, kTextMeshAllCaps | kTextMeshAlignLeft);
+	ObjNode* node = MakeText(kbName, row, 1+keyNo, kTextMeshSmallCaps | kTextMeshAlignLeft);
 	GetMenuNodeData(node)->col = keyNo;
 	return node;
 }
@@ -504,7 +504,7 @@ static ObjNode* MakePbText(int row, int btnNo)
 		pbName = GetPadBindingName(row, btnNo);
 	}
 
-	ObjNode* node = MakeText(pbName, row, 1+btnNo, kTextMeshAllCaps | kTextMeshAlignLeft);
+	ObjNode* node = MakeText(pbName, row, 1+btnNo, kTextMeshSmallCaps | kTextMeshAlignLeft);
 	GetMenuNodeData(node)->col = btnNo;
 	return node;
 }
@@ -547,7 +547,7 @@ static void ReplaceMenuText(LocStrID originalTextInMenuDefinition, LocStrID newT
 	{
 		if (gNav->menu[i].text == originalTextInMenuDefinition)
 		{
-			MakeText(Localize(newText), i, 0, 0);
+			MakeText(Localize(newText), i, 0, kTextMeshSmallCaps);
 		}
 	}
 }
@@ -1921,7 +1921,7 @@ static ObjNode* LayOutLabel(int row)
 	int atlasBackup = gNav->style.fontAtlas;
 	gNav->style.fontAtlas = ATLAS_GROUP_FONT2;
 
-	ObjNode* label = MakeText(GetMenuItemLabel(entry), row, 0, 0);
+	ObjNode* label = MakeText(GetMenuItemLabel(entry), row, 0, kTextMeshSmallCaps);
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
 
@@ -1976,7 +1976,7 @@ static ObjNode* LayOutCycler1(int row)
 	else
 		snprintf(buf, bufSize, "%s: %s", GetMenuItemLabel(entry), GetCyclerValueText(row));
 
-	ObjNode* node = MakeText(buf, row, 0, 0);
+	ObjNode* node = MakeText(buf, row, 0, kTextMeshSmallCaps);
 	node->MoveCall = MoveAction;
 	node->LeftOff -= CYCLER_ARROW_PADDING;
 	node->RightOff += CYCLER_ARROW_PADDING;
@@ -2023,9 +2023,9 @@ static ObjNode* LayOutKeyBinding(int row)
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	int atlasBackup = gNav->style.fontAtlas;
-	gNav->style.fontAtlas = ATLAS_GROUP_FONT1;
+	gNav->style.fontAtlas = ATLAS_GROUP_FONT2;
 
-	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
+	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
@@ -2051,9 +2051,9 @@ static ObjNode* LayOutPadBinding(int row)
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	int atlasBackup = gNav->style.fontAtlas;
-	gNav->style.fontAtlas = ATLAS_GROUP_FONT1;
+	gNav->style.fontAtlas = ATLAS_GROUP_FONT2;
 
-	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
+	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
@@ -2079,9 +2079,9 @@ static ObjNode* LayOutMouseBinding(int row)
 	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	int atlasBackup = gNav->style.fontAtlas;
-	gNav->style.fontAtlas = ATLAS_GROUP_FONT1;
+	gNav->style.fontAtlas = ATLAS_GROUP_FONT2;
 
-	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft);
+	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;

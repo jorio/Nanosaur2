@@ -49,13 +49,13 @@ static struct
 }
 kCreditsText[] =
 {
-	{ "PROGRAMMING & DESIGN", "B\vRIAN\r G\vREENSTONE\r" },
-	{ "ART & DESIGN", "S\vCOTT\r H\vARPER\r" },
-	{ "MUSIC", "A\vLEKSANDER\r D\vIMITRIJEVIC\r" },
-	{ "ANIMATION", "P\vETER\r G\vREENSTONE\r" },
-	{ "ILLUSTRATOR", "R\vICH\r B\vONK\r" },
-	{ "COLORIST", "B\vEN\r P\vRENEVOST\r" },
-	{ "ADDITIONAL PROGRAMMING", "I\vLIYAS\r J\vORIO\r" },
+	{ "PROGRAMMING & DESIGN", "Brian Greenstone" },
+	{ "ART & DESIGN", "Scott Harper" },
+	{ "MUSIC", "Aleksander Dimitrijevic" },
+	{ "ANIMATION", "Peter Greenstone" },
+	{ "ILLUSTRATOR", "Rich Bonk" },
+	{ "COLORIST", "Ben Prenevost" },
+	{ "ADDITIONAL PROGRAMMING", "Iliyas Jorio" },
 	{ 0 },
 };
 
@@ -682,7 +682,7 @@ static void SetupCreditsObjects(void)
 			.group		= ATLAS_GROUP_FONT2,
 			.coord		= {640/2, 400, 0},
 			.slot		= SPRITE_SLOT,
-			.scale		= 0.5f,
+			.scale		= 0.4f,
 			.moveCall	= MoveCreditsLine,
 		};
 
@@ -694,8 +694,8 @@ static void SetupCreditsObjects(void)
 
 		textDef.group = ATLAS_GROUP_FONT1;
 		textDef.coord.y += 32;
-		textDef.scale = 0.7f;
-		objs[1] = TextMesh_New(kCreditsText[i].name, kTextMeshAlignCenter, &textDef);
+		textDef.scale = 0.6f;
+		objs[1] = TextMesh_New(kCreditsText[i].name, kTextMeshAlignCenter | kTextMeshSmallCaps, &textDef);
 		objs[1]->AnaglyphZ = 6.0f;
 
 		for (int j = 0; j < 2; j++)

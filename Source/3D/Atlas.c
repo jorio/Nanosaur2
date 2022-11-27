@@ -62,7 +62,7 @@ Atlas*					gAtlases[MAX_ATLASES];
 /*                         UTF-8                               */
 /***************************************************************/
 
-static uint32_t ReadNextCodepointFromUTF8(const char** utf8TextPtr, int flags)
+static uint32_t ReadNextCodepointFromUTF8(const char** utf8TextPtr)//, int flags)
 {
 #define TRY_ADVANCE(t) do { if (!*(t)) return 0; else (t)++; } while(0)
 
@@ -100,14 +100,35 @@ static uint32_t ReadNextCodepointFromUTF8(const char** utf8TextPtr, int flags)
 		*utf8TextPtr += 4;
 	}
 
-	if (flags & kTextMeshAllCaps)
-	{
-		codepoint = toupper(codepoint);
-	}
-
 	return codepoint;
 
 #undef TRY_ADVANCE
+}
+
+static uint32_t ToUpperUnicode(uint32_t c)
+{
+	if ((c >= 0x0061 && c <= 0x007A)		// ascii: a...z
+		|| (c >= 0x00E0 && c <= 0x00F6)		// latin-1: agrave...ouml
+		|| (c >= 0x00F8 && c <= 0x00FE))	// latin-1: oslash...thorn
+	{
+		return c - 0x0020;
+	}
+	else if (c == 0x00FF)					// yuml
+	{
+		return 0x0178;
+	}
+	else if ((c >= 0x0100 && c <= 0x0137)	// latin extended-A (uppercase even indices)
+		|| (c >= 0x014A && c <= 0x0177))
+	{
+		return c & ~1;
+	}
+	else if ((c >= 0x0139 && c <= 0x0148)	// latin extended-A (uppercase odd indices)
+		|| (c >= 0x179 && c <= 0x017E))
+	{
+		return c | 1;
+	}
+
+	return c;
 }
 
 /***************************************************************/
@@ -245,10 +266,10 @@ static void ParseKerningFile(Atlas* atlas, const char* data)
 
 	while (*data)
 	{
-		uint32_t codepoint1 = ReadNextCodepointFromUTF8(&data, 0);
+		uint32_t codepoint1 = ReadNextCodepointFromUTF8(&data);
 		GAME_ASSERT(codepoint1);
 		
-		uint32_t codepoint2 = ReadNextCodepointFromUTF8(&data, 0);
+		uint32_t codepoint2 = ReadNextCodepointFromUTF8(&data);
 		GAME_ASSERT(codepoint2);
 
 		SkipWhitespace(&data);
@@ -333,6 +354,7 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 	if (flags & kAtlasLoadFont)
 	{
 		atlas->isASCIIFont = true;
+		atlas->isASCIIFontUpperCaseOnly = flags & kAtlasLoadFontIsUpperCaseOnly;
 
 		atlas->maxPages = MAX_CODEPOINT_PAGES;
 		atlas->glyphPages = AllocPtrClear(sizeof(AtlasGlyph*) * atlas->maxPages);
@@ -478,7 +500,12 @@ static float Kern(const Atlas* font, const AtlasGlyph* glyph, const char* utftex
 	if (!glyph || !glyph->numKernPairs)
 		return 1;
 
-	uint32_t buddy = ReadNextCodepointFromUTF8(&utftext, flags);
+	uint32_t buddy = ReadNextCodepointFromUTF8(&utftext);
+
+	if (font->isASCIIFontUpperCaseOnly || (flags & (kTextMeshSmallCaps | kTextMeshAllCaps)))
+	{
+		buddy = ToUpperUnicode(buddy);
+	}
 
 	for (int i = glyph->kernTableOffset; i < glyph->kernTableOffset + glyph->numKernPairs; i++)
 	{
@@ -504,7 +531,7 @@ static void ComputeMetrics(const Atlas* atlas, const char* text, int flags, Text
 
 	for (const char* utftext = text; *utftext; )
 	{
-		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext, flags);
+		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext);
 
 		if (atlas->isASCIIFont)			// Parse control characters if it's a font
 		{
@@ -535,6 +562,17 @@ static void ComputeMetrics(const Atlas* atlas, const char* text, int flags, Text
 
 				default:
 					break;
+			}
+
+			if (flags & kTextMeshSmallCaps)
+			{
+				uint32_t oldCodepoint = codepoint;
+				codepoint = ToUpperUnicode(codepoint);
+				glyphScale = (codepoint == oldCodepoint) ? 1 : SUBSCRIPT_SCALE;
+			}
+			else if ((flags & kTextMeshAllCaps) || atlas->isASCIIFontUpperCaseOnly)
+			{
+				codepoint = ToUpperUnicode(codepoint);
 			}
 		}
 
@@ -639,7 +677,7 @@ static void PrepVertices(
 
 	for (const char* utftext = text; *utftext; )
 	{
-		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext, flags);
+		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext);
 
 		if (atlas->isASCIIFont)			// Parse control characters if it's a font
 		{
@@ -669,6 +707,27 @@ static void PrepVertices(
 				default:
 					break;
 			}
+
+			if (flags & kTextMeshSmallCaps)
+			{
+				uint32_t oldCodepoint = codepoint;
+				codepoint = ToUpperUnicode(codepoint);
+
+				if (codepoint == oldCodepoint)
+				{
+					y = metrics->lineOffsetY[currentLine];
+					glyphScale = 1;
+				}
+				else
+				{
+					y = metrics->lineOffsetY[currentLine] + atlas->lineHeight * (1.0f - SUBSCRIPT_SCALE * 1.05f);
+					glyphScale = SUBSCRIPT_SCALE;
+				}
+			}
+			else if ((flags & kTextMeshAllCaps) || atlas->isASCIIFontUpperCaseOnly)
+			{
+				codepoint = ToUpperUnicode(codepoint);
+			}
 		}
 
 		const AtlasGlyph* g = Atlas_GetGlyph(atlas, codepoint);
@@ -697,7 +756,9 @@ static void PrepVertices(
 
 		float xadv = g->xadv;
 		if (atlas->isASCIIFont)
+		{
 			xadv *= Kern(atlas, g, utftext, flags);
+		}
 
 		x += glyphScale * xadv;
 		p += 4;			// 4 more vertices

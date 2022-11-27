@@ -957,8 +957,8 @@ ObjNode	*player = gPlayerInfo[0].objNode;
 
 void LoadGlobalAssets(void)
 {
-	LoadSpriteAtlas(ATLAS_GROUP_FONT1, ":sprites:fonts:font", kAtlasLoadFont);
-	LoadSpriteAtlas(ATLAS_GROUP_FONT2, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadAltSkin1);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT1, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT2, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1);
 }
 
 void DisposeGlobalAssets(void)

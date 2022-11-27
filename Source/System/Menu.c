@@ -371,6 +371,8 @@ static InputBinding* GetBindingAtRow(int row)
 	return &gGamePrefs.bindings[gNav->menu[row].inputNeed];
 }
 
+// Our font doesn't have glyphs for every symbol on the keyboard,
+// so this function provides more verbose descriptions of some scancodes.
 static const char* GetKeyBindingName(int row, int col)
 {
 	int16_t scancode = GetBindingAtRow(row)->key[col];
@@ -382,6 +384,18 @@ static const char* GetKeyBindingName(int row, int col)
 		case SDL_SCANCODE_BACKSLASH:		return "Backslash";
 		case SDL_SCANCODE_GRAVE:			return "Backtick";
 		case SDL_SCANCODE_SEMICOLON:		return "Semicolon";
+		case SDL_SCANCODE_SLASH:			return "Slash";
+		case SDL_SCANCODE_LEFTBRACKET:		return "Left Bracket";
+		case SDL_SCANCODE_RIGHTBRACKET:		return "Right Bracket";
+		case SDL_SCANCODE_EQUALS:			return "Equals";
+		case SDL_SCANCODE_MINUS:			return "Dash";
+		case SDL_SCANCODE_PERIOD:			return "Period";
+		case SDL_SCANCODE_KP_PLUS:			return "Keypad Plus";
+		case SDL_SCANCODE_KP_MINUS:			return "Keypad Minus";
+		case SDL_SCANCODE_KP_DIVIDE:		return "Keypad Slash";
+		case SDL_SCANCODE_KP_MULTIPLY:		return "Keypad Star";
+		case SDL_SCANCODE_KP_PERIOD:		return "Keypad Period";
+		case SDL_SCANCODE_NONUSBACKSLASH:	return "ISO Extra Key";
 		default:							return SDL_GetScancodeName(scancode);
 	}
 }

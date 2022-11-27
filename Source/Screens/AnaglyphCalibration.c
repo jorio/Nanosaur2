@@ -169,7 +169,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	BuildMainMenuObjects();		// rebuild background image
 
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
 
 			/* CREATE HEAD SENTINEL - ALL ANAGLYPH CALIB OBJECTS WILL BE CHAINED TO IT */
 
@@ -218,7 +218,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 	NewObjectDefinitionType blurbDef =
 	{
 		.group		= ATLAS_GROUP_FONT3,
-		.scale		= 0.18f,
+		.scale		= 0.16f,
 		.slot		= SPRITE_SLOT+2,
 		.coord		= {10, 470, 0},
 	};

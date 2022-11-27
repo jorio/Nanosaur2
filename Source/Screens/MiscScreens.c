@@ -58,11 +58,11 @@ void DoLegalScreen(void)
 
 			/* BUILD OBJECTS */
 
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
 
 	NewObjectDefinitionType textDef =
 	{
-		.scale = 0.2f,
+		.scale = 0.19f,
 		.group = ATLAS_GROUP_FONT3,
 		.coord = {320,240-120,0},
 	};
@@ -80,9 +80,9 @@ void DoLegalScreen(void)
 		"",
 		"",
 		"",
-		"www.pangeasoft.net",
+		"pangeasoft.net",
 		"jorio.itch.io/nanosaur2",
-		"\v\u00A9 2004-2008 Pangea Software, Inc.  Nanosaur is a registered trademark of Pangea Software, Inc.\r",
+		"\v\xc2\xa9 2004-2008 Pangea Software, Inc.  Nanosaur is a registered trademark of Pangea Software, Inc.\r",
 		NULL
 	};
 

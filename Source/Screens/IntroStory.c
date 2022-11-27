@@ -298,7 +298,7 @@ OGLSetupInputType	viewDef;
 			/* LOAD SPRITES */
 
 	LoadSpriteGroupFromSeries(SPRITE_GROUP_LEVELSPECIFIC, NUM_SLIDES, "story");
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:subtitlefont", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
 
 	LoadSoundBank(SOUND_BANK_NARRATION);
 
@@ -576,27 +576,17 @@ static void MakeSubtitleObjects(int slideNum)
 			NewObjectDefinitionType def =
 			{
 				.coord = {640/2, 480-60 + 22*subRow, 0},
-				.scale = 35 * 0.5f,
+				.scale = 35 * 0.5f * 0.015f,
 				.slot = SPRITE_SLOT,
 				.group = ATLAS_GROUP_FONT3,
 				.flags = STATUS_BIT_HIDDEN,
 			};
 
-#if 0
-			ObjNode* textNode = MakeFontStringObject(cursor, &def, true);
-			textNode->SpecialF[0] = subDelay;
-			textNode->Health = subDuration;
-			textNode->MoveCall = MoveSubtitle;
-			//pChain->ChainNode = textNode;
-			//pChain = textNode;
-#else
-			def.scale *= 0.018f;
 			ObjNode* textNode = TextMesh_New(cursor, 0, &def);
 			textNode->SpecialF[0] = subDelay;
 			textNode->Health = subDuration;
 			textNode->MoveCall = MoveSubtitle;
-			puts(cursor);
-#endif
+			textNode->ColorFilter = (OGLColorRGBA){1,1,0.7,1};
 
 			subRow++;
 		}

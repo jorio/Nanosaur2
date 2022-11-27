@@ -1,4 +1,8 @@
-# Convert font exported by https://snowb.org to my atlas format for the pangea ports
+# Convert font exported by https://snowb.org to my atlas format for the pangea ports.
+# INSTRUCTIONS:
+# - Go to https://snowb.org and create a font
+# - Click "Export" and set "Export Type" to "BMFont (XML)"
+# - python3 rawdata/bmfont2atlas.py font.xml
 
 import os, sys, xmltodict, unicodedata
 

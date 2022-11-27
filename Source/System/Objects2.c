@@ -366,7 +366,7 @@ ObjNode	*AttachShadowToObject(ObjNode *theNode, int shadowType, float scaleX, fl
 		.coord		= {x,y,z},
 		.scale		= scaleX,
 		.rot		= theNode->Rot.y,
-		.flags		= STATUS_BIT_NOZWRITES|STATUS_BIT_NOLIGHTING|STATUS_BIT_NOFOG|gAutoFadeStatusBits,
+		.flags		= STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | gAutoFadeStatusBits,
 		.slot		=  (theNode->Slot >= SLOT_OF_DUMB+1) ? (theNode->Slot+1) : (SLOT_OF_DUMB+1),	// shadow *must* be after parent!
 		.moveCall	= nil,
 		.drawCall	= DrawShadow,

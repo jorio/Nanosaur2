@@ -64,9 +64,11 @@ def get_raw_glyph_info(path):
     fixw = glyphstr.endswith(".FIXW")
     glyphstr = glyphstr.removesuffix(".FIXW")
 
-    if glyphstr.startswith('#'):
-        glyphstr = glyphstr.removeprefix('#')
-        codepoint = int(glyphstr)
+    if glyphstr.startswith('#x'):
+        codepoint = int(glyphstr[2:], 16)
+        glyphstr = chr(codepoint)
+    elif glyphstr.startswith('#'):
+        codepoint = int(glyphstr[1:])
         glyphstr = chr(codepoint)
     elif len(glyphstr) > 1:
         glyphstr = html.unescape("&" + glyphstr + ";")

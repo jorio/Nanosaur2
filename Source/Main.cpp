@@ -226,7 +226,7 @@ retryVideo:
 	}
 
 	gSDLWindow = SDL_CreateWindow(
-			"Nanosaur 2 v" PROJECT_VERSION,
+			"Nanosaur II: Hatchling (v" PROJECT_VERSION ")",
 			SDL_WINDOWPOS_UNDEFINED_DISPLAY(display),
 			SDL_WINDOWPOS_UNDEFINED_DISPLAY(display),
 			initialWidth,

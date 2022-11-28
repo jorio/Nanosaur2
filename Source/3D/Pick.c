@@ -1064,7 +1064,6 @@ OGLVector3D			segVec;
 
 Boolean OGL_LineSegmentCollision_Fence(const OGLLineSegment *lineSeg, OGLPoint3D *worldHitCoord, OGLVector3D *hitNormal, float *distToHit)
 {
-short	i;
 Boolean				hit = false;
 OGLPoint3D			hitCoord;
 OGLVector3D			normal;
@@ -1088,8 +1087,20 @@ OGLBoundingBox		*bbox;
 			/* TEST AGAINST ALL FENCES */
 			/***************************/
 
-	for (i = 0; i < gNumFences; i++)
+	for (int i = 0; i < gNumFences; i++)
 	{
+				/* SKIP FENCE_TYPE_INVISIBLEBLOCKENEMY */
+				//
+				// Nano2 source port HACK: Only projectiles (Turrets, Blaster, HeatSeeker, Bomb)
+				// ever call this function, and we DON'T want them to explode when colliding with
+				// an invisible fence.
+				//
+
+		if (gFenceList[i].type == FENCE_TYPE_INVISIBLEBLOCKENEMY)
+		{
+			continue;
+		}
+
 				/* SEE IF LINE SEGMENT INTERSECTS THE BBOX */
 				//
 				// Remember tha the bbox test is approximate and can give false positives!

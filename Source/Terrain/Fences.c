@@ -25,14 +25,6 @@ static void MakeFenceGeometry(void);
 
 #define	FENCE_SINK_FACTOR	30.0f
 
-enum
-{
-	FENCE_TYPE_PINETREES,
-	FENCE_TYPE_INVISIBLEBLOCKENEMY,
-
-	NUM_FENCE_TYPES
-};
-
 
 /**********************/
 /*     VARIABLES      */
@@ -844,6 +836,7 @@ Boolean			isEnemy;
 	return(hit);
 }
 
+#if 0
 /******************** SEE IF LINE SEGMENT HITS FENCE **************************/
 //
 // returns True if hit a fence
@@ -967,6 +960,5 @@ Boolean			intersected;
 	return(false);
 }
 
-
-
+#endif
 

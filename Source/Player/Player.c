@@ -1230,5 +1230,21 @@ void UpdatePlayerSteering(int playerNum)
 
 	playerInfo->analogControlX = yaw;
 	playerInfo->analogControlZ = pitch;
+
+
+
+	/* FULL INVENTORY IF CHEAT KEY COMBO */
+
+	if (IsCheatKeyComboDown())
+	{
+		playerInfo->numFreeLives = GAME_MAX(playerInfo->numFreeLives, 3);
+		playerInfo->shieldPower = MAX_SHIELD_POWER;
+		playerInfo->health = 1;
+		playerInfo->jetpackFuel = 2;	// give me more fuel than the max
+		playerInfo->weaponQuantity[WEAPON_TYPE_BLASTER] = 999;
+		playerInfo->weaponQuantity[WEAPON_TYPE_CLUSTERSHOT] = 999;
+		playerInfo->weaponQuantity[WEAPON_TYPE_BOMB] = 999;
+		playerInfo->weaponQuantity[WEAPON_TYPE_HEATSEEKER] = 999;
+	}
 }
 

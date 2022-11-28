@@ -272,7 +272,7 @@ static void DisposeMenuNavigation(void)
 
 int GetCurrentMenu(void)
 {
-	return gNav->menuID;
+	return gNav ? gNav->menuID : 0;
 }
 
 float GetMenuIdleTime(void)

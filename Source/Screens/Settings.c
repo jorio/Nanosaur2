@@ -7,6 +7,7 @@
 #include "game.h"
 #include "uieffects.h"
 #include "miscscreens.h"
+#include "version.h"
 
 static int DisableMenuEntryInGame(void)
 {
@@ -66,6 +67,15 @@ static void OnPickResetMouseBindings(void)
 	LayoutCurrentMenuAgain();
 }
 
+static void MoveTemporaryGraphicsMenuText(ObjNode* theNode)
+{
+	if (GetCurrentMenu() != 'graf')
+	{
+		DeleteObject(theNode);
+	}
+}
+
+
 static void OnChangeVSync(void)
 {
 	SDL_GL_SetSwapInterval(gGamePrefs.vsync);
@@ -77,7 +87,8 @@ static int ShouldDisplayMSAA(void)
 	// macOS's OpenGL driver doesn't seem to handle MSAA very well,
 	// so don't expose the option unless the game was started with MSAA.
 
-	if (gCurrentAntialiasingLevel)
+	if (gCurrentAntialiasingLevel
+		|| gDebugMode != 0)
 	{
 		return 0;
 	}
@@ -90,14 +101,6 @@ static int ShouldDisplayMSAA(void)
 #endif
 }
 
-static void MoveMSAAWarning(ObjNode* theNode)
-{
-	if (GetCurrentMenu() != 'graf')
-	{
-		DeleteObject(theNode);
-	}
-}
-
 static void OnChangeMSAA(void)
 {
 	const long msaaWarningCookie = 'msaa';
@@ -105,7 +108,8 @@ static void OnChangeMSAA(void)
 	ObjNode* msaaWarning = NULL;
 	for (ObjNode* o = gFirstNodePtr; o != NULL; o = o->NextNode)
 	{
-		if (o->MoveCall == MoveMSAAWarning)
+		if (o->MoveCall == MoveTemporaryGraphicsMenuText
+			&& o->Special[0] == msaaWarningCookie)
 		{
 			msaaWarning = o;
 			break;
@@ -125,12 +129,12 @@ static void OnChangeMSAA(void)
 
 	NewObjectDefinitionType def =
 	{
-		.group = ATLAS_GROUP_FONT1,
-		.coord = {320, 450, 0},
-		.scale = 0.2f,
+		.group = ATLAS_GROUP_FONT2,
+		.coord = {320, 435, 0},
+		.scale = 0.25f,
 		.slot = SPRITE_SLOT,
 		.flags = STATUS_BIT_MOVEINPAUSE,
-		.moveCall = MoveMSAAWarning,
+		.moveCall = MoveTemporaryGraphicsMenuText,
 	};
 
 	msaaWarning = TextMesh_New(Localize(STR_ANTIALIASING_CHANGE_WARNING), 0, &def);
@@ -142,6 +146,31 @@ static void OnChangeMSAA(void)
 	MakeTwitch(msaaWarning, kTwitchPreset_MenuSelect);
 }
 
+static void OnEnterGraphicsMenu(void)
+{
+	NewObjectDefinitionType def =
+	{
+		.coord = {320, 480 - 8, 0},
+		.group = ATLAS_GROUP_FONT2,
+		.scale = 0.15,
+		.slot = SPRITE_SLOT,
+		.moveCall = MoveTemporaryGraphicsMenuText,
+		.flags = STATUS_BIT_MOVEINPAUSE,
+	};
+
+	char rendererInfo[256];
+	snprintf(rendererInfo, sizeof(rendererInfo), "%s, OpenGL %s, %s",
+		(const char*)glGetString(GL_RENDERER),
+		(const char*)glGetString(GL_VERSION),
+		SDL_GetCurrentVideoDriver());
+
+	ObjNode* rendererText = TextMesh_New(rendererInfo, kTextMeshSmallCaps | kTextMeshAlignBottom, &def);
+	rendererText->ColorFilter.a = 0.75f;
+	SendNodeToOverlayPane(rendererText);
+
+	// Create MSAA warning text if needed
+	OnChangeMSAA();
+}
 
 static const MenuItem gSettingsMenuTree[] =
 {
@@ -232,7 +261,7 @@ static const MenuItem gSettingsMenuTree[] =
 	//-------------------------------------------------------------------------
 	// GRAPHICS
 
-	{.id='graf'},
+	{.id='graf', .callback=OnEnterGraphicsMenu},
 	{
 		kMICycler1, STR_FULLSCREEN,
 		.callback=OnToggleFullscreen,
@@ -373,28 +402,6 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
-	// GAMEPAD
-
-	{ .id='gpad' },
-//	{kMISpacer, .customHeight=.35f },
-	{kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight=.5f },
-	{kMISpacer, .customHeight=.4f },
-	{kMIPadBinding, .inputNeed=kNeed_PitchUp },
-	{kMIPadBinding, .inputNeed=kNeed_PitchDown },
-	{kMIPadBinding, .inputNeed=kNeed_YawLeft },
-	{kMIPadBinding, .inputNeed=kNeed_YawRight },
-	{kMIPadBinding, .inputNeed=kNeed_Fire},
-	{kMIPadBinding, .inputNeed=kNeed_Jetpack },
-	{kMIPadBinding, .inputNeed=kNeed_NextWeapon },
-	{kMIPadBinding, .inputNeed=kNeed_PrevWeapon },
-	{kMIPadBinding, .inputNeed=kNeed_Drop },
-	{kMIPadBinding, .inputNeed=kNeed_CameraMode },
-	{kMISpacer, .customHeight=.25f },
-	{kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback=OnPickResetGamepadBindings, .customHeight=.5f },
-	{kMISpacer, .customHeight=.25f },
-	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
-
-	//-------------------------------------------------------------------------
 	// MOUSE
 
 	{ .id='mous' },
@@ -431,6 +438,28 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback=OnPickResetMouseBindings, .customHeight=.5f },
 	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	//-------------------------------------------------------------------------
+	// GAMEPAD
+
+	{ .id = 'gpad' },
+	//	{kMISpacer, .customHeight=.35f },
+	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .5f },
+	{ kMISpacer, .customHeight = .4f },
+	{ kMIPadBinding, .inputNeed = kNeed_PitchUp },
+	{ kMIPadBinding, .inputNeed = kNeed_PitchDown },
+	{ kMIPadBinding, .inputNeed = kNeed_YawLeft },
+	{ kMIPadBinding, .inputNeed = kNeed_YawRight },
+	{ kMIPadBinding, .inputNeed = kNeed_Fire },
+	{ kMIPadBinding, .inputNeed = kNeed_Jetpack },
+	{ kMIPadBinding, .inputNeed = kNeed_NextWeapon },
+	{ kMIPadBinding, .inputNeed = kNeed_PrevWeapon },
+	{ kMIPadBinding, .inputNeed = kNeed_Drop },
+	{ kMIPadBinding, .inputNeed = kNeed_CameraMode },
+	{ kMISpacer, .customHeight = .25f },
+	{ kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback = OnPickResetGamepadBindings, .customHeight = .5f },
+	{ kMISpacer, .customHeight = .25f },
+	{ kMIPick, STR_BACK_SYMBOL,		.next = 'BACK' },
 
 	//-------------------------------------------------------------------------
 	// END SENTINEL

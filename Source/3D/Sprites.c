@@ -161,6 +161,20 @@ void LoadSpriteGroupFromSeries(int groupNum, int numSprites, const char* seriesN
 }
 
 
+/**************** LOAD SPRITE GROUP FROM SEQUENCE OF IMAGE FILES **********************/
+
+void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** spritePaths)
+{
+	AllocSpriteGroup(groupNum, numSprites);
+
+	for (int i = 0; i < gNumSpritesInGroupList[groupNum]; i++)
+	{
+		gSpriteGroupList[groupNum][i] = LoadSpriteFromDualImage(spritePaths[i]);
+		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);
+	}
+}
+
+
 
 #pragma mark -
 

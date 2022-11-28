@@ -214,14 +214,20 @@ enum
 
 enum
 {
+	LEVEL1_SObjType_Fence_BlockEnemy,
 	LEVEL1_SObjType_Fence_PineTree,
 };
 
 enum
 {
+	LEVEL2_SObjType_Fence_BlockEnemy,
 	LEVEL2_SObjType_DustDevil,
 };
 
+enum
+{
+	LEVEL3_SObjType_Fence_BlockEnemy,
+};
 
 /***************** MAIN MENU *************************/
 

@@ -21,7 +21,7 @@ typedef struct
 void InitSpriteManager(void);
 void DisposeAllSpriteGroups(void);
 void DisposeSpriteGroup(int groupNum);
-void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths, int flags);
+void LoadSpriteGroupFromFiles(int groupNum, int numSprites, const char** paths);
 void LoadSpriteGroupFromFile(int groupNum, const char* path, int flags);
 void LoadSpriteGroupFromSeries(int groupNum, int numSprites, const char* seriesName);
 ObjNode *MakeSpriteObject(NewObjectDefinitionType *newObjDef, Boolean drawCentered);

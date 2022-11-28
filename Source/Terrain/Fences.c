@@ -46,7 +46,7 @@ FenceDefType	*gFenceList = nil;
 static const short			gFenceTexture[NUM_FENCE_TYPES][2] =
 {
 	[FENCE_TYPE_PINETREES]				= {SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_PineTree},
-	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= {0,	0},
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= {SPRITE_GROUP_LEVELSPECIFIC,	LEVEL1_SObjType_Fence_BlockEnemy},
 };
 
 
@@ -65,8 +65,8 @@ static const float			gFenceSink[NUM_FENCE_TYPES] =
 
 static const Boolean			gFenceIsLit[NUM_FENCE_TYPES] =
 {
-	[FENCE_TYPE_PINETREES]				= true,					// pine trees
-	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= false,					// invisible enemy blocker
+	[FENCE_TYPE_PINETREES]				= true,
+	[FENCE_TYPE_INVISIBLEBLOCKENEMY]	= false,
 };
 
 static MOMaterialObject			*gFenceMaterials[MAX_FENCES];				// illegal refs to material for each fence in terrain
@@ -448,8 +448,11 @@ short					f;
 			nubs = fence->nubList;										// point to nub list
 			numNubs = fence->numNubs;									// get # nubs in fence
 
-			if (fence->type == FENCE_TYPE_INVISIBLEBLOCKENEMY)			// dont bother with invisible fences
+			if (fence->type == FENCE_TYPE_INVISIBLEBLOCKENEMY			// don't bother with invisible fences
+				&& gDebugMode != 2)										// unless we're in debug mode
+			{
 				continue;
+			}
 
 			for (i = j = 0; i < numNubs; i++, j+=2)
 			{
@@ -507,8 +510,11 @@ Byte		buffNum;
 	{
 		type = gFenceList[f].type;							// get type
 
-		if (type == FENCE_TYPE_INVISIBLEBLOCKENEMY)			// dont bother with invisible fences
+		if (type == FENCE_TYPE_INVISIBLEBLOCKENEMY			// don't bother with invisible fences
+			&& gDebugMode != 2)								// unless we're in debug mode
+		{
 			continue;
+		}
 
 					/* DO BBOX CULLING */
 

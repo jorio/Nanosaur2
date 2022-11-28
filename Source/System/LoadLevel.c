@@ -129,19 +129,27 @@ char	path[256];
 			/* LOAD SPRITES */
 			/****************/
 
+	const char* levelSpecificSpritePaths[5] =
+	{
+		":sprites:textures:blockenemy",
+	};
+	int numLevelSpecificSprites = 1;
+
 	switch (currentBiome)
 	{
 		case BIOME_FOREST:
-			LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:textures:pinefence", 0);
+			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":sprites:textures:pinefence";
 			break;
 
 		case BIOME_DESERT:
-			LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:textures:dustdevil", 0);
+			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":sprites:textures:dustdevil";
 			break;
 
 		default:
 			break;
 	}
+
+	LoadSpriteGroupFromFiles(SPRITE_GROUP_LEVELSPECIFIC, numLevelSpecificSprites, levelSpecificSpritePaths);
 
 
 			/* LOAD OVERHEAD MAP */

@@ -1,5 +1,5 @@
 PRESET,CLASS,AXIS,EASING,DURATION,AMP,PERIOD,PHASE,DELAY
-MenuSelect,Heartbeat,xy,OutCubic,0.17,0.9,,,
+MenuSelect,Heartbeat,xy,OutCubic,0.19,0.91,,,
 MenuDeselect,Heartbeat,xy,OutQuad,0.14,1.1,,,
 MenuWiggle,Wiggle,x,Linear,0.35,25,3,,
 MenuFadeIn,MultAlphaFadeIn,,OutQuad,0.2,,,,

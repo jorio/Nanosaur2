@@ -20,6 +20,7 @@ enum
 	kTextMeshKeepCurrentProjection		= 1<<6,
 	kTextMeshAllCaps					= 1<<7,
 	kTextMeshSmallCaps					= 1<<8,
+	kTextMeshUserFlag1					= 1<<9,
 };
 
 enum

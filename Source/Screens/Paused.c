@@ -117,7 +117,7 @@ void DoPaused(void)
 
 	MenuStyle style = kDefaultMenuStyle;
 	style.canBackOutOfRootMenu = true;
-	style.darkenPaneOpacity = .6f;
+	style.darkenPaneOpacity = .5f;
 	style.startButtonExits = true;
 	style.exitCall = OnExitPause;
 	MakeMenu(gPauseMenuTree, &style);
@@ -134,7 +134,7 @@ void DoReallyQuit(void)
 
 	MenuStyle style = kDefaultMenuStyle;
 	style.canBackOutOfRootMenu = true;
-	style.darkenPaneOpacity = .6f;
+	style.darkenPaneOpacity = .5f;
 	style.startButtonExits = true;
 	style.exitCall = OnExitPause;
 	MakeMenu(gReallyQuitMenuTree, &style);

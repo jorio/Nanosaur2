@@ -50,8 +50,9 @@ static ObjNode* gAnaglyphScreenHead = NULL;
 static const MenuItem gInGameAnaglyphMenu[] =
 {
 	{.id='cali'},
+	{kMISpacer, .customHeight=1.5},
 	{kMILabel, STR_NO_ANAGLYPH_CALIBRATION_IN_GAME, .customHeight=1.0f},
-	{kMISpacer, .customHeight=3},
+	{kMISpacer, .customHeight=1.5},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
@@ -64,7 +65,7 @@ static const MenuItem gAnaglyphMenu[] =
 {
 	{.id='cali'},
 	{
-		kMICycler1, STR_3D_GLASSES_MODE,
+		kMICycler2, STR_3D_GLASSES_MODE,
 		.callback = OnChangeAnaglyphSetting,
 		.cycler =
 		{
@@ -79,7 +80,7 @@ static const MenuItem gAnaglyphMenu[] =
 		},
 	},
 	{
-		kMICycler1,
+		kMICycler2,
 		.text = STR_3D_GLASSES_R,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
@@ -90,7 +91,7 @@ static const MenuItem gAnaglyphMenu[] =
 		},
 	},
 	{
-		kMICycler1,
+		kMICycler2,
 		.text = STR_3D_GLASSES_G,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
@@ -101,7 +102,7 @@ static const MenuItem gAnaglyphMenu[] =
 		},
 	},
 	{
-		kMICycler1,
+		kMICycler2,
 		.text = STR_3D_GLASSES_B,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
@@ -112,7 +113,7 @@ static const MenuItem gAnaglyphMenu[] =
 		},
 	},
 	{
-		kMICycler1,
+		kMICycler2,
 		.text = STR_3D_GLASSES_CHANNEL_BALANCING,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,

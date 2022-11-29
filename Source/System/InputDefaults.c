@@ -51,6 +51,7 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 	{
 		.key = { SDL_SCANCODE_TAB },
 		.pad = { CB(LEFTSTICK) },
+		.mouseButton = SDL_BUTTON_MIDDLE,
 	},
 
 	[kNeed_Jetpack] =

@@ -142,7 +142,7 @@ static void ParseCommandLine(int argc, char** argv)
 
 static void GetInitialWindowSize(int display, int& width, int& height)
 {
-	const float aspectRatio = 4.0f / 3.0f;
+	const float aspectRatio = 16.0f / 10.0f;
 	const float screenCoverage = 2.0f / 3.0f;
 
 	SDL_Rect displayBounds = { .x = 0, .y = 0, .w = 640, .h = 480 };

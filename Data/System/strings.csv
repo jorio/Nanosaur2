@@ -67,11 +67,11 @@ Sound,Audio,Ton,Sonido,Audio,Ljud,Geluid
 Graphics,Graphisme,Bild,Gráficos,Video,Bild,Beeld
 ,,,,,,
 Difficulty,Difficulté,Schwierigkeit,Dificultad,Difficoltà,Svårighet,Moeilijkheid
-Normal,Normale,,,,,
-Kiddie Mode,Mode Gamin,Kindermodus,,,Barnläge,
+Normal,Normale,Normal,Normal,Normale,Normal,Normaal
+Kiddie Mode,Mode Gamin,Kindermodus,Mono Niños,Bambino,Barnläge,Kindermodus
 Story Subtitles,Sous-Titres,Untertitel,Subtítulos,Sottotitoli,Undertexter,Ondertiteling
 ,,,,,,
-Crosshairs,Réticule,Fadenkreuz,Retículo,Reticolo,Streckplatta,
+Crosshairs,Réticule,Fadenkreuz,Retículo,Reticolo,Streckplatta,Dradenkruis
 Hidden,Caché,Versteckt,Invisible,Nascosto,Gömd,Onzichtbaar
 Visible,Visible,Sichtbar,Visible,Visibile,Synlig,Zichtbaar
 ,,,,,,
@@ -83,9 +83,9 @@ Tip: Press Alt-Enter to toggle fullscreen,Conseil: Appuie sur Alt-Entrée pour p
 Fullscreen,Plein écran,Vollbild,Pantalla completa,Schermo intero,Fullskärm,Volledig scherm
 V-Sync,,,,,,
 Antialiasing,Anticrénelage,Antialiasing,Antialiasing,Antialiasing,Kantutjämning,Anti-Kartelvorming
-Msaa 2x,,,,,,
-Msaa 4x,,,,,,
-Msaa 8x,,,,,,
+Msaa 2*,,,,,,
+Msaa 4*,,,,,,
+Msaa 8*,,,,,,
 Preferred Display,Écran préféré,,,Schermo preferito,,
 Display,Écran,Anzeige,Pantalla,Schermo,Skärm,Scherm
 "The new antialiasing level will take
@@ -93,11 +93,11 @@ effect when you restart the game.","Le nouveau niveau d'anticrénelage sera
 effectif après un redémarrage du jeu.",,,"Il nuovo livello di antialiasing avrà
 effetto quanto riavvierai il gioco.",,
 ,,,,,,
-Status bar Spacing,Espacement barre d'état,Statuszeile-Abstand,,,,
-Spread Out,Espacé,,,,,
-Centered,Centré,,,,,
+Status bar Spacing,Espacement barre d'état,Abstand der Statuszeile,Espacio barra de estado,Spaziatura barra di stato,Statusfältavstånd,Statusbalk afstand
+Spaced Out,Espacée,Ausgebreitet,Espaciada,Sparsi,Utspridd,Uitgespreid
+Centered,Centrée,Zentriert,Centrada,Centrata,Centrerat,Gecentreerd
 ,,,,,,
-Status bar Scale,Taille barre d'état,Statuszeile-Maßstab,,,,
+Status bar Scale,Taille barre d'état,Maßstab der Statuszeile,Tamaño barra de estado,Taglia barra di stato,Statusfältstorlek,Statusbalk grootte
 0.5*
 0.6*
 0.7*
@@ -117,15 +117,15 @@ Status bar Scale,Taille barre d'état,Statuszeile-Maßstab,,,,
 ,,,,,,
 3D Glasses,Lunettes 3D,3D-Brille,Gafas 3D,Occhiali 3D,3D-Glasögon,3D-Bril
 Calibrate 3D Glasses,Calibrer Lunettes 3D,,,,,
-3D Mode,Mode 3D,,,,,
-Disabled,Désactivé,,,,,
-Anaglyph Color,Anaglyphe Couleur,,,,,
-Anaglyph B&W,Anaglyphe N&B,,,,,
+Anaglyph 3D,3D Anaglyphe,,,,,
+Disabled,Désactivée,,,,,
+Color,Couleur,,,,,
+Monochrome,Monochrome,,,,,
 Shutter,À Obturation,,,,,
 Channel Balancing,Équilibrage Canaux,,,,,
-R,R,,,,,
-G,V,,,,,
-B,B,,,,,
+Red level,Niveau de Rouge,,,,,
+Green level,Niveau de Vert,,,,,
+Blue level,Niveau de Bleu,,,,,
 ,,,,,,
 Music Volume,Volume Musique,Musiklautstärke,Volumen Música,Volume Musica,Musikvolym,Muziekvolume
 Effects Volume,Volume Bruitages,Effektlautstärke,Volumen Efectos,Volume Effetti,Effektvolym,Volume Geluidseffecten
@@ -150,25 +150,15 @@ Effects Volume,Volume Bruitages,Effektlautstärke,Volumen Efectos,Volume Effetti
 Keyboard,Clavier,Tastatur,Teclado,Tastiera,Tangentbord,Toetsenbord
 Gamepad,Manette,Gamepad,Mando,Gamepad,Handkontroll,Controller
 Mouse,Souris,Maus,Ratón,Mouse,Mus,Muis
-"Press <RETURN> to assign a new key,
-or <X> to clear it","Appuie sur <ENTRÉE> pour réaffecter
-une touche, ou <X> pour l'effacer",,,"Premi <INVIO> per assegnare un nuovo
-tasto, oppure <X> per rimuoverlo","Tryck på <ENTER> för att tilldela en ny
+"Press <RETURN> to assign a new key, or <X> to clear it","Appuie sur <ENTRÉE> pour réaffecter une touche, ou <X> pour l'effacer",,,"Premi <INVIO> per assegnare un nuovo tasto, oppure <X> per rimuoverlo","Tryck på <ENTER> för att tilldela en ny
 tangent, eller <X> för att rensa",
-"Press <A> to assign a new button,
-or <X> to clear it","Appuie sur <A> pour réaffecter
-un bouton, ou <X> pour l'effacer",,,"Premi <A> per assegnare un nuovo
-bottone, oppure <X> per rimuoverlo","Tryck på <A> för att tilldela en ny
-knapp, eller <X> för att rensa",
-"Press a key now, or <ESC> to cancel","Appuie sur la touche de ton choix,
-ou <ÉCHAP> pour annuler",,,"Premi un tasto ora,
-oppure <ESC> per annullare","Tryck på valfri tangent nu,
-eller <ESC> för att avbryta",
+"Press <A> to assign a new button, or <X> to clear it","Appuie sur <A> pour réaffecter un bouton, ou <X> pour l'effacer",,,"Premi <A> per assegnare un nuovo bottone, oppure <X> per rimuoverlo","Tryck på <A> för att tilldela en ny knapp, eller <X> för att rensa",
+"Press a key now, or <ESC> to cancel","Appuie sur la touche de ton choix, ou <ÉCHAP> pour annuler",,,"Premi un tasto ora, oppure <ESC> per annullare","Tryck på valfri tangent nu, eller <ESC> för att avbryta",
 "Press a button now, or <START> to cancel","Appuie sur le bouton de ton choix,
 ou <START> pour annuler",,,"Premi un bottone ora,
 oppure <START> per annullare","Tryck på valfri knapp nu,
 eller <START> för att avbryta",
-No gamepad detected,Aucune manette détectée,Kein gamepad erkannt,,Nessun gamepad rilevato,Ingen handkontroll hittades,
+No gamepad detected,Aucune manette détectée,Kein Controller erkannt,,Nessun gamepad rilevato,Ingen handkontroll hittades,
 Note: You can always steer with the left stick.,Note: le stick gauche sert toujours à se diriger.,,,Nota: Puoi sempre sterzare con lo stick sinistro,Obs: Det går alltid att styra med vänsterspaken,
 Rumble,Vibration,Vibration,Vibración,Vibrazione,Vibration,
 Vertical Steering,Contrôle Vertical,,,,,
@@ -197,34 +187,34 @@ Scroll Left,Défiler Gauche,,,Scorri verso Sx,,
 Scroll Right,Défiler Droite,,,Scorri verso Dx,,
 ,,,,,,
 ...,,,,,,
-Button A,Bouton A,,,Bottone A,Knapp A,Knop A
-Button B,Bouton B,,,Bottone B,Knapp B,Knop B
-Button X,Bouton X,,,Bottone X,Knapp X,Knop X
-Button Y,Bouton Y,,,Bottone Y,Knapp Y,Knop Y
+Button A,Bouton A,A-Taste,,Bottone A,A-Knappen,A-Knop
+Button B,Bouton B,B-Taste,,Bottone B,B-Knappen,B-Knop
+Button X,Bouton X,X-Taste,,Bottone X,X-Knappen,X-Knop
+Button Y,Bouton Y,Y-Taste,,Bottone Y,Y-Knappen,Y-Knop
 Menu,,,,Menu,,
 Guide,,,,Guida,,
 Start,,,,Start,,
-L. Stick Button,Bouton Stick G.,,,Bottone Stick Sx,,
-R. Stick Button,Bouton Stick D.,,,Bottone Stick Dx,,
-L. Bumper,Bumper G.,,,Bumper Sx,,
-R. Bumper,Bumper D.,,,Bumper Dx,,
-D-Pad Up,D-Pad Haut,,,D-Pad Su,D-Pad Omhoog,
-D-Pad Down,D-Pad Bas,,,D-Pad Giù,D-Pad Omlaag,
-D-Pad Left,D-Pad Gauche,,,D-Pad Sinistra,D-Pad Links,
-D-Pad Right,D-Pad Droite,,,D-Pad Destra,D-Pad Rechts,
-L. Stick Up,Stick G. Haut,,,Stick Sx Su,,
-L. Stick Down,Stick G. Bas,,,Stick Sx Giù,,
-L. Stick Left,Stick G. Gauche,,,Stick Sx Sinistra,,
-L. Stick Right,Stick G. Droite,,,Stick Sx Destra,,
-R. Stick Up,Stick D. Haut,,,Stick Dx Su,,
-R. Stick Down,Stick D. Bas,,,Stick Dx Giù,,
-R. Stick Left,Stick D. Gauche,,,Stick Dx Sinistra,,
-R. Stick Right,Stick D. Droite,,,Stick Dx Destra,,
-L. Trigger,Gâchette G.,,,Trigger Sx,,
-R. Trigger,Gâchette D.,,,Trigger Dx,,
+LS Button,Bouton LS,LS-Taste,,Bottone LS,LS-Knappen,LS-Knop
+RS Button,Bouton RS,RS-Taste,,Bottone RS,RS-Knappen,RS-Knop
+LB,,,,,,
+RB,,,,,,
+D-Pad Up,D-Pad Haut,,,D-Pad Su,D-Pad Upp,D-Pad Omhoog
+D-Pad Down,D-Pad Bas,,,D-Pad Giù,D-Pad Ner,D-Pad Omlaag
+D-Pad Left,D-Pad Gauche,,,D-Pad Sinistra,D-Pad Vänster,D-Pad Links
+D-Pad Right,D-Pad Droite,,,D-Pad Destra,D-Pad Höger,D-Pad Rechts
+LS Up,LS Haut,,,LS Su,LS Upp,LS Omhoog
+LS Down,LS Bas,,,LS Giù,LS Ner,LS Omlaag
+LS Left,LS Gauche,,,LS Sinistra,LS Vänster,LS Links
+LS Right,LS Droite,,,LS Destra,LS Höger,LS Rechts
+RS Up,RS Haut,,,RS Su,RS Upp,LS Omhoog
+RS Down,RS Bas,,,RS Giù,RS Ner,LS Omlaag
+RS Left,RS Gauche,,,RS Sinistra,RS Vänster,RS Links
+RS Right,RS Droite,,,RS Destra,RS Höger,RS Rechts
+LT,,,,,,
+RT,,,,,,
 ,,,,,,
-Descend,Piquer,,,,,
-Ascend,Cabrer,,,,,
+Descend,Plonger,,,,,
+Ascend,S'élever,,,,,
 Turn Left,Gauche,,,,,
 Turn Right,Droite,,,,,
 Fire,Tirer,,,,,
@@ -344,16 +334,16 @@ Av Er Vill Ta Tangentbordet.",
 ,,,,,,
 Grab your red/cyan glasses and enable 3D mode to start calibrating.,Prenez vos lunettes rouge/cyan et activez le mode 3D pour commencer la calibration.,,,,,
 While wearing your anaglyph glasses...,"Chaussez vos lunettes anaglyphes, puis...",,,,,
-"Adjust ‘R’ and ‘B’ until the white box in the
-test image looks about the same brightness
-in both your left and right eyes.","Ajustez ‘R’ et ‘B’ jusqu’à ce que le carré blanc
-dans la mire ci-contre apparaisse à la même
-luminosité pour vos deux yeux.",,,,,
-"Adjust ‘G’ until the green pattern is as dark
-as possible in the left eye, yet you still see
-good color balance in the background scene.","Ajustez ‘V’ jusqu’à ce que le motif vert soit aussi
-sombre que possible dans votre œil gauche, tout
-en maintenant un bon équilibre des couleurs dans
+"Adjust Red and Blue levels until the white box
+in the test image looks about the same brightness
+in both your left and right eyes.","Ajustez les niveaux de Rouge et de Bleu jusqu’à
+ce que le carré blanc dans la mire ci-contre apparaisse
+à la même luminosité pour vos deux yeux.",,,,,
+"Adjust the Green level until the green pattern is
+as dark as possible in the left eye, yet you still see
+good color balance in the background scene.","Ajustez le niveau de Vert jusqu’à ce que le motif vert
+soit aussi sombre que possible dans votre œil gauche,
+tout en maintenant un bon équilibre des couleurs dans
 la scène en arrière-plan.",,,,,
 "To improve the balance between the left
 and right eyes at the cost of some color

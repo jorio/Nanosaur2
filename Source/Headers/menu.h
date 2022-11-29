@@ -83,10 +83,10 @@ typedef struct MenuStyle
 	float			fadeOutSpeed;
 	float			standardScale;
 	float			rowHeight;
-	float			uniformXExtent;
 	short			textSlot;
 	float			yOffset;
 	int				fontAtlas;
+	int				fontAtlas2;
 
 	OGLColorRGBA	labelColor;
 	OGLColorRGBA	idleColor;

@@ -33,12 +33,13 @@ static void OnEnterSettingsMenu(void)
 
 static void OnPickLanguage(void)
 {
-	int language = GetCurrentMenuItemID();
+	int language = gGamePrefs.language;
 
-	gGamePrefs.language = language;
 	gGamePrefs.cutsceneSubtitles = (language != LANGUAGE_ENGLISH) || (!IsNativeEnglishSystem());
 
 	LoadLocalizedStrings(language);
+
+	LayoutCurrentMenuAgain();
 }
 
 static void OnToggleFullscreen(void)
@@ -182,7 +183,6 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_CONTROLS,			.next='ctrl'},
 	{kMIPick, STR_GRAPHICS,			.next='graf'},
 	{kMIPick, STR_SOUND,			.next='soun'},
-	{kMIPick, STR_LANGUAGE,			.next='lang' },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
@@ -190,7 +190,24 @@ static const MenuItem gSettingsMenuTree[] =
 
 	{ .id='gene' },
 	{
-		kMICycler1, STR_DIFFICULTY,
+		kMICycler2, STR_LANGUAGE,
+		.callback=OnPickLanguage,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.language,
+			.choices={
+					{STR_ENGLISH, LANGUAGE_ENGLISH},
+					{STR_FRENCH, LANGUAGE_FRENCH},
+					{STR_GERMAN, LANGUAGE_GERMAN},
+					{STR_SPANISH, LANGUAGE_SPANISH},
+					{STR_ITALIAN, LANGUAGE_ITALIAN},
+					{STR_DUTCH, LANGUAGE_DUTCH},
+					{STR_SWEDISH, LANGUAGE_SWEDISH},
+			},
+		},
+	},
+	{
+		kMICycler2, STR_DIFFICULTY,
 		.getLayoutFlags=DisableMenuEntryInGame,
 		.cycler=
 		{
@@ -199,7 +216,7 @@ static const MenuItem gSettingsMenuTree[] =
 		}
 	},
 	{
-		kMICycler1, STR_CROSSHAIRS,
+		kMICycler2, STR_CROSSHAIRS,
 		.cycler=
 		{
 				.valuePtr=&gGamePrefs.showTargetingCrosshairs,
@@ -207,7 +224,7 @@ static const MenuItem gSettingsMenuTree[] =
 		},
 	},
 	{
-		kMICycler1, STR_HUD_POSITION,
+		kMICycler2, STR_HUD_POSITION,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.force4x3HUD,
@@ -215,7 +232,7 @@ static const MenuItem gSettingsMenuTree[] =
 		},
 	},
 	{
-		kMICycler1, STR_HUD_SCALE,
+		kMICycler2, STR_HUD_SCALE,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.hudScale,
@@ -263,7 +280,7 @@ static const MenuItem gSettingsMenuTree[] =
 
 	{.id='graf', .callback=OnEnterGraphicsMenu},
 	{
-		kMICycler1, STR_FULLSCREEN,
+		kMICycler2, STR_FULLSCREEN,
 		.callback=OnToggleFullscreen,
 		.cycler=
 		{
@@ -287,7 +304,7 @@ static const MenuItem gSettingsMenuTree[] =
 ////		},
 //	},
 	{
-		kMICycler1, STR_VSYNC,
+		kMICycler2, STR_VSYNC,
 		.callback = OnChangeVSync,
 		.cycler =
 		{
@@ -300,7 +317,7 @@ static const MenuItem gSettingsMenuTree[] =
 		}
 	},
 	{
-		kMICycler1, STR_ANTIALIASING,
+		kMICycler2, STR_ANTIALIASING,
 		.callback = OnChangeMSAA,
 		.getLayoutFlags = ShouldDisplayMSAA,
 		.cycler =
@@ -331,7 +348,7 @@ static const MenuItem gSettingsMenuTree[] =
 
 	{.id='soun'},
 	{
-		kMICycler1, STR_MUSIC,
+		kMICycler2, STR_MUSIC,
 		.callback=UpdateGlobalVolume,
 		.cycler=
 		{
@@ -348,7 +365,7 @@ static const MenuItem gSettingsMenuTree[] =
 		},
 	},
 	{
-		kMICycler1, STR_SFX,
+		kMICycler2, STR_SFX,
 		.callback=UpdateGlobalVolume,
 		.cycler=
 		{
@@ -367,24 +384,11 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
-	// LANGUAGE
-
-	{.id='lang'},
-	{kMIPick, STR_ENGLISH,	.id=LANGUAGE_ENGLISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_FRENCH,	.id=LANGUAGE_FRENCH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_GERMAN,	.id=LANGUAGE_GERMAN,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_SPANISH,	.id=LANGUAGE_SPANISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_ITALIAN,	.id=LANGUAGE_ITALIAN,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_DUTCH,	.id=LANGUAGE_DUTCH,		.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_SWEDISH,	.id=LANGUAGE_SWEDISH,	.callback=OnPickLanguage,	.customHeight=.75f,	.next='BACK'},
-	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
-
-	//-------------------------------------------------------------------------
 	// KEYBOARD
 
 	{ .id='keyb' },
 //	{kMISpacer, .customHeight=.35f },
-	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.5f },
+	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.7f },
 	{kMISpacer, .customHeight=.4f },
 	{kMIKeyBinding, .inputNeed=kNeed_PitchUp },
 	{kMIKeyBinding, .inputNeed=kNeed_PitchDown },
@@ -400,15 +404,14 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback=OnPickResetKeyboardBindings, .customHeight=.5f },
 	{kMISpacer, .customHeight=.25f },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+	{kMISpacer, .customHeight=2.2f, .getLayoutFlags=HideMenuEntryInGame },
 
 	//-------------------------------------------------------------------------
 	// MOUSE
 
 	{ .id='mous' },
-//	{kMISpacer, .customHeight=.35f },
-//	{kMILabel, STR_CONFIGURE_KEYBOARD_HELP, .customHeight=.5f },
 	{
-		kMICycler1, STR_MOUSE_SENSITIVITY,
+		kMICycler2, STR_MOUSE_SENSITIVITY,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.mouseSensitivityLevel,
@@ -444,7 +447,7 @@ static const MenuItem gSettingsMenuTree[] =
 
 	{ .id = 'gpad' },
 	//	{kMISpacer, .customHeight=.35f },
-	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .5f },
+	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .7f },
 	{ kMISpacer, .customHeight = .4f },
 	{ kMIPadBinding, .inputNeed = kNeed_PitchUp },
 	{ kMIPadBinding, .inputNeed = kNeed_PitchDown },
@@ -460,6 +463,7 @@ static const MenuItem gSettingsMenuTree[] =
 	{ kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback = OnPickResetGamepadBindings, .customHeight = .5f },
 	{ kMISpacer, .customHeight = .25f },
 	{ kMIPick, STR_BACK_SYMBOL,		.next = 'BACK' },
+	{kMISpacer, .customHeight=2.2f, .getLayoutFlags=HideMenuEntryInGame },
 
 	//-------------------------------------------------------------------------
 	// END SENTINEL

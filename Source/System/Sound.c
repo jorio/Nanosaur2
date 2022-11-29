@@ -169,6 +169,10 @@ OSErr			iErr;
 
 
 
+		/* SET INITIAL VOLUME IN ALL CHANNELS FROM PREFS */
+
+	UpdateGlobalVolume();
+
 
 		/***********************/
 		/* LOAD DEFAULT SOUNDS */

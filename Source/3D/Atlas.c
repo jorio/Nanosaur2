@@ -409,7 +409,7 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 
 	if (!(flags & kAtlasLoadAsSingleSprite))
 	{
-		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.txt", fontName);
+		snprintf(pathBuf, sizeof(pathBuf), "%s.txt", fontName);
 		// Parse metrics from SFL file
 		const char* sflPath = pathBuf;
 		char* data = LoadTextFile(sflPath, NULL);
@@ -438,7 +438,7 @@ Atlas* Atlas_Load(const char* fontName, int flags)
 
 	if (flags & kAtlasLoadFont)
 	{
-		snprintf(pathBuf, sizeof(pathBuf), ":sprites:%s.kerning.txt", fontName);
+		snprintf(pathBuf, sizeof(pathBuf), "%s.kerning.txt", fontName);
 
 		// Parse kerning table
 		char* data = LoadTextFile(pathBuf, NULL);

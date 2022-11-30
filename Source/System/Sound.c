@@ -73,7 +73,6 @@ static short				gMostRecentChannel = -1;
 
 Boolean						gSongPlayingFlag = false;
 
-Boolean				gMuteMusicFlag = false;
 short				gCurrentSong = -1;
 
 
@@ -481,17 +480,15 @@ short	musicFileRefNum;
 		DoFatalAlert("PlaySong: SndDoImmediate (volumeCmd) failed!");
 
 
+#if 0
 			/* SEE IF WANT TO MUTE THE MUSIC */
 
 	if (gMuteMusicFlag)
 	{
-		SOFTIMPME;
-#if 0
 		if (gSongMovie)
 			StopMovie(gSongMovie);
-#endif
 	}
-
+#endif
 }
 
 
@@ -509,6 +506,7 @@ void KillSong(void)
 	SndStopFilePlay(gMusicChannel, true);								// stop it
 }
 
+#if 0
 /******************** TOGGLE MUSIC *********************/
 
 void ToggleMusic(void)
@@ -516,8 +514,6 @@ void ToggleMusic(void)
 
 	gMuteMusicFlag = !gMuteMusicFlag;
 
-	SOFTIMPME;
-#if 0
 	if (gSongMovie)
 	{
 		gInQuicktimeFunction = true;				// dont allow song task to start anything new
@@ -530,8 +526,8 @@ void ToggleMusic(void)
 
 		gInQuicktimeFunction = false;
 	}
-#endif
 }
+#endif
 
 
 

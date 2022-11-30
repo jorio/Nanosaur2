@@ -1207,7 +1207,6 @@ static void NavigateCycler(const MenuItem* entry)
 static void NavigateFloatRange(const MenuItem* entry)
 {
 	(void) entry;
-	SOFTIMPME;
 #if 0
 enum
 {

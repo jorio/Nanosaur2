@@ -61,12 +61,6 @@
 #include "atlas.h"
 #include "menu.h"
 
-#define IMPME DoFatalAlert("IMPLEMENT ME in %s", __func__)
-#define SOFTIMPME do { \
-static int softImpMeWarningShown = 0; \
-if (!softImpMeWarningShown++) printf("soft IMPLEMENT ME in %s, %s:%d\n", __func__, __FILE__, __LINE__); \
-} while(0)
-
 #define GAME_ASSERT(condition) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, #condition); } while(0)
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
@@ -76,7 +70,6 @@ extern	Boolean					gDrawLensFlare;
 extern	Boolean					gGameOver;
 extern	Boolean					gGamePaused;
 extern	Boolean					gLevelCompleted;
-extern	Boolean					gMuteMusicFlag;
 extern	Boolean					gMyState_Lighting;
 extern	Boolean					gPlayNow;
 extern	Boolean					gPlayerIsDead[MAX_PLAYERS];

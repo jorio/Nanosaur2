@@ -201,7 +201,6 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMISpacer, .customHeight=.3f},
 	{
 		kMICycler1, STR_DIFFICULTY,
-		.getLayoutFlags=DisableMenuEntryInGame,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.kiddieMode,

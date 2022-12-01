@@ -61,7 +61,7 @@ Nov.,Nov.,Nov,Nov.,Nov.,Nov.,Nov.
 Dec.,Déc.,Dez,Dic.,Dic.,Dec.,Dec.
 ,,,,,,
 Language,Langue,Sprache,Idioma,Lingua,Språk,Taal
-Game,Jeu,Spiel,Juego,Gioco,Spel,Spel
+Interface,Interface,Schnittstelle,Interfaz,Interfaccia,Gränssnitt,Interface
 Controls,Commandes,Steuerung,Comandos,Comandi,Kontroll,Besturing
 Sound,Audio,Ton,Sonido,Audio,Ljud,Geluid
 Graphics,Graphisme,Bild,Gráficos,Video,Bild,Beeld
@@ -99,7 +99,7 @@ Centered,Centrée,Zentriert,Centrada,Centrata,Centrerat,Gecentreerd
 Status bar Scale,Taille barre d'état,Maßstab der Statuszeile,Tamaño barra de estado,Taglia barra di stato,Statusfältstorlek,Statusbalk grootte
 ,,,,,,
 3D Glasses,Lunettes 3D,3D-Brille,Gafas 3D,Occhiali 3D,3D-Glasögon,3D-Bril
-Calibrate 3D Glasses,Calibrer Lunettes 3D,,,,,
+Calibrate 3D Glasses,Calibrer Lunettes 3D,3D-Brille kalibrieren,Calibrar gafas 3D,Calibra occhiali 3D,Kalibrera 3D-glasögon,
 Anaglyph 3D,3D Anaglyphe,,,,,
 Disabled,Désactivée,,,,,
 Color,Couleur,,,,,
@@ -127,10 +127,10 @@ eller <START> för att avbryta",
 No gamepad detected,Aucune manette détectée,Kein Controller erkannt,,Nessun gamepad rilevato,Ingen handkontroll hittades,
 Note: You can always steer with the left stick.,Note: le stick gauche sert toujours à se diriger.,,,Nota: Puoi sempre sterzare con lo stick sinistro,Obs: Det går alltid att styra med vänsterspaken,
 Rumble,Vibration,Vibration,Vibración,Vibrazione,Vibration,
-Vertical Steering,Contrôle Vertical,,,,,
-Normal,Normal,,,,,
-Inverted,Inversé,,,,,
-Mouse Sensitivity,Sensibilité Souris,,,Sensibilità Del Mouse,,
+Vertical Steering,Contrôle Vertical,Vertikale Steuerung,,,Vertikal styrning,
+Normal,Normal,Normal,,,Normal,
+Inverted,Inversé,Umgekehrt,,,Omvänd,
+Mouse Sensitivity,Sensibilité Souris,Mausempfindlichkeit,Sensibilidad del ratón,Sensibilità Del Mouse,Muskänslighet,Muis gevoeligheid
 ,,,,,,
 Back,Retour,Zurück,Atrás,Indietro,Tillbaka,Terug
 OK,,,,,,

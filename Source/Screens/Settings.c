@@ -197,16 +197,29 @@ static const MenuItem gSettingsMenuTree[] =
 	// SETTINGS ROOT MENU
 
 	{ .id='sett', .callback=OnEnterSettingsMenu},
-	{kMIPick, STR_GENERAL,			.next='gene'},
+	{kMILabel, .text=STR_SETTINGS},
+	{kMISpacer, .customHeight=.3f},
+	{
+		kMICycler1, STR_DIFFICULTY,
+		.getLayoutFlags=DisableMenuEntryInGame,
+		.cycler=
+		{
+			.valuePtr=&gGamePrefs.kiddieMode,
+			.choices={ {STR_NORMAL_DIFFICULTY, 0}, {STR_KIDDIE_MODE, 1} },
+		}
+	},
 	{kMIPick, STR_CONTROLS,			.next='ctrl'},
 	{kMIPick, STR_GRAPHICS,			.next='graf'},
 	{kMIPick, STR_SOUND,			.next='soun'},
+	{kMIPick, STR_INTERFACE,		.next='ifac'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
-	// GENERAL
+	// INTERFACE
 
-	{ .id='gene' },
+	{ .id='ifac' },
+	{kMILabel, .text=STR_INTERFACE},
+	{kMISpacer, .customHeight=.3f},
 	{
 		kMICycler2, STR_LANGUAGE,
 		.callback=OnPickLanguage,
@@ -225,20 +238,11 @@ static const MenuItem gSettingsMenuTree[] =
 		},
 	},
 	{
-		kMICycler2, STR_DIFFICULTY,
-		.getLayoutFlags=DisableMenuEntryInGame,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.kiddieMode,
-			.choices={ {STR_NORMAL_DIFFICULTY, 0}, {STR_KIDDIE_MODE, 1} },
-		}
-	},
-	{
 		kMICycler2, STR_CROSSHAIRS,
 		.cycler=
 		{
-				.valuePtr=&gGamePrefs.showTargetingCrosshairs,
-				.choices={ {STR_CROSSHAIRS_OFF, 0}, {STR_CROSSHAIRS_ON, 1} },
+			.valuePtr=&gGamePrefs.showTargetingCrosshairs,
+			.choices={ {STR_CROSSHAIRS_OFF, 0}, {STR_CROSSHAIRS_ON, 1} },
 		},
 	},
 	{
@@ -265,6 +269,8 @@ static const MenuItem gSettingsMenuTree[] =
 	// CONTROLS
 
 	{.id='ctrl'},
+	{kMILabel, .text=STR_CONTROLS},
+	{kMISpacer, .customHeight=.3f},
 	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
 	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
@@ -282,13 +288,15 @@ static const MenuItem gSettingsMenuTree[] =
 	// GRAPHICS
 
 	{.id='graf', .callback=OnEnterGraphicsMenu},
+	{kMILabel, .text=STR_GRAPHICS},
+	{kMISpacer, .customHeight=.3f},
 	{
 		kMICycler2, STR_FULLSCREEN,
 		.callback=OnToggleFullscreen,
 		.cycler=
 		{
 			.valuePtr=&gGamePrefs.fullscreen,
-			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
+			.choices={ {STR_NO, 0}, {STR_YES, 1} },
 		},
 	},
 	{
@@ -312,7 +320,7 @@ static const MenuItem gSettingsMenuTree[] =
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.vsync,
-			.choices = { {STR_OFF, 0}, {STR_ON, 1} },
+			.choices = { {STR_NO, 0}, {STR_YES, 1} },
 		}
 	},
 	{
@@ -324,7 +332,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.valuePtr = &gGamePrefs.antialiasingLevel,
 			.choices =
 			{
-				{STR_OFF, 0},
+				{STR_NO, 0},
 				{STR_MSAA_2X, 1},
 				{STR_MSAA_4X, 2},
 				{STR_MSAA_8X, 3},
@@ -346,6 +354,8 @@ static const MenuItem gSettingsMenuTree[] =
 	// AUDIO
 
 	{.id='soun'},
+	{kMILabel, .text=STR_SOUND},
+	{kMISpacer, .customHeight=.3f},
 	{kMISlider, STR_MUSIC, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.musicVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
 	{kMISlider, STR_SFX, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.sfxVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },

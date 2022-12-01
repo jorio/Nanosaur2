@@ -126,7 +126,6 @@ void DoMainMenuScreen(void)
 		{
 			MenuStyle style = kDefaultMenuStyle;
 			style.yOffset = 302.5f;
-			style.standardScale *= 0.8f;
 			MakeMenu(gMainMenuTree, &style);
 			RegisterSettingsMenu();
 			RegisterFileScreen(FILESCREEN_MODE_LOAD);

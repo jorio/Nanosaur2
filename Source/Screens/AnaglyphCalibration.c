@@ -109,11 +109,7 @@ static const MenuItem gAnaglyphMenu[] =
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.doAnaglyphChannelBalancing,
-			.choices =
-			{
-					{STR_OFF, 0},
-					{STR_ON, 1},
-			},
+			.choices = { {STR_NO, 0}, {STR_YES, 1}, },
 		},
 	},
 	{

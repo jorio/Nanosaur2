@@ -13,7 +13,6 @@ typedef enum
 	kMICycler1,
 	kMICycler2,
 	kMISlider,
-	kMIFloatRange,
 	kMIKeyBinding,
 	kMIPadBinding,
 	kMIMouseBinding,
@@ -51,14 +50,6 @@ typedef struct
 	Byte			increment;
 } MenuSliderData;
 
-typedef struct
-{
-	float*			valuePtr;
-	const float*	equilibriumPtr;
-	float			incrementFrac;
-	float			xSpread;
-} MenuFloatRangeData;
-
 typedef struct MenuItem
 {
 	MenuItemType			type;
@@ -75,7 +66,6 @@ typedef struct MenuItem
 		int 					inputNeed;
 		MenuCyclerData			cycler;
 		MenuSliderData			slider;
-		MenuFloatRangeData		floatRange;
 	};
 
 	float					customHeight;

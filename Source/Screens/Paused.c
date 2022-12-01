@@ -109,6 +109,7 @@ static const MenuItem gPauseMenuTree[] =
 
 void DoPaused(void)
 {
+	gGammaFadeFrac = 1;
 	gGamePaused = true;
 	GrabMouse(false);
 	PauseAllChannels(true);
@@ -126,6 +127,7 @@ void DoPaused(void)
 
 void DoReallyQuit(void)
 {
+	gGammaFadeFrac = 1;
 	gGamePaused = true;
 	GrabMouse(false);
 	PauseAllChannels(true);

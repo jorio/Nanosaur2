@@ -40,7 +40,7 @@ float		gLoadingThermoPercent = 0;
 void DoLegalScreen(void)
 {
 	OGLSetupInputType	viewDef;
-	float	timeout = 40.0f;
+	float	timeout = 10.0f;
 
 	gNumPlayers = 1;									// make sure don't do split-screen
 

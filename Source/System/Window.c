@@ -299,6 +299,28 @@ void Exit2D(void)
 
 #pragma mark -
 
+/******************** GET DEFAULT WINDOW SIZE *******************/
+
+void GetDefaultWindowSize(int display, int* width, int* height)
+{
+	const float aspectRatio = 16.0f / 10.0f;
+	const float screenCoverage = 2.0f / 3.0f;
+
+	SDL_Rect displayBounds = { .x = 0, .y = 0, .w = 640, .h = 480 };
+	SDL_GetDisplayUsableBounds(display, &displayBounds);
+
+	if (displayBounds.w > displayBounds.h)
+	{
+		*width = displayBounds.h * screenCoverage * aspectRatio;
+		*height = displayBounds.h * screenCoverage;
+	}
+	else
+	{
+		*width = displayBounds.w * screenCoverage;
+		*height = displayBounds.w * screenCoverage / aspectRatio;
+	}
+}
+
 /******************** MOVE WINDOW TO PREFERRED DISPLAY *******************/
 //
 // This works best in windowed mode.
@@ -307,17 +329,20 @@ void Exit2D(void)
 
 static void MoveToPreferredDisplay(void)
 {
-#if !(__APPLE__)
 	int currentDisplay = SDL_GetWindowDisplayIndex(gSDLWindow);
 
 	if (currentDisplay != gGamePrefs.monitorNum)
 	{
+		int w = 640;
+		int h = 480;
+		GetDefaultWindowSize(gGamePrefs.monitorNum, &w, &h);
+		SDL_SetWindowSize(gSDLWindow, w, h);
+
 		SDL_SetWindowPosition(
 			gSDLWindow,
 			SDL_WINDOWPOS_CENTERED_DISPLAY(gGamePrefs.monitorNum),
 			SDL_WINDOWPOS_CENTERED_DISPLAY(gGamePrefs.monitorNum));
 	}
-#endif
 }
 
 /*********************** SET FULLSCREEN MODE **********************/
@@ -335,7 +360,6 @@ void SetFullscreenMode(bool enforceDisplayPref)
 	}
 	else
 	{
-#if !(__APPLE__)
 		if (enforceDisplayPref)
 		{
 			int currentDisplay = SDL_GetWindowDisplayIndex(gSDLWindow);
@@ -347,7 +371,6 @@ void SetFullscreenMode(bool enforceDisplayPref)
 				MoveToPreferredDisplay();
 			}
 		}
-#endif
 
 		// Enter fullscreen mode
 		SDL_SetWindowFullscreen(gSDLWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);

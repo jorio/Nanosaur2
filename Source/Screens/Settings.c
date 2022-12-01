@@ -82,6 +82,24 @@ static void OnChangeVSync(void)
 	SDL_GL_SetSwapInterval(gGamePrefs.vsync);
 }
 
+static int GetNumDisplays(void)
+{
+	return SDL_GetNumVideoDisplays();
+}
+
+static int ShouldDisplayMonitorCycler(void)
+{
+	// Expose the option if we have more than one display
+	return (GetNumDisplays() <= 1) ? kMILayoutFlagHidden : 0;
+}
+
+static const char* GetDisplayName(Byte value)
+{
+	static char textBuf[8];
+	snprintf(textBuf, sizeof(textBuf), "%d", value + 1);
+	return textBuf;
+}
+
 static int ShouldDisplayMSAA(void)
 {
 #if __APPLE__
@@ -273,21 +291,21 @@ static const MenuItem gSettingsMenuTree[] =
 			.choices={ {STR_OFF, 0}, {STR_ON, 1} },
 		},
 	},
-//	{
-//		kMICycler1, STR_PREFERRED_DISPLAY,
-////		.callback = OnToggleFullscreen,
-////		.getLayoutFlags = ShouldDisplayMonitorCycler,
-////		.cycler =
-////		{
-////			.valuePtr = &gGamePrefs.monitorNum,
-////			.isDynamicallyGenerated = true,
-////			.generator =
-////			{
-////				.generateNumChoices = GetNumDisplays,
-////				.generateChoiceString = GetDisplayName,
-////			},
-////		},
-//	},
+	{
+		kMICycler2, STR_PREFERRED_DISPLAY,
+		.callback = OnToggleFullscreen,
+		.getLayoutFlags = ShouldDisplayMonitorCycler,
+		.cycler =
+		{
+			.valuePtr = &gGamePrefs.monitorNum,
+			.isDynamicallyGenerated = true,
+			.generator =
+			{
+				.generateNumChoices = GetNumDisplays,
+				.generateChoiceString = GetDisplayName,
+			},
+		},
+	},
 	{
 		kMICycler2, STR_VSYNC,
 		.callback = OnChangeVSync,

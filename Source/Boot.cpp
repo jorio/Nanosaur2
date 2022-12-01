@@ -22,7 +22,6 @@ extern "C"
 
 	SDL_Window* gSDLWindow = nullptr;
 	FSSpec gDataSpec;
-//	CommandLineOptions gCommandLine;
 	int gCurrentAntialiasingLevel;
 
 #if 0 //_WIN32
@@ -75,91 +74,6 @@ static fs::path FindGameData()
 	return dataPath;
 }
 
-static void ParseCommandLine(int argc, char** argv)
-{
-	(void) argc;
-	(void) argv;
-
-#if 0
-	memset(&gCommandLine, 0, sizeof(gCommandLine));
-	gCommandLine.vsync = 1;
-
-	for (int i = 1; i < argc; i++)
-	{
-		std::string argument = argv[i];
-
-		if (argument == "--track")
-		{
-			GAME_ASSERT_MESSAGE(i + 1 < argc, "practice track # unspecified");
-			gCommandLine.bootToTrack = atoi(argv[i + 1]);
-			i += 1;
-		}
-		else if (argument == "--car")
-		{
-			GAME_ASSERT_MESSAGE(i + 1 < argc, "car # unspecified");
-			gCommandLine.car = atoi(argv[i + 1]);
-			i += 1;
-		}
-		else if (argument == "--stats")
-			gDebugMode = 1;
-		else if (argument == "--no-vsync")
-			gCommandLine.vsync = 0;
-		else if (argument == "--vsync")
-			gCommandLine.vsync = 1;
-		else if (argument == "--adaptive-vsync")
-			gCommandLine.vsync = -1;
-		else if (argument == "--display")
-		{
-			GAME_ASSERT_MESSAGE(i + 1 < argc, "display # unspecified");
-			gCommandLine.display = atoi(argv[i + 1]);
-			i += 1;
-		}
-		else if (argument == "--windowed-resolution")
-		{
-			GAME_ASSERT_MESSAGE(i + 2 < argc, "windowed width & height unspecified");
-			gCommandLine.windowedWidth = atoi(argv[i + 1]);
-			gCommandLine.windowedHeight = atoi(argv[i + 2]);
-			i += 2;
-		}
-#if 0
-		else if (argument == "--fullscreen-resolution")
-		{
-			GAME_ASSERT_MESSAGE(i + 2 < argc, "fullscreen width & height unspecified");
-			gCommandLine.fullscreenWidth = atoi(argv[i + 1]);
-			gCommandLine.fullscreenHeight = atoi(argv[i + 2]);
-			i += 2;
-		}
-		else if (argument == "--fullscreen-refresh-rate")
-		{
-			GAME_ASSERT_MESSAGE(i + 1 < argc, "fullscreen refresh rate unspecified");
-			gCommandLine.fullscreenRefreshRate = atoi(argv[i + 1]);
-			i += 1;
-		}
-#endif
-	}
-#endif
-}
-
-static void GetInitialWindowSize(int display, int& width, int& height)
-{
-	const float aspectRatio = 16.0f / 10.0f;
-	const float screenCoverage = 2.0f / 3.0f;
-
-	SDL_Rect displayBounds = { .x = 0, .y = 0, .w = 640, .h = 480 };
-	SDL_GetDisplayUsableBounds(display, &displayBounds);
-
-	if (displayBounds.w > displayBounds.h)
-	{
-		width	= displayBounds.h * screenCoverage * aspectRatio;
-		height	= displayBounds.h * screenCoverage;
-	}
-	else
-	{
-		width	= displayBounds.w * screenCoverage;
-		height	= displayBounds.w * screenCoverage / aspectRatio;
-	}
-}
-
 static void Boot()
 {
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
@@ -191,18 +105,7 @@ retryVideo:
 	}
 
 	// Determine display
-	int display = 0;//gGamePrefs.monitorNum;
-
-#if 0
-	// Display # given on CLI takes precedence over prefs
-	if (gCommandLine.display != 0)
-	{
-		display = gCommandLine.display - 1;
-		gGamePrefs.monitorNum = display;
-		SavePrefs();
-		printf("Will try display %d\n", display);
-	}
-#endif
+	int display = gGamePrefs.monitorNum;
 
 	if (display >= SDL_GetNumVideoDisplays())
 	{
@@ -212,18 +115,7 @@ retryVideo:
 	// Determine initial window size
 	int initialWidth = 640;
 	int initialHeight = 480;
-#if 0
-	if (gCommandLine.windowedWidth != 0 && gCommandLine.windowedHeight != 0)
-	{
-		// Window size given on CLI takes precedence
-		initialWidth = gCommandLine.windowedWidth;
-		initialHeight = gCommandLine.windowedHeight;
-	}
-	else
-#endif
-	{
-		GetInitialWindowSize(display, initialWidth, initialHeight);
-	}
+	GetDefaultWindowSize(display, &initialWidth, &initialHeight);
 
 	gSDLWindow = SDL_CreateWindow(
 			"Nanosaur II: Hatchling (v" PROJECT_VERSION ")",
@@ -259,7 +151,7 @@ retryVideo:
 		auto gamecontrollerdbPath8 = (dataPath / "System" / "gamecontrollerdb.txt").u8string();
 		if (-1 == SDL_GameControllerAddMappingsFromFile((const char*)gamecontrollerdbPath8.c_str()))
 		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Billy Frontier", "Couldn't load gamecontrollerdb.txt!", gSDLWindow);
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Nanosaur 2", "Couldn't load gamecontrollerdb.txt!", gSDLWindow);
 		}
 	}
 }
@@ -281,15 +173,17 @@ static void Shutdown()
 
 int main(int argc, char** argv)
 {
+	(void)argc;
+	(void)argv;
+
 	int				returnCode				= 0;
 	std::string		finalErrorMessage		= "";
 	bool			showFinalErrorMessage	= false;
 
 	try
 	{
-		ParseCommandLine(argc, argv);
 		Boot();
-		/*returnCode =*/ GameMain();
+		GameMain();
 	}
 	catch (Pomme::QuitRequest&)
 	{
@@ -317,7 +211,7 @@ int main(int argc, char** argv)
 	if (showFinalErrorMessage)
 	{
 		std::cerr << "Uncaught exception: " << finalErrorMessage << "\n";
-		SDL_ShowSimpleMessageBox(0, "Cro-Mag Rally", finalErrorMessage.c_str(), nullptr);
+		SDL_ShowSimpleMessageBox(0, "Nanosaur 2", finalErrorMessage.c_str(), nullptr);
 	}
 
 	return returnCode;

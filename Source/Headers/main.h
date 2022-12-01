@@ -46,7 +46,7 @@ enum
 //=================================================
 
 
-int GameMain(void);
+void GameMain(void);
 extern	void ToolBoxInit(void);
 void MoveEverything(void);
 void InitDefaultPrefs(void);

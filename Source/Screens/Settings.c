@@ -387,7 +387,7 @@ static const MenuItem gSettingsMenuTree[] =
 	// MOUSE
 
 	{ .id='mous' },
-	{kMISlider, STR_MOUSE_SENSITIVITY, .slider={.valuePtr=&gGamePrefs.mouseSensitivityLevel, .minValue=1, .maxValue=MAX_MOUSE_SENSITIVITY_LEVELS, .equilibrium=DEFAULT_MOUSE_SENSITIVITY_LEVEL} },
+	{kMISlider, STR_MOUSE_SENSITIVITY, .slider={.valuePtr=&gGamePrefs.mouseSensitivityLevel, .minValue=10, .maxValue=MAX_MOUSE_SENSITIVITY_LEVEL, .equilibrium=DEFAULT_MOUSE_SENSITIVITY_LEVEL} },
 	{kMISpacer, .customHeight=.25f },
 	{kMIMouseBinding, .inputNeed=kNeed_Fire },
 	{kMIMouseBinding, .inputNeed=kNeed_Jetpack },

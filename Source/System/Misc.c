@@ -337,20 +337,6 @@ void VerifySystem(void)
 }
 
 
-/******************** REGULATE SPEED ***************/
-
-void RegulateSpeed(short fps)
-{
-uint32_t	n;
-static uint32_t oldTick = 0;
-
-	n = 60 / fps;
-	while ((TickCount() - oldTick) < n) {}			// wait for n ticks
-	oldTick = TickCount();							// remember current time
-}
-
-
-
 #pragma mark -
 
 
@@ -362,15 +348,9 @@ static uint32_t oldTick = 0;
 
 void CalcFramesPerSecond(void)
 {
-#if 1
 static UnsignedWide time;
 UnsignedWide currTime;
 unsigned long deltaTime;
-#else
-AbsoluteTime currTime,deltaTime;
-static AbsoluteTime time = {0,0};
-Nanoseconds	nano;
-#endif
 float		fps;
 
 int				i;
@@ -467,36 +447,6 @@ int		i;
 
 void MyFlushEvents(void)
 {
-#if 0
-#if 1
-	while (1)
-	{
-		EventRef        theEvent;
-		OSStatus err = ReceiveNextEvent(0, NULL, kEventDurationNoWait, true, &theEvent);
-		if (err == noErr) {
-			(void) SendEventToEventTarget(theEvent, GetEventDispatcherTarget());
-			ReleaseEvent(theEvent);
-		}
-		else
-			break;
-	}
-
-#endif
-#if 0
-	//EventRecord 	theEvent;
-
-	FlushEvents (everyEvent, REMOVE_ALL_EVENTS);
-	FlushEventQueue(GetMainEventQueue());
-
-	/* POLL EVENT QUEUE TO BE SURE THINGS ARE FLUSHED OUT */
-
-	while (GetNextEvent(mDownMask|mUpMask|keyDownMask|keyUpMask|autoKeyMask, &theEvent));
-
-
-	FlushEvents (everyEvent, REMOVE_ALL_EVENTS);
-	FlushEventQueue(GetMainEventQueue());
-#endif
-#endif
 }
 
 

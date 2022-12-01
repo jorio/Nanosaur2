@@ -20,7 +20,6 @@ uint32_t MyRandomLong(void);
 void InitMyRandomSeed(void);
 float RandomFloat(void);
 uint16_t	RandomRange(unsigned short min, unsigned short max);
-extern	void RegulateSpeed(short fps);
 void CalcFramesPerSecond(void);
 Boolean IsPowerOf2(int num);
 float RandomFloat2(void);

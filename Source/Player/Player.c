@@ -1193,7 +1193,7 @@ void UpdatePlayerSteering(int playerNum)
 
 	if (playerNum == KBMFallbackPlayer())
 	{
-		const float mouseSensitivityFrac = (float)(gGamePrefs.mouseSensitivityLevel) * (1.0f / NUM_MOUSE_SENSITIVITY_LEVELS);
+		const float mouseSensitivityFrac = (float)(gGamePrefs.mouseSensitivityLevel) * (1.0f / MAX_MOUSE_SENSITIVITY_LEVELS);
 
 		OGLVector2D mouseDelta = GetMouseDelta();
 

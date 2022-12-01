@@ -15,23 +15,6 @@
 /*    PROTOTYPES            */
 /****************************/
 
-// Make sure that the default values are covered, otherwise
-// the Cycler may display an error message!
-// (DEFAULT_ANAGLYPH_R, DEFAULT_ANAGLYPH_G, DEFAULT_ANAGLYPH_B)
-#define ANAGLYPH_CALIBRATION_CYCLER_ARRAY \
-{ \
-	{STR_MOUSE_SENSITIVITY_1,  0x00}, \
-	{STR_MOUSE_SENSITIVITY_2,  0x1C}, \
-	{STR_MOUSE_SENSITIVITY_3,  0x38}, \
-	{STR_MOUSE_SENSITIVITY_4,  0x55}, \
-	{STR_MOUSE_SENSITIVITY_5,  0x71}, \
-	{STR_MOUSE_SENSITIVITY_6,  0x84}, \
-	{STR_MOUSE_SENSITIVITY_7,  0xA0}, \
-	{STR_MOUSE_SENSITIVITY_8,  0xBC}, \
-	{STR_MOUSE_SENSITIVITY_9,  0xD8}, \
-	{STR_MOUSE_SENSITIVITY_10, 0xFF}, \
-}
-
 static void OnChangeAnaglyphSetting(void);
 static int GetAnaglyphDisplayFlags(void);
 static int GetAnaglyphDisplayFlags_ColorOnly(void);
@@ -80,36 +63,42 @@ static const MenuItem gAnaglyphMenu[] =
 		},
 	},
 	{
-		kMICycler2,
+		kMISlider,
 		.text = STR_3D_GLASSES_R,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
-		.cycler=
+		.slider=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationRed,
-			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+			.minValue=0,
+			.maxValue=255,
+			.equilibrium=DEFAULT_ANAGLYPH_R,
 		},
 	},
 	{
-		kMICycler2,
+		kMISlider,
 		.text = STR_3D_GLASSES_G,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
-		.cycler=
+		.slider=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationGreen,
-			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+			.minValue=0,
+			.maxValue=255,
+			.equilibrium=DEFAULT_ANAGLYPH_G,
 		},
 	},
 	{
-		kMICycler2,
+		kMISlider,
 		.text = STR_3D_GLASSES_B,
 		.callback = SetUpAnaglyphCalibrationScreen,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
-		.cycler=
+		.slider=
 		{
 			.valuePtr=&gGamePrefs.anaglyphCalibrationBlue,
-			.choices=ANAGLYPH_CALIBRATION_CYCLER_ARRAY,
+			.minValue=0,
+			.maxValue=255,
+			.equilibrium=DEFAULT_ANAGLYPH_B,
 		},
 	},
 	{

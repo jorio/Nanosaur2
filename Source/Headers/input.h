@@ -16,8 +16,8 @@
 #define SDL_BUTTON_WHEELUP					(NUM_SUPPORTED_MOUSE_BUTTONS-2)		// make wheelup look like it's a button
 #define SDL_BUTTON_WHEELDOWN				(NUM_SUPPORTED_MOUSE_BUTTONS-1)		// make wheeldown look like it's a button
 
-#define NUM_MOUSE_SENSITIVITY_LEVELS		10
-#define DEFAULT_MOUSE_SENSITIVITY_LEVEL		(NUM_MOUSE_SENSITIVITY_LEVELS/2)
+#define MAX_MOUSE_SENSITIVITY_LEVELS		255
+#define DEFAULT_MOUSE_SENSITIVITY_LEVEL		(MAX_MOUSE_SENSITIVITY_LEVELS/2)
 
 enum
 {
@@ -43,7 +43,6 @@ typedef struct
 	int16_t			key[MAX_BINDINGS_PER_NEED];
 	PadBinding		pad[MAX_BINDINGS_PER_NEED];
 	int8_t			mouseButton;
-
 } InputBinding;
 
 enum
@@ -70,8 +69,6 @@ enum
 
 	kNeed_UIUp,
 	kNeed_UIDown,
-	kNeed_UILeft,
-	kNeed_UIRight,
 	kNeed_UIPrev,
 	kNeed_UINext,
 	kNeed_UIConfirm,

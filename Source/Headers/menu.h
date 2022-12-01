@@ -2,7 +2,7 @@
 
 #include "localization.h"
 
-#define MAX_MENU_CYCLER_CHOICES		20
+#define MAX_MENU_CYCLER_CHOICES		8
 
 typedef enum
 {
@@ -12,6 +12,7 @@ typedef enum
 	kMISpacer,
 	kMICycler1,
 	kMICycler2,
+	kMISlider,
 	kMIFloatRange,
 	kMIKeyBinding,
 	kMIPadBinding,
@@ -43,6 +44,15 @@ typedef struct
 
 typedef struct
 {
+	Byte*			valuePtr;
+	Byte			equilibrium;
+	Byte			minValue;
+	Byte			maxValue;
+	Byte			increment;
+} MenuSliderData;
+
+typedef struct
+{
 	float*			valuePtr;
 	const float*	equilibriumPtr;
 	float			incrementFrac;
@@ -62,9 +72,10 @@ typedef struct MenuItem
 
 	union
 	{
-		int 				inputNeed;
-		MenuCyclerData		cycler;
-		MenuFloatRangeData	floatRange;
+		int 					inputNeed;
+		MenuCyclerData			cycler;
+		MenuSliderData			slider;
+		MenuFloatRangeData		floatRange;
 	};
 
 	float					customHeight;

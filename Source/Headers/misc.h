@@ -43,3 +43,19 @@ static inline int PositiveModulo(int value, unsigned int m)
 	return mod;
 }
 
+static inline float RangeNorm(float x, float rangeMin, float rangeMax)
+{
+	return (x - rangeMin) / (rangeMax - rangeMin);
+}
+
+static inline float RangeLerp(float frac, float rangeMin, float rangeMax)
+{
+	return rangeMin + frac * (rangeMax - rangeMin);
+}
+
+static inline float RangeTranspose(float x, float currentRangeMin, float currentRangeMax, float targetRangeMin, float targetRangeMax)
+{
+	float f = RangeNorm(x, currentRangeMin, currentRangeMax);
+	float y = RangeLerp(f, targetRangeMin, targetRangeMax);
+	return y;
+}

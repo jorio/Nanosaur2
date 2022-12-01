@@ -232,28 +232,13 @@ static const MenuItem gSettingsMenuTree[] =
 		},
 	},
 	{
-		kMICycler2, STR_HUD_SCALE,
-		.cycler=
+		kMISlider, STR_HUD_SCALE,
+		.slider=
 		{
-			.valuePtr=&gGamePrefs.hudScale,
-			.choices={
-					{STR_HUD_SCALE_50, 50},
-					{STR_HUD_SCALE_60, 60},
-					{STR_HUD_SCALE_70, 70},
-					{STR_HUD_SCALE_80, 80},
-					{STR_HUD_SCALE_90, 90},
-					{STR_HUD_SCALE_100, 100},
-					{STR_HUD_SCALE_110, 110},
-					{STR_HUD_SCALE_120, 120},
-					{STR_HUD_SCALE_130, 130},
-					{STR_HUD_SCALE_140, 140},
-					{STR_HUD_SCALE_150, 150},
-					{STR_HUD_SCALE_160, 160},
-					{STR_HUD_SCALE_170, 170},
-					{STR_HUD_SCALE_180, 180},
-					{STR_HUD_SCALE_190, 190},
-					{STR_HUD_SCALE_200, 200},
-					},
+			.valuePtr = &gGamePrefs.hudScale,
+			.minValue = 50,
+			.maxValue = 200,
+			.equilibrium = 100,
 		},
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
@@ -309,11 +294,7 @@ static const MenuItem gSettingsMenuTree[] =
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.vsync,
-			.choices =
-			{
-				{STR_OFF, 0},
-				{STR_ON, 1},
-			},
+			.choices = { {STR_OFF, 0}, {STR_ON, 1} },
 		}
 	},
 	{
@@ -347,40 +328,8 @@ static const MenuItem gSettingsMenuTree[] =
 	// AUDIO
 
 	{.id='soun'},
-	{
-		kMICycler2, STR_MUSIC,
-		.callback=UpdateGlobalVolume,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.musicVolumePercent,
-			.choices=
-			{
-				{STR_VOLUME_000, 0},
-				{STR_VOLUME_020, 20},
-				{STR_VOLUME_040, 40},
-				{STR_VOLUME_060, 60},
-				{STR_VOLUME_080, 80},
-				{STR_VOLUME_100, 100},
-			}
-		},
-	},
-	{
-		kMICycler2, STR_SFX,
-		.callback=UpdateGlobalVolume,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.sfxVolumePercent,
-			.choices=
-			{
-				{STR_VOLUME_000, 0},
-				{STR_VOLUME_020, 20},
-				{STR_VOLUME_040, 40},
-				{STR_VOLUME_060, 60},
-				{STR_VOLUME_080, 80},
-				{STR_VOLUME_100, 100},
-			}
-		},
-	},
+	{kMISlider, STR_MUSIC, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.musicVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
+	{kMISlider, STR_SFX, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.sfxVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
@@ -410,26 +359,7 @@ static const MenuItem gSettingsMenuTree[] =
 	// MOUSE
 
 	{ .id='mous' },
-	{
-		kMICycler2, STR_MOUSE_SENSITIVITY,
-		.cycler=
-		{
-			.valuePtr=&gGamePrefs.mouseSensitivityLevel,
-			.choices=
-			{
-				{STR_MOUSE_SENSITIVITY_1, 1},
-				{STR_MOUSE_SENSITIVITY_2, 2},
-				{STR_MOUSE_SENSITIVITY_3, 3},
-				{STR_MOUSE_SENSITIVITY_4, 4},
-				{STR_MOUSE_SENSITIVITY_5, 5},
-				{STR_MOUSE_SENSITIVITY_6, 6},
-				{STR_MOUSE_SENSITIVITY_7, 7},
-				{STR_MOUSE_SENSITIVITY_8, 8},
-				{STR_MOUSE_SENSITIVITY_9, 9},
-				{STR_MOUSE_SENSITIVITY_10, 10},
-			},
-		},
-	},
+	{kMISlider, STR_MOUSE_SENSITIVITY, .slider={.valuePtr=&gGamePrefs.mouseSensitivityLevel, .minValue=1, .maxValue=MAX_MOUSE_SENSITIVITY_LEVELS, .equilibrium=DEFAULT_MOUSE_SENSITIVITY_LEVEL} },
 	{kMISpacer, .customHeight=.25f },
 	{kMIMouseBinding, .inputNeed=kNeed_Fire },
 	{kMIMouseBinding, .inputNeed=kNeed_Jetpack },

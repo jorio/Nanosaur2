@@ -100,26 +100,16 @@ const InputBinding kDefaultInputBindings[NUM_CONTROL_NEEDS] =
 		.pad = { CB(DPAD_DOWN), CAPLUS(LEFTY) },
 	},
 
-	[kNeed_UILeft] =
-	{
-		.key = { SDL_SCANCODE_LEFT, SDL_SCANCODE_A },
-		.pad = { CB(DPAD_LEFT), CAMINUS(LEFTX) },
-	},
-
-	[kNeed_UIRight] =
-	{
-		.key = { SDL_SCANCODE_RIGHT, SDL_SCANCODE_D },
-		.pad = { CB(DPAD_RIGHT), CAPLUS(LEFTX) },
-	},
-
 	[kNeed_UIPrev] =
 	{
-		.pad = { CB(LEFTSHOULDER) },
+		.key = { SDL_SCANCODE_LEFT, SDL_SCANCODE_A },
+		.pad = { CB(DPAD_LEFT), CAMINUS(LEFTX), CB(LEFTSHOULDER) },
 	},
 
 	[kNeed_UINext] =
 	{
-		.pad = { CB(RIGHTSHOULDER) },
+		.key = { SDL_SCANCODE_RIGHT, SDL_SCANCODE_D },
+		.pad = { CB(DPAD_RIGHT), CAPLUS(LEFTX), CB(RIGHTSHOULDER) },
 	},
 
 	[kNeed_UIConfirm] =

@@ -931,6 +931,8 @@ void ResetDefaultGamepadBindings(void)
 
 void ResetDefaultMouseBindings(void)
 {
+	gGamePrefs.mouseSensitivityLevel = DEFAULT_MOUSE_SENSITIVITY_LEVEL;
+
 	for (int i = 0; i < NUM_CONTROL_NEEDS; i++)
 	{
 		gGamePrefs.bindings[i].mouseButton = kDefaultInputBindings[i].mouseButton;

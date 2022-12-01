@@ -88,21 +88,20 @@ static float SliderValueToKnobX(const SliderInfo* info, float v);
 #define USE_SDL_CURSOR			0
 
 #define MAX_MENU_ROWS			25
-#define MAX_STACK_LENGTH		16
+#define MAX_STACK_LENGTH		16		// for history
 #define CLEAR_BINDING_SCANCODE SDL_SCANCODE_X
-
-#define CYCLER_ARROW_PADDING	80
-#define CYCLER_ARROW_INSET		30
 
 #define MAX_REGISTERED_MENUS	32
 
+#define kMouseHoverTolerance	5
+#define kMinClickableWidth		80
 #define kDefaultX				(640/2)
 #define k2ColumnLeftX			(kDefaultX-220)
 #define k2ColumnRightX			(kDefaultX+140)
 #define kSfxCycle				EFFECT_GRABEGG
 #define kTextMeshUserFlag_AltFont kTextMeshUserFlag1
-
 const int16_t kJoystickDeadZone_BindingThreshold = (75 * 32767 / 100);
+
 #define PlayEffectForMenu(x)		PlayEffect_Parms((x), FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE)
 #define PlayNavigateEffect()		PlayEffectForMenu(EFFECT_CHANGESELECT)
 #define PlayConfirmEffect()			PlayEffectForMenu(EFFECT_MENUSELECT)
@@ -464,6 +463,18 @@ static void SetMaxTextWidth(ObjNode* textNode, float maxWidth)
 	}
 }
 
+static void SetMinClickableWidth(ObjNode* textNode, float minWidth)
+{
+	OGLRect extents = TextMesh_GetExtents(textNode);
+	float extentsWidth = extents.right - extents.left;
+	if (extentsWidth < minWidth)
+	{
+		float padding = 0.5f * (minWidth - extentsWidth);
+		textNode->LeftOff -= padding;
+		textNode->RightOff += padding;
+	}
+}
+
 #pragma mark - Input binding utilities
 
 static InputBinding* GetBindingAtRow(int row)
@@ -601,6 +612,7 @@ static ObjNode* MakeKbText(int row, int keyNo)
 	}
 
 	ObjNode* node = MakeText(kbName, row, 1+keyNo, kTextMeshSmallCaps | kTextMeshAlignCenter);
+	SetMinClickableWidth(node, kMinClickableWidth);
 	return node;
 }
 
@@ -618,9 +630,7 @@ static ObjNode* MakePbText(int row, int btnNo)
 	}
 
 	ObjNode* node = MakeText(pbName, row, 1+btnNo, kTextMeshSmallCaps | kTextMeshAlignCenter);
-
-
-
+	SetMinClickableWidth(node, kMinClickableWidth);
 	return node;
 }
 
@@ -638,6 +648,7 @@ static ObjNode* MakeMbText(int row)
 	}
 
 	ObjNode* node = MakeText(mbName, row, 1, kTextMeshAllCaps | kTextMeshAlignCenter);
+	SetMinClickableWidth(node, kMinClickableWidth);
 	return node;
 }
 
@@ -986,17 +997,11 @@ static void UpdateArrows(void)
 		ObjNode* arrowObj = gNav->arrowObjects[i];
 		SetObjectVisible(arrowObj, true);
 
-		arrowObj->Coord.x = i==0? extents.left - spacing: extents.right + spacing;
+		arrowObj->Coord.x = i==0? (extents.left - spacing): (extents.right + spacing);
 		arrowObj->Coord.y = snapTo->Coord.y;
 		arrowObj->Scale = snapTo->Scale;
 
 		arrowObj->ColorFilter.a = visible[i] ? 1 : 0;
-	}
-
-	if (entry->type == kMICycler1)
-	{
-		gNav->arrowObjects[0]->Coord.x += CYCLER_ARROW_INSET;
-		gNav->arrowObjects[1]->Coord.x -= CYCLER_ARROW_INSET;
 	}
 
 	// Finally, update object transforms
@@ -1029,7 +1034,6 @@ static void NavigateMenuVertically(int delta)
 	} while (skipEntry);
 
 	gNav->idleTime = 0;
-//	gNav->mouseHoverValid = false;
 
 	if (makeSound)
 	{
@@ -1070,8 +1074,9 @@ static void NavigateMenuMouseHover(void)
 		fullExtents.bottom	= fullExtents.right	= -100000;
 
 		ObjNode* textNode = gNav->menuObjects[row];
+		int focusedComponent = -1;
 
-		for (int col = 0; textNode; col++, textNode=textNode->ChainNode)
+		for (int component = 0; textNode; component++, textNode=textNode->ChainNode)
 		{
 			OGLRect extents = TextMesh_GetExtents(textNode);
 			if (extents.top		< fullExtents.top	) fullExtents.top		= extents.top;
@@ -1081,20 +1086,21 @@ static void NavigateMenuMouseHover(void)
 
 			if (cursor.y >= extents.top
 				&& cursor.y <= extents.bottom
-				&& cursor.x >= extents.left - 10
-				&& cursor.x <= extents.right + 10)
+				&& cursor.x >= extents.left - kMouseHoverTolerance
+				&& cursor.x <= extents.right + kMouseHoverTolerance)
 			{
-				gNav->mouseFocusComponent = col;
+				focusedComponent = component;
+				// Don't break -- if several components overlap, we want to focus on the one with the highest component number
 			}
 		}
 
 		if (cursor.y >= fullExtents.top &&
 			cursor.y <= fullExtents.bottom &&
-			cursor.x >= fullExtents.left - 10 &&
-			cursor.x <= fullExtents.right + 10)
+			cursor.x >= fullExtents.left - kMouseHoverTolerance &&
+			cursor.x <= fullExtents.right + kMouseHoverTolerance)
 		{
 			gNav->mouseState = kMouseHovering;
-//			printf("Mouse Hover Valid with Column %d\n", gNav->mouseFocusComponent);
+			gNav->mouseFocusComponent = focusedComponent;
 
 #if USE_SDL_CURSOR
 			SetHandMouseCursor();				// set hand cursor
@@ -1215,6 +1221,7 @@ static ObjNode* LayOutCycler2ColumnsValueText(int row)
 {
 	ObjNode* node2 = MakeText(GetCyclerValueText(row), row, 1, kTextMeshAlignCenter);
 	node2->MoveCall = MoveAction;
+	SetMinClickableWidth(node2, kMinClickableWidth);
 	return node2;
 }
 
@@ -1251,8 +1258,6 @@ static ObjNode* LayOutCycler1Column(int row)
 
 	ObjNode* node = MakeText(buf, row, 0, kTextMeshSmallCaps);
 	node->MoveCall = MoveAction;
-	node->LeftOff -= CYCLER_ARROW_PADDING;
-	node->RightOff += CYCLER_ARROW_PADDING;
 
 	return node;
 }
@@ -1530,7 +1535,7 @@ static void NavigateSlider(const MenuItem* entry)
 	SliderInfo info = GetSliderComponents(entry, sliderRoot);
 
 	if (gNav->mouseState == kMouseHovering
-		&& gNav->mouseFocusComponent == 4		// knob is node #4 in chain
+		&& (gNav->mouseFocusComponent == 4 || gNav->mouseFocusComponent == 3)		// knob is node #4 in chain
 		&& IsClickDown(SDL_BUTTON_LEFT))
 	{
 		// Grab knob
@@ -1664,6 +1669,7 @@ static ObjNode* LayOutMouseBinding(int row)
 	ObjNode* keyNode = MakeText(GetMouseBindingName(row), row, 1, kTextMeshAlignCenter);
 	keyNode->Coord.x = k2ColumnRightX;
 	keyNode->MoveCall = MoveControlBinding;
+	SetMinClickableWidth(keyNode, 70);
 
 	return label;
 }

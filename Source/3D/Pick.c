@@ -824,7 +824,7 @@ Boolean		hit;
 			// then the line segment might be very large, so don't do the grid test.
 			//
 
-	if (allowBBoxTests)
+//	if (allowBBoxTests)
 	{
 		gridX1 = (int)lineSeg->p1.x / GRID_SIZE;
 		gridY1 = (int)lineSeg->p1.y / GRID_SIZE;

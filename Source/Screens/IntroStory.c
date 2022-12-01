@@ -539,7 +539,7 @@ static void MakeSubtitleObjects(int slideNum)
 		return;
 
 	char textCopy[512];
-	strncpy(textCopy, text, sizeof(textCopy));
+	snprintf(textCopy, sizeof(textCopy), "%s", text);
 
 	char* cursor = textCopy;
 	int subRow = 0;

@@ -1,6 +1,6 @@
 // MENU.C
 // (c)2022 Iliyas Jorio
-// This file is part of Cro-Mag Rally. https://github.com/jorio/cromagrally
+// This file is part of Nanosaur 2. https://github.com/jorio/nanosaur2
 
 /****************************/
 /*    EXTERNALS             */
@@ -13,6 +13,7 @@
 #include <SDL_opengl.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 /****************************/
 /*    PROTOTYPES            */
@@ -62,6 +63,7 @@ static ObjNode* LayOutKeyBinding(int row);
 static ObjNode* LayOutPadBinding(int row);
 static ObjNode* LayOutMouseBinding(int row);
 static ObjNode* LayOutSlider(int row);
+static ObjNode* LayOutFileSlot(int row);
 
 static void NavigateMenuVertically(int delta);
 static void NavigateMenuMouseHover(void);
@@ -172,6 +174,7 @@ static const MenuItemClass kMenuItemClasses[kMI_COUNT] =
 	[kMIKeyBinding]		= {0.8f, LayOutKeyBinding, NavigateKeyBinding },
 	[kMIPadBinding]		= {0.8f, LayOutPadBinding, NavigatePadBinding },
 	[kMIMouseBinding]	= {0.8f, LayOutMouseBinding, NavigateMouseBinding },
+	[kMIFileSlot]		= {1.0f, LayOutFileSlot, NavigatePick },
 };
 
 /*********************/
@@ -184,7 +187,7 @@ typedef struct
 	const MenuItem*		menu;
 	MenuStyle			style;
 
-	int					numMenuEntries;
+	int					numRows;
 
 	int					focusRow;
 	int					focusComponent;
@@ -213,6 +216,9 @@ typedef struct
 
 	ObjNode*			arrowObjects[2];
 	ObjNode*			darkenPane;
+
+	float				sweepDelay;
+	bool				sweepRTL;
 } MenuNavigation;
 
 static MenuNavigation* gNav = NULL;
@@ -221,9 +227,6 @@ int gMenuOutcome = 0;
 
 static int gNumMenusRegistered = 0;
 const MenuItem* gMenuRegistry[MAX_REGISTERED_MENUS];
-
-static float gTempInitialSweepFactor = 0;
-static bool gTempForceSwipeRTL = false;
 
 /***********************************/
 /*    MENU NAVIGATION STRUCT       */
@@ -372,6 +375,7 @@ ObjNode* GetCurrentInteractableMenuItemObject(void)
 
 		case kMIMouseBinding:
 		case kMICycler2:
+		case kMIFileSlot:
 			return GetNthChainedNode(obj, 1, NULL);
 			break;
 
@@ -868,9 +872,9 @@ static void GoBackInHistory(void)
 		PlayBackEffect();
 		gNav->historyPos--;
 
-		gTempForceSwipeRTL = true;
+		gNav->sweepRTL = true;
 		LayOutMenu(gNav->history[gNav->historyPos].menuID);
-		gTempForceSwipeRTL = false;
+		gNav->sweepRTL = false;
 	}
 	else if (gNav->style.canBackOutOfRootMenu)
 	{
@@ -1022,11 +1026,11 @@ static void NavigateMenuVertically(int delta)
 	do
 	{
 		gNav->focusRow += delta;
-		gNav->focusRow = PositiveModulo(gNav->focusRow, (unsigned int)gNav->numMenuEntries);
+		gNav->focusRow = PositiveModulo(gNav->focusRow, (unsigned int)gNav->numRows);
 
 		skipEntry = !IsMenuItemSelectable(&gNav->menu[gNav->focusRow]);
 
-		if (browsed++ > gNav->numMenuEntries)
+		if (browsed++ > gNav->numRows)
 		{
 			// no entries are selectable
 			return;
@@ -1062,7 +1066,7 @@ static void NavigateMenuMouseHover(void)
 	gNav->mouseState = kMouseWandering;
 	gNav->mouseFocusComponent = -1;
 
-	for (int row = 0; row < gNav->numMenuEntries; row++)
+	for (int row = 0; row < gNav->numRows; row++)
 	{
 		if (!IsMenuItemSelectable(&gNav->menu[row]))
 		{
@@ -1148,6 +1152,8 @@ static ObjNode* LayOutPick(int row)
 
 	ObjNode* obj = MakeText(GetMenuItemText(entry), row, 0, 0);
 	obj->MoveCall = MoveAction;
+
+	SetMinClickableWidth(obj, 80);
 
 	return obj;
 }
@@ -1389,7 +1395,7 @@ static void NavigateCycler(const MenuItem* entry)
 			entry->callback();
 		}
 
-		gTempForceSwipeRTL = (delta == -1);
+		gNav->sweepRTL = (delta == -1);
 
 		if (entry->type == kMICycler1)
 			LayOutCycler1Column(gNav->focusRow);
@@ -1604,6 +1610,47 @@ static void NavigateSlider(const MenuItem* entry)
 			SetNewSliderValue(entry, &info, v);
 		}
 	}
+}
+
+#pragma mark - Widget: File slot
+
+static ObjNode* LayOutFileSlot(int row)
+{
+	DECLARE_WORKBUF(buf, bufSize);
+
+	const MenuItem* entry = &gNav->menu[row];
+
+	snprintf(buf, bufSize, "%s %c", GetMenuItemText(entry), 'A' + entry->fileSlot);
+	ObjNode* node1 = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
+	node1->Coord.x = k2ColumnLeftX;
+	node1->MoveCall = MoveAction;
+	SetMaxTextWidth(node1, 100);
+	UpdateObjectTransforms(node1);
+
+	SaveGameType saveData;
+	if (!LoadSavedGame(entry->fileSlot, &saveData))
+	{
+		snprintf(buf, bufSize, "---------------- %s ----------------", Localize(STR_EMPTY_SLOT));
+	}
+	else
+	{
+		time_t timestamp = (time_t) saveData.timestamp;
+		struct tm *timeinfo = localtime(&timestamp);
+
+		snprintf(buf, bufSize, "%s %d   %d %s %d",
+				Localize(STR_LEVEL),
+				saveData.level+1,
+				timeinfo->tm_mday,
+				Localize(timeinfo->tm_mon + STR_JANUARY),
+				1900 + timeinfo->tm_year);
+	}
+
+	ObjNode* node2 = MakeText(buf, row, 1, kTextMeshAlignLeft | kTextMeshSmallCaps);
+	node2->Coord.x = k2ColumnLeftX + 120;
+	node2->MoveCall = MoveAction;
+	UpdateObjectTransforms(node2);
+
+	return node1;
 }
 
 #pragma mark - Widget: Key/Pad/Mouse Binding
@@ -1873,7 +1920,7 @@ static void NavigateMouseBinding(const MenuItem* entry)
 
 static void UnbindScancodeFromAllRemappableInputNeeds(int16_t sdlScancode)
 {
-	for (int row = 0; row < gNav->numMenuEntries; row++)
+	for (int row = 0; row < gNav->numRows; row++)
 	{
 		if (gNav->menu[row].type != kMIKeyBinding)
 			continue;
@@ -1893,7 +1940,7 @@ static void UnbindScancodeFromAllRemappableInputNeeds(int16_t sdlScancode)
 
 static void UnbindPadButtonFromAllRemappableInputNeeds(int8_t type, int8_t id)
 {
-	for (int row = 0; row < gNav->numMenuEntries; row++)
+	for (int row = 0; row < gNav->numRows; row++)
 	{
 		if (gNav->menu[row].type != kMIPadBinding)
 			continue;
@@ -1914,7 +1961,7 @@ static void UnbindPadButtonFromAllRemappableInputNeeds(int8_t type, int8_t id)
 
 static void UnbindMouseButtonFromAllRemappableInputNeeds(int8_t id)
 {
-	for (int row = 0; row < gNav->numMenuEntries; row++)
+	for (int row = 0; row < gNav->numRows; row++)
 	{
 		if (gNav->menu[row].type != kMIMouseBinding)
 			continue;
@@ -2201,13 +2248,13 @@ static ObjNode* MakeText(const char* text, int row, int chainItem, int textMeshF
 	Twitch* fadeEffect = MakeTwitch(node, kTwitchPreset_MenuFadeIn);
 	if (fadeEffect)
 	{
-		fadeEffect->delay = -gTempInitialSweepFactor * fadeEffect->duration;
+		fadeEffect->delay = -gNav->sweepDelay * fadeEffect->duration;
 
 		Twitch* displaceEffect = MakeTwitch(node, kTwitchPreset_MenuSweep | kTwitchFlags_Chain);
 		if (displaceEffect)
 		{
 			displaceEffect->delay = fadeEffect->delay;
-			displaceEffect->amplitude *= (gTempForceSwipeRTL ? 1 : -1);
+			displaceEffect->amplitude *= (gNav->sweepRTL ? 1 : -1);
 			displaceEffect->amplitude *= (1.0 + displaceEffect->delay);
 		}
 	}
@@ -2246,19 +2293,26 @@ static void LayOutMenu(int menuID)
 
 	gNav->menu				= menu;
 	gNav->menuID			= menuID;
-	gNav->numMenuEntries	= 0;
 	gNav->menuPick			= -1;
+	gNav->numRows			= 0;
 	gNav->idleTime			= 0;
-
-	// Restore old row
-	gNav->focusRow = gNav->history[gNav->historyPos].row;
 
 	DeleteAllText();
 
+	// Count rows before calling any layout callbacks
+	for (int row = 0; menu[row].type != kMISENTINEL; row++)
+	{
+		gNav->numRows++;
+		GAME_ASSERT(gNav->numRows <= MAX_MENU_ROWS);
+	}
+
+	// Compute total height
 	float totalHeight = 0;
 	float firstHeight = 0;
 	for (int row = 0; menu[row].type != kMISENTINEL; row++)
 	{
+		gNav->focusRow = row;	// TEMPORARILY set focusRow to allow getLayoutFlags (via GetMenuItemHeight) to call into GetCurrentMenuItemID, etc.
+
 		float height = GetMenuItemHeight(row);
 		if (firstHeight == 0)
 			firstHeight = height;
@@ -2274,10 +2328,12 @@ static void LayOutMenu(int menuID)
 		RescaleDarkenPane(gNav->darkenPane, totalHeight);
 	}
 
-	gTempInitialSweepFactor = 0.0f;
+	gNav->sweepDelay = 0.0f;
 
 	for (int row = 0; menu[row].type != kMISENTINEL; row++)
 	{
+		gNav->focusRow = row;	// TEMPORARILY set focusRow to allow getLayoutFlags to call into GetCurrentMenuItemID, etc.
+
 		gNav->menuRowYs[row] = y;
 
 		const MenuItem* entry = &menu[row];
@@ -2285,7 +2341,6 @@ static void LayOutMenu(int menuID)
 
 		if (GetLayoutFlags(entry) & kMILayoutFlagHidden)
 		{
-			gNav->numMenuEntries++;
 			continue;
 		}
 
@@ -2305,15 +2360,16 @@ static void LayOutMenu(int menuID)
 
 		if (entry->type != kMISpacer)
 		{
-			gTempInitialSweepFactor -= .2f;
+			gNav->sweepDelay -= .2f;
 		}
-
-		gNav->numMenuEntries++;
-		GAME_ASSERT(gNav->numMenuEntries < MAX_MENU_ROWS);
 	}
 
-	gTempInitialSweepFactor = 0.0f;
+	gNav->sweepDelay = 0.0f;
 
+	// Restore old focus row from history
+	gNav->focusRow = gNav->history[gNav->historyPos].row;
+
+	// If there was no valid focus row in history, fall back to first interactable row
 	if (gNav->focusRow <= 0
 		|| !IsMenuItemSelectable(&gNav->menu[gNav->focusRow]))	// we had selected this item when we last were in this menu, but it's been disabled since then
 	{
@@ -2414,8 +2470,8 @@ ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style)
 	if (style)
 		memcpy(&gNav->style, style, sizeof(*style));
 
-	gTempInitialSweepFactor	= 0;
-	gTempForceSwipeRTL		= false;
+	gNav->sweepDelay	= 0;
+	gNav->sweepRTL		= false;
 
 			/* LAY OUT MENU COMPONENTS */
 
@@ -2536,12 +2592,13 @@ static void CleanUpMenuDriver(ObjNode* theNode)
 			//MakeTwitch(gNav->darkenPane, kTwitchPreset_MenuDarkenPaneVanish | kTwitchFlags_Chain);
 		}
 
+		// Neutralize move calls in all rows and fade out
 		for (int row = 0; row < MAX_MENU_ROWS; row++)
 		{
-			if (gNav->menuObjects[row])
+			for (ObjNode* chainNode = gNav->menuObjects[row]; chainNode; chainNode = chainNode->ChainNode)
 			{
-				gNav->menuObjects[row]->MoveCall = nil;
-				MakeTwitch(gNav->menuObjects[row], kTwitchPreset_MenuFadeOut | kTwitchFlags_KillPuppet);
+				chainNode->MoveCall = nil;
+				MakeTwitch(chainNode, kTwitchPreset_MenuFadeOut | kTwitchFlags_KillPuppet);
 			}
 		}
 

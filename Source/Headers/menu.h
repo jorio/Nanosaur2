@@ -16,6 +16,7 @@ typedef enum
 	kMIKeyBinding,
 	kMIPadBinding,
 	kMIMouseBinding,
+	kMIFileSlot,
 	kMI_COUNT
 } MenuItemType;
 
@@ -64,6 +65,7 @@ typedef struct MenuItem
 	union
 	{
 		int 					inputNeed;
+		int						fileSlot;
 		MenuCyclerData			cycler;
 		MenuSliderData			slider;
 	};

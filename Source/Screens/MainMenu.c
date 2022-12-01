@@ -29,7 +29,6 @@ static void CheckForLevelCheat(void);
 #define	FONT_SCALE	35.0f
 #define	SCREENSAVER_DELAY	15.0f
 #define	MENU_TEXT_ANAGLYPH_Z	4.0f
-#define	LINE_SPACING	(FONT_SCALE * 1.1f)
 #define	CURSOR_SCALE	35.0f
 
 // This menu tree MUST NOT BE CONST because CheckForLevelCheat needs to change
@@ -67,10 +66,18 @@ static MenuItem gMainMenuTree[] =
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id='chea' },
-	{kMILabel, .rawText="CHEAT MENU!", .customHeight=2},
-	{kMIPick, .rawText="LEVEL 1",	.id='cht1',	.next='EXIT' },
-	{kMIPick, .rawText="LEVEL 2",	.id='cht2',	.next='EXIT' },
-	{kMIPick, .rawText="LEVEL 3",	.id='cht3',	.next='EXIT' },
+	{kMILabel, .rawText="CHEAT MENU!"},
+	{kMIPick, .rawText="LEVEL 1: FOREST",	.id='cht1',	.next='EXIT' },
+	{kMIPick, .rawText="LEVEL 2: DESERT",	.id='cht2',	.next='EXIT' },
+	{kMIPick, .rawText="LEVEL 3: SWAMP",	.id='cht3',	.next='EXIT' },
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{.id='load'},
+	{kMIFileSlot, STR_FILE, .id='lf#0', .fileSlot=0, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#1', .fileSlot=1, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#2', .fileSlot=2, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#3', .fileSlot=3, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#4', .fileSlot=4, .next='EXIT'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id=0 }
@@ -128,7 +135,6 @@ void DoMainMenuScreen(void)
 			style.yOffset = 302.5f;
 			MakeMenu(gMainMenuTree, &style);
 			RegisterSettingsMenu();
-			RegisterFileScreen(FILESCREEN_MODE_LOAD);
 		}
 
 		while (0 == gMenuOutcome)

@@ -68,15 +68,7 @@ void DoLevelIntroScreen(Byte mode);
 void DoWinScreen(void);
 
 
-	/* FILE SCREEN */
-
-enum
-{
-	FILESCREEN_MODE_LOAD,
-	FILESCREEN_MODE_SAVE,
-};
-
-void RegisterFileScreen(int fileScreenMode);
+	/* GATHER CONTROLLERS */
 
 Boolean DoLocalGatherScreen(void);
 

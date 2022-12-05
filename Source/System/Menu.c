@@ -1695,7 +1695,7 @@ static ObjNode* LayOutKeyBinding(int row)
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
-	label->MoveCall = MoveLabel;
+	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 110);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
@@ -1718,7 +1718,7 @@ static ObjNode* LayOutPadBinding(int row)
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
-	label->MoveCall = MoveLabel;
+	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 110);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
@@ -1741,7 +1741,7 @@ static ObjNode* LayOutMouseBinding(int row)
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = k2ColumnLeftX;
 	label->ColorFilter = gNav->style.labelColor;
-	label->MoveCall = MoveLabel;
+	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 150);
 
 	ObjNode* keyNode = MakeMbText(row);

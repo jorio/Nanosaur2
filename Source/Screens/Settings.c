@@ -76,6 +76,13 @@ static void MoveTemporaryGraphicsMenuText(ObjNode* theNode)
 	}
 }
 
+static void MoveTemporaryGamepadMenuText(ObjNode* theNode)
+{
+	if (GetCurrentMenu() != 'gpad')
+	{
+		DeleteObject(theNode);
+	}
+}
 
 static void OnChangeVSync(void)
 {
@@ -189,6 +196,32 @@ static void OnEnterGraphicsMenu(void)
 
 	// Create MSAA warning text if needed
 	OnChangeMSAA();
+}
+
+static void OnEnterGamepadMenu(void)
+{
+	SDL_GameController* sdlController = GetController(0);
+
+	const char* controllerName = Localize(STR_NO_GAMEPAD_DETECTED);
+
+	if (sdlController != NULL)
+	{
+		controllerName = SDL_GameControllerName(sdlController);
+	}
+
+	NewObjectDefinitionType def =
+	{
+		.coord = {320, 480 - 8, 0},
+		.group = ATLAS_GROUP_FONT2,
+		.scale = 0.15,
+		.slot = SPRITE_SLOT,
+		.moveCall = MoveTemporaryGamepadMenuText,
+		.flags = STATUS_BIT_MOVEINPAUSE,
+	};
+
+	ObjNode* controllerText = TextMesh_New(controllerName, kTextMeshSmallCaps | kTextMeshAlignBottom, &def);
+	controllerText->ColorFilter.a = 0.75f;
+	SendNodeToOverlayPane(controllerText);
 }
 
 static const MenuItem gSettingsMenuTree[] =
@@ -402,7 +435,7 @@ static const MenuItem gSettingsMenuTree[] =
 	//-------------------------------------------------------------------------
 	// GAMEPAD
 
-	{ .id = 'gpad' },
+	{ .id = 'gpad', .callback=OnEnterGamepadMenu },
 	//	{kMISpacer, .customHeight=.35f },
 	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .7f },
 	{ kMISpacer, .customHeight = .4f },

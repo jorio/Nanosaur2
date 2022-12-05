@@ -2171,7 +2171,9 @@ static bool AwaitMouseClick(void)
 {
 	bool doWiggle = false;
 
-	if (IsKeyDown(SDL_SCANCODE_ESCAPE))
+	if (IsKeyDown(SDL_SCANCODE_ESCAPE)
+		|| IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
+		|| IsNeedDown(kNeed_UIBack, ANY_PLAYER))
 	{
 		doWiggle = true;
 		goto updateText;

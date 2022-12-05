@@ -1560,6 +1560,8 @@ static void NavigateSlider(const MenuItem* entry)
 {
 	static float prevTickX = -1;
 	static float grabOffset = -1;
+	static float heldCooldown = -1;
+	static bool didRamEdge = false;
 
 	ObjNode* sliderRoot = GetCurrentMenuItemObject();
 	SliderComponents parts = GetSliderComponents(entry, sliderRoot);
@@ -1607,18 +1609,38 @@ static void NavigateSlider(const MenuItem* entry)
 		MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
 		PlayErrorEffect();
 	}
-	else if (IsNeedDown(kNeed_UIPrev, ANY_PLAYER)
-		|| IsNeedDown(kNeed_UINext, ANY_PLAYER))
+	else if (IsNeedActive(kNeed_UIPrev, ANY_PLAYER) || IsNeedActive(kNeed_UINext, ANY_PLAYER))
 	{
-		int direction = IsNeedDown(kNeed_UIPrev, ANY_PLAYER)? -1: 1;
+		int direction = IsNeedActive(kNeed_UIPrev, ANY_PLAYER)? -1: 1;
+		int need = direction < 0? kNeed_UIPrev : kNeed_UINext;
+
+		bool didJustPress = IsNeedDown(need, ANY_PLAYER);
+
+		if (didJustPress)
+		{
+			didRamEdge = false;
+		}
+		else
+		{
+			heldCooldown -= gFramesPerSecondFrac * 12 * (GetNeedAnalogValue(kNeed_UIPrev, ANY_PLAYER) + GetNeedAnalogValue(kNeed_UINext, ANY_PLAYER));
+
+			if (heldCooldown > 0)
+			{
+				return;
+			}
+		}
 
 		if ((direction < 0 && *entry->slider.valuePtr == entry->slider.minValue)
 			|| (direction > 0 && *entry->slider.valuePtr == entry->slider.maxValue))
 		{
-			MakeTwitch(GetCurrentInteractableMenuItemObject(), kTwitchPreset_MenuSelect);
-			MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
-			MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
-			PlayErrorEffect();
+			if (!didRamEdge)
+			{
+				MakeTwitch(GetCurrentInteractableMenuItemObject(), kTwitchPreset_MenuSelect);
+				MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_PadlockWiggle);
+				MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_PadlockWiggle);
+				PlayErrorEffect();
+				didRamEdge = true;
+			}
 		}
 		else
 		{
@@ -1640,6 +1662,8 @@ static void NavigateSlider(const MenuItem* entry)
 
 			PlayNavigateEffect();
 			TwitchSelection();
+
+			heldCooldown = didJustPress? 2.5f: 1;			// longer delay on first iteration
 		}
 	}
 }

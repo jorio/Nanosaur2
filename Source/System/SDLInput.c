@@ -452,8 +452,27 @@ int GetNeedState(int needID, int playerID)
 	return KEYSTATE_OFF;
 }
 
+static float GetNeedAnalogValueAnyP(int needID)
+{
+	for (int i = 0; i < MAX_LOCAL_PLAYERS; i++)
+	{
+		if (gControllers[i].open && gControllers[i].needStates[needID])
+		{
+			return GetNeedAnalogValue(needID, i);
+		}
+	}
+
+	// Fallback to KB/M
+	return GetNeedAnalogValue(needID, KBMFallbackPlayer());
+}
+
 float GetNeedAnalogValue(int needID, int playerID)
 {
+	if (playerID == ANY_PLAYER)
+	{
+		return GetNeedAnalogValueAnyP(needID);
+	}
+
 	GAME_ASSERT(playerID >= 0);
 	GAME_ASSERT(playerID < MAX_LOCAL_PLAYERS);
 	GAME_ASSERT(needID >= 0);

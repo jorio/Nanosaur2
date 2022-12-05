@@ -15,6 +15,7 @@ void DrawInfobarSprite3_Centered(float x, float y, float size, short texNum);
 void DrawInfobarSprite_Centered(float x, float y, float size, short texNum);
 void Infobar_DrawNumber(int number, float x, float y, float scale, int numDigits, Boolean showLeading);
 
+OGLRect Get2DLogicalRect(Byte splitScreenPane, float zoom);
 void SetInfobarSpriteState(float anaglyphZ, float zoom);
 
 ObjNode* ShowLapNum(short playerNum);

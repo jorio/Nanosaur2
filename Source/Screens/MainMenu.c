@@ -431,20 +431,10 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 			/* UPDATE CROSSHAIR POSITION */
 			/*****************************/
 
+	gCursorCoord = GetMouseCoords640x480();
 
-	int mx, my;
-	int ww, wh;
-	SDL_GetMouseState(&mx, &my);
-	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
-
-	float screenToPaneX = (gLogicalRect.right - gLogicalRect.left) / (float)ww;
-	float screenToPaneY = (gLogicalRect.bottom - gLogicalRect.top) / (float)wh;
-
-	theNode->Coord.x = (float)mx * screenToPaneX + gLogicalRect.left;
-	theNode->Coord.y = (float)my * screenToPaneY + gLogicalRect.top;
-
-	gCursorCoord.x = theNode->Coord.x;
-	gCursorCoord.y = theNode->Coord.y;
+	theNode->Coord.x = gCursorCoord.x;
+	theNode->Coord.y = gCursorCoord.y;
 
 	UpdateObjectTransforms(theNode);
 

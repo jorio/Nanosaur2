@@ -448,31 +448,13 @@ void DisposeInfobar(void)
 // anaglyphZ:  +5...-5  where + values are in front of screen, and - values are in back
 //
 
-void SetInfobarSpriteState(float anaglyphZ, float zoom)
+OGLRect Get2DLogicalRect(Byte splitScreenPane, float zoom)
 {
-	OGL_DisableLighting();
-	OGL_DisableCullFace();
-	glDisable(GL_DEPTH_TEST);								// no z-buffer
-
-				/* SET MATERIAL FLAGS */
-				//
-				// Assume that all sprites have clamped edges.
-				// Assume that most sprites have alpha, so enable blending (this won't hurt if it doesn't have an alpha)
-				//
-
-	gGlobalMaterialFlags = BG3D_MATERIALFLAG_CLAMP_V|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_ALWAYSBLEND;
-
-
-			/* INIT MATRICES */
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
 	int dontcare;
 	int drawableW = 1;
 	int drawableH = 1;
 	//SDL_GL_GetDrawableSize(gSDLWindow, &drawableW, &drawableH);
-	OGL_GetCurrentViewport(&dontcare, &dontcare, &drawableW, &drawableH, gCurrentSplitScreenPane);
+	OGL_GetCurrentViewport(&dontcare, &dontcare, &drawableW, &drawableH, splitScreenPane);
 
 	float referenceW = 640;
 	float referenceH = 480;
@@ -505,7 +487,34 @@ void SetInfobarSpriteState(float anaglyphZ, float zoom)
 	float right		= left + logicalW;
 	float bottom	= top + logicalH;
 
-	gLogicalRect = (OGLRect) {.left=left, .top=top, .right=right, .bottom=bottom};
+	return (OGLRect) {.left=left, .top=top, .right=right, .bottom=bottom};
+}
+
+void SetInfobarSpriteState(float anaglyphZ, float zoom)
+{
+	OGL_DisableLighting();
+	OGL_DisableCullFace();
+	glDisable(GL_DEPTH_TEST);								// no z-buffer
+
+				/* SET MATERIAL FLAGS */
+				//
+				// Assume that all sprites have clamped edges.
+				// Assume that most sprites have alpha, so enable blending (this won't hurt if it doesn't have an alpha)
+				//
+
+	gGlobalMaterialFlags = BG3D_MATERIALFLAG_CLAMP_V|BG3D_MATERIALFLAG_CLAMP_U|BG3D_MATERIALFLAG_ALWAYSBLEND;
+
+
+			/* INIT MATRICES */
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom);
+	float left		= gLogicalRect.left;
+	float top		= gLogicalRect.top;
+	float right		= gLogicalRect.right;
+	float bottom	= gLogicalRect.bottom;
 
 	if (IsStereo())
 	{

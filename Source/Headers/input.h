@@ -128,7 +128,10 @@ void ResetDefaultGamepadBindings(void);
 void ResetDefaultMouseBindings(void);
 
 OGLVector2D GetMouseDelta(void);
+OGLPoint2D GetMouseCoords640x480(void);
 void GrabMouse(Boolean capture);
 void SetMacLinearMouse(Boolean linear);
+
+void BackupRestoreCursorCoord(Boolean backup);
 
 #define KBMFallbackPlayer() (gNumPlayers-1)

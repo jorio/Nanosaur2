@@ -1048,10 +1048,66 @@ OGLVector2D GetMouseDelta(void)
 #endif
 }
 
+OGLPoint2D GetMouseCoords640x480(void)
+{
+	int mx, my;
+	int ww, wh;
+	SDL_GetMouseState(&mx, &my);
+	SDL_GetWindowSize(gSDLWindow, &ww, &wh);
+
+	OGLRect r = Get2DLogicalRect(GetOverlayPaneNumber(), 1);
+
+	float screenToPaneX = (r.right - r.left) / (float)ww;
+	float screenToPaneY = (r.bottom - r.top) / (float)wh;
+
+	OGLPoint2D p =
+	{
+		(float) mx * screenToPaneX + r.left,
+		(float) my * screenToPaneY + r.top
+	};
+
+	return p;
+}
+
+void BackupRestoreCursorCoord(Boolean backup)
+{
+	static OGLPoint2D cursorCoordBackup = { -1, -1 };
+
+	if (backup)
+	{
+		cursorCoordBackup = gCursorCoord;
+	}
+	else if (cursorCoordBackup.x >= 0)
+	{
+		gCursorCoord = cursorCoordBackup;
+		OGLRect r = Get2DLogicalRect(GetOverlayPaneNumber(), 1);
+
+		int ww, wh;
+		SDL_GetWindowSize(gSDLWindow, &ww, &wh);
+
+		float screenToPaneX = (r.right - r.left) / (float)ww;
+		float screenToPaneY = (r.bottom - r.top) / (float)wh;
+
+		int mx = (int) ((gCursorCoord.x - r.left) / screenToPaneX);
+		int my = (int) ((gCursorCoord.y - r.top) / screenToPaneY);
+		SDL_WarpMouseInWindow(gSDLWindow, mx, my);
+	}
+}
+
 void GrabMouse(Boolean capture)
 {
+	if (capture)
+	{
+		BackupRestoreCursorCoord(true);
+	}
+
 	SDL_SetWindowGrab(gSDLWindow, capture);
 	SDL_SetRelativeMouseMode(capture? SDL_TRUE: SDL_FALSE);
 //	SDL_ShowCursor(capture? 0: 1);
 	SetMacLinearMouse(capture);
+
+	if (!capture)
+	{
+		BackupRestoreCursorCoord(false);
+	}
 }

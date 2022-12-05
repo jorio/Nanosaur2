@@ -2608,7 +2608,7 @@ static void MoveMenuDriver(ObjNode* theNode)
 			{
 				NavigateMenu();
 			}
-			else if (UserWantsOut())
+			else if (IsNeedDown(kNeed_UIBack, ANY_PLAYER) || IsNeedDown(kNeed_UIPause, ANY_PLAYER))
 			{
 				GoBackInHistory();
 			}

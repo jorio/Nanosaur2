@@ -518,11 +518,13 @@ float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID
 
 Boolean UserWantsOut(void)
 {
+	if (gGammaFadeFrac < 1)				// disallow skipping during fade-in
+		return false;
+
 	return IsNeedDown(kNeed_UIConfirm, ANY_PLAYER)
 		|| IsNeedDown(kNeed_UIBack, ANY_PLAYER)
 		|| IsNeedDown(kNeed_UIPause, ANY_PLAYER)
-//		|| GetNewClickState(SDL_BUTTON_LEFT)
-        ;
+		|| IsClickDown(SDL_BUTTON_LEFT);
 }
 
 Boolean IsCmdQDown(void)
@@ -667,7 +669,7 @@ static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex)
 	{
 		return gControllers[controllerSlot].controllerInstance;
 	}
-	
+
 	// If we can't get an SDL_GameController from that joystick, don't bother
 	if (!SDL_IsGameController(joystickIndex))
 	{
@@ -808,7 +810,7 @@ static void MoveController(int oldSlot, int newSlot)
 	printf("Remapped player controller %d ---> %d\n", oldSlot, newSlot);
 
 	gControllers[newSlot] = gControllers[oldSlot];
-	
+
 	// TODO: Does this actually work??
 	if (gControllers[newSlot].open)
 	{

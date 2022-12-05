@@ -121,3 +121,4 @@ ObjNode* GetCurrentMenuItemObject(void);
 float GetMenuIdleTime(void);
 void KillMenu(int returnCode);
 bool IsMenuTreeEndSentinel(const MenuItem* menuItem);
+int DisableEmptyFileSlots(void);

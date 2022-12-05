@@ -219,6 +219,8 @@ typedef struct
 
 	float				sweepDelay;
 	bool				sweepRTL;
+
+	bool				validSaveSlot[MAX_MENU_ROWS];
 } MenuNavigation;
 
 static MenuNavigation* gNav = NULL;
@@ -1620,7 +1622,7 @@ static ObjNode* LayOutFileSlot(int row)
 
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s %c", GetMenuItemText(entry), 'A' + entry->fileSlot);
+	snprintf(buf, bufSize, "%s %d", GetMenuItemText(entry), 1+entry->fileSlot);
 	ObjNode* node1 = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	node1->Coord.x = k2ColumnLeftX;
 	node1->MoveCall = MoveAction;
@@ -1628,7 +1630,12 @@ static ObjNode* LayOutFileSlot(int row)
 	UpdateObjectTransforms(node1);
 
 	SaveGameType saveData;
-	if (!LoadSavedGame(entry->fileSlot, &saveData))
+
+	bool validSave = LoadSavedGame(entry->fileSlot, &saveData);
+
+	gNav->validSaveSlot[row] = validSave;
+
+	if (!validSave)
 	{
 		snprintf(buf, bufSize, "---------------- %s ----------------", Localize(STR_EMPTY_SLOT));
 	}
@@ -1651,6 +1658,13 @@ static ObjNode* LayOutFileSlot(int row)
 	UpdateObjectTransforms(node2);
 
 	return node1;
+}
+
+int DisableEmptyFileSlots(void)
+{
+	int row = gNav->focusRow;
+	bool isValid = gNav->validSaveSlot[row];
+	return isValid? 0: kMILayoutFlagDisabled;
 }
 
 #pragma mark - Widget: Key/Pad/Mouse Binding

@@ -10,7 +10,6 @@
 #define PREFS_MAGIC			"Nanosaur2 Prefs v0"
 #define PREFS_FILENAME		"Preferences"
 #define SAVEGAME_MAGIC		"Nanosaur2 Save v0"
-#define MAX_SAVE_FILES		5
 
 
 		/***********************/

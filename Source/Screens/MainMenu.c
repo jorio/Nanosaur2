@@ -73,11 +73,11 @@ static MenuItem gMainMenuTree[] =
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{.id='load'},
-	{kMIFileSlot, STR_FILE, .id='lf#0', .fileSlot=0, .next='EXIT'},
-	{kMIFileSlot, STR_FILE, .id='lf#1', .fileSlot=1, .next='EXIT'},
-	{kMIFileSlot, STR_FILE, .id='lf#2', .fileSlot=2, .next='EXIT'},
-	{kMIFileSlot, STR_FILE, .id='lf#3', .fileSlot=3, .next='EXIT'},
-	{kMIFileSlot, STR_FILE, .id='lf#4', .fileSlot=4, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#0', .fileSlot=0, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#1', .fileSlot=1, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#2', .fileSlot=2, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#3', .fileSlot=3, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
+	{kMIFileSlot, STR_FILE, .id='lf#4', .fileSlot=4, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id=0 }

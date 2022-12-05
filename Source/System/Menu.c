@@ -28,6 +28,7 @@ typedef struct
 	Byte		row;
 	Byte		component;
 	float		pulsateTimer;
+	float		maxWidth;
 } MenuNodeData;
 _Static_assert(sizeof(MenuNodeData) <= MAX_SPECIAL_DATA_BYTES, "MenuNodeData doesn't fit in special area");
 #define GetMenuNodeData(node) ((MenuNodeData*) (node)->SpecialPadding)
@@ -460,6 +461,15 @@ static OGLColorRGBA PulsateColor(float* time)
 
 static void SetMaxTextWidth(ObjNode* textNode, float maxWidth)
 {
+	GetMenuNodeData(textNode)->maxWidth = maxWidth;
+
+	// Reset X scaling if we've squeezed the same node previously
+	textNode->Scale.x = textNode->Scale.y;
+
+	// If max width <=0, let it expand
+	if (maxWidth <= EPS)
+		return;
+
 	OGLRect extents = TextMesh_GetExtents(textNode);
 	float extentsWidth = extents.right - extents.left;
 	if (extentsWidth > maxWidth)
@@ -619,6 +629,7 @@ static ObjNode* MakeKbText(int row, int keyNo)
 
 	ObjNode* node = MakeText(kbName, row, 1+keyNo, kTextMeshSmallCaps | kTextMeshAlignCenter);
 	SetMinClickableWidth(node, kMinClickableWidth);
+	SetMaxTextWidth(node, 110);
 	return node;
 }
 
@@ -637,6 +648,7 @@ static ObjNode* MakePbText(int row, int btnNo)
 
 	ObjNode* node = MakeText(pbName, row, 1+btnNo, kTextMeshSmallCaps | kTextMeshAlignCenter);
 	SetMinClickableWidth(node, kMinClickableWidth);
+	SetMaxTextWidth(node, 110);
 	return node;
 }
 
@@ -655,6 +667,7 @@ static ObjNode* MakeMbText(int row)
 
 	ObjNode* node = MakeText(mbName, row, 1, kTextMeshAllCaps | kTextMeshAlignCenter);
 	SetMinClickableWidth(node, kMinClickableWidth);
+	SetMaxTextWidth(node, 110);
 	return node;
 }
 
@@ -667,8 +680,10 @@ static void TwitchSelectionInOrOut(bool scaleIn)
 	if (!obj)
 		return;
 
+	float xSquish = obj->Scale.x / obj->Scale.y;
+
 	float s = GetMenuItemHeight(gNav->focusRow) * gNav->style.standardScale;
-	obj->Scale.x = s * (scaleIn? 1.1: 1);
+	obj->Scale.x = s * (scaleIn? 1.1: 1) * xSquish;
 	obj->Scale.y = s * (scaleIn? 1.1: 1);
 
 	MakeTwitch(obj, (scaleIn ? kTwitchPreset_MenuSelect : kTwitchPreset_MenuDeselect) | kTwitchFlags_Chain);
@@ -1230,6 +1245,7 @@ static ObjNode* LayOutCycler2ColumnsValueText(int row)
 	ObjNode* node2 = MakeText(GetCyclerValueText(row), row, 1, kTextMeshAlignCenter);
 	node2->MoveCall = MoveAction;
 	SetMinClickableWidth(node2, kMinClickableWidth);
+	SetMaxTextWidth(node2, 150);
 	return node2;
 }
 
@@ -1680,7 +1696,7 @@ static ObjNode* LayOutKeyBinding(int row)
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
-	SetMaxTextWidth(label, 90);
+	SetMaxTextWidth(label, 110);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
@@ -1703,7 +1719,7 @@ static ObjNode* LayOutPadBinding(int row)
 	label->Coord.x = 100;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
-	SetMaxTextWidth(label, 90);
+	SetMaxTextWidth(label, 110);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
@@ -1726,8 +1742,9 @@ static ObjNode* LayOutMouseBinding(int row)
 	label->Coord.x = k2ColumnLeftX;
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveLabel;
+	SetMaxTextWidth(label, 150);
 
-	ObjNode* keyNode = MakeText(GetMouseBindingName(row), row, 1, kTextMeshAlignCenter);
+	ObjNode* keyNode = MakeMbText(row);
 	keyNode->Coord.x = k2ColumnRightX;
 	keyNode->MoveCall = MoveControlBinding;
 	SetMinClickableWidth(keyNode, 70);
@@ -2217,8 +2234,11 @@ static ObjNode* MakeText(const char* text, int row, int chainItem, int textMeshF
 
 	if (node)
 	{
-		// Recycling existing text lets us keep the move call, color and specials
+		// Recycling existing text lets us keep the move call, color and specials.
 		TextMesh_Update(text, textMeshFlags, node);
+
+		// Restore max text width
+		SetMaxTextWidth(node, GetMenuNodeData(node)->maxWidth);
 	}
 	else
 	{

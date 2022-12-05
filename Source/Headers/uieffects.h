@@ -84,5 +84,3 @@ typedef struct
 
 void InitTwitchSystem(void);
 Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags);
-
-ObjNode* MakeScrollingBackgroundPattern(void);

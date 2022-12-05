@@ -598,9 +598,9 @@ static float		waveX = 0, waveY = 1.0;
 
 /************************ MAKE LEVEL INTRO SAVE SPRITES ************************/
 
-int GetLevelSpecificMenuLayoutFlags(void)
+int GetLevelSpecificMenuLayoutFlags(const MenuItem* mi)
 {
-	int id = GetCurrentMenuItemID();
+	int id = mi->id;
 	if ((gLevelNum == 1 && id == 'lvl1') || (gLevelNum == 2 && id == 'lvl2'))
 	{
 		return 0;

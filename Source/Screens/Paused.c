@@ -29,8 +29,10 @@ static void OnExitPause(int outcome);
 
 /****************** TOGGLE SPLIT-SCREEN MODE ********************/
 
-static int ShouldDisplaySplitscreenModeCycler(void)
+static int ShouldDisplaySplitscreenModeCycler(const MenuItem* mi)
 {
+	(void) mi;
+
 	if (gNumPlayers >= 2)
 		return 0;
 	else

@@ -9,18 +9,21 @@
 #include "miscscreens.h"
 #include "version.h"
 
-static int DisableMenuEntryInGame(void)
+static int DisableMenuEntryInGame(const MenuItem* mi)
 {
+	(void) mi;
 	return gPlayNow ? kMILayoutFlagDisabled : 0;
 }
 
-static int HideMenuEntryInGame(void)
+static int HideMenuEntryInGame(const MenuItem* mi)
 {
+	(void) mi;
 	return gPlayNow ? kMILayoutFlagHidden : 0;
 }
 
-static int ShowMenuEntryInGameOnly(void)
+static int ShowMenuEntryInGameOnly(const MenuItem* mi)
 {
+	(void) mi;
 	return gPlayNow ? 0 : kMILayoutFlagHidden;
 }
 
@@ -94,8 +97,10 @@ static int GetNumDisplays(void)
 	return SDL_GetNumVideoDisplays();
 }
 
-static int ShouldDisplayMonitorCycler(void)
+static int ShouldDisplayMonitorCycler(const MenuItem* mi)
 {
+	(void) mi;
+
 	// Expose the option if we have more than one display
 	return (GetNumDisplays() <= 1) ? kMILayoutFlagHidden : 0;
 }
@@ -107,8 +112,10 @@ static const char* GetDisplayName(Byte value)
 	return textBuf;
 }
 
-static int ShouldDisplayMSAA(void)
+static int ShouldDisplayMSAA(const MenuItem* mi)
 {
+	(void) mi;
+
 #if __APPLE__
 	// macOS's OpenGL driver doesn't seem to handle MSAA very well,
 	// so don't expose the option unless the game was started with MSAA.

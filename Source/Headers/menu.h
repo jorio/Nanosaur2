@@ -60,7 +60,7 @@ typedef struct MenuItem
 	int32_t					next;		// next menu, or one of 'EXIT', 'BACK' or 0 (no-op)
 
 	void					(*callback)(void);
-	int						(*getLayoutFlags)(void);
+	int						(*getLayoutFlags)(const struct MenuItem* mi);
 
 	union
 	{
@@ -121,4 +121,4 @@ ObjNode* GetCurrentMenuItemObject(void);
 float GetMenuIdleTime(void);
 void KillMenu(int returnCode);
 bool IsMenuTreeEndSentinel(const MenuItem* menuItem);
-int DisableEmptyFileSlots(void);
+int DisableEmptyFileSlots(const MenuItem* menuItem);

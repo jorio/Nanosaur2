@@ -221,7 +221,7 @@ typedef struct
 	float				sweepDelay;
 	bool				sweepRTL;
 
-	bool				validSaveSlot[MAX_MENU_ROWS];
+	uint64_t			validSaveSlotMask;
 } MenuNavigation;
 
 static MenuNavigation* gNav = NULL;
@@ -414,7 +414,7 @@ static const char* FourccToString(int fourCC)
 static int GetLayoutFlags(const MenuItem* mi)
 {
 	if (mi->getLayoutFlags)
-		return mi->getLayoutFlags();
+		return mi->getLayoutFlags(mi);
 	else
 		return 0;
 }
@@ -1649,7 +1649,8 @@ static ObjNode* LayOutFileSlot(int row)
 
 	bool validSave = LoadSavedGame(entry->fileSlot, &saveData);
 
-	gNav->validSaveSlot[row] = validSave;
+	if (validSave)
+		gNav->validSaveSlotMask |= 1 << entry->fileSlot;
 
 	if (!validSave)
 	{
@@ -1676,10 +1677,9 @@ static ObjNode* LayOutFileSlot(int row)
 	return node1;
 }
 
-int DisableEmptyFileSlots(void)
+int DisableEmptyFileSlots(const MenuItem* mi)
 {
-	int row = gNav->focusRow;
-	bool isValid = gNav->validSaveSlot[row];
+	bool isValid = (gNav->validSaveSlotMask >> mi->fileSlot) & 1;
 	return isValid? 0: kMILayoutFlagDisabled;
 }
 
@@ -2332,6 +2332,7 @@ static void LayOutMenu(int menuID)
 	gNav->menuPick			= -1;
 	gNav->numRows			= 0;
 	gNav->idleTime			= 0;
+	gNav->validSaveSlotMask	= 0;
 
 	DeleteAllText();
 
@@ -2347,8 +2348,6 @@ static void LayOutMenu(int menuID)
 	float firstHeight = 0;
 	for (int row = 0; menu[row].type != kMISENTINEL; row++)
 	{
-		gNav->focusRow = row;	// TEMPORARILY set focusRow to allow getLayoutFlags (via GetMenuItemHeight) to call into GetCurrentMenuItemID, etc.
-
 		float height = GetMenuItemHeight(row);
 		if (firstHeight == 0)
 			firstHeight = height;
@@ -2368,8 +2367,6 @@ static void LayOutMenu(int menuID)
 
 	for (int row = 0; menu[row].type != kMISENTINEL; row++)
 	{
-		gNav->focusRow = row;	// TEMPORARILY set focusRow to allow getLayoutFlags to call into GetCurrentMenuItemID, etc.
-
 		gNav->menuRowYs[row] = y;
 
 		const MenuItem* entry = &menu[row];

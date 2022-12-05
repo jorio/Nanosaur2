@@ -16,12 +16,12 @@
 /****************************/
 
 static void OnChangeAnaglyphSetting(void);
-static int GetAnaglyphDisplayFlags(void);
-static int GetAnaglyphDisplayFlags_ColorOnly(void);
+static int GetAnaglyphDisplayFlags(const MenuItem* mi);
+static int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi);
 static void DisposeAnaglyphCalibrationScreen(void);
 static void MoveAnaglyphScreenHeadObject(ObjNode* theNode);
 static void ResetAnaglyphSettings(void);
-static int ShouldShowResetAnaglyphSettings(void);
+static int ShouldShowResetAnaglyphSettings(const MenuItem* mi);
 
 
 /****************************/
@@ -259,16 +259,20 @@ static void OnChangeAnaglyphSetting(void)
 	LayoutCurrentMenuAgain();
 }
 
-static int GetAnaglyphDisplayFlags(void)
+static int GetAnaglyphDisplayFlags(const MenuItem* mi)
 {
+	(void) mi;
+
 	if (IsStereoAnaglyph())
 		return 0;
 	else
 		return kMILayoutFlagHidden;
 }
 
-static int GetAnaglyphDisplayFlags_ColorOnly(void)
+static int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi)
 {
+	(void) mi;
+
 	if (IsStereoAnaglyphColor())
 		return 0;
 	else
@@ -307,7 +311,8 @@ static void ResetAnaglyphSettings(void)
 	LayoutCurrentMenuAgain();
 }
 
-static int ShouldShowResetAnaglyphSettings(void)
+static int ShouldShowResetAnaglyphSettings(const MenuItem* mi)
 {
+	(void) mi;
 	return IsStereo() ? 0 : kMILayoutFlagHidden;
 }

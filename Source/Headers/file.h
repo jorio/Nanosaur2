@@ -139,6 +139,7 @@ void LoadPlayfield(FSSpec *specPtr);
 
 Boolean SaveGame(int fileSlot);
 Boolean LoadSavedGame(int fileSlot, SaveGameType* outData);
+Boolean DeleteSavedGame(int fileSlot);
 void UseSaveGame(const SaveGameType* saveData);
 
 void LoadLevelArt(void);
@@ -148,6 +149,7 @@ void AssembleSeamlessSuperTileTexture(int row, int col, Ptr canvas);
 
 OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
 OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
+OSErr DeleteUserDataFile(const char* filename);
 Ptr LoadDataFile(const char* path, long* outLength);
 char* LoadTextFile(const char* path, long* outLength);
 

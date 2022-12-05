@@ -48,6 +48,9 @@ Entering level 3. Save where?,Bienvenue au niveau 3. Enregistrer où?,Level 3 er
 File,Fichier,Datei,Archivo,File,Fil,Bestand
 Empty,Vide,Leer,Vacío,Vuoto,Tom,Leeg
 Level,Niveau,Level,Level,Livello,Bana,Niveau
+Delete,Effacer,Löschen,Borrar,Cancella,Radera,Verwijder
+Delete a File,Effacer un fichier,Einde Datei löschen,Borrar un archivo,Cancella un file,Radera en fil,Een bestand verwijderen
+Delete Which File?,Quel fichier effacer?,Welche Datei löschen?,¿Qué archivo borrar?,Cancella quale file?,Radera vilken fil?,Welk bestand verwijderen?
 ,,,,,,
 Jan.,Janv.,Jan,Enero,Genn.,Jan.,Jan.
 Feb.,Févr.,Feb,Feb.,Febb.,Febr.,Feb.

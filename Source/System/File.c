@@ -1240,6 +1240,17 @@ Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 	return true;
 }
 
+/***************************** DELETE SAVED GAME ********************************/
+
+Boolean DeleteSavedGame(int fileSlot)
+{
+	char path[256];
+	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
+
+	OSErr iErr = DeleteUserDataFile(path);
+
+	return iErr == noErr;
+}
 
 /********************** USE SAVED GAME DATA *****************************/
 
@@ -1418,6 +1429,19 @@ long				count;
 	return iErr;
 }
 
+/********* DELETE USER FILE IN PREFS FOLDER ********************/
+
+OSErr DeleteUserDataFile(const char* filename)
+{
+	FSSpec file;
+	OSErr iErr;
+
+	InitPrefsFolder(true);
+	iErr = MakeFSSpecForUserDataFile(filename, &file);
+	if (iErr == noErr)
+		iErr = FSpDelete(&file);
+	return iErr;
+}
 
 /*********************** LOAD DATA FILE INTO MEMORY ***********************************/
 //

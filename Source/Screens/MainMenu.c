@@ -20,6 +20,7 @@ static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void ProcessMenuOutcome(int outcome);
 static void CheckForLevelCheat(void);
+static void DeleteFileSlot(void);
 
 
 /****************************/
@@ -78,6 +79,16 @@ static MenuItem gMainMenuTree[] =
 	{kMIFileSlot, STR_FILE, .id='lf#2', .fileSlot=2, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
 	{kMIFileSlot, STR_FILE, .id='lf#3', .fileSlot=3, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
 	{kMIFileSlot, STR_FILE, .id='lf#4', .fileSlot=4, .getLayoutFlags=DisableEmptyFileSlots, .next='EXIT'},
+	{kMIPick, STR_DELETE_A_FILE, .next='dele'},
+	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
+
+	{.id='dele'},
+	{kMILabel, .text=STR_DELETE_WHICH, .customHeight=1.5f},
+	{kMIFileSlot, STR_DELETE, .id='df#0', .fileSlot=0, .getLayoutFlags=DisableEmptyFileSlots, .callback=DeleteFileSlot, .next='BACK'},
+	{kMIFileSlot, STR_DELETE, .id='df#1', .fileSlot=1, .getLayoutFlags=DisableEmptyFileSlots, .callback=DeleteFileSlot, .next='BACK'},
+	{kMIFileSlot, STR_DELETE, .id='df#2', .fileSlot=2, .getLayoutFlags=DisableEmptyFileSlots, .callback=DeleteFileSlot, .next='BACK'},
+	{kMIFileSlot, STR_DELETE, .id='df#3', .fileSlot=3, .getLayoutFlags=DisableEmptyFileSlots, .callback=DeleteFileSlot, .next='BACK'},
+	{kMIFileSlot, STR_DELETE, .id='df#4', .fileSlot=4, .getLayoutFlags=DisableEmptyFileSlots, .callback=DeleteFileSlot, .next='BACK'},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	{ .id=0 }
@@ -507,5 +518,31 @@ static void CheckForLevelCheat(void)
 
 			break;
 		}
+	}
+}
+
+/********************* DELETE FILE SLOT ******************/
+
+static void DeleteFileSlot(void)
+{
+	int id = GetCurrentMenuItemID();
+
+	switch (id)
+	{
+		case 'df#0':
+		case 'df#1':
+		case 'df#2':
+		case 'df#3':
+		case 'df#4':
+		case 'df#5':
+		case 'df#6':
+		case 'df#7':
+		case 'df#8':
+		case 'df#9':
+			DeleteSavedGame(id - 'df#0');
+			break;
+
+		default:
+			DoAlert("DeleteFileSlot: illegal menu item ID");
 	}
 }

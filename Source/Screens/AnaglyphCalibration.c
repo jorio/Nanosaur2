@@ -73,6 +73,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.minValue=0,
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_R,
+			.increment=5,
 		},
 	},
 	{
@@ -86,6 +87,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.minValue=0,
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_G,
+			.increment=5,
 		},
 	},
 	{
@@ -99,6 +101,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.minValue=0,
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_B,
+			.increment=5,
 		},
 	},
 	{

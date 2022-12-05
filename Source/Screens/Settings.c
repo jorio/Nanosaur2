@@ -300,6 +300,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.minValue = 50,
 			.maxValue = 200,
 			.equilibrium = 100,
+			.increment = 5,
 		},
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
@@ -395,8 +396,30 @@ static const MenuItem gSettingsMenuTree[] =
 	{.id='soun'},
 	{kMILabel, .text=STR_SOUND},
 	{kMISpacer, .customHeight=.3f},
-	{kMISlider, STR_MUSIC, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.musicVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
-	{kMISlider, STR_SFX, .callback=UpdateGlobalVolume, .slider={.valuePtr=&gGamePrefs.sfxVolumePercent, .minValue=0, .maxValue=100, .equilibrium=60} },
+	{
+		kMISlider, STR_MUSIC,
+		.callback = UpdateGlobalVolume,
+		.slider =
+		{
+			.valuePtr = &gGamePrefs.musicVolumePercent,
+			.minValue = 0,
+			.maxValue = 100,
+			.equilibrium = 60,
+			.increment = 5,
+		}
+	},
+	{
+		kMISlider, STR_SFX,
+		.callback = UpdateGlobalVolume,
+		.slider =
+		{
+			.valuePtr = &gGamePrefs.sfxVolumePercent,
+			.minValue = 0,
+			.maxValue = 100,
+			.equilibrium = 60,
+			.increment = 5
+		}
+	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
 	//-------------------------------------------------------------------------
@@ -426,7 +449,17 @@ static const MenuItem gSettingsMenuTree[] =
 	// MOUSE
 
 	{ .id='mous' },
-	{kMISlider, STR_MOUSE_SENSITIVITY, .slider={.valuePtr=&gGamePrefs.mouseSensitivityLevel, .minValue=10, .maxValue=MAX_MOUSE_SENSITIVITY_LEVEL, .equilibrium=DEFAULT_MOUSE_SENSITIVITY_LEVEL} },
+	{
+		kMISlider, STR_MOUSE_SENSITIVITY,
+		.slider = 
+		{
+			.valuePtr = &gGamePrefs.mouseSensitivityLevel,
+			.minValue = 10,
+			.maxValue = MAX_MOUSE_SENSITIVITY_LEVEL,
+			.equilibrium = DEFAULT_MOUSE_SENSITIVITY_LEVEL,
+			.increment = 5,
+		}
+	},
 	{kMISpacer, .customHeight=.25f },
 	{kMIMouseBinding, .inputNeed=kNeed_Fire },
 	{kMIMouseBinding, .inputNeed=kNeed_Jetpack },

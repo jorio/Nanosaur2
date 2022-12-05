@@ -44,7 +44,7 @@ typedef struct
 	float		vmax;
 	float		xmin;
 	float		xmax;
-} SliderInfo;
+} SliderComponents;
 
 static ObjNode* MakeText(const char* text, int row, int desiredCol, int flags);
 static void ReplaceMenuText(LocStrID originalTextInMenuDefinition, LocStrID newText);
@@ -80,9 +80,9 @@ static float GetMenuItemHeight(int row);
 static int GetCyclerNumChoices(const MenuItem* entry);
 static int GetValueIndexInCycler(const MenuItem* entry, uint8_t value);
 
-static SliderInfo GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot);
-static float SliderKnobXToValue(const SliderInfo* info, float x);
-static float SliderValueToKnobX(const SliderInfo* info, float v);
+static SliderComponents GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot);
+static float SliderKnobXToValue(const SliderComponents* info, float x);
+static float SliderValueToKnobX(const SliderComponents* info, float v);
 
 /****************************/
 /*    CONSTANTS             */
@@ -1429,7 +1429,7 @@ static void NavigateCycler(const MenuItem* entry)
 
 #pragma mark - Widget: Slider
 
-static SliderInfo GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot)
+static SliderComponents GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot)
 {
 	GAME_ASSERT(entry->type == kMISlider);
 
@@ -1441,7 +1441,7 @@ static SliderInfo GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot
 		GAME_ASSERT(nodes[i]);
 	}
 
-	SliderInfo sliderInfo =
+	SliderComponents sliderInfo =
 	{
 		.caption		= nodes[0],
 		.bar			= nodes[1],
@@ -1460,14 +1460,14 @@ static SliderInfo GetSliderComponents(const MenuItem* entry, ObjNode* sliderRoot
 	return sliderInfo;
 }
 
-static float SliderKnobXToValue(const SliderInfo* info, float x)
+static float SliderKnobXToValue(const SliderComponents* info, float x)
 {
 	float v = RangeTranspose(x, info->xmin, info->xmax, info->vmin, info->vmax);
 	v = GAME_CLAMP(v, info->vmin, info->vmax);
 	return v;
 }
 
-static float SliderValueToKnobX(const SliderInfo* info, float v)
+static float SliderValueToKnobX(const SliderComponents* info, float v)
 {
 	return RangeTranspose(v, info->vmin, info->vmax, info->xmin, info->xmax);
 }
@@ -1476,6 +1476,12 @@ static ObjNode* LayOutSlider(int row)
 {
 	DECLARE_WORKBUF(buf, bufSize);
 	const MenuItem* entry = &gNav->menu[row];
+	const MenuSliderData* sliderData = &entry->slider;
+
+	GAME_ASSERT(sliderData->valuePtr);
+	GAME_ASSERT(sliderData->increment != 0);
+	GAME_ASSERT(sliderData->equilibrium >= entry->slider.minValue);
+	GAME_ASSERT(sliderData->equilibrium <= entry->slider.maxValue);
 
 	int chain = 0;
 
@@ -1486,23 +1492,23 @@ static ObjNode* LayOutSlider(int row)
 	node->Coord.x = k2ColumnLeftX;
 	SetMaxTextWidth(node, 230);
 
-	// Bar
+	// Bar (glyph U+00A2 in green font -- 0xC2A2 in UTF-8)
 	node = MakeText("\xC2\xA2", row, chain++, kTextMeshAlignCenter);
 	node->Coord.x = k2ColumnRightX;
 
-	// Notch
+	// Notch (glyph U+00A3 in green font -- 0xC2A3 in UTF-8)
 	node = MakeText("\xC2\xA3", row, chain++, kTextMeshAlignCenter);
 	node->Coord.x = k2ColumnRightX;
 	node->ColorFilter.a = 0.5f;
 
 	// Meter
-	snprintf(buf, bufSize, "%d ", *entry->slider.valuePtr);
+	snprintf(buf, bufSize, "%d ", *sliderData->valuePtr);
 	node = MakeText(buf, row, chain++, kTextMeshAlignCenter);
 	node->Scale.x /= 3;
 	node->Scale.y /= 3;
 	node->Coord.y -= 12;
 
-	// Knob
+	// Knob  (glyph '#' in green font)
 	node = MakeText("#", row, chain++, kTextMeshAlignCenter);
 
 	for (ObjNode* chainNode = rootNode; chainNode; chainNode = chainNode->ChainNode)
@@ -1511,30 +1517,30 @@ static ObjNode* LayOutSlider(int row)
 		UpdateObjectTransforms(chainNode);
 	}
 
-	SliderInfo sliderInfo = GetSliderComponents(entry, rootNode);
-	float knobX = SliderValueToKnobX(&sliderInfo, (float) *entry->slider.valuePtr);
-	sliderInfo.notch->Coord.x = SliderValueToKnobX(&sliderInfo, (float) entry->slider.equilibrium);
-	sliderInfo.knob->Coord.x = knobX;
-	sliderInfo.meter->Coord.x = knobX;
-	UpdateObjectTransforms(sliderInfo.knob);
-	UpdateObjectTransforms(sliderInfo.meter);
+	SliderComponents parts = GetSliderComponents(entry, rootNode);
+	float knobX = SliderValueToKnobX(&parts, (float) *sliderData->valuePtr);
+	parts.notch->Coord.x = SliderValueToKnobX(&parts, (float) sliderData->equilibrium);
+	parts.knob->Coord.x = knobX;
+	parts.meter->Coord.x = knobX;
+	UpdateObjectTransforms(parts.knob);
+	UpdateObjectTransforms(parts.meter);
 
 	return rootNode;
 }
 
-static float SetNewSliderValue(const MenuItem* entry, SliderInfo* info, float mouseValue)
+static float SetNewSliderValue(const MenuItem* entry, SliderComponents* parts, float mouseValue)
 {
-	float knobX = SliderValueToKnobX(info, mouseValue);			// clamp X
+	float knobX = SliderValueToKnobX(parts, mouseValue);			// clamp X
 
-	info->knob->Coord.x = knobX;
-	info->meter->Coord.x = knobX;
+	parts->knob->Coord.x = knobX;
+	parts->meter->Coord.x = knobX;
 
 	char meterBuf[8];
 	snprintf(meterBuf, sizeof(meterBuf), "%d ", (int)mouseValue);
-	TextMesh_Update(meterBuf, kTextMeshAlignCenter, info->meter);
+	TextMesh_Update(meterBuf, kTextMeshAlignCenter, parts->meter);
 
-	UpdateObjectTransforms(info->knob);
-	UpdateObjectTransforms(info->meter);
+	UpdateObjectTransforms(parts->knob);
+	UpdateObjectTransforms(parts->meter);
 
 	Byte byteValue = (Byte) mouseValue;
 	if (*entry->slider.valuePtr != byteValue)
@@ -1556,15 +1562,15 @@ static void NavigateSlider(const MenuItem* entry)
 	static float grabOffset = -1;
 
 	ObjNode* sliderRoot = GetCurrentMenuItemObject();
-	SliderInfo info = GetSliderComponents(entry, sliderRoot);
+	SliderComponents parts = GetSliderComponents(entry, sliderRoot);
 
 	if (gNav->mouseState == kMouseHovering
 		&& (gNav->mouseFocusComponent == 4 || gNav->mouseFocusComponent == 3)		// knob is node #4 in chain
 		&& IsClickDown(SDL_BUTTON_LEFT))
 	{
 		// Grab knob
-		grabOffset = gCursorCoord.x - info.knob->Coord.x;
-		prevTickX = info.knob->Coord.x;
+		grabOffset = gCursorCoord.x - parts.knob->Coord.x;
+		prevTickX = parts.knob->Coord.x;
 		gNav->mouseState = kMouseGrabbing;
 		PlayStartBindingEffect();
 		TwitchSelection();
@@ -1573,14 +1579,13 @@ static void NavigateSlider(const MenuItem* entry)
 		&& IsClickHeld(SDL_BUTTON_LEFT))
 	{
 		float knobX = gCursorCoord.x - grabOffset;
-		float mouseValue = SliderKnobXToValue(&info, knobX);
-		knobX = SetNewSliderValue(entry, &info, mouseValue);
+		float mouseValue = SliderKnobXToValue(&parts, knobX);
+		knobX = SetNewSliderValue(entry, &parts, mouseValue);
 
 		if (fabsf(prevTickX - knobX) >= 7)
 		{
-			float pitch = RangeTranspose(mouseValue, info.vmin, info.vmax, 0.5f, 0.9f);
-
-			PlayEffect_Parms(EFFECT_CHANGESELECT, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE * pitch );
+			float pitch = RangeTranspose(mouseValue, parts.vmin, parts.vmax, 0.5f, 0.9f);
+			PlayEffect_Parms(EFFECT_CHANGESELECT, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE * pitch );
 
 			PlayNavigateEffect();
 			prevTickX = knobX;
@@ -1605,7 +1610,7 @@ static void NavigateSlider(const MenuItem* entry)
 	else if (IsNeedDown(kNeed_UIPrev, ANY_PLAYER)
 		|| IsNeedDown(kNeed_UINext, ANY_PLAYER))
 	{
-		float direction = IsNeedDown(kNeed_UIPrev, ANY_PLAYER)? -1: 1;
+		int direction = IsNeedDown(kNeed_UIPrev, ANY_PLAYER)? -1: 1;
 
 		if ((direction < 0 && *entry->slider.valuePtr == entry->slider.minValue)
 			|| (direction > 0 && *entry->slider.valuePtr == entry->slider.maxValue))
@@ -1619,13 +1624,22 @@ static void NavigateSlider(const MenuItem* entry)
 		{
 			gNav->mouseState = kMouseOff;
 
-			float f = RangeNorm(*entry->slider.valuePtr, info.vmin, info.vmax);
-			f += 0.10f * direction;
-			f = GAME_CLAMP(f, 0, 1);
-			float v = RangeLerp(f, info.vmin, info.vmax);
-			v = roundf(v);
+			int increment = entry->slider.increment;
 
-			SetNewSliderValue(entry, &info, v);
+			float v = *entry->slider.valuePtr;
+
+			v = increment * roundf(v / (float)increment);	// first, snap value to the nearest multiple of the increment
+			v += direction * increment;
+			v = roundf(v);
+			v = GAME_CLAMP(v, entry->slider.minValue, entry->slider.maxValue);
+
+			SetNewSliderValue(entry, &parts, v);
+
+			float pitch = RangeTranspose(v, parts.vmin, parts.vmax, 0.5f, 0.9f);
+			PlayEffect_Parms(EFFECT_CHANGESELECT, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE * pitch );
+
+			PlayNavigateEffect();
+			TwitchSelection();
 		}
 	}
 }

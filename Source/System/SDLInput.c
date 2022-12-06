@@ -1043,10 +1043,23 @@ OGLVector2D GetMouseDelta(void)
 
 	return (OGLVector2D) {(float) state->dxAccu, (float) state->dyAccu};
 #else
-	int x = 0;
-	int y = 0;
-	SDL_GetRelativeMouseState(&x, &y);
-	return (OGLVector2D) {(float) x, (float) y};
+	static float timeSinceLastCall = 0;
+	static OGLVector2D lastDelta = { 0, 0 };
+
+	timeSinceLastCall += gFramesPerSecondFrac;
+
+	// Mouse sensitivity settings are calibrated to feel good at 60 FPS,
+	// so we mustn't poll GetRelativeMouseState any faster than 60 Hz.
+	if (timeSinceLastCall >= (1.0f / 60.0f))
+	{
+		int x = 0;
+		int y = 0;
+		SDL_GetRelativeMouseState(&x, &y);
+		lastDelta = (OGLVector2D){ (float)x, (float)y };
+		timeSinceLastCall = 0;
+	}
+
+	return lastDelta;
 #endif
 }
 

@@ -1245,6 +1245,9 @@ void UpdatePlayerSteering(int playerNum)
 		playerInfo->weaponQuantity[WEAPON_TYPE_CLUSTERSHOT] = 999;
 		playerInfo->weaponQuantity[WEAPON_TYPE_BOMB] = 999;
 		playerInfo->weaponQuantity[WEAPON_TYPE_HEATSEEKER] = 999;
+
+		if (gPlayerInfo[playerNum].shieldObj == nil)				// see if need to create the shield object
+			CreatePlayerShield(playerNum);
 	}
 }
 

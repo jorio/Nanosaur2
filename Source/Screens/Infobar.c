@@ -925,10 +925,10 @@ double				leftEdge, topEdge;
 	xoff = MAP_SCALE2;
 	yoff = MAP_SCALE2;
 
-	p2D[0].x = -xoff;		p2D[0].y = -yoff;
-	p2D[1].x = xoff;		p2D[1].y = -yoff;
-	p2D[2].x = xoff;		p2D[2].y = yoff;
-	p2D[3].x = -xoff;		p2D[3].y = yoff;
+	p2D[0].x = -xoff;		p2D[0].y = yoff;
+	p2D[1].x = xoff;		p2D[1].y = yoff;
+	p2D[2].x = xoff;		p2D[2].y = -yoff;
+	p2D[3].x = -xoff;		p2D[3].y = -yoff;
 
 	OGLMatrix3x3_SetRotate(&m, rot);
 	OGLPoint2D_TransformArray(p2D, &m, p2D, 4);

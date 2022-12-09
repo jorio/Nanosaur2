@@ -98,10 +98,10 @@ effect when you restart the game.","Le nouveau niveau d'anticrénelage sera
 effectif après un redémarrage du jeu.",,,"Il nuovo livello di antialiasing avrà
 effetto quanto riavvierai il gioco.",,
 ,,,,,,
-Status bar Spacing,Espacement barre d'état,Abstand der Statuszeile,Espacio barra de estado,Spaziatura barra di stato,Statusfältavstånd,Statusbalk afstand
-Spaced Out,Espacée,Ausgebreitet,Espaciada,Separata,Utspridd,Uitgespreid
-Centered,Centrée,Zentriert,Centrada,Centrata,Centrerat,Gecentreerd
-Status bar Scale,Taille barre d'état,Maßstab der Statuszeile,Tamaño barra de estado,Dimensione barra di stato,Statusfältstorlek,Statusbalk grootte
+Status bar Spacing,Espacement barre d'état,Abstand der Statuszeile,Espacio barra de estado,Estensione HUD,Statusfältavstånd,Statusbalk afstand
+Spaced Out,Espacée,Ausgebreitet,Espaciada,Esteso,Utspridd,Uitgespreid
+Centered,Centrée,Zentriert,Centrada,Centrato,Centrerat,Gecentreerd
+Status bar Scale,Taille barre d'état,Maßstab der Statuszeile,Tamaño barra de estado,Dimensione HUD,Statusfältstorlek,Statusbalk grootte
 ,,,,,,
 3D Glasses,Lunettes 3D,3D-Brille,Gafas 3D,Occhiali 3D,3D-Glasögon,3D-Bril
 Calibrate 3D Glasses,Calibrer Lunettes 3D,3D-Brille kalibrieren,Calibrar gafas 3D,Calibra occhiali 3D,Kalibrera 3D-glasögon,

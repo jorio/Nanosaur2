@@ -356,10 +356,17 @@ OGLMatrix4x4	matrix,matrix2;
 	if (gNumShards == 0)												// quick check if any particles at all
 		return;
 
+	GAME_ASSERT(gNumShards > 0);
+
 	fps = gFramesPerSecondFrac;
 
 	for (i=0; i < MAX_SHARDS; i++)
 	{
+		if (!gShards[i].isUsed)
+		{
+			continue;
+		}
+
 				/* ROTATE IT */
 
 		gShards[i].rot.x += gShards[i].rotDelta.x * fps;
@@ -436,6 +443,8 @@ long	i;
 
 	if (gNumShards == 0)												// quick check if any particles at all
 		return;
+
+	GAME_ASSERT(gNumShards > 0);
 
 			/* SET STATE */
 

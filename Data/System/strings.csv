@@ -23,12 +23,12 @@ Story <subtitled>,L'Univers <sous-titré>,Geschichte <mit Untertiteln>,Historia 
 Credits,Crédits,Credits,Créditos,Crediti,Vi Som Gör Nanosaur,Credits
 Pangea Web Site,Site Web Pangea,Pangea-Webseite,Pagina Web de Pangea,Sito web di Pangea,Pangeas hemsida,Pangea-Website
 ,,,,,,
-Race <Swamp>,Course <Marécage>,Rennen <Sumpf>,Carrera 1,Corsa 1,Tävling <Träsket>,Race 1
-Race <Desert>,Course <Désert>,Rennen <Wüste>,Carrera 2,Corsa 2,Tävling <Öknen>,Race 2
-Battle <Forest>,Bataille <Forêt>,Kampf <Wald>,Batalla 1,Battaglia 1,Tvekamp <Skogen>,Strijd 1
-Battle <Desert>,Bataille <Désert>,Kampf <Wüste>,Batalla 2,Battaglia 2,Tvekamp <Öknen>,Strijd 2
-Capture the Eggs <Swamp>,Prise des Œufs <Marécage>,Eier erobern <Sumpf>,Capturar los huevos 1,Cattura le uova 1,Fånga Äggen <Träsket>,De Eieren bemachtigen 1
-Capture the Eggs <Forest>,Prise des Œufs <Forêt>,Eier erobern <Wald>,Capturar los huevos 2,Cattura le uova 2,Fånga Äggen <Skogen>,De Eieren bemachtigen 2
+Race <Swamp>,Course <Marécage>,Rennen <Sumpf>,Carrera 1,Corsa <Palude>,Tävling <Träsket>,Race 1
+Race <Desert>,Course <Désert>,Rennen <Wüste>,Carrera 2,Corsa <Deserto>,Tävling <Öknen>,Race 2
+Battle <Forest>,Bataille <Forêt>,Kampf <Wald>,Batalla 1,Battaglia <Foresta>,Tvekamp <Skogen>,Strijd 1
+Battle <Desert>,Bataille <Désert>,Kampf <Wüste>,Batalla 2,Battaglia <Deserto>,Tvekamp <Öknen>,Strijd 2
+Capture the Eggs <Swamp>,Prise des Œufs <Marécage>,Eier erobern <Sumpf>,Capturar los huevos 1,Cattura le uova <Palude>,Fånga Äggen <Träsket>,De Eieren bemachtigen 1
+Capture the Eggs <Forest>,Prise des Œufs <Forêt>,Eier erobern <Wald>,Capturar los huevos 2,Cattura le uova <Foresta>,Fånga Äggen <Skogen>,De Eieren bemachtigen 2
 ,,,,,,
 Resume,Retour au jeu,Fortfahren,Continuar,Riprendi,Återuppta,Doorgaan
 End Game,Abandonner,Mission beenden,Retirarse,Abbandona,Ge upp,Einde

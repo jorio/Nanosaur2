@@ -106,6 +106,29 @@ int	i;
 }
 
 
+/******** SET SHARD XFORM MATRIX FROM SCALE, ROT, COORD **********/
+
+static void UpdateShardTransformMatrix(ShardType* shard)
+{
+	OGLMatrix4x4	m1;
+	OGLMatrix4x4	m2;
+
+			/* SET SCALE MATRIX */
+
+	OGLMatrix4x4_SetScale(&shard->matrix, shard->scale, shard->scale, shard->scale);
+
+			/* NOW ROTATE IT */
+
+	OGLMatrix4x4_SetRotate_XYZ(&m1, shard->rot.x, shard->rot.y, shard->rot.z);
+	OGLMatrix4x4_Multiply(&shard->matrix, &m1, &m2);
+
+			/* NOW TRANSLATE IT */
+
+	OGLMatrix4x4_SetTranslate(&m1, shard->coord.x, shard->coord.y, shard->coord.z);
+	OGLMatrix4x4_Multiply(&m2, &m1, &shard->matrix);
+}
+
+
 /****************** EXPLODE GEOMETRY ***********************/
 
 void ExplodeGeometry(ObjNode *theNode, float boomForce, Byte particleMode, long particleDensity, float particleDecaySpeed)
@@ -336,6 +359,10 @@ OGLPoint3D			origin;
 		gShards[i].decaySpeed 	= gShardDecaySpeed;
 		gShards[i].mode 		= gShardMode;
 
+				/* SET INITIAL XFORM MATRIX */
+
+		UpdateShardTransformMatrix(&gShards[i]);
+
 				/* SET VALID & INC COUNTER */
 
 		gShards[i].isUsed = true;
@@ -351,7 +378,6 @@ static void MoveShards(ObjNode *theNode)
 #pragma unused (theNode)
 float	ty,y,fps,x,z;
 long	i;
-OGLMatrix4x4	matrix,matrix2;
 
 	if (gNumShards == 0)												// quick check if any particles at all
 		return;
@@ -417,19 +443,7 @@ del:
 			/* UPDATE TRANSFORM MATRIX */
 			/***************************/
 
-				/* SET SCALE MATRIX */
-
-		OGLMatrix4x4_SetScale(&gShards[i].matrix, gShards[i].scale,	gShards[i].scale, gShards[i].scale);
-
-					/* NOW ROTATE IT */
-
-		OGLMatrix4x4_SetRotate_XYZ(&matrix, gShards[i].rot.x, gShards[i].rot.y, gShards[i].rot.z);
-		OGLMatrix4x4_Multiply(&gShards[i].matrix,&matrix, &matrix2);
-
-					/* NOW TRANSLATE IT */
-
-		OGLMatrix4x4_SetTranslate(&matrix, gShards[i].coord.x, gShards[i].coord.y, gShards[i].coord.z);
-		OGLMatrix4x4_Multiply(&matrix2,&matrix, &gShards[i].matrix);
+		UpdateShardTransformMatrix(&gShards[i]);
 	}
 }
 

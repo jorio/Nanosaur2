@@ -482,7 +482,7 @@ bool	isLastSlide = slideNum >= NUM_SLIDES-1;
 		theNode->EffectTimer -= fps;
 		if (theNode->EffectTimer <= 0.0f)				// is it time to play it?
 		{
-			int volume = FULL_CHANNEL_VOLUME*133/100;
+			int volume = FULL_CHANNEL_VOLUME*175/100;
 			PlayEffect_Parms(gSlides[slideNum].narrationSound, volume, volume, NORMAL_CHANNEL_RATE);
 			theNode->HasPlayedEffect = true;
 

@@ -766,7 +766,7 @@ static SDL_GameController* TryOpenAnyUnusedController(bool showMessage)
 	return NULL;
 }
 
-void Rumble(float strength, uint32_t ms, int playerID)
+void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms, int playerID)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,18))
 	#warning Rumble support requires SDL 2.0.18 later
@@ -777,14 +777,15 @@ void Rumble(float strength, uint32_t ms, int playerID)
 		return;
 	}
 
-	strength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
+	lowFrequencyStrength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
+	highFrequencyStrength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
 
 	// If ANY_PLAYER, do rumble on all controllers
 	if (playerID == ANY_PLAYER)
 	{
 		for (int i = 0; i < MAX_LOCAL_PLAYERS; i++)
 		{
-			Rumble(strength, ms, i);
+			Rumble(lowFrequencyStrength, highFrequencyStrength, ms, i);
 		}
 		return;
 	}
@@ -800,7 +801,11 @@ void Rumble(float strength, uint32_t ms, int playerID)
 		return;
 	}
 
-	SDL_GameControllerRumble(controller->controllerInstance, (Uint16)(strength * 65535), (Uint16)(strength * 65535), ms);
+	SDL_GameControllerRumble(
+		controller->controllerInstance,
+		(Uint16)(lowFrequencyStrength * 65535),
+		(Uint16)(highFrequencyStrength * 65535),
+		ms);
 
 	// Prevent jetpack effect from kicking in while we're playing this
 	gPlayerInfo[playerID].jetpackRumbleCooldown = ms * (1.0f / 1000.0f);

@@ -73,7 +73,7 @@ static void OnPickResetMouseBindings(void)
 
 static void TestGamepadRumble(void)
 {
-	Rumble(1, 200, ANY_PLAYER);
+	Rumble(1, 1, 200, ANY_PLAYER);
 }
 
 static void MoveTemporaryGraphicsMenuText(ObjNode* theNode)

@@ -1202,7 +1202,7 @@ float	fps = gFramesPerSecondFrac;
 	gPlayerInfo[playerNum].jetpackRumbleCooldown -= gFramesPerSecondFrac;
 	if (gPlayerInfo[playerNum].jetpackRumbleCooldown <= 0)
 	{
-		Rumble(0.05f, 100, playerNum);
+		Rumble(0, 0.5f, 100, playerNum);
 		gPlayerInfo[playerNum].jetpackRumbleCooldown = 0.100f;
 	}
 

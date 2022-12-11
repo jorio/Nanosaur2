@@ -1100,6 +1100,50 @@ dont_prep_grid:;
 	}
 #endif
 
+
+
+		/* DRAW SPLINES IN DEBUG MODE */
+
+	if (gDebugMode == 2)
+	{
+		glColor4f(0.5f, 1.0f, 0.75f, 1);
+
+		for (int splineNum = 0; splineNum < gNumSplines; splineNum++)
+		{
+			glBegin(GL_LINE_STRIP);
+
+			for (int nubNum = 0; nubNum < gSplineList[splineNum].numPoints; nubNum++)
+			{
+				float x = gSplineList[splineNum].pointList[nubNum].x;
+				float z = gSplineList[splineNum].pointList[nubNum].z;
+				float y = GetTerrainY(x, z) + 10;
+
+				glVertex3f(x, y, z);
+
+			}
+
+			glEnd();
+		}
+
+		glColor4f(1.0f, 0.5f, 0.2f, 1);
+		for (int customSplineNum = 0; customSplineNum < MAX_CUSTOM_SPLINES; customSplineNum++)
+		{
+			if (!gCustomSplines[customSplineNum].isUsed)
+				continue;
+
+			glBegin(GL_LINE_STRIP);
+			for (int nubNum = 0; nubNum < gCustomSplines[customSplineNum].numPoints; nubNum++)
+			{
+				float x = gCustomSplines[customSplineNum].splinePoints[nubNum].x;
+				float y = gCustomSplines[customSplineNum].splinePoints[nubNum].y;
+				float z = gCustomSplines[customSplineNum].splinePoints[nubNum].z;
+				glVertex3f(x, y, z);
+			}
+			glEnd();
+		}
+	}
+
+
 }
 
 

@@ -728,12 +728,16 @@ OSErr					iErr;
 		hand = GetResource('SpIt',1000+i);
 		if (hand)
 		{
+			GAME_ASSERT(GetHandleSize(hand) == (Size) (sizeof(SplineItemType) * spline->numItems));
+
 			SplineItemType	*itemList = (SplineItemType *)*hand;
 
 			spline->itemList = AllocPtrClear(sizeof(SplineItemType) * spline->numItems);	// alloc memory for item list
 
 			for (int j = 0; j < spline->numItems; j++)			// swizzle
 			{
+				memcpy(spline->itemList[j].parm, itemList[j].parm, sizeof(itemList[j].parm));
+
 				spline->itemList[j].placement = SwizzleFloat(&itemList[j].placement);
 				spline->itemList[j].type	= SwizzleUShort(&itemList[j].type);
 				spline->itemList[j].flags	= SwizzleUShort(&itemList[j].flags);

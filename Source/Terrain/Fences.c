@@ -128,7 +128,7 @@ float					sink;
 
 		/* CALCULATE VECTOR FOR EACH SECTION */
 
-		fence->sectionVectors = (OGLVector2D *)AllocPtr(sizeof(OGLVector2D) * (numNubs-1));		// alloc array to hold vectors
+		fence->sectionVectors = (OGLVector2D *) AllocPtrClear(sizeof(OGLVector2D) * (numNubs-1));		// alloc array to hold vectors
 		if (fence->sectionVectors == nil)
 			DoFatalAlert("PrimeFences: AllocPtr failed!");
 
@@ -143,7 +143,7 @@ float					sink;
 
 		/* CALCULATE NORMALS FOR EACH SECTION */
 
-		fence->sectionNormals = (OGLVector2D *)AllocPtr(sizeof(OGLVector2D) * (numNubs-1));		// alloc array to hold vectors
+		fence->sectionNormals = (OGLVector2D *) AllocPtrClear(sizeof(OGLVector2D) * (numNubs-1));		// alloc array to hold vectors
 		if (fence->sectionNormals == nil)
 			DoFatalAlert("PrimeFences: AllocPtr failed!");
 

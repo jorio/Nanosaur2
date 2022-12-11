@@ -209,7 +209,7 @@ MOTriangleIndecies		*t;
 		{
 				/* ALLOCATE NEW GROUP */
 
-			gParticleGroups[i] = (ParticleGroupType *)AllocPtr(sizeof(ParticleGroupType));
+			gParticleGroups[i] = (ParticleGroupType *) AllocPtrClear(sizeof(ParticleGroupType));
 			if (gParticleGroups[i] == nil)
 				return(-1);									// out of memory
 

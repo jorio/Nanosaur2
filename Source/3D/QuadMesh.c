@@ -34,9 +34,9 @@ void ReallocateQuadMesh(MOVertexArrayData* mesh, int numQuads)
 	if (numQuads != 0)
 	{
 		mesh->numMaterials = 1;
-		mesh->points = (OGLPoint3D *) AllocPtr(sizeof(OGLPoint3D) * numPoints);
-		mesh->uvs[0] = (OGLTextureCoord *) AllocPtr(sizeof(OGLTextureCoord) * numPoints);
-		mesh->triangles = (MOTriangleIndecies *) AllocPtr(sizeof(MOTriangleIndecies) * numTriangles);
+		mesh->points = (OGLPoint3D *) AllocPtrClear(sizeof(OGLPoint3D) * numPoints);
+		mesh->uvs[0] = (OGLTextureCoord *) AllocPtrClear(sizeof(OGLTextureCoord) * numPoints);
+		mesh->triangles = (MOTriangleIndecies *) AllocPtrClear(sizeof(MOTriangleIndecies) * numTriangles);
 
 		mesh->pointCapacity = numPoints;
 		mesh->triangleCapacity = numTriangles;

@@ -178,19 +178,19 @@ long	numAnims,numJoints;
 				/* ALLOC ANIM EVENTS LISTS */
 				/***************************/
 
-	skeleton->NumAnimEvents = (Byte *)AllocPtr(sizeof(Byte)*numAnims);					// array which holds # events for each anim
+	skeleton->NumAnimEvents = (Byte *) AllocPtrClear(sizeof(Byte)*numAnims);			// array which holds # events for each anim
 	Alloc_2d_array(AnimEventType, skeleton->AnimEventsList, numAnims, MAX_ANIM_EVENTS);
 
 
 			/* ALLOC BONE INFO */
 
-	skeleton->Bones = (BoneDefinitionType *)AllocPtr(sizeof(BoneDefinitionType)*numJoints);
+	skeleton->Bones = (BoneDefinitionType *) AllocPtrClear(sizeof(BoneDefinitionType)*numJoints);
 
 
 		/* ALLOC DECOMPOSED DATA */
 
-	skeleton->decomposedPointList = (DecomposedPointType *)AllocPtr(sizeof(DecomposedPointType)*MAX_DECOMPOSED_POINTS);
-	skeleton->decomposedNormalsList = (OGLVector3D *)AllocPtr(sizeof(OGLVector3D)*MAX_DECOMPOSED_NORMALS);
+	skeleton->decomposedPointList = (DecomposedPointType *) AllocPtrClear(sizeof(DecomposedPointType)*MAX_DECOMPOSED_POINTS);
+	skeleton->decomposedNormalsList = (OGLVector3D *) AllocPtrClear(sizeof(OGLVector3D)*MAX_DECOMPOSED_NORMALS);
 }
 
 

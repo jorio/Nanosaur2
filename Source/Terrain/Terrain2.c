@@ -126,7 +126,7 @@ int						total;
 
 			/* ALLOC MEMORY FOR NEW LIST */
 
-	tempItemList = (TerrainItemEntryType *)AllocPtr(sizeof(TerrainItemEntryType) * gNumTerrainItems);
+	tempItemList = (TerrainItemEntryType *) AllocPtrClear(sizeof(TerrainItemEntryType) * gNumTerrainItems);
 	if (tempItemList == nil)
 		DoFatalAlert("BuildTerrainItemList: AllocPtr failed!");
 

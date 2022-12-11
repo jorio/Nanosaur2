@@ -170,7 +170,7 @@ uint32_t flags = newObjDef->flags;
 
 			/* NOTHING AVAILBLE IN LIST, SO MALLOC A NEW ONE */
 
-	newNodePtr = (ObjNode *)AllocPtr(sizeof(ObjNode));
+	newNodePtr = (ObjNode *) AllocPtrClear(sizeof(ObjNode));
 	i = -1;
 
 got_it:

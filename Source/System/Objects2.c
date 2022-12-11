@@ -951,7 +951,7 @@ MOTriangleIndecies	*tris;
 	if (theNode->WorldMeshes[meshNum].points == nil)
 	{
 		theNode->WorldMeshes[meshNum] = *data;												// copy the entire vertex array data struct
-		theNode->WorldMeshes[meshNum].points = AllocPtr(sizeof(OGLPoint3D) * numPoints);	// assign a new points array, however
+		theNode->WorldMeshes[meshNum].points = AllocPtrClear(sizeof(OGLPoint3D) * numPoints);	// assign a new points array, however
 	}
 
 	worldBuffer = theNode->WorldMeshes[meshNum].points;				// get ptr to the world-space point buffer
@@ -979,7 +979,7 @@ MOTriangleIndecies	*tris;
 	tris = data->triangles;												// get ptr to triangle array
 
 	if (theNode->WorldPlaneEQs[meshNum] == nil)
-		theNode->WorldPlaneEQs[meshNum] = AllocPtr(sizeof(OGLPlaneEquation) * numTriangles);	// alloc array for plane eq's
+		theNode->WorldPlaneEQs[meshNum] = AllocPtrClear(sizeof(OGLPlaneEquation) * numTriangles);	// alloc array for plane eq's
 
 	for (t = 0; t < numTriangles; t++)
 	{

@@ -410,7 +410,7 @@ MOMaterialData	*data;
 
 	count = textureHeader.bufferSize;			// get size of buffer to load
 
-	texturePixels = AllocPtr(count);			// alloc memory for buffer
+	texturePixels = AllocPtrClear(count);		// alloc memory for buffer
 	if (texturePixels == nil)
 		DoFatalAlert("ReadMaterialTextureMap: AllocPtr failed");
 
@@ -518,7 +518,7 @@ Boolean					hasAlpha;
 			/* ALLOC BUFFER FOR JPEG DATA */
 
 		count = textureHeader.bufferSize;						// get size of JPEG buffer to load
-		Ptr jpegBuffer = AllocPtr(count);						// alloc memory for buffer
+		Ptr jpegBuffer = AllocPtrClear(count);					// alloc memory for buffer
 		GAME_ASSERT(jpegBuffer);
 
 		FSRead(refNum, &count, jpegBuffer);						// read JPEG data (image desc + compressed data)
@@ -540,7 +540,7 @@ Boolean					hasAlpha;
 	if (hasAlpha)
 	{
 		count = w * h;
-		Ptr alphaBuffer = AllocPtr(count);			// alloc buffer for alpha channel
+		Ptr alphaBuffer = AllocPtrClear(count);		// alloc buffer for alpha channel
 		FSRead(refNum, &count, alphaBuffer);		// read alpha buffer
 
 		Ptr textureAlpha = textureRGBA + 3;
@@ -743,7 +743,7 @@ OGLPoint3D			*pointList;
 	count = sizeof(OGLPoint3D) * numPoints;							// calc size of data to read
 
 	if (gImportBG3DVARType == -1)
-		pointList = AllocPtr(count);
+		pointList = AllocPtrClear(count);
 	else
 		pointList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
@@ -776,7 +776,7 @@ OGLVector3D			*normalList;
 	count = sizeof(OGLVector3D) * numPoints;						// calc size of data to read
 
 	if (gImportBG3DVARType == -1)
-		normalList = AllocPtr(count);
+		normalList = AllocPtrClear(count);
 	else
 		normalList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
@@ -808,7 +808,7 @@ OGLTextureCoord		*uvList;
 	count = sizeof(OGLTextureCoord) * numPoints;					// calc size of data to read
 
 	if (gImportBG3DVARType == -1)
-		uvList = AllocPtr(count);
+		uvList = AllocPtrClear(count);
 	else
 		uvList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
@@ -841,7 +841,7 @@ OGLColorRGBA		*colorsF;
 	numPoints = data->numPoints;									// get # colors to expect to read
 
 	count = sizeof(OGLColorRGBA_Byte) * numPoints;					// calc size of data to read
-	colorList = AllocPtr(count);									// alloc buffer to read into
+	colorList = AllocPtrClear(count);								// alloc buffer to read into
 	FSRead(refNum, &count, (Ptr) colorList);						// read the data
 
 
@@ -849,7 +849,7 @@ OGLColorRGBA		*colorsF;
 		/* NOW CREATE COLOR ARRAY IN FLOAT FORMAT */
 
 	if (gImportBG3DVARType == -1)
-		colorsF = AllocPtr(sizeof(OGLColorRGBA) * numPoints);
+		colorsF = AllocPtrClear(sizeof(OGLColorRGBA) * numPoints);
 	else
 		colorsF = OGL_AllocVertexArrayMemory(sizeof(OGLColorRGBA) * numPoints, gImportBG3DVARType);	// alloc vertex array range buffer
 
@@ -884,7 +884,7 @@ MOTriangleIndecies	*triList;
 	count = sizeof(MOTriangleIndecies) * numTriangles;				// calc size of data to read
 
 	if (gImportBG3DVARType == -1)
-		triList = AllocPtr(count);
+		triList = AllocPtrClear(count);
 	else
 		triList = OGL_AllocVertexArrayMemory(count, gImportBG3DVARType);	// alloc vertex array range buffer
 
@@ -941,7 +941,7 @@ static void InitBG3DContainer(void)
 {
 MOGroupObject	*rootGroup;
 
-	gBG3D_CurrentContainer = AllocPtr(sizeof(BG3DFileContainer));
+	gBG3D_CurrentContainer = AllocPtrClear(sizeof(BG3DFileContainer));
 	if (gBG3D_CurrentContainer == nil)
 		DoFatalAlert("InitBG3DContainer: AllocPtr failed!");
 

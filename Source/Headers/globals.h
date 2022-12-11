@@ -38,15 +38,15 @@
 
 #define Alloc_2d_array(type, array, n, m)								\
 {																		\
-uint32_t _i;																\
+uint32_t _i;															\
 																		\
-	array = (type **) AllocPtr((long)(n) * sizeof(type *));				\
+	array = (type **) AllocPtrClear((long)(n) * sizeof(type *));		\
 	if (array == nil)													\
-		DoFatalAlert("Alloc_2d_array failed!");						\
-	array[0] = (type *) AllocPtr((long)(n) * (long)(m) * sizeof(type));	\
+		DoFatalAlert("Alloc_2d_array failed!");							\
+	array[0] = (type *) AllocPtrClear((long)(n) * (long)(m) * sizeof(type));	\
 	if (array[0] == nil)												\
-		DoFatalAlert("Alloc_2d_array failed!");						\
-	for (_i = 1; _i < (uint32_t)(n); _i++)										\
+		DoFatalAlert("Alloc_2d_array failed!");							\
+	for (_i = 1; _i < (uint32_t)(n); _i++)								\
 		array[_i] = array[_i-1] + (m);									\
 }
 

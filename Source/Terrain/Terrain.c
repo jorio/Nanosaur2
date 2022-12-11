@@ -343,7 +343,7 @@ int	u,v,i,j;
 
 			/* ALLOC BASE TRIMESH DATA FOR ALL SUPERTILES */
 
-	gSuperTileMeshData = AllocPtr(sizeof(MOVertexArrayData) * MAX_SUPERTILES);
+	gSuperTileMeshData = AllocPtrClear(sizeof(MOVertexArrayData) * MAX_SUPERTILES);
 	if (gSuperTileMeshData == nil)
 		DoFatalAlert("CreateSuperTileMemoryList: AllocPtr failed - gSuperTileMeshData");
 

@@ -132,7 +132,7 @@ const char*	fileNames[MAX_SKELETON_TYPES] =
 
 			/* ALLOC MEMORY FOR SKELETON INFO STRUCTURE */
 
-	skeleton = (SkeletonDefType *)AllocPtr(sizeof(SkeletonDefType));
+	skeleton = (SkeletonDefType *) AllocPtrClear(sizeof(SkeletonDefType));
 	if (skeleton == nil)
 		DoFatalAlert("Cannot alloc SkeletonInfoType");
 
@@ -243,11 +243,11 @@ OGLPoint3D				*pointPtr;
 
 			/* ALLOC THE POINT & NORMALS SUB-ARRAYS */
 
-		skeleton->Bones[i].pointList = (uint16_t *)AllocPtr(sizeof(uint16_t) * (int)skeleton->Bones[i].numPointsAttachedToBone);
+		skeleton->Bones[i].pointList = (uint16_t *) AllocPtrClear(sizeof(uint16_t) * (int)skeleton->Bones[i].numPointsAttachedToBone);
 		if (skeleton->Bones[i].pointList == nil)
 			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/pointList failed!");
 
-		skeleton->Bones[i].normalList = (uint16_t *)AllocPtr(sizeof(uint16_t) * (int)skeleton->Bones[i].numNormalsAttachedToBone);
+		skeleton->Bones[i].normalList = (uint16_t *) AllocPtrClear(sizeof(uint16_t) * (int)skeleton->Bones[i].numNormalsAttachedToBone);
 		if (skeleton->Bones[i].normalList == nil)
 			DoFatalAlert("ReadDataFromSkeletonFile: AllocPtr/normalList failed!");
 
@@ -638,7 +638,7 @@ OSErr					iErr;
 
 					/* COPY INTO OUR STRUCT */
 
-		gMasterItemList = AllocPtr(sizeof(TerrainItemEntryType) * gNumTerrainItems);			// alloc array of items
+		gMasterItemList = AllocPtrClear(sizeof(TerrainItemEntryType) * gNumTerrainItems);			// alloc array of items
 
 		for (int i = 0; i < gNumTerrainItems; i++)
 		{
@@ -669,7 +669,7 @@ OSErr					iErr;
 	{
 		File_SplineDefType	*splinePtr = (File_SplineDefType *)*hand;
 
-		gSplineList = AllocPtr(sizeof(SplineDefType) * gNumSplines);				// allocate memory for spline data
+		gSplineList = AllocPtrClear(sizeof(SplineDefType) * gNumSplines);				// allocate memory for spline data
 
 		for (int i = 0; i < gNumSplines; i++)
 		{
@@ -705,7 +705,7 @@ OSErr					iErr;
 		{
 			SplinePointType	*ptList = (SplinePointType *)*hand;
 
-			spline->pointList = AllocPtr(sizeof(SplinePointType) * spline->numPoints);	// alloc memory for point list
+			spline->pointList = AllocPtrClear(sizeof(SplinePointType) * spline->numPoints);	// alloc memory for point list
 
 			for (int j = 0; j < spline->numPoints; j++)			// swizzle
 			{
@@ -730,7 +730,7 @@ OSErr					iErr;
 		{
 			SplineItemType	*itemList = (SplineItemType *)*hand;
 
-			spline->itemList = AllocPtr(sizeof(SplineItemType) * spline->numItems);	// alloc memory for item list
+			spline->itemList = AllocPtrClear(sizeof(SplineItemType) * spline->numItems);	// alloc memory for item list
 
 			for (int j = 0; j < spline->numItems; j++)			// swizzle
 			{
@@ -755,7 +755,7 @@ OSErr					iErr;
 	{
 		FileFenceDefType *inData;
 
-		gFenceList = (FenceDefType *)AllocPtr(sizeof(FenceDefType) * gNumFences);	// alloc new ptr for fence data
+		gFenceList = (FenceDefType *) AllocPtrClear(sizeof(FenceDefType) * gNumFences);	// alloc new ptr for fence data
 		if (gFenceList == nil)
 			DoFatalAlert("ReadDataFromPlayfieldFile: AllocPtr failed");
 
@@ -784,7 +784,7 @@ OSErr					iErr;
 		{
    			FencePointType *fileFencePoints = (FencePointType *)*hand;
 
-			gFenceList[i].nubList = (OGLPoint3D *)AllocPtr(sizeof(FenceDefType) * gFenceList[i].numNubs);	// alloc new ptr for nub array
+			gFenceList[i].nubList = (OGLPoint3D *) AllocPtrClear(sizeof(FenceDefType) * gFenceList[i].numNubs);	// alloc new ptr for nub array
 			if (gFenceList[i].nubList == nil)
 				DoFatalAlert("ReadDataFromPlayfieldFile: AllocPtr failed");
 
@@ -1016,7 +1016,7 @@ Ptr LoadSuperTilePixelBuffer(short fRefNum)
 
 				/* ALLOCATE JPEG BUFFER */
 
-	Ptr jpegBuffer = AllocPtr(dataSize);
+	Ptr jpegBuffer = AllocPtrClear(dataSize);
 
 				/* READ THE IMAGE DESC DATA + THE COMPRESSED IMAGE DATA */
 

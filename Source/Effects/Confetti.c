@@ -136,7 +136,7 @@ MOTriangleIndecies		*t;
 		{
 				/* ALLOCATE NEW GROUP */
 
-			gConfettiGroups[i] = (ConfettiGroupType *)AllocPtr(sizeof(ConfettiGroupType));
+			gConfettiGroups[i] = (ConfettiGroupType *) AllocPtrClear(sizeof(ConfettiGroupType));
 			if (gConfettiGroups[i] == nil)
 				return(-1);									// out of memory
 
@@ -168,12 +168,12 @@ MOTriangleIndecies		*t;
 
 			vertexArrayData.numPoints 		= 0;
 			vertexArrayData.numTriangles 	= 0;
-			vertexArrayData.points 			= (OGLPoint3D *)AllocPtr(sizeof(OGLPoint3D) * MAX_CONFETTIS * 4);
+			vertexArrayData.points			= (OGLPoint3D *) AllocPtrClear(sizeof(OGLPoint3D) * MAX_CONFETTIS * 4);
 			vertexArrayData.normals 		= nil;
-			vertexArrayData.uvs[0]	 		= (OGLTextureCoord *)AllocPtr(sizeof(OGLTextureCoord) * MAX_CONFETTIS * 4);
-			vertexArrayData.colorsFloat 		= (OGLColorRGBA *)AllocPtr(sizeof(OGLColorRGBA) * MAX_CONFETTIS * 4);
+			vertexArrayData.uvs[0]			= (OGLTextureCoord *) AllocPtrClear(sizeof(OGLTextureCoord) * MAX_CONFETTIS * 4);
+			vertexArrayData.colorsFloat		= (OGLColorRGBA *) AllocPtrClear(sizeof(OGLColorRGBA) * MAX_CONFETTIS * 4);
 //			vertexArrayData.colorsByte		= nil;
-			vertexArrayData.triangles		= (MOTriangleIndecies *)AllocPtr(sizeof(MOTriangleIndecies) * MAX_CONFETTIS * 2);
+			vertexArrayData.triangles		= (MOTriangleIndecies *) AllocPtrClear(sizeof(MOTriangleIndecies) * MAX_CONFETTIS * 2);
 
 
 					/* INIT UV ARRAYS */

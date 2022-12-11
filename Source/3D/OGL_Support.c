@@ -2196,7 +2196,7 @@ static void OGL_InitVertexArrayMemory(void)
 
 	for (int i = 0; i < VERTEX_ARRAY_RANGE_TYPE_USER1; i++)
 	{
-		gVertexArrayMemoryBlock[i] = AllocPtr(OGL_MaxMemForVARType(i));
+		gVertexArrayMemoryBlock[i] = AllocPtrClear(OGL_MaxMemForVARType(i));
 	}
 
 #if VERTEXARRAYRANGES
@@ -2293,7 +2293,7 @@ Ptr			prevEndPtr;
 	size = (size + 15) & 0xfffffff0;
 
 
-	newNode 		= AllocPtr(sizeof(VertexArrayMemoryNode));		// allocate the node (assume we'll find room for it below)
+	newNode 		= AllocPtrClear(sizeof(VertexArrayMemoryNode));	// allocate the node (assume we'll find room for it below)
 	newNode->size 	= size;											// remember how big a chunk we're allocating
 
 	scanNode = 	gVertexArrayMemory_Head[type];						// start scanning @ front

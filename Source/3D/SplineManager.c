@@ -36,6 +36,8 @@ CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 
 void InitSplineManager(void)
 {
+	memset(gCustomSplines, 0, sizeof(gCustomSplines));
+
 	for (int i = 0; i < MAX_CUSTOM_SPLINES; i++)
 	{
 		gCustomSplines[i].isUsed = false;
@@ -103,7 +105,7 @@ got_slot:
 				/* ALLOC POINT ARRAY */
 
 	maxPoints = pointsPerSpan * numNubs;
-	splinePoints = gCustomSplines[slot].splinePoints = AllocPtr(sizeof(OGLPoint3D) * maxPoints);
+	splinePoints = gCustomSplines[slot].splinePoints = AllocPtrClear(sizeof(OGLPoint3D) * maxPoints);
 
 
 		/*******************************************************/

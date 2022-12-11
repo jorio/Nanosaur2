@@ -1202,8 +1202,8 @@ float	fps = gFramesPerSecondFrac;
 	gPlayerInfo[playerNum].jetpackRumbleCooldown -= gFramesPerSecondFrac;
 	if (gPlayerInfo[playerNum].jetpackRumbleCooldown <= 0)
 	{
-		Rumble(0, 0.5f, 100, playerNum);
-		gPlayerInfo[playerNum].jetpackRumbleCooldown = 0.100f;
+		PlayRumbleEffect(EFFECT_JETPACKHUM, playerNum);
+		gPlayerInfo[playerNum].jetpackRumbleCooldown = 0.100f;	// should match duration of rumble effect in sound.c
 	}
 
 
@@ -1704,6 +1704,18 @@ kaboom:
 				killed |= PlayerLoseHealth(playerNum, fps * .1f, PLAYER_DEATH_TYPE_EXPLODE, &gCoord, true);
 
 			DoPlayerGroundScrape(theNode, playerNum);
+
+				/* GROUND SCRAPE FORCE FEEDBACK */
+
+			if (!killed)
+			{
+				gPlayerInfo[playerNum].groundScrapeRumbleCooldown -= fps;
+				if (gPlayerInfo[playerNum].groundScrapeRumbleCooldown <= 0)
+				{
+					gPlayerInfo[playerNum].groundScrapeRumbleCooldown = 0.1;
+					Rumble(0.8f, 0.5f, 100, playerNum);
+				}
+			}
 		}
 
 		gDelta.y *= -.1f;

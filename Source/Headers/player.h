@@ -173,7 +173,8 @@ typedef struct
 
 	float				dirtParticleTimer;						// particle info for dirt scrap when player brushes ground
 	short				dirtParticleGroup;
-	uint32_t				dirtParticleMagicNum;
+	uint32_t			dirtParticleMagicNum;
+	float				groundScrapeRumbleCooldown;				// force feedback for when player brushed ground
 
 
 			/* DUST DEVIL */

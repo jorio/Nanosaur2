@@ -697,7 +697,12 @@ static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex)
 		.open = true,
 		.controllerInstance = controllerInstance,
 		.joystickInstance = SDL_JoystickGetDeviceInstanceID(joystickIndex),
+#if SDL_VERSION_ATLEAST(2,0,18)
 		.hasRumble = SDL_GameControllerHasRumble(controllerInstance),
+#else
+		#warning Rumble support requires SDL 2.0.18 later
+		.hasRumble = false,
+#endif
 	};
 
 	printf("Opened joystick %d as controller: %s\n",

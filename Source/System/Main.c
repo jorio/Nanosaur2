@@ -605,7 +605,11 @@ float	fps;
 
 					if (oldTimer > 0.0f)							// if just now crossed zero then start fade
 					{
-						MakeFadeEvent(kFadeFlags_Out | (kFadeFlags_P1<<i), fadeOutSpeed);
+						if (gNumPlayers > 1
+							|| gPlayerInfo[i].numFreeLives > 0)		// ...only if hasn't lost adventure mode yet (gameover will freeze-frame fadeout)
+						{
+							MakeFadeEvent(kFadeFlags_Out | (kFadeFlags_P1<<i), fadeOutSpeed);
+						}
 					}
 					else if (gDeathTimer[i] < -(1.0f / fadeOutSpeed))	// once fully faded out reset player @ checkpoint
 					{

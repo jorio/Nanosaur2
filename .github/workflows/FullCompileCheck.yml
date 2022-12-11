@@ -3,24 +3,6 @@ name: Full Compile Check
 on: [workflow_dispatch]
 
 jobs:
-  full-compile-check-aarch64:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-
-      - uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: aarch64
-          distro: ubuntu20.04
-          githubToken: ${{ github.token }}
-          install: |
-            apt update -y
-            apt install -y build-essential libsdl2-dev cmake
-          run: |
-            python3 build.py --dependencies --configure --build --system-sdl
-
   full-compile-check:
     name: ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}

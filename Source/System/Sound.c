@@ -43,6 +43,12 @@ typedef struct
 	float			refVol;
 }EffectType;
 
+typedef struct
+{
+	float			force;
+	uint16_t		duration;
+} AutoRumbleDef;
+
 
 #define	VOLUME_MIN_DIST		700.0f			// distance at which volume is 1.0 (maxxed).  Larger is louder
 
@@ -100,7 +106,7 @@ static const EffectType gEffectsTable[NUM_EFFECTS] =
 	[EFFECT_PLANECRASH     ] = {SOUND_BANK_MAIN, "PLANECRASH",		1},
 	[EFFECT_TURRETFIRE     ] = {SOUND_BANK_MAIN, "TURRETFIRE",		.6f},
 	[EFFECT_STUNGUN        ] = {SOUND_BANK_MAIN, "STUNGUN",			.7f},
-	[EFFECT_ROCKETLAUNCH   ] = {SOUND_BANK_MAIN, "ROCKETLAUNCH",	1},
+	[EFFECT_ROCKETLAUNCH   ] = {SOUND_BANK_MAIN, "ROCKETLAUNCH",	1},		// unused?
 	[EFFECT_WEAPONCHARGE   ] = {SOUND_BANK_MAIN, "WEAPONCHARGE",	1},
 	[EFFECT_FLARESHOOT     ] = {SOUND_BANK_MAIN, "FLARESHOOT",		1},
 	[EFFECT_CHANGEWEAPON   ] = {SOUND_BANK_MAIN, "CHANGEWEAPON",	1},
@@ -136,6 +142,47 @@ static const EffectType gEffectsTable[NUM_EFFECTS] =
 	[EFFECT_STORY7         ] = {SOUND_BANK_NARRATION, "STORY7",		1},
 };
 
+static const AutoRumbleDef gAutoRumbleTable[NUM_EFFECTS] =
+{
+	[EFFECT_NULL           ] = {0,0},
+	[EFFECT_CHANGESELECT   ] = {0,0},
+	[EFFECT_GETPOW         ] = {0.2f, 100},
+	[EFFECT_SPLASH         ] = {0,0},
+	[EFFECT_TURRETEXPLOSION] = {0,0},
+	[EFFECT_IMPACTSIZZLE   ] = {0,0},
+	[EFFECT_SHIELD         ] = {1.0f, 300},
+	[EFFECT_MINEEXPLODE    ] = {0,0},
+	[EFFECT_PLANECRASH     ] = {1.0f, 1000},
+	[EFFECT_TURRETFIRE     ] = {0,0},
+	[EFFECT_STUNGUN        ] = {0.5f, 40},
+	[EFFECT_ROCKETLAUNCH   ] = {1.0f, 180},		// unused I think
+	[EFFECT_WEAPONCHARGE   ] = {0,0},
+	[EFFECT_FLARESHOOT     ] = {1.0f, 180},
+	[EFFECT_CHANGEWEAPON   ] = {0,0},
+	[EFFECT_SONICSCREAM    ] = {0,0},
+	[EFFECT_ELECTRODEHUM   ] = {0,0},
+	[EFFECT_WORMHOLE       ] = {0,0},
+	[EFFECT_WORMHOLEVANISH ] = {0,0},
+	[EFFECT_WORMHOLEAPPEAR ] = {0,0},
+	[EFFECT_EGGINTOWORMHOLE] = {0.2f, 750},
+	[EFFECT_BODYHIT        ] = {1.0f, 300},
+	[EFFECT_LAUNCHMISSILE  ] = {1.0f, 180},
+	[EFFECT_GRABEGG        ] = {0.2f, 100},
+	[EFFECT_JETPACKHUM     ] = {0,0},
+	[EFFECT_JETPACKIGNITE  ] = {0,0},
+	[EFFECT_MENUSELECT     ] = {0,0},
+	[EFFECT_MISSILEENGINE  ] = {0,0},
+	[EFFECT_BOMBDROP       ] = {1.0f, 180},
+	[EFFECT_DUSTDEVIL      ] = {0,0},
+	[EFFECT_LASERBEAM      ] = {0,0},
+	[EFFECT_CRYSTALSHATTER ] = {0,0},
+	[EFFECT_RAPTORDEATH    ] = {0,0},
+	[EFFECT_RAPTORATTACK   ] = {0,0},
+	[EFFECT_BRACHHURT      ] = {0,0},
+	[EFFECT_BRACHDEATH     ] = {0,0},
+	[EFFECT_DIRT           ] = {0,0},
+	[EFFECT_BADSELECT      ] = {0,0},
+};
 
 /********************* INIT SOUND TOOLS ********************/
 
@@ -1071,4 +1118,22 @@ void FadeSound(float loudness)
 {
 	gGlobalVolumeFade = loudness;
 	UpdateGlobalVolume();
+}
+
+
+#pragma mark -
+
+/********************** PLAY RUMBLE EFFECT ***************************/
+
+void PlayRumbleEffect(short effectNum, int playerNum)
+{
+	if (effectNum < 0 || effectNum >= NUM_EFFECTS)
+		return;
+
+	const AutoRumbleDef* rumbleEffect = &gAutoRumbleTable[effectNum];
+
+	if (rumbleEffect->duration > 0)
+	{
+		Rumble(rumbleEffect->force, rumbleEffect->duration, playerNum);
+	}
 }

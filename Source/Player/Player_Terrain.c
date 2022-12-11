@@ -1171,6 +1171,8 @@ float	fps = gFramesPerSecondFrac;
 			MakePuff(3, &buttPt, 7.0, PARTICLE_SObjType_BlackSmoke, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1.0);
 		}
 #endif
+
+		gPlayerInfo[playerNum].jetpackRumbleCooldown = 0;
 	}
 
 			/* BURN FUEL */
@@ -1194,6 +1196,15 @@ float	fps = gFramesPerSecondFrac;
 	else
 		Update3DSoundChannel(EFFECT_JETPACKHUM, &player->EffectChannel, &gCoord);
 
+
+			/* FORCE FEEDBACK */
+
+	gPlayerInfo[playerNum].jetpackRumbleCooldown -= gFramesPerSecondFrac;
+	if (gPlayerInfo[playerNum].jetpackRumbleCooldown <= 0)
+	{
+		Rumble(0.05f, 100, playerNum);
+		gPlayerInfo[playerNum].jetpackRumbleCooldown = 0.100f;
+	}
 
 
 }

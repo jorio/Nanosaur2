@@ -234,6 +234,7 @@ static Boolean DoTrig_Canopy(ObjNode *grass, ObjNode *player)
 
 			PlayerLoseHealth(p, .2, PLAYER_DEATH_TYPE_DEATHDIVE, &player->Coord, true);
 			PlayEffect3D(EFFECT_BODYHIT, &player->Coord);
+			PlayRumbleEffect(EFFECT_BODYHIT, p);
 			gPlayerInfo[p].invincibilityTimer = .6;
 		}
 	}
@@ -291,6 +292,7 @@ static Boolean DoTrig_SmallTree(ObjNode *tree, ObjNode *player)
 {
 	DisorientPlayer(player);
 	PlayEffect3D(EFFECT_BODYHIT, &player->Coord);
+	PlayRumbleEffect(EFFECT_BODYHIT, player->PlayerNum);
 
 	ExplodeGeometry(tree, 200, SHARD_MODE_FROMORIGIN, 1, 1.0);
 	DeleteObject(tree);
@@ -894,6 +896,7 @@ short   p = player->PlayerNum;
 	gPlayerInfo[p].invincibilityTimer = .5f;
 
 	PlayEffect3D(EFFECT_BODYHIT, &player->Coord);
+	PlayRumbleEffect(EFFECT_BODYHIT, p);
 
 	return(false);
 }

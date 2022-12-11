@@ -446,7 +446,7 @@ short		i;
 			/* PLAYE SFX */
 
 	PlayEffect_Parms3D(EFFECT_STUNGUN, &where, NORMAL_CHANNEL_RATE, .7);
-
+	PlayRumbleEffect(EFFECT_STUNGUN, player->PlayerNum);
 
 
 
@@ -759,6 +759,7 @@ OGLVector3D	aim;
 
 
 	PlayEffect_Parms3D(EFFECT_FLARESHOOT, &where, NORMAL_CHANNEL_RATE, .7);
+	PlayRumbleEffect(EFFECT_FLARESHOOT, player->PlayerNum);
 }
 
 
@@ -1072,6 +1073,7 @@ float		speed;
 
 
 	PlayEffect_Parms3D(EFFECT_LAUNCHMISSILE, &where, NORMAL_CHANNEL_RATE, .8);
+	PlayRumbleEffect(EFFECT_LAUNCHMISSILE, playerNum);
 }
 
 
@@ -1793,7 +1795,7 @@ float		speed;
 
 
 	PlayEffect_Parms3D(EFFECT_BOMBDROP, &where, NORMAL_CHANNEL_RATE, .8);
-
+	PlayRumbleEffect(EFFECT_BOMBDROP, playerNum);
 }
 
 

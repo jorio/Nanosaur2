@@ -360,7 +360,10 @@ OGLPoint3D			p;
 				if (dist < 700.0f)
 				{
 					if (gPlayerInfo[i].objNode->Skeleton->AnimNum != PLAYER_ANIM_DISORIENTED)		// play effect on 1st hit
+					{
 						PlayEffect3D(EFFECT_BODYHIT, &gPlayerInfo[i].coord);
+						PlayRumbleEffect(EFFECT_BODYHIT, i);
+					}
 
 					PlayerLoseHealth(i, fps * .1f, PLAYER_DEATH_TYPE_DEATHDIVE, nil, true);
 				}

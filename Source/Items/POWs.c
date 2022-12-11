@@ -263,7 +263,7 @@ short	weaponType, playerNum, quan;
 			/* PLAY EFFECT */
 
 	PlayEffect_Parms3D(EFFECT_GETPOW, &trigger->Coord, NORMAL_CHANNEL_RATE, .6);
-
+	PlayRumbleEffect(EFFECT_GETPOW, playerNum);
 
 	return(false);
 }
@@ -352,6 +352,7 @@ short	playerNum;
 			/* PLAY EFFECT */
 
 	PlayEffect_Parms3D(EFFECT_GETPOW, &trigger->Coord, NORMAL_CHANNEL_RATE, .6);
+	PlayRumbleEffect(EFFECT_GETPOW, playerNum);
 
 	return(false);
 }
@@ -445,6 +446,7 @@ short	playerNum;
 			/* PLAY EFFECT */
 
 	PlayEffect_Parms3D(EFFECT_GETPOW, &trigger->Coord, NORMAL_CHANNEL_RATE, .6);
+	PlayRumbleEffect(EFFECT_GETPOW, playerNum);
 
 	return(false);
 }
@@ -537,6 +539,7 @@ short	playerNum;
 			/* PLAY EFFECT */
 
 	PlayEffect_Parms3D(EFFECT_GETPOW, &trigger->Coord, NORMAL_CHANNEL_RATE, .6);
+	PlayRumbleEffect(EFFECT_GETPOW, playerNum);
 
 	return(false);
 }
@@ -625,6 +628,7 @@ short	playerNum;
 			/* PLAY EFFECT */
 
 	PlayEffect_Parms3D(EFFECT_GETPOW, &trigger->Coord, NORMAL_CHANNEL_RATE, .6);
+	PlayRumbleEffect(EFFECT_GETPOW, playerNum);
 
 	return(false);
 }

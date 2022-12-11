@@ -71,6 +71,11 @@ static void OnPickResetMouseBindings(void)
 	LayoutCurrentMenuAgain();
 }
 
+static void TestGamepadRumble(void)
+{
+	Rumble(1, 200, ANY_PLAYER);
+}
+
 static void MoveTemporaryGraphicsMenuText(ObjNode* theNode)
 {
 	if (GetCurrentMenu() != 'graf')
@@ -311,8 +316,8 @@ static const MenuItem gSettingsMenuTree[] =
 	{.id='ctrl'},
 	{kMILabel, .text=STR_CONTROLS},
 	{kMISpacer, .customHeight=.3f},
-	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_GAMEPAD, .next='gpad' },
+	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
 	{
 		kMICycler1, STR_VERTICAL_STEERING,
@@ -477,8 +482,8 @@ static const MenuItem gSettingsMenuTree[] =
 
 	{ .id = 'gpad', .callback=OnEnterGamepadMenu },
 	//	{kMISpacer, .customHeight=.35f },
-	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .7f },
-	{ kMISpacer, .customHeight = .4f },
+	{ kMILabel, STR_CONFIGURE_GAMEPAD_HELP, .customHeight = .6f },
+	{ kMISpacer, .customHeight = .25f },
 	{ kMIPadBinding, .inputNeed = kNeed_PitchUp },
 	{ kMIPadBinding, .inputNeed = kNeed_PitchDown },
 	{ kMIPadBinding, .inputNeed = kNeed_YawLeft },
@@ -490,10 +495,21 @@ static const MenuItem gSettingsMenuTree[] =
 	{ kMIPadBinding, .inputNeed = kNeed_Drop },
 	{ kMIPadBinding, .inputNeed = kNeed_CameraMode },
 	{ kMISpacer, .customHeight = .25f },
+	{ kMISlider, STR_GAMEPAD_RUMBLE,
+		.callback = TestGamepadRumble,
+		.slider =
+		{
+			.equilibrium = 100,
+			.increment = 10,
+			.minValue = 0,
+			.maxValue = 100,
+			.valuePtr = &gGamePrefs.rumbleIntensity,
+		},
+	},
 	{ kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback = OnPickResetGamepadBindings, .customHeight = .5f },
 	{ kMISpacer, .customHeight = .25f },
 	{ kMIPick, STR_BACK_SYMBOL,		.next = 'BACK' },
-	{kMISpacer, .customHeight=2.2f, .getLayoutFlags=HideMenuEntryInGame },
+	{kMISpacer, .customHeight=2.8f, .getLayoutFlags=HideMenuEntryInGame },
 
 	//-------------------------------------------------------------------------
 	// END SENTINEL

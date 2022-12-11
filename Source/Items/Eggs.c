@@ -423,7 +423,9 @@ ObjNode *nest;
 	egg->MoveCall 					= MoveEgg_Carried;					// change move call
 	egg->CanResetEgg 				= true;								// we can now reset it when needed
 	egg->ResetEggDelay 				= 15.0f;
+	
 	PlayEffect_Parms3D(EFFECT_GRABEGG, &gCoord, NORMAL_CHANNEL_RATE, .6);
+	PlayRumbleEffect(EFFECT_GRABEGG, playerNum);
 }
 
 
@@ -553,7 +555,10 @@ float		dist, dist2;
 		egg->TargetJoint++;
 
 		if (egg->TargetJoint == 1)
+		{
 			PlayEffect3D(EFFECT_EGGINTOWORMHOLE, &gCoord);
+			PlayRumbleEffect(EFFECT_EGGINTOWORMHOLE, ANY_PLAYER);
+		}
 
 		if (egg->TargetJoint >= wormhole->Skeleton->skeletonDefinition->NumBones)
 			goto got_it;

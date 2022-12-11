@@ -277,6 +277,14 @@ Boolean	killed = false;
 	}
 
 
+		/* FORCE FEEDBACK */
+
+	if (!killed)
+	{
+		PlayRumbleEffect(EFFECT_BODYHIT, playerNum);
+	}
+
+
 	return(killed);
 }
 
@@ -330,6 +338,7 @@ ObjNode	*player = gPlayerInfo[playerNum].objNode;
 				gDeathTimer[playerNum] = gPlayerInfo[playerNum].invincibilityTimer = 8.0f;
 				gCameraInDeathDiveMode[playerNum] = true;
 				PlayEffect3D(EFFECT_BODYHIT, &player->Coord);
+				PlayRumbleEffect(EFFECT_BODYHIT, playerNum);
 				break;
 	}
 
@@ -807,6 +816,7 @@ float					x,y,z;
 		gDeathTimer[playerNum] = gPlayerInfo[playerNum].invincibilityTimer = 3.0f;
 
 	PlayEffect_Parms3D(EFFECT_PLANECRASH, &gCoord, NORMAL_CHANNEL_RATE, 0.5f);
+	PlayRumbleEffect(EFFECT_PLANECRASH, playerNum);
 }
 
 
@@ -880,6 +890,8 @@ short   p1,p2;
 	p2Dead = PlayerLoseHealth(p2, damage, PLAYER_DEATH_TYPE_DEATHDIVE, &gCoord, true);
 	gPlayerInfo[p2].invincibilityTimer = .5f;
 
+	PlayRumbleEffect(EFFECT_BODYHIT, p1);
+	PlayRumbleEffect(EFFECT_BODYHIT, p2);
 
 			/*********************************/
 			/* SPECIAL STUFF FOR BATTLE MODE */
@@ -1074,7 +1086,10 @@ ObjNode	*shield = gPlayerInfo[playerNum].shieldObj;
 				/* PLAY EFFECT IF SHIELD WAS ALMOST DIMMED */
 
 		if (shield->ColorFilter.a < .2f)
+		{
 			PlayEffect_Parms3D(EFFECT_SHIELD, &gPlayerInfo[playerNum].coord, NORMAL_CHANNEL_RATE, .3);
+			PlayRumbleEffect(EFFECT_SHIELD, playerNum);
+		}
 
 
 				/* MAKE IT GLOW */

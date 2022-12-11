@@ -132,3 +132,5 @@ void ChangeChannelRate(short channel, long rateMult);
 Boolean StopAChannelIfEffectNum(short *channelNum, short effectNum);
 void PauseAllChannels(Boolean pause);
 void FadeSound(float loudness);
+
+void PlayRumbleEffect(short effectNum, int playerNum);

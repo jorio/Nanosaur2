@@ -101,6 +101,8 @@ typedef struct
 	Byte	musicVolumePercent;
 	Byte	sfxVolumePercent;
 
+	Byte	rumbleIntensity;
+
 	InputBinding	bindings[NUM_CONTROL_NEEDS];
 }PrefsType;
 

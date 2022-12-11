@@ -44,6 +44,7 @@ typedef struct Controller
 {
 	bool					open;
 	bool					fallbackToKeyboard;
+	bool					hasRumble;
 	SDL_GameController*		controllerInstance;
 	SDL_JoystickID			joystickInstance;
 	KeyState				needStates[NUM_CONTROL_NEEDS];
@@ -696,6 +697,7 @@ static SDL_GameController* TryOpenControllerFromJoystick(int joystickIndex)
 		.open = true,
 		.controllerInstance = controllerInstance,
 		.joystickInstance = SDL_JoystickGetDeviceInstanceID(joystickIndex),
+		.hasRumble = SDL_GameControllerHasRumble(controllerInstance),
 	};
 
 	printf("Opened joystick %d as controller: %s\n",
@@ -764,18 +766,45 @@ static SDL_GameController* TryOpenAnyUnusedController(bool showMessage)
 	return NULL;
 }
 
-void Rumble(float strength, uint32_t ms)
+void Rumble(float strength, uint32_t ms, int playerID)
 {
-	#if 0	// TODO: Rumble for specific player
-	if (NULL == gSDLController || !gGamePrefs.gamepadRumble)
-		return;
-
-#if !(SDL_VERSION_ATLEAST(2,0,9))
-	#warning Rumble support requires SDL 2.0.9 or later
+#if !(SDL_VERSION_ATLEAST(2,0,18))
+	#warning Rumble support requires SDL 2.0.18 later
 #else
-	SDL_GameControllerRumble(gSDLController, (Uint16)(strength * 65535), (Uint16)(strength * 65535), ms);
+	// Don't bother if rumble turned off in prefs
+	if (gGamePrefs.rumbleIntensity == 0)
+	{
+		return;
+	}
+
+	strength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
+
+	// If ANY_PLAYER, do rumble on all controllers
+	if (playerID == ANY_PLAYER)
+	{
+		for (int i = 0; i < MAX_LOCAL_PLAYERS; i++)
+		{
+			Rumble(strength, ms, i);
+		}
+		return;
+	}
+
+	GAME_ASSERT(playerID >= 0);
+	GAME_ASSERT(playerID < MAX_LOCAL_PLAYERS);
+
+	const Controller* controller = &gControllers[playerID];
+
+	// Gotta have a valid SDL controller instance
+	if (!controller->hasRumble || !controller->controllerInstance)
+	{
+		return;
+	}
+
+	SDL_GameControllerRumble(controller->controllerInstance, (Uint16)(strength * 65535), (Uint16)(strength * 65535), ms);
+
+	// Prevent jetpack effect from kicking in while we're playing this
+	gPlayerInfo[playerID].jetpackRumbleCooldown = ms * (1.0f / 1000.0f);
 #endif
-	#endif
 }
 
 static int GetControllerSlotFromSDLJoystickInstanceID(SDL_JoystickID joystickInstanceID)
@@ -800,6 +829,7 @@ static void CloseController(int controllerSlot)
 	gControllers[controllerSlot].open = false;
 	gControllers[controllerSlot].controllerInstance = NULL;
 	gControllers[controllerSlot].joystickInstance = -1;
+	gControllers[controllerSlot].hasRumble = false;
 }
 
 static void MoveController(int oldSlot, int newSlot)
@@ -821,6 +851,7 @@ static void MoveController(int oldSlot, int newSlot)
 	gControllers[oldSlot].controllerInstance = NULL;
 	gControllers[oldSlot].joystickInstance = -1;
 	gControllers[oldSlot].open = false;
+	gControllers[oldSlot].hasRumble = false;
 }
 
 static void CompactControllerSlots(void)
@@ -948,6 +979,8 @@ void ResetDefaultGamepadBindings(void)
 	{
 		memcpy(gGamePrefs.bindings[i].pad, kDefaultInputBindings[i].pad, sizeof(gGamePrefs.bindings[i].pad));
 	}
+
+	gGamePrefs.rumbleIntensity = 100;
 }
 
 void ResetDefaultMouseBindings(void)

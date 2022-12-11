@@ -116,7 +116,7 @@ void DoSDLMaintenance(void);
 
 int GetNumControllers(void);
 struct _SDL_GameController* GetController(int n);
-void Rumble(float strength, uint32_t ms);
+void Rumble(float strength, uint32_t ms, int playerID);
 
 void LockPlayerControllerMapping(void);
 void UnlockPlayerControllerMapping(void);

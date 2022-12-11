@@ -159,8 +159,10 @@ void InitDefaultPrefs(void)
 
 	gGamePrefs.mouseSensitivityLevel	= DEFAULT_MOUSE_SENSITIVITY_LEVEL;
 
-	gGamePrefs.musicVolumePercent	= 60;			// careful to set these two volumes to one of the
-	gGamePrefs.sfxVolumePercent		= 60;			// the predefined values allowed in the settings menu
+	gGamePrefs.musicVolumePercent	= 70;
+	gGamePrefs.sfxVolumePercent		= 70;
+
+	gGamePrefs.rumbleIntensity		= 100;
 
 	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");
 	memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));

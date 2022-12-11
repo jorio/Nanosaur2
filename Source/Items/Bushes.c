@@ -289,6 +289,7 @@ short   p = player->PlayerNum;
 	gPlayerInfo[p].invincibilityTimer = .5f;
 
 	PlayEffect3D(EFFECT_BODYHIT, &player->Coord);
+	PlayRumbleEffect(EFFECT_BODYHIT, p);
 
 	return(false);
 }

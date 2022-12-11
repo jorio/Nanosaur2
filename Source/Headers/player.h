@@ -133,6 +133,7 @@ typedef struct
 
 	float				jetpackFuel;
 	Boolean				jetpackActive;
+	float				jetpackRumbleCooldown;
 
 	short				currentWeapon;
 	short				weaponQuantity[NUM_WEAPON_TYPES];

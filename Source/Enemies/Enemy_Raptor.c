@@ -766,6 +766,7 @@ short	playerNum = player->PlayerNum;
 					/* PLAY BODYHIT EFFECT */
 
 		PlayEffect_Parms3D(EFFECT_BODYHIT, &gCoord, NORMAL_CHANNEL_RATE, 1.1);
+		PlayRumbleEffect(EFFECT_BODYHIT, playerNum);
 	}
 
 

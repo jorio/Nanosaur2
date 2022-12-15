@@ -376,11 +376,11 @@ GLint			maxTexSize;
 		gHardwareSupportsVertexArrayRange = false;
 #endif
 
-			/* SEE IF SUPPORT 1024x1024 TEXTURES */
+			/* SEE IF SUPPORT 2048x2048 TEXTURES */
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
-	if (maxTexSize < 1024)
-		DoFatalAlert("Your video card cannot do 1024x1024 textures, so it is below the game's minimum system requirements.");
+	if (maxTexSize < 2048)
+		DoFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.");
 
 			/* GET GL PROCEDURES */
 			// Necessary on Windows

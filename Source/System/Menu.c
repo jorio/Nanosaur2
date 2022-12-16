@@ -1701,7 +1701,9 @@ static ObjNode* LayOutFileSlot(int row)
 	bool validSave = LoadSavedGame(entry->fileSlot, &saveData);
 
 	if (validSave)
-		gNav->validSaveSlotMask |= 1 << entry->fileSlot;
+	{
+		gNav->validSaveSlotMask |= (1ul << entry->fileSlot);
+	}
 
 	if (!validSave)
 	{

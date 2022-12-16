@@ -1267,18 +1267,18 @@ OGLVector3D			segVec, bestNormal;
 static Boolean OGL_LineSegGetHitInfo_DisplayGroup(const OGLLineSegment *lineSeg, ObjNode *theNode, OGLPoint3D *worldHitCoord,
 												OGLVector3D *hitNormal, float *distToHit)
 {
-int		i;
-OGLPoint3D	coord;
-OGLVector3D	normal, lineVec;
-float		dist;
 float		bestDist = 10000000;
+float		dist = bestDist;
 Boolean		gotHit = false;
 
 		/* CREATE A GLOBAL RAY */
 
-	lineVec.x = lineSeg->p2.x - lineSeg->p1.x;
-	lineVec.y = lineSeg->p2.y - lineSeg->p1.y;
-	lineVec.z = lineSeg->p2.z - lineSeg->p1.z;
+	OGLVector3D	lineVec =
+	{
+		.x = lineSeg->p2.x - lineSeg->p1.x,
+		.y = lineSeg->p2.y - lineSeg->p1.y,
+		.z = lineSeg->p2.z - lineSeg->p1.z,
+	};
 	OGLVector3D_Normalize(&lineVec, &lineVec);
 
 
@@ -1289,10 +1289,12 @@ Boolean		gotHit = false;
 
 			/* SCAN THRU OBJNODE'S WORLD-SPACE DATA FOR A HIT */
 
-	for (i = 0; i < MAX_MESHES_IN_MODEL; i++)
+	for (int i = 0; i < MAX_MESHES_IN_MODEL; i++)
 	{
 		if (theNode->WorldMeshes[i].points)														// does this mesh exist?
 		{
+			OGLPoint3D coord = {0};
+			OGLVector3D normal = {0};
 			if (OGL_DoesLineSegIntersectMesh2(lineSeg, &lineVec, theNode->WorldPlaneEQs[i], &theNode->WorldMeshes[i],
 											 &coord, &normal, &dist))							// does the line segment hit this mesh?
 			{

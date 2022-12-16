@@ -272,7 +272,6 @@ static ObjNode* MakePaneDivider(void)
 void InitInfobar(void)
 {
 MOMaterialObject	*mo;
-ObjNode		*newObj;
 
 
 		/* CREATE PANE DIVIDER FOR MULTIPLAYER */

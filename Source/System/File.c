@@ -477,7 +477,6 @@ static void ReadDataFromPlayfieldFile(FSSpec *specPtr)
 {
 Handle					hand;
 PlayfieldHeaderType		**header;
-long					size;
 float					yScale;
 short					fRefNum;
 OSErr					iErr;
@@ -1248,7 +1247,7 @@ Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 
 Boolean DeleteSavedGame(int fileSlot)
 {
-	char path[256];
+	char path[32];
 	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
 
 	OSErr iErr = DeleteUserDataFile(path);

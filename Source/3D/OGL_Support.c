@@ -782,7 +782,10 @@ do_anaglyph:
 
 						/* SET SPLIT-SCREEN VIEWPORT */
 
-		int	x,y,w,h;
+		int x = 0;
+		int y = 0;
+		int w = 1;
+		int h = 1;
 		OGL_GetCurrentViewport(&x, &y, &w, &h, gCurrentSplitScreenPane);
 		glViewport(x,y, w, h);
 		gCurrentPaneAspectRatio = (float)h/(float)w;

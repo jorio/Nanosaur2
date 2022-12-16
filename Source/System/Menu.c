@@ -1379,6 +1379,7 @@ static void NavigateCycler(const MenuItem* entry)
 	if (delta != 0)
 	{
 		gNav->idleTime = 0;
+		gNav->sweepRTL = (delta == -1);
 
 		if (entry->cycler.valuePtr)
 		{
@@ -1412,8 +1413,6 @@ static void NavigateCycler(const MenuItem* entry)
 		{
 			entry->callback();
 		}
-
-		gNav->sweepRTL = (delta == -1);
 
 		if (entry->type == kMICycler1)
 			LayOutCycler1Column(gNav->focusRow);

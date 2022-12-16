@@ -22,8 +22,11 @@ static void MakeFenceGeometry(void);
 /****************************/
 
 
-
+// How much to physically sink fences into terrain (in world units)
 #define	FENCE_SINK_FACTOR	30.0f
+
+// Extend fence quads downwards to avoid gaps (fraction of base fence height)
+#define FENCE_STRETCHSINK_FACTOR		(1.0f / 8.0f)
 
 
 /**********************/
@@ -305,8 +308,8 @@ float					minX,minY,minZ,maxX,maxY,maxZ;
 
 				x = nubs[i].x;
 				z = nubs[i].z;
-				y = nubs[i].y;
-				y2 = y + height;
+				y = nubs[i].y - (height * FENCE_STRETCHSINK_FACTOR);
+				y2 = y + height * (1 + FENCE_STRETCHSINK_FACTOR);
 
 						/* CHECK BBOX */
 
@@ -336,7 +339,7 @@ float					minX,minY,minZ,maxX,maxY,maxZ;
 					u += OGLPoint3D_Distance(&gFenceVertexArrays[b].fencePoints[f][j], &gFenceVertexArrays[b].fencePoints[f][j-2]) * textureUOff;
 				}
 
-				gFenceVertexArrays[b].fenceUVs[f][j].v		= 1;									// bottom
+				gFenceVertexArrays[b].fenceUVs[f][j].v		= (1 + FENCE_STRETCHSINK_FACTOR);		// bottom
 				gFenceVertexArrays[b].fenceUVs[f][j+1].v	= 0;									// top
 				gFenceVertexArrays[b].fenceUVs[f][j].u 	= gFenceVertexArrays[b].fenceUVs[f][j+1].u = u;
 			}

@@ -306,6 +306,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.maxValue = 200,
 			.equilibrium = 100,
 			.increment = 5,
+			.continuousCallback = true,
 		},
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
@@ -337,6 +338,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.minValue = 0,
 			.maxValue = 100,
 			.valuePtr = &gGamePrefs.rumbleIntensity,
+			.continuousCallback = false,
 		},
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
@@ -423,6 +425,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.maxValue = 100,
 			.equilibrium = 70,
 			.increment = 5,
+			.continuousCallback = true,
 		}
 	},
 	{
@@ -434,7 +437,8 @@ static const MenuItem gSettingsMenuTree[] =
 			.minValue = 0,
 			.maxValue = 100,
 			.equilibrium = 70,
-			.increment = 5
+			.increment = 5,
+			.continuousCallback = true,
 		}
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
@@ -475,6 +479,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.maxValue = MAX_MOUSE_SENSITIVITY_LEVEL,
 			.equilibrium = DEFAULT_MOUSE_SENSITIVITY_LEVEL,
 			.increment = 5,
+			.continuousCallback = true,
 		}
 	},
 	{kMISpacer, .customHeight=.25f },

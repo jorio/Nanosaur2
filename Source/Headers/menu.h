@@ -49,6 +49,7 @@ typedef struct
 	Byte			minValue;
 	Byte			maxValue;
 	Byte			increment;
+	bool			continuousCallback;
 } MenuSliderData;
 
 typedef struct MenuItem

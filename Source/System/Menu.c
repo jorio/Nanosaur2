@@ -1548,8 +1548,10 @@ static float SetNewSliderValue(const MenuItem* entry, SliderComponents* parts, f
 		mouseValueInt = GAME_CLAMP(mouseValueInt, entry->slider.minValue, entry->slider.maxValue);
 		*entry->slider.valuePtr = (Byte) mouseValueInt;
 
-		if (entry->callback)
+		if (entry->callback && entry->slider.continuousCallback)
+		{
 			entry->callback();
+		}
 	}
 
 	return knobX;
@@ -1557,9 +1559,11 @@ static float SetNewSliderValue(const MenuItem* entry, SliderComponents* parts, f
 
 static void NavigateSlider(const MenuItem* entry)
 {
+	// the state can be static because we can only drag one slider at a time
 	static float prevTickX = -1;
 	static float grabOffset = -1;
 	static float heldCooldown = -1;
+	static bool beingDragged = false;
 	static bool didRamEdge = false;
 
 	ObjNode* sliderRoot = GetCurrentMenuItemObject();
@@ -1569,15 +1573,15 @@ static void NavigateSlider(const MenuItem* entry)
 		&& (gNav->mouseFocusComponent == 4 || gNav->mouseFocusComponent == 3)		// knob is node #4 in chain
 		&& IsClickDown(SDL_BUTTON_LEFT))
 	{
-		// Grab knob
+		// Start grabbing knob
+		beingDragged = true;
 		grabOffset = gCursorCoord.x - parts.knob->Coord.x;
 		prevTickX = parts.knob->Coord.x;
-		gNav->mouseState = kMouseGrabbing;
+		gNav->mouseState = kMouseGrabbing;			// lock mouse to this widget
 		PlayStartBindingEffect();
 		TwitchSelection();
 	}
-	else if (gNav->mouseState == kMouseGrabbing
-		&& IsClickHeld(SDL_BUTTON_LEFT))
+	else if (beingDragged && IsClickHeld(SDL_BUTTON_LEFT))
 	{
 		float knobX = gCursorCoord.x - grabOffset;
 		float mouseValue = SliderKnobXToValue(&parts, knobX);
@@ -1593,10 +1597,14 @@ static void NavigateSlider(const MenuItem* entry)
 			TwitchSelection();
 		}
 	}
-	else if (gNav->mouseState == kMouseGrabbing
-		&& !IsClickHeld(SDL_BUTTON_LEFT))
+	else if (beingDragged
+		&& (IsClickUp(SDL_BUTTON_LEFT) || IsNeedUp(kNeed_UIPrev, ANY_PLAYER) || IsNeedUp(kNeed_UINext, ANY_PLAYER)))
 	{
-		gNav->mouseState = kMouseWandering;
+		beingDragged = false;
+
+		if (gNav->mouseState == kMouseGrabbing)		// unlock mouse from this widget
+			gNav->mouseState = kMouseWandering;
+
 		PlayConfirmEffect();
 		if (entry->callback)
 			entry->callback();
@@ -1662,7 +1670,14 @@ static void NavigateSlider(const MenuItem* entry)
 			PlayNavigateEffect();
 			TwitchSelection();
 
+			beingDragged = true;
 			heldCooldown = didJustPress? 2.5f: 1;			// longer delay on first iteration
+
+			// twitch arrows
+			if (direction < 0)
+				MakeTwitch(gNav->arrowObjects[0], kTwitchPreset_DisplaceLTR);
+			else
+				MakeTwitch(gNav->arrowObjects[1], kTwitchPreset_DisplaceRTL);
 		}
 	}
 }

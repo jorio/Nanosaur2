@@ -74,6 +74,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_R,
 			.increment=5,
+			.continuousCallback = false,
 		},
 	},
 	{
@@ -88,6 +89,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_G,
 			.increment=5,
+			.continuousCallback = false,
 		},
 	},
 	{
@@ -102,6 +104,7 @@ static const MenuItem gAnaglyphMenu[] =
 			.maxValue=255,
 			.equilibrium=DEFAULT_ANAGLYPH_B,
 			.increment=5,
+			.continuousCallback = false,
 		},
 	},
 	{

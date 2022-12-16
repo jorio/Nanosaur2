@@ -782,8 +782,9 @@ void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms
 		return;
 	}
 
-	lowFrequencyStrength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
-	highFrequencyStrength *= ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
+	float rumbleIntensityFrac = ((float) gGamePrefs.rumbleIntensity) * (1.0f / 100.0f);
+	lowFrequencyStrength *= rumbleIntensityFrac;
+	highFrequencyStrength *= rumbleIntensityFrac;
 
 	// If ANY_PLAYER, do rumble on all controllers
 	if (playerID == ANY_PLAYER)
@@ -810,7 +811,7 @@ void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms
 		controller->controllerInstance,
 		(Uint16)(lowFrequencyStrength * 65535),
 		(Uint16)(highFrequencyStrength * 65535),
-		ms);
+		(Uint32)((float)ms * rumbleIntensityFrac));
 
 	// Prevent jetpack effect from kicking in while we're playing this
 	gPlayerInfo[playerID].jetpackRumbleCooldown = ms * (1.0f / 1000.0f);

@@ -1658,6 +1658,11 @@ float	fps = gFramesPerSecondFrac;
 				theNode->ParticleGroup = -1;
 			}
 		}
+
+
+			/* FORCE FEEDBACK */
+
+		Rumble(0, 1, 25, theNode->PlayerNum);
 	}
 }
 

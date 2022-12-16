@@ -557,7 +557,7 @@ float		dist, dist2;
 		if (egg->TargetJoint == 1)
 		{
 			PlayEffect3D(EFFECT_EGGINTOWORMHOLE, &gCoord);
-			PlayRumbleEffect(EFFECT_EGGINTOWORMHOLE, ANY_PLAYER);
+			PlayRumbleEffect(EFFECT_EGGINTOWORMHOLE, egg->PlayerNum);
 		}
 
 		if (egg->TargetJoint >= wormhole->Skeleton->skeletonDefinition->NumBones)

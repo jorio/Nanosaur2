@@ -320,12 +320,24 @@ static const MenuItem gSettingsMenuTree[] =
 	{kMIPick, STR_CONFIGURE_KEYBOARD, .next='keyb' },
 	{kMIPick, STR_CONFIGURE_MOUSE, .next='mous' },
 	{
-		kMICycler1, STR_VERTICAL_STEERING,
+		kMICycler2, STR_VERTICAL_STEERING,
 		.cycler =
 		{
 			.valuePtr=&gGamePrefs.invertVerticalSteering,
 			.choices = { {STR_NORMAL, 0}, {STR_INVERTED, 1} },
 		}
+	},
+	{
+		kMISlider, STR_GAMEPAD_RUMBLE,
+		.callback = TestGamepadRumble,
+		.slider =
+		{
+			.equilibrium = 100,
+			.increment = 25,
+			.minValue = 0,
+			.maxValue = 100,
+			.valuePtr = &gGamePrefs.rumbleIntensity,
+		},
 	},
 	{kMIPick, STR_BACK_SYMBOL,		.next='BACK' },
 
@@ -409,7 +421,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.valuePtr = &gGamePrefs.musicVolumePercent,
 			.minValue = 0,
 			.maxValue = 100,
-			.equilibrium = 60,
+			.equilibrium = 70,
 			.increment = 5,
 		}
 	},
@@ -421,7 +433,7 @@ static const MenuItem gSettingsMenuTree[] =
 			.valuePtr = &gGamePrefs.sfxVolumePercent,
 			.minValue = 0,
 			.maxValue = 100,
-			.equilibrium = 60,
+			.equilibrium = 70,
 			.increment = 5
 		}
 	},
@@ -494,18 +506,6 @@ static const MenuItem gSettingsMenuTree[] =
 	{ kMIPadBinding, .inputNeed = kNeed_PrevWeapon },
 	{ kMIPadBinding, .inputNeed = kNeed_Drop },
 	{ kMIPadBinding, .inputNeed = kNeed_CameraMode },
-	{ kMISpacer, .customHeight = .25f },
-	{ kMISlider, STR_GAMEPAD_RUMBLE,
-		.callback = TestGamepadRumble,
-		.slider =
-		{
-			.equilibrium = 100,
-			.increment = 10,
-			.minValue = 0,
-			.maxValue = 100,
-			.valuePtr = &gGamePrefs.rumbleIntensity,
-		},
-	},
 	{ kMIPick, STR_RESTORE_DEFAULT_CONFIG, .callback = OnPickResetGamepadBindings, .customHeight = .5f },
 	{ kMISpacer, .customHeight = .25f },
 	{ kMIPick, STR_BACK_SYMBOL,		.next = 'BACK' },

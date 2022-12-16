@@ -433,7 +433,10 @@ float	oldH = theNode->Health;
 	if (theNode->Health < 0.0f)
 	{
 		if (oldH >= 0.0f)
+		{
 			PlayEffect_Parms3D(EFFECT_WORMHOLEVANISH, &theNode->Coord, NORMAL_CHANNEL_RATE, 2.0);
+			PlayRumbleEffect(EFFECT_WORMHOLEVANISH, theNode->PlayerNum);
+		}
 
 		theNode->Scale.x =
 		theNode->Scale.y =

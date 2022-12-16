@@ -1261,6 +1261,7 @@ static ObjNode* LayOutCycler2Columns(int row)
 	node1->Coord.x = k2ColumnLeftX;
 	node1->MoveCall = MoveAction;
 	SetMaxTextWidth(node1, 230);
+	UpdateObjectTransforms(node1);
 
 	ObjNode* node2 = LayOutCycler2ColumnsValueText(row);
 	node2->Coord.x = k2ColumnRightX;
@@ -1510,19 +1511,17 @@ static ObjNode* LayOutSlider(int row)
 	// Knob  (glyph '#' in green font)
 	node = MakeText("#", row, chain++, kTextMeshAlignCenter);
 
-	for (ObjNode* chainNode = rootNode; chainNode; chainNode = chainNode->ChainNode)
-	{
-		chainNode->MoveCall = MoveAction;
-		UpdateObjectTransforms(chainNode);
-	}
-
 	SliderComponents parts = GetSliderComponents(entry, rootNode);
 	float knobX = SliderValueToKnobX(&parts, (float) *sliderData->valuePtr);
 	parts.notch->Coord.x = SliderValueToKnobX(&parts, (float) sliderData->equilibrium);
 	parts.knob->Coord.x = knobX;
 	parts.meter->Coord.x = knobX;
-	UpdateObjectTransforms(parts.knob);
-	UpdateObjectTransforms(parts.meter);
+
+	for (ObjNode* chainNode = rootNode; chainNode; chainNode = chainNode->ChainNode)
+	{
+		chainNode->MoveCall = MoveAction;
+		UpdateObjectTransforms(chainNode);
+	}
 
 	return rootNode;
 }
@@ -1749,12 +1748,14 @@ static ObjNode* LayOutKeyBinding(int row)
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 110);
+	UpdateObjectTransforms(label);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
 		ObjNode* keyNode = MakeKbText(row, j);
 		keyNode->Coord.x = 300 + j * 170 ;
 		keyNode->MoveCall = MoveControlBinding;
+		UpdateObjectTransforms(keyNode);
 	}
 
 	return label;
@@ -1772,12 +1773,14 @@ static ObjNode* LayOutPadBinding(int row)
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 110);
+	UpdateObjectTransforms(label);
 
 	for (int j = 0; j < MAX_USER_BINDINGS_PER_NEED; j++)
 	{
 		ObjNode* keyNode = MakePbText(row, j);
 		keyNode->Coord.x = 300 + j * 170;
 		keyNode->MoveCall = MoveControlBinding;
+		UpdateObjectTransforms(keyNode);
 	}
 
 	return label;
@@ -1795,11 +1798,13 @@ static ObjNode* LayOutMouseBinding(int row)
 	label->ColorFilter = gNav->style.labelColor;
 	label->MoveCall = MoveAction;
 	SetMaxTextWidth(label, 150);
+	UpdateObjectTransforms(label);
 
 	ObjNode* keyNode = MakeMbText(row);
 	keyNode->Coord.x = k2ColumnRightX;
 	keyNode->MoveCall = MoveControlBinding;
 	SetMinClickableWidth(keyNode, 70);
+	UpdateObjectTransforms(keyNode);
 
 	return label;
 }
@@ -2333,17 +2338,21 @@ static ObjNode* MakeText(const char* text, int row, int chainItem, int textMeshF
 	data->row = row;
 	data->component = chainItem;
 
-	Twitch* fadeEffect = MakeTwitch(node, kTwitchPreset_MenuFadeIn);
-	if (fadeEffect)
+	// Fade in / side sweep
+	if (gNav->sweepDelay >= 0)
 	{
-		fadeEffect->delay = -gNav->sweepDelay * fadeEffect->duration;
-
-		Twitch* displaceEffect = MakeTwitch(node, kTwitchPreset_MenuSweep | kTwitchFlags_Chain);
-		if (displaceEffect)
+		Twitch* fadeEffect = MakeTwitch(node, kTwitchPreset_MenuFadeIn);
+		if (fadeEffect)
 		{
-			displaceEffect->delay = fadeEffect->delay;
-			displaceEffect->amplitude *= (gNav->sweepRTL ? 1 : -1);
-			displaceEffect->amplitude *= (1.0 + displaceEffect->delay);
+			fadeEffect->delay = gNav->sweepDelay * fadeEffect->duration;
+
+			Twitch* displaceEffect = MakeTwitch(node, kTwitchPreset_MenuSweep | kTwitchFlags_Chain);
+			if (displaceEffect)
+			{
+				displaceEffect->delay = fadeEffect->delay;
+				displaceEffect->amplitude *= (gNav->sweepRTL ? 1 : -1);
+				displaceEffect->amplitude *= (1.0 + displaceEffect->delay);
+			}
 		}
 	}
 
@@ -2445,7 +2454,7 @@ static void LayOutMenu(int menuID)
 
 		if (entry->type != kMISpacer)
 		{
-			gNav->sweepDelay -= .2f;
+			gNav->sweepDelay += .2f;
 		}
 	}
 

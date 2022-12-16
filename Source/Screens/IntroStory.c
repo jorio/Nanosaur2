@@ -319,7 +319,7 @@ static void FreeIntroStoryScreen(void)
 	MyFlushEvents();
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
-	DisposeAllSpriteGroups();
+	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
 	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
 	DisposeAllBG3DContainers();
 	DisposeTerrain();

@@ -42,7 +42,7 @@ static void OnPickLanguage(void)
 
 	LoadLocalizedStrings(language);
 
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
 }
 
 static void OnToggleFullscreen(void)
@@ -54,21 +54,21 @@ static void OnPickResetKeyboardBindings(void)
 {
 	ResetDefaultKeyboardBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
 }
 
 static void OnPickResetGamepadBindings(void)
 {
 	ResetDefaultGamepadBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
 }
 
 static void OnPickResetMouseBindings(void)
 {
 	ResetDefaultMouseBindings();
 	PlayEffect_Parms(EFFECT_TURRETEXPLOSION, FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, NORMAL_CHANNEL_RATE);
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
 }
 
 static void TestGamepadRumble(void)

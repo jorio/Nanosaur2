@@ -2426,8 +2426,6 @@ static void LayOutMenu(int menuID)
 		RescaleDarkenPane(gNav->darkenPane, totalHeight);
 	}
 
-	gNav->sweepDelay = 0.0f;
-
 	for (int row = 0; menu[row].type != kMISENTINEL; row++)
 	{
 		gNav->menuRowYs[row] = y;
@@ -2484,9 +2482,15 @@ static void LayOutMenu(int menuID)
 	}
 }
 
-void LayoutCurrentMenuAgain(void)
+void LayoutCurrentMenuAgain(bool animate)
 {
+	GAME_ASSERT(gNav);
 	GAME_ASSERT(gNav->menu);
+
+	gNav->sweepDelay = animate? 0: -100000;
+
+	SaveSelectedRowInHistory();
+
 	LayOutMenu(gNav->menuID);
 }
 

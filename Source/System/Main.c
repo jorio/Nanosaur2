@@ -777,7 +777,8 @@ static void CleanupLevel(void)
 	DeleteAllConfettiGroups();
 	DisposeInfobar();
 	DisposeParticleSystem();
-	DisposeAllSpriteGroups();
+	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
+	DisposeSpriteGroup(SPRITE_GROUP_OVERHEADMAP);
 	DisposeAllBG3DContainers();
 	DisposeContrails();
 	FreeAllZaps();
@@ -965,12 +966,23 @@ void LoadGlobalAssets(void)
 {
 	LoadSpriteAtlas(ATLAS_GROUP_FONT1, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly);
 	LoadSpriteAtlas(ATLAS_GROUP_FONT2, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_CURSOR, ":sprites:menu:cursor", 0);
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_INFOBAR,		INFOBAR_SObjType_COUNT,		"infobar");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_GLOBAL,		GLOBAL_SObjType_COUNT,		"global");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_SPHEREMAPS,	SPHEREMAP_SObjType_COUNT,	"spheremap");
+	LoadSpriteGroupFromSeries(SPRITE_GROUP_PARTICLES,	PARTICLE_SObjType_COUNT,	"particle");
+	BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES);
 }
 
 void DisposeGlobalAssets(void)
 {
 	DisposeSpriteAtlas(ATLAS_GROUP_FONT1);
 	DisposeSpriteAtlas(ATLAS_GROUP_FONT2);
+	DisposeSpriteGroup(SPRITE_GROUP_CURSOR);
+	DisposeSpriteGroup(SPRITE_GROUP_INFOBAR);
+	DisposeSpriteGroup(SPRITE_GROUP_GLOBAL);
+	DisposeSpriteGroup(SPRITE_GROUP_SPHEREMAPS);
+	DisposeSpriteGroup(SPRITE_GROUP_PARTICLES);
 }
 
 
@@ -994,6 +1006,13 @@ unsigned long	someLong;
 	ToolBoxInit();
 
 
+#if !_DEBUG
+	SDL_ShowCursor(0);
+#endif
+
+	DoWarmUpScreen();
+
+
 
 			/* INIT SOME OF MY STUFF */
 
@@ -1015,14 +1034,9 @@ unsigned long	someLong;
 	SetMyRandomSeed((uint32_t) someLong);
 
 
-			/* LOAD FONT FOR ENTIRE GAME */
+			/* PRELOAD SPRITES FOR ENTIRE GAME */
 
 	LoadGlobalAssets();
-
-
-#if !_DEBUG
-	SDL_ShowCursor(0);
-#endif
 
 
 #if !SKIPFLUFF

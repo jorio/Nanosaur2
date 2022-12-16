@@ -15,7 +15,8 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static void OnChangeAnaglyphSetting(void);
+static void OnChangeAnaglyphMode(void);
+static void OnTweakAnaglyphLevels(void);
 static int GetAnaglyphDisplayFlags(const MenuItem* mi);
 static int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi);
 static void DisposeAnaglyphCalibrationScreen(void);
@@ -49,7 +50,7 @@ static const MenuItem gAnaglyphMenu[] =
 	{.id='cali'},
 	{
 		kMICycler2, STR_3D_GLASSES_MODE,
-		.callback = OnChangeAnaglyphSetting,
+		.callback = OnChangeAnaglyphMode,
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.stereoGlassesMode,
@@ -65,7 +66,7 @@ static const MenuItem gAnaglyphMenu[] =
 	{
 		kMISlider,
 		.text = STR_3D_GLASSES_R,
-		.callback = SetUpAnaglyphCalibrationScreen,
+		.callback = OnTweakAnaglyphLevels,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
 		.slider=
 		{
@@ -80,7 +81,7 @@ static const MenuItem gAnaglyphMenu[] =
 	{
 		kMISlider,
 		.text = STR_3D_GLASSES_G,
-		.callback = SetUpAnaglyphCalibrationScreen,
+		.callback = OnTweakAnaglyphLevels,
 		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
 		.slider=
 		{
@@ -95,7 +96,7 @@ static const MenuItem gAnaglyphMenu[] =
 	{
 		kMISlider,
 		.text = STR_3D_GLASSES_B,
-		.callback = SetUpAnaglyphCalibrationScreen,
+		.callback = OnTweakAnaglyphLevels,
 		.getLayoutFlags = GetAnaglyphDisplayFlags,
 		.slider=
 		{
@@ -110,7 +111,7 @@ static const MenuItem gAnaglyphMenu[] =
 	{
 		kMICycler2,
 		.text = STR_3D_GLASSES_CHANNEL_BALANCING,
-		.callback = SetUpAnaglyphCalibrationScreen,
+		.callback = OnTweakAnaglyphLevels,
 		.getLayoutFlags = GetAnaglyphDisplayFlags_ColorOnly,
 		.cycler =
 		{
@@ -161,6 +162,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	BuildMainMenuObjects();		// rebuild background image
 
+	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
 	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
 
 			/* CREATE HEAD SENTINEL - ALL ANAGLYPH CALIB OBJECTS WILL BE CHAINED TO IT */
@@ -251,7 +253,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 /*    CALLBACKS             */
 /****************************/
 
-static void OnChangeAnaglyphSetting(void)
+static void OnChangeAnaglyphMode(void)
 {
 	gAnaglyphPass = 0;
 	for (int i = 0; i < 4; i++)
@@ -262,7 +264,13 @@ static void OnChangeAnaglyphSetting(void)
 	}
 
 	SetUpAnaglyphCalibrationScreen();
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
+}
+
+static void OnTweakAnaglyphLevels(void)
+{
+	SetUpAnaglyphCalibrationScreen();
+	LayoutCurrentMenuAgain(false);
 }
 
 static int GetAnaglyphDisplayFlags(const MenuItem* mi)
@@ -314,7 +322,7 @@ static void ResetAnaglyphSettings(void)
 	gGamePrefs.anaglyphCalibrationGreen = DEFAULT_ANAGLYPH_G;
 	gGamePrefs.anaglyphCalibrationBlue = DEFAULT_ANAGLYPH_B;
 	SetUpAnaglyphCalibrationScreen();
-	LayoutCurrentMenuAgain();
+	LayoutCurrentMenuAgain(true);
 }
 
 static int ShouldShowResetAnaglyphSettings(const MenuItem* mi)

@@ -7,6 +7,7 @@
 void DoPaused(void);
 void DoReallyQuit(void);
 
+void DoWarmUpScreen(void);
 void DoLegalScreen(void);
 
 void DrawLoading(float percent);

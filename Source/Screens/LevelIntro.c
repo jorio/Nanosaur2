@@ -456,7 +456,7 @@ static void FreeLevelIntroScreen(void)
 	DeleteAllObjects();
 	FreeAllSkeletonFiles(-1);
 	InitSparkles();				// this will actually delete all the sparkles
-	DisposeAllSpriteGroups();
+	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
 }

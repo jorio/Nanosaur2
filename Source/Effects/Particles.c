@@ -73,8 +73,7 @@ void InitParticleSystem(void)
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroupFromSeries(SPRITE_GROUP_PARTICLES, PARTICLE_SObjType_COUNT, "particle");
-	BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES);
+	GAME_ASSERT(gNumSpritesInGroupList[SPRITE_GROUP_PARTICLES] == PARTICLE_SObjType_COUNT);
 
 
 		/*************************************************************************/
@@ -102,7 +101,7 @@ void InitParticleSystem(void)
 
 void DisposeParticleSystem(void)
 {
-	DisposeSpriteGroup(SPRITE_GROUP_PARTICLES);
+	DeleteAllParticleGroups();
 }
 
 

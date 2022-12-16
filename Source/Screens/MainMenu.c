@@ -201,7 +201,6 @@ void BuildMainMenuObjects(void)
 
 	if (gMainMenuMouseCursor)
 	{
-		DisposeSpriteGroup(SPRITE_GROUP_CURSOR);
 		DeleteObject(gMainMenuMouseCursor);
 	}
 
@@ -287,7 +286,7 @@ static void FreeMainMenuScreen(void)
 	gMainMenuMouseCursor = NULL;
 	gMainMenuBackground = NULL;
 
-	DisposeAllSpriteGroups();
+	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
 	DisposeAllBG3DContainers();
 	OGL_DisposeGameView();
 }
@@ -460,10 +459,7 @@ static void MoveMouseCursorObject(ObjNode *theNode)
 
 ObjNode* MakeMouseCursorObject(void)
 {
-	if (gNumSpritesInGroupList[SPRITE_GROUP_CURSOR] == 0)
-	{
-		LoadSpriteGroupFromFile(SPRITE_GROUP_CURSOR, ":sprites:menu:cursor", 0);
-	}
+	GAME_ASSERT(gNumSpritesInGroupList[SPRITE_GROUP_CURSOR] != 0);
 
 	NewObjectDefinitionType def =
 	{

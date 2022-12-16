@@ -34,6 +34,32 @@ static void DrawLoading_Callback(void);
 float		gLoadingThermoPercent = 0;
 
 
+/******* DO PROGRAM WARM-UP SCREEN AS WE PRELOAD ASSETS **********/
+
+void DoWarmUpScreen(void)
+{
+	OGLSetupInputType	viewDef;
+
+			/* SETUP VIEW */
+
+	OGL_NewViewDef(&viewDef);
+	OGL_SetupGameView(&viewDef);
+
+			/* SHOW IT */
+
+	for (int i = 0; i < 8; i++)
+	{
+		OGL_DrawScene(DrawObjects);
+		DoSDLMaintenance();
+	}
+
+			/* CLEANUP */
+
+	DeleteAllObjects();
+
+	OGL_DisposeGameView();
+}
+
 
 /************** DO LEGAL SCREEN *********************/
 
@@ -129,7 +155,6 @@ void DoLegalScreen(void)
 			/* CLEANUP */
 
 	DeleteAllObjects();
-	DisposeAllSpriteGroups();
 	OGL_DisposeGameView();
 }
 

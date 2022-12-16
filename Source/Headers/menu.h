@@ -114,7 +114,7 @@ void RegisterMenu(const MenuItem* menus);
 
 ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style);
 
-void LayoutCurrentMenuAgain(void);
+void LayoutCurrentMenuAgain(bool animate);
 int GetCurrentMenu(void);
 int GetCurrentMenuItemID(void);
 bool IsMenuMouseControlled(void);

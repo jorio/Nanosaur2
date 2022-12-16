@@ -76,14 +76,6 @@ char	path[256];
 
 	glClearColor(0,0,0,0);						// clear to black for loading screen
 
-				/* LOAD AUDIO */
-
-//	if (levelSoundFiles[gLevelNum][0] > 0)
-//	{
-//		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, levelSoundFiles[gLevelNum], &spec);
-//		LoadSoundBank(&spec, SOUND_BANK_LEVELSPECIFIC);
-//	}
-
 
 			/* LOAD GLOBAL BG3D GEOMETRY */
 
@@ -149,6 +141,10 @@ char	path[256];
 			break;
 	}
 
+	GAME_ASSERT_MESSAGE(
+			numLevelSpecificSprites <= (int) (sizeof(levelSpecificSpritePaths)/sizeof(levelSpecificSpritePaths[0])),
+			"too many level-specific sprites in array");
+
 	LoadSpriteGroupFromFiles(SPRITE_GROUP_LEVELSPECIFIC, numLevelSpecificSprites, levelSpecificSpritePaths);
 
 
@@ -158,10 +154,6 @@ char	path[256];
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadSpriteGroupFromFile(SPRITE_GROUP_OVERHEADMAP, path, 0);
 	}
-
-	LoadSpriteGroupFromSeries(SPRITE_GROUP_INFOBAR,		INFOBAR_SObjType_COUNT,		"infobar");
-	LoadSpriteGroupFromSeries(SPRITE_GROUP_GLOBAL,		GLOBAL_SObjType_COUNT,		"global");
-	LoadSpriteGroupFromSeries(SPRITE_GROUP_SPHEREMAPS,	SPHEREMAP_SObjType_COUNT,	"spheremap");
 
 
 			/* DRAW THE LOADING TEXT AND THERMO */

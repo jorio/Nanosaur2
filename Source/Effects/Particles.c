@@ -233,6 +233,9 @@ MOTriangleIndecies		*t;
 			gParticleGroups[i]->srcBlend 			= def->srcBlend;
 			gParticleGroups[i]->dstBlend 			= def->dstBlend;
 
+			gParticleGroups[i]->visibleForPlayer1	= true;
+			gParticleGroups[i]->visibleForPlayer2	= true;
+
 				/*****************************/
 				/* INIT THE GROUP'S GEOMETRY */
 				/*****************************/
@@ -322,8 +325,7 @@ short	p,group;
 
 	group = def->groupNum;
 
-	if ((group < 0) || (group >= MAX_PARTICLE_GROUPS))
-		DoFatalAlert("AddParticleToGroup: illegal group #");
+	GAME_ASSERT_MESSAGE(group >= 0 && group < MAX_PARTICLE_GROUPS, "Illegal group #");
 
 	if (gParticleGroups[group] == nil)
 	{
@@ -357,6 +359,20 @@ got_it:
 
 
 	return(false);
+}
+
+
+/*************** SET WHICH PANES TO DRAW THE PARTICLE GROUP IN ****************/
+
+void SetParticleGroupVisiblePanes(short group, bool visibleForPlayer1, bool visibleForPlayer2)
+{
+	GAME_ASSERT_MESSAGE(group >= 0 && group < MAX_PARTICLE_GROUPS, "Illegal group #");
+
+	if (gParticleGroups[group])
+	{
+		gParticleGroups[group]->visibleForPlayer1 = visibleForPlayer1;
+		gParticleGroups[group]->visibleForPlayer2 = visibleForPlayer2;
+	}
 }
 
 
@@ -778,9 +794,8 @@ short				paneNum;
 
 static void DrawParticleGroups(ObjNode *theNode)
 {
-long				g, buffNum;
+long				buffNum;
 short				paneNum = gCurrentSplitScreenPane;
-Boolean				isVisible;
 
 #pragma unused(theNode)
 
@@ -798,31 +813,26 @@ Boolean				isVisible;
 
 	buffNum = gGameViewInfoPtr->frameCount & 1;								// which VAR buffer to use?
 
-	for (g = 0; g < MAX_PARTICLE_GROUPS; g++)
+	for (int g = 0; g < MAX_PARTICLE_GROUPS; g++)
 	{
-		if (gParticleGroups[g])
+		const ParticleGroupType* pg = gParticleGroups[g];
+
+		if (NULL == pg														// skip if not allocated
+			|| pg->inPurgeQueue 											// skip if it's in the purge queue
+			|| !OGL_IsBBoxVisible(&pg->bbox, nil)							// skip if culled
+			|| (paneNum == 0 && !pg->visibleForPlayer1)						// skip if hidden for this pane
+			|| (paneNum == 1 && !pg->visibleForPlayer2))					// skip if hidden for this pane
 		{
-			if (gParticleGroups[g]->inPurgeQueue)							// skip if it's in the purge queue
-				continue;
-
-
-			isVisible = OGL_IsBBoxVisible(&gParticleGroups[g]->bbox, nil);
-
-
-			if (isVisible)													// if not culled then draw it
-			{
-				GLint	src,dst;
-
-				src = gParticleGroups[g]->srcBlend;
-				dst = gParticleGroups[g]->dstBlend;
-
-
-					/* DRAW IT */
-
-				OGL_BlendFunc(src, dst);														// set blending mode
-				MO_DrawObject(gParticleGroups[g]->geometryObj[buffNum][paneNum]);	// draw geometry
-			}
+			continue;
 		}
+
+				/* DRAW IT */
+
+		GLint src = pg->srcBlend;
+		GLint dst = pg->dstBlend;
+		OGL_BlendFunc(src, dst);											// set blending mode
+
+		MO_DrawObject(pg->geometryObj[buffNum][paneNum]);					// draw geometry
 	}
 
 			/* RESTORE MODES */

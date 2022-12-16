@@ -48,10 +48,6 @@ static void MakePlayerSmoke(ObjNode *theNode);
 /*    CONSTANTS             */
 /****************************/
 
-#define	DELTA_SUBDIV			8.0f				// smaller == more subdivisions per frame
-
-
-
 #define	FLIGHT_SLIDE_FACTOR		15.0f				// smaller == more slide, larger = less slide
 #define	FLIGHT_TURN_SENSITIVITY	1.9f				// smaller == slower turns, larger == faster turns
 
@@ -801,11 +797,28 @@ short	playerNum = theNode->PlayerNum;
 			/* MAKE SMOKE TRAIL IF HURT */
 			/****************************/
 
-	if (!gGamePrefs.lowRenderQuality)
+	if (!gGamePrefs.lowRenderQuality && gPlayerInfo[playerNum].health < .33f)
 	{
-		if (gPlayerInfo[playerNum].health < .33f)
+		MakePlayerSmoke(theNode);
+	}
+
+
+			/* HIDE SMOKE TRAIL IF FIRST-PERSON */
+
+	{
+		short particleGroup		= (short) theNode->SmokeParticleGroup;
+		uint32_t magicNum 		= (uint32_t) theNode->SmokeParticleMagic;
+
+		if (particleGroup != -1 && VerifyParticleGroupMagicNum(particleGroup, magicNum))
 		{
-			MakePlayerSmoke(theNode);
+			if (gCameraMode[playerNum] == CAMERA_MODE_FIRSTPERSON)
+			{
+				SetParticleGroupVisiblePanes(particleGroup, playerNum != 0, playerNum != 1);
+			}
+			else
+			{
+				SetParticleGroupVisiblePanes(particleGroup, true, true);
+			}
 		}
 	}
 }
@@ -816,8 +829,6 @@ short	playerNum = theNode->PlayerNum;
 static void MakePlayerSmoke(ObjNode *theNode)
 {
 float	fps = gFramesPerSecondFrac;
-long	particleGroup;
-uint32_t magicNum;
 NewParticleGroupDefType	groupDef;
 NewParticleDefType	newParticleDef;
 OGLVector3D			d;
@@ -828,12 +839,11 @@ OGLPoint3D			p;
 	{
 		theNode->SmokeTimer += .02f;										// reset timer
 
-		particleGroup 	= theNode->SmokeParticleGroup;
-		magicNum 		= (uint32_t) theNode->SmokeParticleMagic;
+		short particleGroup		= (short) theNode->SmokeParticleGroup;
+		uint32_t magicNum 		= (uint32_t) theNode->SmokeParticleMagic;
 
 		if ((particleGroup == -1) || (!VerifyParticleGroupMagicNum(particleGroup, magicNum)))
 		{
-
 			theNode->SmokeParticleMagic = magicNum = MyRandomLong();			// generate a random magic num
 
 			groupDef.magicNum				= magicNum;

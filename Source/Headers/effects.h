@@ -2,8 +2,7 @@
 // effects.h
 //
 
-#ifndef __EFFECTS_H
-#define __EFFECTS_H
+#pragma once
 
 #define	MAX_PARTICLE_GROUPS		80
 #define	MAX_PARTICLES			150		// (note change Byte below if > 255)
@@ -30,8 +29,8 @@ typedef struct
 
 	Byte			isUsed[MAX_PARTICLES];
 
-	uint32_t			magicNum;
-	uint16_t			flags;
+	uint32_t		magicNum;
+	uint32_t		flags;
 	float			gravity;
 	float			magnetism;
 	float			baseScale;
@@ -54,6 +53,9 @@ typedef struct
 
 	OGLBoundingBox  bbox;
 
+	bool			visibleForPlayer1;
+	bool			visibleForPlayer2;
+
 }ParticleGroupType;
 
 
@@ -61,9 +63,9 @@ typedef struct
 
 typedef struct
 {
-	uint32_t			magicNum;
+	uint32_t		magicNum;
 	Byte			isUsed[MAX_CONFETTIS];
-	uint32_t			flags;
+	uint32_t		flags;
 	Byte			confettiTextureNum;
 	float			gravity;
 	float			baseScale;
@@ -190,6 +192,7 @@ Boolean AddParticleToGroup(const NewParticleDefType *def);
 Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum);
 Boolean ParticleHitObject(ObjNode *theNode, uint16_t inFlags);
 void DisposeParticleSystem(void);
+void SetParticleGroupVisiblePanes(short group, bool visibleForPlayer1, bool visibleForPlayer2);
 
 void MakePuff(short numPuffs, OGLPoint3D *where, float scale, short texNum, GLint src, GLint dst, float decayRate);
 void MakeSparkExplosion(const OGLPoint3D *coord, float force, float scale, short sparkTexture, short quantityLimit, float fadeRate);
@@ -202,8 +205,6 @@ void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke, shor
 
 
 void MakeFireExplosion(OGLPoint3D *where);
-
-void MakeSplatter(OGLPoint3D *where, short modelObjType, float scale);
 
 void MakeSteam(ObjNode *blob, float x, float y, float z);
 Boolean AddSmoker(TerrainItemEntryType *itemPtr, float  x, float z);
@@ -235,12 +236,3 @@ void ModifyContrailPreviousAddition(short contrailNum, OGLPoint3D *where);
 void DisposeContrails(void);
 void DisconnectContrail(short contrailNum);
 void UpdatePlayerContrails(ObjNode *player);
-
-
-
-
-#endif
-
-
-
-

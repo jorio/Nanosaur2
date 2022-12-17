@@ -71,7 +71,7 @@ static const MenuItem gPauseMenuTree[] =
 
 	{kMIPick, STR_RESUME, .id='resu', .next='EXIT' },
 
-	{kMISpacer, .customHeight=.3f},
+	{kMISpacer, .customHeight=.3f, .getLayoutFlags=ShouldDisplaySplitscreenModeCycler},
 
 	// 2P split-screen mode chooser
 	{
@@ -92,7 +92,7 @@ static const MenuItem gPauseMenuTree[] =
 
 	{kMIPick, STR_SETTINGS, .next='sett' },
 
-	{kMISpacer, .customHeight=.3f},
+	{kMISpacer, .customHeight=.3f, .getLayoutFlags=ShouldDisplaySplitscreenModeCycler},
 
 	{kMIPick, STR_RETIRE, .id='bail', .next='EXIT' },
 

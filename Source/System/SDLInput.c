@@ -60,6 +60,7 @@ Controller			gControllers[MAX_LOCAL_PLAYERS];
 static KeyState		gKeyboardStates[SDL_NUM_SCANCODES];
 static KeyState		gMouseButtonStates[NUM_SUPPORTED_MOUSE_BUTTONS];
 static KeyState		gNeedStates[NUM_CONTROL_NEEDS];
+static int			gLastControllerForNeedAnyP[NUM_CONTROL_NEEDS];
 
 Boolean				gMouseMotionNow = false;
 char				gTextInput[SDL_TEXTINPUTEVENT_TEXT_SIZE];
@@ -96,6 +97,9 @@ static int GetControllerSlotFromSDLJoystickInstanceID(SDL_JoystickID joystickIns
 
 void InitInput(void)
 {
+	for (int i = 0; i < NUM_CONTROL_NEEDS; i++)
+		gLastControllerForNeedAnyP[i] = -1;
+
 	TryFillUpVacantControllerSlots();
 }
 
@@ -409,10 +413,13 @@ int GetClickState(int mouseButton)
 
 static int GetNeedStateAnyP(int needID)
 {
+	gLastControllerForNeedAnyP[needID] = -1;
+
 	for (int i = 0; i < MAX_LOCAL_PLAYERS; i++)
 	{
 		if (gControllers[i].open && gControllers[i].needStates[needID])
 		{
+			gLastControllerForNeedAnyP[needID] = i;
 			return gControllers[i].needStates[needID];
 		}
 	}
@@ -451,6 +458,14 @@ int GetNeedState(int needID, int playerID)
 	}
 
 	return KEYSTATE_OFF;
+}
+
+int GetLastControllerForNeedAnyP(int needID)
+{
+	GAME_ASSERT(needID >= 0);
+	GAME_ASSERT(needID < NUM_CONTROL_NEEDS);
+
+	return gLastControllerForNeedAnyP[needID];
 }
 
 static float GetNeedAnalogValueAnyP(int needID)
@@ -879,6 +894,31 @@ static void CompactControllerSlots(void)
 			writeIndex++;
 		}
 	}
+}
+
+void SwapControllers(int slotA, int slotB)
+{
+	if (slotA == slotB
+		|| slotA < 0
+		|| slotB < 0)
+	{
+		return;
+	}
+
+	Controller copy = gControllers[slotB];
+	gControllers[slotB] = gControllers[slotA];
+	gControllers[slotA] = copy;
+
+	if (gControllers[slotA].open)
+		SDL_GameControllerSetPlayerIndex(gControllers[slotA].controllerInstance, slotA);
+
+	if (gControllers[slotB].open)
+		SDL_GameControllerSetPlayerIndex(gControllers[slotB].controllerInstance, slotB);
+}
+
+void SetMainController(int oldSlot)
+{
+	SwapControllers(0, oldSlot);
 }
 
 static void TryFillUpVacantControllerSlots(void)

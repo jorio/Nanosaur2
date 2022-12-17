@@ -111,6 +111,16 @@ static const MenuItem gPauseMenuTree[] =
 
 void DoPaused(void)
 {
+	// In single-player, reassign main controller to whoever pressed the start button
+	if (gVSMode == VS_MODE_NONE)
+	{
+		int whoPressedStart = GetLastControllerForNeedAnyP(kNeed_UIPause);
+		if (whoPressedStart >= 0)
+		{
+			SetMainController(whoPressedStart);
+		}
+	}
+
 	gGammaFadeFrac = 1;
 	gGamePaused = true;
 	GrabMouse(false);

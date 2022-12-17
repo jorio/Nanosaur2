@@ -19,6 +19,7 @@
 static void SetupMainMenuScreen(void);
 static void FreeMainMenuScreen(void);
 static void ProcessMenuOutcome(int outcome);
+static void SetMainController1P(void);
 static void CheckForLevelCheat(void);
 static void DeleteFileSlot(void);
 
@@ -339,6 +340,8 @@ static void ProcessMenuOutcome(int outcome)
 			break;
 
 		case	'adve':										// SINGLE-PLAYER ADVENTURE CAMPAIGN
+			SetMainController1P();
+
 			gNumPlayers = 1;
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
@@ -348,6 +351,8 @@ static void ProcessMenuOutcome(int outcome)
 		case	'cht1':
 		case	'cht2':
 		case	'cht3':
+			SetMainController1P();
+
 			gNumPlayers = 1;
 			gPlayNow = true;
 			gPlayingFromSavedGame = false;
@@ -366,6 +371,8 @@ static void ProcessMenuOutcome(int outcome)
 		case	'lf#8':										// LOAD SINGLE-PLAYER FILE 8
 		case	'lf#9':										// LOAD SINGLE-PLAYER FILE 9
 		{
+			SetMainController1P();
+
 			SaveGameType loaded = {0};
 			if (LoadSavedGame(outcome - 'lf#0', &loaded))
 			{
@@ -480,6 +487,18 @@ ObjNode* MakeMouseCursorObject(void)
 	SendNodeToOverlayPane(cursor);
 
 	return cursor;
+}
+
+
+/********* SET MAIN CONTROLLER TO USE IN SINGLE-PLAYER ADVENTURE *********/
+
+static void SetMainController1P(void)
+{
+	int mainController = GetLastControllerForNeedAnyP(kNeed_UIConfirm);
+	if (mainController >= 0)
+	{
+		SetMainController(mainController);
+	}
 }
 
 

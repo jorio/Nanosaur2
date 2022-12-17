@@ -1568,17 +1568,35 @@ static void NavigateSlider(const MenuItem* entry)
 	ObjNode* sliderRoot = GetCurrentMenuItemObject();
 	SliderComponents parts = GetSliderComponents(entry, sliderRoot);
 
-	if (gNav->mouseState == kMouseHovering
-		&& (gNav->mouseFocusComponent == 4 || gNav->mouseFocusComponent == 3)		// knob is node #4 in chain
-		&& IsClickDown(SDL_BUTTON_LEFT))
+	if (gNav->mouseState == kMouseHovering && IsClickDown(SDL_BUTTON_LEFT))
 	{
-		// Start grabbing knob
-		beingDragged = true;
-		grabOffset = gCursorCoord.x - parts.knob->Coord.x;
-		prevTickX = parts.knob->Coord.x;
-		gNav->mouseState = kMouseGrabbing;			// lock mouse to this widget
-		PlayStartBindingEffect();
-		TwitchSelection();
+		switch (gNav->mouseFocusComponent)
+		{
+			case 1:		// bar
+			{
+				// Snap knob to mouse pos and start grabbing it
+				float value = SliderKnobXToValue(&parts, gCursorCoord.x);
+				SetNewSliderValue(entry, &parts, value);
+				beingDragged = true;
+				break;
+			}
+
+			case 3:		// meter text
+			case 4:		// knob
+				// Start grabbing knob
+				beingDragged = true;
+				break;
+		}
+
+		if (beingDragged)
+		{
+			prevTickX = parts.knob->Coord.x;
+			grabOffset = gCursorCoord.x - parts.knob->Coord.x;
+			gNav->mouseState = kMouseGrabbing;			// lock mouse to this widget
+
+			PlayStartBindingEffect();
+			TwitchSelection();
+		}
 	}
 	else if (beingDragged && IsClickHeld(SDL_BUTTON_LEFT))
 	{

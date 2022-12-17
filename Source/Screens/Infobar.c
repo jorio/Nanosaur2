@@ -102,6 +102,9 @@ float			g640x480Scaling = 1;
 
 Boolean			gHideInfobar = false;
 
+static int		gBlinkingEggType = -1;
+static float	gBlinkingEggTimer = 0;
+
 
 
 			/* OVERHEAD MAP */
@@ -273,6 +276,9 @@ void InitInfobar(void)
 {
 MOMaterialObject	*mo;
 
+
+	gBlinkingEggType = -1;
+	gBlinkingEggTimer = 0;
 
 		/* CREATE PANE DIVIDER FOR MULTIPLAYER */
 
@@ -643,6 +649,8 @@ void DrawInfobarSprite(float x, float y, float size, short texNum)
 {
 MOMaterialObject	*mo;
 float				aspect;
+
+	GAME_ASSERT(gNumSpritesInGroupList[SPRITE_GROUP_INFOBAR] > texNum);
 
 		/* ACTIVATE THE MATERIAL */
 
@@ -1248,30 +1256,56 @@ float				v;
 }
 
 
+/******************* START BLINKING EGG **********************/
+
+void HighlightInfobarEgg(int eggType)
+{
+	gBlinkingEggType = eggType;
+	gBlinkingEggTimer = 0;
+}
+
+
 /********************** DRAW EGGS *************************/
 
 static void Infobar_DrawEggs(void)
 {
-short	eggType, i;
 float	x,y;
 
 
+	gBlinkingEggTimer += gFramesPerSecondFrac;
+
+
 	x = EGGS_X;
-	for (eggType = 0; eggType < NUM_EGG_TYPES; eggType++)
+	for (int eggType = 0; eggType < NUM_EGG_TYPES; eggType++)
 	{
-		if (gNumEggsToSave[eggType] > 0)							// are there any eggs of this color?
+		if (gNumEggsToSave[eggType] <= 0)							// are there any eggs of this color?
+			continue;
+
+		y = EGGS_Y;
+
+		for (int i = 0; i < gNumEggsToSave[eggType]; i++)
 		{
-			y = EGGS_Y;
-			for (i = 0; i < gNumEggsToSave[eggType]; i++)
+			if (gNumEggsSaved[eggType] > i)
+				DrawInfobarSprite(x, y, EGGS_SCALE, INFOBAR_SObjType_SmallRedEgg + eggType);
+			else
+				DrawInfobarSprite(x, y, EGGS_SCALE, INFOBAR_SObjType_SmallBlankEgg);
+
+					/* BLINKING HALO IF JUST SAVED THIS EGG */
+
+			if ((gBlinkingEggTimer < 4.66f)
+				&& (eggType == gBlinkingEggType)
+				&& (i == gNumEggsSaved[eggType] - 1))
 			{
-				if (gNumEggsSaved[eggType] > i)
-					DrawInfobarSprite(x, y, EGGS_SCALE, INFOBAR_SObjType_SmallRedEgg + eggType);
-				else
-					DrawInfobarSprite(x, y, EGGS_SCALE, INFOBAR_SObjType_SmallBlankEgg);
-				y += EGGS_SCALE;
+				float flux = cosf(gBlinkingEggTimer * PI * 3 - PI);
+				gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8f);
+				DrawInfobarSprite(x, y, EGGS_SCALE, INFOBAR_SObjType_SmallEggHalo);
+				gGlobalTransparency = 1.0f;
 			}
-			x += EGGS_SCALE;
+
+			y += EGGS_SCALE;
 		}
+
+		x += EGGS_SCALE;
 	}
 }
 
@@ -1283,6 +1317,8 @@ static void Infobar_CaptureFlagEggs(void)
 short	eggType = gCurrentSplitScreenPane^1;			// egg type is OTHER player's, so ^ 1
 short	i;
 float	x,y;
+	
+	gBlinkingEggTimer += gFramesPerSecondFrac / (float)gNumPlayers;
 
 	y = CAP_EGGS_Y;
 	x = CAP_EGGS_X;
@@ -1297,6 +1333,20 @@ float	x,y;
 			else
 				DrawInfobarSprite(x, y, CAP_EGGS_SCALE, INFOBAR_SObjType_SmallBlankEgg);
 		}
+
+				/* BLINKING HALO IF JUST CAPTURED THIS EGG */
+
+		if ((gBlinkingEggTimer < 4.66f)
+			&& (eggType == gBlinkingEggType)
+			&& (i == gNumEggsSaved[eggType] - 1))
+		{
+			float flux = cosf(gBlinkingEggTimer * PI * 3 - PI);
+			gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8f);
+			DrawInfobarSprite(x, y, CAP_EGGS_SCALE, INFOBAR_SObjType_SmallEggHalo);
+			gGlobalTransparency = 1.0f;
+		}
+
+
 		x += CAP_EGGS_SCALE * .95f;
 	}
 }

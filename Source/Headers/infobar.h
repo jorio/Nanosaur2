@@ -21,3 +21,4 @@ void SetInfobarSpriteState(float anaglyphZ, float zoom);
 ObjNode* ShowLapNum(short playerNum);
 ObjNode* ShowWinLose(short playerNum, Byte mode);
 
+void HighlightInfobarEgg(int eggType);

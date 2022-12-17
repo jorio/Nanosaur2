@@ -610,6 +610,10 @@ Boolean	gotAllEggs = true;
 
 	gNumEggsSaved[egg->Kind]++;
 
+			/* START BLINKING EGG IN INFOBAR */
+
+	HighlightInfobarEgg(egg->Kind);
+
 
 		/**************************************/
 		/* SEE IF WE GOT ALL THE EGGS WE NEED */

@@ -166,6 +166,8 @@ void DoLegalScreen(void)
 
 void DrawLoading(float percent)
 {
+	static bool shownYet = false;
+	static uint64_t startTicks = 0;
 	static uint64_t lastUpdateTicks = 0;
 
 	// Prevent the OS from thinking our process has locked up
@@ -176,24 +178,45 @@ void DrawLoading(float percent)
 #else
 	uint64_t nowTicks = SDL_GetTicks();
 #endif
+
+	if (percent == 0)
+	{
+		startTicks = nowTicks;
+		lastUpdateTicks = 0;
+		shownYet = false;
+	}
+
+	// Give illusion of instant loading (don't draw thermometer) if we can predict the level will be loaded in under a second
+	if (!shownYet)
+	{
+		uint64_t ticksSinceStart = nowTicks - startTicks;
+		if (ticksSinceStart < 200								// let loading warm up for 200 ms before considering whether to draw or not
+			|| ticksSinceStart <= (uint64_t)(percent * 1000))	// don't draw as long as we're keeping up with the ideal loading time (1000 ms)
+		{
+			return;
+		}
+	}
+
+	// Don't redraw too often or if percentage is out of bounds
 	if (percent > 0
 		&& percent < 1
-		&& nowTicks - lastUpdateTicks < 30)
+		&& nowTicks - lastUpdateTicks < 16)
 	{
 		return;
 	}
+
+	shownYet = true;
 	lastUpdateTicks = nowTicks;
 
-	if (percent > 0.75f)
-	{
-		MakeFadeEvent(kFadeFlags_Out, 0.0001);
-		gGammaFadeFrac = 1.0f - (percent - 0.75f) / 0.25f;
-	}
+	//if (percent > 0.75f)
+	//{
+	//	MakeFadeEvent(kFadeFlags_Out, 0.0001);
+	//	gGammaFadeFrac = 1.0f - (percent - 0.75f) / 0.25f;
+	//}
 
 	// Kill vsync so we don't waste 16ms before loading the next asset
 	int vsyncBackup = SDL_GL_GetSwapInterval();
 	SDL_GL_SetSwapInterval(0);
-
 
 	// Draw thermometer
 	glClear(GL_COLOR_BUFFER_BIT);

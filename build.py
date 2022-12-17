@@ -234,6 +234,8 @@ class Project:
         if full:
             shutil.copytree("docs", f"{appdir}/Documentation")
             os.remove(f"{appdir}/Documentation/logo.png")
+            for docfile in ["CHANGELOG.md", "SECRETS.md"]:
+                shutil.copy(docfile, F"{appdir}/Documentation")
 
 
 class WindowsProject(Project):

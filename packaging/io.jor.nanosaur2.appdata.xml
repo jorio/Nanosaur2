@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.jor.nanosaur2</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>CC-BY-NC-SA-4.0</project_license>
+  <name>Nanosaur 2: Hatchling</name>
+  <summary>Fly a pterodactyl who’s loaded with hi-tech weaponry</summary>
+  <summary xml:lang="fr">Pilotez un ptérodactyle futuriste armé jusqu’au bec</summary>
+  <developer_name>Pangea Software, Inc., Iliyas Jorio</developer_name>
+
+  <description>
+    <p>In the year 4122, a solo Nanosaur was sent 65,000,000 years into the past. His mission was to find the unhatched eggs of ancient dinosaur species and return them to the future. The mission was a success, but before the eggs could be hatched, they were stolen by a group of rebel Nanosaurs. The rebels took the eggs to offworld bases where they planned on breeding the dinosaurs. Their goal was to create warriors for fighting their battle against Earth.</p>
+    <p xml:lang="fr">En l’an 4122, un Nanosaur solitaire fut envoyé 65 millions d’années dans le passé. Il était chargé de trouver des œufs intacts de dinosaures préhistoriques et de les renvoyer dans le futur. La mission fut accomplie, mais avant que les œufs n’éclosent, ils furent volés par un groupe de Nanosaurs rebelles. Les rebelles emmenèrent les œufs dans une base lointaine d’où ils comptaient élever les dinosaures. Ils voulaient créer des mercenaires pour gagner leur bataille contre la Terre.</p>
+    <p xml:lang="it">Nell’anno 4122, un Nanosaur solitario fu inviato 65 milioni di anni nel passato. La sua missione era trovare le uova non schiuse dei dinosauri preistorici e riportarle nel futuro. La missione fu un successo, ma prima che le uova si potessero schiudere, furono rubate da un gruppo di Nanosauri ribelli. I ribelli portarono le uova nelle basi extraterrestri dove avevano pianificato di allevare i dinosauri. Il loro obiettivo era creare guerrieri per combattere la loro battaglia contro la Terra.</p>
+    <p xml:lang="de">Im Jahr 4122 wurde ein einzelner Nanosaurier 65 Millionen Jahre in die Vergangenheit geschickt. Seine Aufgabe war es, die ungeschlüpften Eier uralter Dinosaurierarten zu finden und sie in die Zukunft zurückzubringen. Die Mission war ein Erfolg. Doch bevor die Eier schlüpfen konnten, wurden sie von einer Gruppe rebellischer Nanosaurier gestohlen. Die Rebellen brachten die Eier zu außerweltlichen Basen, wo sie die Dinosaurier züchten wollten. Ihr Ziel war es, Krieger für ihren Kampf gegen die Erde zu schaffen.</p>
+    <p xml:lang="sv">År 4122 skickades en ensam Nanosaurie 65 miljoner år in i det förflutna. Han skulle hitta de okläckta äggen av urgamla dinosauriearter och återföra dem till framtiden. Uppdraget var framgångsrikt, men innan äggen hann kläckas stals de av en grupp rebelliska Nanosaurier. Rebellerna tog äggen till utomvärldsliga baser där de avsåg att föda upp dinosaurierna. Deras mål var att skapa krigare för att kämpa mot jorden.</p>
+
+    <p>But the rebels left one egg behind. . . when it hatched, a new Nanosaur was born. This hatchling was sent on a mission to recover the stolen eggs and defeat the rebel forces.</p>
+    <p xml:lang="fr">Mais les rebelles laissèrent un œuf derrière eux... en éclosant, un nouveau Nanosaur fut né. Ce nouveau-né se vit confier la mission de récupérer les œufs volés et de vaincre les forces rebelles</p>
+    <p xml:lang="it">Ma i ribelli lasciarono indietro un uovo... quando si schiuse, un nuovo Nanosaur era nato. A questo cucciolo fu affidata la missione di recuperare le uova rubate e sconfiggere le forze ribelli.</p>
+    <p xml:lang="de">Aber die Rebellen ließen ein Ei zurück... Als es schlüpfte, wurde ein neuer Nanosaurier geboren. Dieser Schlüpfling wurde auf eine Mission geschickt, um die gestohlenen Eier zu bergen und die Rebellen zu besiegen.</p>
+    <p xml:lang="sv">Men rebellerna lämnade ett ägg efter sig... När det kläcktes föddes en ny Nanosaurie. Denna kläckling skickades på ett uppdrag för att återfå de stulna äggen och besegra rebellstyrkorna.</p>
+
+    <p>Nanosaur II: Hatchling is a continuation of the original Nanosaur storyline, only this time you get to fly a pterodactyl who’s loaded with hi-tech weaponry. In addition to the three level adventure mode where you blast enemy dinos and save eggs, there are also six two-player levels including racing, capture-the-flag, and battle.</p>
+    <p xml:lang="fr">Nanosaur II: Hatchling est la suite du premier Nanosaur, mais cette fois-ci, vous pilotez un ptérodactyle futuriste armé jusqu’au bec. En plus des trois niveaux du mode aventure où vous pulvérisez des dinos ennemis pour récupérer des œufs, il y a également six niveaux où deux joueurs peuvent s’affronter dans une course, une capture de drapeau, et une bataille.</p>
+
+    <p>About this port: Nanosaur 2 was released in 2004 by Pangea Software. It was a pack-in game on Macs that came out around that time. This port aims to provide the best way to experience the game today. This port was made and re-released under permission from Pangea Software, Inc.</p>
+    <p xml:lang="fr">À propos de ce portage : Nanosaur 2 fut initialement lancé en 2004 par Pangea Software. Ce jeu était fourni sur les Macs qui sortaient à cette époque. Ce portage a pour objectif d’offrir la meilleure façon de jouer à Nanosaur 2 aujourd’hui. Ce portage a été réalisé et rediffusé avec la permission de Pangea Software, Inc.</p>
+  </description>
+
+  <categories>
+    <category>Game</category>
+    <category>ActionGame</category>
+    <category>AdventureGame</category>
+  </categories>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">mild</content_attribute>
+    <content_attribute id="violence-fantasy">mild</content_attribute>
+  </content_rating>
+
+  <supports>
+    <control>keyboard</control>
+    <control>gamepad</control>
+    <control>pointing</control>
+  </supports>
+
+  <launchable type="desktop-id">io.jor.nanosaur2.desktop</launchable>
+  <provides>
+    <id>io.jor.nanosaur2.desktop</id>
+  </provides>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://img.itch.zone/aW1hZ2UvMTgyNDM5OS8xMDcwOTc5Ny5qcGc=/794x1000/zznRwl.jpg</image>
+    </screenshot>
+    <screenshot>
+      <image>https://img.itch.zone/aW1hZ2UvMTgyNDM5OS8xMDcwOTgxMy5qcGc=/794x1000/3mEONB.jpg</image>
+    </screenshot>
+    <screenshot>
+      <image>https://img.itch.zone/aW1hZ2UvMTgyNDM5OS8xMDcwOTgyMy5qcGc=/794x1000/yBGur4.jpg</image>
+    </screenshot>
+    <screenshot>
+      <image>https://img.itch.zone/aW1hZ2UvMTgyNDM5OS8xMDcwOTc5OS5qcGc=/794x1000/6mfScV.jpg</image>
+    </screenshot>
+    <screenshot>
+      <image>https://img.itch.zone/aW1hZ2UvMTgyNDM5OS8xMDcwOTgwNy5qcGc=/794x1000/NUyTAG.jpg</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://jorio.itch.io/nanosaur2</url>
+  <url type="donation">https://ko-fi.com/jorio</url>
+  <url type="vcs-browser">https://github.com/jorio/Nanosaur2</url>
+  <url type="bugtracker">https://github.com/jorio/Nanosaur2/issues</url>
+
+  <releases>
+    <release version="2.1.0" date="2022-12-17">
+      <url>https://github.com/jorio/Nanosaur2/releases/tag/v2.1.0</url>
+      <description>
+        <p>Initial release of the modern version.</p>
+        <p>Compared to the last Mac release by Pangea, this version introduces the following improvements:</p>
+        <ul>
+          <li>Improved widescreen support</li>
+          <li>Improved mouse and controller support</li>
+          <li>Seamless terrain texturing</li>
+          <li>Story subtitles</li>
+          <li>Revamped menu system</li>
+          <li>Customizable status bar scaling</li>
+          <li>Minor gameplay bugfixes</li>
+          <li>High-resolution story slides</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Nanosaur 2
+Comment=Fly a pterodactyl who’s loaded with hi-tech weaponry
+Comment[fr]=Pilotez un ptérodactyle futuriste armé jusqu’au bec
+Icon=io.jor.nanosaur2
+Exec=Nanosaur2
+Terminal=false
+Categories=Game;

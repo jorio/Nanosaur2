@@ -586,7 +586,12 @@ static void ComputeMetrics(const Atlas* atlas, const char* text, int flags, Text
 
 		const AtlasGlyph* glyph = Atlas_GetGlyph(atlas, codepoint);
 		if (!glyph)
+		{
+#if _DEBUG
+			printf("Missing glyph for codepoint U+%04X\n", codepoint);
+#endif
 			continue;
+		}
 
 		float kernFactor;
 		float glyphHeight;

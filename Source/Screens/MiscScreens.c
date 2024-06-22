@@ -84,7 +84,7 @@ void DoLegalScreen(void)
 
 			/* BUILD OBJECTS */
 
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":Sprites:fonts:swiss", kAtlasLoadFont);
 
 	NewObjectDefinitionType textDef =
 	{

@@ -96,50 +96,50 @@ SkeletonDefType *LoadSkeletonFile(short skeletonType)
 {
 QDErr		iErr;
 short		fRefNum;
-FSSpec		fsSpec;
+FSSpec		fsSpecSkeleton;
+FSSpec		fsSpecBG3D;
 SkeletonDefType	*skeleton;
-const char*	fileNames[MAX_SKELETON_TYPES] =
+char		pathBuf[128];
+const char*	modelNames[MAX_SKELETON_TYPES] =
 {
-	":Skeletons:nano.skeleton",
-	":Skeletons:wormhole.skeleton",
-	":Skeletons:raptor.skeleton",
-	":Skeletons:bonusworm.skeleton",
-	":Skeletons:brach.skeleton",
-	":Skeletons:worm.skeleton",
-	":Skeletons:ramphor.skeleton",
+	[SKELETON_TYPE_PLAYER]			= "nano",
+	[SKELETON_TYPE_WORMHOLE]		= "wormhole",
+	[SKELETON_TYPE_RAPTOR]			= "raptor",
+	[SKELETON_TYPE_BONUSWORMHOLE]	= "bonusworm",
+	[SKELETON_TYPE_BRACH]			= "brach",
+	[SKELETON_TYPE_WORM]			= "worm",
+	[SKELETON_TYPE_RAMPHOR]			= "ramphor",
 };
 
+	GAME_ASSERT(skeletonType >= 0);
+	GAME_ASSERT(skeletonType < MAX_SKELETON_TYPES);
+	const char* modelName = modelNames[skeletonType];
 
-	if (skeletonType < MAX_SKELETON_TYPES)
-		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, fileNames[skeletonType], &fsSpec);
-	else
-		DoFatalAlert("LoadSkeleton: Unknown skeletonType!");
+	snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.skeleton", modelName);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecSkeleton);
+
+	snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.bg3d", modelName);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecBG3D);
 
 
 			/* OPEN THE FILE'S REZ FORK */
 
-	fRefNum = FSpOpenResFile(&fsSpec,fsRdPerm);
-	if (fRefNum == -1)
-	{
-		iErr = ResError();
-		DoFatalAlert("Error opening Skel Rez file: Error %d", iErr);
-	}
+	fRefNum = FSpOpenResFile(&fsSpecSkeleton, fsRdPerm);
+	GAME_ASSERT(fRefNum != -1);
 
 	UseResFile(fRefNum);
-	if (ResError())
-		DoFatalAlert("Error using Rez file! Error %d", ResError());
+	GAME_ASSERT(noErr == ResError());
 
 
 			/* ALLOC MEMORY FOR SKELETON INFO STRUCTURE */
 
 	skeleton = (SkeletonDefType *) AllocPtrClear(sizeof(SkeletonDefType));
-	if (skeleton == nil)
-		DoFatalAlert("Cannot alloc SkeletonInfoType");
+	GAME_ASSERT(skeleton);
 
 
 			/* READ SKELETON RESOURCES */
 
-	ReadDataFromSkeletonFile(skeleton, &fsSpec, skeletonType);
+	ReadDataFromSkeletonFile(skeleton, &fsSpecBG3D, skeletonType);
 	PrimeBoneData(skeleton);
 
 			/* CLOSE REZ FILE */
@@ -155,7 +155,7 @@ const char*	fileNames[MAX_SKELETON_TYPES] =
 // Current rez file is set to the file.
 //
 
-static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpec, int skeletonType)
+static void ReadDataFromSkeletonFile(SkeletonDefType *skeleton, FSSpec *fsSpecBG3D, int skeletonType)
 {
 Handle				hand;
 int					i,k,j;
@@ -199,6 +199,11 @@ OGLPoint3D				*pointPtr;
 		/* 	LOAD THE REFERENCE GEOMETRY */
 		/********************************/
 
+#if 1
+	// Source port change: original game used to resolve path to BG3D via alias resource within skeleton rez fork.
+	// Instead, we're forcing the BG3D's filename (sans extension) to match the skeleton's.
+	LoadBonesReferenceModel(fsSpecBG3D, skeleton, skeletonType);
+#else
 	alias = (AliasHandle)GetResource(rAliasType,1000);				// alias to geometry BG3D file
 	if (alias != nil)
 	{
@@ -211,7 +216,7 @@ OGLPoint3D				*pointPtr;
 	}
 	else
 		DoFatalAlert("ReadDataFromSkeletonFile: file is missing the Alias resource");
-
+#endif
 
 
 		/***********************************/

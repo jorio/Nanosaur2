@@ -192,7 +192,7 @@ static void LoadTwitchPresets(void)
 
 	memset(gTwitchPresets, 0, sizeof(gTwitchPresets));
 
-	char* csv = LoadTextFile(":system:twitch.csv", NULL);
+	char* csv = LoadTextFile(":System:twitch.csv", NULL);
 
 	bool eol = false;
 

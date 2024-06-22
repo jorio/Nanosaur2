@@ -231,16 +231,16 @@ ObjNode	*newObj;
 
 			/* LOAD MODELS */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:playerparts.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_PLAYER, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:levelintro.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:levelintro.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_LEVELINTRO, VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:menu:nanologo", 0);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:menu:nanologo", 0);
 
 
 			/* LOAD SKELETONS */
@@ -406,7 +406,7 @@ static void MakeLevelIntroStarDome(void)
 {
 	int width = 0;
 	int height = 0;
-	GLuint textureName = OGL_TextureMap_LoadImageFile(":sprites:textures:stardome", &width, &height, NULL);
+	GLuint textureName = OGL_TextureMap_LoadImageFile(":Sprites:textures:stardome", &width, &height, NULL);
 	MOMaterialData matData =
 	{
 		.flags				= BG3D_MATERIALFLAG_TEXTURED,

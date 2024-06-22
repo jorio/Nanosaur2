@@ -79,13 +79,13 @@ char	path[256];
 
 			/* LOAD GLOBAL BG3D GEOMETRY */
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:Global.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:global.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_GLOBAL,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":models:playerparts.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_PLAYER,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
-	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:Weapons.bg3d", &spec);
+	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:weapons.bg3d", &spec);
 	ImportBG3D(&spec, MODEL_GROUP_WEAPONS,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 
 	BG3D_SphereMapGeomteryMaterial(MODEL_GROUP_PLAYER, PLAYER_ObjType_JetPack,
@@ -98,7 +98,7 @@ char	path[256];
 			/* LOAD LEVEL SPECIFIC BG3D GEOMETRY */
 
 	{
-		snprintf(path, sizeof(path), ":models:%s.bg3d", kBiomeNames[currentBiome]);
+		snprintf(path, sizeof(path), ":Models:%s.bg3d", kBiomeNames[currentBiome]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		ImportBG3D(&spec, MODEL_GROUP_LEVELSPECIFIC,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 	}
@@ -123,18 +123,18 @@ char	path[256];
 
 	const char* levelSpecificSpritePaths[5] =
 	{
-		":sprites:textures:blockenemy",
+		":Sprites:textures:blockenemy",
 	};
 	int numLevelSpecificSprites = 1;
 
 	switch (currentBiome)
 	{
 		case BIOME_FOREST:
-			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":sprites:textures:pinefence";
+			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":Sprites:textures:pinefence";
 			break;
 
 		case BIOME_DESERT:
-			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":sprites:textures:dustdevil";
+			levelSpecificSpritePaths[numLevelSpecificSprites++] = ":Sprites:textures:dustdevil";
 			break;
 
 		default:
@@ -150,7 +150,7 @@ char	path[256];
 
 			/* LOAD OVERHEAD MAP */
 	{
-		snprintf(path, sizeof(path), ":sprites:maps:%s", kLevelNames[gLevelNum]);
+		snprintf(path, sizeof(path), ":Sprites:maps:%s", kLevelNames[gLevelNum]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadSpriteGroupFromFile(SPRITE_GROUP_OVERHEADMAP, path, 0);
 	}
@@ -177,7 +177,7 @@ char	path[256];
 			/****************/
 
 	{
-		snprintf(path, sizeof(path), ":terrain:%s.ter", kLevelNames[gLevelNum]);
+		snprintf(path, sizeof(path), ":Terrain:%s.ter", kLevelNames[gLevelNum]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadPlayfield(&spec);
 	}

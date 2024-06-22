@@ -205,7 +205,7 @@ void BuildMainMenuObjects(void)
 		DeleteObject(gMainMenuMouseCursor);
 	}
 
-	gMainMenuBackground = MakeBackgroundPictureObject(":sprites:menu:menuback");
+	gMainMenuBackground = MakeBackgroundPictureObject(":Sprites:menu:menuback");
 	gMainMenuMouseCursor = MakeMouseCursorObject();
 }
 

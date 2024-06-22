@@ -117,28 +117,6 @@ static const char* GetDisplayName(Byte value)
 	return textBuf;
 }
 
-static int ShouldDisplayMSAA(const MenuItem* mi)
-{
-	(void) mi;
-
-#if __APPLE__
-	// macOS's OpenGL driver doesn't seem to handle MSAA very well,
-	// so don't expose the option unless the game was started with MSAA.
-
-	if (gCurrentAntialiasingLevel
-		|| gDebugMode != 0)
-	{
-		return 0;
-	}
-	else
-	{
-		return kMILayoutFlagHidden;
-	}
-#else
-	return 0;
-#endif
-}
-
 static void OnChangeMSAA(void)
 {
 	const long msaaWarningCookie = 'msaa';
@@ -386,7 +364,6 @@ static const MenuItem gSettingsMenuTree[] =
 	{
 		kMICycler2, STR_ANTIALIASING,
 		.callback = OnChangeMSAA,
-		.getLayoutFlags = ShouldDisplayMSAA,
 		.cycler =
 		{
 			.valuePtr = &gGamePrefs.antialiasingLevel,

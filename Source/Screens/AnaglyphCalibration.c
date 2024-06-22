@@ -163,7 +163,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 	BuildMainMenuObjects();		// rebuild background image
 
 	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":sprites:fonts:swiss", kAtlasLoadFont);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":Sprites:fonts:swiss", kAtlasLoadFont);
 
 			/* CREATE HEAD SENTINEL - ALL ANAGLYPH CALIB OBJECTS WILL BE CHAINED TO IT */
 
@@ -192,13 +192,13 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	if (IsStereo())
 	{
-		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:calibration000", 0);
+		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:calibration:calibration000", 0);
 	}
 	else
 	{
 		imageDef.scale = 350;
 		imageDef.coord = (OGLPoint3D) {320, 350, 0};
-		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:calibration:glasses", 0);
+		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:calibration:glasses", 0);
 	}
 
 	ObjNode* sampleImage = MakeSpriteObject(&imageDef, true);

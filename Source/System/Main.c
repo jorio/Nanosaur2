@@ -964,9 +964,9 @@ ObjNode	*player = gPlayerInfo[0].objNode;
 
 void LoadGlobalAssets(void)
 {
-	LoadSpriteAtlas(ATLAS_GROUP_FONT1, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly);
-	LoadSpriteAtlas(ATLAS_GROUP_FONT2, ":sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1);
-	LoadSpriteGroupFromFile(SPRITE_GROUP_CURSOR, ":sprites:menu:cursor", 0);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT1, ":Sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly);
+	LoadSpriteAtlas(ATLAS_GROUP_FONT2, ":Sprites:fonts:font", kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_CURSOR, ":Sprites:menu:cursor", 0);
 	LoadSpriteGroupFromSeries(SPRITE_GROUP_INFOBAR,		INFOBAR_SObjType_COUNT,		"infobar");
 	LoadSpriteGroupFromSeries(SPRITE_GROUP_GLOBAL,		GLOBAL_SObjType_COUNT,		"global");
 	LoadSpriteGroupFromSeries(SPRITE_GROUP_SPHEREMAPS,	SPHEREMAP_SObjType_COUNT,	"spheremap");

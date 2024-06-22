@@ -141,7 +141,7 @@ OGLSetupInputType	viewDef;
 
 			/* LOAD SPRITES */
 
-	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":sprites:story:win", 0);
+	LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:story:win", 0);
 
 
 

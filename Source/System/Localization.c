@@ -23,6 +23,7 @@ static const char kLanguageCodesISO639_1[NUM_LANGUAGES][3] =
 	[LANGUAGE_ITALIAN	] = "it",
 	[LANGUAGE_SWEDISH	] = "sv",
 	[LANGUAGE_DUTCH		] = "nl",
+	[LANGUAGE_RUSSIAN	] = "ru",
 };
 
 void LoadLocalizedStrings(GameLanguageID languageID)

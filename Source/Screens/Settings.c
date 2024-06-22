@@ -278,6 +278,7 @@ static const MenuItem gSettingsMenuTree[] =
 					{STR_ITALIAN, LANGUAGE_ITALIAN},
 					{STR_DUTCH, LANGUAGE_DUTCH},
 					{STR_SWEDISH, LANGUAGE_SWEDISH},
+					{STR_RUSSIAN, LANGUAGE_RUSSIAN},
 			},
 		},
 	},

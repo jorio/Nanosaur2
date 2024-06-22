@@ -127,6 +127,14 @@ static uint32_t ToUpperUnicode(uint32_t c)
 	{
 		return c | 1;
 	}
+	else if (c >= 0x0430 && c <= 0x044F)	// cyrillic
+	{
+		return c - 0x0020;
+	}
+	else if (c >= 0x0450 && c <= 0x045f)	// cyrillic extensions
+	{
+		return c - 0x0050;
+	}
 
 	return c;
 }

@@ -1,4 +1,4 @@
-English,Français,Deutsch,Español,Italiano,Svenska,Nederlands,Russian
+English,Français,Deutsch,Español,Italiano,Svenska,Nederlands,Русский
 English,,,,,,,
 Français,,,,,,,
 Deutsch,,,,,,,
@@ -6,7 +6,7 @@ Español,,,,,,,
 Italiano,,,,,,,
 Svenska,,,,,,,
 Nederlands,,,,,,,
-Russian,,,,,,,
+Русский,,,,,,,
 {,,,,,,,
 ,,,,,,,
 Play Game,Nouvelle partie,Spielen,Jugar,Nuova partita,Spela,Spel Spelen,Играть
@@ -348,7 +348,7 @@ Av Er Vill Ta Tangentbordet.",,"Подключите еще один контр�
 смог управлять с клавиатуры."
 ,,,,,,,
 Grab your red/cyan glasses and enable 3D mode to start calibrating.,Prenez vos lunettes rouge/cyan et activez le mode 3D pour commencer la calibration.,,,Prendi i tuoi occhiali rosso/ciano e abilita la modalità 3D per avviare la calibrazione.,,,Возьмите красно-синие очки и включите 3D режим для начала калибровки.
-While wearing your anaglyph glasses...,"Chaussez vos lunettes anaglyphes, puis...",,,Mentre indossi i tuoi occhiali anaglifi...,,,Пока надеты на вас анаглифные очки…
+While wearing your anaglyph glasses...,"Chaussez vos lunettes anaglyphes, puis...",,,Mentre indossi i tuoi occhiali anaglifi...,,,Пока надеты на вас анаглифные очки...
 "Adjust Red and Blue levels until the white box
 in the test image looks about the same brightness
 in both your left and right eyes.","Ajustez les niveaux de Rouge et de Bleu jusqu’à

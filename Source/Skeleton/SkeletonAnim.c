@@ -387,15 +387,15 @@ SkeletonDefType	*skeletonDef;
 			{
 				kfPtr = &skeletonDef->JointKeyframes[jointNum].keyFrames[animNum][keyFrameNum];	//  point to this keyframe's data
 
-					/* SEE IF FOUND EXACT KEYFRAME */
-
-				if (kfPtr->tick == currentAnimTimeInt)
-				{
-					skeleton->JointCurrentPosition[jointNum] = *kfPtr;			// set data & goto next joint
-					goto update;
-				}
-					/* SEE IF GOT NEXT KEYFRAME */
-				else
+//					/* SEE IF FOUND EXACT KEYFRAME */
+//
+//				if (kfPtr->tick == currentAnimTimeInt)
+//				{
+//					skeleton->JointCurrentPosition[jointNum] = *kfPtr;			// set data & goto next joint
+//					goto update;
+//				}
+//					/* SEE IF GOT NEXT KEYFRAME */
+//				else
 				if (kfPtr->tick > currentAnimTimeInt)
 				{
 					if (keyFrameNum == 0)										// if it's the 1st keyframe, then just use it

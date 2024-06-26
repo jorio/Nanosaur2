@@ -42,8 +42,8 @@ Press ESC to go back,Appuie sur ÉCHAP pour revenir en arrière,,,Premi ESC per 
 ,,,,,,,
 Save Game,Enregistrer la partie,Spiel speichern,Guardar el juego,Salva la partita,Spara spelet,Spel opslaan,Сохранить игру
 Continue Without Saving,Continuer sans enregistrer,Fortfahren ohne zu speichern,Continuar sin guardar,Continua senza salvare,Fortsätta utan att spara,Doorgaan zonder op te slaan,Продолжить без сохранения
-Entering level 2. Save where?,Bienvenue au niveau 2. Enregistrer où?,Level 2 erreicht. Wo willst du speichern?,Entrando en level 2. ¿Dónde guardar?,Accesso al livello 2. Dove salvare?,,,Запуск уровня 2. Куда сохранить?
-Entering level 3. Save where?,Bienvenue au niveau 3. Enregistrer où?,Level 3 erreicht. Wo willst du speichern?,Entrando en level 3. ¿Dónde guardar?,Accesso al livello 3. Dove salvare?,,,Запуск уровня 3. Куда сохранить?
+Entering level 2. Save where?,Bienvenue au niveau 2. Enregistrer où?,Level 2 erreicht. Wo möchten Sie speichern?,Entrando en level 2. ¿Dónde guardar?,Accesso al livello 2. Dove salvare?,,,Запуск уровня 2. Куда сохранить?
+Entering level 3. Save where?,Bienvenue au niveau 3. Enregistrer où?,Level 3 erreicht. Wo möchten Sie speichern?,Entrando en level 3. ¿Dónde guardar?,Accesso al livello 3. Dove salvare?,,,Запуск уровня 3. Куда сохранить?
 ,,,,,,,
 File,Fichier,Datei,Archivo,File,Fil,Bestand,Файл
 Empty,Vide,Leer,Vacío,Vuoto,Tom,Leeg,Пустой
@@ -146,8 +146,8 @@ No,Non,Nein,No,No,Nej,Nee,Нет
 On,Oui,Ein,Sí,Sì,På,,Вкл.
 Off,Non,Aus,No,No,Av,,Выкл.
 ,,,,,,,
-Press!,Appuie!,Drück!,,Premi!,Tryck!,Druk!,Нажимайте!
-Click!,Clique!,,,Fai click!,,,Щелкайте!
+Press!,Appuie!,Drücken!,,Premi!,Tryck!,Druk!,Нажимайте!
+Click!,Clique!,Klicken!,,Fai click!,,,Щелкайте!
 Restore Default Configuration,Restaurer la config. par défaut,Standardkonfiguration zurücksetzen,,Ripristina la configurazione predefinita,Återställ standardkonfiguration,,Восстановить настройки по умолчанию
 Left Click,Clic Gauche,,,Click sinistro,,,ЛКМ
 Middle Click,Clic Milieu,,,Click centrale,,,СКМ
@@ -389,3 +389,7 @@ essere calibrati solo dal menù principale.",,,"К сожалению, 3D очк
 только из главного меню."
 ,,,,,,,
 Really quit?,Sûr de quitter?,Wirklich beenden?,,Uscire davvero?,Verkligen avsluta?,,Правда выйти?
+,,,,,,,
+Mission: FAILED,Mission : ÉCHEC,Auftrag: GESCHEITERT,,Missione: FALLITA,,,Задание: ПРОВАЛЕНО
+Enter Wormhole,Entrez dans le Vortex,Betreten Sie das Wurmloch,,"Entra nel cunicolo
+spazio-temporale",,,Войдите в червоточину

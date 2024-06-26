@@ -28,6 +28,7 @@ static void Infobar_DrawFuel(void);
 static void Infobar_DrawEggs(void);
 static void Infobar_CaptureFlagEggs(void);
 static void Infobar_DrawPlayerArrows(void);
+static void Infobar_DrawMissionStatus(void);
 
 static void MoveLapMessage(ObjNode *theNode);
 
@@ -589,20 +590,7 @@ void DrawInfobar(ObjNode *theNode)
 		case	VS_MODE_NONE:
 				Infobar_DrawLives();
 				Infobar_DrawEggs();
-
-						/* PLAYER DEAD */
-
-				if (gPlayerIsDead[0] && (gPlayerInfo[0].numFreeLives <= 0))
-				{
-					DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorCenterY(0), 200, INFOBAR_SObjType_GameOver);
-
-				}
-						/* ENTER WORMHOLE */
-				else
-				if (gOpenPlayerWormhole && (!gCameraInExitMode))
-				{
-					DrawInfobarSprite_Centered(AnchorCenterX(0), AnchorCenterY(80), 150, INFOBAR_SObjType_EnterWormhole);
-				}
+				Infobar_DrawMissionStatus();
 				break;
 
 			/* RACE MODE */
@@ -1368,6 +1356,64 @@ static void Infobar_DrawPlayerLabels(void)
 }
 
 
+/***************** DRAW "ENTER WORMHOLE" OR "MISSION FAILED" *********************/
+
+static void Infobar_DrawMissionStatus(void)
+{
+	static float flux = 0;
+
+	if (gGamePaused)
+	{
+		flux = 0;
+		return;
+	}
+
+		/* PLAYER DEAD */
+
+	if (gPlayerIsDead[0] && (gPlayerInfo[0].numFreeLives <= 0))
+	{
+		float x = AnchorCenterX(0);
+		float y = AnchorCenterY(0);
+		const char* text = Localize(STR_MISSION_FAILED);
+		gGlobalColorFilter = (OGLColorRGB){1,0,0};
+		Atlas_DrawString(ATLAS_GROUP_FONT2, text, x, y, .66, kTextMeshSmallCaps);
+		gGlobalColorFilter = (OGLColorRGB){1,1,1};
+	}
+
+		/* ENTER WORMHOLE */
+
+	else if (gOpenPlayerWormhole && (!gCameraInExitMode))
+	{
+		flux += gFramesPerSecondFrac;
+
+		float scale = 0.5f * (1.0f + sinf(GAME_MIN(PI, flux*6.0f) - (PI*0.5f)));
+		int flags = 0;
+
+		if (gGamePrefs.language == LANGUAGE_ITALIAN)
+		{
+			// Italian text spans two lines so make it smaller
+			scale *= 0.5f;
+		}
+		else
+		{
+			scale *= 0.66f;
+			flags |= kTextMeshSmallCaps;
+		}
+
+		float x = AnchorCenterX(0);
+		float y = AnchorCenterY(120);
+		const char* text = Localize(STR_ENTER_WORMHOLE);
+		gGlobalTransparency = 0.75f + 0.25f * sinf(flux * (2.0f*PI));
+
+		Atlas_DrawString(ATLAS_GROUP_FONT1, text, x, y, scale, flags);
+		gGlobalTransparency = 1.0f;
+	}
+
+	else
+	{
+		flux = 0;
+	}
+}
 
 
 /***************** DRAW INFOBAR LIVES *********************/

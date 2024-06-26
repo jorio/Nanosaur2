@@ -200,13 +200,11 @@ enum
 	INFOBAR_SObjType_ShieldFrame,
 
 	INFOBAR_SObjType_Loading,
-	INFOBAR_SObjType_GameOver,
-	INFOBAR_SObjType_EnterWormhole,
+
+	INFOBAR_SObjType_SmallEggHalo,
 
 	INFOBAR_SObjType_LeftArrow,
 	INFOBAR_SObjType_RightArrow,
-
-	INFOBAR_SObjType_SmallEggHalo,
 
 	INFOBAR_SObjType_COUNT
 };

@@ -10,7 +10,6 @@
 
 #include "game.h"
 #include "uieffects.h"
-#include <SDL.h>
 
 
 /****************************/
@@ -72,7 +71,7 @@ Boolean DoLocalGatherScreen(void)
 	gNumControllersMissing = gNumPlayers;
 //	UnlockPlayerControllerMapping();
 
-	if (GetNumControllers() >= gNumPlayers)
+	if (GetNumGamepad() >= gNumPlayers)
 	{
 		// Skip gather screen if we already have enough controllers
 		return false;
@@ -98,7 +97,7 @@ Boolean DoLocalGatherScreen(void)
 		outcome = DoLocalGatherControls();
 
 
-		int numControllers = GetNumControllers();
+		int numControllers = GetNumGamepad();
 
 		gNumControllersMissing = gNumPlayers - numControllers;
 		if (gNumControllersMissing < 0)

@@ -295,7 +295,7 @@ void LoadSoundBank(uint8_t bank)
 		{
 			char path[64];
 
-			snprintf(path, sizeof(path), ":Audio:%s:%s.%s",
+			SDL_snprintf(path, sizeof(path), ":Audio:%s:%s.%s",
 				gSoundBankNames[effectDef->bank],
 				effectDef->name,
 				kSoundExts[extNum]);

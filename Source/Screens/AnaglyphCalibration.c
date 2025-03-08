@@ -221,7 +221,7 @@ void SetUpAnaglyphCalibrationScreen(void)
 
 	if (IsStereoAnaglyphColor())
 	{
-		snprintf(blurb, sizeof(blurb),
+		SDL_snprintf(blurb, sizeof(blurb),
 				"%s\n \n"
 				"1. %s\n \n"
 				"2. %s\n \n"
@@ -234,13 +234,13 @@ void SetUpAnaglyphCalibrationScreen(void)
 	}
 	else if (IsStereoAnaglyphMono())
 	{
-		snprintf(blurb, sizeof(blurb), "%s\n \n%s",
+		SDL_snprintf(blurb, sizeof(blurb), "%s\n \n%s",
 				Localize(STR_ANAGLYPH_HELP_WHILEWEARING),
 				Localize(STR_ANAGLYPH_HELP_ADJUSTRB));
 	}
 	else
 	{
-		snprintf(blurb, sizeof(blurb), "%s", Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES));
+		SDL_snprintf(blurb, sizeof(blurb), "%s", Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES));
 		blurbDef.coord = (OGLPoint3D) {320, 470, 0};
 	}
 

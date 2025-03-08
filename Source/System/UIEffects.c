@@ -156,7 +156,7 @@ static int FindEnumString(const char* prefix, const char* column)
 		return -1;
 	}
 
-	size_t prefixLength = (prefix==NULL) ? 0 : strlen(prefix);
+	size_t prefixLength = (prefix==NULL) ? 0 : SDL_strlen(prefix);
 
 	const int numNames = sizeof(kTwitchEnumNames) / sizeof(kTwitchEnumNames[0]);
 
@@ -165,8 +165,8 @@ static int FindEnumString(const char* prefix, const char* column)
 		const char* enumName = kTwitchEnumNames[i];
 
 		if (NULL != enumName
-			&& ((0 == prefixLength) || (0 == strncmp(enumName, prefix, prefixLength)))
-			&& 0 == strcmp(enumName + prefixLength, column))
+			&& ((0 == prefixLength) || (0 == SDL_strncmp(enumName, prefix, prefixLength)))
+			&& 0 == SDL_strcmp(enumName + prefixLength, column))
 		{
 			return i;
 		}
@@ -190,7 +190,7 @@ static void LoadTwitchPresets(void)
 		kCSVColumn_Delay,
 	};
 
-	memset(gTwitchPresets, 0, sizeof(gTwitchPresets));
+	SDL_memset(gTwitchPresets, 0, sizeof(gTwitchPresets));
 
 	char* csv = LoadTextFile(":System:twitch.csv", NULL);
 
@@ -383,7 +383,7 @@ static bool ApplyTwitch(ObjNode* puppet, const Twitch* fx, float timer)
 	if (duration == 0)
 	{
 #if _DEBUG
-		printf("Twitch effect is missing duration\n");
+		SDL_Log("Twitch effect is missing duration\n");
 #endif
 		duration = 1;
 	}
@@ -455,7 +455,7 @@ static bool ApplyTwitch(ObjNode* puppet, const Twitch* fx, float timer)
 			break;
 
 		default:
-			printf("Unknown effect class %d\n", fx->fxClass);
+			SDL_Log("Unknown effect class %d\n", fx->fxClass);
 			break;
 	}
 

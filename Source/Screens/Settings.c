@@ -97,11 +97,6 @@ static void OnChangeVSync(void)
 	SDL_GL_SetSwapInterval(gGamePrefs.vsync);
 }
 
-static int GetNumDisplays(void)
-{
-	return SDL_GetNumVideoDisplays();
-}
-
 static int ShouldDisplayMonitorCycler(const MenuItem* mi)
 {
 	(void) mi;
@@ -113,7 +108,7 @@ static int ShouldDisplayMonitorCycler(const MenuItem* mi)
 static const char* GetDisplayName(Byte value)
 {
 	static char textBuf[8];
-	snprintf(textBuf, sizeof(textBuf), "%d", value + 1);
+	SDL_snprintf(textBuf, sizeof(textBuf), "%d", value + 1);
 	return textBuf;
 }
 
@@ -175,7 +170,7 @@ static void OnEnterGraphicsMenu(void)
 	};
 
 	char rendererInfo[256];
-	snprintf(rendererInfo, sizeof(rendererInfo), "%s, OpenGL %s, %s",
+	SDL_snprintf(rendererInfo, sizeof(rendererInfo), "%s, OpenGL %s, %s",
 		(const char*)glGetString(GL_RENDERER),
 		(const char*)glGetString(GL_VERSION),
 		SDL_GetCurrentVideoDriver());
@@ -190,13 +185,13 @@ static void OnEnterGraphicsMenu(void)
 
 static void OnEnterGamepadMenu(void)
 {
-	SDL_GameController* sdlController = GetController(0);
+	SDL_Gamepad* sdlGamepad = GetGamepad(0);
 
 	const char* controllerName = Localize(STR_NO_GAMEPAD_DETECTED);
 
-	if (sdlController != NULL)
+	if (sdlGamepad != NULL)
 	{
-		controllerName = SDL_GameControllerName(sdlController);
+		controllerName = SDL_GetGamepadName(sdlGamepad);
 	}
 
 	NewObjectDefinitionType def =
@@ -343,7 +338,7 @@ static const MenuItem gSettingsMenuTree[] =
 		.getLayoutFlags = ShouldDisplayMonitorCycler,
 		.cycler =
 		{
-			.valuePtr = &gGamePrefs.monitorNum,
+			.valuePtr = &gGamePrefs.displayNumMinus1,
 			.isDynamicallyGenerated = true,
 			.generator =
 			{

@@ -240,7 +240,7 @@ got_it:
 #if _DEBUG
 		if (gNumObjectNodesPeak > MAX_OBJECTS)
 		{
-			printf("[%d] WARNING: New object count peak: %d. Consider raising MAX_OBJECTS!\n", gGameFrameNum, gNumObjectNodesPeak);
+			SDL_Log("[%d] WARNING: New object count peak: %d. Consider raising MAX_OBJECTS!", gGameFrameNum, gNumObjectNodesPeak);
 		}
 #endif
 	}
@@ -903,7 +903,7 @@ custom_draw:
 
 			default:
 #if _DEBUG
-					printf("Unsupported draw for genre %d\n", theNode->Genre);
+					SDL_Log("Unsupported draw for genre %d", theNode->Genre);
 #endif
 					break;
 		}

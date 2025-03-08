@@ -27,7 +27,7 @@
 // - https://forums3.armagetronad.net/viewtopic.php?f=12&t=3364&start=15
 //   The people who found the basis for the current approach.
 
-#if !(__APPLE__) || OSXPPC
+#if !(__APPLE__)
 
 void SetMacLinearMouse(int linear)
 {
@@ -37,7 +37,7 @@ void SetMacLinearMouse(int linear)
 
 #else
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <IOKit/hidsystem/IOHIDLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
 #include <IOKit/hidsystem/event_status_driver.h>

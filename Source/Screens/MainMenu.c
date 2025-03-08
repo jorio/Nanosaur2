@@ -172,7 +172,7 @@ void DoMainMenuScreen(void)
 			case 'cap1':
 			case 'cap2':
 				// entering multiplayer; fade sound if we're gonna skip LocalGather
-				gGameViewInfoPtr->fadeSound = GetNumControllers() >= 2;
+				gGameViewInfoPtr->fadeSound = GetNumGamepad() >= 2;
 				break;
 
 			default:

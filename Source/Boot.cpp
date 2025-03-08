@@ -1,93 +1,96 @@
 // NANOSAUR 2 ENTRY POINT
-// (C) 2022 Iliyas Jorio
+// (C) 2025 Iliyas Jorio
 // This file is part of Nanosaur 2. https://github.com/jorio/nanosaur2
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+
 #include "Pomme.h"
 #include "PommeInit.h"
 #include "PommeFiles.h"
 
-#include <iostream>
-#include <cstring>
-
-#if __APPLE__
-#include <libproc.h>
-#include <unistd.h>
-#endif
-
 extern "C"
 {
 	#include "game.h"
-	#include "version.h"
 
 	SDL_Window* gSDLWindow = nullptr;
 	FSSpec gDataSpec;
 	int gCurrentAntialiasingLevel;
-
-#if 0 //_WIN32
-	// Tell Windows graphics driver that we prefer running on a dedicated GPU if available
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
-#endif
-
-//	int GameMain(void);
 }
 
-static fs::path FindGameData()
+static fs::path FindGameData(const char* executablePath)
 {
 	fs::path dataPath;
 
-#if __APPLE__
-	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	int attemptNum = 0;
 
-	pid_t pid = getpid();
-	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
-	if (ret <= 0)
+#if !(__APPLE__)
+	attemptNum++;		// skip macOS special case #0
+#endif
+
+	if (!executablePath)
+		attemptNum = 2;
+
+tryAgain:
+	switch (attemptNum)
 	{
-		throw std::runtime_error(std::string(__func__) + ": proc_pidpath failed: " + std::string(strerror(errno)));
+		case 0:			// special case for macOS app bundles
+			dataPath = executablePath;
+			dataPath = dataPath.parent_path().parent_path() / "Resources";
+			break;
+
+		case 1:
+			dataPath = executablePath;
+			dataPath = dataPath.parent_path() / "Data";
+			break;
+
+		case 2:
+			dataPath = "Data";
+			break;
+
+		default:
+			throw std::runtime_error("Couldn't find the Data folder.");
 	}
 
-	dataPath = pathbuf;
-	dataPath = dataPath.parent_path().parent_path() / "Resources";
-#else
-	dataPath = "Data";
-#endif
+	attemptNum++;
 
 	dataPath = dataPath.lexically_normal();
 
 	// Set data spec -- Lets the game know where to find its asset files
-	gDataSpec = Pomme::Files::HostPathToFSSpec(dataPath / "Skeletons");
+	gDataSpec = Pomme::Files::HostPathToFSSpec(dataPath / "System");
 
-#if 0  // No app rez file for Nanosaur 2
-	// Use application resource file
-	auto applicationSpec = Pomme::Files::HostPathToFSSpec(dataPath / "System" / "Application");
-	short resFileRefNum = FSpOpenResFile(&applicationSpec, fsRdPerm);
-
-	if (resFileRefNum == -1)
+	FSSpec someDataFileSpec;
+	OSErr iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":System:gamecontrollerdb.txt", &someDataFileSpec);
+	if (iErr)
 	{
-		throw std::runtime_error("Couldn't find the Data folder.");
+		goto tryAgain;
 	}
-
-	UseResFile(resFileRefNum);
-#endif
 
 	return dataPath;
 }
 
-static void Boot()
+static void Boot(int argc, char** argv)
 {
-	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
+#if _DEBUG
+	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
+#else
+	SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
+#endif
 
 	// Start our "machine"
 	Pomme::Init();
 
+	// Find path to game data folder
+	const char* executablePath = argc > 0 ? argv[0] : NULL;
+	fs::path dataPath = FindGameData(executablePath);
+
 	// Load game prefs before starting
-	InitDefaultPrefs();
 	LoadPrefs();
 
 retryVideo:
 	// Initialize SDL video subsystem
-	if (0 != SDL_Init(SDL_INIT_VIDEO))
+	if (!SDL_Init(SDL_INIT_VIDEO))
 	{
 		throw std::runtime_error("Couldn't initialize SDL video subsystem.");
 	}
@@ -104,32 +107,15 @@ retryVideo:
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 1 << gCurrentAntialiasingLevel);
 	}
 
-	// Determine display
-	int display = gGamePrefs.monitorNum;
-
-	if (display >= SDL_GetNumVideoDisplays())
-	{
-		display = 0;
-	}
-
-	// Determine initial window size
-	int initialWidth = 640;
-	int initialHeight = 480;
-	GetDefaultWindowSize(display, &initialWidth, &initialHeight);
-
 	gSDLWindow = SDL_CreateWindow(
-			"Nanosaur II: Hatchling (v" PROJECT_VERSION ")",
-			SDL_WINDOWPOS_UNDEFINED_DISPLAY(display),
-			SDL_WINDOWPOS_UNDEFINED_DISPLAY(display),
-			initialWidth,
-			initialHeight,
-			SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+		GAME_FULL_NAME " (" GAME_VERSION ")", 640, 480,
+		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
 	if (!gSDLWindow)
 	{
 		if (gCurrentAntialiasingLevel != 0)
 		{
-			printf("Couldn't create SDL window with the requested MSAA level. Retrying without MSAA...\n");
+			SDL_Log("Couldn't create SDL window with the requested MSAA level. Retrying without MSAA...");
 
 			// retry without MSAA
 			gGamePrefs.antialiasingLevel = 0;
@@ -142,22 +128,18 @@ retryVideo:
 		}
 	}
 
-	// Find path to game data folder
-	fs::path dataPath = FindGameData();
-
-	// Init joystick subsystem
+	// Init gamepad subsystem
+	SDL_Init(SDL_INIT_GAMEPAD);
+	auto gamecontrollerdbPath8 = (dataPath / "System" / "gamecontrollerdb.txt").u8string();
+	if (-1 == SDL_AddGamepadMappingsFromFile((const char*)gamecontrollerdbPath8.c_str()))
 	{
-		SDL_Init(SDL_INIT_GAMECONTROLLER);
-		auto gamecontrollerdbPath8 = (dataPath / "System" / "gamecontrollerdb.txt").u8string();
-		if (-1 == SDL_GameControllerAddMappingsFromFile((const char*)gamecontrollerdbPath8.c_str()))
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Nanosaur 2", "Couldn't load gamecontrollerdb.txt!", gSDLWindow);
-		}
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, GAME_FULL_NAME, "Couldn't load gamecontrollerdb.txt!", gSDLWindow);
 	}
 }
 
 static void Shutdown()
 {
+	// Always restore the user's mouse acceleration before exiting.
 	SetMacLinearMouse(false);
 
 	Pomme::Shutdown();
@@ -173,16 +155,12 @@ static void Shutdown()
 
 int main(int argc, char** argv)
 {
-	(void)argc;
-	(void)argv;
-
-	int				returnCode				= 0;
-	std::string		finalErrorMessage		= "";
-	bool			showFinalErrorMessage	= false;
+	bool success = true;
+	std::string uncaught = "";
 
 	try
 	{
-		Boot();
+		Boot(argc, argv);
 		GameMain();
 	}
 	catch (Pomme::QuitRequest&)
@@ -194,25 +172,23 @@ int main(int argc, char** argv)
 	// so we can show an error dialog to the user.
 	catch (std::exception& ex)		// Last-resort catch
 	{
-		returnCode = 1;
-		finalErrorMessage = ex.what();
-		showFinalErrorMessage = true;
+		success = false;
+		uncaught = ex.what();
 	}
 	catch (...)						// Last-resort catch
 	{
-		returnCode = 1;
-		finalErrorMessage = "unknown";
-		showFinalErrorMessage = true;
+		success = false;
+		uncaught = "unknown";
 	}
 #endif
 
 	Shutdown();
 
-	if (showFinalErrorMessage)
+	if (!success)
 	{
-		std::cerr << "Uncaught exception: " << finalErrorMessage << "\n";
-		SDL_ShowSimpleMessageBox(0, "Nanosaur 2", finalErrorMessage.c_str(), nullptr);
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Uncaught exception: %s", uncaught.c_str());
+		SDL_ShowSimpleMessageBox(0, GAME_FULL_NAME, uncaught.c_str(), nullptr);
 	}
 
-	return returnCode;
+	return success ? 0 : 1;
 }

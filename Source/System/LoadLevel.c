@@ -98,7 +98,7 @@ char	path[256];
 			/* LOAD LEVEL SPECIFIC BG3D GEOMETRY */
 
 	{
-		snprintf(path, sizeof(path), ":Models:%s.bg3d", kBiomeNames[currentBiome]);
+		SDL_snprintf(path, sizeof(path), ":Models:%s.bg3d", kBiomeNames[currentBiome]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		ImportBG3D(&spec, MODEL_GROUP_LEVELSPECIFIC,  VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS);
 	}
@@ -150,7 +150,7 @@ char	path[256];
 
 			/* LOAD OVERHEAD MAP */
 	{
-		snprintf(path, sizeof(path), ":Sprites:maps:%s", kLevelNames[gLevelNum]);
+		SDL_snprintf(path, sizeof(path), ":Sprites:maps:%s", kLevelNames[gLevelNum]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadSpriteGroupFromFile(SPRITE_GROUP_OVERHEADMAP, path, 0);
 	}
@@ -177,7 +177,7 @@ char	path[256];
 			/****************/
 
 	{
-		snprintf(path, sizeof(path), ":Terrain:%s.ter", kLevelNames[gLevelNum]);
+		SDL_snprintf(path, sizeof(path), ":Terrain:%s.ter", kLevelNames[gLevelNum]);
 		FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec);
 		LoadPlayfield(&spec);
 	}
@@ -218,7 +218,7 @@ char	path[256];
 	UnsignedWide timeEndLoad;
 	Microseconds(&timeEndLoad);
 
-	printf("%s: %d ms\n", __func__, (timeEndLoad.lo - timeStartLoad.lo) / 1000);
+	SDL_Log("%s: %d ms", __func__, (timeEndLoad.lo - timeStartLoad.lo) / 1000);
 }
 
 

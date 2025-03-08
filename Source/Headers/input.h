@@ -114,8 +114,8 @@ Boolean IsCheatKeyComboDown(void);
 
 void DoSDLMaintenance(void);
 
-int GetNumControllers(void);
-struct _SDL_GameController* GetController(int n);
+int GetNumGamepad(void);
+SDL_Gamepad* GetGamepad(int n);
 int GetLastControllerForNeedAnyP(int needID);		// last controller that triggered a need with ANY_PLAYER
 void SetMainController(int oldControllerSlot);
 void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms, int playerID);

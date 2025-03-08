@@ -353,8 +353,8 @@ GLint			maxTexSize;
 
 			/* ACTIVATE CONTEXT */
 
-	int mkc = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext);
-	GAME_ASSERT_MESSAGE(mkc == 0, SDL_GetError());
+	bool didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext);
+	GAME_ASSERT_MESSAGE(didMakeCurrent, SDL_GetError());
 
 			/* ENABLE VSYNC */
 
@@ -406,7 +406,7 @@ static void OGL_DisposeDrawContext(void)
 	}
 
 	SDL_GL_MakeCurrent(gSDLWindow, NULL);		// make context not current
-	SDL_GL_DeleteContext(gAGLContext);			// nuke context
+	SDL_GL_DestroyContext(gAGLContext);			// nuke context
 	gAGLContext = nil;
 }
 
@@ -662,7 +662,7 @@ GLfloat	ambient[4];
 
 void OGL_DrawScene(void (*drawRoutine)(void))
 {
-	SDL_GL_GetDrawableSize(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
+	SDL_GetWindowSizeInPixels(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight);
 
 
 #if 0
@@ -1172,7 +1172,7 @@ GLuint OGL_TextureMap_LoadImageFile(const char* partialPath, int* outWidth, int*
 	GLuint textureName = 0;
 
 	// Try to load a JPEG file first.
-	snprintf(path, sizeof(path), "%s.jpg", partialPath);
+	SDL_snprintf(path, sizeof(path), "%s.jpg", partialPath);
 	jpgExists = noErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec);
 	if (jpgExists)
 	{
@@ -1189,7 +1189,7 @@ GLuint OGL_TextureMap_LoadImageFile(const char* partialPath, int* outWidth, int*
 	// Now try to load the PNG version of the same image.
 	// If we've already loaded a JPEG, the PNG is used as an alpha mask.
 	// Otherwise, load the PNG as an RGBA image.
-	snprintf(path, sizeof(path), "%s.png", partialPath);
+	SDL_snprintf(path, sizeof(path), "%s.png", partialPath);
 	pngExists = noErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec);
 	if (pngExists)
 	{
@@ -2144,7 +2144,7 @@ void OGL_DrawString(const char* s, GLint x, GLint y)
 void OGL_DrawFloat(float f, GLint x, GLint y)
 {
 	char s[16];
-	snprintf(s, sizeof(s), "%f", f);
+	SDL_snprintf(s, sizeof(s), "%f", f);
 	OGL_DrawString(s, x, y);
 }
 
@@ -2155,7 +2155,7 @@ void OGL_DrawFloat(float f, GLint x, GLint y)
 void OGL_DrawInt(int f, GLint x, GLint y)
 {
 	char s[16];
-	snprintf(s, sizeof(s), "%d", f);
+	SDL_snprintf(s, sizeof(s), "%d", f);
 	OGL_DrawString(s, x, y);
 }
 
@@ -2191,8 +2191,8 @@ static void OGL_InitVertexArrayMemory(void)
 
 		/* INIT THE LINKED LIST HEAD & TAIL PTRS */
 
-	memset(gVertexArrayMemory_Head, 0, sizeof(gVertexArrayMemory_Head));
-	memset(gVertexArrayMemory_Tail, 0, sizeof(gVertexArrayMemory_Tail));
+	SDL_memset(gVertexArrayMemory_Head, 0, sizeof(gVertexArrayMemory_Head));
+	SDL_memset(gVertexArrayMemory_Tail, 0, sizeof(gVertexArrayMemory_Tail));
 
 
 		/* ALLOCATE MASTER BLOCK FOR NON-"USER" V.A.R. TYPES */

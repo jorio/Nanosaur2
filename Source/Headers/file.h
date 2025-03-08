@@ -75,7 +75,7 @@ typedef struct
 	Boolean	lowRenderQuality;
 	Byte	language;
 
-	Byte	monitorNum;
+	Byte	displayNumMinus1;
 	Boolean	fullscreen;
 	Boolean	vsync;
 	Byte	antialiasingLevel;

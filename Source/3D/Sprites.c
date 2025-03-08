@@ -153,7 +153,7 @@ void LoadSpriteGroupFromSeries(int groupNum, int numSprites, const char* seriesN
 	for (int i = 0; i < gNumSpritesInGroupList[groupNum]; i++)
 	{
 		char path[64];
-		snprintf(path, sizeof(path), ":Sprites:%s:%s%03d", seriesName, seriesName, i);
+		SDL_snprintf(path, sizeof(path), ":Sprites:%s:%s%03d", seriesName, seriesName, i);
 
 		gSpriteGroupList[groupNum][i] = LoadSpriteFromDualImage(path);
 		GAME_ASSERT(gSpriteGroupList[groupNum][i].materialObject);

@@ -1,10 +1,8 @@
 // LOCALIZATION.C
-// (C) 2022 Iliyas Jorio
+// (C) 2025 Iliyas Jorio
 // This file is part of Nanosaur 2. https://github.com/jorio/nanosaur2
 
 #include "game.h"
-#include <string.h>
-#include <SDL.h>
 
 #define CSV_PATH ":System:strings.csv"
 
@@ -70,10 +68,13 @@ void LoadLocalizedStrings(GameLanguageID languageID)
 
 		if (myPhrase != NULL)
 		{
+			GAME_ASSERT(row < NUM_LOCALIZED_STRINGS);
 			gStringsTable[row] = myPhrase;
 			row++;
 		}
 	}
+
+	GAME_ASSERT(row == NUM_LOCALIZED_STRINGS);
 }
 
 const char* Localize(LocStrID stringID)
@@ -95,7 +96,7 @@ int LocalizeWithPlaceholder(LocStrID stringID, char* buf0, size_t bufSize, const
 	char* buf = buf0;
 	const char* localizedString = Localize(stringID);
 
-	const char* placeholder = strchr(localizedString, '#');
+	const char* placeholder = SDL_strchr(localizedString, '#');
 
 	if (!placeholder)
 	{
@@ -109,13 +110,13 @@ int LocalizeWithPlaceholder(LocStrID stringID, char* buf0, size_t bufSize, const
 		goto fail;
 	}
 
-	memcpy(buf, localizedString, bytesBeforePlaceholder);
+	SDL_memcpy(buf, localizedString, bytesBeforePlaceholder);
 	buf += bytesBeforePlaceholder;
 	bufSize -= bytesBeforePlaceholder;
 
 	va_list args;
 	va_start(args, format);
-	int rc = vsnprintf(buf, bufSize, format, args);
+	int rc = SDL_vsnprintf(buf, bufSize, format, args);
 	va_end(args);
 
 	if (rc >= 0)
@@ -123,7 +124,7 @@ int LocalizeWithPlaceholder(LocStrID stringID, char* buf0, size_t bufSize, const
 		buf += rc;
 		bufSize -= rc;
 
-		rc = snprintf(buf, bufSize, "%s", placeholder + 1);
+		rc = SDL_snprintf(buf, bufSize, "%s", placeholder + 1);
 		if (rc >= 0)
 		{
 			buf += rc;
@@ -134,25 +135,24 @@ int LocalizeWithPlaceholder(LocStrID stringID, char* buf0, size_t bufSize, const
 	return (int) (buf - buf0);
 
 fail:
-	return snprintf(buf, bufSize, "%s", localizedString);
+	return SDL_snprintf(buf, bufSize, "%s", localizedString);
 }
 
 bool IsNativeEnglishSystem(void)
 {
 	bool prefersEnglish = true;
 
-#if SDL_VERSION_ATLEAST(2,0,14)
-	SDL_Locale* localeList = SDL_GetPreferredLocales();
+	int numLocales = 0;
+	SDL_Locale** localeList = SDL_GetPreferredLocales(&numLocales);
 
 	if (NULL != localeList
-		&& 0 != localeList[0].language
-		&& (0 != strncmp(localeList[0].language, kLanguageCodesISO639_1[LANGUAGE_ENGLISH], 2)))
+		&& 0 != localeList[0]->language
+		&& (0 != strncmp(localeList[0]->language, kLanguageCodesISO639_1[LANGUAGE_ENGLISH], 2)))
 	{
 		prefersEnglish = false;
 	}
 
 	SDL_free(localeList);
-#endif
 
 	return prefersEnglish;
 }
@@ -161,20 +161,18 @@ GameLanguageID GetBestLanguageIDFromSystemLocale(void)
 {
 	GameLanguageID languageID = LANGUAGE_ENGLISH;
 
-#if !(SDL_VERSION_ATLEAST(2,0,14))
-	#warning Please upgrade to SDL 2.0.14 or later for SDL_GetPreferredLocales. Will default to English for now.
-#else
-	SDL_Locale* localeList = SDL_GetPreferredLocales();
-	if (!localeList)
-		return languageID;
+	int numLocales = 0;
+	SDL_Locale** localeList = SDL_GetPreferredLocales(&numLocales);
 
-	for (SDL_Locale* locale = localeList; locale->language; locale++)
+	for (int locale = 0; locale < numLocales; locale++)
 	{
-		for (int i = 0; i < NUM_LANGUAGES; i++)
+		const char* localeLanguage = localeList[locale]->language;
+
+		for (int language = 0; language < NUM_LANGUAGES; language++)
 		{
-			if (0 == strncmp(locale->language, kLanguageCodesISO639_1[i], 2))
+			if (0 == SDL_strncmp(localeLanguage, kLanguageCodesISO639_1[language], 2))
 			{
-				languageID = i;
+				languageID = language;
 				goto foundLocale;
 			}
 		}
@@ -182,7 +180,6 @@ GameLanguageID GetBestLanguageIDFromSystemLocale(void)
 
 foundLocale:
 	SDL_free(localeList);
-#endif
 
 	return languageID;
 }

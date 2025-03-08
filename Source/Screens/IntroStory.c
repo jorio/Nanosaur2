@@ -539,7 +539,7 @@ static void MakeSubtitleObjects(int slideNum)
 		return;
 
 	char textCopy[512];
-	snprintf(textCopy, sizeof(textCopy), "%s", text);
+	SDL_snprintf(textCopy, sizeof(textCopy), "%s", text);
 
 	char* cursor = textCopy;
 	int subRow = 0;
@@ -548,7 +548,7 @@ static void MakeSubtitleObjects(int slideNum)
 
 	while (cursor && *cursor)
 	{
-		char* nextLinebreak = strchr(cursor, '\n');
+		char* nextLinebreak = SDL_strchr(cursor, '\n');
 
 		if (nextLinebreak)
 		{

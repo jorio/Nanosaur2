@@ -10,9 +10,6 @@
 /* EXTERNALS   */
 /***************/
 
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
 #include "game.h"
 
 
@@ -54,10 +51,10 @@ void DoAlert(const char* format, ...)
 	char message[1024];
 	va_list args;
 	va_start(args, format);
-	vsnprintf(message, sizeof(message), format, args);
+	SDL_vsnprintf(message, sizeof(message), format, args);
 	va_end(args);
 
-	printf("Nanosaur 2 Alert: %s\n", message);
+	SDL_Log("Nanosaur 2 Alert: %s\n", message);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
 
 	Exit2D();
@@ -73,10 +70,10 @@ void DoFatalAlert(const char* format, ...)
 	char message[1024];
 	va_list args;
 	va_start(args, format);
-	vsnprintf(message, sizeof(message), format, args);
+	SDL_vsnprintf(message, sizeof(message), format, args);
 	va_end(args);
 
-	printf("Nanosaur 2 Fatal Alert: %s\n", message);
+	SDL_Log("Nanosaur 2 Fatal Alert: %s\n", message);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
 
 	Exit2D();
@@ -111,7 +108,7 @@ static Boolean	beenHere = false;
 		ShutdownSound();								// cleanup sound stuff
 	}
 
-	SDL_ShowCursor(1);
+	SDL_ShowCursor();
 	MyFlushEvents();
 
 	ExitToShell();
@@ -230,7 +227,7 @@ void *AllocPtr(long size)
 	GAME_ASSERT(size <= 0x7FFFFFFF);
 
 	size += PTRCOOKIE_SIZE;						// make room for our cookie & whatever else (also keep to 16-byte alignment!)
-	Ptr p = malloc(size);
+	Ptr p = SDL_malloc(size);
 	GAME_ASSERT(p);
 
 	uint32_t* cookiePtr = (uint32_t *)p;
@@ -254,7 +251,7 @@ void *AllocPtrClear(long size)
 	GAME_ASSERT(size <= 0x7FFFFFFF);
 
 	size += PTRCOOKIE_SIZE;						// make room for our cookie & whatever else (also keep to 16-byte alignment!)
-	Ptr p = calloc(1, size);
+	Ptr p = SDL_calloc(1, size);
 	GAME_ASSERT(p);
 
 	uint32_t* cookiePtr = (uint32_t *)p;
@@ -285,7 +282,7 @@ void* ReallocPtr(void* initialPtr, long newSize)
 	Ptr p = ((Ptr)initialPtr) - PTRCOOKIE_SIZE;	// back up pointer to cookie
 	newSize += PTRCOOKIE_SIZE;					// make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
-	p = realloc(p, newSize);					// reallocate it
+	p = SDL_realloc(p, newSize);				// reallocate it
 	GAME_ASSERT(p);
 
 	uint32_t* cookiePtr = (uint32_t *)p;
@@ -320,7 +317,7 @@ void SafeDisposePtr(void *ptr)
 
 	cookiePtr[0] = 'DEAD';							// zap cookie
 
-	free(p);
+	SDL_free(p);
 
 	gNumPointers--;
 }

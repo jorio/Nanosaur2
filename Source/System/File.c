@@ -10,7 +10,7 @@
 /* EXTERNALS   */
 /***************/
 
-#include <time.h>
+#include <SDL3/SDL_time.h>
 #include "game.h"
 #include "stb_image.h"
 
@@ -115,10 +115,10 @@ const char*	modelNames[MAX_SKELETON_TYPES] =
 	GAME_ASSERT(skeletonType < MAX_SKELETON_TYPES);
 	const char* modelName = modelNames[skeletonType];
 
-	snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.skeleton", modelName);
+	SDL_snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.skeleton", modelName);
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecSkeleton);
 
-	snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.bg3d", modelName);
+	SDL_snprintf(pathBuf, sizeof(pathBuf), ":Skeletons:%s.bg3d", modelName);
 	FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecBG3D);
 
 
@@ -417,14 +417,11 @@ OGLPoint3D				*pointPtr;
 
 OSErr LoadPrefs(void)
 {
+	InitDefaultPrefs();
+
 	OSErr iErr = LoadUserDataFile(PREFS_FILENAME, PREFS_MAGIC, sizeof(gGamePrefs), (Ptr) &gGamePrefs);
 
-	if (noErr != iErr)
-	{
-		InitDefaultPrefs();
-	}
-
-	memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
+	SDL_memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
 
 	return iErr;
 }
@@ -435,12 +432,12 @@ OSErr LoadPrefs(void)
 
 OSErr SavePrefs(void)
 {
-	if (0 == memcmp(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType)))
+	if (0 == SDL_memcmp(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType)))
 	{
 		return noErr;
 	}
 
-	memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
+	SDL_memcpy(&gDiskShadowPrefs, &gGamePrefs, sizeof(PrefsType));
 
 	return SaveUserDataFile(PREFS_FILENAME, PREFS_MAGIC, sizeof(gGamePrefs), (Ptr) &gGamePrefs);
 }
@@ -577,19 +574,19 @@ OSErr					iErr;
 #if _DEBUG
 				if (stId != -1)
 				{
-					printf("%03d ", stId);
+					SDL_Log("%03d ", stId);
 					stNumUses[stId]++;
 					GAME_ASSERT(stNumUses[stId] == 1);  // make sure it's only used ONCE
 				}
 				else
 				{
-					printf("--- ");
+					SDL_Log("--- ");
 				}
 #endif
 			}
 
 #if _DEBUG
-			printf("\n");
+			SDL_Log("\n");
 #endif
 		}
 
@@ -740,7 +737,7 @@ OSErr					iErr;
 
 			for (int j = 0; j < spline->numItems; j++)			// swizzle
 			{
-				memcpy(spline->itemList[j].parm, itemList[j].parm, sizeof(itemList[j].parm));
+				SDL_memcpy(spline->itemList[j].parm, itemList[j].parm, sizeof(itemList[j].parm));
 
 				spline->itemList[j].placement = SwizzleFloat(&itemList[j].placement);
 				spline->itemList[j].type	= SwizzleUShort(&itemList[j].type);
@@ -1057,9 +1054,9 @@ Ptr LoadSuperTilePixelBuffer(short fRefNum)
 		Ptr topRowPixels = textureBuffer + topRow * rowBytes;
 		Ptr bottomRowPixels = textureBuffer + bottomRow * rowBytes;
 
-		memcpy(topRowPixelsCopy, topRowPixels, rowBytes);
-		memcpy(topRowPixels, bottomRowPixels, rowBytes);
-		memcpy(bottomRowPixels, topRowPixelsCopy, rowBytes);
+		SDL_memcpy(topRowPixelsCopy, topRowPixels, rowBytes);
+		SDL_memcpy(topRowPixels, bottomRowPixels, rowBytes);
+		SDL_memcpy(bottomRowPixels, topRowPixelsCopy, rowBytes);
 
 		topRow++;
 		bottomRow--;
@@ -1095,7 +1092,7 @@ static void Blit32(
 
 	for (int row = 0; row < srcRectHeight; row++)
 	{
-		memcpy(dst, src, bpp * srcRectWidth);
+		SDL_memcpy(dst, src, bpp * srcRectWidth);
 		src += bpp * srcWidth;
 		dst += bpp * dstWidth;
 	}
@@ -1132,7 +1129,7 @@ void AssembleSeamlessSuperTileTexture(int row, int col, Ptr canvas)
 	const int ch = th + 2;
 
 	// Clear canvas to black
-	memset(canvas, 0, cw * ch * 4);				// *4 => 32-bit RBGA
+	SDL_memset(canvas, 0, cw * ch * 4);				// *4 => 32-bit RBGA
 
 	// Blit supertile image to middle of canvas
 	Blit32(GetSuperTileImage(row, col), tw, th, 0, 0, tw, th, canvas, cw, ch, 1, 1);
@@ -1206,13 +1203,18 @@ MOMaterialObject* LoadSuperTileTexture(Ptr textureBuffer, int texSize)
 Boolean SaveGame(int fileSlot)
 {
 	char path[256];
-	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
+	SDL_snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
+
+			/* GET TIMESTAMP */
+
+	SDL_Time timestampNanoseconds = 0;
+	SDL_GetCurrentTime(&timestampNanoseconds);
 
 			/* CREATE SAVE GAME DATA */
 
 	SaveGameType saveData =
 	{
-		.timestamp		= time(NULL),
+		.timestamp		= timestampNanoseconds / 1e9,
 		.level			= gLevelNum,						// save @ beginning of next level
 		.numLives 		= gPlayerInfo[0].numFreeLives,
 		.health			= gPlayerInfo[0].health,
@@ -1235,7 +1237,7 @@ Boolean SaveGame(int fileSlot)
 Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 {
 	char path[256];
-	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
+	SDL_snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
 
 	SaveGameType scratch = {0};
 
@@ -1244,7 +1246,7 @@ Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 		return false;
 	}
 
-	memcpy(outData, &scratch, sizeof(SaveGameType));
+	SDL_memcpy(outData, &scratch, sizeof(SaveGameType));
 	return true;
 }
 
@@ -1253,7 +1255,7 @@ Boolean LoadSavedGame(int fileSlot, SaveGameType* outData)
 Boolean DeleteSavedGame(int fileSlot)
 {
 	char path[32];
-	snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
+	SDL_snprintf(path, sizeof(path), "File%c", 'A' + fileSlot);
 
 	OSErr iErr = DeleteUserDataFile(path);
 
@@ -1298,7 +1300,7 @@ OSErr InitPrefsFolder(Boolean createIt)
 static OSErr MakeFSSpecForUserDataFile(const char* filename, FSSpec* spec)
 {
 	char path[256];
-	snprintf(path, sizeof(path), ":%s:%s", PREFS_FOLDER_NAME, filename);
+	SDL_snprintf(path, sizeof(path), ":%s:%s", PREFS_FOLDER_NAME, filename);
 
 	return FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, path, spec);
 }
@@ -1314,7 +1316,7 @@ FSSpec		file;
 long		count;
 long		eof = 0;
 char		fileMagic[64];
-long		magicLength = (long) strlen(magic) + 1;		// including null-terminator
+long		magicLength = (long) SDL_strlen(magic) + 1;		// including null-terminator
 Ptr			payloadCopy = NULL;
 
 	GAME_ASSERT(magicLength < (long) sizeof(fileMagic));
@@ -1348,7 +1350,7 @@ Ptr			payloadCopy = NULL;
 	iErr = FSRead(refNum, &count, fileMagic);
 	if (iErr ||
 		count != magicLength ||
-		0 != strncmp(magic, fileMagic, magicLength-1))
+		0 != SDL_strncmp(magic, fileMagic, magicLength-1))
 	{
 		goto fileIsCorrupt;
 	}
@@ -1371,7 +1373,7 @@ Ptr			payloadCopy = NULL;
 	goto cleanup;
 
 fileIsCorrupt:
-	printf("File '%s' appears to be corrupt!\n", file.cName);
+	SDL_Log("File '%s' appears to be corrupt!\n", file.cName);
 	iErr = badFileFormat;
 	goto cleanup;
 
@@ -1418,7 +1420,7 @@ long				count;
 
 				/* WRITE MAGIC */
 
-	count = (long) strlen(magic) + 1;
+	count = (long) SDL_strlen(magic) + 1;
 	iErr = FSWrite(refNum, &count, (Ptr) magic);
 	if (iErr)
 	{
@@ -1432,7 +1434,7 @@ long				count;
 	iErr = FSWrite(refNum, &count, payloadPtr);
 	FSClose(refNum);
 
-	printf("Wrote %s\n", file.cName);
+	SDL_Log("Wrote %s\n", file.cName);
 
 	return iErr;
 }
@@ -1655,7 +1657,7 @@ Ptr DecompressQTImage(const char* data, int dataSize, int w, int h)
 	{
 		static int n = 0;
 		char dumppath[256];
-		snprintf(dumppath, sizeof(dumppath), "/tmp/nanosaur-%04d.jpg", n++);
+		SDL_snprintf(dumppath, sizeof(dumppath), "/tmp/nanosaur-%04d.jpg", n++);
 		FILE* dump = fopen(dumppath, "wb");
 		fwrite(payload, payloadSize, 1, dump);
 		fclose(dump);

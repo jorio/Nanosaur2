@@ -97,7 +97,7 @@ void DoLegalScreen(void)
 	const char* legalStrings[] =
 	{
 		"Nanosaur II:  Hatchling",
-		"\v" PROJECT_VERSION "\r",
+		"\v" GAME_VERSION "\r",
 		"",
 		"",
 		"",
@@ -173,11 +173,7 @@ void DrawLoading(float percent)
 	// Prevent the OS from thinking our process has locked up
 	DoSDLMaintenance();
 
-#if SDL_VERSION_ATLEAST(2,0,18)
-	uint64_t nowTicks = SDL_GetTicks64();
-#else
 	uint64_t nowTicks = SDL_GetTicks();
-#endif
 
 	if (percent == 0)
 	{
@@ -215,7 +211,8 @@ void DrawLoading(float percent)
 	//}
 
 	// Kill vsync so we don't waste 16ms before loading the next asset
-	int vsyncBackup = SDL_GL_GetSwapInterval();
+	int vsyncBackup = 0;
+	SDL_GL_GetSwapInterval(&vsyncBackup);
 	SDL_GL_SetSwapInterval(0);
 
 	// Draw thermometer

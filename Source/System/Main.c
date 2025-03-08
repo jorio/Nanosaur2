@@ -133,7 +133,7 @@ void ToolBoxInit(void)
 
 void InitDefaultPrefs(void)
 {
-	memset(&gGamePrefs, 0, sizeof(gGamePrefs));
+	SDL_memset(&gGamePrefs, 0, sizeof(gGamePrefs));
 
 		/* DETERMINE WHAT LANGUAGE IS ON THIS MACHINE */
 
@@ -165,7 +165,7 @@ void InitDefaultPrefs(void)
 	gGamePrefs.rumbleIntensity		= 100;
 
 	_Static_assert(sizeof(gGamePrefs.bindings) == sizeof(kDefaultInputBindings), "input binding size mismatch: prefs vs defaults");
-	memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));
+	SDL_memcpy(&gGamePrefs.bindings, &kDefaultInputBindings, sizeof(kDefaultInputBindings));
 }
 
 
@@ -1007,7 +1007,7 @@ unsigned long	someLong;
 
 
 #if !_DEBUG
-	SDL_ShowCursor(0);
+	SDL_HideCursor();
 #endif
 
 	DoWarmUpScreen();

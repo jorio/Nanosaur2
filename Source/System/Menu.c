@@ -8,12 +8,7 @@
 
 #include "game.h"
 #include "uieffects.h"
-
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <math.h>
-#include <string.h>
-#include <time.h>
+#include <SDL3/SDL_time.h>
 
 /****************************/
 /*    PROTOTYPES            */
@@ -244,7 +239,7 @@ static void InitMenuNavigation(void)
 	nav = (MenuNavigation*) AllocPtrClear(sizeof(MenuNavigation));
 	gNav = nav;
 
-	memcpy(&nav->style, &kDefaultMenuStyle, sizeof(MenuStyle));
+	SDL_memcpy(&nav->style, &kDefaultMenuStyle, sizeof(MenuStyle));
 	nav->menuPick = -1;
 	nav->menuState = kMenuStateOff;
 	nav->mouseState = kMouseOff;
@@ -539,51 +534,51 @@ static const char* GetPadBindingName(int row, int col)
 		case kInputTypeButton:
 			switch (pb->id)
 			{
-				case SDL_CONTROLLER_BUTTON_INVALID:			return Localize(STR_UNBOUND_PLACEHOLDER);
-				case SDL_CONTROLLER_BUTTON_A:				return Localize(STR_CONTROLLER_BUTTON_A);
-				case SDL_CONTROLLER_BUTTON_B:				return Localize(STR_CONTROLLER_BUTTON_B);
-				case SDL_CONTROLLER_BUTTON_X:				return Localize(STR_CONTROLLER_BUTTON_X);
-				case SDL_CONTROLLER_BUTTON_Y:				return Localize(STR_CONTROLLER_BUTTON_Y);
-				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:	return Localize(STR_CONTROLLER_BUTTON_LEFTSHOULDER);
-				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:	return Localize(STR_CONTROLLER_BUTTON_RIGHTSHOULDER);
-				case SDL_CONTROLLER_BUTTON_LEFTSTICK:		return Localize(STR_CONTROLLER_BUTTON_LEFTSTICK);
-				case SDL_CONTROLLER_BUTTON_RIGHTSTICK:		return Localize(STR_CONTROLLER_BUTTON_RIGHTSTICK);
-				case SDL_CONTROLLER_BUTTON_DPAD_UP:			return Localize(STR_CONTROLLER_BUTTON_DPAD_UP);
-				case SDL_CONTROLLER_BUTTON_DPAD_DOWN:		return Localize(STR_CONTROLLER_BUTTON_DPAD_DOWN);
-				case SDL_CONTROLLER_BUTTON_DPAD_LEFT:		return Localize(STR_CONTROLLER_BUTTON_DPAD_LEFT);
-				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:		return Localize(STR_CONTROLLER_BUTTON_DPAD_RIGHT);
+				case SDL_GAMEPAD_BUTTON_INVALID:		return Localize(STR_UNBOUND_PLACEHOLDER);
+				case SDL_GAMEPAD_BUTTON_SOUTH:			return Localize(STR_GAMEPAD_BUTTON_A);
+				case SDL_GAMEPAD_BUTTON_EAST:			return Localize(STR_GAMEPAD_BUTTON_B);
+				case SDL_GAMEPAD_BUTTON_WEST:			return Localize(STR_GAMEPAD_BUTTON_X);
+				case SDL_GAMEPAD_BUTTON_NORTH:			return Localize(STR_GAMEPAD_BUTTON_Y);
+				case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:	return Localize(STR_GAMEPAD_BUTTON_LEFT_SHOULDER);
+				case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:	return Localize(STR_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+				case SDL_GAMEPAD_BUTTON_LEFT_STICK:		return Localize(STR_GAMEPAD_BUTTON_LEFT_STICK);
+				case SDL_GAMEPAD_BUTTON_RIGHT_STICK:	return Localize(STR_GAMEPAD_BUTTON_RIGHT_STICK);
+				case SDL_GAMEPAD_BUTTON_DPAD_UP:		return Localize(STR_GAMEPAD_BUTTON_DPAD_UP);
+				case SDL_GAMEPAD_BUTTON_DPAD_DOWN:		return Localize(STR_GAMEPAD_BUTTON_DPAD_DOWN);
+				case SDL_GAMEPAD_BUTTON_DPAD_LEFT:		return Localize(STR_GAMEPAD_BUTTON_DPAD_LEFT);
+				case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:		return Localize(STR_GAMEPAD_BUTTON_DPAD_RIGHT);
 				default:
-					return SDL_GameControllerGetStringForButton(pb->id);
+					return SDL_GetGamepadStringForButton(pb->id);
 			}
 			break;
 
 		case kInputTypeAxisPlus:
 			switch (pb->id)
 			{
-				case SDL_CONTROLLER_AXIS_INVALID:			return Localize(STR_UNBOUND_PLACEHOLDER);
-				case SDL_CONTROLLER_AXIS_LEFTX:				return Localize(STR_CONTROLLER_AXIS_LEFTSTICK_RIGHT);
-				case SDL_CONTROLLER_AXIS_LEFTY:				return Localize(STR_CONTROLLER_AXIS_LEFTSTICK_DOWN);
-				case SDL_CONTROLLER_AXIS_RIGHTX:			return Localize(STR_CONTROLLER_AXIS_RIGHTSTICK_RIGHT);
-				case SDL_CONTROLLER_AXIS_RIGHTY:			return Localize(STR_CONTROLLER_AXIS_RIGHTSTICK_DOWN);
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT:		return Localize(STR_CONTROLLER_AXIS_LEFTTRIGGER);
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:		return Localize(STR_CONTROLLER_AXIS_RIGHTTRIGGER);
+				case SDL_GAMEPAD_AXIS_INVALID:			return Localize(STR_UNBOUND_PLACEHOLDER);
+				case SDL_GAMEPAD_AXIS_LEFTX:			return Localize(STR_GAMEPAD_AXIS_LEFT_STICK_RIGHT);
+				case SDL_GAMEPAD_AXIS_LEFTY:			return Localize(STR_GAMEPAD_AXIS_LEFT_STICK_DOWN);
+				case SDL_GAMEPAD_AXIS_RIGHTX:			return Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_RIGHT);
+				case SDL_GAMEPAD_AXIS_RIGHTY:			return Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_DOWN);
+				case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:		return Localize(STR_GAMEPAD_AXIS_LEFT_TRIGGER);
+				case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:	return Localize(STR_GAMEPAD_AXIS_RIGHT_TRIGGER);
 				default:
-					return SDL_GameControllerGetStringForAxis(pb->id);
+					return SDL_GetGamepadStringForAxis(pb->id);
 			}
 			break;
 
 		case kInputTypeAxisMinus:
 			switch (pb->id)
 			{
-				case SDL_CONTROLLER_AXIS_INVALID:			return Localize(STR_UNBOUND_PLACEHOLDER);
-				case SDL_CONTROLLER_AXIS_LEFTX:				return Localize(STR_CONTROLLER_AXIS_LEFTSTICK_LEFT);
-				case SDL_CONTROLLER_AXIS_LEFTY:				return Localize(STR_CONTROLLER_AXIS_LEFTSTICK_UP);
-				case SDL_CONTROLLER_AXIS_RIGHTX:			return Localize(STR_CONTROLLER_AXIS_RIGHTSTICK_LEFT);
-				case SDL_CONTROLLER_AXIS_RIGHTY:			return Localize(STR_CONTROLLER_AXIS_RIGHTSTICK_UP);
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT:		return Localize(STR_CONTROLLER_AXIS_LEFTTRIGGER);
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:		return Localize(STR_CONTROLLER_AXIS_RIGHTTRIGGER);
+				case SDL_GAMEPAD_AXIS_INVALID:			return Localize(STR_UNBOUND_PLACEHOLDER);
+				case SDL_GAMEPAD_AXIS_LEFTX:			return Localize(STR_GAMEPAD_AXIS_LEFT_STICK_LEFT);
+				case SDL_GAMEPAD_AXIS_LEFTY:			return Localize(STR_GAMEPAD_AXIS_LEFT_STICK_UP);
+				case SDL_GAMEPAD_AXIS_RIGHTX:			return Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_LEFT);
+				case SDL_GAMEPAD_AXIS_RIGHTY:			return Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_UP);
+				case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:		return Localize(STR_GAMEPAD_AXIS_LEFT_TRIGGER);
+				case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:	return Localize(STR_GAMEPAD_AXIS_RIGHT_TRIGGER);
 				default:
-					return SDL_GameControllerGetStringForAxis(pb->id);
+					return SDL_GetGamepadStringForAxis(pb->id);
 			}
 			break;
 
@@ -609,7 +604,7 @@ static const char* GetMouseBindingName(int row)
 		case SDL_BUTTON_WHEELLEFT:		return Localize(STR_MOUSE_WHEEL_LEFT);
 		case SDL_BUTTON_WHEELRIGHT:		return Localize(STR_MOUSE_WHEEL_RIGHT);
 		default:
-			snprintf(buf, bufSize, "%s %d", Localize(STR_BUTTON), binding->mouseButton);
+			SDL_snprintf(buf, bufSize, "%s %d", Localize(STR_BUTTON), binding->mouseButton);
 			return buf;
 	}
 }
@@ -1255,7 +1250,7 @@ static ObjNode* LayOutCycler2Columns(int row)
 
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s:", GetMenuItemText(entry));
+	SDL_snprintf(buf, bufSize, "%s:", GetMenuItemText(entry));
 
 	ObjNode* node1 = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	node1->Coord.x = k2ColumnLeftX;
@@ -1277,9 +1272,9 @@ static ObjNode* LayOutCycler1Column(int row)
 	const MenuItem* entry = &gNav->menu[row];
 
 	if (entry->text == STR_NULL && entry->rawText == NULL)
-		snprintf(buf, bufSize, "%s", GetCyclerValueText(row));
+		SDL_snprintf(buf, bufSize, "%s", GetCyclerValueText(row));
 	else
-		snprintf(buf, bufSize, "%s: %s", GetMenuItemText(entry), GetCyclerValueText(row));
+		SDL_snprintf(buf, bufSize, "%s: %s", GetMenuItemText(entry), GetCyclerValueText(row));
 
 	ObjNode* node = MakeText(buf, row, 0, kTextMeshSmallCaps);
 	node->MoveCall = MoveAction;
@@ -1486,7 +1481,7 @@ static ObjNode* LayOutSlider(int row)
 	int chain = 0;
 
 	// Caption
-	snprintf(buf, bufSize, "%s:", GetMenuItemText(entry));
+	SDL_snprintf(buf, bufSize, "%s:", GetMenuItemText(entry));
 	ObjNode* rootNode = MakeText(buf, row, chain++, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	ObjNode* node = rootNode;
 	node->Coord.x = k2ColumnLeftX;
@@ -1502,7 +1497,7 @@ static ObjNode* LayOutSlider(int row)
 	node->ColorFilter.a = 0.5f;
 
 	// Meter
-	snprintf(buf, bufSize, "%d ", *sliderData->valuePtr);
+	SDL_snprintf(buf, bufSize, "%d ", *sliderData->valuePtr);
 	node = MakeText(buf, row, chain++, kTextMeshAlignCenter);
 	node->Scale.x /= 3;
 	node->Scale.y /= 3;
@@ -1534,7 +1529,7 @@ static float SetNewSliderValue(const MenuItem* entry, SliderComponents* parts, f
 	parts->meter->Coord.x = knobX;
 
 	char meterBuf[8];
-	snprintf(meterBuf, sizeof(meterBuf), "%d ", (int)mouseValue);
+	SDL_snprintf(meterBuf, sizeof(meterBuf), "%d ", (int)mouseValue);
 	TextMesh_Update(meterBuf, kTextMeshAlignCenter, parts->meter);
 
 	UpdateObjectTransforms(parts->knob);
@@ -1704,10 +1699,11 @@ static void NavigateSlider(const MenuItem* entry)
 static ObjNode* LayOutFileSlot(int row)
 {
 	DECLARE_WORKBUF(buf, bufSize);
+	char dateBuf[64];
 
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s %d", GetMenuItemText(entry), 1+entry->fileSlot);
+	SDL_snprintf(buf, bufSize, "%s %d", GetMenuItemText(entry), 1+entry->fileSlot);
 	ObjNode* node1 = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	node1->Coord.x = k2ColumnLeftX;
 	node1->MoveCall = MoveAction;
@@ -1725,19 +1721,33 @@ static ObjNode* LayOutFileSlot(int row)
 
 	if (!validSave)
 	{
-		snprintf(buf, bufSize, "---------------- %s ----------------", Localize(STR_EMPTY_SLOT));
+		SDL_snprintf(buf, bufSize, "---------------- %s ----------------", Localize(STR_EMPTY_SLOT));
 	}
 	else
 	{
-		time_t timestamp = (time_t) saveData.timestamp;
-		struct tm *timeinfo = localtime(&timestamp);
+		SDL_DateTime dt = {0};
+		SDL_TimeToDateTime(saveData.timestamp * 1e9, &dt, true);
+		const char* month = Localize(dt.month - 1 + STR_JANUARY);
+		int day = dt.day;
+		int year = dt.year;
 
-		snprintf(buf, bufSize, "%s %d   %d %s %d",
-				Localize(STR_LEVEL),
-				saveData.level+1,
-				timeinfo->tm_mday,
-				Localize(timeinfo->tm_mon + STR_JANUARY),
-				1900 + timeinfo->tm_year);
+		switch (gGamePrefs.language)
+		{
+			case LANGUAGE_ENGLISH:
+				SDL_snprintf(dateBuf, sizeof(dateBuf), "%s %d, %d", month, day, year);
+				break;
+			case LANGUAGE_GERMAN:
+				SDL_snprintf(dateBuf, sizeof(dateBuf), "%d. %s %d", day, month, year);
+				break;
+			case LANGUAGE_RUSSIAN:
+				SDL_snprintf(dateBuf, sizeof(dateBuf), "%d %s %d \u0433.", day, month, year);
+				break;
+			default:
+				SDL_snprintf(dateBuf, sizeof(dateBuf), "%d %s %d", day, month, year);
+				break;
+		}
+
+		SDL_snprintf(buf, bufSize, "%s %d   %s", Localize(STR_LEVEL), saveData.level + 1, dateBuf);
 	}
 
 	ObjNode* node2 = MakeText(buf, row, 1, kTextMeshAlignLeft | kTextMeshSmallCaps);
@@ -1761,7 +1771,7 @@ static ObjNode* LayOutKeyBinding(int row)
 	DECLARE_WORKBUF(buf, bufSize);
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
+	SDL_snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = 100;
@@ -1786,7 +1796,7 @@ static ObjNode* LayOutPadBinding(int row)
 	DECLARE_WORKBUF(buf, bufSize);
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
+	SDL_snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = 100;
@@ -1811,7 +1821,7 @@ static ObjNode* LayOutMouseBinding(int row)
 	DECLARE_WORKBUF(buf, bufSize);
 	const MenuItem* entry = &gNav->menu[row];
 
-	snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
+	SDL_snprintf(buf, bufSize, "%s:", Localize(STR_KEYBINDING_DESCRIPTION_0 + entry->inputNeed));
 
 	ObjNode* label = MakeText(buf, row, 0, kTextMeshAlignLeft | kTextMeshSmallCaps | kTextMeshUserFlag_AltFont);
 	label->Coord.x = k2ColumnLeftX;
@@ -2101,7 +2111,7 @@ static void AwaitKeyPress(void)
 		goto updateText;
 	}
 
-	for (int16_t scancode = 0; scancode < SDL_NUM_SCANCODES; scancode++)
+	for (int16_t scancode = 0; scancode < SDL_SCANCODE_COUNT; scancode++)
 	{
 		if (IsKeyDown(scancode))
 		{
@@ -2124,7 +2134,7 @@ updateText:
 		TwitchSelectionNopeWiggle();
 }
 
-static bool AwaitGamepadPress(SDL_GameController* controller)
+static bool AwaitGamepadPress(SDL_Gamepad* controller)
 {
 	int row = gNav->focusRow;
 	int btnNo = gNav->focusComponent - 1;
@@ -2134,7 +2144,7 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 	bool doWiggle = false;
 
 	if (IsKeyDown(SDL_SCANCODE_ESCAPE)
-		|| SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START)
+		|| SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_START)
 		|| IsClickDown(SDL_BUTTON_LEFT)
 		|| IsClickDown(SDL_BUTTON_RIGHT))
 	{
@@ -2144,20 +2154,20 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 
 	InputBinding* binding = GetBindingAtRow(gNav->focusRow);
 
-	for (int8_t button = 0; button < SDL_CONTROLLER_BUTTON_MAX; button++)
+	for (int8_t button = 0; button < SDL_GAMEPAD_BUTTON_COUNT; button++)
 	{
 #if 0	// uncomment to prevent binding d-pad
 		switch (button)
 		{
-			case SDL_CONTROLLER_BUTTON_DPAD_UP:			// prevent binding those
-			case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-			case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-			case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+			case SDL_GAMEPAD_BUTTON_DPAD_UP:			// prevent binding those
+			case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+			case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+			case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 				continue;
 		}
 #endif
 
-		if (SDL_GameControllerGetButton(controller, button))
+		if (SDL_GetGamepadButton(controller, button))
 		{
 			PlayEndBindingEffect();
 			UnbindPadButtonFromAllRemappableInputNeeds(kInputTypeButton, button);
@@ -2167,20 +2177,20 @@ static bool AwaitGamepadPress(SDL_GameController* controller)
 		}
 	}
 
-	for (int8_t axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++)
+	for (int8_t axis = 0; axis < SDL_GAMEPAD_AXIS_COUNT; axis++)
 	{
 #if 0	// uncomment to prevent binding LS/RS
 		switch (axis)
 		{
-			case SDL_CONTROLLER_AXIS_LEFTX:				// prevent binding those
-			case SDL_CONTROLLER_AXIS_LEFTY:
-			case SDL_CONTROLLER_AXIS_RIGHTX:
-			case SDL_CONTROLLER_AXIS_RIGHTY:
+			case SDL_GAMEPAD_AXIS_LEFTX:				// prevent binding those
+			case SDL_GAMEPAD_AXIS_LEFTY:
+			case SDL_GAMEPAD_AXIS_RIGHTX:
+			case SDL_GAMEPAD_AXIS_RIGHTY:
 				continue;
 		}
 #endif
 
-		int16_t axisValue = SDL_GameControllerGetAxis(controller, axis);
+		int16_t axisValue = SDL_GetGamepadAxis(controller, axis);
 		if (abs(axisValue) > kJoystickDeadZone_BindingThreshold)
 		{
 			PlayEndBindingEffect();
@@ -2223,11 +2233,11 @@ static void AwaitMetaGamepadPress(void)
 
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
-		SDL_GameController* controller = GetController(i);
-		if (controller)
+		SDL_Gamepad* gamepad = GetGamepad(i);
+		if (gamepad)
 		{
 			anyGamepadFound = true;
-			if (AwaitGamepadPress(controller))
+			if (AwaitGamepadPress(gamepad))
 			{
 				return;
 			}
@@ -2534,7 +2544,7 @@ void RegisterMenu(const MenuItem* menuTree)
 			gMenuRegistry[gNumMenusRegistered] = menuItem;
 			gNumMenusRegistered++;
 
-//			printf("Registered menu '%s'\n", FourccToString(menuItem->id));
+//			SDL_Log("Registered menu '%s'\n", FourccToString(menuItem->id));
 		}
 	}
 }
@@ -2555,8 +2565,8 @@ static const MenuItem* LookUpMenu(int menuID)
 ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style)
 {
 #if USE_SDL_CURSOR
-	int cursorStateBeforeMenu = SDL_ShowCursor(-1);
-	SDL_ShowCursor(1);
+	bool cursorStateBeforeMenu = SDL_CursorVisible();
+	SDL_ShowCursor();
 #endif
 
 			/* CREATE MENU DRIVER */
@@ -2586,7 +2596,7 @@ ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style)
 	gNav->focusRow			= -1;
 
 	if (style)
-		memcpy(&gNav->style, style, sizeof(*style));
+		SDL_memcpy(&gNav->style, style, sizeof(*style));
 
 	gNav->sweepDelay	= 0;
 	gNav->sweepRTL		= false;
@@ -2720,7 +2730,7 @@ static void CleanUpMenuDriver(ObjNode* theNode)
 			}
 		}
 
-		memset(gNav->menuObjects, 0, sizeof(gNav->menuObjects));
+		SDL_memset(gNav->menuObjects, 0, sizeof(gNav->menuObjects));
 	}
 	else
 	{
@@ -2738,7 +2748,10 @@ static void CleanUpMenuDriver(ObjNode* theNode)
 
 #if USE_SDL_CURSOR
 	SetStandardMouseCursor();
-	SDL_ShowCursor(cursorStateBeforeMenu);
+	if (cursorStateBeforeMenu)
+		SDL_ShowCursor();
+	else
+		SDL_HideCursor();
 #endif
 
 	// Save some stuff before deleting

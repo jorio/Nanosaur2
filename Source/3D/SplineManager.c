@@ -36,7 +36,7 @@ CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 
 void InitSplineManager(void)
 {
-	memset(gCustomSplines, 0, sizeof(gCustomSplines));
+	SDL_memset(gCustomSplines, 0, sizeof(gCustomSplines));
 
 	for (int i = 0; i < MAX_CUSTOM_SPLINES; i++)
 	{

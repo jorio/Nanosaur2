@@ -338,7 +338,7 @@ static const MenuItem gSettingsMenuTree[] =
 		.getLayoutFlags = ShouldDisplayMonitorCycler,
 		.cycler =
 		{
-			.valuePtr = &gGamePrefs.displayNumMinus1,
+			.valuePtr = &gGamePrefs.displayNum,
 			.isDynamicallyGenerated = true,
 			.generator =
 			{

@@ -325,6 +325,31 @@ int GetNumDisplays(void)
 	return numDisplays;
 }
 
+/*********** GET SDL_DISPLAYID FOR PREFERRED DISPLAY *************/
+//
+// GamePrefs.displayNum records an index into the array returned by
+// SDL_GetDisplays(), not the actual SDL_DisplayID itself.
+//
+
+SDL_DisplayID GetPreferredSDLDisplayID(void)
+{
+	int numDisplays = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&numDisplays);
+	SDL_DisplayID prefDisplay = 0;
+
+	if (gGamePrefs.displayNum < numDisplays)
+	{
+		prefDisplay = displays[gGamePrefs.displayNum];
+	}
+	else
+	{
+		gGamePrefs.displayNum = 0;
+	}
+
+	SDL_free(displays);
+	return prefDisplay;
+}
+
 /******************** MOVE WINDOW TO PREFERRED DISPLAY *******************/
 //
 // This works best in windowed mode.
@@ -333,12 +358,7 @@ int GetNumDisplays(void)
 
 void MoveToPreferredDisplay(void)
 {
-	if (gGamePrefs.displayNumMinus1 >= GetNumDisplays())
-	{
-		gGamePrefs.displayNumMinus1 = 0;
-	}
-
-	SDL_DisplayID display = gGamePrefs.displayNumMinus1 + 1;
+	SDL_DisplayID display = GetPreferredSDLDisplayID();
 
 	int w = 640;
 	int h = 480;
@@ -370,7 +390,7 @@ void SetFullscreenMode(bool enforceDisplayPref)
 		if (enforceDisplayPref)
 		{
 			SDL_DisplayID currentDisplay = SDL_GetDisplayForWindow(gSDLWindow);
-			SDL_DisplayID desiredDisplay = gGamePrefs.displayNumMinus1 + 1;
+			SDL_DisplayID desiredDisplay = GetPreferredSDLDisplayID();
 
 			if (currentDisplay != desiredDisplay)
 			{

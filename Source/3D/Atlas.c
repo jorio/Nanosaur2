@@ -60,49 +60,6 @@ Atlas*					gAtlases[MAX_ATLASES];
 /*                         UTF-8                               */
 /***************************************************************/
 
-static uint32_t ReadNextCodepointFromUTF8(const char** utf8TextPtr)//, int flags)
-{
-#define TRY_ADVANCE(t) do { if (!*(t)) return 0; else (t)++; } while(0)
-
-	uint32_t codepoint = 0;
-	const uint8_t* t = (const uint8_t*) *utf8TextPtr;
-
-	if ((*t & 0b10000000) == 0)
-	{
-		// 1 byte code point, ASCII
-		codepoint |= (*t & 0b01111111);			TRY_ADVANCE(t);
-		*utf8TextPtr += 1;
-	}
-	else if ((*t & 0b11100000) == 0b11000000)
-	{
-		// 2 byte code point
-		codepoint |= (*t & 0b00011111) << 6;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111);			TRY_ADVANCE(t);
-		*utf8TextPtr += 2;
-	}
-	else if ((**utf8TextPtr & 0b11110000) == 0b11100000)
-	{
-		// 3 byte code point
-		codepoint |= (*t & 0b00001111) << 12;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111) << 6;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111);
-		*utf8TextPtr += 3;
-	}
-	else
-	{
-		// 4 byte code point
-		codepoint |= (*t & 0b00000111) << 18;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111) << 12;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111) << 6;	TRY_ADVANCE(t);
-		codepoint |= (*t & 0b00111111);			TRY_ADVANCE(t);
-		*utf8TextPtr += 4;
-	}
-
-	return codepoint;
-
-#undef TRY_ADVANCE
-}
-
 static uint32_t ToUpperUnicode(uint32_t c)
 {
 	if ((c >= 0x0061 && c <= 0x007A)		// ascii: a...z
@@ -272,10 +229,10 @@ static void ParseKerningFile(Atlas* atlas, const char* data)
 
 	while (*data)
 	{
-		uint32_t codepoint1 = ReadNextCodepointFromUTF8(&data);
+		uint32_t codepoint1 = SDL_StepUTF8(&data, NULL);
 		GAME_ASSERT(codepoint1);
 		
-		uint32_t codepoint2 = ReadNextCodepointFromUTF8(&data);
+		uint32_t codepoint2 = SDL_StepUTF8(&data, NULL);
 		GAME_ASSERT(codepoint2);
 
 		SkipWhitespace(&data);
@@ -506,7 +463,7 @@ static float Kern(const Atlas* font, const AtlasGlyph* glyph, const char* utftex
 	if (!glyph || !glyph->numKernPairs)
 		return 1;
 
-	uint32_t buddy = ReadNextCodepointFromUTF8(&utftext);
+	uint32_t buddy = SDL_StepUTF8(&utftext, NULL);
 
 	if (font->isASCIIFontUpperCaseOnly || (flags & (kTextMeshSmallCaps | kTextMeshAllCaps)))
 	{
@@ -537,7 +494,7 @@ static void ComputeMetrics(const Atlas* atlas, const char* text, int flags, Text
 
 	for (const char* utftext = text; *utftext; )
 	{
-		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext);
+		uint32_t codepoint = SDL_StepUTF8(&utftext, NULL);
 
 		if (atlas->isASCIIFont)			// Parse control characters if it's a font
 		{
@@ -688,7 +645,7 @@ static void PrepVertices(
 
 	for (const char* utftext = text; *utftext; )
 	{
-		uint32_t codepoint = ReadNextCodepointFromUTF8(&utftext);
+		uint32_t codepoint = SDL_StepUTF8(&utftext, NULL);
 
 		if (atlas->isASCIIFont)			// Parse control characters if it's a font
 		{

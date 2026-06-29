@@ -298,20 +298,14 @@ static void DisposeMenuNavigation(void)
 	gNav = nil;
 }
 
-int GetCurrentMenu(void)
-{
-	return gNav ? gNav->menuID : 0;
-}
-
-float GetMenuIdleTime(void)
-{
-	return gNav->idleTime;
-}
-
-bool IsMenuMouseControlled(void)
-{
-	return gNav? gNav->mouseState != kMouseOff: false;
-}
+// The following functions are now implemented in Menu+Swift.swift:
+// - int GetCurrentMenu(void)
+// - float GetMenuIdleTime(void)
+// - bool IsMenuMouseControlled(void)
+// - int GetCurrentMenuItemID(void)
+// - ObjNode* GetCurrentMenuItemObject(void)
+// - bool IsMenuTreeEndSentinel(const MenuItem* menuItem)
+// - int DisableEmptyFileSlots(const MenuItem* menuItem)
 
 void KillMenu(int returnCode)
 {
@@ -342,22 +336,6 @@ static void SetHandMouseCursor(void)
 }
 #endif
 
-int GetCurrentMenuItemID(void)
-{
-	if (gNav->focusRow < 0)
-		return -1;
-
-	return gNav->menu[gNav->focusRow].id;
-}
-
-ObjNode* GetCurrentMenuItemObject(void)
-{
-	if (gNav->focusRow < 0)
-		return NULL;
-
-	return gNav->menuObjects[gNav->focusRow];
-}
-
 ObjNode* GetCurrentInteractableMenuItemObject(void)
 {
 	ObjNode* obj = GetCurrentMenuItemObject();
@@ -385,9 +363,51 @@ ObjNode* GetCurrentInteractableMenuItemObject(void)
 	}
 }
 
-bool IsMenuTreeEndSentinel(const MenuItem* menuItem)
+// These functions are now implemented in Menu+Swift.swift
+// using Swift 6.3's @c @implementation feature
+
+// MARK: - Swift Interop Accessors
+
+// These functions provide access to internal state for Swift implementations
+// They are called via @_silgen_name from Swift
+
+int MenuSwift_GetCurrentMenuID(void)
 {
-	return menuItem->id == 0 && menuItem->type == kMISENTINEL;
+	return gNav ? gNav->menuID : 0;
+}
+
+float MenuSwift_GetIdleTime(void)
+{
+	return gNav ? gNav->idleTime : 0.0f;
+}
+
+bool MenuSwift_IsMouseControlled(void)
+{
+	return gNav ? gNav->mouseState != kMouseOff : false;
+}
+
+int MenuSwift_GetFocusRow(void)
+{
+	return gNav ? gNav->focusRow : -1;
+}
+
+const MenuItem* MenuSwift_GetCurrentMenuItem(void)
+{
+	if (!gNav || gNav->focusRow < 0)
+		return NULL;
+	return &gNav->menu[gNav->focusRow];
+}
+
+uint64_t MenuSwift_GetValidSaveSlotMask(void)
+{
+	return gNav ? gNav->validSaveSlotMask : 0;
+}
+
+ObjNode* MenuSwift_GetMenuItemObject(int row)
+{
+	if (!gNav || row < 0 || row >= MAX_MENU_ROWS)
+		return NULL;
+	return gNav->menuObjects[row];
 }
 
 /****************************/
@@ -1758,11 +1778,7 @@ static ObjNode* LayOutFileSlot(int row)
 	return node1;
 }
 
-int DisableEmptyFileSlots(const MenuItem* mi)
-{
-	bool isValid = (gNav->validSaveSlotMask >> mi->fileSlot) & 1;
-	return isValid? 0: kMILayoutFlagDisabled;
-}
+// DisableEmptyFileSlots is now implemented in Menu+Swift.swift
 
 #pragma mark - Widget: Key/Pad/Mouse Binding
 

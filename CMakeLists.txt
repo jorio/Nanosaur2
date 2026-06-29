@@ -13,11 +13,19 @@ set(CMAKE_CXX_STANDARD		20)
 set(CMAKE_C_STANDARD		17)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")  # Sync with LSMinimumSystemVersion in SDL3.framework's Info.plist
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target macOS architectures")
 
 project(${GAME_TARGET}
 	VERSION ${GAME_VERSION}
 	LANGUAGES C CXX)
+
+option(ENABLE_SWIFT "Enable Swift implementation" OFF)
+
+if(ENABLE_SWIFT)
+	# Swift requires single architecture for now
+	unset(CMAKE_OSX_ARCHITECTURES CACHE)
+	set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "Target macOS architecture" FORCE)
+	enable_language(Swift)
+endif()
 
 option(BUILD_SDL_FROM_SOURCE "Build SDL from source" OFF)
 option(SDL_STATIC "Static link SDL" OFF)
@@ -105,7 +113,7 @@ find_package(OpenGL REQUIRED)
 configure_file(${GAME_SRCDIR}/Headers/version.h.in ${GAME_SRCDIR}/Headers/version.h)
 
 # Glob all source files
-file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/*.c ${GAME_SRCDIR}/*.cpp ${GAME_SRCDIR}/*.h)
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/*.c ${GAME_SRCDIR}/*.cpp ${GAME_SRCDIR}/*.h ${GAME_SRCDIR}/*.swift)
 
 # Make source groups match file tree
 source_group(TREE ${GAME_SRCDIR} PREFIX "" FILES ${GAME_SOURCES})
@@ -123,6 +131,8 @@ add_executable(${GAME_TARGET} ${GAME_SOURCES})
 
 target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers)
 
+# Swift include paths come from bridging header configuration below
+
 #------------------------------------------------------------------------------
 # COMPILER/LINKER OPTIONS
 #------------------------------------------------------------------------------
@@ -135,17 +145,38 @@ target_compile_definitions(${GAME_TARGET} PRIVATE
 	GL_SILENCE_DEPRECATION)
 
 if(NOT MSVC)
+	# C/C++ specific flags
 	target_compile_options(${GAME_TARGET} PRIVATE
-		-fexceptions
-		-Wall
-		-Wextra
-		-Wshadow
-		-Werror=return-type
+		$<$<COMPILE_LANGUAGE:C>:-fexceptions>
+		$<$<COMPILE_LANGUAGE:C>:-Wall>
+		$<$<COMPILE_LANGUAGE:C>:-Wextra>
+		$<$<COMPILE_LANGUAGE:C>:-Wshadow>
+		$<$<COMPILE_LANGUAGE:C>:-Werror=return-type>
 		$<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>
-		-Wno-multichar
-		-Wno-unknown-pragmas
-		-Wstrict-aliasing=2
+		$<$<COMPILE_LANGUAGE:C>:-Wno-multichar>
+		$<$<COMPILE_LANGUAGE:C>:-Wno-unknown-pragmas>
+		$<$<COMPILE_LANGUAGE:C>:-Wstrict-aliasing=2>
+		$<$<COMPILE_LANGUAGE:CXX>:-fexceptions>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wall>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wshadow>
+		$<$<COMPILE_LANGUAGE:CXX>:-Werror=return-type>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wno-multichar>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>
+		$<$<COMPILE_LANGUAGE:CXX>:-Wstrict-aliasing=2>
 	)
+
+	# Swift-specific flags: bridging header for C interop, parse as library (no main)
+	if(ENABLE_SWIFT)
+		set_target_properties(${GAME_TARGET} PROPERTIES
+			Swift_COMPILATION_MODE singlefile
+		)
+		target_compile_options(${GAME_TARGET} PRIVATE
+			$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>
+			$<$<COMPILE_LANGUAGE:Swift>:${GAME_SRCDIR}/Headers/Nanosaur2-Bridging-Header.h>
+			$<$<COMPILE_LANGUAGE:Swift>:-parse-as-library>
+		)
+	endif()
 
 	# Sanitizers in debug mode (Linux only)
 	# When using a debugger, you should export LSAN_OPTIONS=detect_leaks=0

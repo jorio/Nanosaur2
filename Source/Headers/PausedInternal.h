@@ -10,7 +10,11 @@
 extern const MenuItem gPauseMenuTree[];
 extern const MenuItem gReallyQuitMenuTree[];
 
+#pragma clang assume_nonnull begin
+
 // Swift can't import an extern array of incomplete size directly; hand it
 // out as a pointer instead (which is what MakeMenu wants anyway).
 static inline const MenuItem* GetPauseMenuTree(void) { return gPauseMenuTree; }
 static inline const MenuItem* GetReallyQuitMenuTree(void) { return gReallyQuitMenuTree; }
+
+#pragma clang assume_nonnull end

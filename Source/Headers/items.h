@@ -13,7 +13,7 @@ void CreateCyclorama(void);
 void DrawCyclorama(ObjNode *theNode);
 
 Boolean AddRock(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddCrystal(TerrainItemEntryType *itemPtr, float  x, float z);
+Boolean AddCrystal(TerrainItemEntryType * _Nonnull itemPtr, float  x, float z);
 Boolean DoTrig_MiscSmackableObject(ObjNode *trigger, ObjNode *theNode);
 Boolean AddRiverRock(TerrainItemEntryType *itemPtr, float  x, float z);
 Boolean AddGasMound(TerrainItemEntryType *itemPtr, float  x, float z);

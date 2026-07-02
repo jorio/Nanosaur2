@@ -109,7 +109,7 @@ private let cMoveCrystalShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>
 }
 
 @c @implementation
-public func AddCrystal(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
+public func AddCrystal(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>, _ x: Float, _ z: Float) -> UInt8 {
     if itemPtr.pointee.parm.0 > 2 {
         SwFatal("AddCrystal: illegal subtype")
     }

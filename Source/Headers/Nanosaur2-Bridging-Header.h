@@ -3,3 +3,4 @@
 #include "game.h"
 #include "SwiftInternal.h"
 #include "MenuInternal.h"
+#include "PausedInternal.h"

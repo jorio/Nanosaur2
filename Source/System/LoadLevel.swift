@@ -78,11 +78,11 @@ public func LoadLevelArt() {
 
     // LOAD SKELETONS
 
-    LoadASkeleton(UInt8(SKELETON_TYPE_PLAYER))
-    LoadASkeleton(UInt8(SKELETON_TYPE_RAPTOR))
-    LoadASkeleton(UInt8(SKELETON_TYPE_BRACH))
+    LoadASkeleton(UInt8(SkeletonType.player.rawValue))
+    LoadASkeleton(UInt8(SkeletonType.raptor.rawValue))
+    LoadASkeleton(UInt8(SkeletonType.brach.rawValue))
 
-    LoadASkeleton(UInt8(SKELETON_TYPE_WORMHOLE))
+    LoadASkeleton(UInt8(SkeletonType.wormhole.rawValue))
 
     // LOAD TERRAIN
 
@@ -112,8 +112,8 @@ public func LoadLevelArt() {
                                         -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Sheen))
 
     case .swamp: // LEVEL_NUM_ADVENTURE3, LEVEL_NUM_RACE1, LEVEL_NUM_FLAG1
-        LoadASkeleton(UInt8(SKELETON_TYPE_WORM))
-        LoadASkeleton(UInt8(SKELETON_TYPE_RAMPHOR))
+        LoadASkeleton(UInt8(SkeletonType.worm.rawValue))
+        LoadASkeleton(UInt8(SkeletonType.ramphor.rawValue))
 
     default:
         break

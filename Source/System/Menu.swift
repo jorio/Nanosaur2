@@ -532,7 +532,7 @@ private func navigateCycler(_ e: UnsafePointer<MenuItem>!) {
 // MARK: - Slider
 
 private func getSliderComponents(_ e: UnsafePointer<MenuItem>!, _ root: UnsafeMutablePointer<ObjNode>!) -> SliderComponents {
-    var n: [UnsafeMutablePointer<ObjNode>?] = [root, nil, nil, nil, nil]
+    var n: InlineArray<5, UnsafeMutablePointer<ObjNode>?> = [root, nil, nil, nil, nil]
     for i in 1..<5 { n[i] = n[i-1]!.pointee.ChainNode; SwGameAssert(n[i] != nil) }
     var si = SliderComponents(); si.caption = n[0]; si.bar = n[1]; si.notch = n[2]; si.meter = n[3]; si.knob = n[4]
     let be = TextMesh_GetExtents(si.bar!)

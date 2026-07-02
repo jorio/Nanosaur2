@@ -6,7 +6,7 @@ private let NUM_SLIDES = 1
 private let SLIDE_FADE_RATE: Float = 0.8
 
 private var gEndSlideShow = false
-private var gSlideActive = [Bool](repeating: false, count: NUM_SLIDES)
+private var gSlideActive: InlineArray<1, Bool> = InlineArray(repeating: false) // must match NUM_SLIDES
 
 private let gSlides: [SlideType] = [
     // WIN PAGE

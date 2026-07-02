@@ -8,3 +8,4 @@
 #include "LoadLevelInternal.h"
 #include "SparkleInternal.h"
 #include "AnaglyphCalibrationInternal.h"
+#include "PlayerRaceInternal.h"

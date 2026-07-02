@@ -33,8 +33,7 @@ private let ANY_PLAYER: Int = -1
 
 @inline(__always)
 private func getMenuNodeData(_ node: UnsafeMutablePointer<ObjNode>!) -> UnsafeMutablePointer<MenuNodeData> {
-    UnsafeMutableRawPointer(node.withMemoryRebound(to: UInt8.self, capacity: Int(MAX_SPECIAL_DATA_BYTES)) { $0 })
-        .assumingMemoryBound(to: MenuNodeData.self)
+    GetMenuNodeDataPtr(node)
 }
 
 // MARK: - Array access helpers

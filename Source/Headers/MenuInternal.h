@@ -40,6 +40,12 @@ typedef struct
 
 _Static_assert(sizeof(MenuNodeData) <= MAX_SPECIAL_DATA_BYTES, "MenuNodeData doesn't fit in special area");
 
+// MenuNodeData lives in the ObjNode's SpecialPadding scratch area (mirrors
+// the GetMenuNodeData macro from the original Menu.c). Swift needs this C
+// shim because SpecialPadding is a union member, and Swift's pointer(to:)
+// returns nil at runtime for union members.
+static inline MenuNodeData* _Nonnull GetMenuNodeDataPtr(ObjNode* _Nonnull node) { return (MenuNodeData*) node->SpecialPadding; }
+
 typedef struct
 {
 	ObjNode*	caption;

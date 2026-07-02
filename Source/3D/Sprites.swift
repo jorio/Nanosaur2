@@ -78,14 +78,14 @@ private func AllocSpriteGroup(_ groupNum: Int32, _ capacity: Int32) {
 }
 
 @c @implementation
-public func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: UnsafePointer<CChar>!, _ flags: Int32) {
+public func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: UnsafePointer<CChar>, _ flags: Int32) {
     AllocSpriteGroup(groupNum, 1)
     GetSpriteGroupList(groupNum)![0] = LoadSpriteFromDualImage(String(cString: path))
     SwGameAssert(GetSpriteGroupList(groupNum)![0].materialObject != nil)
 }
 
 @c @implementation
-public func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: UnsafePointer<CChar>!) {
+public func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: UnsafePointer<CChar>) {
     AllocSpriteGroup(groupNum, numSprites)
 
     let seriesNameStr = String(cString: seriesName)
@@ -100,18 +100,18 @@ public func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ 
 }
 
 @c @implementation
-public func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ spritePaths: UnsafeMutablePointer<UnsafePointer<CChar>?>!) {
+public func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ spritePaths: UnsafeMutablePointer<UnsafePointer<CChar>>) {
     AllocSpriteGroup(groupNum, numSprites)
 
     let group = GetSpriteGroupList(groupNum)!
     for i in 0..<GetNumSpritesInGroup(groupNum) {
-        group[Int(i)] = LoadSpriteFromDualImage(String(cString: spritePaths[Int(i)]!))
+        group[Int(i)] = LoadSpriteFromDualImage(String(cString: spritePaths[Int(i)]))
         SwGameAssert(group[Int(i)].materialObject != nil)
     }
 }
 
 @c @implementation
-public func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>!, _ drawCentered: UInt8) -> UnsafeMutablePointer<ObjNode>! {
+public func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>, _ drawCentered: UInt8) -> UnsafeMutablePointer<ObjNode>? {
     // ERROR CHECK
 
     if Int32(newObjDef.pointee.type) >= GetNumSpritesInGroup(Int32(newObjDef.pointee.group)) {

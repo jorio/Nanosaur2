@@ -3,13 +3,17 @@
 /* (c)2022 Iliyas Jorio        */
 /*******************************/
 
+// SetUpAnaglyphCalibrationScreen/DisposeAnaglyphCalibrationScreen/
+// MoveAnaglyphScreenHeadObject are now in AnaglyphCalibration.swift.
+// The menu tree data tables (and the callbacks they embed by designated
+// initializer) stay here; see AnaglyphCalibrationInternal.h.
 
 /****************************/
 /*    EXTERNALS             */
 /****************************/
 
 #include "game.h"
-
+#include "AnaglyphCalibrationInternal.h"
 
 /****************************/
 /*    PROTOTYPES            */
@@ -19,8 +23,6 @@ static void OnChangeAnaglyphMode(void);
 static void OnTweakAnaglyphLevels(void);
 static int GetAnaglyphDisplayFlags(const MenuItem* mi);
 static int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi);
-static void DisposeAnaglyphCalibrationScreen(void);
-static void MoveAnaglyphScreenHeadObject(ObjNode* theNode);
 static void ResetAnaglyphSettings(void);
 static int ShouldShowResetAnaglyphSettings(const MenuItem* mi);
 
@@ -29,9 +31,7 @@ static int ShouldShowResetAnaglyphSettings(const MenuItem* mi);
 /*    VARIABLES             */
 /****************************/
 
-static ObjNode* gAnaglyphScreenHead = NULL;
-
-static const MenuItem gInGameAnaglyphMenu[] =
+const MenuItem gInGameAnaglyphMenu[] =
 {
 	{.id='cali'},
 	{kMISpacer, .customHeight=1.5},
@@ -45,7 +45,7 @@ static const MenuItem gInGameAnaglyphMenu[] =
 	{ .id=0 }
 };
 
-static const MenuItem gAnaglyphMenu[] =
+const MenuItem gAnaglyphMenu[] =
 {
 	{.id='cali'},
 	{
@@ -137,118 +137,6 @@ static const MenuItem gAnaglyphMenu[] =
 };
 
 
-/******** SET UP ANAGLYPH CALIBRATION SCREEN *********/
-
-void SetUpAnaglyphCalibrationScreen(void)
-{
-			/* REGISTER MENU */
-
-	if (gPlayNow)
-	{
-		RegisterMenu(gInGameAnaglyphMenu);		// can't show actual menu in-game
-		return;
-	}
-	else
-	{
-		RegisterMenu(gAnaglyphMenu);
-	}
-
-			/* NUKE AND RELOAD TEXTURES SO THE CURRENT ANAGLYPH FILTER APPLIES TO THEM */
-
-	DisposeAnaglyphCalibrationScreen();
-
-	DisposeGlobalAssets();		// reload the font - won't apply to current menu because it keeps a reference to the
-	LoadGlobalAssets();			// old material, but at least the text will look correct when we exit the menu.
-
-	BuildMainMenuObjects();		// rebuild background image
-
-	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
-	LoadSpriteAtlas(ATLAS_GROUP_FONT3, ":Sprites:fonts:swiss", kAtlasLoadFont);
-
-			/* CREATE HEAD SENTINEL - ALL ANAGLYPH CALIB OBJECTS WILL BE CHAINED TO IT */
-
-	NewObjectDefinitionType headSentinelDef =
-	{
-		.group = CUSTOM_GENRE,
-		.scale = 1,
-		.slot = SPRITE_SLOT,
-		.flags = STATUS_BIT_HIDDEN | STATUS_BIT_MOVEINPAUSE,
-		.moveCall = MoveAnaglyphScreenHeadObject,
-	};
-	ObjNode* anaglyphScreenHead = MakeNewObject(&headSentinelDef);
-	gAnaglyphScreenHead = anaglyphScreenHead;
-
-
-			/* MAKE TEST PATTERN */
-
-	NewObjectDefinitionType imageDef =
-	{
-		.group		= SPRITE_GROUP_LEVELSPECIFIC,
-		.type		= 0,		// 0th image in sprite group
-		.coord		= {500,380,0},
-		.slot		= SPRITE_SLOT+1,
-		.scale		= 250,
-	};
-
-	if (IsStereo())
-	{
-		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:calibration:calibration000", 0);
-	}
-	else
-	{
-		imageDef.scale = 350;
-		imageDef.coord = (OGLPoint3D) {320, 350, 0};
-		LoadSpriteGroupFromFile(SPRITE_GROUP_LEVELSPECIFIC, ":Sprites:calibration:glasses", 0);
-	}
-
-	ObjNode* sampleImage = MakeSpriteObject(&imageDef, true);
-	sampleImage->AnaglyphZ = 4.0f;
-
-	AppendNodeToChain(anaglyphScreenHead, sampleImage);
-
-
-			/* MAKE HELP BLURB */
-
-	NewObjectDefinitionType blurbDef =
-	{
-		.group		= ATLAS_GROUP_FONT3,
-		.scale		= 0.16f,
-		.slot		= SPRITE_SLOT+2,
-		.coord		= {10, 470, 0},
-	};
-
-	char blurb[1024];
-
-	if (IsStereoAnaglyphColor())
-	{
-		SDL_snprintf(blurb, sizeof(blurb),
-				"%s\n \n"
-				"1. %s\n \n"
-				"2. %s\n \n"
-				"3. %s",
-				Localize(STR_ANAGLYPH_HELP_WHILEWEARING),
-				Localize(STR_ANAGLYPH_HELP_ADJUSTRB),
-				Localize(STR_ANAGLYPH_HELP_ADJUSTG),
-				Localize(STR_ANAGLYPH_HELP_CHANNELBALANCING));
-
-	}
-	else if (IsStereoAnaglyphMono())
-	{
-		SDL_snprintf(blurb, sizeof(blurb), "%s\n \n%s",
-				Localize(STR_ANAGLYPH_HELP_WHILEWEARING),
-				Localize(STR_ANAGLYPH_HELP_ADJUSTRB));
-	}
-	else
-	{
-		SDL_snprintf(blurb, sizeof(blurb), "%s", Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES));
-		blurbDef.coord = (OGLPoint3D) {320, 470, 0};
-	}
-
-	ObjNode* blurbNode = TextMesh_New(blurb, (IsStereo()?kTextMeshAlignLeft:kTextMeshAlignCenter) | kTextMeshAlignBottom, &blurbDef);
-	AppendNodeToChain(anaglyphScreenHead, blurbNode);
-}
-
-
 /****************************/
 /*    CALLBACKS             */
 /****************************/
@@ -291,28 +179,6 @@ static int GetAnaglyphDisplayFlags_ColorOnly(const MenuItem* mi)
 		return 0;
 	else
 		return kMILayoutFlagHidden;
-}
-
-static void DisposeAnaglyphCalibrationScreen(void)
-{
-	DisposeSpriteAtlas(ATLAS_GROUP_FONT3);
-	DisposeSpriteGroup(SPRITE_GROUP_LEVELSPECIFIC);
-
-	if (gAnaglyphScreenHead)
-	{
-		DeleteObject(gAnaglyphScreenHead);
-		gAnaglyphScreenHead = NULL;
-	}
-}
-
-static void MoveAnaglyphScreenHeadObject(ObjNode* theNode)
-{
-	(void) theNode;
-
-	if (GetCurrentMenu() != 'cali')
-	{
-		DisposeAnaglyphCalibrationScreen();
-	}
 }
 
 static void ResetAnaglyphSettings(void)

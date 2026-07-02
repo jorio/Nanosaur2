@@ -7,3 +7,4 @@
 #include "SplineManagerInternal.h"
 #include "LoadLevelInternal.h"
 #include "SparkleInternal.h"
+#include "AnaglyphCalibrationInternal.h"

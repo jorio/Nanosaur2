@@ -2,6 +2,7 @@
 // splinemanager.h
 //
 
+#pragma once
 
 #define MAX_CUSTOM_SPLINES		40
 

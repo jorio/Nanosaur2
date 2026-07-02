@@ -4,3 +4,4 @@
 #include "SwiftInternal.h"
 #include "MenuInternal.h"
 #include "PausedInternal.h"
+#include "SplineManagerInternal.h"

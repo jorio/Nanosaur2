@@ -1,5 +1,7 @@
-// ObjNodeExtensions.swift - method-call sugar for the free functions in
-// Objects.swift that take an ObjNode as their logical receiver.
+// ObjNodeExtensions.swift - method-call sugar for the already-ported free
+// functions (across Objects.swift, SkeletonJoints.swift, QuadMesh.swift,
+// Sparkle.swift, Player_Race.swift) that take an ObjNode as their logical
+// receiver.
 //
 // These can't be done via C's swift_name(self:) member-import mechanism:
 // combining swift_name with @c @implementation on the same declaration
@@ -29,6 +31,22 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func nthChainedNode(_ targetIndex: Int32, outPrevNode: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>? = nil) -> UnsafeMutablePointer<ObjNode>? {
         GetNthChainedNode(self, targetIndex, outPrevNode)
     }
+
+    // From SkeletonJoints.swift
+    func findCoordOfJoint(_ jointNum: Int, outPoint: UnsafeMutablePointer<OGLPoint3D>) { FindCoordOfJoint(self, jointNum, outPoint) }
+    func findCoordOnJoint(_ jointNum: Int, inPoint: UnsafePointer<OGLPoint3D>, outPoint: UnsafeMutablePointer<OGLPoint3D>) { FindCoordOnJoint(self, jointNum, inPoint, outPoint) }
+    func findCoordOnJointAtFlagEvent(_ jointNum: Int, inPoint: UnsafePointer<OGLPoint3D>, outPoint: UnsafeMutablePointer<OGLPoint3D>) { FindCoordOnJointAtFlagEvent(self, jointNum, inPoint, outPoint) }
+    func findJointMatrixAtFlagEvent(_ jointNum: Int, flagNum: UInt8, m: UnsafeMutablePointer<OGLMatrix4x4>) { FindJointMatrixAtFlagEvent(self, jointNum, flagNum, m) }
+    func findJointFullMatrix(_ jointNum: Int, outMatrix: UnsafeMutablePointer<OGLMatrix4x4>) { FindJointFullMatrix(self, jointNum, outMatrix) }
+
+    // From QuadMesh.swift
+    func quadMeshWithin() -> UnsafeMutablePointer<MOVertexArrayData> { GetQuadMeshWithin(self) }
+
+    // From Sparkle.swift
+    func getFreeSparkle() -> Int16 { GetFreeSparkle(self) }
+
+    // From Player_Race.swift
+    func updatePlayerRaceMarkers() { UpdatePlayerRaceMarkers(self) }
 }
 
 extension Optional where Wrapped == UnsafeMutablePointer<ObjNode> {

@@ -2,15 +2,13 @@
 // (C) 2025 Iliyas Jorio
 // This file is part of Nanosaur 2. https://github.com/jorio/nanosaur2
 
+// LoadLocalizedStrings/Localize/DisposeLocalizedStrings are now in
+// Localization.swift. LocalizeWithPlaceholder stays here because it takes
+// C variadic arguments, which Swift can't implement. IsNativeEnglishSystem
+// and GetBestLanguageIDFromSystemLocale also stay here since they consume
+// kLanguageCodesISO639_1, a 2D fixed char array.
+
 #include "game.h"
-
-#define CSV_PATH ":System:strings.csv"
-
-#define MAX_STRINGS (NUM_LOCALIZED_STRINGS + 1)
-
-static GameLanguageID	gCurrentStringsLanguage = LANGUAGE_ILLEGAL;
-static Ptr				gStringsBuffer = nil;
-static const char*		gStringsTable[MAX_STRINGS];
 
 static const char kLanguageCodesISO639_1[NUM_LANGUAGES][3] =
 {
@@ -23,73 +21,6 @@ static const char kLanguageCodesISO639_1[NUM_LANGUAGES][3] =
 	[LANGUAGE_DUTCH		] = "nl",
 	[LANGUAGE_RUSSIAN	] = "ru",
 };
-
-void LoadLocalizedStrings(GameLanguageID languageID)
-{
-	// Don't bother reloading strings if we've already loaded this language
-	if (languageID == gCurrentStringsLanguage)
-	{
-		return;
-	}
-
-	// Free previous strings buffer
-	DisposeLocalizedStrings();
-
-	GAME_ASSERT(languageID >= 0);
-	GAME_ASSERT(languageID < NUM_LANGUAGES);
-
-	long count = 0;
-	gStringsBuffer = LoadTextFile(CSV_PATH, &count);
-
-	for (int i = 0; i < MAX_STRINGS; i++)
-		gStringsTable[i] = nil;
-	gStringsTable[STR_NULL] = "???";
-	_Static_assert(STR_NULL == 0, "STR_NULL must be 0!");
-
-	int row = 1;	// start row at 1, so that 0 is an illegal index (STR_NULL)
-
-	char* csvReader = gStringsBuffer;
-	while (csvReader != NULL)
-	{
-		char* myPhrase = NULL;
-		bool eol = false;
-
-		for (int x = 0; !eol; x++)
-		{
-			char* phrase = CSVIterator(&csvReader, &eol);
-
-			if (phrase &&
-				phrase[0] &&
-				(x == languageID || !myPhrase))
-			{
-				myPhrase = phrase;
-			}
-		}
-
-		if (myPhrase != NULL)
-		{
-			GAME_ASSERT(row < NUM_LOCALIZED_STRINGS);
-			gStringsTable[row] = myPhrase;
-			row++;
-		}
-	}
-
-	GAME_ASSERT(row == NUM_LOCALIZED_STRINGS);
-}
-
-const char* Localize(LocStrID stringID)
-{
-	if (!gStringsBuffer)
-		return "STRINGS NOT LOADED";
-
-	if (stringID < 0 || stringID >= MAX_STRINGS)
-		return "ILLEGAL STRING ID";
-
-	if (!gStringsTable[stringID])
-		return "";
-
-	return gStringsTable[stringID];
-}
 
 int LocalizeWithPlaceholder(LocStrID stringID, char* buf0, size_t bufSize, const char* format, ...)
 {
@@ -182,13 +113,4 @@ foundLocale:
 	SDL_free(localeList);
 
 	return languageID;
-}
-
-void DisposeLocalizedStrings(void)
-{
-	if (gStringsBuffer != nil)
-	{
-		SafeDisposePtr(gStringsBuffer);
-		gStringsBuffer = nil;
-	}
 }

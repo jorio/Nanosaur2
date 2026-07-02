@@ -359,10 +359,10 @@ public func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
     // SEE IF DO CONTRAIL ON WINGS
 
     switch Int32(player.pointee.Skeleton!.pointee.AnimNum) {
-    case Int32(PLAYER_ANIM_FLAP),
-         Int32(PLAYER_ANIM_DEATHDIVE),
-         Int32(PLAYER_ANIM_DUSTDEVIL),
-         Int32(PLAYER_ANIM_READY2GRAB):
+    case Int32(PlayerAnim.flap.rawValue),
+         Int32(PlayerAnim.deathDive.rawValue),
+         Int32(PlayerAnim.dustDevil.rawValue),
+         Int32(PlayerAnim.readyToGrab.rawValue):
         disconnectPlayerContrails(player, contrailSlots)
         return
 
@@ -392,9 +392,9 @@ public func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
 
         var tip = tipOff[i]
         if i == 0 {
-            FindCoordOnJoint(player, PLAYER_JOINT_RIGHT_WINGTIP, &tip, &pt)
+            FindCoordOnJoint(player, Int(PlayerJoint.rightWingtip.rawValue), &tip, &pt)
         } else {
-            FindCoordOnJoint(player, PLAYER_JOINT_LEFT_WINGTIP, &tip, &pt)
+            FindCoordOnJoint(player, Int(PlayerJoint.leftWingtip.rawValue), &tip, &pt)
         }
 
         // START NEW CONTRAIL IF NEEDED

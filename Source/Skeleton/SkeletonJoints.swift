@@ -88,7 +88,7 @@ public func FindCoordOnJointAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>
     var i: UInt8 = 0
     while i < numEvents {
         let event = skeletonDef.pointee.AnimEventsList![Int(animNum)]![Int(i)]
-        if event.type == UInt8(ANIMEVENT_TYPE_SETFLAG) {
+        if event.type == UInt8(AnimEventKind.setFlag.rawValue) {
             time = event.time
             break
         }
@@ -125,7 +125,7 @@ public func FindJointMatrixAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>,
     var i: UInt8 = 0
     while i < numEvents {
         let event = skelDef.pointee.AnimEventsList![Int(skeleton.pointee.AnimNum)]![Int(i)]
-        if event.type == UInt8(ANIMEVENT_TYPE_SETFLAG) { // is setflag?
+        if event.type == UInt8(AnimEventKind.setFlag.rawValue) { // is setflag?
             if event.value == flagNum { // is for flag #n?
                 time = event.time
                 break

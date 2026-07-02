@@ -12,7 +12,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
     // MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(PARTICLE_TYPE_FALLINGSPARKS)
+    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 500
     gNewParticleGroupDef.magnetism = 0
@@ -57,7 +57,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 
     // FRAGMENT
 
-    ExplodeGeometry(crystal, 600, UInt8(SHARD_MODE_FROMORIGIN), 1, 1.0)
+    ExplodeGeometry(crystal, 600, UInt8(ShardMode.fromOrigin.rawValue), 1, 1.0)
 
     // SHOCKWAVE
 

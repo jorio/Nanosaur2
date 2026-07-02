@@ -295,7 +295,7 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
         gShards[i].rot.z = 0
         gShards[i].scale = 1.0
 
-        if (Int32(gShardMode) & Int32(SHARD_MODE_FROMORIGIN)) != 0 { // see if random deltas or from origin
+        if (Int32(gShardMode) & Int32(ShardMode.fromOrigin.rawValue)) != 0 { // see if random deltas or from origin
             var v = OGLVector3D()
 
             v.x = centerPt.x - origin.x // calc vector from object's origin
@@ -312,7 +312,7 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
             gShards[i].coordDelta.z = RandomFloat2() * boomForce
         }
 
-        if (Int32(gShardMode) & Int32(SHARD_MODE_UPTHRUST)) != 0 {
+        if (Int32(gShardMode) & Int32(ShardMode.upthrust.rawValue)) != 0 {
             gShards[i].coordDelta.y += 1.5 * gBoomForce
         }
 
@@ -356,7 +356,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
         // MOVE IT
 
-        if (Int32(gShards[i].mode) & Int32(SHARD_MODE_HEAVYGRAVITY)) != 0 {
+        if (Int32(gShards[i].mode) & Int32(ShardMode.heavyGravity.rawValue)) != 0 {
             gShards[i].coordDelta.y -= fps * 1000.0 // gravity
         } else {
             gShards[i].coordDelta.y -= fps * 300.0 // gravity
@@ -373,7 +373,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
         let ty = GetTerrainY(x, z) // get terrain height here
         if y <= ty {
-            if (Int32(gShards[i].mode) & Int32(SHARD_MODE_BOUNCE)) != 0 {
+            if (Int32(gShards[i].mode) & Int32(ShardMode.bounce.rawValue)) != 0 {
                 gShards[i].coord.y = ty
                 gShards[i].coordDelta.y *= -0.5
                 gShards[i].coordDelta.x *= 0.9

@@ -86,11 +86,11 @@ typedef struct
 
 
 
-enum
+typedef enum SWIFT_ENUM_CLOSED ParticleType
 {
-	PARTICLE_TYPE_FALLINGSPARKS,
-	PARTICLE_TYPE_GRAVITOIDS
-};
+	PARTICLE_TYPE_FALLINGSPARKS SWIFT_NAME(fallingSparks),
+	PARTICLE_TYPE_GRAVITOIDS SWIFT_NAME(gravitoids)
+} ParticleType;
 
 enum
 {

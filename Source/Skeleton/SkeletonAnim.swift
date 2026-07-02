@@ -78,7 +78,7 @@ private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
 
     skeleton.pointee.LoopBackTime = 0
     skeleton.pointee.AnimNum = UInt8(animNum)
-    skeleton.pointee.AnimDirection = UInt8(ANIM_DIRECTION_FORWARD)
+    skeleton.pointee.AnimDirection = UInt8(AnimDirection.forward.rawValue)
     skeleton.pointee.AnimEventIndex = 0
     skeleton.pointee.CurrentAnimTime = 0
     skeleton.pointee.PauseTimer = 0
@@ -156,15 +156,15 @@ public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     if skeleton.pointee.PauseTimer > 0.0 {
         skeleton.pointee.PauseTimer -= gFramesPerSecondFrac
     } else {
-        if animDirection == UInt8(ANIM_DIRECTION_FORWARD) {
+        if animDirection == UInt8(AnimDirection.forward.rawValue) {
             currentTime += (30.0 * fps) * skeleton.pointee.AnimSpeed
         } else {
             currentTime -= (30.0 * fps) * skeleton.pointee.AnimSpeed
             if currentTime < loopbackTime {
                 currentTime = loopbackTime + (loopbackTime - currentTime)
                 switch Int(skeleton.pointee.EndMode) {
-                case ANIMEVENT_TYPE_ZIGZAG:
-                    animDirection = UInt8(ANIM_DIRECTION_FORWARD)
+                case Int(AnimEventKind.zigzag.rawValue):
+                    animDirection = UInt8(AnimDirection.forward.rawValue)
                     if loopbackTime == 0 {
                         animEventIndex = 0
                     } else {
@@ -191,16 +191,16 @@ public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         let eventValue = event.value
 
         switch Int(eventType) {
-        case ANIMEVENT_TYPE_STOP:
+        case Int(AnimEventKind.stop.rawValue):
             skeleton.pointee.AnimHasStopped = 1
             animEventIndex += 1
 
-        case ANIMEVENT_TYPE_SETMARKER:
+        case Int(AnimEventKind.setMarker.rawValue):
             animEventIndex += 1
             skeleton.pointee.LoopBackTime = eventTime
             loopbackTime = eventTime
 
-        case ANIMEVENT_TYPE_LOOP:
+        case Int(AnimEventKind.loop.rawValue):
             loopCount += 1
             if loopbackTime != 0 {
                 currentTime -= eventTime
@@ -216,28 +216,28 @@ public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
                 }
             }
 
-        case ANIMEVENT_TYPE_ZIGZAG:
+        case Int(AnimEventKind.zigzag.rawValue):
             loopCount += 1
-            animDirection = UInt8(ANIM_DIRECTION_BACKWARD)
+            animDirection = UInt8(AnimDirection.backward.rawValue)
             currentTime -= eventTime - currentTime
-            skeleton.pointee.EndMode = UInt8(ANIMEVENT_TYPE_ZIGZAG)
+            skeleton.pointee.EndMode = UInt8(AnimEventKind.zigzag.rawValue)
             animEventIndex += 1
 
-        case ANIMEVENT_TYPE_SETFLAG:
+        case Int(AnimEventKind.setFlag.rawValue):
             if eventValue >= maxFlagsInObjNode {
                 SwFatal("Error: ANIMEVENT_TYPE_SETFLAG > MAX_FLAGS_IN_OBJNODE!")
             }
             setObjNodeFlag(theNode, eventValue, 1)
             animEventIndex += 1
 
-        case ANIMEVENT_TYPE_CLEARFLAG:
+        case Int(AnimEventKind.clearFlag.rawValue):
             if eventValue >= maxFlagsInObjNode {
                 SwFatal("Error: ANIMEVENT_TYPE_SETFLAG > MAX_FLAGS_IN_OBJNODE!")
             }
             setObjNodeFlag(theNode, eventValue, 0)
             animEventIndex += 1
 
-        case ANIMEVENT_TYPE_PLAYSOUND:
+        case Int(AnimEventKind.playSound.rawValue):
             if gDisableAnimSounds == 0 {
                 switch eventValue {
                 case 0:
@@ -249,7 +249,7 @@ public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
             }
             animEventIndex += 1
 
-        case ANIMEVENT_TYPE_PAUSE:
+        case Int(AnimEventKind.pause.rawValue):
             skeleton.pointee.PauseTimer = Float(eventValue) / 30.0
             currentTime = eventTime
             animEventIndex += 1
@@ -536,7 +536,7 @@ public func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale
             theNode.pointee.ParticleMagicNum = magicNum
 
             groupDef.magicNum = magicNum
-            groupDef.type = UInt8(PARTICLE_TYPE_FALLINGSPARKS)
+            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = -200
             groupDef.magnetism = 0

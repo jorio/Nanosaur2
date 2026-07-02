@@ -51,9 +51,9 @@ private func getMenuNodeData(_ node: UnsafeMutablePointer<ObjNode>!) -> UnsafeMu
 
 private func menuItemHeight(_ type: MenuItemType) -> Float {
     switch type {
-    case kMISENTINEL: return 0.0; case kMILabel: return 0.9; case kMISpacer: return 0.5
-    case kMICycler1, kMICycler2, kMISlider, kMIPick, kMIFileSlot: return 1.0
-    case kMIKeyBinding, kMIPadBinding, kMIMouseBinding: return 0.8
+    case MenuItemType.sentinel: return 0.0; case MenuItemType.label: return 0.9; case MenuItemType.spacer: return 0.5
+    case MenuItemType.cycler1, MenuItemType.cycler2, MenuItemType.slider, MenuItemType.pick, MenuItemType.fileSlot: return 1.0
+    case MenuItemType.keyBinding, MenuItemType.padBinding, MenuItemType.mouseBinding: return 0.8
     default: return 1.0
     }
 }
@@ -110,7 +110,7 @@ public func GetCurrentMenuItemObject() -> UnsafeMutablePointer<ObjNode>? {
 
 @c @implementation
 public func IsMenuTreeEndSentinel(_ menuItem: UnsafePointer<MenuItem>) -> Bool {
-    menuItem.pointee.id == 0 && menuItem.pointee.type == kMISENTINEL
+    menuItem.pointee.id == 0 && menuItem.pointee.type == MenuItemType.sentinel
 }
 
 @c @implementation
@@ -139,8 +139,8 @@ public func LayoutCurrentMenuAgain(_ animate: Bool) {
 @c @implementation
 public func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
     var mi = menuTree
-    while mi.pointee.type != kMISENTINEL || mi.pointee.id != 0 {
-        if mi.pointee.type == kMISENTINEL {
+    while mi.pointee.type != MenuItemType.sentinel || mi.pointee.id != 0 {
+        if mi.pointee.type == MenuItemType.sentinel {
             if mi.pointee.id == 0 { break }
             if lookUpMenu(mi.pointee.id) != nil { mi = mi.successor(); continue }
             SwGameAssert(gNumMenusRegistered < MAX_REGISTERED_MENUS)
@@ -177,7 +177,7 @@ private func getLayoutFlags(_ mi: UnsafePointer<MenuItem>!) -> Int32 {
     if let cb = mi.pointee.getLayoutFlags { return Int32(cb(mi)) }; return 0
 }
 private func isMenuItemSelectable(_ mi: UnsafePointer<MenuItem>!) -> Bool {
-    switch mi.pointee.type { case kMISpacer, kMILabel: return false
+    switch mi.pointee.type { case MenuItemType.spacer, MenuItemType.label: return false
     default: return (getLayoutFlags(mi) & Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)) == 0 }
 }
 private func getMenuItemHeight(_ row: Int32) -> Float {
@@ -222,9 +222,9 @@ private func getCurrentInteractableMenuItemObject() -> UnsafeMutablePointer<ObjN
     guard let obj = GetCurrentMenuItemObject() else { return nil }
     let nav = gNav!; let t = nav.pointee.menu![Int(nav.pointee.focusRow)].type
     switch t {
-    case kMIKeyBinding, kMIPadBinding: return GetNthChainedNode(obj, nav.pointee.focusComponent, nil)
-    case kMIMouseBinding, kMICycler2, kMIFileSlot: return GetNthChainedNode(obj, 1, nil)
-    case kMISlider: return GetNthChainedNode(obj, 4, nil)
+    case MenuItemType.keyBinding, MenuItemType.padBinding: return GetNthChainedNode(obj, nav.pointee.focusComponent, nil)
+    case MenuItemType.mouseBinding, MenuItemType.cycler2, MenuItemType.fileSlot: return GetNthChainedNode(obj, 1, nil)
+    case MenuItemType.slider: return GetNthChainedNode(obj, 4, nil)
     default: return obj
     }
 }
@@ -306,9 +306,9 @@ private let cMoveControlBinding: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     let miType = gNav!.pointee.menu![Int(data.pointee.row)].type
     var ps: MenuState = .off
     switch miType {
-    case kMIKeyBinding: ps = .awaitingKeyPress
-    case kMIPadBinding: ps = .awaitingPadPress
-    case kMIMouseBinding: ps = .awaitingMouseClick
+    case MenuItemType.keyBinding: ps = .awaitingKeyPress
+    case MenuItemType.padBinding: ps = .awaitingPadPress
+    case MenuItemType.mouseBinding: ps = .awaitingMouseClick
     default: SwFatal("MoveControlBinding: unknown MI type")
     }
     if data.pointee.row == gNav!.pointee.focusRow && data.pointee.component == gNav!.pointee.focusComponent {
@@ -335,12 +335,12 @@ private func goBackInHistory() {
 
 private func navigateMenuItem(_ type: MenuItemType, _ entry: UnsafePointer<MenuItem>!) {
     switch type {
-    case kMICycler1, kMICycler2: navigateCycler(entry)
-    case kMISlider: navigateSlider(entry)
-    case kMIPick, kMIFileSlot: navigatePick(entry)
-    case kMIKeyBinding: navigateKeyBinding(entry)
-    case kMIPadBinding: navigatePadBinding(entry)
-    case kMIMouseBinding: navigateMouseBinding(entry)
+    case MenuItemType.cycler1, MenuItemType.cycler2: navigateCycler(entry)
+    case MenuItemType.slider: navigateSlider(entry)
+    case MenuItemType.pick, MenuItemType.fileSlot: navigatePick(entry)
+    case MenuItemType.keyBinding: navigateKeyBinding(entry)
+    case MenuItemType.padBinding: navigatePadBinding(entry)
+    case MenuItemType.mouseBinding: navigateMouseBinding(entry)
     default: break
     }
 }
@@ -399,17 +399,17 @@ private func updateArrows() {
     let chainRoot = GetCurrentMenuItemObject(); var visible: InlineArray<2, Bool> = [false, false]
     let entry = gNav!.pointee.menu!.advanced(by: Int(gNav!.pointee.focusRow))
     switch entry.pointee.type {
-    case kMICycler1, kMICycler2:
+    case MenuItemType.cycler1, MenuItemType.cycler2:
         let vp = MenuItem_GetCyclerValuePtr(entry)!; let v = vp.pointee; let i = getValueIndexInCycler(entry, v)
         visible[0] = i != 0; visible[1] = i != getCyclerNumChoices(entry) - 1
-    case kMIKeyBinding, kMIPadBinding:
+    case MenuItemType.keyBinding, MenuItemType.padBinding:
         visible = [true, true]
         if gNav!.pointee.menuState == .awaitingKeyPress || gNav!.pointee.menuState == .awaitingPadPress || gNav!.pointee.menuState == .awaitingMouseClick { visible = [false, false] }
-    case kMISlider:
+    case MenuItemType.slider:
         visible[0] = MenuItem_GetSliderValuePtr(entry)!.pointee != MenuItem_GetSliderMin(entry)
         visible[1] = MenuItem_GetSliderValuePtr(entry)!.pointee != MenuItem_GetSliderMax(entry)
         snapTo = chainRoot?.pointee.ChainNode
-    case kMIMouseBinding: snapTo = nil
+    case MenuItemType.mouseBinding: snapTo = nil
     default: break
     }
     if gNav!.pointee.mouseState != .off { snapTo = nil }
@@ -523,7 +523,7 @@ private func navigateCycler(_ e: UnsafePointer<MenuItem>!) {
             PlayEffect_Parms(kSfxCycle, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, UInt(Float(NORMAL_CHANNEL_RATE) * 2/3 + RandomFloat2() * Float(0x3000)))
         }
         if let cb = e.pointee.callback { cb() }
-        if e.pointee.type == kMICycler1 { _ = layOutCycler1Column(gNav!.pointee.focusRow) }
+        if e.pointee.type == MenuItemType.cycler1 { _ = layOutCycler1Column(gNav!.pointee.focusRow) }
         else { _ = layOutCycler2ColumnsValueText(gNav!.pointee.focusRow) }
         _ = MakeTwitch(delta < 0 ? Nav_GetArrow(gNav!, 0) : Nav_GetArrow(gNav!, 1), Int32(delta < 0 ? kTwitchPreset_DisplaceLTR : kTwitchPreset_DisplaceRTL))
     }
@@ -827,21 +827,21 @@ private func navigateMouseBinding(_ e: UnsafePointer<MenuItem>!) {
 
 private func unbindScancodeFromAllRemappableInputNeeds(_ sc: Int16) {
     for row in 0..<gNav!.pointee.numRows {
-        if gNav!.pointee.menu![Int(row)].type != kMIKeyBinding { continue }
+        if gNav!.pointee.menu![Int(row)].type != MenuItemType.keyBinding { continue }
         let b = getBindingAtRow(row)
         for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetKey(b, j) == sc { InputBinding_SetKey(b, j, 0); _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
     }
 }
 private func unbindPadButtonFromAllRemappableInputNeeds(_ type: Int8, _ id: Int8) {
     for row in 0..<gNav!.pointee.numRows {
-        if gNav!.pointee.menu![Int(row)].type != kMIPadBinding { continue }
+        if gNav!.pointee.menu![Int(row)].type != MenuItemType.padBinding { continue }
         let b = getBindingAtRow(row)
         for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetPadType(b, j) == type && InputBinding_GetPadID(b, j) == id { InputBinding_SetPad(b, j, Int8(kInputTypeUnbound), 0); _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
     }
 }
 private func unbindMouseButtonFromAllRemappableInputNeeds(_ id: Int8) {
     for row in 0..<gNav!.pointee.numRows {
-        if gNav!.pointee.menu![Int(row)].type != kMIMouseBinding { continue }
+        if gNav!.pointee.menu![Int(row)].type != MenuItemType.mouseBinding { continue }
         let b = getBindingAtRow(row)
         if b.pointee.mouseButton == id { b.pointee.mouseButton = 0; _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, 1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) }
     }
@@ -915,11 +915,11 @@ private func deleteAllText() {
 }
 private func layOutMenuItem(_ type: MenuItemType, _ row: Int32) -> UnsafeMutablePointer<ObjNode>? {
     switch type {
-    case kMILabel: return layOutLabel(row); case kMIPick: return layOutPick(row)
-    case kMICycler1: return layOutCycler1Column(row); case kMICycler2: return layOutCycler2Columns(row)
-    case kMISlider: return layOutSlider(row)
-    case kMIKeyBinding: return layOutKeyBinding(row); case kMIPadBinding: return layOutPadBinding(row)
-    case kMIMouseBinding: return layOutMouseBinding(row); case kMIFileSlot: return layOutFileSlot(row)
+    case MenuItemType.label: return layOutLabel(row); case MenuItemType.pick: return layOutPick(row)
+    case MenuItemType.cycler1: return layOutCycler1Column(row); case MenuItemType.cycler2: return layOutCycler2Columns(row)
+    case MenuItemType.slider: return layOutSlider(row)
+    case MenuItemType.keyBinding: return layOutKeyBinding(row); case MenuItemType.padBinding: return layOutPadBinding(row)
+    case MenuItemType.mouseBinding: return layOutMouseBinding(row); case MenuItemType.fileSlot: return layOutFileSlot(row)
     default: return nil
     }
 }
@@ -956,32 +956,32 @@ private func makeText(_ text: String, _ row: Int32, _ chainItem: Int32, _ textMe
 private func replaceMenuText(_ origID: LocStrID, _ newText: LocStrID) {
     for i in 0..<Int(MAX_MENU_ROWS) {
         let mi = gNav!.pointee.menu!.advanced(by: i)
-        if mi.pointee.type == kMISENTINEL { break }
+        if mi.pointee.type == MenuItemType.sentinel { break }
         if mi.pointee.text == origID { _ = makeText(String(cString: Localize(newText)), Int32(i), 0, kTextMeshSmallCapsFlag) }
     }
 }
 private func layOutMenu(_ menuID: Int32) {
     let sentinel = lookUpMenu(menuID)
-    SwGameAssert(sentinel != nil); SwGameAssert(sentinel!.pointee.id == menuID); SwGameAssert(sentinel!.pointee.type == kMISENTINEL)
+    SwGameAssert(sentinel != nil); SwGameAssert(sentinel!.pointee.id == menuID); SwGameAssert(sentinel!.pointee.type == MenuItemType.sentinel)
     let menu = sentinel!.advanced(by: 1)
     setHistMID(gNav!.pointee.historyPos, menuID)
     gNav!.pointee.menu = menu; gNav!.pointee.menuID = menuID; gNav!.pointee.menuPick = -1
     gNav!.pointee.numRows = 0; gNav!.pointee.idleTime = 0; gNav!.pointee.validSaveSlotMask = 0
     deleteAllText()
-    var row = 0; while menu[row].type != kMISENTINEL { gNav!.pointee.numRows += 1; SwGameAssert(gNav!.pointee.numRows <= MAX_MENU_ROWS); row += 1 }
+    var row = 0; while menu[row].type != MenuItemType.sentinel { gNav!.pointee.numRows += 1; SwGameAssert(gNav!.pointee.numRows <= MAX_MENU_ROWS); row += 1 }
     var totalHeight: Float = 0; var firstHeight: Float = 0; row = 0
-    while menu[row].type != kMISENTINEL { let h = getMenuItemHeight(Int32(row)); if firstHeight == 0 { firstHeight = h }; totalHeight += h * gNav!.pointee.style.rowHeight; row += 1 }
+    while menu[row].type != MenuItemType.sentinel { let h = getMenuItemHeight(Int32(row)); if firstHeight == 0 { firstHeight = h }; totalHeight += h * gNav!.pointee.style.rowHeight; row += 1 }
     var y = -totalHeight * Float(0.5) + gNav!.pointee.style.yOffset; y += firstHeight * gNav!.pointee.style.rowHeight / Float(2.0)
     if let dp = gNav!.pointee.darkenPane { rescaleDarkenPane(dp, totalHeight) }
     row = 0
-    while menu[row].type != kMISENTINEL {
+    while menu[row].type != MenuItemType.sentinel {
         setMRowY(row, y); let entry = menu.advanced(by: row); let et = entry.pointee.type
         if (getLayoutFlags(entry) & Int32(kMILayoutFlagHidden)) != 0 { row += 1; continue }
         if let node = layOutMenuItem(et, Int32(row)) {
             if (getLayoutFlags(entry) & Int32(kMILayoutFlagDisabled)) != 0 { var cn: UnsafeMutablePointer<ObjNode>? = node; while let c = cn { getMenuNodeData(c).pointee.muted = 1; cn = c.pointee.ChainNode } }
         }
         y += getMenuItemHeight(Int32(row)) * gNav!.pointee.style.rowHeight
-        if et != kMISpacer { gNav!.pointee.sweepDelay += Float(0.2) }
+        if et != MenuItemType.spacer { gNav!.pointee.sweepDelay += Float(0.2) }
         row += 1
     }
     gNav!.pointee.sweepDelay = 0.0

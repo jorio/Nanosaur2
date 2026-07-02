@@ -4,20 +4,20 @@
 
 #define MAX_MENU_CYCLER_CHOICES		8
 
-typedef enum
+typedef enum SWIFT_ENUM_CLOSED MenuItemType
 {
-	kMISENTINEL,
-	kMIPick,
-	kMILabel,
-	kMISpacer,
-	kMICycler1,
-	kMICycler2,
-	kMISlider,
-	kMIKeyBinding,
-	kMIPadBinding,
-	kMIMouseBinding,
-	kMIFileSlot,
-	kMI_COUNT
+	kMISENTINEL SWIFT_NAME(sentinel),
+	kMIPick SWIFT_NAME(pick),
+	kMILabel SWIFT_NAME(label),
+	kMISpacer SWIFT_NAME(spacer),
+	kMICycler1 SWIFT_NAME(cycler1),
+	kMICycler2 SWIFT_NAME(cycler2),
+	kMISlider SWIFT_NAME(slider),
+	kMIKeyBinding SWIFT_NAME(keyBinding),
+	kMIPadBinding SWIFT_NAME(padBinding),
+	kMIMouseBinding SWIFT_NAME(mouseBinding),
+	kMIFileSlot SWIFT_NAME(fileSlot),
+	kMI_COUNT SWIFT_NAME(count)
 } MenuItemType;
 
 typedef struct

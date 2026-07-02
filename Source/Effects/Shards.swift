@@ -13,15 +13,15 @@ private struct ShardType {
     var mode: UInt8 = 0
     var matrix = OGLMatrix4x4()
 
-    var points = [OGLPoint3D](repeating: OGLPoint3D(), count: 3)
-    var uvs = [OGLTextureCoord](repeating: OGLTextureCoord(), count: 3)
+    var points: InlineArray<3, OGLPoint3D> = InlineArray(repeating: OGLPoint3D())
+    var uvs: InlineArray<3, OGLTextureCoord> = InlineArray(repeating: OGLTextureCoord())
     var material: UnsafeMutablePointer<MOMaterialObject>?
     var colorFilter = OGLColorRGBA()
     var glow: UInt32 = 0
 }
 
 private var gNumShards = 0
-private var gShards = [ShardType](repeating: ShardType(), count: maxShards)
+private var gShards: InlineArray<2500, ShardType> = InlineArray(repeating: ShardType())
 
 private var gBoomForce: Float = 0
 private var gShardDecaySpeed: Float = 0

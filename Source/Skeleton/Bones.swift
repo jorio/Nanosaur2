@@ -16,7 +16,7 @@ private var gCurrentSkeleton: UnsafeMutablePointer<SkeletonDefType>?
 private var gCurrentSkelObjData: UnsafeMutablePointer<SkeletonObjDataType>?
 private var gMatrix = OGLMatrix4x4()
 private var gBBox: UnsafeMutablePointer<OGLBoundingBox>?
-private var gTransformedNormals = [OGLVector3D](repeating: OGLVector3D(), count: Int(MAX_DECOMPOSED_NORMALS))
+private var gTransformedNormals: InlineArray<2000, OGLVector3D> = InlineArray(repeating: OGLVector3D())
 
 // MARK: - Fixed-array-field helpers (all plain struct fields, never unions)
 

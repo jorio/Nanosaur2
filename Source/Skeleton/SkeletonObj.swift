@@ -4,8 +4,8 @@
 // blocks in the original C are dead code in every build this port targets
 // (same reasoning as #if SKIPFLUFF elsewhere) — dropped here.
 
-private var gLoadedSkeletonsList: [UnsafeMutablePointer<SkeletonDefType>?] = Array(repeating: nil, count: Int(MAX_SKELETON_TYPES))
-private var gNumDecomposedTriMeshesInSkeleton: [Int16] = Array(repeating: 0, count: Int(MAX_SKELETON_TYPES))
+private var gLoadedSkeletonsList: InlineArray<7, UnsafeMutablePointer<SkeletonDefType>?> = InlineArray(repeating: nil)
+private var gNumDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArray(repeating: 0)
 
 @c @implementation
 public func InitSkeletonManager() {

@@ -396,7 +396,7 @@ private func navigateMenuMouseHover() {
 }
 private func updateArrows() {
     var snapTo: UnsafeMutablePointer<ObjNode>? = getCurrentInteractableMenuItemObject()
-    let chainRoot = GetCurrentMenuItemObject(); var visible = [false, false]
+    let chainRoot = GetCurrentMenuItemObject(); var visible: InlineArray<2, Bool> = [false, false]
     let entry = gNav!.pointee.menu!.advanced(by: Int(gNav!.pointee.focusRow))
     switch entry.pointee.type {
     case kMICycler1, kMICycler2:

@@ -49,7 +49,7 @@ public func DeleteSparkle(_ i: Int16) {
 @c @implementation
 public func DrawSparkles() {
     let up = OGLVector3D(x: 0, y: 1, z: 0)
-    var frame: [OGLPoint3D] = [
+    var frame: InlineArray<4, OGLPoint3D> = [
         OGLPoint3D(x: -130, y: 130, z: 0),
         OGLPoint3D(x: 130, y: 130, z: 0),
         OGLPoint3D(x: 130, y: -130, z: 0),
@@ -143,8 +143,16 @@ public func DrawSparkles() {
         var m = OGLMatrix4x4()
         var up_ = up
         SetLookAtMatrixAndTranslate(&m, &up_, &where_, cam.pointer(to: \.cameraLocation)!) // aim at camera & translate
-        var tc = [OGLPoint3D](repeating: OGLPoint3D(x: 0, y: 0, z: 0), count: 4)
-        OGLPoint3D_TransformArray(&frame, &m, &tc, 4)
+        var tc: InlineArray<4, OGLPoint3D> = InlineArray(repeating: OGLPoint3D(x: 0, y: 0, z: 0))
+        withUnsafeMutablePointer(to: &frame) { framePtr in
+            withUnsafeMutablePointer(to: &tc) { tcPtr in
+                OGLPoint3D_TransformArray(
+                    UnsafeMutableRawPointer(framePtr).assumingMemoryBound(to: OGLPoint3D.self),
+                    &m,
+                    UnsafeMutableRawPointer(tcPtr).assumingMemoryBound(to: OGLPoint3D.self),
+                    4)
+            }
+        }
 
         // DRAW IT
 

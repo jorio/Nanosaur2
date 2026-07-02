@@ -817,7 +817,7 @@ private func DrawBoundingBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         front = theNode.pointee.LocalBBox.max.z + theNode.pointee.Coord.z
         back = theNode.pointee.LocalBBox.min.z + theNode.pointee.Coord.z
     } else { // non-skeletons need full transform
-        var corners = [OGLPoint3D](repeating: OGLPoint3D(x: 0, y: 0, z: 0), count: 8)
+        var corners: InlineArray<8, OGLPoint3D> = InlineArray(repeating: OGLPoint3D(x: 0, y: 0, z: 0))
 
         corners[0].x = theNode.pointee.LocalBBox.min.x // top far left
         corners[0].y = theNode.pointee.LocalBBox.max.y
@@ -852,7 +852,15 @@ private func DrawBoundingBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         corners[7].z = theNode.pointee.LocalBBox.max.z
 
         var transformedCorners = corners
-        OGLPoint3D_TransformArray(&corners, &theNode.pointee.BaseTransformMatrix, &transformedCorners, 8)
+        withUnsafeMutablePointer(to: &corners) { cornersPtr in
+            withUnsafeMutablePointer(to: &transformedCorners) { transformedCornersPtr in
+                OGLPoint3D_TransformArray(
+                    UnsafeMutableRawPointer(cornersPtr).assumingMemoryBound(to: OGLPoint3D.self),
+                    &theNode.pointee.BaseTransformMatrix,
+                    UnsafeMutableRawPointer(transformedCornersPtr).assumingMemoryBound(to: OGLPoint3D.self),
+                    8)
+            }
+        }
         corners = transformedCorners
 
         // FIND NEW BOUNDS

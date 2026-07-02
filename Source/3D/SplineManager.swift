@@ -49,7 +49,7 @@ public func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePoi
     // ALLOCATE 2D ARRAY FOR CALCULATIONS: 8 rows of numNubs OGLPoint3D each
     let n = Int(numNubs)
     let flat = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * 8 * n)!.assumingMemoryBound(to: OGLPoint3D.self)
-    var space = [UnsafeMutablePointer<OGLPoint3D>](repeating: flat, count: 8)
+    var space: InlineArray<8, UnsafeMutablePointer<OGLPoint3D>> = InlineArray(repeating: flat)
     for i in 1..<8 {
         space[i] = space[i - 1] + n
     }

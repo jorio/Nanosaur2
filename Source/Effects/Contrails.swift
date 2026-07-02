@@ -346,7 +346,7 @@ private let cDrawContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 public func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
     var pt = OGLPoint3D()
     var aim = OGLVector3D()
-    let tipOff = [
+    let tipOff: InlineArray<2, OGLPoint3D> = [
         OGLPoint3D(x: 35, y: 0, z: 3),
         OGLPoint3D(x: -35, y: 0, z: 3),
     ]

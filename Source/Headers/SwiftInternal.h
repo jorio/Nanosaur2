@@ -13,3 +13,6 @@ static inline void SwGameAssertMessage(bool cond, const char* msg) { if (!cond) 
 
 // SDL_Log is variadic, which Swift can't call directly.
 static inline void SwLog(const char* msg) { SDL_Log("%s", msg); }
+
+// DoAlert is variadic, which Swift can't call directly.
+static inline void SwAlert(const char* msg) { DoAlert("%s", msg); }

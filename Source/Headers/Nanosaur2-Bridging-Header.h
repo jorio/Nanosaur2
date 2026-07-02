@@ -12,3 +12,4 @@
 #include "SpritesInternal.h"
 #include "ObjectsInternal.h"
 #include "EnemyInternal.h"
+#include "BonesInternal.h"

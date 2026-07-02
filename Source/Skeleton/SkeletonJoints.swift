@@ -1,11 +1,5 @@
 // SkeletonJoints.swift - Port of SkeletonJoints.c (formerly Skeleton2.c) to Swift
-
-private let M00: Int32 = 0
-private let M11: Int32 = 5
-private let M22: Int32 = 10
-private let M03: Int32 = 12
-private let M13: Int32 = 13
-private let M23: Int32 = 14
+// M00/M11/M22/M03/M13/M23 (OGLMatrix4x4 column-major indices) live in SwiftSupport.swift
 
 // Mirrors the C function-local `static OGLMatrix4x4 matrix2` in
 // UpdateJointTransforms: only M00/M11/M22/M03/M13/M23 are ever written, so

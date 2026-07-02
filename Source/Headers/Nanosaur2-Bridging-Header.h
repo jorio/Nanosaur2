@@ -10,3 +10,4 @@
 #include "AnaglyphCalibrationInternal.h"
 #include "PlayerRaceInternal.h"
 #include "SpritesInternal.h"
+#include "ObjectsInternal.h"

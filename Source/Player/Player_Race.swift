@@ -7,7 +7,7 @@ private func raceCheckpointTaggedBase(_ pi: UnsafeMutablePointer<PlayerInfoType>
 }
 
 private func PlayerCompletedRace(_ playerNum: Int16) {
-    GetPlayerInfoPtr(Int32(playerNum))!.pointee.raceComplete = 1
+    GetPlayerInfoPtr(Int32(playerNum)).pointee.raceComplete = 1
 
     if gLevelCompleted == 0 { // only if this is the 1st guy to win
         for i in 0..<Int16(gNumPlayers) { // see which player Won (was not eliminated)
@@ -25,7 +25,7 @@ private func PlayerCompletedRace(_ playerNum: Int16) {
 // Called from the player's update function to see which line markers we've crossed as part of the
 // race placement testing.
 @c @implementation
-public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
+public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
     var newCheckpoint: Int32 = 0
     let p = Int32(player.pointee.PlayerNum)
     var c: Int = 0
@@ -37,7 +37,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
 
         SetReincarnationCheckpointAtMarker(player, Int16(c))
 
-        let pi = GetPlayerInfoPtr(p)!
+        let pi = GetPlayerInfoPtr(p)
         let oldCheckpoint = pi.pointee.raceCheckpointNum // get old checkpoint #
 
         // SEE IF CROSSED FINISH LINE
@@ -142,7 +142,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // SEE HOW FAR TO THE NEXT CHECKPOINT
 
-    let pi = GetPlayerInfoPtr(p)!
+    let pi = GetPlayerInfoPtr(p)
     newCheckpoint = Int32(pi.pointee.raceCheckpointNum)
 
     // GET NEXT CKP #
@@ -151,7 +151,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // GET CENTERPOINT OF THE NEXT CHECKPOINT
 
-    let nextMarker = GetLineMarkerPtr(nextCheckpoint)!
+    let nextMarker = GetLineMarkerPtr(nextCheckpoint)
     var x1 = (nextMarker.pointee.x.0 + nextMarker.pointee.x.1) * 0.5
     var z1 = (nextMarker.pointee.z.0 + nextMarker.pointee.z.1) * 0.5
 
@@ -163,7 +163,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // GET CENTERPOINT OF CURRENT CHECKPOINT
 
-    let curMarker = GetLineMarkerPtr(newCheckpoint)!
+    let curMarker = GetLineMarkerPtr(newCheckpoint)
     let x2 = (curMarker.pointee.x.0 + curMarker.pointee.x.1) * 0.5
     let z2 = (curMarker.pointee.z.0 + curMarker.pointee.z.1) * 0.5
 
@@ -197,7 +197,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>!) {
 @c @implementation
 public func CalcPlayerPlaces() {
     for p in 0..<Int32(gNumPlayers) {
-        let pi = GetPlayerInfoPtr(p)!
+        let pi = GetPlayerInfoPtr(p)
         if pi.pointee.raceComplete != 0 { // if player already done, then dont do anything
             continue
         }
@@ -209,7 +209,7 @@ public func CalcPlayerPlaces() {
                 continue
             }
 
-            let ii = GetPlayerInfoPtr(i)!
+            let ii = GetPlayerInfoPtr(i)
 
             var countAsAhead = true
             repeat {

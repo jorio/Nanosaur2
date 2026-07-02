@@ -241,7 +241,7 @@ void CauseBombShockwaveDamage(ObjNode *wave, uint32_t ctype);
 
 			/* RACE */
 
-void UpdatePlayerRaceMarkers(ObjNode *player);
+void UpdatePlayerRaceMarkers(ObjNode * _Nonnull player);
 void CalcPlayerPlaces(void);
 
 void UpdatePlayerSteering(int playerNum);

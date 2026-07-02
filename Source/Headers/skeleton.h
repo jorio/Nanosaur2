@@ -91,12 +91,12 @@ void SetSkeletonAnimTime(SkeletonObjDataType *skeleton, float timeRatio);
 void BurnSkeleton(ObjNode *theNode, float flameScale);
 
 
-extern	void UpdateJointTransforms(SkeletonObjDataType *skeleton,long jointNum);
-void FindCoordOfJoint(ObjNode *theNode, long jointNum, OGLPoint3D *outPoint);
-void FindCoordOnJoint(ObjNode *theNode, long jointNum, const OGLPoint3D *inPoint, OGLPoint3D *outPoint);
-void FindJointFullMatrix(ObjNode *theNode, long jointNum, OGLMatrix4x4 *outMatrix);
-void FindCoordOnJointAtFlagEvent(ObjNode *theNode, long jointNum, const OGLPoint3D *inPoint, OGLPoint3D *outPoint);
-void FindJointMatrixAtFlagEvent(ObjNode *theNode, long jointNum, Byte flagNum, OGLMatrix4x4 *m);
+extern	void UpdateJointTransforms(SkeletonObjDataType * _Nonnull skeleton,long jointNum);
+void FindCoordOfJoint(ObjNode * _Nonnull theNode, long jointNum, OGLPoint3D * _Nonnull outPoint);
+void FindCoordOnJoint(ObjNode * _Nonnull theNode, long jointNum, const OGLPoint3D * _Nonnull inPoint, OGLPoint3D * _Nonnull outPoint);
+void FindJointFullMatrix(ObjNode * _Nonnull theNode, long jointNum, OGLMatrix4x4 * _Nonnull outMatrix);
+void FindCoordOnJointAtFlagEvent(ObjNode * _Nonnull theNode, long jointNum, const OGLPoint3D * _Nonnull inPoint, OGLPoint3D * _Nonnull outPoint);
+void FindJointMatrixAtFlagEvent(ObjNode * _Nonnull theNode, long jointNum, Byte flagNum, OGLMatrix4x4 * _Nonnull m);
 
 
 void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType);

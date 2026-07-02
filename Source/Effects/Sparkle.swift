@@ -15,7 +15,7 @@ public func InitSparkles() {
 
 // OUTPUT: -1 if none
 @c @implementation
-public func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>!) -> Int16 {
+public func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>?) -> Int16 {
     // FIND A FREE SLOT
     var i: Int32 = 0
     while i < Int32(MAX_SPARKLES) {

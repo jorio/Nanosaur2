@@ -27,13 +27,23 @@
 // the remainder, e.g. `VS_MODE_NONE` imports as `VSMode.none` and
 // `kMenuStateAwaitingKeyPress` as `MenuState.awaitingKeyPress`. The C
 // spelling is unchanged; only Swift's view of it is renamed.
+//
+// SWIFT_FLAG_ENUM: marks a C enum as a bitmask/flag group (cases combined
+// with `|`, values that are powers of two). Clang imports this as a Swift
+// struct conforming to `OptionSet` instead of a plain `enum` — this is the
+// C equivalent of Objective-C's `NS_OPTIONS`. Gives array-literal syntax
+// (`[.a, .b]`), `.contains(_:)`, `.union`, and correct `.rawValue` OR-
+// combination. Use this instead of SWIFT_ENUM_CLOSED for any enum whose
+// cases are meant to be OR'd together.
 
 #if defined(__clang__)
 	#define SWIFT_ENUM_CLOSED __attribute__((enum_extensibility(closed)))
 	#define SWIFT_ENUM_OPEN __attribute__((enum_extensibility(open)))
+	#define SWIFT_FLAG_ENUM __attribute__((flag_enum, enum_extensibility(open)))
 	#define SWIFT_NAME(_name) __attribute__((swift_name(#_name)))
 #else
 	#define SWIFT_ENUM_CLOSED
 	#define SWIFT_ENUM_OPEN
+	#define SWIFT_FLAG_ENUM
 	#define SWIFT_NAME(_name)
 #endif

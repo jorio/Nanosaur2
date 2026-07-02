@@ -57,7 +57,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 
     // FRAGMENT
 
-    ExplodeGeometry(crystal, 600, UInt8(ShardMode.fromOrigin.rawValue), 1, 1.0)
+    ExplodeGeometry(crystal, 600, .fromOrigin, 1, 1.0)
 
     // SHOCKWAVE
 

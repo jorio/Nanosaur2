@@ -10,7 +10,7 @@ private struct ShardType {
     var coordDelta = OGLPoint3D()
     var decaySpeed: Float = 0
     var scale: Float = 0
-    var mode: UInt8 = 0
+    var mode: ShardMode = []
     var matrix = OGLMatrix4x4()
 
     var points: InlineArray<3, OGLPoint3D> = InlineArray(repeating: OGLPoint3D())
@@ -25,7 +25,7 @@ private var gShards: InlineArray<2500, ShardType> = InlineArray(repeating: Shard
 
 private var gBoomForce: Float = 0
 private var gShardDecaySpeed: Float = 0
-private var gShardMode: UInt8 = 0
+private var gShardMode: ShardMode = []
 private var gShardDensity = 0
 private var gWorkMatrix = OGLMatrix4x4()
 private var gShardSrcObj: UnsafeMutablePointer<ObjNode>?
@@ -114,7 +114,7 @@ private func updateShardTransformMatrix(_ shard: inout ShardType) {
 }
 
 @c @implementation
-public func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Float, _ particleMode: UInt8, _ particleDensity: Int, _ particleDecaySpeed: Float) {
+public func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Float, _ particleMode: ShardMode, _ particleDensity: Int, _ particleDecaySpeed: Float) {
     gShardSrcObj = theNode
     gBoomForce = boomForce
     gShardMode = particleMode
@@ -295,7 +295,7 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
         gShards[i].rot.z = 0
         gShards[i].scale = 1.0
 
-        if (Int32(gShardMode) & Int32(ShardMode.fromOrigin.rawValue)) != 0 { // see if random deltas or from origin
+        if gShardMode.contains(.fromOrigin) { // see if random deltas or from origin
             var v = OGLVector3D()
 
             v.x = centerPt.x - origin.x // calc vector from object's origin
@@ -312,7 +312,7 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
             gShards[i].coordDelta.z = RandomFloat2() * boomForce
         }
 
-        if (Int32(gShardMode) & Int32(ShardMode.upthrust.rawValue)) != 0 {
+        if gShardMode.contains(.upthrust) {
             gShards[i].coordDelta.y += 1.5 * gBoomForce
         }
 
@@ -356,7 +356,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
         // MOVE IT
 
-        if (Int32(gShards[i].mode) & Int32(ShardMode.heavyGravity.rawValue)) != 0 {
+        if gShards[i].mode.contains(.heavyGravity) {
             gShards[i].coordDelta.y -= fps * 1000.0 // gravity
         } else {
             gShards[i].coordDelta.y -= fps * 300.0 // gravity
@@ -373,7 +373,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
         let ty = GetTerrainY(x, z) // get terrain height here
         if y <= ty {
-            if (Int32(gShards[i].mode) & Int32(ShardMode.bounce.rawValue)) != 0 {
+            if gShards[i].mode.contains(.bounce) {
                 gShards[i].coord.y = ty
                 gShards[i].coordDelta.y *= -0.5
                 gShards[i].coordDelta.x *= 0.9

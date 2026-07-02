@@ -5,7 +5,7 @@
 #ifndef __SHARDS_H
 #define __SHARDS_H
 
-typedef enum SWIFT_ENUM_CLOSED ShardMode
+typedef enum SWIFT_FLAG_ENUM ShardMode
 {
 	SHARD_MODE_UPTHRUST SWIFT_NAME(upthrust) = 1,
 	SHARD_MODE_HEAVYGRAVITY SWIFT_NAME(heavyGravity) = (1<<1),
@@ -17,7 +17,7 @@ typedef enum SWIFT_ENUM_CLOSED ShardMode
 
 
 void InitShardSystem(void);
-void ExplodeGeometry(ObjNode *theNode, float boomForce, Byte particleMode, long particleDensity, float particleDecaySpeed);
+void ExplodeGeometry(ObjNode *theNode, float boomForce, ShardMode particleMode, long particleDensity, float particleDecaySpeed);
 
 
 #endif

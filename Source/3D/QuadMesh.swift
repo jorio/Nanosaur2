@@ -57,7 +57,7 @@ public func GetQuadMeshWithin(_ theNode: UnsafeMutablePointer<ObjNode>) -> Unsaf
     let metaObjectHeader = theNode.pointee.BaseGroup!.pointee.objectData.groupContents.1!
     let vertexObject = UnsafeMutableRawPointer(metaObjectHeader).assumingMemoryBound(to: MOVertexArrayObject.self)
 
-    SwGameAssert(metaObjectHeader.pointee.type == .MO_TYPE_GEOMETRY)
+    SwGameAssert(metaObjectHeader.pointee.type == .geometry)
     SwGameAssert(metaObjectHeader.pointee.subType == MO_GEOMETRY_SUBTYPE_VERTEXARRAY)
 
     return vertexObject.pointer(to: \.objectData)!
@@ -73,7 +73,7 @@ public func MakeQuadMeshObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefini
         matData.flags = 0 // not textured
         matData.numMipmaps = 0
         matData.diffuseColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
-        material = MO_CreateNewObjectOfType(.MO_TYPE_MATERIAL, 0, &matData)!.assumingMemoryBound(to: MOMaterialObject.self)
+        material = MO_CreateNewObjectOfType(.material, 0, &matData)!.assumingMemoryBound(to: MOMaterialObject.self)
         ownMaterial = true
     }
 
@@ -90,7 +90,7 @@ public func MakeQuadMeshObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefini
     mesh.numMaterials = 1
     mesh.materials = (material, nil)
     ReallocateQuadMesh(&mesh, quadCapacity)
-    let meshMO = MO_CreateNewObjectOfType(.MO_TYPE_GEOMETRY, MO_GEOMETRY_SUBTYPE_VERTEXARRAY, &mesh)
+    let meshMO = MO_CreateNewObjectOfType(.geometry, MO_GEOMETRY_SUBTYPE_VERTEXARRAY, &mesh)
 
     // Attach color mesh
     CreateBaseGroup(textNode)

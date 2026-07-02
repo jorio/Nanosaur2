@@ -12,21 +12,21 @@
 
 typedef enum SWIFT_ENUM_CLOSED MenuState
 {
-	kMenuStateOff SWIFT_NAME(kMenuStateOff),
-	kMenuStateFadeIn SWIFT_NAME(kMenuStateFadeIn),
-	kMenuStateReady SWIFT_NAME(kMenuStateReady),
-	kMenuStateFadeOut SWIFT_NAME(kMenuStateFadeOut),
-	kMenuStateAwaitingKeyPress SWIFT_NAME(kMenuStateAwaitingKeyPress),
-	kMenuStateAwaitingPadPress SWIFT_NAME(kMenuStateAwaitingPadPress),
-	kMenuStateAwaitingMouseClick SWIFT_NAME(kMenuStateAwaitingMouseClick),
+	kMenuStateOff SWIFT_NAME(off),
+	kMenuStateFadeIn SWIFT_NAME(fadeIn),
+	kMenuStateReady SWIFT_NAME(ready),
+	kMenuStateFadeOut SWIFT_NAME(fadeOut),
+	kMenuStateAwaitingKeyPress SWIFT_NAME(awaitingKeyPress),
+	kMenuStateAwaitingPadPress SWIFT_NAME(awaitingPadPress),
+	kMenuStateAwaitingMouseClick SWIFT_NAME(awaitingMouseClick),
 } MenuState;
 
 typedef enum SWIFT_ENUM_CLOSED MouseState
 {
-	kMouseOff SWIFT_NAME(kMouseOff),
-	kMouseWandering SWIFT_NAME(kMouseWandering),
-	kMouseHovering SWIFT_NAME(kMouseHovering),
-	kMouseGrabbing SWIFT_NAME(kMouseGrabbing),
+	kMouseOff SWIFT_NAME(off),
+	kMouseWandering SWIFT_NAME(wandering),
+	kMouseHovering SWIFT_NAME(hovering),
+	kMouseGrabbing SWIFT_NAME(grabbing),
 } MouseState;
 
 typedef struct

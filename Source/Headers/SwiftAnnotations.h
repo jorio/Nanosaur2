@@ -22,9 +22,11 @@
 // SWIFT_NAME(x): pins the exact Swift-side spelling of a single enum case
 // (or other declaration) instead of relying on Clang's fuzzy prefix-
 // stripping heuristic, which does not produce predictable results against
-// this codebase's `k`-prefixed naming convention. Using this, `kFooBar`
-// still imports as `.kFooBar` (now qualified under its enum type) rather
-// than some derived shorthand.
+// this codebase's `k`-prefixed naming convention. Policy: give each case
+// its idiomatic Swift name — strip the common prefix and lowerCamelCase
+// the remainder, e.g. `VS_MODE_NONE` imports as `VSMode.none` and
+// `kMenuStateAwaitingKeyPress` as `MenuState.awaitingKeyPress`. The C
+// spelling is unchanged; only Swift's view of it is renamed.
 
 #if defined(__clang__)
 	#define SWIFT_ENUM_CLOSED __attribute__((enum_extensibility(closed)))

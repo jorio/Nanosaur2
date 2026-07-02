@@ -93,7 +93,7 @@ private func CreateDummyInitObject() {
 //
 // The linked list is sorted from smallest to largest!
 @c @implementation
-public func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>!) -> UnsafeMutablePointer<ObjNode>! {
+public func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode>? {
     let flags = newObjDef.pointee.flags
 
     // FIND NEW FREE OBJECT
@@ -186,7 +186,7 @@ public func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionT
 // This is an ObjNode who's BaseGroup is a group, therefore these objects
 // can be transformed (scale,rot,trans).
 @c @implementation
-public func MakeNewDisplayGroupObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>!) -> UnsafeMutablePointer<ObjNode>! {
+public func MakeNewDisplayGroupObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode>? {
     newObjDef.pointee.genre = UInt8(DISPLAY_GROUP_GENRE)
 
     guard let newObj = MakeNewObject(newObjDef) else {
@@ -216,7 +216,7 @@ public func MakeNewDisplayGroupObject(_ newObjDef: UnsafeMutablePointer<NewObjec
 }
 
 @c @implementation
-public func CalcObjectRadiusFromBBox(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func CalcObjectRadiusFromBBox(_ theNode: UnsafeMutablePointer<ObjNode>) {
     var max = abs(theNode.pointee.LocalBBox.max.x) // get radius to right
     var n = abs(theNode.pointee.LocalBBox.min.x) // get radius to left
     if n > max { max = n }
@@ -244,7 +244,7 @@ public func CalcObjectRadiusFromBBox(_ theNode: UnsafeMutablePointer<ObjNode>!) 
 // If the ObjNode's "Type" field has changed, call this to dispose of
 // the old BaseGroup and create a new one with the correct model attached.
 @c @implementation
-public func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
     DisposeObjectBaseGroup(theNode) // dispose of old group
     CreateBaseGroup(theNode) // create new group object
 
@@ -279,7 +279,7 @@ public func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // Attaches a geometry object to the BaseGroup object. MakeNewDisplayGroupObject must have already been
 // called which made the group & transforms.
 @c @implementation
-public func AttachGeometryToDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ geometry: MetaObjectPtr!) {
+public func AttachGeometryToDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ geometry: MetaObjectPtr?) {
     MO_AppendToGroup(theNode.pointee.BaseGroup, geometry)
 }
 
@@ -288,7 +288,7 @@ public func AttachGeometryToDisplayGroupObject(_ theNode: UnsafeMutablePointer<O
 //
 // The base is composed of BaseGroup & BaseTransformObject.
 @c @implementation
-public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
     var transMatrix = OGLMatrix4x4()
     var scaleMatrix = OGLMatrix4x4()
     var rotMatrix = OGLMatrix4x4()
@@ -946,7 +946,8 @@ private func DrawBoundingSpheres(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 }
 
 @c @implementation
-public func MoveStaticObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func MoveStaticObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+    guard let theNode else { return }
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
         return
@@ -957,7 +958,8 @@ public func MoveStaticObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
 // Keeps object conformed to terrain curves
 @c @implementation
-public func MoveStaticObject2(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func MoveStaticObject2(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+    guard let theNode else { return }
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
         return
@@ -973,7 +975,8 @@ public func MoveStaticObject2(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
 // Keeps at current terrain height
 @c @implementation
-public func MoveStaticObject3(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func MoveStaticObject3(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+    guard let theNode else { return }
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
         return
@@ -1002,7 +1005,7 @@ public func DeleteAllObjects() {
 }
 
 @c @implementation
-public func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else { // see if passed a bogus node
         return
     }
@@ -1108,7 +1111,7 @@ public func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // Simply detaches the objnode from the linked list, patches the links
 // and keeps the original objnode intact.
 @c @implementation
-public func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ subrecurse: UInt8) {
+public func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8) {
     guard let theNode else {
         return
     }
@@ -1152,7 +1155,7 @@ public func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ subrecurse
 }
 
 @c @implementation
-public func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ recurse: UInt8) {
+public func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
     guard let theNode else {
         return
     }
@@ -1230,7 +1233,7 @@ private func FlushObjectDeleteQueue() {
 }
 
 @c @implementation
-public func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if theNode.pointee.BaseGroup != nil {
         MO_DisposeObjectReference(theNode.pointee.BaseGroup)
 
@@ -1246,13 +1249,13 @@ public func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // MARK: - Object information
 
 @c @implementation
-public func GetObjectInfo(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func GetObjectInfo(_ theNode: UnsafeMutablePointer<ObjNode>) {
     gCoord = theNode.pointee.Coord
     gDelta = theNode.pointee.Delta
 }
 
 @c @implementation
-public func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if theNode.pointee.CType == INVALID_NODE_FLAG { // see if already deleted
         return
     }
@@ -1272,7 +1275,7 @@ public func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
 // This updates the skeleton object's base translate & rotate transforms
 @c @implementation
-public func UpdateObjectTransforms(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func UpdateObjectTransforms(_ theNode: UnsafeMutablePointer<ObjNode>) {
     var m = OGLMatrix4x4()
     var m2: OGLMatrix4x4
     var mx = OGLMatrix4x4(), my = OGLMatrix4x4(), mz = OGLMatrix4x4(), mxz = OGLMatrix4x4()
@@ -1334,7 +1337,7 @@ public func UpdateObjectTransforms(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 }
 
 @c @implementation
-public func SetObjectGridLocation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func SetObjectGridLocation(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.GridX = Int32(theNode.pointee.Coord.x) / Int32(GRID_SIZE) // n unit sized grid
     theNode.pointee.GridY = Int32(theNode.pointee.Coord.y) / Int32(GRID_SIZE)
     theNode.pointee.GridZ = Int32(theNode.pointee.Coord.z) / Int32(GRID_SIZE)
@@ -1343,7 +1346,7 @@ public func SetObjectGridLocation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // This call simply resets the base transform object so that it uses the latest
 // base transform matrix
 @c @implementation
-public func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let mo = theNode.pointee.BaseTransformObject
 
     if theNode.pointee.CType == INVALID_NODE_FLAG { // see if invalid
@@ -1360,7 +1363,7 @@ public func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>!) 
 }
 
 @c @implementation
-public func SetObjectVisible(_ theNode: UnsafeMutablePointer<ObjNode>!, _ visible: UInt8) -> UInt8 {
+public func SetObjectVisible(_ theNode: UnsafeMutablePointer<ObjNode>, _ visible: UInt8) -> UInt8 {
     if visible != 0 {
         theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
     } else {
@@ -1373,7 +1376,7 @@ public func SetObjectVisible(_ theNode: UnsafeMutablePointer<ObjNode>!, _ visibl
 // MARK: - Advanced node chaining
 
 @c @implementation
-public func GetNodeChainLength(_ node: UnsafeMutablePointer<ObjNode>!) -> Int32 {
+public func GetNodeChainLength(_ node: UnsafeMutablePointer<ObjNode>?) -> Int32 {
     var n = node
     var length: Int32 = 0
     while length <= 0x7FFF {
@@ -1387,7 +1390,7 @@ public func GetNodeChainLength(_ node: UnsafeMutablePointer<ObjNode>!) -> Int32 
 }
 
 @c @implementation
-public func GetNthChainedNode(_ start: UnsafeMutablePointer<ObjNode>!, _ targetIndex: Int32, _ outPrevNode: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!) -> UnsafeMutablePointer<ObjNode>! {
+public func GetNthChainedNode(_ start: UnsafeMutablePointer<ObjNode>?, _ targetIndex: Int32, _ outPrevNode: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>?) -> UnsafeMutablePointer<ObjNode>? {
     var pNode: UnsafeMutablePointer<ObjNode>?
     var node = start
 
@@ -1416,7 +1419,7 @@ public func GetNthChainedNode(_ start: UnsafeMutablePointer<ObjNode>!, _ targetI
 }
 
 @c @implementation
-public func GetChainTailNode(_ start: UnsafeMutablePointer<ObjNode>!) -> UnsafeMutablePointer<ObjNode>! {
+public func GetChainTailNode(_ start: UnsafeMutablePointer<ObjNode>?) -> UnsafeMutablePointer<ObjNode>? {
     var pNode: UnsafeMutablePointer<ObjNode>?
     var node = start
 
@@ -1433,7 +1436,7 @@ public func GetChainTailNode(_ start: UnsafeMutablePointer<ObjNode>!) -> UnsafeM
 }
 
 @c @implementation
-public func AppendNodeToChain(_ first: UnsafeMutablePointer<ObjNode>!, _ newTail: UnsafeMutablePointer<ObjNode>!) {
+public func AppendNodeToChain(_ first: UnsafeMutablePointer<ObjNode>, _ newTail: UnsafeMutablePointer<ObjNode>) {
     let oldTail = GetChainTailNode(first)!
     oldTail.pointee.ChainNode = newTail
 
@@ -1446,7 +1449,7 @@ public func AppendNodeToChain(_ first: UnsafeMutablePointer<ObjNode>!, _ newTail
 }
 
 @c @implementation
-public func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else {
         return
     }
@@ -1475,7 +1478,7 @@ public func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // MARK: - Overlay pane
 
 @c @implementation
-public func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+public func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
     theNode.pointee.PlayerNum = gNumPlayers
 }

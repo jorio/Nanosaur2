@@ -64,28 +64,28 @@ typedef enum SWIFT_ENUM_CLOSED WhatType
 //========================================================
 
 extern	void InitObjectManager(void);
-extern	ObjNode	*MakeNewObject(NewObjectDefinitionType *newObjDef);
+extern	ObjNode	* _Nullable MakeNewObject(NewObjectDefinitionType * _Nonnull newObjDef);
 extern	void MoveObjects(void);
 void DrawObjects(void);
 
 extern	void DeleteAllObjects(void);
-extern	void DeleteObject(ObjNode	*theNode);
-void DetachObject(ObjNode *theNode, Boolean subrecurse);
-extern	void GetObjectInfo(ObjNode *theNode);
-extern	void UpdateObject(ObjNode *theNode);
-void SetObjectGridLocation(ObjNode *theNode);
-extern	ObjNode *MakeNewDisplayGroupObject(NewObjectDefinitionType *newObjDef);
-extern	void CreateBaseGroup(ObjNode *theNode);
-extern	void UpdateObjectTransforms(ObjNode *theNode);
-extern	void SetObjectTransformMatrix(ObjNode *theNode);
-extern	void DisposeObjectBaseGroup(ObjNode *theNode);
-extern	void ResetDisplayGroupObject(ObjNode *theNode);
-void AttachObject(ObjNode *theNode, Boolean recurse);
-void CalcObjectRadiusFromBBox(ObjNode *theNode);
+extern	void DeleteObject(ObjNode * _Nullable theNode);
+void DetachObject(ObjNode * _Nullable theNode, Boolean subrecurse);
+extern	void GetObjectInfo(ObjNode * _Nonnull theNode);
+extern	void UpdateObject(ObjNode * _Nonnull theNode);
+void SetObjectGridLocation(ObjNode * _Nonnull theNode);
+extern	ObjNode * _Nullable MakeNewDisplayGroupObject(NewObjectDefinitionType * _Nonnull newObjDef);
+extern	void CreateBaseGroup(ObjNode * _Nonnull theNode);
+extern	void UpdateObjectTransforms(ObjNode * _Nonnull theNode);
+extern	void SetObjectTransformMatrix(ObjNode * _Nonnull theNode);
+extern	void DisposeObjectBaseGroup(ObjNode * _Nonnull theNode);
+extern	void ResetDisplayGroupObject(ObjNode * _Nonnull theNode);
+void AttachObject(ObjNode * _Nullable theNode, Boolean recurse);
+void CalcObjectRadiusFromBBox(ObjNode * _Nonnull theNode);
 
-void MoveStaticObject(ObjNode *theNode);
-void MoveStaticObject2(ObjNode *theNode);
-void MoveStaticObject3(ObjNode *theNode);
+void MoveStaticObject(ObjNode * _Nullable theNode);
+void MoveStaticObject2(ObjNode * _Nullable theNode);
+void MoveStaticObject3(ObjNode * _Nullable theNode);
 
 void CalcNewTargetOffsets(ObjNode *theNode, float scale);
 
@@ -110,20 +110,20 @@ void CreateCollisionBoxFromBoundingBox_Update(ObjNode *theNode, float tweakXZ, f
 void KeepOldCollisionBoxes(ObjNode *theNode);
 void AddCollisionBoxToObject(ObjNode *theNode, float top, float bottom, float left,
 							 float right, float front, float back);
-void AttachGeometryToDisplayGroupObject(ObjNode *theNode, MetaObjectPtr geometry);
+void AttachGeometryToDisplayGroupObject(ObjNode * _Nonnull theNode, MetaObjectPtr _Nullable geometry);
 void CalcDisplayGroupWorldPoints(ObjNode *theNode);
 
 void HideObjectChain(ObjNode *theNode);
 void ShowObjectChain(ObjNode *theNode);
 
-Boolean SetObjectVisible(ObjNode *theNode, Boolean visible);
+Boolean SetObjectVisible(ObjNode * _Nonnull theNode, Boolean visible);
 
-int GetNodeChainLength(ObjNode* start);
-ObjNode* GetNthChainedNode(ObjNode* start, int targetIndex, ObjNode** outPrevNode);
-ObjNode* GetChainTailNode(ObjNode* start);
-void AppendNodeToChain(ObjNode* start, ObjNode* newTail);
-void UnchainNode(ObjNode* theNode);
+int GetNodeChainLength(ObjNode* _Nullable start);
+ObjNode* _Nullable GetNthChainedNode(ObjNode* _Nullable start, int targetIndex, ObjNode* _Nullable * _Nullable outPrevNode);
+ObjNode* _Nullable GetChainTailNode(ObjNode* _Nullable start);
+void AppendNodeToChain(ObjNode* _Nonnull start, ObjNode* _Nonnull newTail);
+void UnchainNode(ObjNode* _Nullable theNode);
 
 ObjNode* MakeBackgroundPictureObject(const char* imagePath);
 
-void SendNodeToOverlayPane(ObjNode* theNode);
+void SendNodeToOverlayPane(ObjNode* _Nonnull theNode);

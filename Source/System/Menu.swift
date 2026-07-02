@@ -414,7 +414,7 @@ private func updateArrows() {
     default: break
     }
     if gNav!.pointee.mouseState != .kMouseOff { snapTo = nil }
-    guard let snapTo = snapTo else { for i in 0..<2 { SetObjectVisible(Nav_GetArrow(gNav!, Int32(i)), 0) }; return }
+    guard let snapTo = snapTo else { for i in 0..<2 { SetObjectVisible(Nav_GetArrow(gNav!, Int32(i))!, 0) }; return }
     let ext = TextMesh_GetExtents(snapTo); let spacing: Float = 45 * snapTo.pointee.Scale.x
     for i in 0..<2 {
         let a = Nav_GetArrow(gNav!, Int32(i))!; SetObjectVisible(a, 1)
@@ -422,7 +422,7 @@ private func updateArrows() {
         a.pointee.Coord.y = snapTo.pointee.Coord.y; a.pointee.Scale = snapTo.pointee.Scale
         a.pointee.ColorFilter.a = visible[i] ? 1 : 0
     }
-    for i in 0..<2 { UpdateObjectTransforms(Nav_GetArrow(gNav!, Int32(i))) }
+    for i in 0..<2 { UpdateObjectTransforms(Nav_GetArrow(gNav!, Int32(i))!) }
 }
 
 // MARK: - Widget layouts
@@ -939,8 +939,8 @@ private func makeText(_ text: String, _ row: Int32, _ chainItem: Int32, _ textMe
         def.scale = getMenuItemHeight(row) * gNav!.pointee.style.standardScale
         def.group = UInt8(fontAtlas); def.slot = gNav!.pointee.style.textSlot + Int16(chainItem); def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
         node = text.withCString { TextMesh_New($0, textMeshFlags, &def) }
-        SendNodeToOverlayPane(node)
-        if chainHead != nil { AppendNodeToChain(chainHead, node) } else { setMObj(Int(row), node) }
+        SendNodeToOverlayPane(node!)
+        if let chainHead { AppendNodeToChain(chainHead, node!) } else { setMObj(Int(row), node) }
     }
     let data = getMenuNodeData(node)
     data.pointee.row = UInt8(row); data.pointee.component = UInt8(chainItem)

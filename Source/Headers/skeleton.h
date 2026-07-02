@@ -66,6 +66,7 @@ typedef enum SWIFT_ENUM_CLOSED AccelerationMode
 #define	NO_PREVIOUS_JOINT	(-1)
 
 extern  float	gAccelerationCurve[CURVE_SIZE];
+static inline float* GetAccelerationCurvePtr(void) { return gAccelerationCurve; }
 
 
 //===============================

@@ -31,7 +31,7 @@ public func InitEffects() {
 }
 
 @c @implementation
-public func MakeShockwaveRing(_ coord: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) -> UnsafeMutablePointer<ObjNode>! {
+public func MakeShockwaveRing(_ coord: UnsafeMutablePointer<OGLPoint3D>, _ scale: Float) -> UnsafeMutablePointer<ObjNode> {
     var def = NewObjectDefinitionType()
     def.group = UInt8(MODEL_GROUP_GLOBAL)
     def.type = UInt8(GLOBAL_ObjType_ShockwaveRing)

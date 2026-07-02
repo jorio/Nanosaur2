@@ -180,7 +180,7 @@ extern	NewConfettiGroupDefType	gNewConfettiGroupDef;
 
 
 void InitEffects(void);
-ObjNode *MakeShockwaveRing(OGLPoint3D *coord, float scale);
+ObjNode * _Nonnull MakeShockwaveRing(OGLPoint3D * _Nonnull coord, float scale);
 
 
 			/* PARTICLES */

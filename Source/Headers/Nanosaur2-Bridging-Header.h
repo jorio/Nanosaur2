@@ -13,3 +13,4 @@
 #include "ObjectsInternal.h"
 #include "EnemyInternal.h"
 #include "BonesInternal.h"
+#include "EggsInternal.h"

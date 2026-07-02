@@ -2,6 +2,7 @@
 // items.h
 //
 
+#pragma once
 
 #define	BUMBLEBEE_JOINTNUM_HAND		23
 

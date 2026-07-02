@@ -36,8 +36,8 @@ typedef struct
 
 		struct
 		{
-			int				(*generateNumChoices)(void);
-			const char*		(*generateChoiceString)(Byte value);
+			int				(* _Nullable generateNumChoices)(void);
+			const char*		(* _Nullable generateChoiceString)(Byte value);
 		} generator;
 	};
 } MenuCyclerData;
@@ -56,12 +56,12 @@ typedef struct MenuItem
 {
 	MenuItemType			type;
 	LocStrID				text;
-	const char*				rawText;
+	const char*				_Nullable rawText;
 	int32_t					id;			// value stored in gMenuOutcome when exiting menu
 	int32_t					next;		// next menu, or one of 'EXIT', 'BACK' or 0 (no-op)
 
-	void					(*callback)(void);
-	int						(*getLayoutFlags)(const struct MenuItem* mi);
+	void					(* _Nullable callback)(void);
+	int						(* _Nullable getLayoutFlags)(const struct MenuItem* mi);
 
 	union
 	{
@@ -105,21 +105,21 @@ typedef struct MenuStyle
 		bool			canBackOutOfRootMenu : 1;
 	};
 
-	void			(*exitCall)(int);
+	void			(* _Nullable exitCall)(int);
 } MenuStyle;
 
 extern const MenuStyle kDefaultMenuStyle;
 
-void RegisterMenu(const MenuItem* menus);
+void RegisterMenu(const MenuItem* _Nonnull menus);
 
-ObjNode* MakeMenu(const MenuItem* menu, const MenuStyle* style);
+ObjNode* _Nonnull MakeMenu(const MenuItem* _Nonnull menu, const MenuStyle* _Nullable style);
 
 void LayoutCurrentMenuAgain(bool animate);
 int GetCurrentMenu(void);
 int GetCurrentMenuItemID(void);
 bool IsMenuMouseControlled(void);
-ObjNode* GetCurrentMenuItemObject(void);
+ObjNode* _Nullable GetCurrentMenuItemObject(void);
 float GetMenuIdleTime(void);
 void KillMenu(int returnCode);
-bool IsMenuTreeEndSentinel(const MenuItem* menuItem);
-int DisableEmptyFileSlots(const MenuItem* menuItem);
+bool IsMenuTreeEndSentinel(const MenuItem* _Nonnull menuItem);
+int DisableEmptyFileSlots(const MenuItem* _Nonnull menuItem);

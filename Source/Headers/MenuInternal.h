@@ -62,7 +62,7 @@ typedef struct
 typedef struct
 {
 	int					menuID;
-	const MenuItem*		menu;
+	const MenuItem*	_Nullable menu;
 	MenuStyle			style;
 
 	int					numRows;
@@ -74,7 +74,7 @@ typedef struct
 	float				menuFadeAlpha;
 	MenuState			menuState;
 	int					menuPick;
-	ObjNode*			menuObjects[MAX_MENU_ROWS];
+	ObjNode*	_Nullable	menuObjects[MAX_MENU_ROWS];
 
 	MenuHistoryEntry	history[MAX_STACK_LENGTH];
 	int					historyPos;
@@ -84,8 +84,8 @@ typedef struct
 
 	float				idleTime;
 
-	ObjNode*			arrowObjects[2];
-	ObjNode*			darkenPane;
+	ObjNode*	_Nullable	arrowObjects[2];
+	ObjNode*	_Nullable	darkenPane;
 
 	float				sweepDelay;
 	bool				sweepRTL;
@@ -94,10 +94,10 @@ typedef struct
 } MenuNavigation;
 
 // Global variables - defined in Menu.c, accessed from Swift
-extern MenuNavigation* gNav;
+extern MenuNavigation* _Nullable gNav;
 extern int gMenuOutcome;
 extern int gNumMenusRegistered;
-extern const MenuItem* gMenuRegistry[MAX_REGISTERED_MENUS];
+extern const MenuItem* _Nullable gMenuRegistry[MAX_REGISTERED_MENUS];
 
 // ---- Swift-compatible inline wrappers for C macros ----
 
@@ -122,32 +122,32 @@ static inline int SwGameClampI(int x, int lo, int hi) { return x < lo ? lo : (x 
 static inline void CopyDefaultMenuStyle(MenuStyle* dst) { *dst = kDefaultMenuStyle; }
 
 // arrowObjects tuple accessor
-static inline ObjNode* Nav_GetArrow(MenuNavigation* nav, int i) { return nav->arrowObjects[i]; }
-static inline void Nav_SetArrow(MenuNavigation* nav, int i, ObjNode* v) { nav->arrowObjects[i] = v; }
+static inline ObjNode* _Nullable Nav_GetArrow(MenuNavigation* nav, int i) { return nav->arrowObjects[i]; }
+static inline void Nav_SetArrow(MenuNavigation* nav, int i, ObjNode* _Nullable v) { nav->arrowObjects[i] = v; }
 
 // ---- Array accessors (Swift imports fixed-size C arrays as tuples) ----
 
-static inline ObjNode* Nav_GetMenuObject(MenuNavigation* nav, int i) { return nav->menuObjects[i]; }
-static inline void Nav_SetMenuObject(MenuNavigation* nav, int i, ObjNode* v) { nav->menuObjects[i] = v; }
+static inline ObjNode* _Nullable Nav_GetMenuObject(MenuNavigation* nav, int i) { return nav->menuObjects[i]; }
+static inline void Nav_SetMenuObject(MenuNavigation* nav, int i, ObjNode* _Nullable v) { nav->menuObjects[i] = v; }
 static inline float Nav_GetMenuRowY(MenuNavigation* nav, int i) { return nav->menuRowYs[i]; }
 static inline void Nav_SetMenuRowY(MenuNavigation* nav, int i, float v) { nav->menuRowYs[i] = v; }
 static inline int Nav_GetHistoryMenuID(MenuNavigation* nav, int i) { return nav->history[i].menuID; }
 static inline void Nav_SetHistoryMenuID(MenuNavigation* nav, int i, int v) { nav->history[i].menuID = v; }
 static inline int Nav_GetHistoryRow(MenuNavigation* nav, int i) { return nav->history[i].row; }
 static inline void Nav_SetHistoryRow(MenuNavigation* nav, int i, int v) { nav->history[i].row = v; }
-static inline const MenuItem* GetRegistryEntry(int i) { return gMenuRegistry[i]; }
-static inline void SetRegistryEntry(int i, const MenuItem* v) { gMenuRegistry[i] = v; }
+static inline const MenuItem* _Nullable GetRegistryEntry(int i) { return gMenuRegistry[i]; }
+static inline void SetRegistryEntry(int i, const MenuItem* _Nullable v) { gMenuRegistry[i] = v; }
 
 // ---- Anonymous union accessors for MenuItem ----
 
-static inline Byte* MenuItem_GetCyclerValuePtr(const MenuItem* mi) { return mi->cycler.valuePtr; }
+static inline Byte* _Nullable MenuItem_GetCyclerValuePtr(const MenuItem* mi) { return mi->cycler.valuePtr; }
 static inline bool MenuItem_GetCyclerDynamic(const MenuItem* mi) { return mi->cycler.isDynamicallyGenerated; }
 static inline LocStrID MenuItem_GetCyclerChoiceText(const MenuItem* mi, int i) { return mi->cycler.choices[i].text; }
 static inline uint8_t MenuItem_GetCyclerChoiceValue(const MenuItem* mi, int i) { return mi->cycler.choices[i].value; }
-static inline int (*MenuItem_GetGenNumChoices(const MenuItem* mi))(void) { return mi->cycler.generator.generateNumChoices; }
-static inline const char* (*MenuItem_GetGenChoiceString(const MenuItem* mi))(Byte) { return mi->cycler.generator.generateChoiceString; }
+static inline int (* _Nullable MenuItem_GetGenNumChoices(const MenuItem* mi))(void) { return mi->cycler.generator.generateNumChoices; }
+static inline const char* (* _Nullable MenuItem_GetGenChoiceString(const MenuItem* mi))(Byte) { return mi->cycler.generator.generateChoiceString; }
 
-static inline Byte* MenuItem_GetSliderValuePtr(const MenuItem* mi) { return mi->slider.valuePtr; }
+static inline Byte* _Nullable MenuItem_GetSliderValuePtr(const MenuItem* mi) { return mi->slider.valuePtr; }
 static inline Byte MenuItem_GetSliderEquilibrium(const MenuItem* mi) { return mi->slider.equilibrium; }
 static inline Byte MenuItem_GetSliderMin(const MenuItem* mi) { return mi->slider.minValue; }
 static inline Byte MenuItem_GetSliderMax(const MenuItem* mi) { return mi->slider.maxValue; }

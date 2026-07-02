@@ -2,6 +2,8 @@
 // sprites.h
 //
 
+#pragma once
+
 
 
 enum

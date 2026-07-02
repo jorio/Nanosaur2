@@ -9,3 +9,4 @@
 #include "SparkleInternal.h"
 #include "AnaglyphCalibrationInternal.h"
 #include "PlayerRaceInternal.h"
+#include "SpritesInternal.h"

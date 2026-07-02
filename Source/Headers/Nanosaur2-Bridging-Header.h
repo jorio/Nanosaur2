@@ -11,3 +11,4 @@
 #include "PlayerRaceInternal.h"
 #include "SpritesInternal.h"
 #include "ObjectsInternal.h"
+#include "EnemyInternal.h"

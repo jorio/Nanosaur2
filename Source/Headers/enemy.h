@@ -2,6 +2,8 @@
 // enemy.h
 //
 
+#pragma once
+
 #include "terrain.h"
 #include "splineitems.h"
 

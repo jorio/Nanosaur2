@@ -66,13 +66,13 @@ public func LoadLocalizedStrings(_ languageID: GameLanguageID) {
 }
 
 @c @implementation
-public func Localize(_ stringID: LocStrID) -> UnsafePointer<CChar>! {
-    guard gStringsBuffer != nil else { return UnsafePointer(kNotLoadedMsg) }
+public func Localize(_ stringID: LocStrID) -> UnsafePointer<CChar> {
+    guard gStringsBuffer != nil else { return UnsafePointer(kNotLoadedMsg!) }
 
     let id = Int(stringID.rawValue)
-    guard id >= 0 && id < gStringsTable.count else { return UnsafePointer(kIllegalIdMsg) }
+    guard id >= 0 && id < gStringsTable.count else { return UnsafePointer(kIllegalIdMsg!) }
 
-    guard let entry = gStringsTable[id] else { return UnsafePointer(kEmptyMsg) }
+    guard let entry = gStringsTable[id] else { return UnsafePointer(kEmptyMsg!) }
 
     return UnsafePointer(entry)
 }

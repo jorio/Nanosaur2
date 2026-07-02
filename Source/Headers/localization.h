@@ -239,7 +239,7 @@ typedef enum LocStrID
 void LoadLocalizedStrings(GameLanguageID languageID);
 void DisposeLocalizedStrings(void);
 
-const char* Localize(LocStrID stringID);
+const char* _Nonnull Localize(LocStrID stringID);
 int LocalizeWithPlaceholder(LocStrID stringID, char* buf, size_t bufSize, const char* format, ...);
 
 bool IsNativeEnglishSystem(void);

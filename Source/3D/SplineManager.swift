@@ -5,7 +5,7 @@
 @c @implementation
 public func InitSplineManager() {
     for i in 0..<Int32(MAX_CUSTOM_SPLINES) {
-        let slot = GetCustomSplineSlot(i)!
+        let slot = GetCustomSplineSlot(i)
         slot.pointee.isUsed = 0
         slot.pointee.numPoints = 0
         slot.pointee.splinePoints = nil
@@ -21,7 +21,7 @@ public func FreeAllCustomSplines() {
 
 @c @implementation
 public func FreeACustomSpline(_ splineNum: Int16) {
-    let slot = GetCustomSplineSlot(Int32(splineNum))!
+    let slot = GetCustomSplineSlot(Int32(splineNum))
     if slot.pointee.isUsed != 0 {
         SafeDisposePtr(slot.pointee.splinePoints)
         slot.pointee.splinePoints = nil
@@ -30,11 +30,11 @@ public func FreeACustomSpline(_ splineNum: Int16) {
 }
 
 @c @implementation
-public func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePointer<OGLPoint3D>!, _ pointsPerSpan: Int) -> Int16 {
+public func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePointer<OGLPoint3D>, _ pointsPerSpan: Int) -> Int16 {
     // FIND FREE SLOT
     var slot: Int32 = 0
     while slot < Int32(MAX_CUSTOM_SPLINES) {
-        if GetCustomSplineSlot(slot)!.pointee.isUsed == 0 {
+        if GetCustomSplineSlot(slot).pointee.isUsed == 0 {
             break
         }
         slot += 1
@@ -43,7 +43,7 @@ public func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePoi
         return -1
     }
 
-    let splineSlot = GetCustomSplineSlot(slot)!
+    let splineSlot = GetCustomSplineSlot(slot)
     splineSlot.pointee.isUsed = 1
 
     // ALLOCATE 2D ARRAY FOR CALCULATIONS: 8 rows of numNubs OGLPoint3D each

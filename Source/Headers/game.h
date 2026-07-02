@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "SwiftAnnotations.h"
 #include "version.h"
 #include "globals.h"
 #include "structs.h"
@@ -198,7 +199,7 @@ extern	short					gNumFencesDrawn;
 extern	short					gNumSuperTilesDrawn;
 extern	short					gNumWaterDrawn;
 extern	short					gPrefsFolderVRefNum;
-extern	short					gVSMode;
+extern	VSMode				gVSMode;
 extern	signed char				gNumEnemyOfKind[NUM_ENEMY_KINDS];
 extern	uint32_t				gGameFrameNum;
 extern	uint32_t				gGlobalMaterialFlags;

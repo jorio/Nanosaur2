@@ -295,7 +295,7 @@ public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // CREATE THE BASE GROUP OBJECT
 
-    let baseGroupRaw = MO_CreateNewObjectOfType(UInt32(MO_TYPE_GROUP), 0, nil)
+    let baseGroupRaw = MO_CreateNewObjectOfType(.MO_TYPE_GROUP, 0, nil)
     guard let baseGroupRaw else {
         SwFatal("CreateBaseGroup: MO_CreateNewObjectOfType failed!")
         return
@@ -327,7 +327,7 @@ public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // CREATE A MATRIX XFORM
 
-    let transObjectRaw = MO_CreateNewObjectOfType(UInt32(MO_TYPE_MATRIX), 0, &theNode.pointee.BaseTransformMatrix) // make matrix xform object
+    let transObjectRaw = MO_CreateNewObjectOfType(.MO_TYPE_MATRIX, 0, &theNode.pointee.BaseTransformMatrix) // make matrix xform object
     guard let transObjectRaw else {
         SwFatal("CreateBaseGroup: MO_CreateNewObjectOfType/Matrix Failed!")
         return

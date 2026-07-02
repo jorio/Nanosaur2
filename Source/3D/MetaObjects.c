@@ -15,7 +15,7 @@
 /*    PROTOTYPES            */
 /****************************/
 
-static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, intptr_t subType);
+static MetaObjectPtr AllocateEmptyMetaObject(MetaObjectType type, intptr_t subType);
 static void SetMetaObjectToGroup(MOGroupObject *groupObj);
 static void SetMetaObjectToGeometry(MetaObjectPtr mo, intptr_t subType, void *data);
 static void SetMetaObjectToMaterial(MOMaterialObject *matObj, MOMaterialData *inData);
@@ -76,7 +76,7 @@ void MO_InitHandler(void)
 //
 
 
-MetaObjectPtr	MO_CreateNewObjectOfType(uint32_t type, intptr_t subType, void *data)
+MetaObjectPtr	MO_CreateNewObjectOfType(MetaObjectType type, intptr_t subType, void *data)
 {
 MetaObjectPtr	mo;
 
@@ -131,7 +131,7 @@ MetaObjectPtr	mo;
 // allocates an empty meta object and connects it to the linked list
 //
 
-static MetaObjectPtr AllocateEmptyMetaObject(uint32_t type, intptr_t subType)
+static MetaObjectPtr AllocateEmptyMetaObject(MetaObjectType type, intptr_t subType)
 {
 MetaObjectHeader	*mo;
 int					size;

@@ -36,7 +36,7 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
 @c @implementation
 public func DoPaused() {
     // In single-player, reassign main controller to whoever pressed the start button
-    if gVSMode == Int16(VS_MODE_NONE) {
+    if gVSMode == .VS_MODE_NONE {
         let whoPressedStart = GetLastControllerForNeedAnyP(Int32(kNeed_UIPause))
         if whoPressedStart >= 0 {
             SetMainController(whoPressedStart)

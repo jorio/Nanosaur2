@@ -65,7 +65,7 @@ float				gLevelCompletedCoolDownTimer = 0;
 Boolean				gSkipLevelIntro			= false;
 
 short				gLevelNum;
-short				gVSMode = VS_MODE_NONE;						// nano vs. nano mode
+VSMode				gVSMode = VS_MODE_NONE;						// nano vs. nano mode
 
 float				gRaceReadySetGoTimer;
 

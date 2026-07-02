@@ -66,8 +66,8 @@ private func initMenuNavigation() {
     gNav = AllocPtrClear(MemoryLayout<MenuNavigation>.size)!.assumingMemoryBound(to: MenuNavigation.self)
     let nav = gNav!
     CopyDefaultMenuStyle(&nav.pointee.style)
-    nav.pointee.menuPick = -1; nav.pointee.menuState = SwMenuStateOff
-    nav.pointee.mouseState = SwMouseOff; nav.pointee.mouseFocusComponent = -1
+    nav.pointee.menuPick = -1; nav.pointee.menuState = .kMenuStateOff
+    nav.pointee.mouseState = .kMouseOff; nav.pointee.mouseFocusComponent = -1
     var arrowDef = NewObjectDefinitionType()
     arrowDef.scale = 1; arrowDef.slot = nav.pointee.style.textSlot
     arrowDef.group = UInt8(nav.pointee.style.fontAtlas); arrowDef.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
@@ -95,7 +95,7 @@ public func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
 public func GetMenuIdleTime() -> Float { gNav != nil ? gNav!.pointee.idleTime : 0.0 }
 
 @c @implementation
-public func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != SwMouseOff : false }
+public func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != .kMouseOff : false }
 
 @c @implementation
 public func GetCurrentMenuItemID() -> Int32 {
@@ -124,8 +124,8 @@ public func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>!) -> Int32
 
 @c @implementation
 public func KillMenu(_ returnCode: Int32) {
-    if gNav!.pointee.menuState == SwMenuStateReady {
-        gNav!.pointee.menuPick = returnCode; gNav!.pointee.menuState = SwMenuStateFadeOut
+    if gNav!.pointee.menuState == .kMenuStateReady {
+        gNav!.pointee.menuPick = returnCode; gNav!.pointee.menuState = .kMenuStateFadeOut
     }
 }
 
@@ -163,7 +163,7 @@ public func MakeMenu(_ menu: UnsafePointer<MenuItem>!, _ style: UnsafePointer<Me
     RegisterMenu(menu)
     initMenuNavigation()
     gMenuOutcome = 0
-    gNav!.pointee.menuState = SwMenuStateFadeIn; gNav!.pointee.menuFadeAlpha = 0; gNav!.pointee.focusRow = -1
+    gNav!.pointee.menuState = .kMenuStateFadeIn; gNav!.pointee.menuFadeAlpha = 0; gNav!.pointee.focusRow = -1
     if let style { SDL_memcpy(&gNav!.pointee.style, style, MemoryLayout<MenuStyle>.size) }
     gNav!.pointee.sweepDelay = 0; gNav!.pointee.sweepRTL = false
     gNav!.pointee.darkenPane = nil
@@ -305,11 +305,11 @@ private let cMoveControlBinding: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     guard let node = node else { return }
     let data = getMenuNodeData(node)
     let miType = gNav!.pointee.menu![Int(data.pointee.row)].type
-    var ps: Int32 = 0
+    var ps: MenuState = .kMenuStateOff
     switch miType {
-    case kMIKeyBinding: ps = Int32(SwMenuStateAwaitingKeyPress)
-    case kMIPadBinding: ps = Int32(SwMenuStateAwaitingPadPress)
-    case kMIMouseBinding: ps = Int32(SwMenuStateAwaitingMouseClick)
+    case kMIKeyBinding: ps = .kMenuStateAwaitingKeyPress
+    case kMIPadBinding: ps = .kMenuStateAwaitingPadPress
+    case kMIMouseBinding: ps = .kMenuStateAwaitingMouseClick
     default: SwFatal("MoveControlBinding: unknown MI type")
     }
     if data.pointee.row == gNav!.pointee.focusRow && data.pointee.component == gNav!.pointee.focusComponent {
@@ -328,7 +328,7 @@ private func goBackInHistory() {
         playBackEffect(); gNav!.pointee.historyPos -= 1
         gNav!.pointee.sweepRTL = true; layOutMenu(histMID(gNav!.pointee.historyPos))
         gNav!.pointee.sweepRTL = false
-    } else if MenuStyle_GetCanBackOutOfRootMenu(&gNav!.pointee.style) { playBackEffect(); gNav!.pointee.menuState = SwMenuStateFadeOut }
+    } else if MenuStyle_GetCanBackOutOfRootMenu(&gNav!.pointee.style) { playBackEffect(); gNav!.pointee.menuState = .kMenuStateFadeOut }
     else { playErrorEffect() }
 }
 
@@ -348,8 +348,8 @@ private func navigateMenuItem(_ type: MenuItemType, _ entry: UnsafePointer<MenuI
 private func navigateMenu() {
     SwGameAssert(MenuStyle_GetIsInteractive(&gNav!.pointee.style))
     if SwIsNeedDown(kNeed_UIBack, ANY_PLAYER) || SwIsClickDown(Int(SDL_BUTTON_X1)) { goBackInHistory(); return }
-    if SwIsNeedDown(kNeed_UIUp, ANY_PLAYER) { navigateMenuVertically(-1); saveSelectedRowInHistory(); gNav!.pointee.mouseState = SwMouseOff }
-    else if SwIsNeedDown(kNeed_UIDown, ANY_PLAYER) { navigateMenuVertically(1); saveSelectedRowInHistory(); gNav!.pointee.mouseState = SwMouseOff }
+    if SwIsNeedDown(kNeed_UIUp, ANY_PLAYER) { navigateMenuVertically(-1); saveSelectedRowInHistory(); gNav!.pointee.mouseState = .kMouseOff }
+    else if SwIsNeedDown(kNeed_UIDown, ANY_PLAYER) { navigateMenuVertically(1); saveSelectedRowInHistory(); gNav!.pointee.mouseState = .kMouseOff }
     else { navigateMenuMouseHover() }
     let entry = gNav!.pointee.menu!.advanced(by: Int(gNav!.pointee.focusRow))
     navigateMenuItem(entry.pointee.type, entry)
@@ -368,11 +368,11 @@ private func navigateMenuVertically(_ delta: Int32) {
     if makeSound { playNavigateEffect(); twitchSelection() }
 }
 private func navigateMenuMouseHover() {
-    if gNav!.pointee.mouseState == SwMouseGrabbing { return }
+    if gNav!.pointee.mouseState == .kMouseGrabbing { return }
     var cursor = OGLPoint2D(x: -1, y: -1)
     if cursor.x == gCursorCoord.x && cursor.y == gCursorCoord.y { return }
     cursor = gCursorCoord
-    gNav!.pointee.mouseState = SwMouseWandering; gNav!.pointee.mouseFocusComponent = -1
+    gNav!.pointee.mouseState = .kMouseWandering; gNav!.pointee.mouseFocusComponent = -1
     for row in 0..<gNav!.pointee.numRows {
         let mi = gNav!.pointee.menu!.advanced(by: Int(row))
         if !isMenuItemSelectable(mi) { continue }
@@ -386,7 +386,7 @@ private func navigateMenuMouseHover() {
             textNode = tn.pointee.ChainNode; comp += 1
         }
         if cursor.y >= fe.top && cursor.y <= fe.bottom && cursor.x >= fe.left - kMouseHoverTolerance && cursor.x <= fe.right + kMouseHoverTolerance {
-            gNav!.pointee.mouseState = SwMouseHovering; gNav!.pointee.mouseFocusComponent = fc
+            gNav!.pointee.mouseState = .kMouseHovering; gNav!.pointee.mouseFocusComponent = fc
             if gNav!.pointee.focusRow != Int32(row) {
                 gNav!.pointee.idleTime = 0; twitchSelectionInOrOut(false)
                 gNav!.pointee.focusRow = Int32(row); playNavigateEffect(); twitchSelectionInOrOut(true)
@@ -405,7 +405,7 @@ private func updateArrows() {
         visible[0] = i != 0; visible[1] = i != getCyclerNumChoices(entry) - 1
     case kMIKeyBinding, kMIPadBinding:
         visible = [true, true]
-        if gNav!.pointee.menuState == SwMenuStateAwaitingKeyPress || gNav!.pointee.menuState == SwMenuStateAwaitingPadPress || gNav!.pointee.menuState == SwMenuStateAwaitingMouseClick { visible = [false, false] }
+        if gNav!.pointee.menuState == .kMenuStateAwaitingKeyPress || gNav!.pointee.menuState == .kMenuStateAwaitingPadPress || gNav!.pointee.menuState == .kMenuStateAwaitingMouseClick { visible = [false, false] }
     case kMISlider:
         visible[0] = MenuItem_GetSliderValuePtr(entry)!.pointee != MenuItem_GetSliderMin(entry)
         visible[1] = MenuItem_GetSliderValuePtr(entry)!.pointee != MenuItem_GetSliderMax(entry)
@@ -413,7 +413,7 @@ private func updateArrows() {
     case kMIMouseBinding: snapTo = nil
     default: break
     }
-    if gNav!.pointee.mouseState != SwMouseOff { snapTo = nil }
+    if gNav!.pointee.mouseState != .kMouseOff { snapTo = nil }
     guard let snapTo = snapTo else { for i in 0..<2 { SetObjectVisible(Nav_GetArrow(gNav!, Int32(i)), 0) }; return }
     let ext = TextMesh_GetExtents(snapTo); let spacing: Float = 45 * snapTo.pointee.Scale.x
     for i in 0..<2 {
@@ -439,15 +439,15 @@ private func layOutPick(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
     setMinClickableWidth(o, 80); return o
 }
 private func navigatePick(_ entry: UnsafePointer<MenuItem>!) {
-    let validClick = gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))
+    let validClick = gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))
     if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || validClick {
-        if !validClick { gNav!.pointee.mouseState = SwMouseOff }
+        if !validClick { gNav!.pointee.mouseState = .kMouseOff }
         if entry.pointee.next != BACK_FOURCC { playConfirmEffect() }
         gNav!.pointee.idleTime = 0; gNav!.pointee.menuPick = entry.pointee.id
         if let cb = entry.pointee.callback { cb() }
         switch entry.pointee.next {
         case 0, NOOP_FOURCC: twitchSelection()
-        case EXIT_FOURCC: gNav!.pointee.menuState = SwMenuStateFadeOut
+        case EXIT_FOURCC: gNav!.pointee.menuState = .kMenuStateFadeOut
         case BACK_FOURCC: goBackInHistory()
         default:
             saveSelectedRowInHistory(); gNav!.pointee.historyPos += 1
@@ -503,10 +503,10 @@ private func getCyclerValueForIndex(_ e: UnsafePointer<MenuItem>!, _ index: Int3
 }
 private func navigateCycler(_ e: UnsafePointer<MenuItem>!) {
     var delta: Int32 = 0; var allowWrap = false
-    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { delta = -1; gNav!.pointee.mouseState = SwMouseOff }
-    else if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { delta = 1; gNav!.pointee.mouseState = SwMouseOff }
-    else if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) { gNav!.pointee.mouseState = SwMouseOff; twitchSelectionNopeWiggle(); return }
-    else if gNav!.pointee.mouseState == SwMouseHovering {
+    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { delta = -1; gNav!.pointee.mouseState = .kMouseOff }
+    else if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { delta = 1; gNav!.pointee.mouseState = .kMouseOff }
+    else if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) { gNav!.pointee.mouseState = .kMouseOff; twitchSelectionNopeWiggle(); return }
+    else if gNav!.pointee.mouseState == .kMouseHovering {
         if SwIsClickDown(Int(SDL_BUTTON_LEFT)) { delta = 1; allowWrap = true }
         else if SwIsClickDown(Int(SDL_BUTTON_RIGHT)) { delta = -1; allowWrap = true }
         else if SwIsClickDown(Int(SDL_BUTTON_WHEELDOWN)) || SwIsClickDown(Int(SDL_BUTTON_WHEELLEFT)) { delta = -1 }
@@ -576,7 +576,7 @@ private func navigateSlider(_ e: UnsafePointer<MenuItem>!) {
     var prevTickX: Float = -1; var grabOffset: Float = -1; var heldCooldown: Float = -1
     var beingDragged = false; var didRamEdge = false
     let root = GetCurrentMenuItemObject(); var p = getSliderComponents(e, root)
-    if gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT)) {
+    if gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT)) {
         switch gNav!.pointee.mouseFocusComponent {
         case 1: _ = setNewSliderValue(e, &p, sliderKnobXToValue(p, gCursorCoord.x)); beingDragged = true
         case 3, 4: beingDragged = true
@@ -584,7 +584,7 @@ private func navigateSlider(_ e: UnsafePointer<MenuItem>!) {
         }
         if beingDragged {
             prevTickX = p.knob!.pointee.Coord.x; grabOffset = gCursorCoord.x - p.knob!.pointee.Coord.x
-            gNav!.pointee.mouseState = SwMouseGrabbing; playStartBindingEffect(); twitchSelection()
+            gNav!.pointee.mouseState = .kMouseGrabbing; playStartBindingEffect(); twitchSelection()
         }
     } else if beingDragged && SwIsClickHeld(Int(SDL_BUTTON_LEFT)) {
         let kx = setNewSliderValue(e, &p, sliderKnobXToValue(p, gCursorCoord.x - grabOffset))
@@ -595,7 +595,7 @@ private func navigateSlider(_ e: UnsafePointer<MenuItem>!) {
         }
     } else if beingDragged && (SwIsClickUp(Int(SDL_BUTTON_LEFT)) || SwIsNeedUp(kNeed_UIPrev, ANY_PLAYER) || SwIsNeedUp(kNeed_UINext, ANY_PLAYER)) {
         beingDragged = false
-        if gNav!.pointee.mouseState == SwMouseGrabbing { gNav!.pointee.mouseState = SwMouseWandering }
+        if gNav!.pointee.mouseState == .kMouseGrabbing { gNav!.pointee.mouseState = .kMouseWandering }
         playConfirmEffect(); if let cb = e.pointee.callback { cb() }
     } else if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) {
         _ = MakeTwitch(getCurrentInteractableMenuItemObject(), Int32(kTwitchPreset_MenuSelect))
@@ -617,7 +617,7 @@ private func navigateSlider(_ e: UnsafePointer<MenuItem>!) {
                 _ = MakeTwitch(Nav_GetArrow(gNav!, 1), Int32(kTwitchPreset_PadlockWiggle)); playErrorEffect(); didRamEdge = true
             }
         } else {
-            gNav!.pointee.mouseState = SwMouseOff; let inc = Float(MenuItem_GetSliderIncrement(e))
+            gNav!.pointee.mouseState = .kMouseOff; let inc = Float(MenuItem_GetSliderIncrement(e))
             var v = Float(vp.pointee); v = inc * (v / inc).rounded(); v += Float(dir) * inc; v = v.rounded()
             v = SwGameClampF(v, Float(MenuItem_GetSliderMin(e)), Float(MenuItem_GetSliderMax(e)))
             _ = setNewSliderValue(e, &p, v)
@@ -686,17 +686,17 @@ private func layOutMouseBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 // MARK: - Binding text helpers
 
 private func makeKbText(_ row: Int32, _ keyNo: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == SwMenuStateAwaitingKeyPress ? String(cString: Localize(STR_PRESS)) : getKeyBindingName(row, keyNo)
+    let name: String = gNav!.pointee.menuState == .kMenuStateAwaitingKeyPress ? String(cString: Localize(STR_PRESS)) : getKeyBindingName(row, keyNo)
     let n = makeText(name, row, 1 + keyNo, kTextMeshSmallCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
 private func makePbText(_ row: Int32, _ btnNo: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == SwMenuStateAwaitingPadPress ? String(cString: Localize(STR_PRESS)) : getPadBindingName(row, btnNo)
+    let name: String = gNav!.pointee.menuState == .kMenuStateAwaitingPadPress ? String(cString: Localize(STR_PRESS)) : getPadBindingName(row, btnNo)
     let n = makeText(name, row, 1 + btnNo, kTextMeshSmallCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
 private func makeMbText(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == SwMenuStateAwaitingMouseClick ? String(cString: Localize(STR_CLICK)) : getMouseBindingName(row)
+    let name: String = gNav!.pointee.menuState == .kMenuStateAwaitingMouseClick ? String(cString: Localize(STR_CLICK)) : getMouseBindingName(row)
     let n = makeText(name, row, 1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
@@ -786,41 +786,41 @@ private func getMouseBindingName(_ row: Int32) -> String {
 private func navigateKeyBinding(_ e: UnsafePointer<MenuItem>!) {
     var keyNo = Int32(PositiveModulo(gNav!.pointee.focusComponent - 1, UInt32(MAX_USER_BINDINGS_PER_NEED)))
     gNav!.pointee.focusComponent = keyNo + 1; let row = gNav!.pointee.focusRow
-    if gNav!.pointee.mouseState == SwMouseHovering && (gNav!.pointee.mouseFocusComponent == 1 || gNav!.pointee.mouseFocusComponent == 2) && keyNo != gNav!.pointee.mouseFocusComponent - 1 {
+    if gNav!.pointee.mouseState == .kMouseHovering && (gNav!.pointee.mouseFocusComponent == 1 || gNav!.pointee.mouseFocusComponent == 2) && keyNo != gNav!.pointee.mouseFocusComponent - 1 {
         keyNo = gNav!.pointee.mouseFocusComponent - 1; twitchOutSelection(); gNav!.pointee.idleTime = 0
         gNav!.pointee.focusComponent = keyNo + 1; playNavigateEffect(); twitchSelection(); return
     }
-    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { twitchOutSelection(); keyNo = Int32(PositiveModulo(keyNo - 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.idleTime = 0; gNav!.pointee.focusComponent = keyNo + 1; playNavigateEffect(); gNav!.pointee.mouseState = SwMouseOff; twitchSelection(); return }
-    if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { twitchOutSelection(); keyNo = Int32(PositiveModulo(keyNo + 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.idleTime = 0; gNav!.pointee.focusComponent = keyNo + 1; playNavigateEffect(); gNav!.pointee.mouseState = SwMouseOff; twitchSelection(); return }
-    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
+    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { twitchOutSelection(); keyNo = Int32(PositiveModulo(keyNo - 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.idleTime = 0; gNav!.pointee.focusComponent = keyNo + 1; playNavigateEffect(); gNav!.pointee.mouseState = .kMouseOff; twitchSelection(); return }
+    if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { twitchOutSelection(); keyNo = Int32(PositiveModulo(keyNo + 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.idleTime = 0; gNav!.pointee.focusComponent = keyNo + 1; playNavigateEffect(); gNav!.pointee.mouseState = .kMouseOff; twitchSelection(); return }
+    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
         twitchOutSelection(); gNav!.pointee.idleTime = 0; InputBinding_SetKey(getBindingAtRow(row), keyNo, 0); playDeleteEffect(); _ = makeKbText(row, keyNo); twitchSelection(); return
     }
-    if SwIsKeyDown(Int(SDL_SCANCODE_RETURN.rawValue)) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
-        playStartBindingEffect(); InvalidateAllInputs(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = SwMenuStateAwaitingKeyPress; _ = makeKbText(row, keyNo); twitchSelection(); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP_CANCEL); return
+    if SwIsKeyDown(Int(SDL_SCANCODE_RETURN.rawValue)) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
+        playStartBindingEffect(); InvalidateAllInputs(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = .kMenuStateAwaitingKeyPress; _ = makeKbText(row, keyNo); twitchSelection(); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP_CANCEL); return
     }
 }
 private func navigatePadBinding(_ e: UnsafePointer<MenuItem>!) {
     var btnNo = Int32(PositiveModulo(gNav!.pointee.focusComponent - 1, UInt32(MAX_USER_BINDINGS_PER_NEED)))
     gNav!.pointee.focusComponent = btnNo + 1; let row = gNav!.pointee.focusRow
-    if gNav!.pointee.mouseState == SwMouseHovering && (gNav!.pointee.mouseFocusComponent == 1 || gNav!.pointee.mouseFocusComponent == 2) && btnNo != gNav!.pointee.mouseFocusComponent - 1 {
+    if gNav!.pointee.mouseState == .kMouseHovering && (gNav!.pointee.mouseFocusComponent == 1 || gNav!.pointee.mouseFocusComponent == 2) && btnNo != gNav!.pointee.mouseFocusComponent - 1 {
         btnNo = gNav!.pointee.mouseFocusComponent - 1; twitchOutSelection(); gNav!.pointee.idleTime = 0; gNav!.pointee.focusComponent = btnNo + 1; playNavigateEffect(); twitchSelection(); return
     }
-    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { twitchOutSelection(); btnNo = Int32(PositiveModulo(btnNo - 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.focusComponent = btnNo + 1; gNav!.pointee.idleTime = 0; gNav!.pointee.mouseState = SwMouseOff; playNavigateEffect(); twitchSelection(); return }
-    if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { twitchOutSelection(); btnNo = Int32(PositiveModulo(btnNo + 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.focusComponent = btnNo + 1; gNav!.pointee.idleTime = 0; gNav!.pointee.mouseState = SwMouseOff; playNavigateEffect(); twitchSelection(); return }
-    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
+    if SwIsNeedDown(kNeed_UIPrev, ANY_PLAYER) { twitchOutSelection(); btnNo = Int32(PositiveModulo(btnNo - 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.focusComponent = btnNo + 1; gNav!.pointee.idleTime = 0; gNav!.pointee.mouseState = .kMouseOff; playNavigateEffect(); twitchSelection(); return }
+    if SwIsNeedDown(kNeed_UINext, ANY_PLAYER) { twitchOutSelection(); btnNo = Int32(PositiveModulo(btnNo + 1, UInt32(MAX_USER_BINDINGS_PER_NEED))); gNav!.pointee.focusComponent = btnNo + 1; gNav!.pointee.idleTime = 0; gNav!.pointee.mouseState = .kMouseOff; playNavigateEffect(); twitchSelection(); return }
+    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
         twitchOutSelection(); gNav!.pointee.idleTime = 0; InputBinding_SetPad(getBindingAtRow(row), btnNo, Int8(kInputTypeUnbound), 0); playDeleteEffect(); _ = makePbText(row, btnNo); twitchSelection(); return
     }
-    if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
-        playStartBindingEffect(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = SwMenuStateAwaitingPadPress; _ = makePbText(row, btnNo); twitchSelection(); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP_CANCEL); return
+    if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
+        playStartBindingEffect(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = .kMenuStateAwaitingPadPress; _ = makePbText(row, btnNo); twitchSelection(); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP_CANCEL); return
     }
 }
 private func navigateMouseBinding(_ e: UnsafePointer<MenuItem>!) {
     let row = gNav!.pointee.focusRow; gNav!.pointee.focusComponent = 1
-    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
+    if SwIsNeedDown(kNeed_UIDelete, ANY_PLAYER) || SwIsKeyDown(Int(CLEAR_BINDING_SCANCODE)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_MIDDLE))) {
         gNav!.pointee.idleTime = 0; getBindingAtRow(row).pointee.mouseButton = 0; playDeleteEffect(); _ = makeMbText(row); twitchSelection(); return
     }
-    if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == SwMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
-        playStartBindingEffect(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = SwMenuStateAwaitingMouseClick; _ = makeMbText(row); twitchSelection(); InvalidateAllInputs(); return
+    if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) || (gNav!.pointee.mouseState == .kMouseHovering && SwIsClickDown(Int(SDL_BUTTON_LEFT))) {
+        playStartBindingEffect(); gNav!.pointee.idleTime = 0; gNav!.pointee.menuState = .kMenuStateAwaitingMouseClick; _ = makeMbText(row); twitchSelection(); InvalidateAllInputs(); return
     }
 }
 
@@ -858,13 +858,13 @@ private func awaitKeyPress() {
         for sc: Int16 in 0..<Int16(SDL_SCANCODE_COUNT.rawValue) {
             if SwIsKeyDown(Int(sc)) {
                 unbindScancodeFromAllRemappableInputNeeds(sc); InputBinding_SetKey(getBindingAtRow(row), keyNo, sc); playEndBindingEffect()
-                gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeKbText(row, keyNo); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP)
+                gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeKbText(row, keyNo); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP)
                 return
             }
         }
         return
     }
-    gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeKbText(row, keyNo); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP); if doWiggle { twitchSelectionNopeWiggle() }
+    gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeKbText(row, keyNo); replaceMenuText(STR_CONFIGURE_KEYBOARD_HELP, STR_CONFIGURE_KEYBOARD_HELP); if doWiggle { twitchSelectionNopeWiggle() }
 }
 private func awaitGamepadPress(_ controller: OpaquePointer) -> Bool {
     let row = gNav!.pointee.focusRow; let btnNo = gNav!.pointee.focusComponent - 1
@@ -875,26 +875,26 @@ private func awaitGamepadPress(_ controller: OpaquePointer) -> Bool {
         for button: Int8 in 0..<Int8(SDL_GAMEPAD_BUTTON_COUNT.rawValue) {
             if SDL_GetGamepadButton(controller, SDL_GamepadButton(rawValue: Int32(button))) {
                 playEndBindingEffect(); unbindPadButtonFromAllRemappableInputNeeds(Int8(kInputTypeButton), button); InputBinding_SetPad(b, btnNo, Int8(kInputTypeButton), button)
-                gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); return true
+                gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); return true
             }
         }
         for axis: Int8 in 0..<Int8(SDL_GAMEPAD_AXIS_COUNT.rawValue) {
             let av = SDL_GetGamepadAxis(controller, SDL_GamepadAxis(rawValue: Int32(axis)))
             if abs(Int32(av)) > kJoystickDeadZone_BindingThreshold {
                 playEndBindingEffect(); let at: Int8 = av < 0 ? Int8(kInputTypeAxisMinus) : Int8(kInputTypeAxisPlus); unbindPadButtonFromAllRemappableInputNeeds(at, axis); InputBinding_SetPad(b, btnNo, at, axis)
-                gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); return true
+                gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); return true
             }
         }
         return false
     }
-    gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); if doWiggle { twitchSelectionNopeWiggle() }; return true
+    gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_CONFIGURE_GAMEPAD_HELP); if doWiggle { twitchSelectionNopeWiggle() }; return true
 }
 private func awaitMetaGamepadPress() {
     let row = gNav!.pointee.focusRow; let btnNo = gNav!.pointee.focusComponent - 1
     if SwIsNeedActive(kNeed_UIConfirm, ANY_PLAYER) && !SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) { return }
     var anyFound = false
     for i in 0..<Int32(MAX_PLAYERS) { if let gp = GetGamepad(i) { anyFound = true; if awaitGamepadPress(gp) { return } } }
-    if !anyFound { gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_NO_GAMEPAD_DETECTED); twitchSelectionNopeWiggle() }
+    if !anyFound { gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makePbText(row, btnNo); replaceMenuText(STR_CONFIGURE_GAMEPAD_HELP, STR_NO_GAMEPAD_DETECTED); twitchSelectionNopeWiggle() }
 }
 private func awaitMouseClick() {
     var doWiggle = false
@@ -902,11 +902,11 @@ private func awaitMouseClick() {
     else {
         let b = getBindingAtRow(gNav!.pointee.focusRow)
         for mb: Int8 in 0..<Int8(NUM_SUPPORTED_MOUSE_BUTTONS) {
-            if SwIsClickDown(Int(mb)) { unbindMouseButtonFromAllRemappableInputNeeds(mb); b.pointee.mouseButton = mb; playEndBindingEffect(); gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeMbText(gNav!.pointee.focusRow); return }
+            if SwIsClickDown(Int(mb)) { unbindMouseButtonFromAllRemappableInputNeeds(mb); b.pointee.mouseButton = mb; playEndBindingEffect(); gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeMbText(gNav!.pointee.focusRow); return }
         }
         return
     }
-    gNav!.pointee.menuState = SwMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeMbText(gNav!.pointee.focusRow); if doWiggle { twitchSelectionNopeWiggle() }
+    gNav!.pointee.menuState = .kMenuStateReady; gNav!.pointee.idleTime = 0; _ = makeMbText(gNav!.pointee.focusRow); if doWiggle { twitchSelectionNopeWiggle() }
 }
 
 // MARK: - Page layout
@@ -1003,29 +1003,29 @@ private func lookUpMenu(_ menuID: Int32) -> UnsafePointer<MenuItem>? {
 
 private let cMoveMenuDriver: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode = theNode else { return }
-    if gNav!.pointee.menuState == SwMenuStateOff { return }
+    if gNav!.pointee.menuState == .kMenuStateOff { return }
     gNav!.pointee.idleTime += gFramesPerSecondFrac
     if SwIsNeedDown(kNeed_UIStart, ANY_PLAYER) && MenuStyle_GetStartButtonExits(&gNav!.pointee.style) && MenuStyle_GetCanBackOutOfRootMenu(&gNav!.pointee.style)
-        && gNav!.pointee.menuState != SwMenuStateAwaitingPadPress && gNav!.pointee.menuState != SwMenuStateAwaitingKeyPress && gNav!.pointee.menuState != SwMenuStateAwaitingMouseClick {
-        gNav!.pointee.menuState = SwMenuStateFadeOut
+        && gNav!.pointee.menuState != .kMenuStateAwaitingPadPress && gNav!.pointee.menuState != .kMenuStateAwaitingKeyPress && gNav!.pointee.menuState != .kMenuStateAwaitingMouseClick {
+        gNav!.pointee.menuState = .kMenuStateFadeOut
     }
     switch gNav!.pointee.menuState {
-    case SwMenuStateFadeIn:
+    case .kMenuStateFadeIn:
         gNav!.pointee.menuFadeAlpha += gFramesPerSecondFrac * gNav!.pointee.style.fadeInSpeed
-        if gNav!.pointee.menuFadeAlpha >= 1.0 { gNav!.pointee.menuFadeAlpha = 1.0; gNav!.pointee.menuState = SwMenuStateReady }
-    case SwMenuStateFadeOut:
-        if MenuStyle_GetAsyncFadeOut(&gNav!.pointee.style) { gNav!.pointee.menuState = SwMenuStateOff }
-        else { gNav!.pointee.menuFadeAlpha -= gFramesPerSecondFrac * gNav!.pointee.style.fadeOutSpeed; if gNav!.pointee.menuFadeAlpha <= 0 { gNav!.pointee.menuFadeAlpha = 0; gNav!.pointee.menuState = SwMenuStateOff } }
-    case SwMenuStateReady:
+        if gNav!.pointee.menuFadeAlpha >= 1.0 { gNav!.pointee.menuFadeAlpha = 1.0; gNav!.pointee.menuState = .kMenuStateReady }
+    case .kMenuStateFadeOut:
+        if MenuStyle_GetAsyncFadeOut(&gNav!.pointee.style) { gNav!.pointee.menuState = .kMenuStateOff }
+        else { gNav!.pointee.menuFadeAlpha -= gFramesPerSecondFrac * gNav!.pointee.style.fadeOutSpeed; if gNav!.pointee.menuFadeAlpha <= 0 { gNav!.pointee.menuFadeAlpha = 0; gNav!.pointee.menuState = .kMenuStateOff } }
+    case .kMenuStateReady:
         if MenuStyle_GetIsInteractive(&gNav!.pointee.style) { navigateMenu() }
         else if SwIsNeedDown(kNeed_UIBack, ANY_PLAYER) || SwIsNeedDown(kNeed_UIPause, ANY_PLAYER) { goBackInHistory() }
-    case SwMenuStateAwaitingKeyPress: awaitKeyPress()
-    case SwMenuStateAwaitingPadPress: awaitMetaGamepadPress()
-    case SwMenuStateAwaitingMouseClick: awaitMouseClick()
+    case .kMenuStateAwaitingKeyPress: awaitKeyPress()
+    case .kMenuStateAwaitingPadPress: awaitMetaGamepadPress()
+    case .kMenuStateAwaitingMouseClick: awaitMouseClick()
     default: break
     }
     updateArrows()
-    if gNav!.pointee.menuState == SwMenuStateOff { cleanUpMenuDriver(theNode) }
+    if gNav!.pointee.menuState == .kMenuStateOff { cleanUpMenuDriver(theNode) }
 }
 
 private func cleanUpMenuDriver(_ theNode: UnsafeMutablePointer<ObjNode>!) {

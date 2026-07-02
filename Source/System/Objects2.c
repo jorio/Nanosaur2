@@ -354,7 +354,7 @@ void CalcNewTargetOffsets(ObjNode *theNode, float scale)
 
 /******************* ATTACH SHADOW TO OBJECT ************************/
 
-ObjNode	*AttachShadowToObject(ObjNode *theNode, int shadowType, float scaleX, float scaleZ, Boolean checkBlockers)
+ObjNode	*AttachShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ, Boolean checkBlockers)
 {
 	float x = theNode->Coord.x;
 	float z = theNode->Coord.z;
@@ -393,7 +393,7 @@ ObjNode	*AttachShadowToObject(ObjNode *theNode, int shadowType, float scaleX, fl
 // For creating shadows whic are never going to call UpdateShadow()
 //
 
-ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, int shadowType, float scaleX, float scaleZ)
+ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ)
 {
 ObjNode	*shadowObj;
 

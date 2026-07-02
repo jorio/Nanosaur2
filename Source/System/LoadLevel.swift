@@ -49,9 +49,9 @@ public func LoadLevelArt() {
     var levelSpecificSpritePaths: [String] = [":Sprites:textures:blockenemy"]
 
     switch currentBiome {
-    case Int32(BIOME_FOREST):
+    case .BIOME_FOREST:
         levelSpecificSpritePaths.append(":Sprites:textures:pinefence")
-    case Int32(BIOME_DESERT):
+    case .BIOME_DESERT:
         levelSpecificSpritePaths.append(":Sprites:textures:dustdevil")
     default:
         break
@@ -100,18 +100,18 @@ public func LoadLevelArt() {
     // DO BIOME SPECIFIC STUFF
 
     switch currentBiome {
-    case Int32(BIOME_FOREST): // LEVEL_NUM_ADVENTURE1, LEVEL_NUM_BATTLE1, LEVEL_NUM_FLAG2
+    case .BIOME_FOREST: // LEVEL_NUM_ADVENTURE1, LEVEL_NUM_BATTLE1, LEVEL_NUM_FLAG2
         BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_LEVELSPECIFIC), Int16(LEVEL1_ObjType_AirMine_Mine),
                                         -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Satin))
 
-    case Int32(BIOME_DESERT): // LEVEL_NUM_ADVENTURE2, LEVEL_NUM_RACE2, LEVEL_NUM_BATTLE2
+    case .BIOME_DESERT: // LEVEL_NUM_ADVENTURE2, LEVEL_NUM_RACE2, LEVEL_NUM_BATTLE2
         BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_LEVELSPECIFIC), Int16(LEVEL2_ObjType_AirMine_Mine),
                                         -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Satin))
 
         BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_LEVELSPECIFIC), Int16(LEVEL2_ObjType_Crystal1),
                                         -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Sheen))
 
-    case Int32(BIOME_SWAMP): // LEVEL_NUM_ADVENTURE3, LEVEL_NUM_RACE1, LEVEL_NUM_FLAG1
+    case .BIOME_SWAMP: // LEVEL_NUM_ADVENTURE3, LEVEL_NUM_RACE1, LEVEL_NUM_FLAG1
         LoadASkeleton(UInt8(SKELETON_TYPE_WORM))
         LoadASkeleton(UInt8(SKELETON_TYPE_RAMPHOR))
 

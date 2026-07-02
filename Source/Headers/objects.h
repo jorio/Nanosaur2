@@ -36,24 +36,24 @@ enum
 };
 
 
-enum
+typedef enum SWIFT_ENUM_CLOSED ShadowType
 {
-	SHADOW_TYPE_CIRCULAR,
-	SHADOW_TYPE_BALSAPLANE,
-	SHADOW_TYPE_CIRCULARDARK,
-	SHADOW_TYPE_SQUARE
-};
+	SHADOW_TYPE_CIRCULAR SWIFT_NAME(SHADOW_TYPE_CIRCULAR),
+	SHADOW_TYPE_BALSAPLANE SWIFT_NAME(SHADOW_TYPE_BALSAPLANE),
+	SHADOW_TYPE_CIRCULARDARK SWIFT_NAME(SHADOW_TYPE_CIRCULARDARK),
+	SHADOW_TYPE_SQUARE SWIFT_NAME(SHADOW_TYPE_SQUARE)
+} ShadowType;
 
 
-enum
+typedef enum SWIFT_ENUM_CLOSED WhatType
 {
-	WHAT_UNDEFINED = 0,
+	WHAT_UNDEFINED SWIFT_NAME(WHAT_UNDEFINED) = 0,
 
-	WHAT_ELECTRODE,
-	WHAT_EGGWORMHOLE,
-	WHAT_EGG,
-	WHAT_HOLE
-};
+	WHAT_ELECTRODE SWIFT_NAME(WHAT_ELECTRODE),
+	WHAT_EGGWORMHOLE SWIFT_NAME(WHAT_EGGWORMHOLE),
+	WHAT_EGG SWIFT_NAME(WHAT_EGG),
+	WHAT_HOLE SWIFT_NAME(WHAT_HOLE)
+} WhatType;
 
 
 #define	ShadowScaleX	SpecialF[0]
@@ -96,13 +96,13 @@ void CalcObjectBoxFromNode(ObjNode *theNode);
 void CalcObjectBoxFromGlobal(ObjNode *theNode);
 void SetObjectCollisionBounds(ObjNode *theNode, float top, float bottom, float left,
 							 float right, float front, float back);
-ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, int shadowType, float scaleX, float scaleZ);
+ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ);
 void UpdateShadow(ObjNode *theNode);
 
 void CullTestAllObjects(void);
 Boolean	IsObjectTotallyCulled(ObjNode *theNode);
 
-ObjNode	*AttachShadowToObject(ObjNode *theNode, int shadowType, float scaleX, float scaleZ, Boolean checkBlockers);
+ObjNode	*AttachShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ, Boolean checkBlockers);
 void CreateCollisionBoxFromBoundingBox(ObjNode *theNode, float tweakXZ, float tweakY);
 void CreateCollisionBoxFromBoundingBox_Maximized(ObjNode *theNode, float scaleMag);
 void CreateCollisionBoxFromBoundingBox_Rotated(ObjNode *theNode, float tweakXZ, float tweakY);

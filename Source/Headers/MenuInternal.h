@@ -10,24 +10,24 @@
 #define MAX_STACK_LENGTH		16
 #define MAX_REGISTERED_MENUS	32
 
-enum
+typedef enum SWIFT_ENUM_CLOSED MenuState
 {
-	kMenuStateOff,
-	kMenuStateFadeIn,
-	kMenuStateReady,
-	kMenuStateFadeOut,
-	kMenuStateAwaitingKeyPress,
-	kMenuStateAwaitingPadPress,
-	kMenuStateAwaitingMouseClick,
-};
+	kMenuStateOff SWIFT_NAME(kMenuStateOff),
+	kMenuStateFadeIn SWIFT_NAME(kMenuStateFadeIn),
+	kMenuStateReady SWIFT_NAME(kMenuStateReady),
+	kMenuStateFadeOut SWIFT_NAME(kMenuStateFadeOut),
+	kMenuStateAwaitingKeyPress SWIFT_NAME(kMenuStateAwaitingKeyPress),
+	kMenuStateAwaitingPadPress SWIFT_NAME(kMenuStateAwaitingPadPress),
+	kMenuStateAwaitingMouseClick SWIFT_NAME(kMenuStateAwaitingMouseClick),
+} MenuState;
 
-enum
+typedef enum SWIFT_ENUM_CLOSED MouseState
 {
-	kMouseOff,
-	kMouseWandering,
-	kMouseHovering,
-	kMouseGrabbing,
-};
+	kMouseOff SWIFT_NAME(kMouseOff),
+	kMouseWandering SWIFT_NAME(kMouseWandering),
+	kMouseHovering SWIFT_NAME(kMouseHovering),
+	kMouseGrabbing SWIFT_NAME(kMouseGrabbing),
+} MouseState;
 
 typedef struct
 {
@@ -72,14 +72,14 @@ typedef struct
 
 	float				menuRowYs[MAX_MENU_ROWS];
 	float				menuFadeAlpha;
-	int					menuState;
+	MenuState			menuState;
 	int					menuPick;
 	ObjNode*			menuObjects[MAX_MENU_ROWS];
 
 	MenuHistoryEntry	history[MAX_STACK_LENGTH];
 	int					historyPos;
 
-	int					mouseState;
+	MouseState			mouseState;
 	int					mouseFocusComponent;
 
 	float				idleTime;
@@ -118,19 +118,6 @@ static inline bool SwIsNeedUp(long need, long player) { return GetNeedState((int
 static inline void SwGameAssert(bool cond) { if (!cond) DoFatalAlert("GAME_ASSERT failed"); }
 static inline float SwGameClampF(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
 static inline int SwGameClampI(int x, int lo, int hi) { return x < lo ? lo : (x > hi ? hi : x); }
-
-// Int32 aliases for anonymous enum constants (Swift imports anon enums as Int, not Int32)
-static const int32_t SwMenuStateOff = kMenuStateOff;
-static const int32_t SwMenuStateFadeIn = kMenuStateFadeIn;
-static const int32_t SwMenuStateReady = kMenuStateReady;
-static const int32_t SwMenuStateFadeOut = kMenuStateFadeOut;
-static const int32_t SwMenuStateAwaitingKeyPress = kMenuStateAwaitingKeyPress;
-static const int32_t SwMenuStateAwaitingPadPress = kMenuStateAwaitingPadPress;
-static const int32_t SwMenuStateAwaitingMouseClick = kMenuStateAwaitingMouseClick;
-static const int32_t SwMouseOff = kMouseOff;
-static const int32_t SwMouseWandering = kMouseWandering;
-static const int32_t SwMouseHovering = kMouseHovering;
-static const int32_t SwMouseGrabbing = kMouseGrabbing;
 
 static inline void CopyDefaultMenuStyle(MenuStyle* dst) { *dst = kDefaultMenuStyle; }
 

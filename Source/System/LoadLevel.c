@@ -19,7 +19,7 @@
 /*     VARIABLES      */
 /**********************/
 
-static const int kLevelBiomes[NUM_LEVELS] =
+static const Biome kLevelBiomes[NUM_LEVELS] =
 {
 	[LEVEL_NUM_ADVENTURE1]	= BIOME_FOREST,
 	[LEVEL_NUM_ADVENTURE2]	= BIOME_DESERT,
@@ -52,6 +52,6 @@ static const char*	kBiomeNames[NUM_BIOMES] =
 	[BIOME_SWAMP]			= "swamp",
 };
 
-int GetLevelBiome(int levelNum) { return kLevelBiomes[levelNum]; }
+Biome GetLevelBiome(int levelNum) { return kLevelBiomes[levelNum]; }
 const char* GetLevelName(int levelNum) { return kLevelNames[levelNum]; }
-const char* GetBiomeName(int biomeNum) { return kBiomeNames[biomeNum]; }
+const char* GetBiomeName(Biome biomeNum) { return kBiomeNames[biomeNum]; }

@@ -23,7 +23,7 @@ private func LoadSpriteFromDualImage(_ path: String) -> SpriteType {
     sprite.width = Int32(matData.width)
     sprite.height = Int32(matData.height)
     sprite.aspectRatio = Float(matData.height) / Float(matData.height)
-    sprite.materialObject = MO_CreateNewObjectOfType(UInt32(MO_TYPE_MATERIAL), 0, &matData)
+    sprite.materialObject = MO_CreateNewObjectOfType(.MO_TYPE_MATERIAL, 0, &matData)
     return sprite
 }
 
@@ -135,7 +135,7 @@ public func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefiniti
     spriteData.type = Int16(newObjDef.pointee.type) // set group subtype
     spriteData.drawCentered = drawCentered
 
-    guard let spriteMORaw = MO_CreateNewObjectOfType(UInt32(MO_TYPE_SPRITE), 0, &spriteData) else {
+    guard let spriteMORaw = MO_CreateNewObjectOfType(.MO_TYPE_SPRITE, 0, &spriteData) else {
         SwFatal("MakeSpriteObject: MO_CreateNewObjectOfType failed!")
         return nil
     }

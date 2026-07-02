@@ -12,5 +12,9 @@
 extern const MenuItem gInGameAnaglyphMenu[];
 extern const MenuItem gAnaglyphMenu[];
 
+#pragma clang assume_nonnull begin
+
 static inline const MenuItem* GetInGameAnaglyphMenu(void) { return gInGameAnaglyphMenu; }
 static inline const MenuItem* GetAnaglyphMenu(void) { return gAnaglyphMenu; }
+
+#pragma clang assume_nonnull end

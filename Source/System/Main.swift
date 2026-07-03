@@ -1,0 +1,810 @@
+// Main.swift - Port of Main.c to Swift
+//
+// Nearly every global in this file (gGamePrefs, gGameViewInfoPtr, gLevelNum,
+// gVSMode, gDebugMode, gAutoFadeStatusBits, gTimeDemo, gGameOver,
+// gLevelCompleted, gPlayingFromSavedGame, gSkipLevelIntro,
+// gRaceReadySetGoTimer, gPrefsFolderVRefNum/DirID, gWorldSunDirection,
+// gBestCheckpointNum/Coord/Aim) is read/written by many other already-
+// ported and still-unported files, so they all stay `extern`'d in the
+// stubbed Main.c. gBestCheckpointNum/Aim additionally have shim
+// accessors in PlayerInternal.h that reference them directly.
+//
+// gTimeDemoStartTime/EndTime, gGameLevelTimer, gLevelCompletedCoolDownTimer,
+// gFillColor1, and gLevelSongs have no `extern` declaration anywhere and
+// are only ever touched from this file, so they move into private Swift
+// storage.
+
+private var gTimeDemoStartTime: UInt32 = 0
+private var gTimeDemoEndTime: UInt32 = 0
+private var gGameLevelTimer: Float = 0
+private var gLevelCompletedCoolDownTimer: Float = 0
+private var gFillColor1 = OGLColorRGBA(r: 0.8, g: 0.8, b: 0.7, a: 1)
+
+// LEVEL SONGS
+private let gLevelSongs: [Int16] = [
+    Int16(SONG_LEVEL1), // ADVENTURE LEVEL 1
+    Int16(SONG_LEVEL2), // ADVENTURE LEVEL 2
+    Int16(SONG_LEVEL3), // ADVENTURE LEVEL 3
+
+    Int16(SONG_LEVEL3), // RACE 1
+    Int16(SONG_LEVEL2), // RACE 2
+    Int16(SONG_LEVEL1), // BATTLE 1
+    Int16(SONG_LEVEL2), // BATTLE 2
+    Int16(SONG_LEVEL3), // CAPTURE THE FLAG 1
+    Int16(SONG_LEVEL1), // CAPTURE THE FLAG 2
+]
+
+// MARK: - Toolbox init
+
+@c @implementation
+public func ToolBoxInit() {
+    MyFlushEvents()
+
+    // FIRST VERIFY SYSTEM BEFORE GOING TOO FAR
+
+    VerifySystem()
+    InitInput()
+
+    // INIT PREFERENCES
+
+    InitPrefsFolder(0)
+    InitDefaultPrefs()
+    _ = LoadPrefs()
+
+    SetFullscreenMode(false)
+
+    // BOOT OGL
+
+    OGL_Boot()
+}
+
+// MARK: - Init default prefs
+
+@c @implementation
+public func InitDefaultPrefs() {
+    withUnsafeMutableBytes(of: &gGamePrefs) { raw in
+        _ = SDL_memset(raw.baseAddress, 0, raw.count)
+    }
+
+    // DETERMINE WHAT LANGUAGE IS ON THIS MACHINE
+
+    gGamePrefs.fullscreen = 1
+    gGamePrefs.vsync = 1
+
+    gGamePrefs.language = UInt8(GetBestLanguageIDFromSystemLocale().rawValue)
+    gGamePrefs.cutsceneSubtitles = IsNativeEnglishSystem() ? 0 : 1 // enable subtitles if user's native language isn't English
+
+    gGamePrefs.lowRenderQuality = 0
+    gGamePrefs.splitScreenMode = UInt8(SplitscreenMode.vertical.rawValue)
+    gGamePrefs.stereoGlassesMode = UInt8(STEREO_GLASSES_MODE_OFF)
+    gGamePrefs.anaglyphCalibrationRed = UInt8(DEFAULT_ANAGLYPH_R)
+    gGamePrefs.anaglyphCalibrationGreen = UInt8(DEFAULT_ANAGLYPH_G)
+    gGamePrefs.anaglyphCalibrationBlue = UInt8(DEFAULT_ANAGLYPH_B)
+    gGamePrefs.doAnaglyphChannelBalancing = 1
+
+    gGamePrefs.showTargetingCrosshairs = 1
+    gGamePrefs.kiddieMode = 0
+
+    gGamePrefs.force4x3HUD = 0
+    gGamePrefs.hudScale = 100
+
+    gGamePrefs.mouseSensitivityLevel = UInt8(DEFAULT_MOUSE_SENSITIVITY_LEVEL)
+
+    gGamePrefs.musicVolumePercent = 70
+    gGamePrefs.sfxVolumePercent = 70
+
+    gGamePrefs.rumbleIntensity = 100
+
+    withUnsafeMutablePointer(to: &gGamePrefs.bindings) { dst in
+        withUnsafePointer(to: kDefaultInputBindings) { src in
+            UnsafeMutableRawPointer(dst).copyMemory(from: UnsafeRawPointer(src), byteCount: MemoryLayout<InputBinding>.size * Int(NUM_CONTROL_NEEDS))
+        }
+    }
+}
+
+// MARK: -
+
+// MARK: - Play game adventure
+
+// Play the multi-level adventure mode
+private func playGameAdventure() {
+    // GAME INITIALIZATION
+
+    InitPlayerInfo_Game() // init player info for entire game
+
+    // PLAY THRU LEVELS SEQUENTIALLY
+
+    while gLevelNum <= Int16(LevelNum.adventure3.rawValue) {
+        // DO LEVEL INTRO
+
+        PlaySong(gLevelSongs[Int(gLevelNum)], 1)
+
+        if gSkipLevelIntro == 0 {
+            if (gLevelNum == 0) || gPlayingFromSavedGame != 0 {
+                DoLevelIntroScreen(UInt8(INTRO_MODE_NOSAVE))
+            } else {
+                DoLevelIntroScreen(UInt8(INTRO_MODE_SAVEGAME))
+            }
+        }
+        gSkipLevelIntro = 0 // reset skip flag
+
+        MyFlushEvents()
+
+        // LOAD ALL OF THE ART & STUFF
+
+        initLevel()
+
+        // PLAY IT
+
+        playLevel()
+
+        gPlayingFromSavedGame = 0 // once we've completed a level after restoring, we're not really playing from a saved game anymore
+
+        // CLEANUP LEVEL
+
+        MyFlushEvents()
+        cleanupLevel()
+
+        // SEE IF LOST
+
+        if gGameOver != 0 { // bail out if game has ended
+            break
+        }
+
+        // DO END-LEVEL BONUS SCREEN
+
+        if gLevelNum == Int16(LevelNum.adventure3.rawValue) { // if just won game then do win screen first!
+            DoWinScreen()
+        }
+
+        gLevelNum += 1
+    }
+
+    gPlayingFromSavedGame = 0
+}
+
+// MARK: - Play game: versus
+
+// Play one of the 2-player versus modes.
+private func playGameVersus() {
+    // GAME INITIALIZATION
+
+    InitPlayerInfo_Game() // init player info for entire game
+
+    // DO LEVEL INTRO
+
+    PlaySong(gLevelSongs[Int(gLevelNum)], 1)
+
+    MyFlushEvents()
+
+    // LOAD ALL OF THE ART & STUFF
+
+    initLevel()
+
+    // PLAY IT
+
+    playLevel()
+
+    // CLEANUP LEVEL
+
+    MyFlushEvents()
+    cleanupLevel()
+}
+
+// MARK: -
+
+// MARK: - Init level
+
+// Sets up the OpenGL draw context and loads all the data files
+// for the level we're about to play.
+private func initLevel() {
+    if gTimeDemo != 0 { // if time demo always reset random seed
+        SetMyRandomSeed(0)
+    }
+
+    // INIT COMMON STUFF
+
+    gGameFrameNum = 0
+    gGameLevelTimer = 0
+    gGameOver = 0
+    gLevelCompleted = 0
+
+    for i in 0..<Int(gNumPlayers) {
+        SetBestCheckpointNum(Int32(i), -1)
+        GetPlayerInfoEntry(Int32(i))!.pointee.objNode = nil
+    }
+
+    // MAKE VIEW
+
+    SetTerrainScale(Int32(DEFAULT_TERRAIN_SCALE)) // set scale to some default for now
+
+    // SETUP VIEW DEF
+
+    var viewDef = OGLSetupInputType()
+    OGL_NewViewDef(&viewDef)
+
+    viewDef.camera.hither = 20
+    viewDef.camera.fov = GetSplitscreenPaneFOV()
+    viewDef.view.clearBackBuffer = 0
+    viewDef.camera.yon = (Float(gSuperTileActiveRange) * Float(SUPERTILE_SIZE) * gTerrainPolygonSize) * 0.95
+
+    switch Int16(gLevelNum) {
+    case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
+        viewDef.view.clearColor.r = 0.968
+        viewDef.view.clearColor.g = 0.537
+        viewDef.view.clearColor.b = 0.278
+        viewDef.styles.useFog = 1
+        viewDef.styles.fogStart = viewDef.camera.yon * 0.4
+        viewDef.styles.fogEnd = viewDef.camera.yon * 0.95
+        viewDef.lights.ambientColor.r = 0.45
+        viewDef.lights.ambientColor.g = 0.45
+        viewDef.lights.ambientColor.b = 0.45
+        gWorldSunDirection.x = 0.4
+        gWorldSunDirection.y = -0.3
+        gWorldSunDirection.z = 0.2
+        gFillColor1.r = 0.6
+        gFillColor1.g = 0.6
+        gFillColor1.b = 0.6
+        gDrawLensFlare = 1
+
+    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
+        viewDef.view.clearColor.r = 0.568
+        viewDef.view.clearColor.g = 0.243
+        viewDef.view.clearColor.b = 0.125
+        viewDef.styles.useFog = 1
+        viewDef.styles.fogStart = viewDef.camera.yon * 0.4
+        viewDef.styles.fogEnd = viewDef.camera.yon * 0.95
+        viewDef.lights.ambientColor.r = 0.45
+        viewDef.lights.ambientColor.g = 0.45
+        viewDef.lights.ambientColor.b = 0.45
+        gWorldSunDirection.x = 0.4
+        gWorldSunDirection.y = -0.3
+        gWorldSunDirection.z = 0.2
+        gFillColor1.r = 0.6
+        gFillColor1.g = 0.6
+        gFillColor1.b = 0.6
+        gDrawLensFlare = 1
+
+    default:
+        viewDef.view.clearColor.r = 0.43
+        viewDef.view.clearColor.g = 0.33
+        viewDef.view.clearColor.b = 0.7
+        viewDef.styles.useFog = 1
+        viewDef.styles.fogStart = viewDef.camera.yon * 0.35
+        viewDef.styles.fogEnd = viewDef.camera.yon * 0.95
+        viewDef.lights.ambientColor.r = 0.4
+        viewDef.lights.ambientColor.g = 0.4
+        viewDef.lights.ambientColor.b = 0.4
+        gWorldSunDirection.x = 0.4
+        gWorldSunDirection.y = -0.5
+        gWorldSunDirection.z = 0.5
+        gFillColor1.r = 0.7
+        gFillColor1.g = 0.7
+        gFillColor1.b = 0.7
+        gDrawLensFlare = 1
+    }
+
+    // SET LIGHTS
+
+    viewDef.lights.numFillLights = 1
+    var normalizedSunDir = OGLVector3D()
+    OGLVector3D_Normalize(&gWorldSunDirection, &normalizedSunDir)
+    gWorldSunDirection = normalizedSunDir
+    viewDef.lights.fillDirection.0 = gWorldSunDirection
+    viewDef.lights.fillColor.0 = gFillColor1
+
+    // SET ANAGLYPH INFO
+
+    if isStereo() {
+        gAnaglyphFocallength = 200.0
+        gAnaglyphEyeSeparation = 35.0
+
+        if isStereoAnaglyphMono() {
+            viewDef.lights.ambientColor.r += 0.1 // make a little brighter
+            viewDef.lights.ambientColor.g += 0.1
+            viewDef.lights.ambientColor.b += 0.1
+        }
+    }
+
+    // MAKE DRAW CONTEXT
+
+    OGL_SetupGameView(&viewDef)
+
+    // SET AUTO-FADE INFO
+
+    gAutoFadeStartDist = gGameViewInfoPtr!.pointee.yon * 0.80
+    gAutoFadeEndDist = gGameViewInfoPtr!.pointee.yon * 0.9
+
+    gAutoFadeRange_Frac = 1.0 / (gAutoFadeEndDist - gAutoFadeStartDist)
+
+    if gAutoFadeStartDist != 0.0 {
+        gAutoFadeStatusBits = UInt32(STATUS_BIT_AUTOFADE)
+    } else {
+        gAutoFadeStatusBits = 0
+    }
+
+    // LOAD ART & TERRAIN
+    //
+    // NOTE: only call this *after* draw context is created!
+
+    LoadLevelArt()
+    InitInfobar()
+
+    // INIT OTHER MANAGERS
+
+    InitSplineManager()
+    InitContrails()
+    InitEnemyManager()
+    InitEffects()
+    InitSparkles()
+    InitItemsManager()
+
+    // INIT SPECIAL
+
+    // INIT LEVEL & MODE SPECIFICS
+    //
+    // (no cases active; the only original case was for a level that no
+    // longer exists in this build, kept as dead code in the original too)
+
+    if gVSMode == .race {
+        gRaceReadySetGoTimer = 3.0
+    }
+
+    // INIT THE PLAYER & RELATED STUFF
+
+    PrimeTerrainWater() // NOTE:  must do this before items get added since some items may be on the water
+    InitPlayerAtStartOfLevel() // NOTE:  this will also cause the initial items in the start area to be created
+
+    PrimeSplines()
+    PrimeFences()
+
+    // INIT CAMERAS
+
+    for i in 0..<Int(gNumPlayers) {
+        InitCamera_Terrain(Int16(i))
+    }
+}
+
+// MARK: - Play level
+
+private func playLevel() {
+    // PREP STUFF
+
+    DoSDLMaintenance()
+    CalcFramesPerSecond()
+    CalcFramesPerSecond()
+
+    _ = MakeFadeEvent(UInt8(kFadeFlags_In), 1.0)
+
+    if gTimeDemo != 0 {
+        gTimeDemoStartTime = TickCount()
+    }
+
+    GrabMouse(1)
+
+    // MAIN GAME LOOP
+
+    while true {
+        // INPUT
+
+        DoSDLMaintenance()
+
+        if gGamePaused != 0 {
+            MoveObjects()
+            CalcFramesPerSecond()
+            DoPlayerTerrainUpdate()
+            OGL_DrawScene(cDrawLevelCallback)
+            continue
+        }
+
+        for i in 0..<Int(gNumPlayers) {
+            UpdatePlayerSteering(Int32(i))
+        }
+
+        // MOVE OBJECTS & UPDATE TERRAIN & DRAW
+
+        MoveEverything()
+        DoPlayerTerrainUpdate()
+        OGL_DrawScene(cDrawLevelCallback)
+
+        // UPDATE FPS AND TIMERS
+
+        CalcFramesPerSecond()
+        let fps = gFramesPerSecondFrac
+
+        gGameFrameNum += 1
+        gGameLevelTimer += fps
+        gDisableHiccupTimer = 0 // reenable this after the 1st frame
+
+        // SEE IF RESET PLAYER NOW
+
+        for i in 0..<Int(gNumPlayers) { // check all players
+            if GetPlayerIsDead(Int32(i)) != 0 { // is this player dead?
+                let oldTimer = GetDeathTimer(Int32(i))
+                var deathTimer = oldTimer - fps
+                SetDeathTimer(Int32(i), deathTimer)
+                if deathTimer <= 0.0 { // is it time to reincarnate player?
+                    let fadeOutSpeed: Float = 4.0
+
+                    if oldTimer > 0.0 { // if just now crossed zero then start fade
+                        if gNumPlayers > 1
+                            || GetPlayerInfoEntry(Int32(i))!.pointee.numFreeLives > 0 { // ...only if hasn't lost adventure mode yet (gameover will freeze-frame fadeout)
+                            _ = MakeFadeEvent(UInt8(kFadeFlags_Out) | (UInt8(kFadeFlags_P1) << i), fadeOutSpeed)
+                        }
+                    } else if deathTimer < -(1.0 / fadeOutSpeed) { // once fully faded out reset player @ checkpoint
+                        ResetPlayerAtBestCheckpoint(Int16(i))
+                    }
+                }
+                _ = deathTimer
+                deathTimer = 0
+            }
+        }
+
+        // SEE IF PAUSED
+
+        if SwIsNeedDown(Int(kNeed_UIPause), Int(ANY_PLAYER)) { // do regular pause mode
+            DoPaused()
+        }
+
+        #if os(macOS)
+        if IsCmdQDown() != 0 {
+            DoReallyQuit()
+        }
+        #endif
+
+        // LEVEL CHEAT
+
+        if (SwIsKeyHeld(Int(SDL_SCANCODE_LGUI.rawValue)) || SwIsKeyHeld(Int(SDL_SCANCODE_RGUI.rawValue)))
+            && SwIsKeyDown(Int(SDL_SCANCODE_F10.rawValue)) { // see if skip level
+            gLevelCompleted = 1
+        }
+
+        // SEE IF LEVEL IS COMPLETED
+
+        if gGameOver != 0 { // if we need immediate abort, then bail now
+            break
+        }
+
+        if gLevelCompleted != 0 {
+            gLevelCompletedCoolDownTimer -= fps // game is done, but wait for cool-down timer before bailing
+            if gLevelCompletedCoolDownTimer <= 0.0 {
+                break
+            }
+        }
+    }
+
+    GrabMouse(0)
+
+    if gGammaFadeFrac > 0 { // only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
+        gGameViewInfoPtr!.pointee.fadeSound = 1
+        OGL_FadeOutScene(cDrawLevelCallback, cUpdateTerrainForFadeOut)
+    }
+
+    if gTimeDemo != 0 {
+        gTimeDemoEndTime = TickCount()
+        let ticks = gTimeDemoEndTime - gTimeDemoStartTime
+        let seconds = Float(ticks) / 60.0
+
+        showTimeDemoResults(Int32(gGameFrameNum), seconds, Float(gGameFrameNum) / seconds)
+
+        ExitToShell()
+    }
+}
+
+// MARK: - Show time demo results
+
+private func showTimeDemoResults(_ numFrames: Int32, _ numSeconds: Float, _ averageFPS: Float) {
+    SwAlert("showTimeDemoResults:\nFrames: \(numFrames)\nTime: \(numSeconds)\nAverage FPS: \(averageFPS)\nPeak #Objs: \(gNumObjectNodesPeak)")
+}
+
+// MARK: - Draw level callback
+
+private let cDrawLevelCallback: @convention(c) () -> Void = {
+    if isStereo() {
+        let p = Int(gCurrentSplitScreenPane) // get the player # who's draw context is being drawn
+
+        // MAKE SURE ANAGLYPH SETTINGS ARE GOOD FOR THIS CAMERA MODE
+
+        switch GetCameraMode(Int32(p)) {
+        case UInt8(CameraMode.normal.rawValue):
+            if isStereoShutter() {
+                gAnaglyphFocallength = 280.0
+                gAnaglyphEyeSeparation = 45.0
+            } else {
+                gAnaglyphFocallength = 260.0
+                gAnaglyphEyeSeparation = 35.0
+            }
+
+        case UInt8(CameraMode.firstPerson.rawValue):
+            gAnaglyphFocallength = 300.0
+            gAnaglyphEyeSeparation = 80.0
+
+        case UInt8(CameraMode.anaglyphClose.rawValue):
+            gAnaglyphFocallength = 700.0
+            gAnaglyphEyeSeparation = 50.0
+
+        default:
+            break
+        }
+    }
+
+    DrawObjects()
+}
+
+private let cUpdateTerrainForFadeOut: @convention(c) () -> Void = {
+    DoPlayerTerrainUpdate()
+}
+
+// IsStereo/IsStereoAnaglyphMono/IsStereoShutter are parameterized C macros,
+// which Swift can't import as callable symbols.
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO) }
+private func isStereoShutter() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_SHUTTER) }
+
+// MARK: - Cleanup level
+
+private func cleanupLevel() {
+    FreeAllCustomSplines()
+    StopAllEffectChannels()
+    EmptySplineObjectList()
+    DeleteAllObjects()
+    FreeAllSkeletonFiles(-1)
+    DisposeTerrain()
+    DeleteAllParticleGroups()
+    DeleteAllConfettiGroups()
+    DisposeInfobar()
+    DisposeParticleSystem()
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_LEVELSPECIFIC))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_OVERHEADMAP))
+    DisposeAllBG3DContainers()
+    DisposeContrails()
+    FreeAllZaps()
+
+    OGL_DisposeGameView() // do this last!
+
+    // SET SOME IMPORTANT GLOBALS BACK TO DEFAULTS
+
+    gVSMode = .none
+    gNumPlayers = 1
+}
+
+// MARK: -
+
+// MARK: - Move everything
+
+@c @implementation
+public func MoveEverything() {
+    MoveObjects()
+    MoveSplineObjects()
+    UpdateCameras() // update camera
+    UpdateFences()
+    UpdateDustDevilUVAnimation()
+
+    // MODE-SPECIFIC STUFF
+
+    switch gVSMode {
+    // ADVENTURE MODE
+    case .none:
+        break
+
+    // RACE MODE
+    case .race:
+        gRaceReadySetGoTimer -= gFramesPerSecondFrac
+        CalcPlayerPlaces() // determinw who is in what place
+
+    default:
+        break
+    }
+}
+
+// MARK: - Start level completion
+
+@c @implementation
+public func StartLevelCompletion(_ coolDownTimer: Float) {
+    if gLevelCompleted == 0 {
+        gLevelCompleted = 1
+        gLevelCompletedCoolDownTimer = coolDownTimer
+    }
+}
+
+// MARK: -
+
+// MARK: - Prime time demo spline
+
+@c @implementation
+public func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+    if gTimeDemo == 0 { // are we in time demo mode?
+        return 0
+    }
+
+    // GET SPLINE INFO
+
+    let placement = itemPtr.pointee.placement
+    var x: Float = 0
+    var z: Float = 0
+    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+
+    // MAKE DUMMY SPLINE TRACKER OBJECT
+
+    var def = NewObjectDefinitionType()
+    def.genre = UInt8(CUSTOM_GENRE)
+    def.slot = 0
+    def.moveCall = nil
+    def.flags = 0
+    def.scale = 1
+
+    let newObj = MakeNewObject(&def)!
+
+    // SET SPLINE INFO
+
+    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.pointee.SplineItemPtr = itemPtr
+    newObj.pointee.SplineNum = UInt8(splineNum)
+    newObj.pointee.SplinePlacement = placement
+    newObj.pointee.SplineMoveCall = cMoveTimeDemoOnSpline // set move call
+
+    // ADD SPLINE OBJECT TO SPLINE OBJECT LIST
+
+    DetachObject(newObj, 1) // detach this object from the linked list
+    AddToSplineObjectList(newObj, 1)
+
+    return 1
+}
+
+// MARK: - Move time demo on spline
+
+private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
+    guard let theNode = theNodeOpt else { return }
+    let player = GetPlayerInfoEntry(0)!.pointee.objNode!
+
+    // MOVE ALONG THE SPLINE
+
+    if IncreaseSplineIndex(theNode, 450) != 0 {
+        gGameOver = 1
+    }
+
+    GetObjectCoordOnSpline(theNode)
+
+    theNode.pointee.Coord.y = GetTerrainY(theNode.pointee.Coord.x, theNode.pointee.Coord.z) + 600.0
+    theNode.pointee.OldCoord.y = theNode.pointee.Coord.y
+
+    var v = OGLVector3D()
+    v.x = theNode.pointee.Coord.x - theNode.pointee.OldCoord.x // calc aim vector
+    v.y = theNode.pointee.Coord.y - theNode.pointee.OldCoord.y
+    v.z = theNode.pointee.Coord.z - theNode.pointee.OldCoord.z
+    var vNorm = OGLVector3D()
+    OGLVector3D_Normalize(&v, &vNorm)
+    v = vNorm
+
+    // AIM ALONG SPLINE
+
+    withUnsafePointer(to: gUp) { upPtr in
+        OGL_UpdateCameraFromToUp(&theNode.pointee.OldCoord, &theNode.pointee.Coord, upPtr, 0)
+    }
+
+    GetPlayerInfoEntry(0)!.pointee.camera.cameraLocation = theNode.pointee.Coord
+    GetPlayerInfoEntry(0)!.pointee.coord = theNode.pointee.Coord // update player coord
+    player.pointee.Coord = theNode.pointee.Coord
+    player.pointee.MotionVector = v
+    let r = CalcYAngleFromPointToPoint(0, theNode.pointee.OldCoord.x, theNode.pointee.OldCoord.z,
+                                        theNode.pointee.Coord.x, theNode.pointee.Coord.z)
+    player.pointee.Rot.y = r
+
+    OGLMatrix4x4_SetTranslate(&player.pointee.BaseTransformMatrix, theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    var m = OGLMatrix4x4()
+    OGLMatrix4x4_SetRotate_Y(&m, r)
+    var result = OGLMatrix4x4()
+    OGLMatrix4x4_Multiply(&m, &player.pointee.BaseTransformMatrix, &result)
+    player.pointee.BaseTransformMatrix = result
+
+    theNode.pointee.OldCoord = theNode.pointee.Coord // remember coord also
+
+    if (MyRandomLong() & 0xff) < 15 {
+        let weapon = RandomRange(UInt16(WeaponType.blaster.rawValue), UInt16(WeaponType.bomb.rawValue))
+        GetPlayerInfoEntry(0)!.pointee.currentWeapon = Int16(weapon)
+        weaponQuantityBase(GetPlayerInfoEntry(0)!)[Int(weapon)] = 999
+        PlayerFireButtonPressed(player, 1)
+    }
+}
+
+@inline(__always) private func weaponQuantityBase(_ p: UnsafeMutablePointer<PlayerInfoType>) -> UnsafeMutablePointer<Int16> {
+    UnsafeMutableRawPointer(p.pointer(to: \.weaponQuantity)!).assumingMemoryBound(to: Int16.self)
+}
+
+// MARK: -
+
+// MARK: - Load/dispose font used throughout the game
+
+@c @implementation
+public func LoadGlobalAssets() {
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
+    LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_CURSOR), ":Sprites:menu:cursor", 0)
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_INFOBAR), Int32(INFOBAR_SObjType_COUNT), "infobar")
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_GLOBAL), Int32(GLOBAL_SObjType_COUNT), "global")
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_SPHEREMAPS), Int32(SPHEREMAP_SObjType_COUNT), "spheremap")
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_COUNT), "particle")
+    BlendAllSpritesInGroup(Int16(SPRITE_GROUP_PARTICLES))
+}
+
+@c @implementation
+public func DisposeGlobalAssets() {
+    DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT1))
+    DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT2))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_CURSOR))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_INFOBAR))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_GLOBAL))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_SPHEREMAPS))
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_PARTICLES))
+}
+
+// MARK: -
+
+// MARK: - Program main entry
+
+@c @implementation
+public func GameMain() {
+    // BOOT STUFF
+
+    ToolBoxInit()
+
+    #if !DEBUG
+    SDL_HideCursor()
+    #endif
+
+    DoWarmUpScreen()
+
+    // INIT SOME OF MY STUFF
+
+    LoadLocalizedStrings(GameLanguageID(rawValue: Int32(gGamePrefs.language)))
+    InitSpriteManager()
+    InitBG3DManager()
+    InitWindowStuff()
+    InitTerrainManager()
+    InitSkeletonManager()
+    InitSoundTools()
+    InitTwitchSystem()
+
+    // INIT MORE MY STUFF
+
+    InitObjectManager()
+
+    var someLong: UInt = 0
+    GetDateTime(&someLong) // init random seed
+    SetMyRandomSeed(UInt32(someLong))
+
+    // PRELOAD SPRITES FOR ENTIRE GAME
+
+    LoadGlobalAssets()
+
+    // SHOW TITLES
+    // (SKIPFLUFF is hardcoded off in this build, so this block always runs.)
+
+    DoLegalScreen()
+
+    DoIntroStoryScreen()
+
+    // MAIN LOOP
+
+    while true {
+        gTimeDemo = 0
+
+        // DO MAIN MENU
+
+        MyFlushEvents()
+        DoMainMenuScreen()
+
+        // PLAY ADVENTURE OR VS. MODE
+
+        if gVSMode == .none {
+            playGameAdventure()
+        } else {
+            if DoLocalGatherScreen() != 0 {
+                gVSMode = .none
+                gNumPlayers = 1
+                continue
+            }
+            playGameVersus()
+        }
+    }
+}

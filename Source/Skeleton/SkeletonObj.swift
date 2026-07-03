@@ -11,7 +11,7 @@ private var gNumDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArr
 public func InitSkeletonManager() {
     CalcAccelerationSplineCurve() // calc accel curve
 
-    for i in 0..<SkeletonType.allCases.count {
+    for (i, _) in SkeletonType.allCases.enumerated() {
         gLoadedSkeletonsList[i] = nil
     }
 }
@@ -49,8 +49,8 @@ public func FreeSkeletonFile(_ skeletonType: UInt8) {
 // Free's all except for the input type (-1 == none to skip)
 @c @implementation
 public func FreeAllSkeletonFiles(_ skipMe: Int16) {
-    for i in 0..<Int16(SkeletonType.allCases.count) {
-        if i != skipMe {
+    for (i, _) in SkeletonType.allCases.enumerated() {
+        if Int16(i) != skipMe {
             FreeSkeletonFile(UInt8(i))
         }
     }

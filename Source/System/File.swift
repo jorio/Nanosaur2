@@ -988,7 +988,7 @@ public func SaveGame(_ fileSlot: Int32) -> UInt8 {
     saveData.jetpackFuel = GetPlayerInfoEntry(0)!.pointee.jetpackFuel
     saveData.shieldPower = GetPlayerInfoEntry(0)!.pointee.shieldPower
 
-    for i in 0..<WeaponType.allCases.count {
+    for (i, _) in WeaponType.allCases.enumerated() {
         weaponQuantityBase(&saveData)[i] = UInt16(bitPattern: playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)[i])
     }
 
@@ -1052,7 +1052,7 @@ public func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 
     let saveWeapons = UnsafeMutablePointer(mutating: saveData).map { weaponQuantityBase($0) }!
     let playerWeapons = playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)
-    for i in 0..<WeaponType.allCases.count {
+    for (i, _) in WeaponType.allCases.enumerated() {
         playerWeapons[i] = Int16(bitPattern: saveWeapons[i])
     }
 }

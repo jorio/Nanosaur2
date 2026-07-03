@@ -7,7 +7,7 @@ private let eggScale: Float = 6.0
 public func FindAllEggItems() {
     // INIT EGG COUNTS
 
-    for i in 0..<EggColor.allCases.count {
+    for (i, _) in EggColor.allCases.enumerated() {
         GetNumEggsToSaveSlot(Int32(i))!.pointee = 0
         GetNumEggsSavedSlot(Int32(i))!.pointee = 0
     }
@@ -440,7 +440,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
     // HANDLE REGULAR ADVENTURE MODE
 
     case .none:
-        for i in 0..<EggColor.allCases.count {
+        for (i, _) in EggColor.allCases.enumerated() {
             if GetNumEggsToSaveSlot(Int32(i))!.pointee > 0 { // do we need to get this color?
                 if GetNumEggsSavedSlot(Int32(i))!.pointee < GetNumEggsToSaveSlot(Int32(i))!.pointee { // did we get them all?
                     gotAllEggs = false

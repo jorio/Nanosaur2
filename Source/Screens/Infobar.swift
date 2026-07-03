@@ -988,7 +988,7 @@ private func infobarDrawEggs() {
     gBlinkingEggTimer += gFramesPerSecondFrac
 
     var x = eggsX()
-    for eggType in 0..<EggColor.allCases.count {
+    for (eggType, _) in EggColor.allCases.enumerated() {
         if GetNumEggsToSaveSlot(Int32(eggType)).pointee <= 0 { // are there any eggs of this color?
             continue
         }

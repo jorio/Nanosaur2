@@ -114,7 +114,7 @@ public func PrimeTerrainWater() {
     }
 
     // INIT UVS
-    for i in 0..<WaterType.allCases.count {
+    for (i, _) in WaterType.allCases.enumerated() {
         gWaterUVs[i][0].u = 0; gWaterUVs[i][0].v = 0
         gWaterUVs[i][1].u = 0; gWaterUVs[i][1].v = 0
     }
@@ -297,64 +297,64 @@ private let cMoveWater: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 private func moveWater() {
     let fps = gFramesPerSecondFrac
 
-    for i in 0..<WaterType.allCases.count {
-        switch i {
-        case Int(WaterType.green.rawValue), Int(WaterType.blue.rawValue):
+    for (i, waterType) in WaterType.allCases.enumerated() {
+        switch waterType {
+        case .green, .blue:
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
 
             gWaterUVs[i][1].u -= 0.015 * fps
             gWaterUVs[i][1].v += 0.025 * fps
 
-        case Int(WaterType.lava.rawValue):
+        case .lava:
             gWaterUVs[i][0].u += 0.08 * fps
             gWaterUVs[i][0].v += 0.03 * fps
 
             gWaterUVs[i][1].u -= 0.06 * fps
             gWaterUVs[i][1].v += 0.05 * fps
 
-        case Int(WaterType.lavaDir0.rawValue):
+        case .lavaDir0:
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        case Int(WaterType.lavaDir4.rawValue):
+        case .lavaDir4:
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WaterType.lavaDir2.rawValue):
+        case .lavaDir2:
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
 
-        case Int(WaterType.lavaDir6.rawValue):
+        case .lavaDir6:
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps
 
-        case Int(WaterType.lavaDir1.rawValue):
+        case .lavaDir1:
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        case Int(WaterType.lavaDir3.rawValue):
+        case .lavaDir3:
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WaterType.lavaDir5.rawValue):
+        case .lavaDir5:
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WaterType.lavaDir7.rawValue):
+        case .lavaDir7:
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        default:
-            break
+        case ._count:
+            break // sizing sentinel, never actually iterated (allCases excludes it)
         }
     }
 }

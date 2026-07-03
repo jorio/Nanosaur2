@@ -50,7 +50,7 @@ public func InitPlayerInfo_Game() {
             pi.pointee.shieldPower = MAX_SHIELD_POWER
 
             let weaponQuantity = weaponQuantityBase(pi)
-            for w in 0..<WeaponType.allCases.count { // init weapon inventory
+            for (w, _) in WeaponType.allCases.enumerated() { // init weapon inventory
                 weaponQuantity[w] = 0
             }
         }

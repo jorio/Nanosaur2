@@ -74,7 +74,7 @@ private func makeRamphor(_ x: Float, _ z: Float, _ animNum: Int16, _ height: Int
     } else {
         newObj.pointee.Damage = ramphorDamage
     }
-    newObj.pointee.Kind = Int32(ENEMY_KIND_RAMPHOR)
+    newObj.pointee.Kind = Int32(EnemyKind.ramphor.rawValue)
 
     // SET HOT-SPOT FOR AUTO TARGETING WEAPONS
 

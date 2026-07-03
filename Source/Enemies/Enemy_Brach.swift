@@ -29,7 +29,7 @@ public func AddEnemy_Brach(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>
     }
 
     if itemPtr.pointee.parm.3 & 1 == 0 { // see if always add
-        if GetNumEnemyOfKindSlot(Int32(ENEMY_KIND_BRACH))!.pointee >= maxBrachs {
+        if GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee >= maxBrachs {
             return 0
         }
     }
@@ -46,7 +46,7 @@ public func AddEnemy_Brach(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>
     UpdateObjectTransforms(newObj)
 
     gNumEnemies += 1
-    GetNumEnemyOfKindSlot(Int32(ENEMY_KIND_BRACH))!.pointee += 1
+    GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee += 1
 
     return 1
 }
@@ -62,7 +62,7 @@ private func makeBrach(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutabl
 
     newObj.pointee.Health = brachHealth
     newObj.pointee.Damage = brachDamage
-    newObj.pointee.Kind = Int32(ENEMY_KIND_BRACH)
+    newObj.pointee.Kind = Int32(EnemyKind.brach.rawValue)
 
     // MAKE SHADOW
 

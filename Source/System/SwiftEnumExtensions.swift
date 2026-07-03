@@ -114,3 +114,9 @@ extension WaterType: @retroactive Sendable, @retroactive CaseIterable {
 extension EggColor: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [EggColor] = [.red, .green, .blue, .yellow, .purple] // NUM_EGG_TYPES (_count) intentionally excluded
 }
+
+// MARK: - EnemyKind (enemy.h)
+
+extension EnemyKind: @retroactive Sendable, @retroactive CaseIterable {
+    public static let allCases: [EnemyKind] = [.raptor, .brach, .ramphor] // NUM_ENEMY_KINDS (_count) intentionally excluded
+}

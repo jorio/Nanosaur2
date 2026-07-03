@@ -5,7 +5,7 @@ public func InitEnemyManager() {
     gNumEnemies = 0
     gMaxEnemies = 16
 
-    for i in 0..<Int32(NUM_ENEMY_KINDS) {
+    for i in 0..<Int32(EnemyKind.allCases.count) {
         GetNumEnemyOfKindSlot(i)!.pointee = 0
     }
 }

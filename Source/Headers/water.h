@@ -47,11 +47,11 @@ typedef struct		// NOTE: MUST MATCH OREOTERRAIN DATA!!!
 
 void PrimeTerrainWater(void);
 void DisposeWater(void);
-Boolean DoWaterCollisionDetect(ObjNode *theNode, float x, float y, float z, int *patchNum);
+Boolean DoWaterCollisionDetect(ObjNode * _Nonnull theNode, float x, float y, float z, int * _Nullable patchNum);
 Boolean IsXZOverWater(float x, float z);
-Boolean GetWaterY(float x, float z, float *y);
+Boolean GetWaterY(float x, float z, float * _Nonnull y);
 
 	/* RIPPLE */
 
-void CreateNewRipple(const OGLPoint3D *where, float baseScale, float scaleSpeed, float fadeRate);
+void CreateNewRipple(const OGLPoint3D * _Nonnull where, float baseScale, float scaleSpeed, float fadeRate);
 void CreateMultipleNewRipples(float x, float z, float baseScale, float scaleSpeed, float fadeRate, short numRipples);

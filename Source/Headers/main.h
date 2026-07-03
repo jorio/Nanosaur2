@@ -26,7 +26,7 @@ typedef enum SWIFT_ENUM_CLOSED Biome
 	BIOME_FOREST SWIFT_NAME(forest),
 	BIOME_DESERT SWIFT_NAME(desert),
 	BIOME_SWAMP SWIFT_NAME(swamp),
-	NUM_BIOMES SWIFT_NAME(count),
+	NUM_BIOMES SWIFT_NAME(_count),
 } Biome;
 
 

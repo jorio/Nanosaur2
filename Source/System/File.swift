@@ -103,7 +103,7 @@ public func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<Skel
     let modelNames = ["nano", "wormhole", "raptor", "bonusworm", "brach", "worm", "ramphor"]
 
     SwGameAssert(skeletonType >= 0)
-    SwGameAssert(Int(skeletonType) < Int(SkeletonType.count.rawValue))
+    SwGameAssert(Int(skeletonType) < SkeletonType.allCases.count)
     let modelName = modelNames[Int(skeletonType)]
 
     var fsSpecSkeleton = FSSpec()
@@ -988,7 +988,7 @@ public func SaveGame(_ fileSlot: Int32) -> UInt8 {
     saveData.jetpackFuel = GetPlayerInfoEntry(0)!.pointee.jetpackFuel
     saveData.shieldPower = GetPlayerInfoEntry(0)!.pointee.shieldPower
 
-    for i in 0..<Int(WeaponType.count.rawValue) {
+    for i in 0..<WeaponType.allCases.count {
         weaponQuantityBase(&saveData)[i] = UInt16(bitPattern: playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)[i])
     }
 
@@ -1052,7 +1052,7 @@ public func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 
     let saveWeapons = UnsafeMutablePointer(mutating: saveData).map { weaponQuantityBase($0) }!
     let playerWeapons = playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)
-    for i in 0..<Int(WeaponType.count.rawValue) {
+    for i in 0..<WeaponType.allCases.count {
         playerWeapons[i] = Int16(bitPattern: saveWeapons[i])
     }
 }

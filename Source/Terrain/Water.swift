@@ -32,7 +32,7 @@ private let gWaterUvs2Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * M
 private var gWaterInitY = [Float](repeating: 0, count: MAX_WATER)
 
 // UV'S FOR WATER TYPES ([2] is for the two layers we can have)
-private var gWaterUVs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: Int(WaterType.count.rawValue))
+private var gWaterUVs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: WaterType.allCases.count)
 
 // RIPPLES
 private var gNumRipples = 0
@@ -75,7 +75,7 @@ private let gWaterTransparency: [Float] = [
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // lava water 0-7
 ]
 
-private let gWaterGlow: [Bool] = Array(repeating: false, count: Int(WaterType.count.rawValue))
+private let gWaterGlow: [Bool] = Array(repeating: false, count: WaterType.allCases.count)
 
 private let gWaterFixedYCoord: [Float] = [
     400.0, // #0 swimming pool
@@ -114,7 +114,7 @@ public func PrimeTerrainWater() {
     }
 
     // INIT UVS
-    for i in 0..<Int(WaterType.count.rawValue) {
+    for i in 0..<WaterType.allCases.count {
         gWaterUVs[i][0].u = 0; gWaterUVs[i][0].v = 0
         gWaterUVs[i][1].u = 0; gWaterUVs[i][1].v = 0
     }
@@ -297,7 +297,7 @@ private let cMoveWater: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 private func moveWater() {
     let fps = gFramesPerSecondFrac
 
-    for i in 0..<Int(WaterType.count.rawValue) {
+    for i in 0..<WaterType.allCases.count {
         switch i {
         case Int(WaterType.green.rawValue), Int(WaterType.blue.rawValue):
             gWaterUVs[i][0].u += 0.02 * fps

@@ -11,14 +11,14 @@ private var gNumDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArr
 public func InitSkeletonManager() {
     CalcAccelerationSplineCurve() // calc accel curve
 
-    for i in 0..<Int(SkeletonType.count.rawValue) {
+    for i in 0..<SkeletonType.allCases.count {
         gLoadedSkeletonsList[i] = nil
     }
 }
 
 @c @implementation
 public func LoadASkeleton(_ num: UInt8) {
-    if num >= UInt8(SkeletonType.count.rawValue) {
+    if num >= UInt8(SkeletonType.allCases.count) {
         SwFatal("LoadASkeleton: MAX_SKELETON_TYPES exceeded!")
     }
 
@@ -49,7 +49,7 @@ public func FreeSkeletonFile(_ skeletonType: UInt8) {
 // Free's all except for the input type (-1 == none to skip)
 @c @implementation
 public func FreeAllSkeletonFiles(_ skipMe: Int16) {
-    for i in 0..<Int16(SkeletonType.count.rawValue) {
+    for i in 0..<Int16(SkeletonType.allCases.count) {
         if i != skipMe {
             FreeSkeletonFile(UInt8(i))
         }

@@ -17,7 +17,7 @@ typedef enum SWIFT_ENUM_CLOSED MenuItemType
 	kMIPadBinding SWIFT_NAME(padBinding),
 	kMIMouseBinding SWIFT_NAME(mouseBinding),
 	kMIFileSlot SWIFT_NAME(fileSlot),
-	kMI_COUNT SWIFT_NAME(count)
+	kMI_COUNT SWIFT_NAME(_count)
 } MenuItemType;
 
 typedef struct

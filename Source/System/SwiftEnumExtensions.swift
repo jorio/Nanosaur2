@@ -132,3 +132,9 @@ extension LevelNum: @retroactive Sendable, @retroactive CaseIterable {
 extension SplitscreenMode: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [SplitscreenMode] = [.none, .horizontal, .vertical] // NUM_SPLITSCREEN_MODES (_count) intentionally excluded
 }
+
+// MARK: - PowType (globals.h)
+
+extension PowType: @retroactive Sendable, @retroactive CaseIterable {
+    public static let allCases: [PowType] = [.stunPulse, .health, .jumpJet, .fuel, .supernova, .freeze, .magnet, .growth, .flame, .flare, .dart, .freeLife] // NUM_POW_TYPES (_count) intentionally excluded
+}

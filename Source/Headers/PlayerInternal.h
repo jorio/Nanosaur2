@@ -29,3 +29,6 @@ static inline void SetCameraInDeathDiveMode(int i, Boolean v) { gCameraInDeathDi
 
 static inline float GetAutoFireDelay(int i) { return gAutoFireDelay[i]; }
 static inline void SetAutoFireDelay(int i, float v) { gAutoFireDelay[i] = v; }
+
+static inline short GetBestCheckpointNum(int i) { return gBestCheckpointNum[i]; }
+static inline void SetBestCheckpointNum(int i, short v) { gBestCheckpointNum[i] = v; }

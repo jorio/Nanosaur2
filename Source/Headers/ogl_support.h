@@ -270,14 +270,14 @@ enum
 
 		/* SPLITSCREEN */
 
-enum
+typedef enum SWIFT_ENUM_CLOSED SplitscreenMode
 {
-	SPLITSCREEN_MODE_NONE = 0,
-	SPLITSCREEN_MODE_HORIZ,			// 2 horizontal panes
-	SPLITSCREEN_MODE_VERT,			// 2 vertical panes
+	SPLITSCREEN_MODE_NONE SWIFT_NAME(none) = 0,
+	SPLITSCREEN_MODE_HORIZ SWIFT_NAME(horizontal),			// 2 horizontal panes
+	SPLITSCREEN_MODE_VERT SWIFT_NAME(vertical),			// 2 vertical panes
 
-	NUM_SPLITSCREEN_MODES
-};
+	NUM_SPLITSCREEN_MODES SWIFT_NAME(_count)
+} SplitscreenMode;
 
 
 //=====================================================================

@@ -158,7 +158,7 @@ private let cDrawPaneDivider: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 }
 
 private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    if gActiveSplitScreenMode == UInt8(SPLITSCREEN_MODE_NONE) {
+    if gActiveSplitScreenMode == UInt8(SplitscreenMode.none.rawValue) {
         return
     }
 
@@ -182,13 +182,13 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     glBegin(GLenum(GL_QUADS))
 
     switch gActiveSplitScreenMode {
-    case UInt8(SPLITSCREEN_MODE_HORIZ):
+    case UInt8(SplitscreenMode.horizontal.rawValue):
         glVertex2f(-halfLW, -halfThickness)
         glVertex2f(-halfLW, +halfThickness)
         glVertex2f(+halfLW, +halfThickness)
         glVertex2f(+halfLW, -halfThickness)
 
-    case UInt8(SPLITSCREEN_MODE_VERT):
+    case UInt8(SplitscreenMode.vertical.rawValue):
         glVertex2f(-halfThickness, -halfLH)
         glVertex2f(-halfThickness, +halfLH)
         glVertex2f(+halfThickness, +halfLH)

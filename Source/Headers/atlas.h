@@ -66,23 +66,23 @@ typedef struct Atlas
 	bool isASCIIFontUpperCaseOnly;
 } Atlas;
 
-Atlas* Atlas_Load(const char* atlasName, int flags);
-void Atlas_Dispose(Atlas* atlas);
+Atlas* _Nonnull Atlas_Load(const char* _Nonnull atlasName, int flags);
+void Atlas_Dispose(Atlas* _Nonnull atlas);
 
-const AtlasGlyph* Atlas_GetGlyph(const Atlas* atlas, uint32_t codepoint);
+const AtlasGlyph* _Nullable Atlas_GetGlyph(const Atlas* _Nonnull atlas, uint32_t codepoint);
 
 
-ObjNode* TextMesh_NewEmpty(int capacity, NewObjectDefinitionType *newObjDef);
-ObjNode* TextMesh_New(const char *text, int flags, NewObjectDefinitionType *newObjDef);
-void TextMesh_Update(const char* text, int flags, ObjNode* textNode);
-OGLRect TextMesh_GetExtents(ObjNode* textNode);
-void TextMesh_DrawExtents(ObjNode* textNode);
+ObjNode* _Nonnull TextMesh_NewEmpty(int capacity, NewObjectDefinitionType* _Nonnull newObjDef);
+ObjNode* _Nonnull TextMesh_New(const char* _Nonnull text, int flags, NewObjectDefinitionType* _Nonnull newObjDef);
+void TextMesh_Update(const char* _Nonnull text, int flags, ObjNode* _Nonnull textNode);
+OGLRect TextMesh_GetExtents(ObjNode* _Nonnull textNode);
+void TextMesh_DrawExtents(ObjNode* _Nonnull textNode);
 
-void Atlas_ImmediateDraw(int groupNum, const char* text, uint32_t flags);
+void Atlas_ImmediateDraw(int groupNum, const char* _Nonnull text, uint32_t flags);
 
 void Atlas_DrawString2(
 	int groupNum,
-	const char* text,
+	const char* _Nonnull text,
 	float x,
 	float y,
 	float scaleX,
@@ -93,7 +93,7 @@ void Atlas_DrawString2(
 #define Atlas_DrawString(group, text, x, y, scale, flags) \
 	Atlas_DrawString2(group, text, x, y, scale, scale, 0, flags)
 
-void LoadSpriteAtlas(int groupNum, const char* atlasName, int flags);
+void LoadSpriteAtlas(int groupNum, const char* _Nonnull atlasName, int flags);
 void DisposeSpriteAtlas(int groupNum);
 void DisposeAllSpriteAtlases(void);
-const AtlasGlyph* GetAtlasSpriteInfo(int groupNum, int spriteNum);
+const AtlasGlyph* _Nullable GetAtlasSpriteInfo(int groupNum, int spriteNum);

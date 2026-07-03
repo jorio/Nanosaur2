@@ -105,6 +105,6 @@ public func SetUpAnaglyphCalibrationScreen() {
     }
 
     let alignFlag: Int32 = (isStereo() ? Int32(kTextMeshAlignLeft) : Int32(kTextMeshAlignCenter)) | Int32(kTextMeshAlignBottom)
-    let blurbNode = TextMesh_New(blurb, alignFlag, &blurbDef)!
+    let blurbNode = TextMesh_New(blurb, alignFlag, &blurbDef)
     AppendNodeToChain(anaglyphScreenHead, blurbNode)
 }

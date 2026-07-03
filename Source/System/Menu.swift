@@ -71,7 +71,7 @@ private func initMenuNavigation() {
     arrowDef.scale = 1; arrowDef.slot = nav.pointee.style.textSlot
     arrowDef.group = UInt8(nav.pointee.style.fontAtlas); arrowDef.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
     for i in 0..<2 {
-        let arrow = TextMesh_New(i == 0 ? "(" : ")", 0, &arrowDef)!
+        let arrow = TextMesh_New(i == 0 ? "(" : ")", 0, &arrowDef)
         arrow.pointee.ColorFilter = nav.pointee.style.arrowColor
         SendNodeToOverlayPane(arrow)
         Nav_SetArrow(nav, Int32(i), arrow)

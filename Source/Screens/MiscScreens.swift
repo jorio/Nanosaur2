@@ -138,7 +138,7 @@ public func DoLegalScreen() {
 
     for s in legalStrings {
         if !s.isEmpty {
-            let textNode = TextMesh_New(s, 0, &textDef)!
+            let textNode = TextMesh_New(s, 0, &textDef)
             textNode.pointee.ColorFilter = OGLColorRGBA(r: 1, g: 1, b: 0, a: 1)
         }
 

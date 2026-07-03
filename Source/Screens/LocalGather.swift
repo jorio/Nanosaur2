@@ -134,7 +134,7 @@ private func SetupLocalGatherScreen() {
 
     def2.coord.y = 480 / 2 + 220
     def2.scale = 0.27
-    let pressEsc = TextMesh_New(Localize(STR_PRESS_ESC_TO_GO_BACK), 0, &def2)!
+    let pressEsc = TextMesh_New(Localize(STR_PRESS_ESC_TO_GO_BACK), 0, &def2)
     SendNodeToOverlayPane(pressEsc)
     pressEsc.pointee.ColorFilter = OGLColorRGBA(r: 0.5, g: 0.5, b: 0.5, a: 1)
     _ = MakeTwitch(pressEsc, Int32(kTwitchPreset_PressKeyPrompt))

@@ -18,3 +18,4 @@
 #include "WaterInternal.h"
 #include "PlayerInternal.h"
 #include "InfobarInternal.h"
+#include "PickInternal.h"

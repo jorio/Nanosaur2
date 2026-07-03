@@ -172,6 +172,19 @@ extension UnsafeMutablePointer where Pointee == MOMaterialObject {
         get { pointee.objectData.height }
         nonmutating set { pointee.objectData.height = newValue }
     }
+
+    func textureName(at index: Int) -> GLuint {
+        textureNameBase(self)[index]
+    }
+
+    func setTextureName(_ value: GLuint, at index: Int) {
+        textureNameBase(self)[index] = value
+    }
+}
+
+/// Flat, dynamically-indexable pointer into `textureName[MO_MAX_MIPMAPS]`.
+@inline(__always) private func textureNameBase(_ obj: UnsafeMutablePointer<MOMaterialObject>) -> UnsafeMutablePointer<GLuint> {
+    UnsafeMutableRawPointer(obj.pointer(to: \.objectData.textureName)!).assumingMemoryBound(to: GLuint.self)
 }
 
 // MARK: - MOMatrixObject

@@ -13,6 +13,7 @@
 
 static const float SwPI2 = PI2;
 static const unsigned short SwALL_SOLID_SIDES = ALL_SOLID_SIDES;
+static const int SwMAX_BG3D_GROUPS = MAX_BG3D_GROUPS;
 
 static inline void SwGameAssertMessage(bool cond, const char* msg) { if (!cond) DoFatalAlert("%s", msg); }
 

@@ -11,3 +11,6 @@
 extern BG3DFileContainer *gBG3DContainerList[];
 
 static inline MetaObjectPtr GetBG3DContainerRoot(int group) { return gBG3DContainerList[group]->root; }
+
+static inline BG3DFileContainer* _Nullable GetBG3DContainer(int group) { return gBG3DContainerList[group]; }
+static inline void SetBG3DContainer(int group, BG3DFileContainer* _Nullable value) { gBG3DContainerList[group] = value; }

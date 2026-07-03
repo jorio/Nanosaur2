@@ -11,11 +11,21 @@
 
 // OGLMatrix4x4 column-major value[16] indices (see ogl_support.h's M00..M33 enum).
 let M00: Int32 = 0
+let M10: Int32 = 1
+let M20: Int32 = 2
+let M30: Int32 = 3
+let M01: Int32 = 4
 let M11: Int32 = 5
+let M21: Int32 = 6
+let M31: Int32 = 7
+let M02: Int32 = 8
+let M12: Int32 = 9
 let M22: Int32 = 10
+let M32: Int32 = 11
 let M03: Int32 = 12
 let M13: Int32 = 13
 let M23: Int32 = 14
+let M33: Int32 = 15
 
 @inline(__always)
 func matValue(_ m: inout OGLMatrix4x4, _ i: Int32) -> Float {

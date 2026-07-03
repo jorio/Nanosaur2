@@ -47,7 +47,10 @@ private struct RippleRecord {
     var scaleSpeed: Float = 0
 }
 
-private var gRippleList = [RippleRecord](repeating: RippleRecord(), count: MAX_RIPPLES)
+// NOTE: keep this literal count (100) in sync with MAX_RIPPLES above -
+// InlineArray's size is a compile-time generic parameter, so it can't
+// reference the `let` constant directly.
+private var gRippleList: InlineArray<100, RippleRecord> = InlineArray(repeating: RippleRecord())
 
 // MARK: - Tables
 

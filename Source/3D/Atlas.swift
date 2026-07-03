@@ -23,15 +23,18 @@ private let kControlChar_Tab: UInt32 = 9 // '\t'
 private let kControlChar_Subscript: UInt32 = 11 // '\v'
 private let kControlChar_ResetInlineFormatting: UInt32 = 13 // '\r'
 
+// NOTE: keep this literal count (16) in sync with MAX_LINEBREAKS_PER_OBJNODE
+// above - InlineArray's size is a compile-time generic parameter, so it
+// can't reference the `let` constant directly.
 private struct TextMetrics {
     var numQuads: Int32 = 0
     var numLines: Int32 = 0
     var bbWidth: Float = 0
     var bbHeight: Float = 0
-    var lineWidths = [Float](repeating: 0, count: MAX_LINEBREAKS_PER_OBJNODE)
-    var lineHeights = [Float](repeating: 0, count: MAX_LINEBREAKS_PER_OBJNODE)
-    var lineOffsetX = [Float](repeating: 0, count: MAX_LINEBREAKS_PER_OBJNODE)
-    var lineOffsetY = [Float](repeating: 0, count: MAX_LINEBREAKS_PER_OBJNODE)
+    var lineWidths: InlineArray<16, Float> = InlineArray(repeating: 0)
+    var lineHeights: InlineArray<16, Float> = InlineArray(repeating: 0)
+    var lineOffsetX: InlineArray<16, Float> = InlineArray(repeating: 0)
+    var lineOffsetY: InlineArray<16, Float> = InlineArray(repeating: 0)
 }
 
 private let gImmediateModePoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLPoint3D.self)

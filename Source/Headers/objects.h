@@ -87,34 +87,34 @@ void MoveStaticObject(ObjNode * _Nullable theNode);
 void MoveStaticObject2(ObjNode * _Nullable theNode);
 void MoveStaticObject3(ObjNode * _Nullable theNode);
 
-void CalcNewTargetOffsets(ObjNode *theNode, float scale);
+void CalcNewTargetOffsets(ObjNode * _Nonnull theNode, float scale);
 
 //===================
 
 
-void CalcObjectBoxFromNode(ObjNode *theNode);
-void CalcObjectBoxFromGlobal(ObjNode *theNode);
-void SetObjectCollisionBounds(ObjNode *theNode, float top, float bottom, float left,
+void CalcObjectBoxFromNode(ObjNode * _Nonnull theNode);
+void CalcObjectBoxFromGlobal(ObjNode * _Nullable theNode);
+void SetObjectCollisionBounds(ObjNode * _Nonnull theNode, float top, float bottom, float left,
 							 float right, float front, float back);
-ObjNode	*AttachStaticShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ);
-void UpdateShadow(ObjNode *theNode);
+ObjNode	* _Nonnull AttachStaticShadowToObject(ObjNode * _Nonnull theNode, ShadowType shadowType, float scaleX, float scaleZ);
+void UpdateShadow(ObjNode * _Nullable theNode);
 
 void CullTestAllObjects(void);
-Boolean	IsObjectTotallyCulled(ObjNode *theNode);
+Boolean	IsObjectTotallyCulled(ObjNode * _Nonnull theNode);
 
-ObjNode	*AttachShadowToObject(ObjNode *theNode, ShadowType shadowType, float scaleX, float scaleZ, Boolean checkBlockers);
-void CreateCollisionBoxFromBoundingBox(ObjNode *theNode, float tweakXZ, float tweakY);
-void CreateCollisionBoxFromBoundingBox_Maximized(ObjNode *theNode, float scaleMag);
-void CreateCollisionBoxFromBoundingBox_Rotated(ObjNode *theNode, float tweakXZ, float tweakY);
-void CreateCollisionBoxFromBoundingBox_Update(ObjNode *theNode, float tweakXZ, float tweakY);
-void KeepOldCollisionBoxes(ObjNode *theNode);
-void AddCollisionBoxToObject(ObjNode *theNode, float top, float bottom, float left,
+ObjNode	* _Nullable AttachShadowToObject(ObjNode * _Nonnull theNode, ShadowType shadowType, float scaleX, float scaleZ, Boolean checkBlockers);
+void CreateCollisionBoxFromBoundingBox(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
+void CreateCollisionBoxFromBoundingBox_Maximized(ObjNode * _Nonnull theNode, float scaleMag);
+void CreateCollisionBoxFromBoundingBox_Rotated(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
+void CreateCollisionBoxFromBoundingBox_Update(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
+void KeepOldCollisionBoxes(ObjNode * _Nonnull theNode);
+void AddCollisionBoxToObject(ObjNode * _Nonnull theNode, float top, float bottom, float left,
 							 float right, float front, float back);
 void AttachGeometryToDisplayGroupObject(ObjNode * _Nonnull theNode, MetaObjectPtr _Nullable geometry);
-void CalcDisplayGroupWorldPoints(ObjNode *theNode);
+void CalcDisplayGroupWorldPoints(ObjNode * _Nonnull theNode);
 
-void HideObjectChain(ObjNode *theNode);
-void ShowObjectChain(ObjNode *theNode);
+void HideObjectChain(ObjNode * _Nullable theNode);
+void ShowObjectChain(ObjNode * _Nullable theNode);
 
 Boolean SetObjectVisible(ObjNode * _Nonnull theNode, Boolean visible);
 
@@ -124,6 +124,6 @@ ObjNode* _Nullable GetChainTailNode(ObjNode* _Nullable start);
 void AppendNodeToChain(ObjNode* _Nonnull start, ObjNode* _Nonnull newTail);
 void UnchainNode(ObjNode* _Nullable theNode);
 
-ObjNode* MakeBackgroundPictureObject(const char* imagePath);
+ObjNode* _Nonnull MakeBackgroundPictureObject(const char* _Nonnull imagePath);
 
 void SendNodeToOverlayPane(ObjNode* _Nonnull theNode);

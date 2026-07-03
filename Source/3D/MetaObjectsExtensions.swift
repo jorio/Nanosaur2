@@ -33,42 +33,42 @@ extension MetaObjectsRef {
 
     var cookie: UInt32 {
         get { header.pointee.cookie }
-        set { header.pointee.cookie = newValue }
+        nonmutating set { header.pointee.cookie = newValue }
     }
 
     var type: MetaObjectType {
         get { header.pointee.type }
-        set { header.pointee.type = newValue }
+        nonmutating set { header.pointee.type = newValue }
     }
 
     var refCount: Int {
         get { header.pointee.refCount }
-        set { header.pointee.refCount = newValue }
+        nonmutating set { header.pointee.refCount = newValue }
     }
 
     var subType: Int {
         get { header.pointee.subType }
-        set { header.pointee.subType = newValue }
+        nonmutating set { header.pointee.subType = newValue }
     }
 
     var data: UnsafeMutableRawPointer? {
         get { header.pointee.data }
-        set { header.pointee.data = newValue }
+        nonmutating set { header.pointee.data = newValue }
     }
 
     var parentGroup: MetaObjectsRef? {
         get { UnsafeMutableRawPointer(header.pointee.parentGroup) }
-        set { header.pointee.parentGroup = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
+        nonmutating set { header.pointee.parentGroup = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
     }
 
     var prevNode: MetaObjectsRef? {
         get { UnsafeMutableRawPointer(header.pointee.prevNode) }
-        set { header.pointee.prevNode = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
+        nonmutating set { header.pointee.prevNode = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
     }
 
     var nextNode: MetaObjectsRef? {
         get { UnsafeMutableRawPointer(header.pointee.nextNode) }
-        set { header.pointee.nextNode = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
+        nonmutating set { header.pointee.nextNode = newValue?.assumingMemoryBound(to: MetaObjectHeader.self) }
     }
 
     /// Draws this meta object, recursing through groups as needed.
@@ -118,7 +118,7 @@ extension MetaObjectsRef {
 extension UnsafeMutablePointer where Pointee == MOGroupObject {
     var numObjectsInGroup: Int32 {
         get { pointee.objectData.numObjectsInGroup }
-        set { pointee.objectData.numObjectsInGroup = newValue }
+        nonmutating set { pointee.objectData.numObjectsInGroup = newValue }
     }
 
     func groupContent(at index: Int) -> MetaObjectsRef? {
@@ -135,42 +135,42 @@ extension UnsafeMutablePointer where Pointee == MOGroupObject {
 extension UnsafeMutablePointer where Pointee == MOMaterialObject {
     var flags: UInt32 {
         get { pointee.objectData.flags }
-        set { pointee.objectData.flags = newValue }
+        nonmutating set { pointee.objectData.flags = newValue }
     }
 
     var diffuseColor: OGLColorRGBA {
         get { pointee.objectData.diffuseColor }
-        set { pointee.objectData.diffuseColor = newValue }
+        nonmutating set { pointee.objectData.diffuseColor = newValue }
     }
 
     var multiTextureMode: UInt16 {
         get { pointee.objectData.multiTextureMode }
-        set { pointee.objectData.multiTextureMode = newValue }
+        nonmutating set { pointee.objectData.multiTextureMode = newValue }
     }
 
     var multiTextureCombine: UInt16 {
         get { pointee.objectData.multiTextureCombine }
-        set { pointee.objectData.multiTextureCombine = newValue }
+        nonmutating set { pointee.objectData.multiTextureCombine = newValue }
     }
 
     var envMapNum: UInt16 {
         get { pointee.objectData.envMapNum }
-        set { pointee.objectData.envMapNum = newValue }
+        nonmutating set { pointee.objectData.envMapNum = newValue }
     }
 
     var numMipmaps: UInt32 {
         get { pointee.objectData.numMipmaps }
-        set { pointee.objectData.numMipmaps = newValue }
+        nonmutating set { pointee.objectData.numMipmaps = newValue }
     }
 
     var width: UInt32 {
         get { pointee.objectData.width }
-        set { pointee.objectData.width = newValue }
+        nonmutating set { pointee.objectData.width = newValue }
     }
 
     var height: UInt32 {
         get { pointee.objectData.height }
-        set { pointee.objectData.height = newValue }
+        nonmutating set { pointee.objectData.height = newValue }
     }
 }
 
@@ -179,7 +179,7 @@ extension UnsafeMutablePointer where Pointee == MOMaterialObject {
 extension UnsafeMutablePointer where Pointee == MOMatrixObject {
     var matrix: OGLMatrix4x4 {
         get { pointee.matrix }
-        set { pointee.matrix = newValue }
+        nonmutating set { pointee.matrix = newValue }
     }
 }
 
@@ -188,32 +188,32 @@ extension UnsafeMutablePointer where Pointee == MOMatrixObject {
 extension UnsafeMutablePointer where Pointee == MOPictureObject {
     var drawCoord: OGLPoint3D {
         get { pointee.objectData.drawCoord }
-        set { pointee.objectData.drawCoord = newValue }
+        nonmutating set { pointee.objectData.drawCoord = newValue }
     }
 
     var drawScaleX: Float {
         get { pointee.objectData.drawScaleX }
-        set { pointee.objectData.drawScaleX = newValue }
+        nonmutating set { pointee.objectData.drawScaleX = newValue }
     }
 
     var drawScaleY: Float {
         get { pointee.objectData.drawScaleY }
-        set { pointee.objectData.drawScaleY = newValue }
+        nonmutating set { pointee.objectData.drawScaleY = newValue }
     }
 
     var fullWidth: Int32 {
         get { pointee.objectData.fullWidth }
-        set { pointee.objectData.fullWidth = newValue }
+        nonmutating set { pointee.objectData.fullWidth = newValue }
     }
 
     var fullHeight: Int32 {
         get { pointee.objectData.fullHeight }
-        set { pointee.objectData.fullHeight = newValue }
+        nonmutating set { pointee.objectData.fullHeight = newValue }
     }
 
     var material: UnsafeMutablePointer<MOMaterialObject>? {
         get { pointee.objectData.material }
-        set { pointee.objectData.material = newValue }
+        nonmutating set { pointee.objectData.material = newValue }
     }
 }
 
@@ -222,52 +222,52 @@ extension UnsafeMutablePointer where Pointee == MOPictureObject {
 extension UnsafeMutablePointer where Pointee == MOSpriteObject {
     var width: Float {
         get { pointee.objectData.width }
-        set { pointee.objectData.width = newValue }
+        nonmutating set { pointee.objectData.width = newValue }
     }
 
     var height: Float {
         get { pointee.objectData.height }
-        set { pointee.objectData.height = newValue }
+        nonmutating set { pointee.objectData.height = newValue }
     }
 
     var aspectRatio: Float {
         get { pointee.objectData.aspectRatio }
-        set { pointee.objectData.aspectRatio = newValue }
+        nonmutating set { pointee.objectData.aspectRatio = newValue }
     }
 
     var scaleBasis: Float {
         get { pointee.objectData.scaleBasis }
-        set { pointee.objectData.scaleBasis = newValue }
+        nonmutating set { pointee.objectData.scaleBasis = newValue }
     }
 
     var drawCentered: Bool {
         get { pointee.objectData.drawCentered != 0 }
-        set { pointee.objectData.drawCentered = newValue ? 1 : 0 }
+        nonmutating set { pointee.objectData.drawCentered = newValue ? 1 : 0 }
     }
 
     var coord: OGLPoint3D {
         get { pointee.objectData.coord }
-        set { pointee.objectData.coord = newValue }
+        nonmutating set { pointee.objectData.coord = newValue }
     }
 
     var scaleX: Float {
         get { pointee.objectData.scaleX }
-        set { pointee.objectData.scaleX = newValue }
+        nonmutating set { pointee.objectData.scaleX = newValue }
     }
 
     var scaleY: Float {
         get { pointee.objectData.scaleY }
-        set { pointee.objectData.scaleY = newValue }
+        nonmutating set { pointee.objectData.scaleY = newValue }
     }
 
     var rot: Float {
         get { pointee.objectData.rot }
-        set { pointee.objectData.rot = newValue }
+        nonmutating set { pointee.objectData.rot = newValue }
     }
 
     var material: UnsafeMutablePointer<MOMaterialObject>? {
         get { pointee.objectData.material }
-        set { pointee.objectData.material = newValue }
+        nonmutating set { pointee.objectData.material = newValue }
     }
 }
 
@@ -276,12 +276,12 @@ extension UnsafeMutablePointer where Pointee == MOSpriteObject {
 extension UnsafeMutablePointer where Pointee == MOVertexArrayObject {
     var VARtype: Int16 {
         get { pointee.objectData.VARtype }
-        set { pointee.objectData.VARtype = newValue }
+        nonmutating set { pointee.objectData.VARtype = newValue }
     }
 
     var numMaterials: Int16 {
         get { pointee.objectData.numMaterials }
-        set { pointee.objectData.numMaterials = newValue }
+        nonmutating set { pointee.objectData.numMaterials = newValue }
     }
 
     func material(at index: Int) -> UnsafeMutablePointer<MOMaterialObject>? {
@@ -294,22 +294,22 @@ extension UnsafeMutablePointer where Pointee == MOVertexArrayObject {
 
     var numPoints: Int32 {
         get { pointee.objectData.numPoints }
-        set { pointee.objectData.numPoints = newValue }
+        nonmutating set { pointee.objectData.numPoints = newValue }
     }
 
     var numTriangles: Int32 {
         get { pointee.objectData.numTriangles }
-        set { pointee.objectData.numTriangles = newValue }
+        nonmutating set { pointee.objectData.numTriangles = newValue }
     }
 
     var points: UnsafeMutablePointer<OGLPoint3D>? {
         get { pointee.objectData.points }
-        set { pointee.objectData.points = newValue }
+        nonmutating set { pointee.objectData.points = newValue }
     }
 
     var normals: UnsafeMutablePointer<OGLVector3D>? {
         get { pointee.objectData.normals }
-        set { pointee.objectData.normals = newValue }
+        nonmutating set { pointee.objectData.normals = newValue }
     }
 
     func uv(at index: Int) -> UnsafeMutablePointer<OGLTextureCoord>? {
@@ -322,27 +322,27 @@ extension UnsafeMutablePointer where Pointee == MOVertexArrayObject {
 
     var colorsFloat: UnsafeMutablePointer<OGLColorRGBA>? {
         get { pointee.objectData.colorsFloat }
-        set { pointee.objectData.colorsFloat = newValue }
+        nonmutating set { pointee.objectData.colorsFloat = newValue }
     }
 
     var triangles: UnsafeMutablePointer<MOTriangleIndecies>? {
         get { pointee.objectData.triangles }
-        set { pointee.objectData.triangles = newValue }
+        nonmutating set { pointee.objectData.triangles = newValue }
     }
 
     var bBox: OGLBoundingBox {
         get { pointee.objectData.bBox }
-        set { pointee.objectData.bBox = newValue }
+        nonmutating set { pointee.objectData.bBox = newValue }
     }
 
     var pointCapacity: Int32 {
         get { pointee.objectData.pointCapacity }
-        set { pointee.objectData.pointCapacity = newValue }
+        nonmutating set { pointee.objectData.pointCapacity = newValue }
     }
 
     var triangleCapacity: Int32 {
         get { pointee.objectData.triangleCapacity }
-        set { pointee.objectData.triangleCapacity = newValue }
+        nonmutating set { pointee.objectData.triangleCapacity = newValue }
     }
 }
 

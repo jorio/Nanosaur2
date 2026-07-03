@@ -36,7 +36,7 @@ public func LoadLevelArt() {
         ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELSPECIFIC), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
     }
 
-    for i in 0..<Int32(NUM_EGG_TYPES) {
+    for i in 0..<Int32(EggColor.allCases.count) {
         BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_GLOBAL), Int16(GLOBAL_ObjType_RedEgg) + Int16(i),
                                         -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Satin))
     }

@@ -108,3 +108,9 @@ extension AccelerationMode: @retroactive Sendable, @retroactive CaseIterable {
 extension WaterType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [WaterType] = [.green, .blue, .lava, .lavaDir0, .lavaDir1, .lavaDir2, .lavaDir3, .lavaDir4, .lavaDir5, .lavaDir6, .lavaDir7] // NUM_WATER_TYPES (_count) intentionally excluded
 }
+
+// MARK: - EggColor (items.h)
+
+extension EggColor: @retroactive Sendable, @retroactive CaseIterable {
+    public static let allCases: [EggColor] = [.red, .green, .blue, .yellow, .purple] // NUM_EGG_TYPES (_count) intentionally excluded
+}

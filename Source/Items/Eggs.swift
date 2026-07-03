@@ -7,7 +7,7 @@ private let eggScale: Float = 6.0
 public func FindAllEggItems() {
     // INIT EGG COUNTS
 
-    for i in 0..<Int(NUM_EGG_TYPES) {
+    for i in 0..<EggColor.allCases.count {
         GetNumEggsToSaveSlot(Int32(i))!.pointee = 0
         GetNumEggsSavedSlot(Int32(i))!.pointee = 0
     }
@@ -19,7 +19,7 @@ public func FindAllEggItems() {
     for i in 0..<Int(gNumTerrainItems) {
         if itemPtr[i].type == UInt16(MAP_ITEM_EGG) { // see if it's an Egg item
             let eggColor = Int(itemPtr[i].parm.0) // egg color # is in parm 0
-            if eggColor >= Int(NUM_EGG_TYPES) {
+            if eggColor >= EggColor.allCases.count {
                 SwFatal("FindAllEggItems: bad egg color!")
             }
 
@@ -440,7 +440,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
     // HANDLE REGULAR ADVENTURE MODE
 
     case .none:
-        for i in 0..<Int(NUM_EGG_TYPES) {
+        for i in 0..<EggColor.allCases.count {
             if GetNumEggsToSaveSlot(Int32(i))!.pointee > 0 { // do we need to get this color?
                 if GetNumEggsSavedSlot(Int32(i))!.pointee < GetNumEggsToSaveSlot(Int32(i))!.pointee { // did we get them all?
                     gotAllEggs = false

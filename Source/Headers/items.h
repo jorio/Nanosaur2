@@ -23,16 +23,16 @@ Boolean AddAsteroid(TerrainItemEntryType *itemPtr, float  x, float z);
 
 		/* EGGS */
 
-enum
+typedef enum SWIFT_ENUM_CLOSED EggColor
 {
-	EGG_COLOR_RED,
-	EGG_COLOR_GREEN,
-	EGG_COLOR_BLUE,
-	EGG_COLOR_YELLOW,
-	EGG_COLOR_PURPLE,
+	EGG_COLOR_RED SWIFT_NAME(red),
+	EGG_COLOR_GREEN SWIFT_NAME(green),
+	EGG_COLOR_BLUE SWIFT_NAME(blue),
+	EGG_COLOR_YELLOW SWIFT_NAME(yellow),
+	EGG_COLOR_PURPLE SWIFT_NAME(purple),
 
-	NUM_EGG_TYPES
-};
+	NUM_EGG_TYPES SWIFT_NAME(_count)
+} EggColor;
 
 
 Boolean AddEgg(TerrainItemEntryType *itemPtr, float  x, float z);

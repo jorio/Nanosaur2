@@ -23,11 +23,11 @@ public func AddForestDoor(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!
     let type: Int32
 
     switch gLevelNum {
-    case Int16(LEVEL_NUM_ADVENTURE1):
+    case Int16(LevelNum.adventure1.rawValue):
         type = Int32(LEVEL1_ObjType_ForestDoor_Wall)
-    case Int16(LEVEL_NUM_ADVENTURE2):
+    case Int16(LevelNum.adventure2.rawValue):
         type = Int32(LEVEL2_ObjType_ForestDoor_Wall)
-    case Int16(LEVEL_NUM_ADVENTURE3), Int16(LEVEL_NUM_RACE1), Int16(LEVEL_NUM_FLAG1):
+    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
         type = Int32(LEVEL3_ObjType_ForestDoor_Wall)
     default:
         SwFatal("AddForestDoor: no door here yet, call Brian!")
@@ -119,7 +119,7 @@ private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     if gForestDoorOpen[Int(wall.pointee.Kind)] {
         door.pointee.Rot.z -= fps
 
-        if gLevelNum != Int16(LEVEL_NUM_ADVENTURE3) { // on level 3 we'll keep the door spinning
+        if gLevelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
             if door.pointee.Rot.z < -Float.pi {
                 door.pointee.Rot.z = -Float.pi
             }

@@ -940,7 +940,7 @@ public func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
     var maxAlt: Float
 
     switch gLevelNum {
-    case Int16(LEVEL_NUM_ADVENTURE1):
+    case Int16(LevelNum.adventure1.rawValue):
         maxAlt = GetTerrainY(x, z) + MAX_ALTITUDE_DIFF
         if maxAlt > MAX_ALTITUDE {
             maxAlt = MAX_ALTITUDE

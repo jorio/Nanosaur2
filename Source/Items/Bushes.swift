@@ -16,11 +16,11 @@ public func AddGrass(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x
 
     let type: Int32
     switch gLevelNum {
-    case Int16(LEVEL_NUM_ADVENTURE1), Int16(LEVEL_NUM_FLAG2), Int16(LEVEL_NUM_BATTLE1):
+    case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         type = Int32(LEVEL1_ObjType_Grass) + Int32(itemPtr.pointee.parm.0)
-    case Int16(LEVEL_NUM_ADVENTURE2), Int16(LEVEL_NUM_RACE2), Int16(LEVEL_NUM_BATTLE2):
+    case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
         type = Int32(LEVEL2_ObjType_Grass) + Int32(itemPtr.pointee.parm.0)
-    case Int16(LEVEL_NUM_ADVENTURE3), Int16(LEVEL_NUM_RACE1), Int16(LEVEL_NUM_FLAG1):
+    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
         type = Int32(LEVEL3_ObjType_Grass_Single) + Int32(itemPtr.pointee.parm.0)
     default:
         return 0

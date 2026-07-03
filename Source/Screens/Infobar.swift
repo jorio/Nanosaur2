@@ -779,63 +779,63 @@ private func infobarDrawMap() {
     var v: Float
 
     switch gLevelNum {
-    case Int16(LEVEL_NUM_ADVENTURE1):
+    case Int16(LevelNum.adventure1.rawValue):
         visibleRange = 0.18
         leftEdge -= 1175.0 // offset by the cropped black-space amount
         u = Float(leftEdge) * 0.00011
         topEdge -= 911.0 // offset by the cropped black-space amount
         v = Float(topEdge) * 0.00011
 
-    case Int16(LEVEL_NUM_ADVENTURE2):
+    case Int16(LevelNum.adventure2.rawValue):
         visibleRange = 0.24
         leftEdge -= 527.0
         u = Float(leftEdge) * 0.0001057
         topEdge -= 275.0
         v = Float(topEdge) * 0.0001057
 
-    case Int16(LEVEL_NUM_ADVENTURE3):
+    case Int16(LevelNum.adventure3.rawValue):
         visibleRange = 0.29
         leftEdge -= 496.0
         u = Float(leftEdge) * 0.0001029
         topEdge -= 192.0
         v = Float(topEdge) * 0.0001029
 
-    case Int16(LEVEL_NUM_RACE1):
+    case Int16(LevelNum.race1.rawValue):
         visibleRange = 0.3
         leftEdge -= 779.0
         u = Float(leftEdge) * 0.0001463
         topEdge -= 317.0
         v = Float(topEdge) * 0.0001463
 
-    case Int16(LEVEL_NUM_RACE2):
+    case Int16(LevelNum.race2.rawValue):
         visibleRange = 0.25
         leftEdge -= 743.0
         u = Float(leftEdge) * 0.000148853 // 1.0 / pixel width
         topEdge -= 329.0
         v = Float(topEdge) * 0.000148853
 
-    case Int16(LEVEL_NUM_FLAG1):
+    case Int16(LevelNum.flag1.rawValue):
         visibleRange = 0.3
         leftEdge -= 1499.0
         u = Float(leftEdge) * 0.0001999
         topEdge -= 809.0
         v = Float(topEdge) * 0.0001999
 
-    case Int16(LEVEL_NUM_FLAG2):
+    case Int16(LevelNum.flag2.rawValue):
         visibleRange = 0.5
         leftEdge -= 2544
         u = Float(leftEdge) * 0.0002735
         topEdge -= 728
         v = Float(topEdge) * 0.0002735
 
-    case Int16(LEVEL_NUM_BATTLE1):
+    case Int16(LevelNum.battle1.rawValue):
         visibleRange = 0.5
         leftEdge -= 2732.0
         u = Float(leftEdge) * 0.000371
         topEdge -= 1328.0
         v = Float(topEdge) * 0.000371
 
-    case Int16(LEVEL_NUM_BATTLE2):
+    case Int16(LevelNum.battle2.rawValue):
         visibleRange = 0.3
         leftEdge -= 3152.0
         u = Float(leftEdge) * 0.00054585

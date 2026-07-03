@@ -16,3 +16,4 @@
 #include "EggsInternal.h"
 #include "UIEffectsInternal.h"
 #include "WaterInternal.h"
+#include "PlayerInternal.h"

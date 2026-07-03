@@ -195,22 +195,22 @@ typedef struct
 
 void InitPlayerInfo_Game(void);
 void InitPlayerAtStartOfLevel(void);
-Boolean DoTrig_Player(ObjNode *trigger, ObjNode *theNode);
+Boolean DoTrig_Player(ObjNode * _Nonnull trigger, ObjNode * _Nonnull theNode);
 
-Boolean PlayerLoseHealth(short playerNum, float damage, Byte deathType, OGLPoint3D *where, Boolean disorient);
-void KillPlayer(short playerNum, Byte deathType, OGLPoint3D *where);
-void ExplodePlayer(ObjNode *player, short playerNum, OGLPoint3D *where);
-void DisorientPlayer(ObjNode *player);
+Boolean PlayerLoseHealth(short playerNum, float damage, Byte deathType, OGLPoint3D * _Nullable where, Boolean disorient);
+void KillPlayer(short playerNum, Byte deathType, OGLPoint3D * _Nullable where);
+void ExplodePlayer(ObjNode * _Nonnull player, short playerNum, OGLPoint3D * _Nullable where);
+void DisorientPlayer(ObjNode * _Nonnull player);
 
 void ResetPlayerAtBestCheckpoint(short playerNum);
-void UpdateCarriedObject(ObjNode *player, ObjNode *held);
-float CalcDistanceToClosestPlayer(OGLPoint3D *pt, short *playerNum);
+void UpdateCarriedObject(ObjNode * _Nonnull player, ObjNode * _Nonnull held);
+float CalcDistanceToClosestPlayer(OGLPoint3D * _Nonnull pt, short * _Nullable playerNum);
 
-void HidePlayer(ObjNode *player);
-void ShowPlayer(ObjNode *player);
-Boolean	FadePlayer(ObjNode *player, float rate);
+void HidePlayer(ObjNode * _Nonnull player);
+void ShowPlayer(ObjNode * _Nonnull player);
+Boolean	FadePlayer(ObjNode * _Nonnull player, float rate);
 
-void SetPlayerFlyingAnim(ObjNode *player);
+void SetPlayerFlyingAnim(ObjNode * _Nonnull player);
 float CalcPlayerMaxAltitude(float x, float z);
 
 
@@ -218,7 +218,7 @@ void CreatePlayerObject(short playerNum, OGLPoint3D *where, float rotY);
 void HandlePlayerLineMarkerCrossing(ObjNode *player);
 
 Boolean PlayerSmackedIntoObject(ObjNode *player, ObjNode *hitObj, short deathType);
-Boolean PlayerHitByWeaponCallback(ObjNode *weapon, ObjNode *player, OGLPoint3D *hitCoord, OGLVector3D *hitNormal);
+Boolean PlayerHitByWeaponCallback(ObjNode * _Nonnull weapon, ObjNode * _Nonnull player, OGLPoint3D * _Nullable hitCoord, OGLVector3D * _Nullable hitNormal);
 
 void MovePlayerJetpack(ObjNode *jetpack);
 void JetpackOff(short playerNum);

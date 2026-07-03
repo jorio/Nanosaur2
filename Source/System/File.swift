@@ -302,7 +302,7 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
         }
         let numKPtr = handleData(handNumK, Int8.self)
         for j in 0..<numJoints {
-            jointKeyframesBase(skeleton)[j].numKeyFrames.0 = (numKPtr + j).pointee
+            numKeyFramesBase(jointKeyframesBase(skeleton) + j)[i] = (numKPtr + j).pointee
         }
         ReleaseResource(handNumK)
     }

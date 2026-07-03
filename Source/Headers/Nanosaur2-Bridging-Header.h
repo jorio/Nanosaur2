@@ -14,3 +14,4 @@
 #include "EnemyInternal.h"
 #include "BonesInternal.h"
 #include "EggsInternal.h"
+#include "UIEffectsInternal.h"

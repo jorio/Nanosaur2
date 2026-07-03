@@ -83,4 +83,4 @@ typedef struct
 } Twitch;
 
 void InitTwitchSystem(void);
-Twitch* MakeTwitch(ObjNode* puppet, int presetAndFlags);
+Twitch* _Nullable MakeTwitch(ObjNode* _Nullable puppet, int presetAndFlags);

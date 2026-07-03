@@ -17,3 +17,4 @@
 #include "UIEffectsInternal.h"
 #include "WaterInternal.h"
 #include "PlayerInternal.h"
+#include "InfobarInternal.h"

@@ -220,8 +220,8 @@ ObjNode *MakeFireRing(float x, float y, float z);
 
 void InitConfettiManager(void);
 void DeleteAllConfettiGroups(void);
-short NewConfettiGroup(NewConfettiGroupDefType *def);
-Boolean AddConfettiToGroup(NewConfettiDefType *def);
+short NewConfettiGroup(NewConfettiGroupDefType * _Nonnull def);
+Boolean AddConfettiToGroup(NewConfettiDefType * _Nonnull def);
 Boolean VerifyConfettiGroupMagicNum(short group, uint32_t magicNum);
 void MakeConfettiExplosion(float x, float y, float z, float force, float scale, short texture, short quantityLimit);
 void DoPlayerGroundScrape(ObjNode *player, short playerNum);

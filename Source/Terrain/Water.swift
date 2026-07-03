@@ -32,7 +32,7 @@ private let gWaterUvs2Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * M
 private var gWaterInitY = [Float](repeating: 0, count: MAX_WATER)
 
 // UV'S FOR WATER TYPES ([2] is for the two layers we can have)
-private var gWaterUVs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: Int(NUM_WATER_TYPES))
+private var gWaterUVs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: Int(WaterType.count.rawValue))
 
 // RIPPLES
 private var gNumRipples = 0
@@ -75,7 +75,7 @@ private let gWaterTransparency: [Float] = [
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // lava water 0-7
 ]
 
-private let gWaterGlow: [Bool] = Array(repeating: false, count: Int(NUM_WATER_TYPES))
+private let gWaterGlow: [Bool] = Array(repeating: false, count: Int(WaterType.count.rawValue))
 
 private let gWaterFixedYCoord: [Float] = [
     400.0, // #0 swimming pool
@@ -114,7 +114,7 @@ public func PrimeTerrainWater() {
     }
 
     // INIT UVS
-    for i in 0..<Int(NUM_WATER_TYPES) {
+    for i in 0..<Int(WaterType.count.rawValue) {
         gWaterUVs[i][0].u = 0; gWaterUVs[i][0].v = 0
         gWaterUVs[i][1].u = 0; gWaterUVs[i][1].v = 0
     }
@@ -297,57 +297,57 @@ private let cMoveWater: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 private func moveWater() {
     let fps = gFramesPerSecondFrac
 
-    for i in 0..<Int(NUM_WATER_TYPES) {
+    for i in 0..<Int(WaterType.count.rawValue) {
         switch i {
-        case Int(WATER_TYPE_GREEN), Int(WATER_TYPE_BLUE):
+        case Int(WaterType.green.rawValue), Int(WaterType.blue.rawValue):
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
 
             gWaterUVs[i][1].u -= 0.015 * fps
             gWaterUVs[i][1].v += 0.025 * fps
 
-        case Int(WATER_TYPE_LAVA):
+        case Int(WaterType.lava.rawValue):
             gWaterUVs[i][0].u += 0.08 * fps
             gWaterUVs[i][0].v += 0.03 * fps
 
             gWaterUVs[i][1].u -= 0.06 * fps
             gWaterUVs[i][1].v += 0.05 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR0):
+        case Int(WaterType.lavaDir0.rawValue):
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR4):
+        case Int(WaterType.lavaDir4.rawValue):
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR2):
+        case Int(WaterType.lavaDir2.rawValue):
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR6):
+        case Int(WaterType.lavaDir6.rawValue):
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR1):
+        case Int(WaterType.lavaDir1.rawValue):
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR3):
+        case Int(WaterType.lavaDir3.rawValue):
             gWaterUVs[i][0].u -= 0.02 * fps
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].u -= 0.03 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR5):
+        case Int(WaterType.lavaDir5.rawValue):
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v -= 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps
             gWaterUVs[i][1].v -= 0.03 * fps
 
-        case Int(WATER_TYPE_LAVA_DIR7):
+        case Int(WaterType.lavaDir7.rawValue):
             gWaterUVs[i][0].u += 0.02 * fps
             gWaterUVs[i][0].v += 0.02 * fps
             gWaterUVs[i][1].u += 0.03 * fps

@@ -280,7 +280,7 @@ public func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // called which made the group & transforms.
 @c @implementation
 public func AttachGeometryToDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ geometry: MetaObjectPtr?) {
-    MO_AppendToGroup(theNode.pointee.BaseGroup, geometry)
+    UnsafeMutableRawPointer(theNode.pointee.BaseGroup)?.append(geometry)
 }
 
 // The base group contains the base transform matrix plus any other objects you want to add into it.
@@ -334,7 +334,7 @@ public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
     let transObject = transObjectRaw.assumingMemoryBound(to: MOMatrixObject.self)
 
-    MO_AttachToGroupStart(theNode.pointee.BaseGroup, transObjectRaw) // add to base group
+    UnsafeMutableRawPointer(theNode.pointee.BaseGroup)?.prepend(transObjectRaw) // add to base group
     theNode.pointee.BaseTransformObject = transObject // keep extra LEGAL ref (remember to dispose later)
 }
 
@@ -635,7 +635,7 @@ public func DrawObjects() {
 
                 case Int32(DISPLAY_GROUP_GENRE), Int32(QUADMESH_GENRE):
                     if let baseGroup = node.pointee.BaseGroup {
-                        MO_DrawObject(baseGroup)
+                        UnsafeMutableRawPointer(baseGroup).draw()
                     }
 
                 case Int32(SPRITE_GENRE):
@@ -649,7 +649,7 @@ public func DrawObjects() {
                         spriteMO.pointee.objectData.scaleY = node.pointee.Scale.y
                         spriteMO.pointee.objectData.rot = node.pointee.Rot.y
 
-                        MO_DrawObject(spriteMO)
+                        UnsafeMutableRawPointer(spriteMO).draw()
                         OGL_PopState() // restore state
                     }
 
@@ -658,7 +658,7 @@ public func DrawObjects() {
                         OGL_PushState()
                         SetInfobarSpriteState(node.pointee.AnaglyphZ, 1)
 
-                        MO_DrawObject(baseGroup)
+                        UnsafeMutableRawPointer(baseGroup).draw()
 
                         if gDebugMode >= 2 {
                             TextMesh_DrawExtents(node)
@@ -1050,7 +1050,7 @@ public func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         theNode.pointee.Skeleton = nil
 
     case Int32(SPRITE_GENRE):
-        MO_DisposeObjectReference(theNode.pointee.SpriteMO) // dispose reference to sprite meta object
+        UnsafeMutableRawPointer(theNode.pointee.SpriteMO)?.release() // dispose reference to sprite meta object
         theNode.pointee.SpriteMO = nil
 
     default:
@@ -1243,13 +1243,13 @@ private func FlushObjectDeleteQueue() {
 @c @implementation
 public func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if theNode.pointee.BaseGroup != nil {
-        MO_DisposeObjectReference(theNode.pointee.BaseGroup)
+        UnsafeMutableRawPointer(theNode.pointee.BaseGroup)?.release()
 
         theNode.pointee.BaseGroup = nil
     }
 
     if theNode.pointee.BaseTransformObject != nil { // also nuke extra ref to transform object
-        MO_DisposeObjectReference(theNode.pointee.BaseTransformObject)
+        UnsafeMutableRawPointer(theNode.pointee.BaseTransformObject)?.release()
         theNode.pointee.BaseTransformObject = nil
     }
 }

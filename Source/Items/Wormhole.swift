@@ -298,7 +298,7 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     if theNode.pointee.What == Int32(WhatType.eggWormhole.rawValue) {
         DrawSkeleton(theNode)
     } else {
-        MO_DrawObject(UnsafeMutableRawPointer(theNode.pointee.BaseGroup))
+        UnsafeMutableRawPointer(theNode.pointee.BaseGroup)?.draw()
     }
 
     // RESTORE MODS

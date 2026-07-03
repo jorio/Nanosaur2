@@ -34,12 +34,12 @@ extension MetaObjectsRef {
     func release() { MO_DisposeObjectReference(self) }
 
     /// Appends `child` to this group's content list. `self` must actually be a group.
-    func append(_ child: MetaObjectsRef) {
+    func append(_ child: MetaObjectsRef?) {
         MO_AppendToGroup(assumingMemoryBound(to: MOGroupObject.self), child)
     }
 
     /// Inserts `child` at the start of this group's content list. `self` must actually be a group.
-    func prepend(_ child: MetaObjectsRef) {
+    func prepend(_ child: MetaObjectsRef?) {
         MO_AttachToGroupStart(assumingMemoryBound(to: MOGroupObject.self), child)
     }
 

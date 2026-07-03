@@ -97,11 +97,11 @@ public func MakeQuadMeshObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefini
     AttachGeometryToDisplayGroupObject(textNode, meshMO)
 
     // Dispose of extra reference to mesh
-    MO_DisposeObjectReference(meshMO)
+    meshMO?.release()
 
     // Dispose of extra reference to material that we've created
     if ownMaterial {
-        MO_DisposeObjectReference(UnsafeMutableRawPointer(material))
+        UnsafeMutableRawPointer(material)?.release()
         material = nil
     }
 

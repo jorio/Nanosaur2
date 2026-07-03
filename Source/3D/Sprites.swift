@@ -55,7 +55,7 @@ public func DisposeSpriteGroup(_ groupNum: Int32) {
 
     let group = GetSpriteGroupList(groupNum)!
     for i in 0..<Int(n) {
-        MO_DisposeObjectReference(group[i].materialObject)
+        group[i].materialObject?.release()
     }
 
     // DISPOSE OF GROUP'S ARRAY

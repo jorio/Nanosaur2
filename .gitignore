@@ -1,6 +1,7 @@
 build*/
 cmake-build-*/
 cache/
+extern/
 extern/SDL2-*
 extern/SDL2.framework
 dist/

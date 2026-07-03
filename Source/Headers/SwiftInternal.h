@@ -2,6 +2,10 @@
 
 #include "globals.h"
 
+// Only pulls in the declarations (no STB_IMAGE_IMPLEMENTATION defined here),
+// so this doesn't duplicate the implementation compiled into stb_image.c.
+#include "stb_image.h"
+
 // General-purpose C shims for Swift interop, shared across ported files.
 // Clang's macro-constant importer can only fold simple numeric literals;
 // compound macros that reference other macros/enum constants aren't
@@ -30,3 +34,7 @@ static inline Boolean GetPlayerIsDead(int i) { return gPlayerIsDead[i]; }
 // incomplete array type), which Swift's importer rejects outright. Route
 // through a shim instead, matching GetCollisionListEntry in EnemyInternal.h.
 static inline ChannelInfoType* GetChannelInfoEntry(int i) { return &gChannelInfo[i]; }
+
+// gSuperTileTextureObjects is a fixed-size C array, which Swift imports as a
+// non-subscriptable tuple. Hand out an element pointer instead.
+static inline MOMaterialObject** GetSuperTileTextureObjectSlot(int i) { return &gSuperTileTextureObjects[i]; }

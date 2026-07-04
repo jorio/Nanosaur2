@@ -164,13 +164,13 @@ private func setupLevelIntroScreen() {
 
     // LOAD SKELETONS
 
-    LoadASkeleton(UInt8(SkeletonType.wormhole.rawValue))
+    LoadASkeleton(UInt8(SkeletonType.bonusWormhole.rawValue))
     LoadASkeleton(UInt8(SkeletonType.player.rawValue))
 
     // MAKE WORMHOLE
 
     var wormholeDef = NewObjectDefinitionType()
-    wormholeDef.type = UInt8(SkeletonType.wormhole.rawValue)
+    wormholeDef.type = UInt8(SkeletonType.bonusWormhole.rawValue)
     wormholeDef.animNum = 0
     wormholeDef.coord.x = 0.0
     wormholeDef.coord.y = 0

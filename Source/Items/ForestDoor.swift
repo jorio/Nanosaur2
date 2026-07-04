@@ -16,89 +16,91 @@ public func InitForestDoors() {
     }
 }
 
-@c @implementation
-public func AddForestDoor(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let keyID = Int32(itemPtr.pointee.parm.0)
-    let rot = Float(itemPtr.pointee.parm.1) * (Float.pi / 2)
-    let type: Int32
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addForestDoor(x: Float, z: Float) -> UInt8 {
+        let keyID = Int32(pointee.parm.0)
+        let rot = Float(pointee.parm.1) * (Float.pi / 2)
+        let type: Int32
 
-    switch gLevelNum {
-    case Int16(LevelNum.adventure1.rawValue):
-        type = Int32(LEVEL1_ObjType_ForestDoor_Wall)
-    case Int16(LevelNum.adventure2.rawValue):
-        type = Int32(LEVEL2_ObjType_ForestDoor_Wall)
-    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
-        type = Int32(LEVEL3_ObjType_ForestDoor_Wall)
-    default:
-        SwFatal("AddForestDoor: no door here yet, call Brian!")
-        return 0
+        switch gLevelNum {
+        case Int16(LevelNum.adventure1.rawValue):
+            type = Int32(LEVEL1_ObjType_ForestDoor_Wall)
+        case Int16(LevelNum.adventure2.rawValue):
+            type = Int32(LEVEL2_ObjType_ForestDoor_Wall)
+        case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
+            type = Int32(LEVEL3_ObjType_ForestDoor_Wall)
+        default:
+            SwFatal("AddForestDoor: no door here yet, call Brian!")
+            return 0
+        }
+
+        // MAKE DAM WALL
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(type)
+        def.scale = damDoorScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = 0
+        def.slot = 176
+        def.moveCall = cMoveForestDoor
+        def.rot = rot
+
+        let wall = MakeNewDisplayGroupObject(&def)!
+
+        wall.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        wall.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        wall.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(wall, 1, 1)
+
+        wall.pointee.TriggerCallback = DoTrig_MiscSmackableObject
+
+        wall.pointee.Kind = keyID
+
+        // MAKE DOOR
+
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_ForestDoor_Door)
+        def.flags |= UInt32(STATUS_BIT_ROTZXY)
+        def.coord.y = wall.pointee.Coord.y + damDoorScale * 70.0
+        def.slot += 1
+        def.moveCall = nil
+        let door = MakeNewDisplayGroupObject(&def)!
+
+        // SET COLLISION STUFF
+
+        door.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+
+        if gForestDoorOpen[Int(keyID)] { // see if door is open
+            door.pointee.Rot.z = -Float.pi
+            UpdateObjectTransforms(door)
+        }
+
+        wall.pointee.ChainNode = door
+        door.pointee.ChainHead = wall
+
+        // MAKE RING
+
+        def.type = UInt8(GLOBAL_ObjType_ForestDoor_Ring)
+        def.flags |= UInt32(STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_UVTRANSFORM)
+        def.slot = Int16(SLOT_OF_DUMB - 1)
+        let ring = MakeNewDisplayGroupObject(&def)!
+
+        // SET COLLISION STUFF
+
+        ring.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+
+        door.pointee.ChainNode = ring
+        ring.pointee.ChainHead = door
+
+        return 1 // item was added
     }
-
-    // MAKE DAM WALL
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(type)
-    def.scale = damDoorScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = 0
-    def.slot = 176
-    def.moveCall = cMoveForestDoor
-    def.rot = rot
-
-    let wall = MakeNewDisplayGroupObject(&def)!
-
-    wall.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    wall.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    wall.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(wall, 1, 1)
-
-    wall.pointee.TriggerCallback = DoTrig_MiscSmackableObject
-
-    wall.pointee.Kind = keyID
-
-    // MAKE DOOR
-
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_ForestDoor_Door)
-    def.flags |= UInt32(STATUS_BIT_ROTZXY)
-    def.coord.y = wall.pointee.Coord.y + damDoorScale * 70.0
-    def.slot += 1
-    def.moveCall = nil
-    let door = MakeNewDisplayGroupObject(&def)!
-
-    // SET COLLISION STUFF
-
-    door.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-
-    if gForestDoorOpen[Int(keyID)] { // see if door is open
-        door.pointee.Rot.z = -Float.pi
-        UpdateObjectTransforms(door)
-    }
-
-    wall.pointee.ChainNode = door
-    door.pointee.ChainHead = wall
-
-    // MAKE RING
-
-    def.type = UInt8(GLOBAL_ObjType_ForestDoor_Ring)
-    def.flags |= UInt32(STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_UVTRANSFORM)
-    def.slot = Int16(SLOT_OF_DUMB - 1)
-    let ring = MakeNewDisplayGroupObject(&def)!
-
-    // SET COLLISION STUFF
-
-    ring.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-
-    door.pointee.ChainNode = ring
-    ring.pointee.ChainHead = door
-
-    return 1 // item was added
 }
 
 private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { wallOpt in
@@ -138,95 +140,97 @@ private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
 // MARK: - Forest Door Key
 
-@c @implementation
-public func AddForestDoorKey(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let keyID = Int32(itemPtr.pointee.parm.0)
-    let rot = Float(itemPtr.pointee.parm.1) * (Float.pi * 2 / 8)
-    let keyDestroyed = itemPtr.pointee.flags & UInt16(ITEM_FLAGS_USER1) != 0
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addForestDoorKey(x: Float, z: Float) -> UInt8 {
+        let keyID = Int32(pointee.parm.0)
+        let rot = Float(pointee.parm.1) * (Float.pi * 2 / 8)
+        let keyDestroyed = pointee.flags & UInt16(ITEM_FLAGS_USER1) != 0
 
-    // MAKE KEY HOLDER
+        // MAKE KEY HOLDER
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_ForestDoor_KeyHolder)
-    def.scale = damDoorScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits
-    def.slot = 209
-    def.moveCall = cMoveForestDoorKey
-    def.rot = rot
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_ForestDoor_KeyHolder)
+        def.scale = damDoorScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits
+        def.slot = 209
+        def.moveCall = cMoveForestDoorKey
+        def.rot = rot
 
-    let keyHolder = MakeNewDisplayGroupObject(&def)!
+        let keyHolder = MakeNewDisplayGroupObject(&def)!
 
-    keyHolder.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        keyHolder.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    keyHolder.pointee.Kind = keyID
-
-    // SET COLLISION STUFF
-
-    keyHolder.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    keyHolder.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(keyHolder, 1, 1)
-
-    keyHolder.pointee.TriggerCallback = doTrigForestDoorKey
-    keyHolder.pointee.HitByWeaponHandler = cForestDoorKeyHitByWeaponCallback
-
-    keyHolder.pointee.HeatSeekHotSpotOff.y = 220.0
-
-    keyHolder.pointee.Health = 0.3
-
-    // MAKE KEY
-
-    if !keyDestroyed { // was the key already destroyed?
-        keyHolder.pointee.CType |= UInt32(CTYPE_AUTOTARGETWEAPON) // make keyholder auto-target
-
-        def.type = UInt8(GLOBAL_ObjType_ForestDoor_Key)
-        def.slot += 1
-        def.moveCall = nil
-        let key = MakeNewDisplayGroupObject(&def)!
+        keyHolder.pointee.Kind = keyID
 
         // SET COLLISION STUFF
 
-        key.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_AUTOTARGETWEAPON)
+        keyHolder.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        keyHolder.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(keyHolder, 1, 1)
 
-        key.pointee.HitByWeaponHandler = cForestDoorKeyHitByWeaponCallback
+        keyHolder.pointee.TriggerCallback = doTrigForestDoorKey
+        keyHolder.pointee.HitByWeaponHandler = cForestDoorKeyHitByWeaponCallback
 
-        key.pointee.HeatSeekHotSpotOff.y = 220.0
+        keyHolder.pointee.HeatSeekHotSpotOff.y = 220.0
 
-        keyHolder.pointee.ChainNode = key
-        key.pointee.ChainHead = keyHolder
+        keyHolder.pointee.Health = 0.3
 
-        // MAKE SPARKLES
+        // MAKE KEY
 
-        var sparkleRot: Float = 0
-        for j in 0..<3 {
-            let i = GetFreeSparkle(key)
-            sparklesBase(key)[j] = i
-            if i != -1 {
-                let sparkle = GetSparkleSlot(Int32(i))!
-                sparkle.pointee.flags = UInt32(SPARKLE_FLAG_OMNIDIRECTIONAL | SPARKLE_FLAG_FLICKER | SPARKLE_FLAG_TRANSFORMWITHOWNER)
-                sparkle.pointee.where.x = sin(sparkleRot) * 20.0
-                sparkle.pointee.where.y = 190.0
-                sparkle.pointee.where.z = cos(sparkleRot) * 20.0
+        if !keyDestroyed { // was the key already destroyed?
+            keyHolder.pointee.CType |= UInt32(CTYPE_AUTOTARGETWEAPON) // make keyholder auto-target
 
-                sparkle.pointee.color.r = 1
-                sparkle.pointee.color.g = 1
-                sparkle.pointee.color.b = 1
-                sparkle.pointee.color.a = 1
+            def.type = UInt8(GLOBAL_ObjType_ForestDoor_Key)
+            def.slot += 1
+            def.moveCall = nil
+            let key = MakeNewDisplayGroupObject(&def)!
 
-                sparkle.pointee.scale = 60.0
-                sparkle.pointee.separation = 50
+            // SET COLLISION STUFF
 
-                sparkle.pointee.textureNum = Int16(PARTICLE_SObjType_RedGlint)
+            key.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_AUTOTARGETWEAPON)
 
-                sparkleRot += Float.pi * 2 * 0.333
+            key.pointee.HitByWeaponHandler = cForestDoorKeyHitByWeaponCallback
+
+            key.pointee.HeatSeekHotSpotOff.y = 220.0
+
+            keyHolder.pointee.ChainNode = key
+            key.pointee.ChainHead = keyHolder
+
+            // MAKE SPARKLES
+
+            var sparkleRot: Float = 0
+            for j in 0..<3 {
+                let i = GetFreeSparkle(key)
+                sparklesBase(key)[j] = i
+                if i != -1 {
+                    let sparkle = GetSparkleSlot(Int32(i))!
+                    sparkle.pointee.flags = UInt32(SPARKLE_FLAG_OMNIDIRECTIONAL | SPARKLE_FLAG_FLICKER | SPARKLE_FLAG_TRANSFORMWITHOWNER)
+                    sparkle.pointee.where.x = sin(sparkleRot) * 20.0
+                    sparkle.pointee.where.y = 190.0
+                    sparkle.pointee.where.z = cos(sparkleRot) * 20.0
+
+                    sparkle.pointee.color.r = 1
+                    sparkle.pointee.color.g = 1
+                    sparkle.pointee.color.b = 1
+                    sparkle.pointee.color.a = 1
+
+                    sparkle.pointee.scale = 60.0
+                    sparkle.pointee.separation = 50
+
+                    sparkle.pointee.textureNum = Int16(PARTICLE_SObjType_RedGlint)
+
+                    sparkleRot += Float.pi * 2 * 0.333
+                }
             }
         }
-    }
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 private let cMoveForestDoorKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { keyHolderOpt in

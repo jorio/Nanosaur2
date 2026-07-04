@@ -28,104 +28,106 @@ public func FindAllEggItems() {
     }
 }
 
-@c @implementation
-public func AddEgg(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let eggColor = Int32(itemPtr.pointee.parm.0)
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addEgg(x: Float, z: Float) -> UInt8 {
+        let eggColor = Int32(pointee.parm.0)
 
-    // MAKE NEST
+        // MAKE NEST
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_Nest)
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.slot = Int16(SLOT_OF_DUMB)
-    def.moveCall = cMoveNest
-    def.scale = eggScale
-    def.flags = gAutoFadeStatusBits
-    def.rot = RandomFloat() * SwPI2
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_Nest)
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.slot = Int16(SLOT_OF_DUMB)
+        def.moveCall = cMoveNest
+        def.scale = eggScale
+        def.flags = gAutoFadeStatusBits
+        def.rot = RandomFloat() * SwPI2
 
-    let nest = MakeNewDisplayGroupObject(&def)!
+        let nest = MakeNewDisplayGroupObject(&def)!
 
-    nest.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        nest.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    if itemPtr.pointee.flags & UInt16(ITEM_FLAGS_USER1) == 0 { // if user flag is set then egg has already been saved, so don't make it
-        // MAKE EGG
+        if pointee.flags & UInt16(ITEM_FLAGS_USER1) == 0 { // if user flag is set then egg has already been saved, so don't make it
+            // MAKE EGG
 
-        def.type = UInt8(Int32(GLOBAL_ObjType_RedEgg) + eggColor)
-        def.slot += 1
-        def.moveCall = cMoveEggNotCarried
-        let egg = MakeNewDisplayGroupObject(&def)!
+            def.type = UInt8(Int32(GLOBAL_ObjType_RedEgg) + eggColor)
+            def.slot += 1
+            def.moveCall = cMoveEggNotCarried
+            let egg = MakeNewDisplayGroupObject(&def)!
 
-        egg.pointee.What = Int32(WhatType.egg.rawValue)
+            egg.pointee.What = Int32(WhatType.egg.rawValue)
 
-        egg.pointee.Kind = eggColor // remember what color of egg this is
-        egg.pointee.Flag.0 = 0 // CanResetEgg
+            egg.pointee.Kind = eggColor // remember what color of egg this is
+            egg.pointee.Flag.0 = 0 // CanResetEgg
 
-        egg.pointee.Coord.y -= egg.pointee.LocalBBox.min.y
-        egg.pointee.InitCoord.y = egg.pointee.Coord.y
-        egg.pointee.Rot.x = 0 // rot onto side
+            egg.pointee.Coord.y -= egg.pointee.LocalBBox.min.y
+            egg.pointee.InitCoord.y = egg.pointee.Coord.y
+            egg.pointee.Rot.x = 0 // rot onto side
 
-        UpdateObjectTransforms(egg)
+            UpdateObjectTransforms(egg)
 
-        // SET COLLISION STUFF
+            // SET COLLISION STUFF
 
-        egg.pointee.CType = UInt32(CTYPE_EGG)
-        egg.pointee.CBits = UInt32(CBITS_ALLSOLID)
-        CreateCollisionBoxFromBoundingBox(egg, 1, 1)
+            egg.pointee.CType = UInt32(CTYPE_EGG)
+            egg.pointee.CBits = UInt32(CBITS_ALLSOLID)
+            CreateCollisionBoxFromBoundingBox(egg, 1, 1)
 
-        // SET HOLD OFFSETS
+            // SET HOLD OFFSETS
 
-        egg.pointee.HoldOffset.x = 0
-        egg.pointee.HoldOffset.y = 0
-        egg.pointee.HoldOffset.z = 0
+            egg.pointee.HoldOffset.x = 0
+            egg.pointee.HoldOffset.y = 0
+            egg.pointee.HoldOffset.z = 0
 
-        egg.pointee.HoldRot.x = 0
-        egg.pointee.HoldRot.y = 0
-        egg.pointee.HoldRot.z = 0
+            egg.pointee.HoldRot.x = 0
+            egg.pointee.HoldRot.y = 0
+            egg.pointee.HoldRot.z = 0
 
-        egg.pointee.Special.1 = 0 // TargetJoint
+            egg.pointee.Special.1 = 0 // TargetJoint
 
-        egg.pointee.Timer = 0 // DelayUntilCanPickup
+            egg.pointee.Timer = 0 // DelayUntilCanPickup
 
-        nest.pointee.ChainNode = egg
-        egg.pointee.ChainHead = nest
+            nest.pointee.ChainNode = egg
+            egg.pointee.ChainHead = nest
 
-        nest.pointee.Flag.1 = 1 // NestHasEgg: the egg is in the nest
+            nest.pointee.Flag.1 = 1 // NestHasEgg: the egg is in the nest
 
-        // MAKE BEAM
+            // MAKE BEAM
 
-        def.type = UInt8(GLOBAL_ObjType_EggBeam)
-        def.flags |= UInt32(STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
-        def.slot = Int16(SLOT_OF_DUMB + 50)
-        def.moveCall = nil
-        let beam = MakeNewDisplayGroupObject(&def)!
+            def.type = UInt8(GLOBAL_ObjType_EggBeam)
+            def.flags |= UInt32(STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
+            def.slot = Int16(SLOT_OF_DUMB + 50)
+            def.moveCall = nil
+            let beam = MakeNewDisplayGroupObject(&def)!
 
-        switch eggColor {
-        case 0: // red
-            beam.pointee.ColorFilter.g = 0.5
-            beam.pointee.ColorFilter.b = 0.5
-        case 1: // green
-            beam.pointee.ColorFilter.r = 0.5
-            beam.pointee.ColorFilter.b = 0.5
-        case 2: // blue
-            beam.pointee.ColorFilter.r = 0.5
-            beam.pointee.ColorFilter.g = 0.5
-        case 3: // yellow
-            beam.pointee.ColorFilter.b = 0.5
-        case 4: // purple
-            beam.pointee.ColorFilter.g = 0.5
-        default:
-            break
+            switch eggColor {
+            case 0: // red
+                beam.pointee.ColorFilter.g = 0.5
+                beam.pointee.ColorFilter.b = 0.5
+            case 1: // green
+                beam.pointee.ColorFilter.r = 0.5
+                beam.pointee.ColorFilter.b = 0.5
+            case 2: // blue
+                beam.pointee.ColorFilter.r = 0.5
+                beam.pointee.ColorFilter.g = 0.5
+            case 3: // yellow
+                beam.pointee.ColorFilter.b = 0.5
+            case 4: // purple
+                beam.pointee.ColorFilter.g = 0.5
+            default:
+                break
+            }
+
+            egg.pointee.ChainNode = beam
+
+            _ = AttachShadowToObject(egg, .circular, 3, 3, 1)
         }
 
-        egg.pointee.ChainNode = beam
-
-        _ = AttachShadowToObject(egg, .circular, 3, 3, 1)
+        return 1 // item was added
     }
-
-    return 1 // item was added
 }
 
 private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { nestOpt in

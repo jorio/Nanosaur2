@@ -42,30 +42,32 @@ private let raptorJointnumTailtip = 22
 
 // MARK: - Add raptor enemy
 
-@c @implementation
-public func AddEnemy_Raptor(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    if gGamePrefs.kiddieMode != 0 { // don't add any non-spline enemies in kiddie mode
-        return 0
-    }
-
-    if gNumEnemies >= gMaxEnemies { // keep from getting absurd
-        return 0
-    }
-
-    if (itemPtr.pointee.parm.3 & 1) == 0 { // see if always add
-        if GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee >= maxRaptors {
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addEnemyRaptor(x: Float, z: Float) -> UInt8 {
+        if gGamePrefs.kiddieMode != 0 { // don't add any non-spline enemies in kiddie mode
             return 0
         }
+
+        if gNumEnemies >= gMaxEnemies { // keep from getting absurd
+            return 0
+        }
+
+        if (pointee.parm.3 & 1) == 0 { // see if always add
+            if GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee >= maxRaptors {
+                return 0
+            }
+        }
+
+        let newObj = makeRaptor(x, z, Int16(raptorAnimWalk))!
+
+        newObj.pointee.TerrainItemPtr = self
+
+        gNumEnemies += 1
+        GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee += 1
+
+        return 1
     }
-
-    let newObj = makeRaptor(x, z, Int16(raptorAnimWalk))!
-
-    newObj.pointee.TerrainItemPtr = itemPtr
-
-    gNumEnemies += 1
-    GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee += 1
-
-    return 1
 }
 
 // MARK: - Make raptor

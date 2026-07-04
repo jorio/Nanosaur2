@@ -4,123 +4,125 @@ private let airMineScale: Float = 1.2
 
 // MARK: - Add air mine
 
-@c @implementation
-public func AddAirMine(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let typeB: Int32
-    let typeM: Int32
-    let typeC: Int32
-    var chainOff: Float = 0
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addAirMine(x: Float, z: Float) -> UInt8 {
+        let typeB: Int32
+        let typeM: Int32
+        let typeC: Int32
+        var chainOff: Float = 0
 
-    var h = Int(itemPtr.pointee.parm.0)
-    if h != 0 {
-        h = 10 - h
-        if h < 0 {
-            h = 0
+        var h = Int(pointee.parm.0)
+        if h != 0 {
+            h = 10 - h
+            if h < 0 {
+                h = 0
+            }
         }
+
+        switch gLevelNum {
+        case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
+            typeB = Int32(LEVEL1_ObjType_AirMine_Base)
+            typeM = Int32(LEVEL1_ObjType_AirMine_Mine)
+            typeC = Int32(LEVEL1_ObjType_AirMine_Chain)
+            if h == 0 {
+                chainOff = RandomFloat() * (600.0 * airMineScale)
+            } else {
+                chainOff = Float(h) * (800.0 / 10.0)
+            }
+
+        case Int16(LevelNum.adventure2.rawValue):
+            typeB = Int32(LEVEL2_ObjType_AirMine_Base)
+            typeM = Int32(LEVEL2_ObjType_AirMine_Mine)
+            typeC = Int32(LEVEL2_ObjType_AirMine_Chain)
+            if h == 0 {
+                chainOff = RandomFloat() * (1400.0 * airMineScale)
+            } else {
+                chainOff = Float(h) * (2300.0 / 10.0)
+            }
+
+        case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
+            typeB = Int32(LEVEL3_ObjType_AirMine_Base)
+            typeM = Int32(LEVEL3_ObjType_AirMine_Mine)
+            typeC = Int32(LEVEL3_ObjType_AirMine_Chain)
+            if h == 0 {
+                chainOff = RandomFloat() * (1400.0 * airMineScale)
+            } else {
+                chainOff = Float(h) * (2300.0 / 10.0)
+            }
+
+        default:
+            SwFatal("AddAirMine: no mines here yet, call Brian!")
+            return 0
+        }
+
+        // MAKE BASE
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(typeB)
+        def.scale = airMineScale
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(SLOT_OF_DUMB) - 200
+        def.moveCall = cMoveAirMine
+        def.rot = 0
+
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
+
+        let base = MakeNewDisplayGroupObject(&def)!
+
+        base.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        base.pointee.CType = UInt32(CTYPE_MISC)
+        base.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(base, 1, 1)
+
+        // MAKE CHAIN
+
+        def.type = UInt8(typeC)
+        def.coord.y -= chainOff
+        def.slot += 1
+        def.moveCall = nil
+        def.rot = RandomFloat() * SwPI2
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
+        let chain = MakeNewDisplayGroupObject(&def)!
+
+        chain.pointee.SpecialF.0 = RandomFloat() * SwPI2 // WobbleX
+
+        base.pointee.ChainNode = chain
+        chain.pointee.ChainHead = base
+
+        // MAKE MINE
+
+        def.type = UInt8(typeM)
+        def.slot += 1
+        def.flags = gAutoFadeStatusBits
+        let mine = MakeNewDisplayGroupObject(&def)!
+
+        // SET COLLISION STUFF
+
+        mine.pointee.Damage = 1.0
+
+        mine.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
+        mine.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(mine, 0.5, 0.9)
+
+        mine.pointee.TriggerCallback = cDoTrig_AirMine
+        mine.pointee.HitByWeaponHandler = cAirMineHitByWeaponCallback
+
+        chain.pointee.ChainNode = mine
+        mine.pointee.ChainHead = chain
+
+        // CALL THE MOVE FUNCTION ONCE TO ALIGN ALL THE PARTS
+
+        cMoveAirMine(base)
+
+        return 1 // item was added
     }
-
-    switch gLevelNum {
-    case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
-        typeB = Int32(LEVEL1_ObjType_AirMine_Base)
-        typeM = Int32(LEVEL1_ObjType_AirMine_Mine)
-        typeC = Int32(LEVEL1_ObjType_AirMine_Chain)
-        if h == 0 {
-            chainOff = RandomFloat() * (600.0 * airMineScale)
-        } else {
-            chainOff = Float(h) * (800.0 / 10.0)
-        }
-
-    case Int16(LevelNum.adventure2.rawValue):
-        typeB = Int32(LEVEL2_ObjType_AirMine_Base)
-        typeM = Int32(LEVEL2_ObjType_AirMine_Mine)
-        typeC = Int32(LEVEL2_ObjType_AirMine_Chain)
-        if h == 0 {
-            chainOff = RandomFloat() * (1400.0 * airMineScale)
-        } else {
-            chainOff = Float(h) * (2300.0 / 10.0)
-        }
-
-    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
-        typeB = Int32(LEVEL3_ObjType_AirMine_Base)
-        typeM = Int32(LEVEL3_ObjType_AirMine_Mine)
-        typeC = Int32(LEVEL3_ObjType_AirMine_Chain)
-        if h == 0 {
-            chainOff = RandomFloat() * (1400.0 * airMineScale)
-        } else {
-            chainOff = Float(h) * (2300.0 / 10.0)
-        }
-
-    default:
-        SwFatal("AddAirMine: no mines here yet, call Brian!")
-        return 0
-    }
-
-    // MAKE BASE
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(typeB)
-    def.scale = airMineScale
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(SLOT_OF_DUMB) - 200
-    def.moveCall = cMoveAirMine
-    def.rot = 0
-
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
-
-    let base = MakeNewDisplayGroupObject(&def)!
-
-    base.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    base.pointee.CType = UInt32(CTYPE_MISC)
-    base.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(base, 1, 1)
-
-    // MAKE CHAIN
-
-    def.type = UInt8(typeC)
-    def.coord.y -= chainOff
-    def.slot += 1
-    def.moveCall = nil
-    def.rot = RandomFloat() * SwPI2
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
-    let chain = MakeNewDisplayGroupObject(&def)!
-
-    chain.pointee.SpecialF.0 = RandomFloat() * SwPI2 // WobbleX
-
-    base.pointee.ChainNode = chain
-    chain.pointee.ChainHead = base
-
-    // MAKE MINE
-
-    def.type = UInt8(typeM)
-    def.slot += 1
-    def.flags = gAutoFadeStatusBits
-    let mine = MakeNewDisplayGroupObject(&def)!
-
-    // SET COLLISION STUFF
-
-    mine.pointee.Damage = 1.0
-
-    mine.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
-    mine.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(mine, 0.5, 0.9)
-
-    mine.pointee.TriggerCallback = cDoTrig_AirMine
-    mine.pointee.HitByWeaponHandler = cAirMineHitByWeaponCallback
-
-    chain.pointee.ChainNode = mine
-    mine.pointee.ChainHead = chain
-
-    // CALL THE MOVE FUNCTION ONCE TO ALIGN ALL THE PARTS
-
-    cMoveAirMine(base)
-
-    return 1 // item was added
 }
 
 // MARK: - Move air mine

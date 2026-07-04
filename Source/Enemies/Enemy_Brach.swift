@@ -22,33 +22,35 @@ private let brachAnimDeath = 2
 private let brachAnimScratch = 3
 private let brachAnimEat = 4
 
-@c @implementation
-public func AddEnemy_Brach(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    if gNumEnemies >= gMaxEnemies { // keep from getting absurd
-        return 0
-    }
-
-    if itemPtr.pointee.parm.3 & 1 == 0 { // see if always add
-        if GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee >= maxBrachs {
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addEnemyBrach(x: Float, z: Float) -> UInt8 {
+        if gNumEnemies >= gMaxEnemies { // keep from getting absurd
             return 0
         }
+
+        if pointee.parm.3 & 1 == 0 { // see if always add
+            if GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee >= maxBrachs {
+                return 0
+            }
+        }
+
+        let newObj = makeBrach(x, z, Int16(brachAnimStand))!
+
+        newObj.pointee.TerrainItemPtr = self
+
+        newObj.pointee.Timer = RandomFloat() * 10.0
+
+        // SET ROT
+
+        newObj.pointee.Rot.y = Float(pointee.parm.0) * (Float.pi * 2 / 8.0)
+        UpdateObjectTransforms(newObj)
+
+        gNumEnemies += 1
+        GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee += 1
+
+        return 1
     }
-
-    let newObj = makeBrach(x, z, Int16(brachAnimStand))!
-
-    newObj.pointee.TerrainItemPtr = itemPtr
-
-    newObj.pointee.Timer = RandomFloat() * 10.0
-
-    // SET ROT
-
-    newObj.pointee.Rot.y = Float(itemPtr.pointee.parm.0) * (Float.pi * 2 / 8.0)
-    UpdateObjectTransforms(newObj)
-
-    gNumEnemies += 1
-    GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee += 1
-
-    return 1
 }
 
 private func makeBrach(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutablePointer<ObjNode>? {

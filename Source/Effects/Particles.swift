@@ -1375,12 +1375,14 @@ public func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
 
 // MARK: - Add smoker
 
-@c @implementation
-public func AddSmoker(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let newObj = MakeSmoker(x, z, Int32(itemPtr.pointee.parm.0))!
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addSmoker(x: Float, z: Float) -> UInt8 {
+        let newObj = MakeSmoker(x, z, Int32(pointee.parm.0))!
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    return 1
+        return 1
+    }
 }
 
 // MARK: - Make smoker
@@ -1576,28 +1578,30 @@ public func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ pla
 
 // MARK: - Add flame
 
-@c @implementation
-public func AddFlame(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE CUSTOM OBJECT
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addFlame(x: Float, z: Float) -> UInt8 {
+        // MAKE CUSTOM OBJECT
 
-    var def = NewObjectDefinitionType()
-    def.genre = UInt8(CUSTOM_GENRE)
-    def.slot = Int16(WATER_SLOT + 1)
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = FindHighestCollisionAtXZ(x, z, UInt32(CTYPE_TERRAIN | CTYPE_WATER))
-    def.scale = 1.0 + RandomFloat() * 0.8
-    def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES | STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP)
-    def.moveCall = cMoveFlame
-    def.drawCall = cDrawFlame
+        var def = NewObjectDefinitionType()
+        def.genre = UInt8(CUSTOM_GENRE)
+        def.slot = Int16(WATER_SLOT + 1)
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = FindHighestCollisionAtXZ(x, z, UInt32(CTYPE_TERRAIN | CTYPE_WATER))
+        def.scale = 1.0 + RandomFloat() * 0.8
+        def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZWRITES | STATUS_BIT_DONTCULL | STATUS_BIT_NOTEXTUREWRAP)
+        def.moveCall = cMoveFlame
+        def.drawCall = cDrawFlame
 
-    let newObj = MakeNewObject(&def)!
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.Special.0 = Int(RandomRange(0, 10)) // FlameFrame: start on random frame
-    newObj.pointee.SpecialF.0 = 20.0 + RandomFloat() * 2.0 // FlameSpeed: set anim speed
-    newObj.pointee.Timer = 0
+        let newObj = MakeNewObject(&def)!
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.Special.0 = Int(RandomRange(0, 10)) // FlameFrame: start on random frame
+        newObj.pointee.SpecialF.0 = 20.0 + RandomFloat() * 2.0 // FlameSpeed: set anim speed
+        newObj.pointee.Timer = 0
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Move flame

@@ -10,29 +10,31 @@ private let maxHoleTargets = 11
     UnsafeMutableRawPointer(skelObjData.pointer(to: \.jointTransformMatrix)!).assumingMemoryBound(to: OGLMatrix4x4.self)
 }
 
-@c @implementation
-public func AddHole(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.genre = UInt8(EVENT_GENRE)
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = 0
-    def.scale = 1
-    def.slot = Int16(SLOT_OF_DUMB + 50)
-    def.moveCall = cMoveHole
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addHole(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.genre = UInt8(EVENT_GENRE)
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = 0
+        def.scale = 1
+        def.slot = Int16(SLOT_OF_DUMB + 50)
+        def.moveCall = cMoveHole
 
-    let newObj = MakeNewObject(&def)!
+        let newObj = MakeNewObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    newObj.pointee.What = Int32(WhatType.hole.rawValue)
-    newObj.pointee.Kind = Int32(itemPtr.pointee.parm.0) // remember hole group #
+        newObj.pointee.What = Int32(WhatType.hole.rawValue)
+        newObj.pointee.Kind = Int32(pointee.parm.0) // remember hole group #
 
-    newObj.pointee.Mode = holeModeInactive
-    newObj.pointee.Timer = RandomFloat() * 2.0 // delay until worm
+        newObj.pointee.Mode = holeModeInactive
+        newObj.pointee.Timer = RandomFloat() * 2.0 // delay until worm
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 private let cMoveHole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in

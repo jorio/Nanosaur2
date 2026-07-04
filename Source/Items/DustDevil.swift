@@ -228,16 +228,18 @@ public func UpdateDustDevilUVAnimation() {
 
 // MARK: - Add dust devil
 
-@c @implementation
-public func AddDustDevil(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    guard let newObj = makeDustDevil(x, z) else {
-        return 0
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addDustDevil(x: Float, z: Float) -> UInt8 {
+        guard let newObj = makeDustDevil(x, z) else {
+            return 0
+        }
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.MoveCall = cMoveDustDevil
+
+        return 1 // item was added
     }
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.MoveCall = cMoveDustDevil
-
-    return 1 // item was added
 }
 
 // MARK: - Make dust devil

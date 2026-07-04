@@ -108,59 +108,61 @@ private let cMoveCrystalShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>
     CauseBombShockwaveDamage(theNode, UInt32(CTYPE_PLAYER1 | CTYPE_PLAYER2 | CTYPE_ENEMY | CTYPE_WEAPONTEST))
 }
 
-@c @implementation
-public func AddCrystal(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>, _ x: Float, _ z: Float) -> UInt8 {
-    if itemPtr.pointee.parm.0 > 2 {
-        SwFatal("AddCrystal: illegal subtype")
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addCrystal(x: Float, z: Float) -> UInt8 {
+        if pointee.parm.0 > 2 {
+            SwFatal("AddCrystal: illegal subtype")
+        }
+
+        // MAKE BASE
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(LEVEL2_ObjType_Crystal1Base) + pointee.parm.0
+        def.scale = 1.5 + RandomFloat2() * 0.5
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(SLOT_OF_DUMB - 50)
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
+
+        let base = MakeNewDisplayGroupObject(&def)!
+
+        base.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        RotateOnTerrain(base, -2, nil) // keep flat on terrain
+        SetObjectTransformMatrix(base)
+
+        if (pointee.flags & UInt16(ITEM_FLAGS_USER1)) == 0 { // did we blow up the crystal previously?
+            // MAKE CRYSTAL
+
+            def.type = UInt8(LEVEL2_ObjType_Crystal1) + pointee.parm.0
+            def.slot = Int16(SLOT_OF_DUMB - 3)
+            def.moveCall = nil
+            let crystal = MakeNewDisplayGroupObject(&def)!
+
+            // SET COLLISION STUFF
+
+            crystal.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST | CTYPE_MISC)
+            crystal.pointee.CBits = UInt32(CBITS_ALLSOLID)
+            CalcObjectBoxFromNode(crystal)
+
+            crystal.pointee.HitByWeaponHandler = cCrystalHitByWeaponCallback
+
+            crystal.pointee.HeatSeekHotSpotOff.x = 0
+            crystal.pointee.HeatSeekHotSpotOff.y = 50.0
+            crystal.pointee.HeatSeekHotSpotOff.z = 0
+
+            crystal.pointee.BaseTransformMatrix = base.pointee.BaseTransformMatrix
+            SetObjectTransformMatrix(crystal)
+
+            base.pointee.ChainNode = crystal
+            crystal.pointee.ChainHead = base
+        }
+
+        return 1 // item was added
     }
-
-    // MAKE BASE
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(LEVEL2_ObjType_Crystal1Base) + itemPtr.pointee.parm.0
-    def.scale = 1.5 + RandomFloat2() * 0.5
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(SLOT_OF_DUMB - 50)
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
-
-    let base = MakeNewDisplayGroupObject(&def)!
-
-    base.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    RotateOnTerrain(base, -2, nil) // keep flat on terrain
-    SetObjectTransformMatrix(base)
-
-    if (itemPtr.pointee.flags & UInt16(ITEM_FLAGS_USER1)) == 0 { // did we blow up the crystal previously?
-        // MAKE CRYSTAL
-
-        def.type = UInt8(LEVEL2_ObjType_Crystal1) + itemPtr.pointee.parm.0
-        def.slot = Int16(SLOT_OF_DUMB - 3)
-        def.moveCall = nil
-        let crystal = MakeNewDisplayGroupObject(&def)!
-
-        // SET COLLISION STUFF
-
-        crystal.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST | CTYPE_MISC)
-        crystal.pointee.CBits = UInt32(CBITS_ALLSOLID)
-        CalcObjectBoxFromNode(crystal)
-
-        crystal.pointee.HitByWeaponHandler = cCrystalHitByWeaponCallback
-
-        crystal.pointee.HeatSeekHotSpotOff.x = 0
-        crystal.pointee.HeatSeekHotSpotOff.y = 50.0
-        crystal.pointee.HeatSeekHotSpotOff.z = 0
-
-        crystal.pointee.BaseTransformMatrix = base.pointee.BaseTransformMatrix
-        SetObjectTransformMatrix(crystal)
-
-        base.pointee.ChainNode = crystal
-        crystal.pointee.ChainHead = base
-    }
-
-    return 1 // item was added
 }

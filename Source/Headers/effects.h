@@ -207,10 +207,8 @@ void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke, shor
 void MakeFireExplosion(OGLPoint3D *where);
 
 void MakeSteam(ObjNode *blob, float x, float y, float z);
-Boolean AddSmoker(TerrainItemEntryType *itemPtr, float  x, float z);
 ObjNode *MakeSmoker(float  x, float z, int kind);
 
-Boolean AddFlame(TerrainItemEntryType *itemPtr, float  x, float z);
 ObjNode *MakeFireRing(float x, float y, float z);
 
 

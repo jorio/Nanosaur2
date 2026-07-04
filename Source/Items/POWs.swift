@@ -19,73 +19,75 @@ private let powReappearDelay: Float = 10.0
 
 // MARK: - Add weapon powerup
 
-@c @implementation
-public func AddWeaponPOW(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let weaponType = Int16(itemPtr.pointee.parm.0)
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addWeaponPOW(x: Float, z: Float) -> UInt8 {
+        let weaponType = Int16(pointee.parm.0)
 
-    if weaponType == Int16(WeaponType.sonicScream.rawValue) { // since this in an infinite weapon, don't need POW's
-        return 1
-    }
-
-    // MAKE FRAME
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_POWFrame)
-    def.scale = powScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY + powYOff
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(PLAYER_SLOT) + 55
-    def.moveCall = cMovePOW
-    def.rot = RandomFloat() * SwPI2
-
-    let newObj = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    newObj.pointee.Special.0 = Int(weaponType) // WeaponPOWType
-    newObj.pointee.Mode = PowMode.normal.rawValue
-
-    switch WeaponType(rawValue: Int32(weaponType)) {
-    case .heatSeeker:
-        if gVSMode == .none { // fewer missiles in 2P modes
-            newObj.pointee.Special.1 = 10 // WeaponPOWQuantity
-        } else {
-            newObj.pointee.Special.1 = 4
+        if weaponType == Int16(WeaponType.sonicScream.rawValue) { // since this in an infinite weapon, don't need POW's
+            return 1
         }
 
-    case .blaster:
-        newObj.pointee.Special.1 = 25
+        // MAKE FRAME
 
-    default:
-        newObj.pointee.Special.1 = 20
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_POWFrame)
+        def.scale = powScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY + powYOff
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(PLAYER_SLOT) + 55
+        def.moveCall = cMovePOW
+        def.rot = RandomFloat() * SwPI2
+
+        let newObj = MakeNewDisplayGroupObject(&def)!
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        newObj.pointee.Special.0 = Int(weaponType) // WeaponPOWType
+        newObj.pointee.Mode = PowMode.normal.rawValue
+
+        switch WeaponType(rawValue: Int32(weaponType)) {
+        case .heatSeeker:
+            if gVSMode == .none { // fewer missiles in 2P modes
+                newObj.pointee.Special.1 = 10 // WeaponPOWQuantity
+            } else {
+                newObj.pointee.Special.1 = 4
+            }
+
+        case .blaster:
+            newObj.pointee.Special.1 = 25
+
+        default:
+            newObj.pointee.Special.1 = 20
+        }
+
+        newObj.pointee.SpecialF.0 = RandomFloat() * SwPI2 // Wobble
+
+        // SET COLLISION STUFF
+
+        newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
+        newObj.pointee.CBits = 0
+        CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
+
+        newObj.pointee.TriggerCallback = cDoTrig_WeaponPOW
+
+        // MAKE MEMBRANE
+
+        def.type = UInt8(Int32(GLOBAL_ObjType_BlasterPOWMembrane) + Int32(weaponType))
+        def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_NOFOG)
+        def.slot = Int16(SLOT_OF_DUMB) + 3
+        def.moveCall = nil
+        let membrane = MakeNewDisplayGroupObject(&def)!
+
+        newObj.pointee.ChainNode = membrane
+
+        AttachShadowToObject(newObj, .circular, 5, 2, 1)
+
+        return 1 // item was added
     }
-
-    newObj.pointee.SpecialF.0 = RandomFloat() * SwPI2 // Wobble
-
-    // SET COLLISION STUFF
-
-    newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
-    newObj.pointee.CBits = 0
-    CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
-
-    newObj.pointee.TriggerCallback = cDoTrig_WeaponPOW
-
-    // MAKE MEMBRANE
-
-    def.type = UInt8(Int32(GLOBAL_ObjType_BlasterPOWMembrane) + Int32(weaponType))
-    def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_NOFOG)
-    def.slot = Int16(SLOT_OF_DUMB) + 3
-    def.moveCall = nil
-    let membrane = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.ChainNode = membrane
-
-    AttachShadowToObject(newObj, .circular, 5, 2, 1)
-
-    return 1 // item was added
 }
 
 // MARK: - Move weapon powerup
@@ -203,48 +205,50 @@ private let cDoTrig_WeaponPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
 
 // MARK: - Add health powerup
 
-@c @implementation
-public func AddHealthPOW(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE FRAME
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addHealthPOW(x: Float, z: Float) -> UInt8 {
+        // MAKE FRAME
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_HealthPOWFrame)
-    def.scale = powScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY + powYOff
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(PLAYER_SLOT) + 55
-    def.moveCall = cMovePOW
-    def.rot = RandomFloat() * SwPI2
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_HealthPOWFrame)
+        def.scale = powScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY + powYOff
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(PLAYER_SLOT) + 55
+        def.moveCall = cMovePOW
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.Mode = PowMode.normal.rawValue
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.Mode = PowMode.normal.rawValue
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
-    newObj.pointee.CBits = 0
-    CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
+        newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
+        newObj.pointee.CBits = 0
+        CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
 
-    newObj.pointee.TriggerCallback = cDoTrig_HealthPOW
+        newObj.pointee.TriggerCallback = cDoTrig_HealthPOW
 
-    // MAKE MEMBRANE
+        // MAKE MEMBRANE
 
-    def.type = UInt8(GLOBAL_ObjType_HealthPOWMembrane)
-    def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
-    def.slot = Int16(SLOT_OF_DUMB) + 3
-    def.moveCall = nil
-    let membrane = MakeNewDisplayGroupObject(&def)!
+        def.type = UInt8(GLOBAL_ObjType_HealthPOWMembrane)
+        def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
+        def.slot = Int16(SLOT_OF_DUMB) + 3
+        def.moveCall = nil
+        let membrane = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.ChainNode = membrane
+        newObj.pointee.ChainNode = membrane
 
-    AttachShadowToObject(newObj, .circular, 4, 1.5, 1)
+        AttachShadowToObject(newObj, .circular, 4, 1.5, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: health pow
@@ -279,48 +283,50 @@ private let cDoTrig_HealthPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
 
 // MARK: - Add fuel powerup
 
-@c @implementation
-public func AddFuelPOW(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE FRAME
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addFuelPOW(x: Float, z: Float) -> UInt8 {
+        // MAKE FRAME
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_POWFrame)
-    def.scale = powScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY + powYOff
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(PLAYER_SLOT) + 55
-    def.moveCall = cMovePOW
-    def.rot = RandomFloat() * SwPI2
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_POWFrame)
+        def.scale = powScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY + powYOff
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(PLAYER_SLOT) + 55
+        def.moveCall = cMovePOW
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.Mode = PowMode.normal.rawValue
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.Mode = PowMode.normal.rawValue
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
-    newObj.pointee.CBits = 0
-    CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
+        newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
+        newObj.pointee.CBits = 0
+        CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
 
-    newObj.pointee.TriggerCallback = cDoTrig_FuelPOW
+        newObj.pointee.TriggerCallback = cDoTrig_FuelPOW
 
-    // MAKE MEMBRANE
+        // MAKE MEMBRANE
 
-    def.type = UInt8(GLOBAL_ObjType_FuelPOWMembrane)
-    def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
-    def.slot = Int16(SLOT_OF_DUMB) + 3
-    def.moveCall = nil
-    let membrane = MakeNewDisplayGroupObject(&def)!
+        def.type = UInt8(GLOBAL_ObjType_FuelPOWMembrane)
+        def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
+        def.slot = Int16(SLOT_OF_DUMB) + 3
+        def.moveCall = nil
+        let membrane = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.ChainNode = membrane
+        newObj.pointee.ChainNode = membrane
 
-    AttachShadowToObject(newObj, .circular, 5, 2, 1)
+        AttachShadowToObject(newObj, .circular, 5, 2, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: fuel pow
@@ -360,48 +366,50 @@ private let cDoTrig_FuelPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
 
 // MARK: - Add shield powerup
 
-@c @implementation
-public func AddShieldPOW(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE FRAME
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addShieldPOW(x: Float, z: Float) -> UInt8 {
+        // MAKE FRAME
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_POWFrame)
-    def.scale = powScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY + powYOff
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(PLAYER_SLOT) + 55
-    def.moveCall = cMovePOW
-    def.rot = RandomFloat() * SwPI2
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_POWFrame)
+        def.scale = powScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY + powYOff
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(PLAYER_SLOT) + 55
+        def.moveCall = cMovePOW
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.Mode = PowMode.normal.rawValue
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.Mode = PowMode.normal.rawValue
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
-    newObj.pointee.CBits = 0
-    CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
+        newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
+        newObj.pointee.CBits = 0
+        CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
 
-    newObj.pointee.TriggerCallback = cDoTrig_ShieldPOW
+        newObj.pointee.TriggerCallback = cDoTrig_ShieldPOW
 
-    // MAKE MEMBRANE
+        // MAKE MEMBRANE
 
-    def.type = UInt8(GLOBAL_ObjType_ShieldPOWMembrane)
-    def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
-    def.slot = Int16(SLOT_OF_DUMB) + 3
-    def.moveCall = nil
-    let membrane = MakeNewDisplayGroupObject(&def)!
+        def.type = UInt8(GLOBAL_ObjType_ShieldPOWMembrane)
+        def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
+        def.slot = Int16(SLOT_OF_DUMB) + 3
+        def.moveCall = nil
+        let membrane = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.ChainNode = membrane
+        newObj.pointee.ChainNode = membrane
 
-    AttachShadowToObject(newObj, .circular, 5, 2, 1)
+        AttachShadowToObject(newObj, .circular, 5, 2, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: shield pow
@@ -442,47 +450,49 @@ private let cDoTrig_ShieldPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
 
 // MARK: - Add free life
 
-@c @implementation
-public func AddFreeLifePOW(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE FRAME
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addFreeLifePOW(x: Float, z: Float) -> UInt8 {
+        // MAKE FRAME
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_POWFrame)
-    def.scale = powScale
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY + powYOff
-    def.flags = gAutoFadeStatusBits
-    def.slot = Int16(PLAYER_SLOT) + 55
-    def.moveCall = cMovePOW
-    def.rot = RandomFloat() * SwPI2
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_POWFrame)
+        def.scale = powScale
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY + powYOff
+        def.flags = gAutoFadeStatusBits
+        def.slot = Int16(PLAYER_SLOT) + 55
+        def.moveCall = cMovePOW
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
-    newObj.pointee.CBits = 0
-    CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
+        newObj.pointee.CType = UInt32(CTYPE_TRIGGER | CTYPE_POWERUP)
+        newObj.pointee.CBits = 0
+        CreateCollisionBoxFromBoundingBox_Maximized(newObj, 1.5)
 
-    newObj.pointee.TriggerCallback = cDoTrig_FreeLifePOW
+        newObj.pointee.TriggerCallback = cDoTrig_FreeLifePOW
 
-    // MAKE MEMBRANE
+        // MAKE MEMBRANE
 
-    def.type = UInt8(GLOBAL_ObjType_FreeLifePOWMembrane)
-    def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
-    def.slot = Int16(SLOT_OF_DUMB) + 3
-    def.moveCall = nil
-    let membrane = MakeNewDisplayGroupObject(&def)!
+        def.type = UInt8(GLOBAL_ObjType_FreeLifePOWMembrane)
+        def.flags |= UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG)
+        def.slot = Int16(SLOT_OF_DUMB) + 3
+        def.moveCall = nil
+        let membrane = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.ChainNode = membrane
+        newObj.pointee.ChainNode = membrane
 
-    AttachShadowToObject(newObj, .circular, 4, 1.5, 1)
+        AttachShadowToObject(newObj, .circular, 4, 1.5, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: free life pow

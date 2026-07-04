@@ -42,85 +42,87 @@ private var gZapBuffer: Int16 = 0 // which VAR double buffer? 0 or 1
     UnsafeMutableRawPointer(triangle.pointer(to: \.vertexIndices)!).assumingMemoryBound(to: GLuint.self)
 }
 
-@c @implementation
-public func AddElectrode(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // MAKE POLE
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addElectrode(x: Float, z: Float) -> UInt8 {
+        // MAKE POLE
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_Electrode_Pole)
-    def.scale = electrodeScale
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 161
-    def.moveCall = cMoveElectrode
-    def.rot = 0
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_Electrode_Pole)
+        def.scale = electrodeScale
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 161
+        def.moveCall = cMoveElectrode
+        def.rot = 0
 
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
 
-    let pole = MakeNewDisplayGroupObject(&def)!
+        let pole = MakeNewDisplayGroupObject(&def)!
 
-    pole.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        pole.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    if itemPtr.pointee.flags & UInt16(ITEM_FLAGS_USER1) != 0 { // see if already got blown up
-        pole.pointee.Health = 0
-        pole.pointee.DeltaRot.y = 0
-        pole.pointee.ColorFilter.r = 0.3
-        pole.pointee.ColorFilter.g = 0.3
-        pole.pointee.ColorFilter.b = 0.3
-        pole.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    } else {
-        pole.pointee.What = Int32(WhatType.electrode.rawValue)
-        pole.pointee.Health = 1.0
-        pole.pointee.DeltaRot.y = Float.pi
-        pole.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
+        if pointee.flags & UInt16(ITEM_FLAGS_USER1) != 0 { // see if already got blown up
+            pole.pointee.Health = 0
+            pole.pointee.DeltaRot.y = 0
+            pole.pointee.ColorFilter.r = 0.3
+            pole.pointee.ColorFilter.g = 0.3
+            pole.pointee.ColorFilter.b = 0.3
+            pole.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        } else {
+            pole.pointee.What = Int32(WhatType.electrode.rawValue)
+            pole.pointee.Health = 1.0
+            pole.pointee.DeltaRot.y = Float.pi
+            pole.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
+        }
+
+        // SET COLLISION STUFF
+
+        pole.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(pole, 1, 1)
+
+        pole.pointee.TriggerCallback = cDoTrigElectrode
+        pole.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
+
+        pole.pointee.Timer = RandomFloat() * 1.0
+
+        pole.pointee.HeatSeekHotSpotOff.x = 0
+        pole.pointee.HeatSeekHotSpotOff.y = 600.0
+        pole.pointee.HeatSeekHotSpotOff.z = 0
+
+        // MAKE TOP & BOTTOM
+
+        def.type = UInt8(GLOBAL_ObjType_Electrode_TopBottom)
+        def.slot += 1
+        def.moveCall = nil
+        let topbot = MakeNewDisplayGroupObject(&def)!
+
+        // SET COLLISION STUFF
+
+        topbot.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        topbot.pointee.TriggerCallback = cDoTrigElectrode
+        topbot.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
+
+        pole.pointee.ChainNode = topbot
+        topbot.pointee.ChainHead = pole
+
+        // MAKE MIDDLE
+
+        def.type = UInt8(GLOBAL_ObjType_Electrode_Middle)
+        def.slot += 1
+        let middle = MakeNewDisplayGroupObject(&def)!
+
+        middle.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        middle.pointee.TriggerCallback = cDoTrigElectrode
+        middle.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
+
+        topbot.pointee.ChainNode = middle
+        middle.pointee.ChainHead = topbot
+
+        return 1 // item was added
     }
-
-    // SET COLLISION STUFF
-
-    pole.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(pole, 1, 1)
-
-    pole.pointee.TriggerCallback = cDoTrigElectrode
-    pole.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
-
-    pole.pointee.Timer = RandomFloat() * 1.0
-
-    pole.pointee.HeatSeekHotSpotOff.x = 0
-    pole.pointee.HeatSeekHotSpotOff.y = 600.0
-    pole.pointee.HeatSeekHotSpotOff.z = 0
-
-    // MAKE TOP & BOTTOM
-
-    def.type = UInt8(GLOBAL_ObjType_Electrode_TopBottom)
-    def.slot += 1
-    def.moveCall = nil
-    let topbot = MakeNewDisplayGroupObject(&def)!
-
-    // SET COLLISION STUFF
-
-    topbot.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    topbot.pointee.TriggerCallback = cDoTrigElectrode
-    topbot.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
-
-    pole.pointee.ChainNode = topbot
-    topbot.pointee.ChainHead = pole
-
-    // MAKE MIDDLE
-
-    def.type = UInt8(GLOBAL_ObjType_Electrode_Middle)
-    def.slot += 1
-    let middle = MakeNewDisplayGroupObject(&def)!
-
-    middle.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    middle.pointee.TriggerCallback = cDoTrigElectrode
-    middle.pointee.HitByWeaponHandler = cElectrodeHitByWeaponCallback
-
-    topbot.pointee.ChainNode = middle
-    middle.pointee.ChainHead = topbot
-
-    return 1 // item was added
 }
 
 private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { poleOpt in

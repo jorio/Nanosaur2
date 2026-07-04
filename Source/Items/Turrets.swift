@@ -9,118 +9,120 @@ private var gTurretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
 
 // MARK: - Add tower turret
 
-@c @implementation
-public func AddTowerTurret(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let typeB: Int32
-    let typeT: Int32
-    let typeW: Int32
-    let typeG: Int32
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addTowerTurret(x: Float, z: Float) -> UInt8 {
+        let typeB: Int32
+        let typeT: Int32
+        let typeW: Int32
+        let typeG: Int32
 
-    switch gLevelNum {
-    case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
-        typeB = Int32(LEVEL1_ObjType_TowerTurret_Base)
-        typeT = Int32(LEVEL1_ObjType_TowerTurret_Turret)
-        typeW = Int32(LEVEL1_ObjType_TowerTurret_Wheel)
-        typeG = Int32(LEVEL1_ObjType_TowerTurret_Gun)
+        switch gLevelNum {
+        case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
+            typeB = Int32(LEVEL1_ObjType_TowerTurret_Base)
+            typeT = Int32(LEVEL1_ObjType_TowerTurret_Turret)
+            typeW = Int32(LEVEL1_ObjType_TowerTurret_Wheel)
+            typeG = Int32(LEVEL1_ObjType_TowerTurret_Gun)
 
-    case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.battle2.rawValue), Int16(LevelNum.race2.rawValue):
-        typeB = Int32(LEVEL2_ObjType_TowerTurret_Base)
-        typeT = Int32(LEVEL2_ObjType_TowerTurret_Turret)
-        typeW = Int32(LEVEL2_ObjType_TowerTurret_Wheel)
-        typeG = Int32(LEVEL2_ObjType_TowerTurret_Gun)
+        case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.battle2.rawValue), Int16(LevelNum.race2.rawValue):
+            typeB = Int32(LEVEL2_ObjType_TowerTurret_Base)
+            typeT = Int32(LEVEL2_ObjType_TowerTurret_Turret)
+            typeW = Int32(LEVEL2_ObjType_TowerTurret_Wheel)
+            typeG = Int32(LEVEL2_ObjType_TowerTurret_Gun)
 
-    case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
-        typeB = Int32(LEVEL3_ObjType_TowerTurret_Base)
-        typeT = Int32(LEVEL3_ObjType_TowerTurret_Turret)
-        typeW = Int32(LEVEL3_ObjType_TowerTurret_Wheel)
-        typeG = Int32(LEVEL3_ObjType_TowerTurret_Gun)
+        case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
+            typeB = Int32(LEVEL3_ObjType_TowerTurret_Base)
+            typeT = Int32(LEVEL3_ObjType_TowerTurret_Turret)
+            typeW = Int32(LEVEL3_ObjType_TowerTurret_Wheel)
+            typeG = Int32(LEVEL3_ObjType_TowerTurret_Gun)
 
-    default:
-        SwFatal("AddTowerTurret: not here yet, call Brian!")
-        return 0
+        default:
+            SwFatal("AddTowerTurret: not here yet, call Brian!")
+            return 0
+        }
+
+        // MAKE BASE
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(typeB)
+        def.scale = towerTurretScale
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 331
+        def.moveCall = cMoveTowerTurret
+        def.rot = RandomFloat() * SwPI2
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
+
+        let base = MakeNewDisplayGroupObject(&def)!
+
+        base.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        base.pointee.CType = UInt32(CTYPE_MISC)
+        base.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(base, 1, 1)
+
+        base.pointee.Health = 0.8
+
+        // MAKE TURRET
+
+        def.type = UInt8(typeT)
+        def.slot += 1
+        def.moveCall = nil
+        let turret = MakeNewDisplayGroupObject(&def)!
+
+        turret.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
+        turret.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox(turret, 1, 1)
+        turret.pointee.HitByWeaponHandler = cTurretHitByWeaponCallback
+
+        turret.pointee.HeatSeekHotSpotOff.x = 0
+        turret.pointee.HeatSeekHotSpotOff.y = 300.0
+        turret.pointee.HeatSeekHotSpotOff.z = 0
+
+        base.pointee.ChainNode = turret
+        turret.pointee.ChainHead = base
+
+        // MAKE WHEEL
+
+        def.type = UInt8(typeW)
+        def.slot += 1
+        def.flags |= UInt32(STATUS_BIT_ROTZXY)
+        let wheel = MakeNewDisplayGroupObject(&def)!
+
+        wheel.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
+
+        turret.pointee.ChainNode = wheel
+        wheel.pointee.ChainHead = turret
+
+        // MAKE GUN
+
+        def.type = UInt8(typeG)
+        def.flags = gAutoFadeStatusBits
+        def.slot += 1
+        let gun = MakeNewDisplayGroupObject(&def)!
+
+        gun.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
+
+        wheel.pointee.ChainNode = gun
+        gun.pointee.ChainHead = wheel
+
+        // MAKE LENS
+
+        def.group = UInt8(MODEL_GROUP_GLOBAL)
+        def.type = UInt8(GLOBAL_ObjType_TowerTurret_Lens)
+        def.slot = Int16(SLOT_OF_DUMB)
+        def.flags |= UInt32(STATUS_BIT_GLOW)
+        let lens = MakeNewDisplayGroupObject(&def)!
+
+        gun.pointee.ChainNode = lens
+        lens.pointee.ChainHead = gun
+
+        return 1 // item was added
     }
-
-    // MAKE BASE
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(typeB)
-    def.scale = towerTurretScale
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 331
-    def.moveCall = cMoveTowerTurret
-    def.rot = RandomFloat() * SwPI2
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale)
-
-    let base = MakeNewDisplayGroupObject(&def)!
-
-    base.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    base.pointee.CType = UInt32(CTYPE_MISC)
-    base.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(base, 1, 1)
-
-    base.pointee.Health = 0.8
-
-    // MAKE TURRET
-
-    def.type = UInt8(typeT)
-    def.slot += 1
-    def.moveCall = nil
-    let turret = MakeNewDisplayGroupObject(&def)!
-
-    turret.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
-    turret.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox(turret, 1, 1)
-    turret.pointee.HitByWeaponHandler = cTurretHitByWeaponCallback
-
-    turret.pointee.HeatSeekHotSpotOff.x = 0
-    turret.pointee.HeatSeekHotSpotOff.y = 300.0
-    turret.pointee.HeatSeekHotSpotOff.z = 0
-
-    base.pointee.ChainNode = turret
-    turret.pointee.ChainHead = base
-
-    // MAKE WHEEL
-
-    def.type = UInt8(typeW)
-    def.slot += 1
-    def.flags |= UInt32(STATUS_BIT_ROTZXY)
-    let wheel = MakeNewDisplayGroupObject(&def)!
-
-    wheel.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
-
-    turret.pointee.ChainNode = wheel
-    wheel.pointee.ChainHead = turret
-
-    // MAKE GUN
-
-    def.type = UInt8(typeG)
-    def.flags = gAutoFadeStatusBits
-    def.slot += 1
-    let gun = MakeNewDisplayGroupObject(&def)!
-
-    gun.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST | CTYPE_AUTOTARGETWEAPON)
-
-    wheel.pointee.ChainNode = gun
-    gun.pointee.ChainHead = wheel
-
-    // MAKE LENS
-
-    def.group = UInt8(MODEL_GROUP_GLOBAL)
-    def.type = UInt8(GLOBAL_ObjType_TowerTurret_Lens)
-    def.slot = Int16(SLOT_OF_DUMB)
-    def.flags |= UInt32(STATUS_BIT_GLOW)
-    let lens = MakeNewDisplayGroupObject(&def)!
-
-    gun.pointee.ChainNode = lens
-    lens.pointee.ChainHead = gun
-
-    return 1 // item was added
 }
 
 // MARK: - Move tower turret

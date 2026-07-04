@@ -55,14 +55,12 @@ void MoveEnemySkipChunk(ObjNode *chunk);
 
 		/* RAPTOR */
 
-Boolean AddEnemy_Raptor(TerrainItemEntryType *itemPtr, float x, float z);
 Boolean PrimeEnemy_Raptor(long splineNum, SplineItemType *itemPtr);
 
 
 
 				/* BRACH */
 
-Boolean AddEnemy_Brach(TerrainItemEntryType *itemPtr, float x, float z);
 Boolean PrimeEnemy_Brach(long splineNum, SplineItemType *itemPtr);
 
 

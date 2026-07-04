@@ -2,143 +2,145 @@
 
 private let treeBurnTime: Float = 15.0
 
-// MARK: - Add birch tree
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    // MARK: - Add birch tree
 
-@c @implementation
-public func AddBirchTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL1_ObjType_Tree_Birch_HighRed) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 1.2 + RandomFloat() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY // GetTerrainY(x,z)
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+    @discardableResult
+    func addBirchTree(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL1_ObjType_Tree_Birch_HighRed) + Int32(pointee.parm.0))
+        def.scale = 1.2 + RandomFloat() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY // GetTerrainY(x,z)
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
 
-    CreateCollisionBoxFromBoundingBox(newObj, 0.1, 1) // tree trunk collision box
+        CreateCollisionBoxFromBoundingBox(newObj, 0.1, 1) // tree trunk collision box
 
-    AddCollisionBoxToObject(newObj, newObj.pointee.TopOff * 0.9, newObj.pointee.TopOff * 0.45, // tree canopy collision box
-                             newObj.pointee.LeftOff * 3.3, newObj.pointee.RightOff * 3.3,
-                             newObj.pointee.FrontOff * 3.3, newObj.pointee.BackOff * 3.3)
+        AddCollisionBoxToObject(newObj, newObj.pointee.TopOff * 0.9, newObj.pointee.TopOff * 0.45, // tree canopy collision box
+                                 newObj.pointee.LeftOff * 3.3, newObj.pointee.RightOff * 3.3,
+                                 newObj.pointee.FrontOff * 3.3, newObj.pointee.BackOff * 3.3)
 
-    newObj.pointee.TriggerCallback = cDoTrigTree
+        newObj.pointee.TriggerCallback = cDoTrigTree
 
-    newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
 
-    return 1 // item was added
-}
+        return 1 // item was added
+    }
 
-// MARK: - Add pine tree
+    // MARK: - Add pine tree
 
-@c @implementation
-public func AddPineTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL1_ObjType_Tree_Pine_HighDead) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 1.2 + RandomFloat() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY // GetTerrainY(x,z)
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 588
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+    @discardableResult
+    func addPineTree(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL1_ObjType_Tree_Pine_HighDead) + Int32(pointee.parm.0))
+        def.scale = 1.2 + RandomFloat() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY // GetTerrainY(x,z)
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 588
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
 
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.12, 0.95) // tree trunk collision box
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.12, 0.95) // tree trunk collision box
 
-    AddCollisionBoxToObject(newObj, newObj.pointee.TopOff * 0.4, newObj.pointee.TopOff * 0.15, // tree canopy collision box
-                             newObj.pointee.LeftOff * 2.3, newObj.pointee.RightOff * 2.3,
-                             newObj.pointee.FrontOff * 2.3, newObj.pointee.BackOff * 2.3)
+        AddCollisionBoxToObject(newObj, newObj.pointee.TopOff * 0.4, newObj.pointee.TopOff * 0.15, // tree canopy collision box
+                                 newObj.pointee.LeftOff * 2.3, newObj.pointee.RightOff * 2.3,
+                                 newObj.pointee.FrontOff * 2.3, newObj.pointee.BackOff * 2.3)
 
-    newObj.pointee.TriggerCallback = cDoTrigTree
+        newObj.pointee.TriggerCallback = cDoTrigTree
 
-    newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
 
-    return 1 // item was added
-}
+        return 1 // item was added
+    }
 
-// MARK: - Add fallen tree
+    // MARK: - Add fallen tree
 
-@c @implementation
-public func AddFallenTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(LEVEL1_ObjType_FallenTree)
-    def.scale = 1.7
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 511
-    def.moveCall = MoveStaticObject
-    def.rot = Float(itemPtr.pointee.parm.0) * (SwPI2 / 8)
+    @discardableResult
+    func addFallenTree(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(LEVEL1_ObjType_FallenTree)
+        def.scale = 1.7
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 511
+        def.moveCall = MoveStaticObject
+        def.rot = Float(pointee.parm.0) * (SwPI2 / 8)
 
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), 1.0)
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), 1.0)
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 0.4)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 0.4)
 
-    newObj.pointee.TriggerCallback = cDoTrigTree
+        newObj.pointee.TriggerCallback = cDoTrigTree
 
-    return 1 // item was added
-}
+        return 1 // item was added
+    }
 
-// MARK: - Add tree stump
+    // MARK: - Add tree stump
 
-@c @implementation
-public func AddTreeStump(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(LEVEL1_ObjType_TreeStump)
-    def.scale = 1.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 491
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+    @discardableResult
+    func addTreeStump(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(LEVEL1_ObjType_TreeStump)
+        def.scale = 1.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 491
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 1)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 1)
 
-    newObj.pointee.TriggerCallback = cDoTrigTree
+        newObj.pointee.TriggerCallback = cDoTrigTree
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: tree
@@ -179,36 +181,38 @@ private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
 
 // MARK: -
 
-// MARK: - Add small tree
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    // MARK: - Add small tree
 
-// Small trees can be hit w/o killing the player.
-@c @implementation
-public func AddSmallTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(LEVEL1_ObjType_SmallTree)
-    def.scale = 1.0 + RandomFloat() * 0.2
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 620
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+    // Small trees can be hit w/o killing the player.
+    @discardableResult
+    func addSmallTree(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(LEVEL1_ObjType_SmallTree)
+        def.scale = 1.0 + RandomFloat() * 0.2
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 620
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 1)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_TRIGGER | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.3, 1)
 
-    newObj.pointee.TriggerCallback = cDoTrigSmallTree
+        newObj.pointee.TriggerCallback = cDoTrigSmallTree
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: small tree
@@ -428,304 +432,306 @@ private func makeLeafConfetti(_ x: Float, _ y: Float, _ z: Float, _ texture: Int
 
 // MARK: -
 
-// MARK: - Add bent pine tree
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    // MARK: - Add bent pine tree
 
-@c @implementation
-public func AddBentPineTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let rot = Float(itemPtr.pointee.parm.1) * (SwPI2 / 8.0)
+    @discardableResult
+    func addBentPineTree(x: Float, z: Float) -> UInt8 {
+        let rot = Float(pointee.parm.1) * (SwPI2 / 8.0)
 
-    // MAKE TRUNK
+        // MAKE TRUNK
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL1_ObjType_BentPine1_Trunk) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 1.2 + RandomFloat2() * 0.2
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits
-    def.slot = 444
-    def.moveCall = MoveStaticObject
-    def.rot = rot
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL1_ObjType_BentPine1_Trunk) + Int32(pointee.parm.0))
+        def.scale = 1.2 + RandomFloat2() * 0.2
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits
+        def.slot = 444
+        def.moveCall = MoveStaticObject
+        def.rot = rot
 
-    let trunk = MakeNewDisplayGroupObject(&def)!
+        let trunk = MakeNewDisplayGroupObject(&def)!
 
-    trunk.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        trunk.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    trunk.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    trunk.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(trunk, 1, 1)
+        trunk.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        trunk.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(trunk, 1, 1)
 
-    // MAKE LEAVES
+        // MAKE LEAVES
 
-    def.type = UInt8(Int32(LEVEL1_ObjType_BentPine1_Leaves) + Int32(itemPtr.pointee.parm.0))
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = Int16(SLOT_OF_DUMB)
-    def.moveCall = nil
-    let leaves = MakeNewDisplayGroupObject(&def)!
+        def.type = UInt8(Int32(LEVEL1_ObjType_BentPine1_Leaves) + Int32(pointee.parm.0))
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = Int16(SLOT_OF_DUMB)
+        def.moveCall = nil
+        let leaves = MakeNewDisplayGroupObject(&def)!
 
-    trunk.pointee.ChainNode = leaves
+        trunk.pointee.ChainNode = leaves
 
-    return 1 // item was added
-}
-
-// MARK: -
-
-// MARK: - Add desert tree
-
-@c @implementation
-public func AddDesertTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let type = Int(itemPtr.pointee.parm.0)
-    let rot = Int(itemPtr.pointee.parm.1)
-
-    if itemPtr.pointee.parm.0 > 4 {
-        SwFatal("AddDesertTree: illegal subtype")
+        return 1 // item was added
     }
 
-    // MAKE SOLID TRUNK
+    // MARK: - Add desert tree
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL2_ObjType_Tree1) + Int32(type))
-    def.scale = 1.2 + RandomFloat() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
+    @discardableResult
+    func addDesertTree(x: Float, z: Float) -> UInt8 {
+        let type = Int(pointee.parm.0)
+        let rot = Int(pointee.parm.1)
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        if pointee.parm.0 > 4 {
+            SwFatal("addDesertTree: illegal subtype")
+        }
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        // MAKE SOLID TRUNK
 
-    // SET COLLISION STUFF
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL2_ObjType_Tree1) + Int32(type))
+        def.scale = 1.2 + RandomFloat() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    CreateCollisionBoxFromBoundingBox(newObj, 0.3, 1) // tree trunk collision box
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    if type != 0 { // tree #0 is too bent to burn!
-        newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        // SET COLLISION STUFF
+
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+
+        CreateCollisionBoxFromBoundingBox(newObj, 0.3, 1) // tree trunk collision box
+
+        if type != 0 { // tree #0 is too bent to burn!
+            newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        }
+
+        // MAKE NON-SOLID CANOPY
+
+        def.type = UInt8(Int32(LEVEL2_ObjType_Tree1_Canopy) + Int32(type))
+        def.slot += 1
+        def.moveCall = nil
+        let canopy = MakeNewDisplayGroupObject(&def)!
+
+        // SET COLLISION STUFF
+
+        canopy.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        canopy.pointee.CBits = 0
+        canopy.pointee.TriggerCallback = cDoTrigCanopy
+
+        newObj.pointee.ChainNode = canopy
+
+        return 1 // item was added
     }
 
-    // MAKE NON-SOLID CANOPY
+    // MARK: - Add palm tree
 
-    def.type = UInt8(Int32(LEVEL2_ObjType_Tree1_Canopy) + Int32(type))
-    def.slot += 1
-    def.moveCall = nil
-    let canopy = MakeNewDisplayGroupObject(&def)!
+    @discardableResult
+    func addPalmTree(x: Float, z: Float) -> UInt8 {
+        let type = Int(pointee.parm.0)
+        let rot = Int(pointee.parm.1)
 
-    // SET COLLISION STUFF
+        // MAKE SOLID TRUNK
 
-    canopy.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    canopy.pointee.CBits = 0
-    canopy.pointee.TriggerCallback = cDoTrigCanopy
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL2_ObjType_PalmTree1) + Int32(type))
+        def.scale = 1.2 + RandomFloat() * 0.3
+        def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
 
-    newObj.pointee.ChainNode = canopy
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    return 1 // item was added
-}
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-// MARK: - Add palm tree
+        // SET COLLISION STUFF
 
-@c @implementation
-public func AddPalmTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let type = Int(itemPtr.pointee.parm.0)
-    let rot = Int(itemPtr.pointee.parm.1)
+        newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
 
-    // MAKE SOLID TRUNK
+        CreateCollisionBoxFromBoundingBox(newObj, 0.3, 1) // tree trunk collision box
 
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL2_ObjType_PalmTree1) + Int32(type))
-    def.scale = 1.2 + RandomFloat() * 0.3
-    def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
+        if type != 2 { // don't allow the bent trees to burn
+            newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        }
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        // MAKE NON-SOLID CANOPY
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        def.type = UInt8(Int32(LEVEL2_ObjType_PalmTree1_Canopy) + Int32(type))
+        def.slot += 1
+        def.moveCall = nil
+        let canopy = MakeNewDisplayGroupObject(&def)!
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        canopy.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
+        canopy.pointee.CBits = 0
+        canopy.pointee.TriggerCallback = cDoTrigCanopy
 
-    CreateCollisionBoxFromBoundingBox(newObj, 0.3, 1) // tree trunk collision box
+        newObj.pointee.ChainNode = canopy
 
-    if type != 2 { // don't allow the bent trees to burn
-        newObj.pointee.HitByWeaponHandler = cTreeHitByWeaponCallback
+        return 1 // item was added
     }
 
-    // MAKE NON-SOLID CANOPY
+    // MARK: - Add burnt desert tree
 
-    def.type = UInt8(Int32(LEVEL2_ObjType_PalmTree1_Canopy) + Int32(type))
-    def.slot += 1
-    def.moveCall = nil
-    let canopy = MakeNewDisplayGroupObject(&def)!
+    @discardableResult
+    func addBurntDesertTree(x: Float, z: Float) -> UInt8 {
+        let type = Int(pointee.parm.0)
 
-    // SET COLLISION STUFF
-
-    canopy.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
-    canopy.pointee.CBits = 0
-    canopy.pointee.TriggerCallback = cDoTrigCanopy
-
-    newObj.pointee.ChainNode = canopy
-
-    return 1 // item was added
-}
-
-// MARK: - Add burnt desert tree
-
-@c @implementation
-public func AddBurntDesertTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let type = Int(itemPtr.pointee.parm.0)
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL2_ObjType_BurntTree1) + Int32(type))
-    def.scale = 1.2 + RandomFloat() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
-
-    let newObj = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-
-    CreateCollisionBoxFromBoundingBox(newObj, 0.3, 0.95) // tree trunk collision box
-
-    newObj.pointee.TriggerCallback = cDoTrigTree
-
-    return 1 // item was added
-}
-
-// MARK: -
-
-// MARK: - Add hydra tree
-
-@c @implementation
-public func AddHydraTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let type = Int(itemPtr.pointee.parm.0)
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL3_ObjType_HydraTree_Small) + Int32(type))
-    def.scale = 1.5 + RandomFloat() * 0.5
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
-
-    let newObj = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-
-    newObj.pointee.TriggerCallback = cDoTrigTree
-
-    CreateCollisionBoxFromBoundingBox(newObj, 0.1, 0.7) // tree trunk collision box
-
-    return 1 // item was added
-}
-
-// MARK: - Add odd tree
-
-@c @implementation
-public func AddOddTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let type = Int(itemPtr.pointee.parm.0)
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL3_ObjType_OddTree_Small) + Int32(type))
-    def.scale = 1.3 + RandomFloat() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
-    def.slot = 501
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
-
-    let newObj = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-
-    newObj.pointee.Damage = 0.9
-    newObj.pointee.TriggerCallback = cDoTrigFallenSwampTree
-
-    CreateCollisionBoxFromBoundingBox(newObj, 0.25, 0.9) // tree trunk collision box
-
-    return 1 // item was added
-}
-
-// MARK: - Add swamp fallen tree
-
-@c @implementation
-public func AddSwampFallenTree(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL3_ObjType_FallenTree1) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 1.2 + RandomFloat2() * 0.2
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits
-    def.slot = 444
-    def.moveCall = MoveStaticObject
-
-    if itemPtr.pointee.parm.1 > 0 {
-        def.rot = Float(Int(itemPtr.pointee.parm.1) - 1) * (SwPI2 / 8.0)
-    } else {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL2_ObjType_BurntTree1) + Int32(type))
+        def.scale = 1.2 + RandomFloat() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
+
+        let newObj = MakeNewDisplayGroupObject(&def)!
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+
+        CreateCollisionBoxFromBoundingBox(newObj, 0.3, 0.95) // tree trunk collision box
+
+        newObj.pointee.TriggerCallback = cDoTrigTree
+
+        return 1 // item was added
+    }
+}
+
+// MARK: -
+
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    // MARK: - Add hydra tree
+
+    @discardableResult
+    func addHydraTree(x: Float, z: Float) -> UInt8 {
+        let type = Int(pointee.parm.0)
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL3_ObjType_HydraTree_Small) + Int32(type))
+        def.scale = 1.5 + RandomFloat() * 0.5
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
+
+        let newObj = MakeNewDisplayGroupObject(&def)!
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+
+        newObj.pointee.TriggerCallback = cDoTrigTree
+
+        CreateCollisionBoxFromBoundingBox(newObj, 0.1, 0.7) // tree trunk collision box
+
+        return 1 // item was added
     }
 
-    let trunk = MakeNewDisplayGroupObject(&def)!
+    // MARK: - Add odd tree
 
-    trunk.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+    @discardableResult
+    func addOddTree(x: Float, z: Float) -> UInt8 {
+        let type = Int(pointee.parm.0)
 
-    // SET COLLISION STUFF
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL3_ObjType_OddTree_Small) + Int32(type))
+        def.scale = 1.3 + RandomFloat() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.slot = 501
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    trunk.pointee.Damage = 0.25
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    trunk.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    trunk.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(trunk, 1, 1)
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    trunk.pointee.TriggerCallback = cDoTrigFallenSwampTree
+        // SET COLLISION STUFF
 
-    return 1 // item was added
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_WEAPONTEST | CTYPE_TRIGGER)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+
+        newObj.pointee.Damage = 0.9
+        newObj.pointee.TriggerCallback = cDoTrigFallenSwampTree
+
+        CreateCollisionBoxFromBoundingBox(newObj, 0.25, 0.9) // tree trunk collision box
+
+        return 1 // item was added
+    }
+
+    // MARK: - Add swamp fallen tree
+
+    @discardableResult
+    func addSwampFallenTree(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL3_ObjType_FallenTree1) + Int32(pointee.parm.0))
+        def.scale = 1.2 + RandomFloat2() * 0.2
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits
+        def.slot = 444
+        def.moveCall = MoveStaticObject
+
+        if pointee.parm.1 > 0 {
+            def.rot = Float(Int(pointee.parm.1) - 1) * (SwPI2 / 8.0)
+        } else {
+            def.rot = RandomFloat() * SwPI2
+        }
+
+        let trunk = MakeNewDisplayGroupObject(&def)!
+
+        trunk.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        trunk.pointee.Damage = 0.25
+
+        trunk.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        trunk.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(trunk, 1, 1)
+
+        trunk.pointee.TriggerCallback = cDoTrigFallenSwampTree
+
+        return 1 // item was added
+    }
 }
 
 // MARK: - Trigger callback: fallen swamp tree
@@ -756,33 +762,35 @@ private let cDoTrigFallenSwampTree: @convention(c) (UnsafeMutablePointer<ObjNode
     return 0
 }
 
-// MARK: - Add swamp tree stump
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    // MARK: - Add swamp tree stump
 
-@c @implementation
-public func AddSwampStump(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL3_ObjType_Stump1) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 1.3
-    def.coord.x = x
-    def.coord.z = z
-    def.coord.y = itemPtr.pointee.terrainY
-    def.flags = gAutoFadeStatusBits
-    def.slot = 380
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+    @discardableResult
+    func addSwampStump(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL3_ObjType_Stump1) + Int32(pointee.parm.0))
+        def.scale = 1.3
+        def.coord.x = x
+        def.coord.z = z
+        def.coord.y = pointee.terrainY
+        def.flags = gAutoFadeStatusBits
+        def.slot = 380
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.8, 0.9)
+        newObj.pointee.CType = UInt32(CTYPE_MISC | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.8, 0.9)
 
-    newObj.pointee.TriggerCallback = cDoTrigTree
+        newObj.pointee.TriggerCallback = cDoTrigTree
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }

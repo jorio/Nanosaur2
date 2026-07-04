@@ -16,18 +16,20 @@ private let orbRingDiameter: Float = laserOrbScale * 21.0
 
 // MARK: - Add laser orb
 
-@c @implementation
-public func AddLaserOrb(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    if gGamePrefs.kiddieMode != 0 { // dont add these in kiddie mode
-        return 0
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addLaserOrb(x: Float, z: Float) -> UInt8 {
+        if gGamePrefs.kiddieMode != 0 { // dont add these in kiddie mode
+            return 0
+        }
+
+        let newObj = makeLaserOrb(x, z)
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.MoveCall = cMoveLaserOrb
+
+        return 1 // item was added
     }
-
-    let newObj = makeLaserOrb(x, z)
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.MoveCall = cMoveLaserOrb
-
-    return 1 // item was added
 }
 
 // MARK: - Make laser orb

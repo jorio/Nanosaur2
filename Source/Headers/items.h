@@ -13,12 +13,7 @@ extern	void InitItemsManager(void);
 void CreateCyclorama(void);
 void DrawCyclorama(ObjNode *theNode);
 
-Boolean AddRock(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddCrystal(TerrainItemEntryType * _Nonnull itemPtr, float  x, float z);
 Boolean DoTrig_MiscSmackableObject(ObjNode *trigger, ObjNode *theNode);
-Boolean AddRiverRock(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddGasMound(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddAsteroid(TerrainItemEntryType *itemPtr, float  x, float z);
 
 
 		/* EGGS */
@@ -35,7 +30,6 @@ typedef enum SWIFT_ENUM_CLOSED EggColor
 } EggColor;
 
 
-Boolean AddEgg(TerrainItemEntryType *itemPtr, float  x, float z);
 void DropEgg_NoWormhole(short playerNum);
 void FindAllEggItems(void);
 
@@ -47,18 +41,12 @@ extern	Byte	gNumEggsSaved[NUM_EGG_TYPES];
 		/* WORMHOLE */
 
 void InitWormholes(void);
-Boolean AddEggWormhole(TerrainItemEntryType *itemPtr, float  x, float z);
 ObjNode *FindClosestEggWormholeInRange(short playerNum, OGLPoint3D *pt);
 ObjNode *MakeEntryWormhole(short playerNum);
 
 extern	Boolean			gOpenPlayerWormhole;
 extern	ObjNode			*gExitWormhole;
 
-
-
-		/* TURRETS */
-
-Boolean AddTowerTurret(TerrainItemEntryType *itemPtr, float  x, float z);
 
 
 		/* POWERUPS */
@@ -81,86 +69,34 @@ enum
 };
 
 		/* BUSHES */
-
-Boolean AddGrass(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddFern(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddBerryBush(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddCatTail(TerrainItemEntryType *itemPtr, float  x, float z);
-
-Boolean AddDesertBush(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddCactus(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddPalmBush(TerrainItemEntryType *itemPtr, float  x, float z);
-
-Boolean AddGeckoPlant(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddSproutPlant(TerrainItemEntryType *itemPtr, float  x, float z);
-
-Boolean AddIvy(TerrainItemEntryType *itemPtr, float  x, float z);
-
-
-		/* TREES */
-
-Boolean AddBirchTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddPineTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddSmallTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddFallenTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddTreeStump(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddBentPineTree(TerrainItemEntryType *itemPtr, float  x, float z);
-
-Boolean AddDesertTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddPalmTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddBurntDesertTree(TerrainItemEntryType *itemPtr, float  x, float z);
-
-Boolean AddHydraTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddOddTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddSwampFallenTree(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddSwampStump(TerrainItemEntryType *itemPtr, float  x, float z);
-
-
-		/* MINES */
-
-Boolean AddAirMine(TerrainItemEntryType *itemPtr, float  x, float z);
-
+//
+// AddGrass/AddFern/AddBerryBush/AddCatTail/AddDesertBush/AddCactus/
+// AddPalmBush/AddGeckoPlant/AddSproutPlant/AddIvy are now
+// TerrainItemEntryType-pointer methods in Bushes.swift - nothing in C
+// calls them anymore, so they're no longer declared here.
 
 
 	/* FOREST DOOR */
 
 void InitForestDoors(void);
-Boolean AddForestDoor(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddForestDoorKey(TerrainItemEntryType *itemPtr, float  x, float z);
 
 
 	/* ELECTRODES */
 
-Boolean AddElectrode(TerrainItemEntryType *itemPtr, float  x, float z);
 void InitZaps(void);
 void FreeAllZaps(void);
-
-
-		/* POWS */
-
-Boolean AddWeaponPOW(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddFuelPOW(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddHealthPOW(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddShieldPOW(TerrainItemEntryType *itemPtr, float  x, float z);
-Boolean AddFreeLifePOW(TerrainItemEntryType *itemPtr, float  x, float z);
 
 
 		/* DUST DEVIL */
 
 void InitDustDevilMemory(void);
 void UpdateDustDevilUVAnimation(void);
-Boolean AddDustDevil(TerrainItemEntryType *itemPtr, float  x, float z);
 Boolean PrimeDustDevil(long splineNum, SplineItemType *itemPtr);
 
 
 		/* LASER ORBS */
 
-Boolean AddLaserOrb(TerrainItemEntryType *itemPtr, float  x, float z);
 Boolean PrimeLaserOrb(long splineNum, SplineItemType *itemPtr);
-
-		/* HOLES */
-
-Boolean AddHole(TerrainItemEntryType *itemPtr, float  x, float z);
 
 
 

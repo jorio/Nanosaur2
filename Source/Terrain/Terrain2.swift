@@ -6,69 +6,208 @@
 // of the shared terrain globals): many other already-ported and
 // still-unported files read/write them directly via `extern`.
 
-// AddCrystal's itemPtr param is `_Nonnull`-annotated in items.h, so its
-// Swift signature doesn't match the other Add* routines' implicitly-
-// unwrapped-optional itemPtr. Wrap it so the function table below has one
-// uniform element type.
-private let cAddCrystal: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
-    AddCrystal(itemPtr!, x, z)
-}
+// AddCrystal/Bushes.swift's/Trees.swift's/etc. Add* routines are all
+// TerrainItemEntryType methods, not @convention(c) free functions, so they
+// don't fit the table's uniform element type directly - wrap each one in a
+// thin @convention(c) closure.
 
 private let nilAdd: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { _, _, _ in
     0
+}
+
+private let cAddGrass: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addGrass(x: x, z: z)
+}
+private let cAddFern: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addFern(x: x, z: z)
+}
+private let cAddBerryBush: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addBerryBush(x: x, z: z)
+}
+private let cAddCatTail: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addCatTail(x: x, z: z)
+}
+private let cAddDesertBush: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addDesertBush(x: x, z: z)
+}
+private let cAddCactus: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addCactus(x: x, z: z)
+}
+private let cAddPalmBush: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addPalmBush(x: x, z: z)
+}
+private let cAddGeckoPlant: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addGeckoPlant(x: x, z: z)
+}
+private let cAddSproutPlant: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addSproutPlant(x: x, z: z)
+}
+private let cAddIvy: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addIvy(x: x, z: z)
+}
+private let cAddBirchTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addBirchTree(x: x, z: z)
+}
+private let cAddPineTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addPineTree(x: x, z: z)
+}
+private let cAddEgg: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addEgg(x: x, z: z)
+}
+private let cAddEggWormhole: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addEggWormhole(x: x, z: z)
+}
+private let cAddTowerTurret: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addTowerTurret(x: x, z: z)
+}
+private let cAddWeaponPOW: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addWeaponPOW(x: x, z: z)
+}
+private let cAddSmallTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addSmallTree(x: x, z: z)
+}
+private let cAddFallenTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addFallenTree(x: x, z: z)
+}
+private let cAddTreeStump: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addTreeStump(x: x, z: z)
+}
+private let cAddRock: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addRock(x: x, z: z)
+}
+private let cAddEnemyRaptor: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addEnemyRaptor(x: x, z: z)
+}
+private let cAddDustDevil: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addDustDevil(x: x, z: z)
+}
+private let cAddAirMine: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addAirMine(x: x, z: z)
+}
+private let cAddForestDoor: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addForestDoor(x: x, z: z)
+}
+private let cAddForestDoorKey: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addForestDoorKey(x: x, z: z)
+}
+private let cAddElectrode: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addElectrode(x: x, z: z)
+}
+private let cAddHealthPOW: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addHealthPOW(x: x, z: z)
+}
+private let cAddFuelPOW: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addFuelPOW(x: x, z: z)
+}
+private let cAddRiverRock: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addRiverRock(x: x, z: z)
+}
+private let cAddGasMound: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addGasMound(x: x, z: z)
+}
+private let cAddBentPineTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addBentPineTree(x: x, z: z)
+}
+private let cAddEnemyBrach: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addEnemyBrach(x: x, z: z)
+}
+private let cAddDesertTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addDesertTree(x: x, z: z)
+}
+private let cAddCrystal: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addCrystal(x: x, z: z)
+}
+private let cAddPalmTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addPalmTree(x: x, z: z)
+}
+private let cAddLaserOrb: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addLaserOrb(x: x, z: z)
+}
+private let cAddShieldPOW: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addShieldPOW(x: x, z: z)
+}
+private let cAddSmoker: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addSmoker(x: x, z: z)
+}
+private let cAddFlame: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addFlame(x: x, z: z)
+}
+private let cAddBurntDesertTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addBurntDesertTree(x: x, z: z)
+}
+private let cAddHydraTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addHydraTree(x: x, z: z)
+}
+private let cAddOddTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addOddTree(x: x, z: z)
+}
+private let cAddAsteroid: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addAsteroid(x: x, z: z)
+}
+private let cAddSwampFallenTree: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addSwampFallenTree(x: x, z: z)
+}
+private let cAddSwampStump: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addSwampStump(x: x, z: z)
+}
+private let cAddHole: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addHole(x: x, z: z)
+}
+private let cAddFreeLifePOW: @convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8 = { itemPtr, x, z in
+    itemPtr!.addFreeLifePOW(x: x, z: z)
 }
 
 private let maxItemNum = 48 // for error checking!
 
 private let gTerrainItemAddRoutines: [(@convention(c) (UnsafeMutablePointer<TerrainItemEntryType>?, Float, Float) -> UInt8)] = [
     nilAdd, // My Start Coords
-    AddBirchTree,
-    AddPineTree,
-    AddEgg,
-    AddEggWormhole,
-    AddTowerTurret,
-    AddWeaponPOW,
-    AddSmallTree,
-    AddFallenTree,
-    AddTreeStump,
-    AddGrass,
-    AddFern,
-    AddBerryBush,
-    AddCatTail,
-    AddRock,
-    AddEnemy_Raptor,
-    AddDustDevil, // 16
-    AddAirMine, // 17: air mine
-    AddForestDoor,
-    AddForestDoorKey,
-    AddElectrode,
-    AddHealthPOW,
-    AddFuelPOW,
-    AddRiverRock,
-    AddGasMound,
-    AddBentPineTree,
-    AddEnemy_Brach, // 26:
-    AddDesertTree, // 27
-    AddDesertBush,
-    AddCactus,
+    cAddBirchTree,
+    cAddPineTree,
+    cAddEgg,
+    cAddEggWormhole,
+    cAddTowerTurret,
+    cAddWeaponPOW,
+    cAddSmallTree,
+    cAddFallenTree,
+    cAddTreeStump,
+    cAddGrass,
+    cAddFern,
+    cAddBerryBush,
+    cAddCatTail,
+    cAddRock,
+    cAddEnemyRaptor,
+    cAddDustDevil, // 16
+    cAddAirMine, // 17: air mine
+    cAddForestDoor,
+    cAddForestDoorKey,
+    cAddElectrode,
+    cAddHealthPOW,
+    cAddFuelPOW,
+    cAddRiverRock,
+    cAddGasMound,
+    cAddBentPineTree,
+    cAddEnemyBrach, // 26:
+    cAddDesertTree, // 27
+    cAddDesertBush,
+    cAddCactus,
     cAddCrystal,
-    AddPalmTree,
-    AddLaserOrb, // 32
-    AddShieldPOW,
-    AddSmoker,
-    AddFlame,
-    AddPalmBush, // 36: palm bush
-    AddBurntDesertTree,
-    AddHydraTree,
-    AddOddTree,
-    AddGeckoPlant,
-    AddSproutPlant,
-    AddIvy,
-    AddAsteroid,
-    AddSwampFallenTree,
-    AddSwampStump,
-    AddHole, // 46: hole worms
-    AddFreeLifePOW,
+    cAddPalmTree,
+    cAddLaserOrb, // 32
+    cAddShieldPOW,
+    cAddSmoker,
+    cAddFlame,
+    cAddPalmBush, // 36: palm bush
+    cAddBurntDesertTree,
+    cAddHydraTree,
+    cAddOddTree,
+    cAddGeckoPlant,
+    cAddSproutPlant,
+    cAddIvy,
+    cAddAsteroid,
+    cAddSwampFallenTree,
+    cAddSwampStump,
+    cAddHole, // 46: hole worms
+    cAddFreeLifePOW,
     nilAdd, // 48: Ramphor enemy
 ]
 

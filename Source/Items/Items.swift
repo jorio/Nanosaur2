@@ -141,111 +141,117 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
 // MARK: - Add rock
 
-@c @implementation
-public func AddRock(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    let base: Int32
-    let rot = Int(itemPtr.pointee.parm.1)
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addRock(x: Float, z: Float) -> UInt8 {
+        let base: Int32
+        let rot = Int(pointee.parm.1)
 
-    switch gLevelNum {
-    case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
-        base = Int32(LEVEL1_ObjType_Rock1)
+        switch gLevelNum {
+        case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
+            base = Int32(LEVEL1_ObjType_Rock1)
 
-    case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
-        base = Int32(LEVEL2_ObjType_Rock_Small1)
+        case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
+            base = Int32(LEVEL2_ObjType_Rock_Small1)
 
-    default:
-        SwFatal("AddRock: brian needs to assign rocks to this level")
-        return 0
+        default:
+            SwFatal("AddRock: brian needs to assign rocks to this level")
+            return 0
+        }
+
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(base + Int32(pointee.parm.0))
+        def.scale = 2.0 + RandomFloat2() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 491
+        def.moveCall = MoveStaticObject
+        def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
+
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
+
+        let newObj = MakeNewDisplayGroupObject(&def)!
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+
+        // SET COLLISION STUFF
+
+        newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.7, 0.8)
+
+        return 1 // item was added
     }
-
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(base + Int32(itemPtr.pointee.parm.0))
-    def.scale = 2.0 + RandomFloat2() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 491
-    def.moveCall = MoveStaticObject
-    def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
-
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
-
-    let newObj = MakeNewDisplayGroupObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-
-    // SET COLLISION STUFF
-
-    newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 0.7, 0.8)
-
-    return 1 // item was added
 }
 
 // MARK: - Add river rock
 
-@c @implementation
-public func AddRiverRock(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL1_ObjType_RiverRock1) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 2.0 + RandomFloat2() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 491
-    def.moveCall = MoveStaticObject
-    def.rot = RandomFloat() * SwPI2
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addRiverRock(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL1_ObjType_RiverRock1) + Int32(pointee.parm.0))
+        def.scale = 2.0 + RandomFloat2() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 491
+        def.moveCall = MoveStaticObject
+        def.rot = RandomFloat() * SwPI2
 
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
+        newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: -
 
 // MARK: - Add gas mound
 
-@c @implementation
-public func AddGasMound(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL1_ObjType_GasMound1) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 3.0 + RandomFloat2() * 0.3
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 197
-    def.moveCall = cMoveGasMound
-    def.rot = RandomFloat() * SwPI2
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addGasMound(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL1_ObjType_GasMound1) + Int32(pointee.parm.0))
+        def.scale = 3.0 + RandomFloat2() * 0.3
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 197
+        def.moveCall = cMoveGasMound
+        def.rot = RandomFloat() * SwPI2
 
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    newObj.pointee.Kind = Int32(itemPtr.pointee.parm.0)
+        newObj.pointee.Kind = Int32(pointee.parm.0)
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
+        newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }
 
 // MARK: - Move gas mound
@@ -373,32 +379,34 @@ public func DoTrig_MiscSmackableObject(_ trigger: UnsafeMutablePointer<ObjNode>!
 
 // MARK: - Add asteroid
 
-@c @implementation
-public func AddAsteroid(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    var def = NewObjectDefinitionType()
-    def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
-    def.type = UInt8(Int32(LEVEL3_ObjType_Asteroid_Cracked) + Int32(itemPtr.pointee.parm.0))
-    def.scale = 4.0 + RandomFloat2() * 1.0
-    def.coord.x = x
-    def.coord.z = z
-    def.flags = gAutoFadeStatusBits
-    def.slot = 197
-    def.moveCall = nil
-    def.rot = RandomFloat() * SwPI2
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addAsteroid(x: Float, z: Float) -> UInt8 {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(Int32(LEVEL3_ObjType_Asteroid_Cracked) + Int32(pointee.parm.0))
+        def.scale = 4.0 + RandomFloat2() * 1.0
+        def.coord.x = x
+        def.coord.z = z
+        def.flags = gAutoFadeStatusBits
+        def.slot = 197
+        def.moveCall = nil
+        def.rot = RandomFloat() * SwPI2
 
-    def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
+        def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), def.scale) - GetObjectGroupBBox(Int32(def.group), Int32(def.type)).min.y
 
-    let newObj = MakeNewDisplayGroupObject(&def)!
+        let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
 
-    newObj.pointee.Kind = Int32(itemPtr.pointee.parm.0)
+        newObj.pointee.Kind = Int32(pointee.parm.0)
 
-    // SET COLLISION STUFF
+        // SET COLLISION STUFF
 
-    newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
-    newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
-    CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
+        newObj.pointee.CType = UInt32(CTYPE_SOLIDTOENEMY | CTYPE_PLAYERTEST | CTYPE_WEAPONTEST)
+        newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
+        CreateCollisionBoxFromBoundingBox_Rotated(newObj, 1, 1)
 
-    return 1 // item was added
+        return 1 // item was added
+    }
 }

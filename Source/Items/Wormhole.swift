@@ -63,42 +63,44 @@ private func modifyWormholeTextures() {
 
 // MARK: - Egg Wormhole
 
-@c @implementation
-public func AddEggWormhole(_ itemPtr: UnsafeMutablePointer<TerrainItemEntryType>!, _ x: Float, _ z: Float) -> UInt8 {
-    // SEE IF NEED TO CREATE AN EXIT WORMHOLE INSTEAD
+extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
+    @discardableResult
+    func addEggWormhole(x: Float, z: Float) -> UInt8 {
+        // SEE IF NEED TO CREATE AN EXIT WORMHOLE INSTEAD
 
-    if gOpenPlayerWormhole != 0 {
-        if gExitWormhole == nil {
-            makeExitWormhole(x, z)
+        if gOpenPlayerWormhole != 0 {
+            if gExitWormhole == nil {
+                makeExitWormhole(x, z)
+            }
+            return 0
         }
-        return 0
+
+        // MAKE NEW SKELETON OBJECT
+
+        var def = NewObjectDefinitionType()
+        def.type = UInt8(SkeletonType.wormhole.rawValue)
+        def.animNum = 0
+        def.coord.x = x
+        def.coord.y = pointee.terrainY + 1300.0
+        def.coord.z = z
+        def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW)
+        def.slot = Int16(SLOT_OF_DUMB)
+        def.moveCall = cMoveEggWormhole
+        def.drawCall = cDrawWormhole
+        def.rot = Float(pointee.parm.0) * (SwPI2 / 8)
+        def.scale = eggWormholeSize
+
+        let newObj = MakeNewSkeletonObject(&def)!
+
+        newObj.pointee.TerrainItemPtr = self // keep ptr to item list
+        newObj.pointee.PlayerNum = pointee.parm.1 // remember this for capture the flag modes
+        newObj.pointee.What = Int32(WhatType.eggWormhole.rawValue)
+
+        newObj.pointee.Rot.x = 0.8
+        UpdateObjectTransforms(newObj)
+
+        return 1 // item was added
     }
-
-    // MAKE NEW SKELETON OBJECT
-
-    var def = NewObjectDefinitionType()
-    def.type = UInt8(SkeletonType.wormhole.rawValue)
-    def.animNum = 0
-    def.coord.x = x
-    def.coord.y = itemPtr.pointee.terrainY + 1300.0
-    def.coord.z = z
-    def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOZWRITES | STATUS_BIT_GLOW)
-    def.slot = Int16(SLOT_OF_DUMB)
-    def.moveCall = cMoveEggWormhole
-    def.drawCall = cDrawWormhole
-    def.rot = Float(itemPtr.pointee.parm.0) * (SwPI2 / 8)
-    def.scale = eggWormholeSize
-
-    let newObj = MakeNewSkeletonObject(&def)!
-
-    newObj.pointee.TerrainItemPtr = itemPtr // keep ptr to item list
-    newObj.pointee.PlayerNum = itemPtr.pointee.parm.1 // remember this for capture the flag modes
-    newObj.pointee.What = Int32(WhatType.eggWormhole.rawValue)
-
-    newObj.pointee.Rot.x = 0.8
-    UpdateObjectTransforms(newObj)
-
-    return 1 // item was added
 }
 
 private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in

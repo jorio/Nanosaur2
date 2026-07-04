@@ -577,6 +577,12 @@ private func updateParticleGroupsGeometry() {
             let alpha = alphaBase(group)
             let points = geoData.points!
 
+            // Rotation/scale submatrix is only recomputed for the 1st particle (or if allAim);
+            // subsequent particles reuse it and just patch in the translation. Must be declared
+            // outside the loop so it persists across iterations - matching the original C, which
+            // relied on an uninitialized stack local implicitly keeping its value between iterations.
+            var m = OGLMatrix4x4()
+
             for p in 0..<Int(MAX_PARTICLES) {
                 if isUsed[p] == 0 { // make sure this particle is used
                     continue
@@ -599,8 +605,6 @@ private func updateParticleGroupsGeometry() {
                 v[3].y = scale
 
                 // TRANSFORM THIS PARTICLE'S VERTICES & ADD TO TRIMESH
-
-                var m = OGLMatrix4x4()
 
                 if (n == 0) || (allAim != 0) { // only set the look-at matrix for the 1st particle unless we want to force it for all (optimization technique)
                     let up = OGLVector3D(x: 0, y: 1, z: 0)

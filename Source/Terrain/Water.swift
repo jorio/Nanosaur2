@@ -351,8 +351,6 @@ private func moveWater() {
             gWaterUVs[i][1].u += 0.03 * fps
             gWaterUVs[i][1].v += 0.03 * fps
 
-        case ._count:
-            break // sizing sentinel, never actually iterated (allCases excludes it)
         }
     }
 }

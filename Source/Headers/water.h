@@ -11,22 +11,7 @@ enum
 	WATER_FLAG_FIXEDHEIGHT	= (1)
 };
 
-typedef enum SWIFT_ENUM_CLOSED WaterType
-{
-	WATER_TYPE_GREEN SWIFT_NAME(green) = 0,
-	WATER_TYPE_BLUE SWIFT_NAME(blue),
-	WATER_TYPE_LAVA SWIFT_NAME(lava),
-	WATER_TYPE_LAVA_DIR0 SWIFT_NAME(lavaDir0),
-	WATER_TYPE_LAVA_DIR1 SWIFT_NAME(lavaDir1),
-	WATER_TYPE_LAVA_DIR2 SWIFT_NAME(lavaDir2),
-	WATER_TYPE_LAVA_DIR3 SWIFT_NAME(lavaDir3),
-	WATER_TYPE_LAVA_DIR4 SWIFT_NAME(lavaDir4),
-	WATER_TYPE_LAVA_DIR5 SWIFT_NAME(lavaDir5),
-	WATER_TYPE_LAVA_DIR6 SWIFT_NAME(lavaDir6),
-	WATER_TYPE_LAVA_DIR7 SWIFT_NAME(lavaDir7),
-
-	NUM_WATER_TYPES SWIFT_NAME(_count)
-} WaterType;
+// WaterType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 typedef struct		// NOTE: MUST MATCH OREOTERRAIN DATA!!!

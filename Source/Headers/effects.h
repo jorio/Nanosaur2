@@ -86,11 +86,7 @@ typedef struct
 
 
 
-typedef enum SWIFT_ENUM_CLOSED ParticleType
-{
-	PARTICLE_TYPE_FALLINGSPARKS SWIFT_NAME(fallingSparks),
-	PARTICLE_TYPE_GRAVITOIDS SWIFT_NAME(gravitoids)
-} ParticleType;
+// ParticleType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 enum
 {

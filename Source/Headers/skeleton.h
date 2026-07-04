@@ -27,34 +27,13 @@ typedef enum SWIFT_ENUM_CLOSED SkeletonType
 
 #define	MAX_ANIMEVENT_TYPES	7
 
-typedef enum SWIFT_ENUM_CLOSED AnimDirection
-{
-	ANIM_DIRECTION_FORWARD SWIFT_NAME(forward),
-	ANIM_DIRECTION_BACKWARD SWIFT_NAME(backward)
-} AnimDirection;
+// AnimDirection is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
-typedef enum SWIFT_ENUM_CLOSED AnimEventKind
-{
-	ANIMEVENT_TYPE_STOP SWIFT_NAME(stop),
-	ANIMEVENT_TYPE_LOOP SWIFT_NAME(loop),
-	ANIMEVENT_TYPE_ZIGZAG SWIFT_NAME(zigzag),
-	ANIMEVENT_TYPE_GOTOMARKER SWIFT_NAME(gotoMarker),
-	ANIMEVENT_TYPE_SETMARKER SWIFT_NAME(setMarker),
-	ANIMEVENT_TYPE_PLAYSOUND SWIFT_NAME(playSound),
-	ANIMEVENT_TYPE_SETFLAG SWIFT_NAME(setFlag),
-	ANIMEVENT_TYPE_CLEARFLAG SWIFT_NAME(clearFlag),
-	ANIMEVENT_TYPE_PAUSE SWIFT_NAME(pause)
-} AnimEventKind;
+// AnimEventKind is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 		/* ACCELERATION MODES */
-typedef enum SWIFT_ENUM_CLOSED AccelerationMode
-{
-	ACCEL_MODE_LINEAR SWIFT_NAME(linear),
-	ACCEL_MODE_EASEINOUT SWIFT_NAME(easeInOut),
-	ACCEL_MODE_EASEIN SWIFT_NAME(easeIn),
-	ACCEL_MODE_EASEOUT SWIFT_NAME(easeOut)
-} AccelerationMode;
+// AccelerationMode is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 #define	NUM_ACCELERATION_CURVE_NUBS		23						// THESE MUST MATCH BIO-OREO'S NUMBERS!!!

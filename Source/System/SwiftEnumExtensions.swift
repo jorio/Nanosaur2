@@ -8,6 +8,12 @@
 // is a naming-convention signal that it's a sizing sentinel, not a real
 // case - avoid referencing it from Swift; there's no compiler enforcement
 // of this, so it relies on code review.
+//
+// DialogMessage/ParticleType/AnimDirection/AnimEventKind/AccelerationMode/
+// PowType/WaterType/ShadowType/WhatType/PlayerDeathType/PlayerAnim/
+// PlayerJoint are now plain Swift enums in GameEnums.swift with real
+// CaseIterable conformance auto-derived by the compiler - no manual
+// extension needed for those anymore.
 
 // MARK: - MenuState / MouseState (MenuInternal.h)
 
@@ -23,12 +29,6 @@ extension MouseState: @retroactive Sendable, @retroactive CaseIterable {
 
 extension CameraMode: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [CameraMode] = [.normal, .firstPerson, .anaglyphClose]
-}
-
-// MARK: - ParticleType (effects.h)
-
-extension ParticleType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [ParticleType] = [.fallingSparks, .gravitoids]
 }
 
 // MARK: - Biome / VSMode (main.h)
@@ -53,60 +53,20 @@ extension MenuItemType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [MenuItemType] = [.sentinel, .pick, .label, .spacer, .cycler1, .cycler2, .slider, .keyBinding, .padBinding, .mouseBinding, .fileSlot] // kMI_COUNT (_count) intentionally excluded
 }
 
-// MARK: - ShadowType / WhatType (objects.h)
-
-extension ShadowType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [ShadowType] = [.circular, .balsaPlane, .circularDark, .square]
-}
-
-extension WhatType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [WhatType] = [.undefined, .electrode, .eggWormhole, .egg, .hole]
-}
-
 // MARK: - ShardMode (shards.h)
 
 extension ShardMode: @retroactive Sendable {}
 
-// MARK: - PlayerDeathType / PlayerAnim / PlayerJoint / WeaponType (player.h)
-
-extension PlayerDeathType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [PlayerDeathType] = [.explode, .deathDive]
-}
-
-extension PlayerAnim: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [PlayerAnim] = [.flap, .bankLeft, .bankRight, .deathDive, .appearWormhole, .readyToGrab, .flapWithEgg, .bankLeftEgg, .bankRightEgg, .enterWormhole, .disoriented, .dustDevil, .coasting]
-}
-
-extension PlayerJoint: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [PlayerJoint] = [.leftArmpit, .rightArmpit, .leftFoot, .rightFoot, .rightWing3, .rightWingtip, .leftWing3, .leftWingtip, .head, .jaw, .eggHold]
-}
+// MARK: - WeaponType (player.h)
 
 extension WeaponType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [WeaponType] = [.none, .blaster, .clusterShot, .heatSeeker, .sonicScream, .bomb] // NUM_WEAPON_TYPES (_count) intentionally excluded
 }
 
-// MARK: - SkeletonType / AnimDirection / AnimEventKind / AccelerationMode (skeleton.h)
+// MARK: - SkeletonType (skeleton.h)
 
 extension SkeletonType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [SkeletonType] = [.player, .wormhole, .raptor, .bonusWormhole, .brach, .worm, .ramphor] // MAX_SKELETON_TYPES (_count) intentionally excluded
-}
-
-extension AnimDirection: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [AnimDirection] = [.forward, .backward]
-}
-
-extension AnimEventKind: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [AnimEventKind] = [.stop, .loop, .zigzag, .gotoMarker, .setMarker, .playSound, .setFlag, .clearFlag, .pause]
-}
-
-extension AccelerationMode: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [AccelerationMode] = [.linear, .easeInOut, .easeIn, .easeOut]
-}
-
-// MARK: - WaterType (water.h)
-
-extension WaterType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [WaterType] = [.green, .blue, .lava, .lavaDir0, .lavaDir1, .lavaDir2, .lavaDir3, .lavaDir4, .lavaDir5, .lavaDir6, .lavaDir7] // NUM_WATER_TYPES (_count) intentionally excluded
 }
 
 // MARK: - EggColor (items.h)
@@ -131,12 +91,6 @@ extension LevelNum: @retroactive Sendable, @retroactive CaseIterable {
 
 extension SplitscreenMode: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [SplitscreenMode] = [.none, .horizontal, .vertical] // NUM_SPLITSCREEN_MODES (_count) intentionally excluded
-}
-
-// MARK: - PowType (globals.h)
-
-extension PowType: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [PowType] = [.stunPulse, .health, .jumpJet, .fuel, .supernova, .freeze, .magnet, .growth, .flame, .flare, .dart, .freeLife] // NUM_POW_TYPES (_count) intentionally excluded
 }
 
 // MARK: - VertexArrayRangeType (ogl_support.h)

@@ -21,50 +21,17 @@
 #define	MAX_SHIELD_POWER		3.0f
 
 
-typedef enum SWIFT_ENUM_CLOSED PlayerDeathType
-{
-	PLAYER_DEATH_TYPE_EXPLODE SWIFT_NAME(explode),
-	PLAYER_DEATH_TYPE_DEATHDIVE SWIFT_NAME(deathDive)
-} PlayerDeathType;
+// PlayerDeathType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 		/* ANIMS */
 
-typedef enum SWIFT_ENUM_CLOSED PlayerAnim
-{
-	PLAYER_ANIM_FLAP SWIFT_NAME(flap),
-	PLAYER_ANIM_BANKLEFT SWIFT_NAME(bankLeft),
-	PLAYER_ANIM_BANKRIGHT SWIFT_NAME(bankRight),
-	PLAYER_ANIM_DEATHDIVE SWIFT_NAME(deathDive),
-	PLAYER_ANIM_APPEARWORMHOLE SWIFT_NAME(appearWormhole),
-	PLAYER_ANIM_READY2GRAB SWIFT_NAME(readyToGrab),
-	PLAYER_ANIM_FLAPWITHEGG SWIFT_NAME(flapWithEgg),
-	PLAYER_ANIM_BANKLEFTEGG SWIFT_NAME(bankLeftEgg),
-	PLAYER_ANIM_BANKRIGHTEGG SWIFT_NAME(bankRightEgg),
-	PLAYER_ANIM_ENTERWORMHOLE SWIFT_NAME(enterWormhole),
-	PLAYER_ANIM_DISORIENTED SWIFT_NAME(disoriented),
-	PLAYER_ANIM_DUSTDEVIL SWIFT_NAME(dustDevil),
-	PLAYER_ANIM_COASTING SWIFT_NAME(coasting)
-} PlayerAnim;
+// PlayerAnim is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 		/* JOINTS */
 
-typedef enum SWIFT_ENUM_CLOSED PlayerJoint
-{
-	PLAYER_JOINT_LEFT_ARMPIT SWIFT_NAME(leftArmpit) = 1,
-	PLAYER_JOINT_RIGHT_ARMPIT SWIFT_NAME(rightArmpit) = 2,
-	PLAYER_JOINT_LEFT_FOOT SWIFT_NAME(leftFoot) = 8,
-	PLAYER_JOINT_RIGHT_FOOT SWIFT_NAME(rightFoot) = 11,
-	PLAYER_JOINT_RIGHT_WING3 SWIFT_NAME(rightWing3) = 13,
-	PLAYER_JOINT_RIGHT_WINGTIP SWIFT_NAME(rightWingtip) = 16,
-	PLAYER_JOINT_LEFT_WING3 SWIFT_NAME(leftWing3) = 18,
-	PLAYER_JOINT_LEFT_WINGTIP SWIFT_NAME(leftWingtip) = 21,
-	PLAYER_JOINT_HEAD SWIFT_NAME(head) = 23,
-	PLAYER_JOINT_JAW SWIFT_NAME(jaw) = 24,
-	PLAYER_JOINT_EGGHOLD SWIFT_NAME(eggHold) = 27
-
-} PlayerJoint;
+// PlayerJoint is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 		/* WEAPON TYPES */

@@ -36,24 +36,10 @@ enum
 };
 
 
-typedef enum SWIFT_ENUM_CLOSED ShadowType
-{
-	SHADOW_TYPE_CIRCULAR SWIFT_NAME(circular),
-	SHADOW_TYPE_BALSAPLANE SWIFT_NAME(balsaPlane),
-	SHADOW_TYPE_CIRCULARDARK SWIFT_NAME(circularDark),
-	SHADOW_TYPE_SQUARE SWIFT_NAME(square)
-} ShadowType;
+// ShadowType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
-typedef enum SWIFT_ENUM_CLOSED WhatType
-{
-	WHAT_UNDEFINED SWIFT_NAME(undefined) = 0,
-
-	WHAT_ELECTRODE SWIFT_NAME(electrode),
-	WHAT_EGGWORMHOLE SWIFT_NAME(eggWormhole),
-	WHAT_EGG SWIFT_NAME(egg),
-	WHAT_HOLE SWIFT_NAME(hole)
-} WhatType;
+// WhatType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 #define	ShadowScaleX	SpecialF[0]

@@ -184,23 +184,7 @@ enum
 	| STATUS_BIT_NOFOG \
 	| STATUS_BIT_NOLIGHTING)
 
-typedef enum SWIFT_ENUM_CLOSED PowType
-{
-	POW_TYPE_STUNPULSE SWIFT_NAME(stunPulse),
-	POW_TYPE_HEALTH SWIFT_NAME(health),
-	POW_TYPE_JUMPJET SWIFT_NAME(jumpJet),
-	POW_TYPE_FUEL SWIFT_NAME(fuel),
-	POW_TYPE_SUPERNOVA SWIFT_NAME(supernova),
-	POW_TYPE_FREEZE SWIFT_NAME(freeze),
-	POW_TYPE_MAGNET SWIFT_NAME(magnet),
-	POW_TYPE_GROWTH SWIFT_NAME(growth),
-	POW_TYPE_FLAME SWIFT_NAME(flame),
-	POW_TYPE_FLARE SWIFT_NAME(flare),
-	POW_TYPE_DART SWIFT_NAME(dart),
-	POW_TYPE_FREELIFE SWIFT_NAME(freeLife),
-
-	NUM_POW_TYPES SWIFT_NAME(_count)
-} PowType;
+// PowType is now a plain Swift enum in GameEnums.swift - nothing in C touches it, so it's no longer declared here.
 
 
 

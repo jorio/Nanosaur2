@@ -1713,7 +1713,7 @@ public func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
         color.pointee.b != gMyState_Color.b ||
         color.pointee.a != gMyState_Color.a
     {
-        withUnsafePointer(to: color.pointee.r) { glColor4fv($0) }
+        UnsafeRawPointer(color).withMemoryRebound(to: Float.self, capacity: 4) { glColor4fv($0) }
 
         gMyState_Color = color.pointee
     }

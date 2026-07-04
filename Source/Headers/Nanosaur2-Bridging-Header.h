@@ -19,3 +19,4 @@
 #include "PlayerInternal.h"
 #include "InfobarInternal.h"
 #include "PickInternal.h"
+#include "LevelIntroInternal.h"

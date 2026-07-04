@@ -161,14 +161,14 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
             let player = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
             var aimPt = aimOff.transformed(by: player.pointee.BaseTransformMatrix) // calc pt in front of player to aim ag
             var muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
-            let angle = TurnObjectTowardTarget(turret, &muzzleCoord, aimPt.x, aimPt.z, Float.pi / 2, 0, nil) // turn turret on y-axis
+            let angle = turret.turnTowardTarget(from: &muzzleCoord, toX: aimPt.x, toZ: aimPt.z, turnSpeed: Float.pi / 2, useOffsets: 0, crossOut: nil) // turn turret on y-axis
 
             turret.updateTransforms()
 
             // IF AIMED CLOSE, THEN ALSO AIM GUN
 
             if angle < (Float.pi / 4) {
-                let angle2 = TurnObjectTowardTargetOnX(gun, &gun.pointee.Coord, &aimPt, Float.pi / 2)
+                let angle2 = gun.turnTowardTargetOnX(from: &gun.pointee.Coord, to: &aimPt, turnSpeed: Float.pi / 2)
                 if angle2 < (Float.pi / 3) {
                     if dist < shootDist { // see if player close enough to shoot at
                         if gun.pointee.SpecialF.0 <= 0.0 {

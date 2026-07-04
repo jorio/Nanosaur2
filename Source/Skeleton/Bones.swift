@@ -129,7 +129,7 @@ private func decomposeVertexArrayGeometry(_ theTriMesh: UnsafeMutablePointer<MOV
         for pn in 0..<Int(skeleton.pointee.numDecomposedPoints) {
             let candidate = skeleton.pointee.decomposedPointList! + pn // point to this decomposed point
 
-            if PointsAreCloseEnough(vertexList + vertNum, &candidate.pointee.realPoint) != 0 { // see if close enough to match
+            if (vertexList + vertNum).pointee.isCloseEnough(to: candidate.pointee.realPoint) { // see if close enough to match
                 // ADD ANOTHER REFERENCE
 
                 refNum = Int(candidate.pointee.numRefs) // get # refs for this point

@@ -15,14 +15,6 @@ float OGLPoint2D_LineDistance(OGLPoint2D *point, float p1x, float p1y, float p2x
 
 void OGL_ComputeTrianglePlaneEquation(const OGLPoint3D	*trianglePoints, OGLPlaneEquation *planeEquation);
 
-float	CalcXAngleFromPointToPoint(float oldRot, const OGLPoint3D *from, const OGLPoint3D *to);
-float	CalcYAngleFromPointToPoint(float oldRot, float fromX, float fromZ, float toX, float toZ);
-float TurnObjectTowardTarget(ObjNode *theNode, const OGLPoint3D *from, float toX, float toZ, float turnSpeed, Boolean useOffsets, float *crossOut);
-float TurnObjectTowardTarget2D(ObjNode *theNode, float fromX, float fromY, float toX, float toY, float turnSpeed);
-float TurnObjectTowardTargetOnX(ObjNode *theNode, const OGLPoint3D *from, const OGLPoint3D *to, float turnSpeed);
-float TurnPointTowardPoint(float *rotY, OGLPoint3D *from, float toX, float toZ, float turnSpeed);
-float TurnObjectTowardPlayer(short playerNum, ObjNode *theNode, const OGLPoint3D *from, float turnSpeed, float thresholdAngle, float *turnDirection);
-void CalcPointOnObject(const ObjNode *theNode, const OGLPoint3D *inPt, OGLPoint3D *outPt);
 Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, float v1y, float v1z,
 								 float v2x, float v2y, float v2z, OGLPoint3D *outPoint);
 
@@ -32,7 +24,6 @@ Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, 
 // now plain OGLVector3D methods in 3DMath_Geometry.swift/3DMath_Angles.swift -
 // nothing in C calls them anymore, so they're no longer declared here.
 
-Boolean PointsAreCloseEnough(const OGLPoint3D *v1, const OGLPoint3D *v2);
 float IntersectionOfYAndPlane_Func(float x, float z, const OGLPlaneEquation *p);
 
 extern	Boolean IsPointInTriangle3D(const OGLPoint3D *point3D,	const OGLPoint3D *trianglePoints, OGLVector3D *normal);

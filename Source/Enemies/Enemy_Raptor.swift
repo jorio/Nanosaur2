@@ -154,8 +154,8 @@ private func moveRaptorStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
     let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
 
-    _ = TurnObjectTowardTarget(theNode, &gCoord, playerInfo.pointee.coord.x,
-                                playerInfo.pointee.coord.z, raptorTurnSpeed, 0, nil)
+    _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x,
+                                toZ: playerInfo.pointee.coord.z, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: nil)
 
     if dist < raptorChaseDistMax {
         theNode.pointee.SpecialF.0 = 0 // WalkSpeed
@@ -192,7 +192,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
         pz = theNode.pointee.InitCoord.z
         var playerNum: Int16 = 0
         dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
-        aim = TurnObjectTowardTarget(theNode, &gCoord, px, pz, raptorTurnSpeed, 0, &cross)
+        aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: &cross)
 
         if dist < 500.0 { // are we basically home?
             theNode.pointee.Mode = raptorModeWalkInFront
@@ -217,7 +217,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
             pz = player.pointee.Coord.z - cos(r) * 2600.0
 
             dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to the target pt
-            aim = TurnObjectTowardTarget(theNode, &gCoord, px, pz, raptorTurnSpeed, 1, &cross)
+            aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
 
             if dist < 400.0 { // once we've reached this point then switch to enemy target mode
                 theNode.pointee.Mode = raptorModeWalkToPlayer
@@ -226,7 +226,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
                 pz = player.pointee.Coord.z
 
                 dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to player
-                aim = TurnObjectTowardTarget(theNode, &gCoord, px, pz, raptorTurnSpeed, 1, &cross)
+                aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
             }
         }
 
@@ -237,7 +237,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
             pz = player.pointee.Coord.z
 
             dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to player
-            aim = TurnObjectTowardTarget(theNode, &gCoord, px, pz, raptorTurnSpeed, 1, &cross)
+            aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
         } else {
             // shouldn't happen
             return

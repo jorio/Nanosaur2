@@ -173,8 +173,8 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     if GetPlayerIsDead(Int32(playerNum)) == 0 { // don't aim at dead players
         let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
-        _ = TurnObjectTowardTarget(theNode, &gCoord, playerInfo.pointee.coord.x, playerInfo.pointee.coord.z,
-                                    brachTurnSpeed, 0, nil)
+        _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
+                                    turnSpeed: brachTurnSpeed, useOffsets: 0, crossOut: nil)
     }
 
     let r = theNode.pointee.Rot.y

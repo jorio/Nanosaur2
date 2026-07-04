@@ -101,19 +101,6 @@ void OGLBoundingBox_Transform(OGLBoundingBox *inBox, OGLMatrix4x4 *m, OGLBoundin
 float DecayToZero(float number, float decay);
 
 
-		/* COS/SIN/TAN */
-
-double FastSin0(double fAngle);
-double FastSin1 (double  fAngle);
-double FastCos0(double fAngle);
-double FastCos1 (double  fAngle);
-double FastTan0 (double  fAngle);
-double FastTan1 (double  fAngle);
-double FastInvTan0 (double  fValue);
-double FastInvTan1 (double  fValue);
-
-double FastInvSqrt(double val);
-
 extern	const 	OGLVector3D	gUp;
 
 

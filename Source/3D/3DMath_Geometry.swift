@@ -1191,148 +1191,139 @@ public func OGL_ComputeTrianglePlaneEquation(_ trianglePoints: UnsafePointer<OGL
 // #0 functions are fast, but less accurate
 // #1 functions are still fast, but more accurate
 
-// SIN
+extension Double {
+    // SIN
 
-@c @implementation
-public func FastSin0(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = 7.61e-03
-    fResult *= fASqr
-    fResult -= 1.6605e-01
-    fResult *= fASqr
-    fResult += 1.0
-    fResult *= fAngle
-    return fResult
-}
+    func fastSin0() -> Double {
+        let fASqr = self * self
+        var fResult = 7.61e-03
+        fResult *= fASqr
+        fResult -= 1.6605e-01
+        fResult *= fASqr
+        fResult += 1.0
+        fResult *= self
+        return fResult
+    }
 
-@c @implementation
-public func FastSin1(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = -2.39e-08
-    fResult *= fASqr
-    fResult += 2.7526e-06
-    fResult *= fASqr
-    fResult -= 1.98409e-04
-    fResult *= fASqr
-    fResult += 8.3333315e-03
-    fResult *= fASqr
-    fResult -= 1.666666664e-01
-    fResult *= fASqr
-    fResult += 1.0
-    fResult *= fAngle
-    return fResult
-}
+    func fastSin1() -> Double {
+        let fASqr = self * self
+        var fResult = -2.39e-08
+        fResult *= fASqr
+        fResult += 2.7526e-06
+        fResult *= fASqr
+        fResult -= 1.98409e-04
+        fResult *= fASqr
+        fResult += 8.3333315e-03
+        fResult *= fASqr
+        fResult -= 1.666666664e-01
+        fResult *= fASqr
+        fResult += 1.0
+        fResult *= self
+        return fResult
+    }
 
-// COS
+    // COS
 
-@c @implementation
-public func FastCos0(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = 3.705e-02
-    fResult *= fASqr
-    fResult -= 4.967e-01
-    fResult *= fASqr
-    fResult += 1.0
-    return fResult
-}
+    func fastCos0() -> Double {
+        let fASqr = self * self
+        var fResult = 3.705e-02
+        fResult *= fASqr
+        fResult -= 4.967e-01
+        fResult *= fASqr
+        fResult += 1.0
+        return fResult
+    }
 
-@c @implementation
-public func FastCos1(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = -2.605e-07
-    fResult *= fASqr
-    fResult += 2.47609e-05
-    fResult *= fASqr
-    fResult -= 1.3888397e-03
-    fResult *= fASqr
-    fResult += 4.16666418e-02
-    fResult *= fASqr
-    fResult -= 4.999999963e-01
-    fResult *= fASqr
-    fResult += 1.0
-    return fResult
-}
+    func fastCos1() -> Double {
+        let fASqr = self * self
+        var fResult = -2.605e-07
+        fResult *= fASqr
+        fResult += 2.47609e-05
+        fResult *= fASqr
+        fResult -= 1.3888397e-03
+        fResult *= fASqr
+        fResult += 4.16666418e-02
+        fResult *= fASqr
+        fResult -= 4.999999963e-01
+        fResult *= fASqr
+        fResult += 1.0
+        return fResult
+    }
 
-// TAN
+    // TAN
 
-@c @implementation
-public func FastTan0(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = 2.033e-01
-    fResult *= fASqr
-    fResult += 3.1755e-01
-    fResult *= fASqr
-    fResult += 1.0
-    fResult *= fAngle
-    return fResult
-}
+    func fastTan0() -> Double {
+        let fASqr = self * self
+        var fResult = 2.033e-01
+        fResult *= fASqr
+        fResult += 3.1755e-01
+        fResult *= fASqr
+        fResult += 1.0
+        fResult *= self
+        return fResult
+    }
 
-@c @implementation
-public func FastTan1(_ fAngle: Double) -> Double {
-    let fASqr = fAngle * fAngle
-    var fResult = 9.5168091e-03
-    fResult *= fASqr
-    fResult += 2.900525e-03
-    fResult *= fASqr
-    fResult += 2.45650893e-02
-    fResult *= fASqr
-    fResult += 5.33740603e-02
-    fResult *= fASqr
-    fResult += 1.333923995e-01
-    fResult *= fASqr
-    fResult += 3.333314036e-01
-    fResult *= fASqr
-    fResult += 1.0
-    fResult *= fAngle
-    return fResult
-}
+    func fastTan1() -> Double {
+        let fASqr = self * self
+        var fResult = 9.5168091e-03
+        fResult *= fASqr
+        fResult += 2.900525e-03
+        fResult *= fASqr
+        fResult += 2.45650893e-02
+        fResult *= fASqr
+        fResult += 5.33740603e-02
+        fResult *= fASqr
+        fResult += 1.333923995e-01
+        fResult *= fASqr
+        fResult += 3.333314036e-01
+        fResult *= fASqr
+        fResult += 1.0
+        fResult *= self
+        return fResult
+    }
 
-@c @implementation
-public func FastInvTan0(_ fValue: Double) -> Double {
-    let fVSqr = fValue * fValue
-    var fResult = 0.0208351
-    fResult *= fVSqr
-    fResult -= 0.085133
-    fResult *= fVSqr
-    fResult += 0.180141
-    fResult *= fVSqr
-    fResult -= 0.3302995
-    fResult *= fVSqr
-    fResult += 0.999866
-    fResult *= fValue
-    return fResult
-}
+    func fastInvTan0() -> Double {
+        let fVSqr = self * self
+        var fResult = 0.0208351
+        fResult *= fVSqr
+        fResult -= 0.085133
+        fResult *= fVSqr
+        fResult += 0.180141
+        fResult *= fVSqr
+        fResult -= 0.3302995
+        fResult *= fVSqr
+        fResult += 0.999866
+        fResult *= self
+        return fResult
+    }
 
-@c @implementation
-public func FastInvTan1(_ fValue: Double) -> Double {
-    let fVSqr = fValue * fValue
-    var fResult = 0.0028662257
-    fResult *= fVSqr
-    fResult -= 0.0161657367
-    fResult *= fVSqr
-    fResult += 0.0429096138
-    fResult *= fVSqr
-    fResult -= 0.0752896400
-    fResult *= fVSqr
-    fResult += 0.1065626393
-    fResult *= fVSqr
-    fResult -= 0.1420889944
-    fResult *= fVSqr
-    fResult += 0.1999355085
-    fResult *= fVSqr
-    fResult -= 0.3333314528
-    fResult *= fVSqr
-    fResult += 1.0
-    fResult *= fValue
-    return fResult
-}
+    func fastInvTan1() -> Double {
+        let fVSqr = self * self
+        var fResult = 0.0028662257
+        fResult *= fVSqr
+        fResult -= 0.0161657367
+        fResult *= fVSqr
+        fResult += 0.0429096138
+        fResult *= fVSqr
+        fResult -= 0.0752896400
+        fResult *= fVSqr
+        fResult += 0.1065626393
+        fResult *= fVSqr
+        fResult -= 0.1420889944
+        fResult *= fVSqr
+        fResult += 0.1999355085
+        fResult *= fVSqr
+        fResult -= 0.3333314528
+        fResult *= fVSqr
+        fResult += 1.0
+        fResult *= self
+        return fResult
+    }
 
-// MARK: -
+    // MARK: - Fast inverse square root
 
-// MARK: - Fast inverse square root
-
-@c @implementation
-public func FastInvSqrt(_ val: Double) -> Double {
-    // __ppc__ is never defined for this build (arm64/x86_64 only).
-    1.0 / sqrt(val)
+    func fastInvSqrt() -> Double {
+        // __ppc__ is never defined for this build (arm64/x86_64 only).
+        1.0 / sqrt(self)
+    }
 }

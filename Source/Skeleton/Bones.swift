@@ -48,8 +48,7 @@ private let kDeformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
 }
 
 // INPUT: inSpec = spec of 3dmf file to load or nil to StdDialog it.
-@c @implementation
-public func LoadBonesReferenceModel(_ inSpec: UnsafeMutablePointer<FSSpec>!, _ skeleton: UnsafeMutablePointer<SkeletonDefType>!, _ skeletonType: Int32) {
+func LoadBonesReferenceModel(_ inSpec: UnsafeMutablePointer<FSSpec>!, _ skeleton: UnsafeMutablePointer<SkeletonDefType>!, _ skeletonType: Int32) {
     gCurrentSkeleton = skeleton
 
     let g = Int32(MODEL_GROUP_SKELETONBASE) + skeletonType // calc group # to store model into
@@ -202,8 +201,7 @@ private func decomposeVertexArrayGeometry(_ theTriMesh: UnsafeMutablePointer<MOV
 
 // Updates all of the points in the local trimesh data to coordinate with the
 // current joint transforms.
-@c @implementation
-public func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     guard let currentSkelObjData = theNode.pointee.Skeleton else {
         return
     }
@@ -415,8 +413,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
 }
 
 // After a skeleton file is loaded, this will calc some other needed things.
-@c @implementation
-public func PrimeBoneData(_ skeleton: UnsafeMutablePointer<SkeletonDefType>!) {
+func PrimeBoneData(_ skeleton: UnsafeMutablePointer<SkeletonDefType>!) {
     if skeleton.pointee.NumBones == 0 {
         SwFatal("PrimeBoneData: # = 0??")
     }

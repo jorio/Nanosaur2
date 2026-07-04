@@ -385,8 +385,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
 
 // MARK: - Init/Free Zaps
 
-@c @implementation
-public func InitZaps() {
+func InitZaps() {
     gZapBuffer = 0
 
     for i in 0..<maxZaps {
@@ -408,8 +407,7 @@ public func InitZaps() {
     newObj.pointee.Damage = 1.0
 }
 
-@c @implementation
-public func FreeAllZaps() {
+func FreeAllZaps() {
     for i in 0..<maxZaps {
         if gZaps[i].isUsed != 0 {
             freeZap(i)

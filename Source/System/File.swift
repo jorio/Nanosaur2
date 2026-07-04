@@ -98,8 +98,7 @@ private var g3DMaxY: Float = 0
 //		Skeleton types NUM_CHARACTERS and over are for other skeleton entities.
 //
 // OUTPUT:	Ptr to skeleton data
-@c @implementation
-public func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDefType>! {
+func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDefType>! {
     let modelNames = ["nano", "wormhole", "raptor", "bonusworm", "brach", "worm", "ramphor"]
 
     SwGameAssert(skeletonType >= 0)
@@ -400,8 +399,7 @@ public func SavePrefs() -> OSErr {
 
 // MARK: - Load Playfield
 
-@c @implementation
-public func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
+func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
     gDisableHiccupTimer = 1
 
     // READ PLAYFIELD RESOURCES
@@ -815,8 +813,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
 // MARK: - Supertile Textures
 
-@c @implementation
-public func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
+func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
     let texSize = Int(SUPERTILE_TEXMAP_SIZE)
 
     // READ THE SIZE OF THE NEXT COMPRESSED SUPERTILE TEXTURE
@@ -913,8 +910,7 @@ private func getSuperTileImage(_ row: Int, _ col: Int) -> UnsafePointer<Int8>? {
     return image.map { UnsafePointer($0) }
 }
 
-@c @implementation
-public func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canvas: Ptr!) {
+func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canvas: Ptr!) {
     SwGameAssert(getSuperTileImage(Int(row), Int(col)) != nil) // make sure we're not trying to do assemble a blank texture
 
     let tw = Int(SUPERTILE_TEXMAP_SIZE) // supertile width & height
@@ -943,8 +939,7 @@ public func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canva
     blit32(getSuperTileImage(Int(row) + 1, Int(col) + 1), tw, th, 0, 0, 1, 1, canvas, cw, ch, cw - 1, ch - 1)
 }
 
-@c @implementation
-public func LoadSuperTileTexture(_ textureBuffer: Ptr!, _ texSize: Int32) -> UnsafeMutablePointer<MOMaterialObject>! {
+func LoadSuperTileTexture(_ textureBuffer: Ptr!, _ texSize: Int32) -> UnsafeMutablePointer<MOMaterialObject>! {
     // LOAD GL TEXTURE
 
     let textureName = OGL_TextureMap_Load(textureBuffer, texSize, texSize, Int32(GL_RGBA), Int32(GL_RGBA), Int32(GL_UNSIGNED_BYTE))
@@ -969,8 +964,7 @@ public func LoadSuperTileTexture(_ textureBuffer: Ptr!, _ texSize: Int32) -> Uns
 // MARK: - Save Game
 
 // Returns true if saving was successful
-@c @implementation
-public func SaveGame(_ fileSlot: Int32) -> UInt8 {
+func SaveGame(_ fileSlot: Int32) -> UInt8 {
     let path = "File\(Character(UnicodeScalar(UInt8(65 + fileSlot))))"
 
     // GET TIMESTAMP
@@ -1011,8 +1005,7 @@ public func SaveGame(_ fileSlot: Int32) -> UInt8 {
     UnsafeMutableRawPointer(p.pointer(to: \.weaponQuantity)!).assumingMemoryBound(to: Int16.self)
 }
 
-@c @implementation
-public func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameType>!) -> UInt8 {
+func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameType>!) -> UInt8 {
     let path = "File\(Character(UnicodeScalar(UInt8(65 + fileSlot))))"
 
     var scratch = SaveGameType()
@@ -1042,8 +1035,7 @@ public func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
     return iErr == kNoErr ? 1 : 0
 }
 
-@c @implementation
-public func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
+func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
     gLevelNum = Int16(saveData.pointee.level)
     GetPlayerInfoEntry(0)!.pointee.numFreeLives = Int16(saveData.pointee.numLives)
     GetPlayerInfoEntry(0)!.pointee.health = saveData.pointee.health
@@ -1059,8 +1051,7 @@ public func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 
 // MARK: - User Data Files
 
-@c @implementation
-public func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
+func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
     var createdDirID: Int = 0
 
     let iErr = FindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gPrefsFolderVRefNum, &gPrefsFolderDirID) // locate the folder
@@ -1083,8 +1074,7 @@ private func makeFSSpecForUserDataFile(_ filename: String, _ spec: UnsafeMutable
 private let PREFS_FOLDER_NAME_SWIFT = "Nanosaur2"
 
 // Load struct from user file in prefs folder
-@c @implementation
-public func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
     let magicLength = Int(strlen(magic)) + 1 // including null-terminator
     var fileMagic = [Int8](repeating: 0, count: 64)
@@ -1148,8 +1138,7 @@ public func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafeP
 }
 
 // Save struct to user file in prefs folder
-@c @implementation
-public func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
@@ -1192,8 +1181,7 @@ public func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafeP
     return iErr
 }
 
-@c @implementation
-public func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
+func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
@@ -1205,8 +1193,7 @@ public func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
 }
 
 // Use SafeDisposePtr when done.
-@c @implementation
-public func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
+func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
     var spec = FSSpec()
 
     let err = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
@@ -1242,8 +1229,7 @@ public func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutab
 }
 
 // Use SafeDisposePtr when done.
-@c @implementation
-public func LoadTextFile(_ spec: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
+func LoadTextFile(_ spec: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
     LoadDataFile(spec, outLength)
 }
 
@@ -1251,8 +1237,7 @@ public func LoadTextFile(_ spec: UnsafePointer<CChar>!, _ outLength: UnsafeMutab
 
 // Call this function repeatedly to iterate over cells in a CSV table.
 // THIS FUNCTION MODIFIES THE INPUT BUFFER!
-@c @implementation
-public func CSVIterator(_ csvCursor: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>!, _ eolOut: UnsafeMutablePointer<Bool>!) -> UnsafeMutablePointer<CChar>! {
+func CSVIterator(_ csvCursor: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>!, _ eolOut: UnsafeMutablePointer<Bool>!) -> UnsafeMutablePointer<CChar>! {
     let kCSVStateStop = 0
     let kCSVStateWithinQuotedString = 1
     let kCSVStateWithinUnquotedString = 2
@@ -1344,8 +1329,7 @@ public func CSVIterator(_ csvCursor: UnsafeMutablePointer<UnsafeMutablePointer<C
 // MARK: - QuickTime Image Decompression
 
 // Caller is responsible for freeing the pointer!
-@c @implementation
-public func DecompressQTImage(_ data: UnsafePointer<CChar>!, _ dataSize: Int32, _ w: Int32, _ h: Int32) -> Ptr! {
+func DecompressQTImage(_ data: UnsafePointer<CChar>!, _ dataSize: Int32, _ w: Int32, _ h: Int32) -> Ptr! {
     // The beginning of the buffer is an ImageDescription record.
     // The first int is an offset to the actual data.
     var offsetSrc = data.withMemoryRebound(to: Int32.self, capacity: 1) { $0.pointee }

@@ -2,8 +2,7 @@
 //
 // This is not code for the terrain splines! This does other custom spline management.
 
-@c @implementation
-public func InitSplineManager() {
+func InitSplineManager() {
     for i in 0..<Int32(MAX_CUSTOM_SPLINES) {
         let slot = GetCustomSplineSlot(i)
         slot.pointee.isUsed = 0
@@ -12,15 +11,13 @@ public func InitSplineManager() {
     }
 }
 
-@c @implementation
-public func FreeAllCustomSplines() {
+func FreeAllCustomSplines() {
     for i in 0..<Int16(MAX_CUSTOM_SPLINES) {
         FreeACustomSpline(i)
     }
 }
 
-@c @implementation
-public func FreeACustomSpline(_ splineNum: Int16) {
+func FreeACustomSpline(_ splineNum: Int16) {
     let slot = GetCustomSplineSlot(Int32(splineNum))
     if slot.pointee.isUsed != 0 {
         SafeDisposePtr(slot.pointee.splinePoints)
@@ -29,8 +26,7 @@ public func FreeACustomSpline(_ splineNum: Int16) {
     }
 }
 
-@c @implementation
-public func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePointer<OGLPoint3D>, _ pointsPerSpan: Int) -> Int16 {
+func GenerateCustomSpline(_ numNubs: Int16, _ nubPoints: UnsafeMutablePointer<OGLPoint3D>, _ pointsPerSpan: Int) -> Int16 {
     // FIND FREE SLOT
     var slot: Int32 = 0
     while slot < Int32(MAX_CUSTOM_SPLINES) {

@@ -62,8 +62,7 @@ private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGl
 // MARK: - Init terrain manager
 
 // Only called at boot!
-@c @implementation
-public func InitTerrainManager() {
+func InitTerrainManager() {
     SetTerrainScale(Int32(DEFAULT_TERRAIN_SCALE)) // set scale to some default for now
 
     // BUILT TRIANGLE SPLITTING TABLES
@@ -91,8 +90,7 @@ public func InitTerrainManager() {
 
 // MARK: - Set terrain scale
 
-@c @implementation
-public func SetTerrainScale(_ polygonSize: Int32) {
+func SetTerrainScale(_ polygonSize: Int32) {
     gTerrainPolygonSize = Float(polygonSize) // size in world units of terrain polygon
     gTerrainPolygonSizeInt = UInt32(polygonSize)
 
@@ -113,8 +111,7 @@ public func SetTerrainScale(_ polygonSize: Int32) {
 
 // MARK: - Init current scroll settings
 
-@c @implementation
-public func InitCurrentScrollSettings() {
+func InitCurrentScrollSettings() {
     for i in 0..<Int(gNumPlayers) { // init settings for each player in game
         let pi = GetPlayerInfoEntry(Int32(i))!
         let x = Int(pi.pointee.coord.x - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
@@ -151,8 +148,7 @@ private var gPreviousSuperTileRow: [Int32] = Array(repeating: 0, count: Int(MAX_
 
 // MARK: - Init supertile grid
 
-@c @implementation
-public func InitSuperTileGrid() {
+func InitSuperTileGrid() {
     gSuperTileStatusGrid = alloc2DArray(SuperTileStatus.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide)) // alloc 2D grid array
 
     // INIT ALL GRID SLOTS TO EMPTY AND UNUSED
@@ -169,8 +165,7 @@ public func InitSuperTileGrid() {
 // MARK: - Dispose terrain
 
 // Deletes any existing terrain data
-@c @implementation
-public func DisposeTerrain() {
+func DisposeTerrain() {
     DisposeSuperTileMemoryList()
 
     // FREE ALL TEXTURE OBJECTS
@@ -255,8 +250,7 @@ public func DisposeTerrain() {
 
 // Preallocates memory and initializes the data for the maximum number of supertiles that
 // we will ever need on this level.
-@c @implementation
-public func CreateSuperTileMemoryList() {
+func CreateSuperTileMemoryList() {
     // ALLOCATE ARRAYS FOR ALL THE DATA WE WILL NEED
 
     gNumFreeSupertiles = Int16(maxSupertiles)
@@ -353,8 +347,7 @@ public func CreateSuperTileMemoryList() {
 
 // MARK: - Dispose supertile memory list
 
-@c @implementation
-public func DisposeSuperTileMemoryList() {
+func DisposeSuperTileMemoryList() {
     // NUKE ALL MASTER ARRAYS WHICH WILL FREE UP ALL SUPERTILE MEMORY
 
     if let meshData = gSuperTileMeshData {
@@ -650,8 +643,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
 
 // MARK: - Calculate supertile vertex normals
 
-@c @implementation
-public func CalculateSupertileVertexNormals(_ meshData: UnsafeMutablePointer<MOVertexArrayData>!, _ startRow: Int, _ startCol: Int) {
+func CalculateSupertileVertexNormals(_ meshData: UnsafeMutablePointer<MOVertexArrayData>!, _ startRow: Int, _ startCol: Int) {
     let vertexPointList = meshData.pointee.points! // get ptr to points list
     let vertexNormals = meshData.pointee.normals! // get ptr to vertex normals
     let triangleList = meshData.pointee.triangles! // get ptr to triangle index list
@@ -734,8 +726,7 @@ private func releaseAllSuperTiles() {
 // MARK: - Draw terrain
 
 // This is the main call to update the screen.  It draws all ObjNode's and the terrain itself
-@c @implementation
-public func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // DRAW STUFF
 
     // SET A NICE STATE FOR TERRAIN DRAWING
@@ -874,8 +865,7 @@ public func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 // INPUT: x/z = world coords
 //
 // OUTPUT: y = world y coord
-@c @implementation
-public func GetTerrainY(_ x: Float, _ z: Float) -> Float {
+func GetTerrainY(_ x: Float, _ z: Float) -> Float {
     if gMapYCoords == nil { // make sure there's a terrain
         return ILLEGAL_TERRAIN_Y
     }
@@ -943,8 +933,7 @@ public func GetTerrainY(_ x: Float, _ z: Float) -> Float {
 // MARK: - Get min terrain Y
 
 // Uses the models's bounding box to find the lowest y for all sides
-@c @implementation
-public func GetMinTerrainY(_ x: Float, _ z: Float, _ group: Int16, _ type: Int16, _ scale: Float) -> Float {
+func GetMinTerrainY(_ x: Float, _ z: Float, _ group: Int16, _ type: Int16, _ scale: Float) -> Float {
     // POINT TO BOUNDING BOX
 
     let bBox = GetObjectGroupBBox(Int32(group), Int32(type)) // get this model's bounding box
@@ -987,8 +976,7 @@ public func GetMinTerrainY(_ x: Float, _ z: Float, _ group: Int16, _ type: Int16
 //
 // INPUT: x/y = world x/y coords
 // OUTPUT: row/col in tile coords and supertile coords
-@c @implementation
-public func GetSuperTileInfo(_ x: Int, _ z: Int, _ superCol: UnsafeMutablePointer<Int32>!, _ superRow: UnsafeMutablePointer<Int32>!, _ tileCol: UnsafeMutablePointer<Int32>!, _ tileRow: UnsafeMutablePointer<Int32>!) {
+func GetSuperTileInfo(_ x: Int, _ z: Int, _ superCol: UnsafeMutablePointer<Int32>!, _ superRow: UnsafeMutablePointer<Int32>!, _ tileCol: UnsafeMutablePointer<Int32>!, _ tileRow: UnsafeMutablePointer<Int32>!) {
     if (x < 0) || (z < 0) { // see if out of bounds
         return
     }
@@ -1121,8 +1109,7 @@ private let gridMask3: [[UInt8]] = [
     [2, 2, 2, 2, 2, 2],
 ]
 
-@c @implementation
-public func DoPlayerTerrainUpdate() {
+func DoPlayerTerrainUpdate() {
     if gNumUniqueSuperTiles == 0 { // dont draw if terrain not loaded
         return
     }
@@ -1292,8 +1279,7 @@ private func calcNewItemDeleteWindow(_ playerNum: UInt8) {
 
 // MARK: - Calculate split mode matrix
 
-@c @implementation
-public func CalculateSplitModeMatrix() {
+func CalculateSplitModeMatrix() {
     gMapSplitMode = alloc2DArray(UInt8.self, rows: Int(gTerrainTileDepth), cols: Int(gTerrainTileWidth)) // alloc 2D array
 
     for row in 0..<Int(gTerrainTileDepth) {

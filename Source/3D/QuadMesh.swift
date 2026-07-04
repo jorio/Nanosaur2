@@ -1,7 +1,6 @@
 // QuadMesh.swift - Port of QuadMesh.c to Swift
 
-@c @implementation
-public func ReallocateQuadMesh(_ mesh: UnsafeMutablePointer<MOVertexArrayData>, _ numQuads: Int32) {
+func ReallocateQuadMesh(_ mesh: UnsafeMutablePointer<MOVertexArrayData>, _ numQuads: Int32) {
     if mesh.pointee.points != nil {
         SafeDisposePtr(UnsafeMutableRawPointer(mesh.pointee.points))
         mesh.pointee.points = nil
@@ -48,8 +47,7 @@ public func ReallocateQuadMesh(_ mesh: UnsafeMutablePointer<MOVertexArrayData>, 
     }
 }
 
-@c @implementation
-public func GetQuadMeshWithin(_ theNode: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<MOVertexArrayData> {
+func GetQuadMeshWithin(_ theNode: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<MOVertexArrayData> {
     SwGameAssert(theNode.pointee.Genre == UInt8(TEXTMESH_GENRE) || theNode.pointee.Genre == UInt8(QUADMESH_GENRE))
     SwGameAssert(theNode.pointee.BaseGroup != nil)
     SwGameAssert(theNode.pointee.BaseGroup!.pointee.objectData.numObjectsInGroup >= 2)
@@ -63,8 +61,7 @@ public func GetQuadMeshWithin(_ theNode: UnsafeMutablePointer<ObjNode>) -> Unsaf
     return vertexObject.pointer(to: \.objectData)!
 }
 
-@c @implementation
-public func MakeQuadMeshObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>, _ quadCapacity: Int32, _ material: UnsafeMutablePointer<MOMaterialObject>?) -> UnsafeMutablePointer<ObjNode> {
+func MakeQuadMeshObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>, _ quadCapacity: Int32, _ material: UnsafeMutablePointer<MOMaterialObject>?) -> UnsafeMutablePointer<ObjNode> {
     // If no material was given, make a blank material
     var ownMaterial = false
     var material = material

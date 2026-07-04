@@ -174,8 +174,7 @@ private var gMostRecentChannel: Int16 = -1
 
 // MARK: - Init sound tools
 
-@c @implementation
-public func InitSoundTools() {
+func InitSoundTools() {
     gMaxChannels = 0
     gMostRecentChannel = -1
 
@@ -211,8 +210,7 @@ public func InitSoundTools() {
 // MARK: - Shutdown sound
 
 // Called at Quit time
-@c @implementation
-public func ShutdownSound() {
+func ShutdownSound() {
     // STOP ANY PLAYING AUDIO
 
     StopAllEffectChannels()
@@ -236,8 +234,7 @@ public func ShutdownSound() {
 
 // MARK: - Load sound bank
 
-@c @implementation
-public func LoadSoundBank(_ bank: UInt8) {
+func LoadSoundBank(_ bank: UInt8) {
     let kSoundExts = ["aiff", "mp3"]
 
     StopAllEffectChannels()
@@ -306,8 +303,7 @@ public func LoadSoundBank(_ bank: UInt8) {
 
 // MARK: - Dispose sound bank
 
-@c @implementation
-public func DisposeSoundBank(_ bank: UInt8) {
+func DisposeSoundBank(_ bank: UInt8) {
     StopAllEffectChannels() // make sure all sounds are stopped before nuking any banks
 
     // FREE ALL SAMPLES
@@ -329,8 +325,7 @@ public func DisposeSoundBank(_ bank: UInt8) {
 // MARK: - Stop a channel
 
 // Stops the indicated sound channel from playing.
-@c @implementation
-public func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
+func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
     let c = channelNum.pointee
 
     if (c < 0) || (c >= gMaxChannels) { // make sure its a legal #
@@ -356,8 +351,7 @@ public func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
 // MARK: - Stop a channel if effect num
 
 // Stops the indicated sound channel from playing if it is still this effect #
-@c @implementation
-public func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effectNum: Int16) -> UInt8 {
+func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effectNum: Int16) -> UInt8 {
     let c = channelNum.pointee
 
     if c < 0 {
@@ -375,8 +369,7 @@ public func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, 
 
 // MARK: - Stop all effect channels
 
-@c @implementation
-public func StopAllEffectChannels() {
+func StopAllEffectChannels() {
     for i in 0..<Int(gMaxChannels) {
         var c = Int16(i)
         StopAChannel(&c)
@@ -390,8 +383,7 @@ public func StopAllEffectChannels() {
 // if songNum == -1, then play existing open song
 //
 // INPUT: loopFlag = true if want song to loop
-@c @implementation
-public func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
+func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
     if songNum == gCurrentSong { // see if this is already playing
         return
     }
@@ -467,8 +459,7 @@ public func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 
 // MARK: - Kill song
 
-@c @implementation
-public func KillSong() {
+func KillSong() {
     gCurrentSong = -1
 
     if gSongPlayingFlag == 0 {
@@ -487,8 +478,7 @@ public func KillSong() {
 // NO SSP
 //
 // OUTPUT: channel # used to play sound
-@c @implementation
-public func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!) -> Int16 {
+func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!) -> Int16 {
     if effectNum >= Int16(maxEffects) { // see if illegal sound #
         SwFatal("Illegal sound number \(effectNum)!")
     }
@@ -516,8 +506,7 @@ public func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLP
 // Plays an effect with parameters in 3D
 //
 // OUTPUT: channel # used to play sound
-@c @implementation
-public func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ rateMultiplier: UInt32, _ volumeAdjust: Float) -> Int16 {
+func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ rateMultiplier: UInt32, _ volumeAdjust: Float) -> Int16 {
     if effectNum >= Int16(maxEffects) { // see if illegal sound #
         SwFatal("Illegal sound number \(effectNum)!")
     }
@@ -545,8 +534,7 @@ public func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointe
 // MARK: - Update 3D sound channel
 
 // Returns TRUE if effectNum was a mismatch or something went wrong
-@c @implementation
-public func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<Int16>!, _ where_: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
+func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<Int16>!, _ where_: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
     let c = channel.pointee
 
     if c == -1 {
@@ -673,8 +661,7 @@ private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePoint
 // MARK: - Update listener location
 
 // Get ear coord for all local players
-@c @implementation
-public func UpdateListenerLocation() {
+func UpdateListenerLocation() {
     for i in 0..<Int(gNumPlayers) {
         let p = cameraPlacementsBase()[i]
 
@@ -699,8 +686,7 @@ public func UpdateListenerLocation() {
 // MARK: - Play effect
 
 // OUTPUT: channel # used to play sound
-@c @implementation
-public func PlayEffect(_ effectNum: Int16) -> Int16 {
+func PlayEffect(_ effectNum: Int16) -> Int16 {
     PlayEffect_Parms(effectNum, FULL_CHANNEL_VOLUME, FULL_CHANNEL_VOLUME, UInt(NORMAL_CHANNEL_RATE))
 }
 
@@ -816,8 +802,7 @@ public func UpdateGlobalVolume() {
 // MARK: - Change channel volume
 
 // Modifies the volume of a currently playing channel
-@c @implementation
-public func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: Float) {
+func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: Float) {
     if channel < 0 { // make sure it's valid
         return
     }
@@ -844,8 +829,7 @@ public func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: 
 //
 // The Input Freq is a fixed-point multiplier, not the static rate via rateCmd.
 // This function uses rateMultiplierCmd, so a value of 0x00020000 is x2.0
-@c @implementation
-public func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
+func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
     if channel < 0 { // make sure it's valid
         return
     }
@@ -892,8 +876,7 @@ private func findSilentChannel() -> Int16 {
 
 // MARK: - Is effect channel playing
 
-@c @implementation
-public func IsEffectChannelPlaying(_ chanNum: Int16) -> UInt8 {
+func IsEffectChannelPlaying(_ chanNum: Int16) -> UInt8 {
     var theStatus = SCStatus()
     SndChannelStatus(gSndChannel[Int(chanNum)], Int16(MemoryLayout<SCStatus>.size), &theStatus) // get channel info
     return theStatus.scChannelBusy
@@ -901,8 +884,7 @@ public func IsEffectChannelPlaying(_ chanNum: Int16) -> UInt8 {
 
 // MARK: - Pause all sound channels
 
-@c @implementation
-public func PauseAllChannels(_ pause: UInt8) {
+func PauseAllChannels(_ pause: UInt8) {
     var cmd = SndCommand()
     cmd.cmd = UInt16(pause != 0 ? pommePausePlaybackCmd.rawValue : pommeResumePlaybackCmd.rawValue)
 
@@ -917,8 +899,7 @@ public func PauseAllChannels(_ pause: UInt8) {
 
 // MARK: - Global volume fade
 
-@c @implementation
-public func FadeSound(_ loudness: Float) {
+func FadeSound(_ loudness: Float) {
     gGlobalVolumeFade = loudness
     UpdateGlobalVolume()
 }
@@ -927,8 +908,7 @@ public func FadeSound(_ loudness: Float) {
 
 // MARK: - Play rumble effect
 
-@c @implementation
-public func PlayRumbleEffect(_ effectNum: Int16, _ playerNum: Int32) {
+func PlayRumbleEffect(_ effectNum: Int16, _ playerNum: Int32) {
     if effectNum < 0 || effectNum >= Int16(NUM_EFFECTS) {
         return
     }

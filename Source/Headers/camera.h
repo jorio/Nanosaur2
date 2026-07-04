@@ -19,11 +19,5 @@ extern  Byte		gCameraMode[];
 
 float GetSplitscreenPaneFOV(void);
 
-void UpdateCameras(void);
-void InitCamera_Terrain(short playerNum);
-void DrawLensFlare(void);
 
 
-void PrepAnaglyphCameras(void);
-void RestoreCamerasFromAnaglyph(void);
-void CalcAnaglyphCameraOffset(Byte pane, Byte pass);

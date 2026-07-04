@@ -36,8 +36,7 @@ private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGl
 
 // MARK: - Update player crosshairs
 
-@c @implementation
-public func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
+func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     let p = Int(player.pointee.PlayerNum)
 
     // DO RAY COLLISION AGAINST THE SCENE TO SEE WHAT THE CROSSHAIRS HIT
@@ -85,8 +84,7 @@ public func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
 // MARK: - Player fire button pressed
 
 // Called when player presses the Fire button
-@c @implementation
-public func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFireButton: UInt8) {
+func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFireButton: UInt8) {
     let playerNum = Int32(player.pointee.PlayerNum)
     let pi = GetPlayerInfoEntry(playerNum)!
     var didShoot = false
@@ -166,8 +164,7 @@ public func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ 
 // Called when player releases a previously pressed Fire button
 //
 // This is used by weapons which require a charge before firing.
-@c @implementation
-public func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
+func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
     let playerNum = Int32(player.pointee.PlayerNum)
     let pi = GetPlayerInfoEntry(playerNum)!
     var didShoot = false
@@ -211,8 +208,7 @@ public func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 // Scans thru our weapon inventory starting at the current weapon, looking for another weapon
 // which we have inventory for.
-@c @implementation
-public func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: Int32) {
+func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: Int32) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let numWeaponTypes = Int32(WeaponType.allCases.count)
 
@@ -1761,8 +1757,7 @@ private let cMoveBombShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
 // MARK: - Cause bomb shockwave damage
 
-@c @implementation
-public func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: UInt32) {
+func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: UInt32) {
     let radius = wave.pointee.Scale.x * 10.0 // calc radius of sphere
 
     let oldDamage = wave.pointee.Damage // remember original damager factor

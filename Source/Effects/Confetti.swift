@@ -45,8 +45,7 @@ private var gNumActiveConfettiGroups: Int16 = 0
 
 // MARK: - Init
 
-@c @implementation
-public func InitConfettiManager() {
+func InitConfettiManager() {
     // INIT GROUP ARRAY
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
         gConfettiGroups[i] = nil
@@ -69,8 +68,7 @@ public func InitConfettiManager() {
     MakeNewObject(&def)
 }
 
-@c @implementation
-public func DeleteAllConfettiGroups() {
+func DeleteAllConfettiGroups() {
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
         deleteConfettiGroup(i)
     }
@@ -93,8 +91,7 @@ private func deleteConfettiGroup(_ groupNum: Int) {
 
 // INPUT: def -> group type to create
 // OUTPUT: group ID#
-@c @implementation
-public func NewConfettiGroup(_ def: UnsafeMutablePointer<NewConfettiGroupDefType>) -> Int16 {
+func NewConfettiGroup(_ def: UnsafeMutablePointer<NewConfettiGroupDefType>) -> Int16 {
     // SCAN FOR A FREE GROUP
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
         if gConfettiGroups[i] == nil {
@@ -184,8 +181,7 @@ public func NewConfettiGroup(_ def: UnsafeMutablePointer<NewConfettiGroupDefType
 }
 
 // Returns true if confetti group was invalid or is full.
-@c @implementation
-public func AddConfettiToGroup(_ def: UnsafeMutablePointer<NewConfettiDefType>) -> UInt8 {
+func AddConfettiToGroup(_ def: UnsafeMutablePointer<NewConfettiDefType>) -> UInt8 {
     let group = Int(def.pointee.groupNum)
 
     if group < 0 || group >= Int(MAX_CONFETTI_GROUPS) {
@@ -463,8 +459,7 @@ private func drawConfettiGroups() {
 
 // MARK: - Verify
 
-@c @implementation
-public func VerifyConfettiGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
+func VerifyConfettiGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
     guard let g = gConfettiGroups[Int(group)] else {
         return 0
     }
@@ -474,8 +469,7 @@ public func VerifyConfettiGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> U
 
 // MARK: - Make confetti explosion
 
-@c @implementation
-public func MakeConfettiExplosion(_ x: Float, _ y: Float, _ z: Float, _ force: Float, _ scale: Float, _ texture: Int16, _ quantity: Int16) {
+func MakeConfettiExplosion(_ x: Float, _ y: Float, _ z: Float, _ force: Float, _ scale: Float, _ texture: Int16, _ quantity: Int16) {
     let radius = 1.0 * scale
 
     gNewConfettiGroupDef.magicNum = 0

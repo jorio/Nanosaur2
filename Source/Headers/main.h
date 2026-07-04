@@ -49,12 +49,6 @@ typedef enum SWIFT_ENUM_CLOSED VSMode
 //=================================================
 
 
-void GameMain(void);
-extern	void ToolBoxInit(void);
-void MoveEverything(void);
-void InitDefaultPrefs(void);
-void StartLevelCompletion(float coolDownTimer);
-Boolean PrimeTimeDemoSpline(long splineNum, SplineItemType *itemPtr);
 
-void LoadGlobalAssets(void);
-void DisposeGlobalAssets(void);
+
+void GameMain(void);

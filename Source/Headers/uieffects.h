@@ -82,5 +82,4 @@ typedef struct
 	float seed;
 } Twitch;
 
-void InitTwitchSystem(void);
 Twitch* _Nullable MakeTwitch(ObjNode* _Nullable puppet, int presetAndFlags);

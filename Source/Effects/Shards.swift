@@ -60,8 +60,7 @@ private var gShardSrcObj: UnsafeMutablePointer<ObjNode>?
     }
 }
 
-@c @implementation
-public func InitShardSystem() {
+func InitShardSystem() {
     gNumShards = 0
 
     for i in 0..<maxShards {
@@ -113,8 +112,7 @@ private func updateShardTransformMatrix(_ shard: inout ShardType) {
     shard.matrix = m2.multiplied(by: m1)
 }
 
-@c @implementation
-public func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Float, _ particleMode: ShardMode, _ particleDensity: Int, _ particleDecaySpeed: Float) {
+func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Float, _ particleMode: ShardMode, _ particleDensity: Int, _ particleDecaySpeed: Float) {
     gShardSrcObj = theNode
     gBoomForce = boomForce
     gShardMode = particleMode

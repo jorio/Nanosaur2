@@ -77,8 +77,7 @@ public func Localize(_ stringID: LocStrID) -> UnsafePointer<CChar> {
     return UnsafePointer(entry)
 }
 
-@c @implementation
-public func DisposeLocalizedStrings() {
+func DisposeLocalizedStrings() {
     if gStringsBuffer != nil {
         SafeDisposePtr(gStringsBuffer)
         gStringsBuffer = nil

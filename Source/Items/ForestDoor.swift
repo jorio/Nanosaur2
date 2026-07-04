@@ -9,8 +9,7 @@ private var gForestDoorOpen = [Bool](repeating: false, count: maxDamDoors)
     UnsafeMutableRawPointer(n.pointer(to: \.Sparkles)!).assumingMemoryBound(to: Int16.self)
 }
 
-@c @implementation
-public func InitForestDoors() {
+func InitForestDoors() {
     for i in 0..<maxDamDoors {
         gForestDoorOpen[i] = false
     }

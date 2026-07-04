@@ -126,9 +126,6 @@ typedef struct
 
 //=================================================
 
-SkeletonDefType *LoadSkeletonFile(short skeletonType);
-OSErr InitPrefsFolder(Boolean createIt);
-OSErr LoadPrefs(void);
 OSErr SavePrefs(void);
 
 #define IsStereoAnaglyphColor() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_COLOR)
@@ -137,24 +134,11 @@ OSErr SavePrefs(void);
 #define IsStereoShutter() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
 #define IsStereo() (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 
-void LoadPlayfield(FSSpec *specPtr);
 
-Boolean SaveGame(int fileSlot);
-Boolean LoadSavedGame(int fileSlot, SaveGameType* outData);
 Boolean DeleteSavedGame(int fileSlot);
-void UseSaveGame(const SaveGameType* saveData);
 
-void LoadLevelArt(void);
-Ptr LoadSuperTilePixelBuffer(short fRefNum);
-MOMaterialObject* LoadSuperTileTexture(Ptr pixelBuffer, int texSize);
-void AssembleSeamlessSuperTileTexture(int row, int col, Ptr canvas);
 
-OSErr LoadUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
-OSErr SaveUserDataFile(const char* filename, const char* magic, long payloadLength, Ptr payloadPtr);
-OSErr DeleteUserDataFile(const char* filename);
-Ptr LoadDataFile(const char* path, long* outLength);
-char* LoadTextFile(const char* path, long* outLength);
 
-char* CSVIterator(char** csvCursor, bool* eolOut);
 
-Ptr DecompressQTImage(const char* data, int dataSize, int expectedWidth, int expectedHeight);
+
+OSErr LoadPrefs(void);

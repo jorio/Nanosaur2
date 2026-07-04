@@ -9,11 +9,7 @@
 
 			/* ITEMS */
 
-extern	void InitItemsManager(void);
-void CreateCyclorama(void);
-void DrawCyclorama(ObjNode *theNode);
 
-Boolean DoTrig_MiscSmackableObject(ObjNode *trigger, ObjNode *theNode);
 
 
 		/* EGGS */
@@ -30,8 +26,6 @@ typedef enum SWIFT_ENUM_CLOSED EggColor
 } EggColor;
 
 
-void DropEgg_NoWormhole(short playerNum);
-void FindAllEggItems(void);
 
 extern	Byte	gNumEggsToSave[NUM_EGG_TYPES];
 extern	Byte	gNumEggsSaved[NUM_EGG_TYPES];
@@ -40,9 +34,6 @@ extern	Byte	gNumEggsSaved[NUM_EGG_TYPES];
 
 		/* WORMHOLE */
 
-void InitWormholes(void);
-ObjNode *FindClosestEggWormholeInRange(short playerNum, OGLPoint3D *pt);
-ObjNode *MakeEntryWormhole(short playerNum);
 
 extern	Boolean			gOpenPlayerWormhole;
 extern	ObjNode			*gExitWormhole;
@@ -78,25 +69,18 @@ enum
 
 	/* FOREST DOOR */
 
-void InitForestDoors(void);
 
 
 	/* ELECTRODES */
 
-void InitZaps(void);
-void FreeAllZaps(void);
 
 
 		/* DUST DEVIL */
 
-void InitDustDevilMemory(void);
-void UpdateDustDevilUVAnimation(void);
-Boolean PrimeDustDevil(long splineNum, SplineItemType *itemPtr);
 
 
 		/* LASER ORBS */
 
-Boolean PrimeLaserOrb(long splineNum, SplineItemType *itemPtr);
 
 
 

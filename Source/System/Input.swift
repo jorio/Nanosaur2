@@ -47,8 +47,7 @@ private var gTextInput = ""
 
 // MARK: - Init input
 
-@c @implementation
-public func InitInput() {
+func InitInput() {
     for i in 0..<Int(NUM_CONTROL_NEEDS) {
         gLastGamepadForNeedAnyP[i] = -1
     }
@@ -69,13 +68,11 @@ private func updateKeyState(_ state: inout UInt8, _ downNow: Bool) {
     }
 }
 
-@c @implementation
-public func InvalidateNeedState(_ need: Int32) {
+func InvalidateNeedState(_ need: Int32) {
     gNeedStates[Int(need)] = UInt8(KEYSTATE_IGNOREHELD)
 }
 
-@c @implementation
-public func InvalidateAllInputs() {
+func InvalidateAllInputs() {
     for i in 0..<gNeedStates.count { gNeedStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
     for i in 0..<gKeyboardStates.count { gKeyboardStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
     for i in 0..<gMouseButtonStates.count { gMouseButtonStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
@@ -213,8 +210,7 @@ private func updateControllerSpecificInputNeeds(_ controllerNum: Int) {
 
 // MARK: - Public functions
 
-@c @implementation
-public func DoSDLMaintenance() {
+func DoSDLMaintenance() {
     gTextInput = ""
     gMouseMotionNow = false
     var mouseWheelDeltaX: Int32 = 0
@@ -341,8 +337,7 @@ public func GetNeedState(_ needID: Int32, _ playerID: Int32) -> Int32 {
     return Int32(KEYSTATE_OFF)
 }
 
-@c @implementation
-public func GetLastControllerForNeedAnyP(_ needID: Int32) -> Int32 {
+func GetLastControllerForNeedAnyP(_ needID: Int32) -> Int32 {
     SwGameAssert(needID >= 0)
     SwGameAssert(needID < Int32(NUM_CONTROL_NEEDS))
 
@@ -360,8 +355,7 @@ private func getNeedAnalogValueAnyP(_ needID: Int32) -> Float {
     return GetNeedAnalogValue(needID, Int32(gNumPlayers) - 1) // KBMFallbackPlayer()
 }
 
-@c @implementation
-public func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
+func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
     if playerID == Int32(ANY_PLAYER) {
         return getNeedAnalogValueAnyP(needID)
     }
@@ -387,8 +381,7 @@ public func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
     return 0.0
 }
 
-@c @implementation
-public func GetNeedAnalogSteering(_ negativeNeedID: Int32, _ positiveNeedID: Int32, _ playerID: Int32) -> Float {
+func GetNeedAnalogSteering(_ negativeNeedID: Int32, _ positiveNeedID: Int32, _ playerID: Int32) -> Float {
     let neg = GetNeedAnalogValue(negativeNeedID, playerID)
     let pos = GetNeedAnalogValue(positiveNeedID, playerID)
 
@@ -399,8 +392,7 @@ public func GetNeedAnalogSteering(_ negativeNeedID: Int32, _ positiveNeedID: Int
     }
 }
 
-@c @implementation
-public func UserWantsOut() -> UInt8 {
+func UserWantsOut() -> UInt8 {
     if gGammaFadeFrac < 1 { // disallow skipping during fade-in
         return 0
     }
@@ -412,8 +404,7 @@ public func UserWantsOut() -> UInt8 {
     return out ? 1 : 0
 }
 
-@c @implementation
-public func IsCmdQDown() -> UInt8 {
+func IsCmdQDown() -> UInt8 {
 #if os(macOS)
     let cmdHeld = SwIsKeyHeld(Int(SDL_SCANCODE_LGUI.rawValue)) || SwIsKeyHeld(Int(SDL_SCANCODE_RGUI.rawValue))
     let qScancode = SDL_GetScancodeFromKey(SDLK_Q, nil)
@@ -424,8 +415,7 @@ public func IsCmdQDown() -> UInt8 {
 #endif
 }
 
-@c @implementation
-public func IsCheatKeyComboDown() -> UInt8 {
+func IsCheatKeyComboDown() -> UInt8 {
     // The original Mac version used B-R-I, but some cheap PC keyboards can't register
     // this particular key combo, so C-M-R is available as an alternative.
     let combo = (SwIsKeyHeld(Int(SDL_SCANCODE_B.rawValue)) && SwIsKeyHeld(Int(SDL_SCANCODE_R.rawValue)) && SwIsKeyHeld(Int(SDL_SCANCODE_I.rawValue)))
@@ -435,8 +425,7 @@ public func IsCheatKeyComboDown() -> UInt8 {
 
 // MARK: - Controller mapping
 
-@c @implementation
-public func GetNumGamepad() -> Int32 {
+func GetNumGamepad() -> Int32 {
     var count: Int32 = 0
 
     for i in 0..<maxLocalPlayers {
@@ -680,8 +669,7 @@ private func swapControllers(_ slotA: Int, _ slotB: Int) {
     }
 }
 
-@c @implementation
-public func SetMainController(_ oldSlot: Int32) {
+func SetMainController(_ oldSlot: Int32) {
     swapControllers(0, Int(oldSlot))
 }
 
@@ -778,8 +766,7 @@ public func ResetDefaultMouseBindings() {
 private var gMouseDeltaTimeSinceLastCall: Float = 0
 private var gMouseDeltaLast = OGLVector2D()
 
-@c @implementation
-public func GetMouseDelta() -> OGLVector2D {
+func GetMouseDelta() -> OGLVector2D {
     gMouseDeltaTimeSinceLastCall += gFramesPerSecondFrac
 
     // Mouse sensitivity settings are calibrated to feel good at 60 FPS,
@@ -795,8 +782,7 @@ public func GetMouseDelta() -> OGLVector2D {
     return gMouseDeltaLast
 }
 
-@c @implementation
-public func GetMouseCoords640x480() -> OGLPoint2D {
+func GetMouseCoords640x480() -> OGLPoint2D {
     var mx: Float = 0
     var my: Float = 0
     var ww: Int32 = 0
@@ -814,8 +800,7 @@ public func GetMouseCoords640x480() -> OGLPoint2D {
 
 private var gCursorCoordBackup = OGLPoint2D(x: -1, y: -1)
 
-@c @implementation
-public func BackupRestoreCursorCoord(_ backup: UInt8) {
+func BackupRestoreCursorCoord(_ backup: UInt8) {
     if backup != 0 {
         gCursorCoordBackup = gCursorCoord
     } else if gCursorCoordBackup.x >= 0 {
@@ -835,8 +820,7 @@ public func BackupRestoreCursorCoord(_ backup: UInt8) {
     }
 }
 
-@c @implementation
-public func GrabMouse(_ capture: UInt8) {
+func GrabMouse(_ capture: UInt8) {
     if capture != 0 {
         BackupRestoreCursorCoord(1)
     }

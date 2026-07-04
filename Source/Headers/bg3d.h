@@ -117,15 +117,6 @@ typedef struct
 //-----------------------------------
 
 
-void InitBG3DManager(void);
-void ImportBG3D(FSSpec* _Nonnull spec, int groupNum, short varType);
-void DisposeBG3DContainer(int groupNum);
-void DisposeAllBG3DContainers(void);
-void BG3D_SetContainerMaterialFlags(short group, short type, short geometryNum, uint32_t flags);
-void BG3D_SphereMapGeomteryMaterial(short group, short type, short geometryNum, uint16_t combineMode, uint16_t envMapNum);
-void SetSphereMapInfoOnVertexArrayData(MOVertexArrayData* _Nonnull va, uint16_t combineMode, uint16_t envMapNum);
-void SetSphereMapInfoOnVertexArrayObject(MOVertexArrayObject* _Nonnull mo, uint16_t combineMode, uint16_t envMapNum);
-void SetSphereMapInfoOnMaterialObject(MOMaterialObject* _Nonnull mat, uint16_t combineMode, uint16_t envMapNum);
 
 
 #endif

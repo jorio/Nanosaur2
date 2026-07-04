@@ -89,8 +89,7 @@ private let gWaterFixedYCoord: [Float] = [
 
 // MARK: - Dispose water
 
-@c @implementation
-public func DisposeWater() {
+func DisposeWater() {
     guard let handle = gWaterListHandle else {
         return
     }
@@ -105,8 +104,7 @@ public func DisposeWater() {
 //
 // Called during terrain prime function to initialize
 
-@c @implementation
-public func PrimeTerrainWater() {
+func PrimeTerrainWater() {
     initRipples()
 
     if gNumWaterPatches > MAX_WATER {
@@ -421,8 +419,7 @@ private func drawWater() {
 
 // MARK: - Do water collision detect
 
-@c @implementation
-public func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x: Float, _ y: Float, _ z: Float, _ patchNum: UnsafeMutablePointer<Int32>?) -> UInt8 {
+func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x: Float, _ y: Float, _ z: Float, _ patchNum: UnsafeMutablePointer<Int32>?) -> UInt8 {
     for i in 0..<Int(gNumWaterPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
@@ -447,8 +444,7 @@ public func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x
 //
 // Returns true if x/z coords are over a water bbox
 
-@c @implementation
-public func IsXZOverWater(_ x: Float, _ z: Float) -> UInt8 {
+func IsXZOverWater(_ x: Float, _ z: Float) -> UInt8 {
     for i in 0..<Int(gNumWaterPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
@@ -465,8 +461,7 @@ public func IsXZOverWater(_ x: Float, _ z: Float) -> UInt8 {
 //
 // returns TRUE if over water.
 
-@c @implementation
-public func GetWaterY(_ x: Float, _ z: Float, _ y: UnsafeMutablePointer<Float>) -> UInt8 {
+func GetWaterY(_ x: Float, _ z: Float, _ y: UnsafeMutablePointer<Float>) -> UInt8 {
     for i in 0..<Int(gNumWaterPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
@@ -496,8 +491,7 @@ private func initRipples() {
     }
 }
 
-@c @implementation
-public func CreateNewRipple(_ where_: UnsafePointer<OGLPoint3D>, _ baseScale: Float, _ scaleSpeed: Float, _ fadeRate: Float) {
+func CreateNewRipple(_ where_: UnsafePointer<OGLPoint3D>, _ baseScale: Float, _ scaleSpeed: Float, _ fadeRate: Float) {
     let x = where_.pointee.x
     var y = where_.pointee.y
     let z = where_.pointee.z
@@ -539,8 +533,7 @@ public func CreateNewRipple(_ where_: UnsafePointer<OGLPoint3D>, _ baseScale: Fl
     gNumRipples += 1
 }
 
-@c @implementation
-public func CreateMultipleNewRipples(_ x: Float, _ z: Float, _ baseScale: Float, _ scaleSpeed: Float, _ fadeRate: Float, _ numRipples: Int16) {
+func CreateMultipleNewRipples(_ x: Float, _ z: Float, _ baseScale: Float, _ scaleSpeed: Float, _ fadeRate: Float, _ numRipples: Int16) {
     // GET Y COORD FOR WATER
     var y2: Float = 0
     guard GetWaterY(x, z, &y2) != 0 else {

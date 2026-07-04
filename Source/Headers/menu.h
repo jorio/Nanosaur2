@@ -117,9 +117,5 @@ ObjNode* _Nonnull MakeMenu(const MenuItem* _Nonnull menu, const MenuStyle* _Null
 void LayoutCurrentMenuAgain(bool animate);
 int GetCurrentMenu(void);
 int GetCurrentMenuItemID(void);
-bool IsMenuMouseControlled(void);
-ObjNode* _Nullable GetCurrentMenuItemObject(void);
-float GetMenuIdleTime(void);
-void KillMenu(int returnCode);
 bool IsMenuTreeEndSentinel(const MenuItem* _Nonnull menuItem);
 int DisableEmptyFileSlots(const MenuItem* _Nonnull menuItem);

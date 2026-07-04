@@ -7,18 +7,13 @@
 void DoPaused(void);
 void DoReallyQuit(void);
 
-void DoWarmUpScreen(void);
-void DoLegalScreen(void);
 
-void DrawLoading(float percent);
 
 
 		/* MAIN MENU */
 
-void DoMainMenuScreen(void);
 ObjNode* MakeMouseCursorObject(void);
 
-void BuildMainMenuObjects(void);
 
 void RegisterSettingsMenu(void);
 
@@ -47,7 +42,6 @@ typedef struct
 #define	EffectNum			Special[0]
 #define	HasPlayedEffect		Flag[0]
 
-void DoIntroStoryScreen(void);
 
 
 		/* LEVEL INTRO */
@@ -60,18 +54,15 @@ enum
 	INTRO_MODE_SAVEGAME
 };
 
-void DoLevelIntroScreen(Byte mode);
 
 
 
 	/* WIN SCREEN */
 
-void DoWinScreen(void);
 
 
 	/* GATHER CONTROLLERS */
 
-Boolean DoLocalGatherScreen(void);
 
 	/* ANAGLYPH CALIBRATION */
 

@@ -218,23 +218,4 @@ typedef struct
 
 //-----------------------------
 
-void MO_InitHandler(void);
-MetaObjectPtr MO_CreateNewObjectOfType(MetaObjectType type, intptr_t subType, void *data);
-MetaObjectPtr MO_GetNewReference(MetaObjectPtr mo);
-void MO_AppendToGroup(MOGroupObject *group, MetaObjectPtr newObject);
-void MO_AttachToGroupStart(MOGroupObject *group, MetaObjectPtr newObject);
-void MO_DrawGeometry_VertexArray(const MOVertexArrayData *data);
-void MO_DrawGroup(const MOGroupObject *object);
-void MO_DrawObject(const MetaObjectPtr object);
-void MO_DrawMaterial(MOMaterialObject *matObj);
-void MO_DrawMatrix(const MOMatrixObject *matObj);
-void MO_DrawPicture(const MOPictureObject *picObj);
-void MO_DisposeObjectReference(MetaObjectPtr obj);
-void MO_DuplicateVertexArrayData(MOVertexArrayData *inData, MOVertexArrayData *outData, short varType);
-void MO_DeleteObjectInfo_Geometry_VertexArray(MOVertexArrayData *data);
-void MO_CalcBoundingBox(MetaObjectPtr object, OGLBoundingBox *bBox, OGLMatrix4x4 *m);
-void MO_CalcBoundingSphere(MetaObjectPtr object, float *bSphere);
 
-void MO_DrawSprite(const MOSpriteObject *spriteObj);
-void MO_VertexArray_OffsetUVs(MetaObjectPtr object, float du, float dv);
-void MO_Object_OffsetUVs(MetaObjectPtr object, float du, float dv);

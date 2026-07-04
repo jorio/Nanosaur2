@@ -26,8 +26,7 @@ private var gNumWorldCalcsThisFrame: Int32 = 0
 
 // MARK: - Object collision
 
-@c @implementation
-public func AddCollisionBoxToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) {
+func AddCollisionBoxToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) {
     let boxPtr = collisionBoxesBase(theNode)
 
     let i = Int(theNode.pointee.NumCollisionBoxes) // inc # collision boxes
@@ -43,8 +42,7 @@ public func AddCollisionBoxToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ 
     KeepOldCollisionBoxes(theNode)
 }
 
-@c @implementation
-public func CreateCollisionBoxFromBoundingBox(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
+func CreateCollisionBoxFromBoundingBox(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
     theNode.pointee.NumCollisionBoxes = 1
 
     var sx: Float, sy: Float, sz: Float
@@ -72,8 +70,7 @@ public func CreateCollisionBoxFromBoundingBox(_ theNode: UnsafeMutablePointer<Ob
 }
 
 // Same as above, but does not touch the old boxes
-@c @implementation
-public func CreateCollisionBoxFromBoundingBox_Update(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
+func CreateCollisionBoxFromBoundingBox_Update(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
     theNode.pointee.NumCollisionBoxes = 1
 
     var sx: Float, sy: Float, sz: Float
@@ -100,8 +97,7 @@ public func CreateCollisionBoxFromBoundingBox_Update(_ theNode: UnsafeMutablePoi
 }
 
 // Same as above except it expands the x/z box to the max of x or z so object can rotate without problems.
-@c @implementation
-public func CreateCollisionBoxFromBoundingBox_Maximized(_ theNode: UnsafeMutablePointer<ObjNode>, _ scaleMag: Float) {
+func CreateCollisionBoxFromBoundingBox_Maximized(_ theNode: UnsafeMutablePointer<ObjNode>, _ scaleMag: Float) {
     theNode.pointee.NumCollisionBoxes = 1
 
     // POINT TO BOUNDING BOX
@@ -138,8 +134,7 @@ public func CreateCollisionBoxFromBoundingBox_Maximized(_ theNode: UnsafeMutable
     KeepOldCollisionBoxes(theNode)
 }
 
-@c @implementation
-public func CreateCollisionBoxFromBoundingBox_Rotated(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
+func CreateCollisionBoxFromBoundingBox_Rotated(_ theNode: UnsafeMutablePointer<ObjNode>, _ tweakXZ: Float, _ tweakY: Float) {
     theNode.pointee.NumCollisionBoxes = 1
 
     // CALC ROTATED BBOX
@@ -169,8 +164,7 @@ public func CreateCollisionBoxFromBoundingBox_Rotated(_ theNode: UnsafeMutablePo
 }
 
 // Also keeps old coordinate and stuff
-@c @implementation
-public func KeepOldCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>) {
+func KeepOldCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let boxes = collisionBoxesBase(theNode)
 
     for i in 0..<Int(theNode.pointee.NumCollisionBoxes) {
@@ -187,8 +181,7 @@ public func KeepOldCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // This does a simple 1 box calculation for basic objects.
 // Box is calculated based on theNode's coords.
-@c @implementation
-public func CalcObjectBoxFromNode(_ theNode: UnsafeMutablePointer<ObjNode>) {
+func CalcObjectBoxFromNode(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if theNode.pointee.NumCollisionBoxes > 0 {
         let boxPtr = collisionBoxesBase(theNode) // get ptr to 1st box (presumed only box)
 
@@ -203,8 +196,7 @@ public func CalcObjectBoxFromNode(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // This does a simple 1 box calculation for basic objects.
 // Box is calculated based on gCoord
-@c @implementation
-public func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else {
         return
     }
@@ -220,8 +212,7 @@ public func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 }
 
 // Sets an object's collision offset/bounds. Adjust accordingly for input rotation 0..3 (clockwise)
-@c @implementation
-public func SetObjectCollisionBounds(_ theNode: UnsafeMutablePointer<ObjNode>, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) {
+func SetObjectCollisionBounds(_ theNode: UnsafeMutablePointer<ObjNode>, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) {
     theNode.pointee.NumCollisionBoxes = 1 // 1 collision box
     theNode.pointee.TopOff = top
     theNode.pointee.BottomOff = bottom
@@ -234,16 +225,14 @@ public func SetObjectCollisionBounds(_ theNode: UnsafeMutablePointer<ObjNode>, _
     KeepOldCollisionBoxes(theNode)
 }
 
-@c @implementation
-public func CalcNewTargetOffsets(_ theNode: UnsafeMutablePointer<ObjNode>, _ scale: Float) {
+func CalcNewTargetOffsets(_ theNode: UnsafeMutablePointer<ObjNode>, _ scale: Float) {
     theNode.pointee.TargetOff.x = RandomFloat2() * scale
     theNode.pointee.TargetOff.z = RandomFloat2() * scale
 }
 
 // MARK: - Object shadows
 
-@c @implementation
-public func AttachShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType: ShadowType, _ scaleX: Float, _ scaleZ: Float, _ checkBlockers: UInt8) -> UnsafeMutablePointer<ObjNode>? {
+func AttachShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType: ShadowType, _ scaleX: Float, _ scaleZ: Float, _ checkBlockers: UInt8) -> UnsafeMutablePointer<ObjNode>? {
     let x = theNode.pointee.Coord.x
     let z = theNode.pointee.Coord.z
     let y = GetTerrainY(x, z) + SHADOW_Y_OFF
@@ -273,8 +262,7 @@ public func AttachShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ sha
 }
 
 // For creating shadows whic are never going to call UpdateShadow()
-@c @implementation
-public func AttachStaticShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType: ShadowType, _ scaleX: Float, _ scaleZ: Float) -> UnsafeMutablePointer<ObjNode> {
+func AttachStaticShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType: ShadowType, _ scaleX: Float, _ scaleZ: Float) -> UnsafeMutablePointer<ObjNode> {
     let x = theNode.pointee.Coord.x
     let z = theNode.pointee.Coord.z
     let y = GetTerrainY(x, z) + SHADOW_Y_OFF
@@ -301,8 +289,7 @@ public func AttachStaticShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>,
     return shadowObj
 }
 
-@c @implementation
-public func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else {
         return
     }
@@ -449,8 +436,7 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Object culling
 
-@c @implementation
-public func CullTestAllObjects() {
+func CullTestAllObjects() {
     guard var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr else { // get & verify 1st node
         return
     }
@@ -562,8 +548,7 @@ public func CullTestAllObjects() {
 }
 
 // Returns true if object is culled in all panes
-@c @implementation
-public func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
+func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
     for i in 0..<Int(gNumPlayers) {
         let culledThisPane = theNode.pointee.StatusBits & (UInt32(STATUS_BIT_ISCULLED1) << i)
         if culledThisPane == 0 {
@@ -576,8 +561,7 @@ public func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> U
 
 // MARK: - World points
 
-@c @implementation
-public func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
+func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
     glMatrixMode(GLenum(GL_MODELVIEW))
     glPushMatrix()
     glLoadIdentity()
@@ -706,8 +690,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
 
 // MARK: - Object chains
 
-@c @implementation
-public func HideObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func HideObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
@@ -716,8 +699,7 @@ public func HideObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     }
 }
 
-@c @implementation
-public func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
@@ -728,8 +710,7 @@ public func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
 // MARK: - Background picture object node
 
-@c @implementation
-public func MakeBackgroundPictureObject(_ imagePath: UnsafePointer<CChar>) -> UnsafeMutablePointer<ObjNode> {
+func MakeBackgroundPictureObject(_ imagePath: UnsafePointer<CChar>) -> UnsafeMutablePointer<ObjNode> {
     let backgroundPicture = MO_CreateNewObjectOfType(.picture, 0, UnsafeMutableRawPointer(mutating: imagePath))
 
     var def = NewObjectDefinitionType()

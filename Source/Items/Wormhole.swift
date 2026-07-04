@@ -16,8 +16,7 @@ private let minDistToGetEgg: Float = 1600.0
     UnsafeMutableRawPointer(data.pointer(to: \.uvs)!).assumingMemoryBound(to: UnsafeMutablePointer<OGLTextureCoord>?.self)
 }
 
-@c @implementation
-public func InitWormholes() {
+func InitWormholes() {
     gOpenPlayerWormhole = 0
     gExitWormhole = nil
 
@@ -161,8 +160,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     }
 }
 
-@c @implementation
-public func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointer<OGLPoint3D>!) -> UnsafeMutablePointer<ObjNode>! {
+func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointer<OGLPoint3D>!) -> UnsafeMutablePointer<ObjNode>! {
     var best: UnsafeMutablePointer<ObjNode>?
     var minDist: Float = 1000000
 
@@ -225,8 +223,7 @@ public func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutabl
 // MARK: - Entry Wormhole
 
 // Create an entry wormhole at Player 1's position.
-@c @implementation
-public func MakeEntryWormhole(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>! {
+func MakeEntryWormhole(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>! {
     let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
     let x = playerInfo.pointee.coord.x
     let z = playerInfo.pointee.coord.z

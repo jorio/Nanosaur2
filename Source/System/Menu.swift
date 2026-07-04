@@ -90,11 +90,9 @@ private func disposeMenuNavigation() {
 @c @implementation
 public func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
 
-@c @implementation
-public func GetMenuIdleTime() -> Float { gNav != nil ? gNav!.pointee.idleTime : 0.0 }
+func GetMenuIdleTime() -> Float { gNav != nil ? gNav!.pointee.idleTime : 0.0 }
 
-@c @implementation
-public func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != .off : false }
+func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != .off : false }
 
 @c @implementation
 public func GetCurrentMenuItemID() -> Int32 {
@@ -102,8 +100,7 @@ public func GetCurrentMenuItemID() -> Int32 {
     return nav.pointee.menu![Int(nav.pointee.focusRow)].id
 }
 
-@c @implementation
-public func GetCurrentMenuItemObject() -> UnsafeMutablePointer<ObjNode>? {
+func GetCurrentMenuItemObject() -> UnsafeMutablePointer<ObjNode>? {
     guard let nav = gNav, nav.pointee.focusRow >= 0 else { return nil }
     return mObj(Int(nav.pointee.focusRow))
 }
@@ -121,8 +118,7 @@ public func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>) -> Int32 
     return isValid != 0 ? 0 : Int32(kMILayoutFlagDisabled)
 }
 
-@c @implementation
-public func KillMenu(_ returnCode: Int32) {
+func KillMenu(_ returnCode: Int32) {
     if gNav!.pointee.menuState == .ready {
         gNav!.pointee.menuPick = returnCode; gNav!.pointee.menuState = .fadeOut
     }

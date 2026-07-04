@@ -134,30 +134,6 @@ typedef struct
 //=====================================================================
 
 
-void SetTerrainScale(int polygonSize);
 
-void CreateSuperTileMemoryList(void);
-void DisposeSuperTileMemoryList(void);
-extern 	void DisposeTerrain(void);
-void GetSuperTileInfo(long x, long z, int *superCol, int *superRow, int *tileCol, int *tileRow);
-extern	void InitTerrainManager(void);
-float	GetTerrainY(float x, float z);
-float	GetMinTerrainY(float x, float z, short group, short type, float scale);
-void InitCurrentScrollSettings(void);
 
-extern 	void BuildTerrainItemList(void);
-void AddTerrainItemsOnSuperTile(long row, long col);
-extern 	Boolean TrackTerrainItem(ObjNode *theNode);
-void DrawTerrain(ObjNode *theNode);
-Boolean SeeIfCoordsOutOfRange(float x, float z);
-void InitSuperTileGrid(void);
-void RotateOnTerrain(ObjNode *theNode, float yOffset, OGLVector3D *surfaceNormal);
-void RotateOnTerrain_WideArea(ObjNode *theNode, float yOffset, float radius);
-void DoPlayerTerrainUpdate(void);
-void CalcTileNormals(long row, long col, OGLVector3D *n1, OGLVector3D *n2);
-void CalcTileNormals_NotNormalized(long row, long col, OGLVector3D *n1, OGLVector3D *n2);
-void CalculateSplitModeMatrix(void);
-void CalculateSupertileVertexNormals(MOVertexArrayData	*meshData, long	startRow, long startCol);
 
-void DoItemShadowCasting(void);
-Boolean SeeIfCrossedLineMarker(ObjNode *theNode, long *whichLine);

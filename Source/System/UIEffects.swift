@@ -559,8 +559,7 @@ public func MakeTwitch(_ puppet: UnsafeMutablePointer<ObjNode>?, _ presetAndFlag
 
 // MARK: - Init
 
-@c @implementation
-public func InitTwitchSystem() {
+func InitTwitchSystem() {
     loadTwitchPresets()
     initTwitchPool()
 }

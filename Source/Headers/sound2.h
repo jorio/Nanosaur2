@@ -111,28 +111,8 @@ extern	ChannelInfoType				gChannelInfo[];
 //===================== PROTOTYPES ===================================
 
 
-extern void	InitSoundTools(void);
-void ShutdownSound(void);
 
-void StopAChannel(short *channelNum);
-extern	void StopAllEffectChannels(void);
-void LoadSoundBank(uint8_t bank);
-void DisposeSoundBank(uint8_t bank);
-void PlaySong(short songNum, Boolean loopFlag);
-extern void	KillSong(void);
-extern	short PlayEffect(short effectNum);
-short PlayEffect_Parms3D(short effectNum, OGLPoint3D *where, uint32_t rateMultiplier, float volumeAdjust);
 extern void	ToggleMusic(void);
 void UpdateGlobalVolume(void);
 short PlayEffect_Parms(short effectNum, uint32_t leftVolume, uint32_t rightVolume, unsigned long rateMultiplier);
-void ChangeChannelVolume(short channel, float leftVol, float rightVol);
-short PlayEffect3D(short effectNum, OGLPoint3D *where);
-Boolean Update3DSoundChannel(short effectNum, short *channel, OGLPoint3D *where);
-Boolean IsEffectChannelPlaying(short chanNum);
-void UpdateListenerLocation(void);
-void ChangeChannelRate(short channel, long rateMult);
-Boolean StopAChannelIfEffectNum(short *channelNum, short effectNum);
-void PauseAllChannels(Boolean pause);
-void FadeSound(float loudness);
 
-void PlayRumbleEffect(short effectNum, int playerNum);

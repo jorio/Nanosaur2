@@ -27,16 +27,14 @@ private func LoadSpriteFromDualImage(_ path: String) -> SpriteType {
     return sprite
 }
 
-@c @implementation
-public func InitSpriteManager() {
+func InitSpriteManager() {
     for i in 0..<Int32(MAX_SPRITE_GROUPS) {
         SetSpriteGroupList(i, nil)
         SetNumSpritesInGroup(i, 0)
     }
 }
 
-@c @implementation
-public func DisposeAllSpriteGroups() {
+func DisposeAllSpriteGroups() {
     for i in 0..<Int32(MAX_SPRITE_GROUPS) {
         if GetSpriteGroupList(i) != nil {
             DisposeSpriteGroup(i)
@@ -44,8 +42,7 @@ public func DisposeAllSpriteGroups() {
     }
 }
 
-@c @implementation
-public func DisposeSpriteGroup(_ groupNum: Int32) {
+func DisposeSpriteGroup(_ groupNum: Int32) {
     let n = GetNumSpritesInGroup(groupNum) // get # sprites in this group
     if n == 0 || GetSpriteGroupList(groupNum) == nil {
         return
@@ -77,15 +74,13 @@ private func AllocSpriteGroup(_ groupNum: Int32, _ capacity: Int32) {
     SwGameAssert(GetSpriteGroupList(groupNum) != nil)
 }
 
-@c @implementation
-public func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: UnsafePointer<CChar>, _ flags: Int32) {
+func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: UnsafePointer<CChar>, _ flags: Int32) {
     AllocSpriteGroup(groupNum, 1)
     GetSpriteGroupList(groupNum)![0] = LoadSpriteFromDualImage(String(cString: path))
     SwGameAssert(GetSpriteGroupList(groupNum)![0].materialObject != nil)
 }
 
-@c @implementation
-public func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: UnsafePointer<CChar>) {
+func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: UnsafePointer<CChar>) {
     AllocSpriteGroup(groupNum, numSprites)
 
     let seriesNameStr = String(cString: seriesName)
@@ -99,8 +94,7 @@ public func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ 
     }
 }
 
-@c @implementation
-public func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ spritePaths: UnsafeMutablePointer<UnsafePointer<CChar>>) {
+func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ spritePaths: UnsafeMutablePointer<UnsafePointer<CChar>>) {
     AllocSpriteGroup(groupNum, numSprites)
 
     let group = GetSpriteGroupList(groupNum)!
@@ -110,8 +104,7 @@ public func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ s
     }
 }
 
-@c @implementation
-public func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>, _ drawCentered: UInt8) -> UnsafeMutablePointer<ObjNode>? {
+func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>, _ drawCentered: UInt8) -> UnsafeMutablePointer<ObjNode>? {
     // ERROR CHECK
 
     if Int32(newObjDef.pointee.type) >= GetNumSpritesInGroup(Int32(newObjDef.pointee.group)) {
@@ -155,8 +148,7 @@ public func MakeSpriteObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefiniti
 }
 
 // Set the blending flag for all sprites in the group.
-@c @implementation
-public func BlendAllSpritesInGroup(_ group: Int16) {
+func BlendAllSpritesInGroup(_ group: Int16) {
     let n = GetNumSpritesInGroup(Int32(group)) // get # sprites in this group
     if n == 0 || GetSpriteGroupList(Int32(group)) == nil {
         SwFatal("BlendAllSpritesInGroup: this group is empty")
@@ -174,8 +166,7 @@ public func BlendAllSpritesInGroup(_ group: Int16) {
 }
 
 // Set the blending flag for 1 sprite in the group.
-@c @implementation
-public func BlendASprite(_ group: Int32, _ type: Int32) {
+func BlendASprite(_ group: Int32, _ type: Int32) {
     if type >= GetNumSpritesInGroup(group) {
         SwFatal("BlendASprite: illegal type")
     }

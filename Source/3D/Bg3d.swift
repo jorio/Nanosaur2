@@ -46,8 +46,7 @@ private func fsReadStruct<T>(_ refNum: Int16, _ value: inout T) -> OSErr {
 
 // MARK: - Init BG3D manager
 
-@c @implementation
-public func InitBG3DManager() {
+func InitBG3DManager() {
     for i in 0..<Int(SwMAX_BG3D_GROUPS) {
         SetBG3DContainer(Int32(i), nil)
     }
@@ -61,8 +60,7 @@ public func InitBG3DManager() {
 // varType == the Vertex Array Range group that we want to allocate the BG3D's vertex arrays with.
 // If it is -1 then we don't want it in VAR memory.
 
-@c @implementation
-public func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varType: Int16) {
+func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varType: Int16) {
     gImportBG3DVARType = varType
 
     // INIT SOME VARIABLES
@@ -704,8 +702,7 @@ private func initBG3DContainer() {
 
 // MARK: - Dispose all BG3D containers
 
-@c @implementation
-public func DisposeAllBG3DContainers() {
+func DisposeAllBG3DContainers() {
     for i in 0..<Int(SwMAX_BG3D_GROUPS) {
         if GetBG3DContainer(Int32(i)) != nil {
             DisposeBG3DContainer(Int32(i))
@@ -715,8 +712,7 @@ public func DisposeAllBG3DContainers() {
 
 // MARK: - Dispose BG3D
 
-@c @implementation
-public func DisposeBG3DContainer(_ groupNum: Int32) {
+func DisposeBG3DContainer(_ groupNum: Int32) {
     guard let file = GetBG3DContainer(groupNum) else { // point to this file's container object; see if already gone
         return
     }
@@ -741,8 +737,7 @@ public func DisposeBG3DContainer(_ groupNum: Int32) {
 //
 // geometryNum, -1 == all
 
-@c @implementation
-public func BG3D_SetContainerMaterialFlags(_ group: Int16, _ type: Int16, _ geometryNum: Int16, _ flags: UInt32) {
+func BG3D_SetContainerMaterialFlags(_ group: Int16, _ type: Int16, _ geometryNum: Int16, _ flags: UInt32) {
     func applyFlags(_ vaObj: UnsafeMutablePointer<MOVertexArrayObject>) {
         let n = vaObj.numMaterials
         if n <= 0 { // make sure there are materials
@@ -798,8 +793,7 @@ public func BG3D_SetContainerMaterialFlags(_ group: Int16, _ type: Int16, _ geom
 //
 // Set the appropriate flags on a geometry's matrial to be a sphere map
 
-@c @implementation
-public func BG3D_SphereMapGeomteryMaterial(_ group: Int16, _ type: Int16, _ geometryNum: Int16, _ combineMode: UInt16, _ envMapNum: UInt16) {
+func BG3D_SphereMapGeomteryMaterial(_ group: Int16, _ type: Int16, _ geometryNum: Int16, _ combineMode: UInt16, _ envMapNum: UInt16) {
     guard let moRaw = GetBG3DGroupObject(Int32(group), Int32(type)) else { // point to this object
         return
     }
@@ -836,8 +830,7 @@ public func BG3D_SphereMapGeomteryMaterial(_ group: Int16, _ type: Int16, _ geom
 
 // MARK: - Set sphere map info on vertex array object
 
-@c @implementation
-public func SetSphereMapInfoOnVertexArrayObject(_ mo: UnsafeMutablePointer<MOVertexArrayObject>, _ combineMode: UInt16, _ envMapNum: UInt16) {
+func SetSphereMapInfoOnVertexArrayObject(_ mo: UnsafeMutablePointer<MOVertexArrayObject>, _ combineMode: UInt16, _ envMapNum: UInt16) {
     let moRaw = UnsafeMutableRawPointer(mo)
     if moRaw.type != .geometry || moRaw.subType != Int(MO_GEOMETRY_SUBTYPE_VERTEXARRAY) {
         SwFatal("SetSphereMapInfo:  object isnt a vertex array")
@@ -856,8 +849,7 @@ public func SetSphereMapInfoOnVertexArrayObject(_ mo: UnsafeMutablePointer<MOVer
 
 // MARK: - Set sphere map info on vertex array data
 
-@c @implementation
-public func SetSphereMapInfoOnVertexArrayData(_ va: UnsafeMutablePointer<MOVertexArrayData>, _ combineMode: UInt16, _ envMapNum: UInt16) {
+func SetSphereMapInfoOnVertexArrayData(_ va: UnsafeMutablePointer<MOVertexArrayData>, _ combineMode: UInt16, _ envMapNum: UInt16) {
     guard let mat = va.pointee.materials.0 else { // get pointer to material
         return
     }
@@ -870,8 +862,7 @@ public func SetSphereMapInfoOnVertexArrayData(_ va: UnsafeMutablePointer<MOVerte
 
 // MARK: - Set sphere map info on material object
 
-@c @implementation
-public func SetSphereMapInfoOnMaterialObject(_ mat: UnsafeMutablePointer<MOMaterialObject>, _ combineMode: UInt16, _ envMapNum: UInt16) {
+func SetSphereMapInfoOnMaterialObject(_ mat: UnsafeMutablePointer<MOMaterialObject>, _ combineMode: UInt16, _ envMapNum: UInt16) {
     if UnsafeMutableRawPointer(mat).type != .material {
         SwFatal("SetSphereMapInfoOnMaterialObject:  object isnt a material")
         return

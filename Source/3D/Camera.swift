@@ -75,8 +75,7 @@ public func GetSplitscreenPaneFOV() -> Float {
 
 // MARK: - Draw lens flare
 
-@c @implementation
-public func DrawLensFlare() {
+func DrawLensFlare() {
     var transColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
 
     if gDrawLensFlare == 0 {
@@ -205,8 +204,7 @@ public func DrawLensFlare() {
 // This MUST be called after the players have been created so that we know
 // where to put the camera.
 
-@c @implementation
-public func InitCamera_Terrain(_ playerNum: Int16) {
+func InitCamera_Terrain(_ playerNum: Int16) {
     let playerObj = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode
 
     resetCameraSettings()
@@ -272,8 +270,7 @@ private func resetCameraSettings() {
 
 // MARK: - Update cameras
 
-@c @implementation
-public func UpdateCameras() {
+func UpdateCameras() {
     let fps = gFramesPerSecondFrac
     var from = OGLPoint3D()
     var to = OGLPoint3D()
@@ -538,8 +535,7 @@ private func updateCamera_FirstPerson(_ i: Int16) {
 //
 // Make a copy of the camera's real coord info before we do anaglyph offsetting.
 
-@c @implementation
-public func PrepAnaglyphCameras() {
+func PrepAnaglyphCameras() {
     for i in 0..<Int(gNumPlayers) {
         gAnaglyphCameraBackup[i] = (cameraPlacementsBase() + Int(Int32(i))).pointee
     }
@@ -547,8 +543,7 @@ public func PrepAnaglyphCameras() {
 
 // MARK: - Restore cameras from anaglyph
 
-@c @implementation
-public func RestoreCamerasFromAnaglyph() {
+func RestoreCamerasFromAnaglyph() {
     for i in 0..<Int(gNumPlayers) {
         (cameraPlacementsBase() + Int(Int32(i))).pointee = gAnaglyphCameraBackup[i]
     }
@@ -556,8 +551,7 @@ public func RestoreCamerasFromAnaglyph() {
 
 // MARK: - Calc anaglyph camera offset
 
-@c @implementation
-public func CalcAnaglyphCameraOffset(_ pane: UInt8, _ pass: UInt8) {
+func CalcAnaglyphCameraOffset(_ pane: UInt8, _ pass: UInt8) {
     var sep = gAnaglyphEyeSeparation
 
     if pass > 0 {

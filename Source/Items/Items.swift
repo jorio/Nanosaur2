@@ -7,8 +7,7 @@ private var gCloudScroll = OGLVector2D()
 
 // MARK: - Init items manager
 
-@c @implementation
-public func InitItemsManager() {
+func InitItemsManager() {
     InitForestDoors()
     InitZaps()
     InitWormholes()
@@ -25,8 +24,7 @@ public func InitItemsManager() {
 
 // MARK: - Create cyclorama
 
-@c @implementation
-public func CreateCyclorama() {
+func CreateCyclorama() {
     var def = NewObjectDefinitionType()
     def.group = UInt8(MODEL_GROUP_LEVELSPECIFIC)
     def.type = 0 // cyc is always 1st model in level bg3d files
@@ -43,8 +41,7 @@ public func CreateCyclorama() {
 
 // MARK: - Draw cyclorama
 
-@c @implementation
-public func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
+func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
     let theNode = theNodeOpt!
     let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
 
@@ -366,8 +363,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 // MARK: - Trigger callback: misc smackable object
 
 // Returns TRUE if want to handle hit as a solid
-@c @implementation
-public func DoTrig_MiscSmackableObject(_ trigger: UnsafeMutablePointer<ObjNode>!, _ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func DoTrig_MiscSmackableObject(_ trigger: UnsafeMutablePointer<ObjNode>!, _ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     if PlayerSmackedIntoObject(theNode, trigger, Int16(PlayerDeathType.explode.rawValue)) != 0 {
         return 0
     }

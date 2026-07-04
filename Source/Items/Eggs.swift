@@ -3,8 +3,7 @@
 private let eggScale: Float = 6.0
 
 // Called when terrain is loaded - it counts the total egg inventory for this level.
-@c @implementation
-public func FindAllEggItems() {
+func FindAllEggItems() {
     // INIT EGG COUNTS
 
     for (i, _) in EggColor.allCases.enumerated() {
@@ -336,8 +335,7 @@ private let cMoveEggCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
 // Does a generic drop of the egg - when it doesn't need to
 // go into a wormhole.
-@c @implementation
-public func DropEgg_NoWormhole(_ playerNum: Int16) {
+func DropEgg_NoWormhole(_ playerNum: Int16) {
     let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
     if let egg = playerInfo.pointee.carriedObj { // get egg
         egg.pointee.Timer = 1.0 // DelayUntilCanPickup: delay until can be picked back up

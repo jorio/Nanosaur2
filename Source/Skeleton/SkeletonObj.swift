@@ -7,8 +7,7 @@
 private var gLoadedSkeletonsList: InlineArray<7, UnsafeMutablePointer<SkeletonDefType>?> = InlineArray(repeating: nil)
 private var gNumDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArray(repeating: 0)
 
-@c @implementation
-public func InitSkeletonManager() {
+func InitSkeletonManager() {
     CalcAccelerationSplineCurve() // calc accel curve
 
     for (i, _) in SkeletonType.allCases.enumerated() {
@@ -16,8 +15,7 @@ public func InitSkeletonManager() {
     }
 }
 
-@c @implementation
-public func LoadASkeleton(_ num: UInt8) {
+func LoadASkeleton(_ num: UInt8) {
     if num >= UInt8(SkeletonType.allCases.count) {
         SwFatal("LoadASkeleton: MAX_SKELETON_TYPES exceeded!")
     }
@@ -35,8 +33,7 @@ public func LoadASkeleton(_ num: UInt8) {
 }
 
 // Disposes of all memory used by a skeleton file (from File.c)
-@c @implementation
-public func FreeSkeletonFile(_ skeletonType: UInt8) {
+func FreeSkeletonFile(_ skeletonType: UInt8) {
     if let skeleton = gLoadedSkeletonsList[Int(skeletonType)] { // make sure this really exists
         // (the local-copy-of-decomposed-trimeshes disposal loop was already
         // commented out in the original C)
@@ -47,8 +44,7 @@ public func FreeSkeletonFile(_ skeletonType: UInt8) {
 }
 
 // Free's all except for the input type (-1 == none to skip)
-@c @implementation
-public func FreeAllSkeletonFiles(_ skipMe: Int16) {
+func FreeAllSkeletonFiles(_ skipMe: Int16) {
     for (i, _) in SkeletonType.allCases.enumerated() {
         if Int16(i) != skipMe {
             FreeSkeletonFile(UInt8(i))
@@ -59,8 +55,7 @@ public func FreeAllSkeletonFiles(_ skipMe: Int16) {
 // This routine simply initializes the blank object.
 // The function CopySkeletonInfoToNewSkeleton actually attaches the specific skeleton
 // file to this ObjNode.
-@c @implementation
-public func MakeNewSkeletonObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>!) -> UnsafeMutablePointer<ObjNode>! {
+func MakeNewSkeletonObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>!) -> UnsafeMutablePointer<ObjNode>! {
     let type = newObjDef.pointee.type
 
     // CREATE NEW OBJECT NODE
@@ -96,8 +91,7 @@ public func MakeNewSkeletonObject(_ newObjDef: UnsafeMutablePointer<NewObjectDef
 // ONLY called by ReadDataFromSkeletonFile in file.c.
 //
 // NOTE: skeleton has already been allocated by LoadSkeleton!!!
-@c @implementation
-public func AllocSkeletonDefinitionMemory(_ skeleton: UnsafeMutablePointer<SkeletonDefType>!) {
+func AllocSkeletonDefinitionMemory(_ skeleton: UnsafeMutablePointer<SkeletonDefType>!) {
     let numJoints = Int(skeleton.pointee.NumBones) // get # joints in skeleton
     let numAnims = Int(skeleton.pointee.NumAnims) // get # anims in skeleton
 
@@ -213,8 +207,7 @@ private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePoint
     return skeletonData
 }
 
-@c @implementation
-public func FreeSkeletonBaseData(_ skeletonData: UnsafeMutablePointer<SkeletonObjDataType>!, _ skeletonType: Int16) {
+func FreeSkeletonBaseData(_ skeletonData: UnsafeMutablePointer<SkeletonObjDataType>!, _ skeletonType: Int16) {
     // FREE OUR LOCAL COPY OF THE SKELETON'S TRIMESH
 
     let numDecomp = Int(gNumDecomposedTriMeshesInSkeleton[Int(skeletonType)]) // how many trimeshes in this skeleton's geometry?
@@ -232,8 +225,7 @@ public func FreeSkeletonBaseData(_ skeletonData: UnsafeMutablePointer<SkeletonOb
     SafeDisposePtr(skeletonData)
 }
 
-@c @implementation
-public func DrawSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func DrawSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
 
     let skelType = Int(theNode.pointee.Type)

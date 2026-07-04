@@ -19,14 +19,10 @@ enum
 	kFadeFlags_P2		= 0x20,
 };
 
-extern void	InitWindowStuff(void);
-ObjNode* MakeFadeEvent(Byte fadeFlags, float fadeSpeed);
 
-void OGL_FadeOutScene(void (*drawCall)(void), void (*moveCall)(void));
 
 void Enter2D(void);
 void Exit2D(void);
 
 int GetNumDisplays(void);
-void GetDefaultWindowSize(SDL_DisplayID display, int* width, int* height);
 void SetFullscreenMode(bool enforceDisplayPref);

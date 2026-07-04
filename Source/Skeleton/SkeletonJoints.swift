@@ -13,8 +13,7 @@ private var gScaleTranslateMatrix: OGLMatrix4x4 = {
 // Updates ALL of the transforms in a joint's transform group based on the theNode->Skeleton->JointCurrentPosition
 //
 // INPUT: jointNum = joint # to rotate
-@c @implementation
-public func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>, _ jointNum: Int) {
+func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>, _ jointNum: Int) {
     let jointMatricesBase = UnsafeMutableRawPointer(skeleton.pointer(to: \.jointTransformMatrix)!).assumingMemoryBound(to: OGLMatrix4x4.self)
     let destMatPtr = jointMatricesBase + jointNum // get ptr to joint's xform matrix
 
@@ -47,8 +46,7 @@ public func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDa
 }
 
 // Returns the 3-space coord of the given joint.
-@c @implementation
-public func FindCoordOfJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
+func FindCoordOfJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
     var matrix = OGLMatrix4x4()
     let point3D = OGLPoint3D(x: 0, y: 0, z: 0) // use joint's origin @ 0,0,0
 
@@ -62,8 +60,7 @@ public func FindCoordOfJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNu
 // using 0,0,0 as the applied point, it takes the input point which
 // is an offset from the origin of the joint. Thus, the returned point
 // is "on" the joint rather than the exact coord of the hinge.
-@c @implementation
-public func FindCoordOnJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ inPoint: UnsafePointer<OGLPoint3D>, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
+func FindCoordOnJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ inPoint: UnsafePointer<OGLPoint3D>, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
     var matrix = OGLMatrix4x4()
 
     FindJointFullMatrix(theNode, jointNum, &matrix) // calc matrix
@@ -72,8 +69,7 @@ public func FindCoordOnJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNu
 
 // Same as above except that it finds the coordinate on the skeleton structure
 // at the EXACT moment that the Flag event occurred.
-@c @implementation
-public func FindCoordOnJointAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ inPoint: UnsafePointer<OGLPoint3D>, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
+func FindCoordOnJointAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ inPoint: UnsafePointer<OGLPoint3D>, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
     var matrix = OGLMatrix4x4()
     var time: Int16 = 0
 
@@ -112,8 +108,7 @@ public func FindCoordOnJointAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>
     GetModelCurrentPosition(skeleton) // reset all of the matrices to original positions
 }
 
-@c @implementation
-public func FindJointMatrixAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ flagNum: UInt8, _ m: UnsafeMutablePointer<OGLMatrix4x4>) {
+func FindJointMatrixAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ flagNum: UInt8, _ m: UnsafeMutablePointer<OGLMatrix4x4>) {
     var time: Int16 = 0
 
     // GET THE TIME OF THE 1ST FLAG EVENT
@@ -151,8 +146,7 @@ public func FindJointMatrixAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>,
 }
 
 // Returns an accumulated matrix for a joint's coordinates.
-@c @implementation
-public func FindJointFullMatrix(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ outMatrix: UnsafeMutablePointer<OGLMatrix4x4>) {
+func FindJointFullMatrix(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ outMatrix: UnsafeMutablePointer<OGLMatrix4x4>) {
     var jointNum = jointNum
 
     // ACCUMULATE A MATRIX DOWN THE CHAIN

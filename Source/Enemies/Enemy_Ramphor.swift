@@ -20,8 +20,7 @@ private let ramphorAnimBlock = 4
 private let ramphorJointnumButt = 3
 private let ramphorJointnumTailtip = 31
 
-@c @implementation
-public func PrimeEnemy_Ramphor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeEnemy_Ramphor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     let height = Int32(itemPtr.pointee.parm.0)
     let speed = Int32(itemPtr.pointee.parm.1)
 

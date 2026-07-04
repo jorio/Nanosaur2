@@ -148,8 +148,7 @@ private var gMyState_BlendFuncD: GLenum = 0
 
 // MARK: - OGL Boot
 
-@c @implementation
-public func OGL_Boot() {
+func OGL_Boot() {
     // GENERATE ANAGLYPH GREY CONVERSION TABLE
     //
     // This makes an intensity curve to brighten things up, but sometimes
@@ -170,8 +169,7 @@ public func OGL_Boot() {
 
 // MARK: - OGL Shutdown
 
-@c @implementation
-public func OGL_Shutdown() {
+func OGL_Shutdown() {
     OGL_DisposeDrawContext()
 }
 
@@ -179,8 +177,7 @@ public func OGL_Shutdown() {
 
 // fills a view def structure with default values.
 
-@c @implementation
-public func OGL_NewViewDef(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>!) {
+func OGL_NewViewDef(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>!) {
     let clearColor = OGLColorRGBA(r: 0, g: 0, b: 0, a: 1)
     let cameraFrom = OGLPoint3D(x: 0, y: 0, z: 0.0)
     let cameraTo = OGLPoint3D(x: 0, y: 0, z: -1)
@@ -232,8 +229,7 @@ public func OGL_NewViewDef(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>!) 
 
 // MARK: - Setup OGL window
 
-@c @implementation
-public func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
+func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
     SwGameAssert(gGameViewInfoPtr == nil)
 
     // ALLOC MEMORY FOR OUTPUT DATA
@@ -299,8 +295,7 @@ public func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputT
 
 // Disposes of all data created by OGL_SetupWindow
 
-@c @implementation
-public func OGL_DisposeGameView() {
+func OGL_DisposeGameView() {
     SwGameAssert(gGameViewInfoPtr != nil)
 
     // MAKE SURE TO CLEAR STEREO BUFFERS IF NEEDED
@@ -588,8 +583,7 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 
 // MARK: - OGL draw scene
 
-@c @implementation
-public func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
+func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     SDL_GetWindowSizeInPixels(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight)
 
     if gGameViewInfoPtr!.pointee.isActive == 0 {
@@ -862,8 +856,7 @@ private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
 // Remember that with OpenGL, the bottom of the screen is y==0, so some of this code
 // may look upside down.
 
-@c @implementation
-public func OGL_GetCurrentViewport(_ x: UnsafeMutablePointer<Int32>!, _ y: UnsafeMutablePointer<Int32>!, _ w: UnsafeMutablePointer<Int32>!, _ h: UnsafeMutablePointer<Int32>!, _ whichPane: UInt8) {
+func OGL_GetCurrentViewport(_ x: UnsafeMutablePointer<Int32>!, _ y: UnsafeMutablePointer<Int32>!, _ w: UnsafeMutablePointer<Int32>!, _ h: UnsafeMutablePointer<Int32>!, _ whichPane: UInt8) {
     let t = Int32(gGameViewInfoPtr!.pointee.clip.top)
     let b = Int32(gGameViewInfoPtr!.pointee.clip.bottom)
     let l = Int32(gGameViewInfoPtr!.pointee.clip.left)
@@ -924,8 +917,7 @@ public func OGL_GetCurrentViewport(_ x: UnsafeMutablePointer<Int32>!, _ y: Unsaf
 //			textureInRAM = true if OpenGL is to use the texture directly from imageMemory.
 //							In this case we are in control of the texture, and must remember to delete it later
 
-@c @implementation
-public func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32, _ height: Int32, _ destFormat: GLint, _ srcFormat: GLint, _ dataType: GLint) -> GLuint {
+func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32, _ height: Int32, _ destFormat: GLint, _ srcFormat: GLint, _ dataType: GLint) -> GLuint {
     if isStereoAnaglyphColor() {
         ConvertTextureToColorAnaglyph(imageMemory, Int16(width), Int16(height), srcFormat, dataType)
     } else if isStereoAnaglyphMono() {
@@ -969,8 +961,7 @@ public func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width
 
 // MARK: - OGL texturemap load from PNG/JPG
 
-@c @implementation
-public func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWidth: UnsafeMutablePointer<Int32>!, _ outHeight: UnsafeMutablePointer<Int32>!, _ outHasAlpha: UnsafeMutablePointer<Int32>!) -> GLuint {
+func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWidth: UnsafeMutablePointer<Int32>!, _ outHeight: UnsafeMutablePointer<Int32>!, _ outHasAlpha: UnsafeMutablePointer<Int32>!) -> GLuint {
     var dummySpec = FSSpec()
     let partialPathStr = String(cString: partialPath)
     var jpgExists = false
@@ -1154,8 +1145,7 @@ private func ConvertTextureToGrey(_ imageMemory: UnsafeMutableRawPointer!, _ wid
 
 // MARK: - Color balance RGB for anaglyph
 
-@c @implementation
-public func ColorBalanceRGBForAnaglyph(_ rr: UnsafeMutablePointer<UInt32>!, _ gg: UnsafeMutablePointer<UInt32>!, _ bb: UnsafeMutablePointer<UInt32>!, _ allowChannelBalancing: UInt8) {
+func ColorBalanceRGBForAnaglyph(_ rr: UnsafeMutablePointer<UInt32>!, _ gg: UnsafeMutablePointer<UInt32>!, _ bb: UnsafeMutablePointer<UInt32>!, _ allowChannelBalancing: UInt8) {
     var r = rr.pointee
     var g = gg.pointee
     var b = bb.pointee
@@ -1279,8 +1269,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 
 // MARK: - OGL: RAM texture has changed
 
-@c @implementation
-public func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
+func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
     glBindTexture(GLenum(GL_TEXTURE_2D), textureName) // this is now the currently active texture
 
     glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, Int32(width), Int32(height), GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
@@ -1290,8 +1279,7 @@ public func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ he
 
 // Sets the current OpenGL texture using glBindTexture et.al. so any textured triangles will use it.
 
-@c @implementation
-public func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
+func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
     glBindTexture(GLenum(GL_TEXTURE_2D), textureName)
     if OGL_CheckError() != 0 {
         SwFatalAlert("OGL_Texture_SetOpenGLTexture: glBindTexture failed!")
@@ -1302,8 +1290,7 @@ public func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
 
 // MARK: - OGL_MoveCameraFromTo
 
-@c @implementation
-public func OGL_MoveCameraFromTo(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Float, _ toDX: Float, _ toDY: Float, _ toDZ: Float, _ camNum: Int32) {
+func OGL_MoveCameraFromTo(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Float, _ toDX: Float, _ toDY: Float, _ toDZ: Float, _ camNum: Int32) {
     // SET CAMERA COORDS
 
     let placements = cameraPlacementsBase()
@@ -1320,8 +1307,7 @@ public func OGL_MoveCameraFromTo(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Flo
 
 // MARK: - OGL_MoveCameraFrom
 
-@c @implementation
-public func OGL_MoveCameraFrom(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Float, _ camNum: UInt8) {
+func OGL_MoveCameraFrom(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Float, _ camNum: UInt8) {
     // SET CAMERA COORDS
 
     let placements = cameraPlacementsBase()
@@ -1336,8 +1322,7 @@ public func OGL_MoveCameraFrom(_ fromDX: Float, _ fromDY: Float, _ fromDZ: Float
 
 // from and to are both optional as nil
 
-@c @implementation
-public func OGL_UpdateCameraFromTo(_ from: UnsafeMutablePointer<OGLPoint3D>?, _ to: UnsafeMutablePointer<OGLPoint3D>?, _ camNum: Int32) {
+func OGL_UpdateCameraFromTo(_ from: UnsafeMutablePointer<OGLPoint3D>?, _ to: UnsafeMutablePointer<OGLPoint3D>?, _ camNum: Int32) {
     let up = OGLVector3D(x: 0, y: 1, z: 0)
 
     if camNum < 0 || camNum >= MAX_VIEWPORTS {
@@ -1360,8 +1345,7 @@ public func OGL_UpdateCameraFromTo(_ from: UnsafeMutablePointer<OGLPoint3D>?, _ 
 
 // MARK: - OGL_UpdateCameraFromToUp
 
-@c @implementation
-public func OGL_UpdateCameraFromToUp(_ from: UnsafeMutablePointer<OGLPoint3D>!, _ to: UnsafeMutablePointer<OGLPoint3D>!, _ up: UnsafePointer<OGLVector3D>!, _ camNum: Int32) {
+func OGL_UpdateCameraFromToUp(_ from: UnsafeMutablePointer<OGLPoint3D>!, _ to: UnsafeMutablePointer<OGLPoint3D>!, _ up: UnsafePointer<OGLVector3D>!, _ camNum: Int32) {
     if camNum < 0 || camNum >= MAX_VIEWPORTS {
         SwFatalAlert("OGL_UpdateCameraFromToUp: illegal camNum")
     }
@@ -1379,8 +1363,7 @@ public func OGL_UpdateCameraFromToUp(_ from: UnsafeMutablePointer<OGLPoint3D>!, 
 // This is called by OGL_DrawScene to initialize all of the view matrices,
 // and to extract the current view matrices used for culling et.al.
 
-@c @implementation
-public func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
+func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
     var tempX: Int32 = 0
     var tempY: Int32 = 0
     var w: Int32 = 0
@@ -1488,8 +1471,7 @@ public func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
 // MARK: - OGL: Check error
 
-@c @implementation
-public func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
+func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
     let error = glGetError()
     if error != 0 {
         var text = ""
@@ -1509,8 +1491,7 @@ public func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) ->
 
 // MARK: - Push state
 
-@c @implementation
-public func OGL_PushState() {
+func OGL_PushState() {
     // PUSH MATRIES WITH OPENGL
 
     glMatrixMode(GLenum(GL_MODELVIEW))
@@ -1546,8 +1527,7 @@ public func OGL_PushState() {
 
 // MARK: - Pop state
 
-@c @implementation
-public func OGL_PopState() {
+func OGL_PopState() {
     // RETREIVE OPENGL MATRICES
 
     glMatrixMode(GLenum(GL_PROJECTION))
@@ -1614,8 +1594,7 @@ public func OGL_PopState() {
 
 // MARK: - OGL enable lighting
 
-@c @implementation
-public func OGL_EnableLighting() {
+func OGL_EnableLighting() {
     if gMyState_Lighting == 0 {
         gMyState_Lighting = 1
         glEnable(GLenum(GL_LIGHTING))
@@ -1624,8 +1603,7 @@ public func OGL_EnableLighting() {
 
 // MARK: - OGL disable lighting
 
-@c @implementation
-public func OGL_DisableLighting() {
+func OGL_DisableLighting() {
     if gMyState_Lighting != 0 {
         gMyState_Lighting = 0
         glDisable(GLenum(GL_LIGHTING))
@@ -1634,8 +1612,7 @@ public func OGL_DisableLighting() {
 
 // MARK: - OGL enable blend
 
-@c @implementation
-public func OGL_EnableBlend() {
+func OGL_EnableBlend() {
     if !gMyState_Blend {
         gMyState_Blend = true
         glEnable(GLenum(GL_BLEND))
@@ -1644,8 +1621,7 @@ public func OGL_EnableBlend() {
 
 // MARK: - OGL disable blend
 
-@c @implementation
-public func OGL_DisableBlend() {
+func OGL_DisableBlend() {
     if gMyState_Blend {
         gMyState_Blend = false
         glDisable(GLenum(GL_BLEND))
@@ -1654,8 +1630,7 @@ public func OGL_DisableBlend() {
 
 // MARK: - OGL enable texture 2D
 
-@c @implementation
-public func OGL_EnableTexture2D() {
+func OGL_EnableTexture2D() {
     // DO STATE CACHINE FOR UNIT 0
 
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
@@ -1672,8 +1647,7 @@ public func OGL_EnableTexture2D() {
 
 // MARK: - OGL disable texture 2D
 
-@c @implementation
-public func OGL_DisableTexture2D() {
+func OGL_DisableTexture2D() {
     // DO STATE CACHINE FOR UNIT 0
 
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
@@ -1692,8 +1666,7 @@ public func OGL_DisableTexture2D() {
 
 // Sets the currently active texture unit for GL_TEXTURE0...n
 
-@c @implementation
-public func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
+func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
     gGlActiveTextureProc?(texUnit)
     gGlClientActiveTextureProc?(texUnit)
 
@@ -1702,8 +1675,7 @@ public func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
 
 // MARK: - OGL set color 4fv
 
-@c @implementation
-public func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
+func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
     if color.pointee.r != gMyState_Color.r ||
         color.pointee.g != gMyState_Color.g ||
         color.pointee.b != gMyState_Color.b ||
@@ -1717,8 +1689,7 @@ public func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
 
 // MARK: - OGL set color 4f
 
-@c @implementation
-public func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
+func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
     if r != gMyState_Color.r ||
         g != gMyState_Color.g ||
         b != gMyState_Color.b ||
@@ -1735,8 +1706,7 @@ public func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
 
 // MARK: - OGL enable cull face
 
-@c @implementation
-public func OGL_EnableCullFace() {
+func OGL_EnableCullFace() {
     if !gMyState_CullFace {
         gMyState_CullFace = true
         glEnable(GLenum(GL_CULL_FACE))
@@ -1745,8 +1715,7 @@ public func OGL_EnableCullFace() {
 
 // MARK: - OGL disable cull face
 
-@c @implementation
-public func OGL_DisableCullFace() {
+func OGL_DisableCullFace() {
     if gMyState_CullFace {
         gMyState_CullFace = false
         glDisable(GLenum(GL_CULL_FACE))
@@ -1755,8 +1724,7 @@ public func OGL_DisableCullFace() {
 
 // MARK: - OGL enable fog
 
-@c @implementation
-public func OGL_EnableFog() {
+func OGL_EnableFog() {
     if !gMyState_Fog {
         gMyState_Fog = true
         glEnable(GLenum(GL_FOG))
@@ -1765,8 +1733,7 @@ public func OGL_EnableFog() {
 
 // MARK: - OGL disable fog
 
-@c @implementation
-public func OGL_DisableFog() {
+func OGL_DisableFog() {
     if gMyState_Fog {
         gMyState_Fog = false
         glDisable(GLenum(GL_FOG))
@@ -1775,8 +1742,7 @@ public func OGL_DisableFog() {
 
 // MARK: - OGL blend func
 
-@c @implementation
-public func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
+func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
     if sfactor != gMyState_BlendFuncS || dfactor != gMyState_BlendFuncD {
         glBlendFunc(sfactor, dfactor)
 
@@ -1797,8 +1763,7 @@ private func OGL_FreeFont() {
 
 // MARK: - OGL_Draw string
 
-@c @implementation
-public func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
+func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
     glMatrixMode(GLenum(GL_MODELVIEW))
@@ -1819,16 +1784,14 @@ public func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
 
 // MARK: - OGL_Draw float
 
-@c @implementation
-public func OGL_DrawFloat(_ f: Float, _ x: GLint, _ y: GLint) {
+func OGL_DrawFloat(_ f: Float, _ x: GLint, _ y: GLint) {
     let s = "\(f)"
     s.withCString { OGL_DrawString($0, x, y) }
 }
 
 // MARK: - OGL_Draw int
 
-@c @implementation
-public func OGL_DrawInt(_ f: Int32, _ x: GLint, _ y: GLint) {
+func OGL_DrawInt(_ f: Int32, _ x: GLint, _ y: GLint) {
     let s = "\(f)"
     s.withCString { OGL_DrawString($0, x, y) }
 }
@@ -1897,8 +1860,7 @@ private func OGL_DisableVertexArrayRanges() {
 
 // Call this function to get a section of our vertex array ranged memory
 
-@c @implementation
-public func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawPointer! {
+func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawPointer! {
     if type >= UInt8(VertexArrayRangeType.user1.rawValue) { // can't allocate memory for the "User" Types
         SwFatalAlert("OGL_AllocVertexArrayMemory: illegal type")
     }
@@ -1993,8 +1955,7 @@ public func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMuta
 
 // MARK: - OGL: Free vertex array memory
 
-@c @implementation
-public func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt8) {
+func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt8) {
     if type >= UInt8(VertexArrayRangeType.user1.rawValue) { // can't free memory for the "User" Types
         SwFatalAlert("OGL_FreeVertexArrayMemory: illegal type")
     }
@@ -2046,8 +2007,7 @@ public func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ typ
 //
 // (VERTEXARRAYRANGES is 0 - the original body was entirely behind that flag, so this is a no-op, matching the current C build.)
 
-@c @implementation
-public func OGL_SetVertexArrayRangeDirty(_ buffer: Int16) {
+func OGL_SetVertexArrayRangeDirty(_ buffer: Int16) {
 }
 
 // MARK: - OGL: Max mem for VAR type

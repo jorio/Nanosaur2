@@ -158,8 +158,7 @@ private func FreeWinScreen() {
     OGL_DisposeGameView()
 }
 
-@c @implementation
-public func DoWinScreen() {
+func DoWinScreen() {
     // SETUP
 
     SetupWinScreen()

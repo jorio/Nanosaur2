@@ -1,7 +1,6 @@
 // Enemy.swift - Port of Enemy.c to Swift
 
-@c @implementation
-public func InitEnemyManager() {
+func InitEnemyManager() {
     gNumEnemies = 0
     gMaxEnemies = 16
 
@@ -10,8 +9,7 @@ public func InitEnemyManager() {
     }
 }
 
-@c @implementation
-public func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
+func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
     if theEnemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 { // spline enemies dont factor into the enemy counts!
         let kindSlot = GetNumEnemyOfKindSlot(theEnemy.pointee.Kind)!
         kindSlot.pointee -= 1 // dec kind count
@@ -26,8 +24,7 @@ public func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
     DeleteObject(theEnemy) // nuke the obj
 }
 
-@c @implementation
-public func UpdateEnemy(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func UpdateEnemy(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     theNode.pointee.Speed = gDelta.length
 
     theNode.update()
@@ -38,8 +35,7 @@ public func UpdateEnemy(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // INPUT:	itemPtr->parm[0] = skeleton type 0..n
 //
 // OUTPUT:	ObjNode or nil if err.
-@c @implementation
-public func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z: Float, _ scale: Float, _ rot: Float, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) -> UnsafeMutablePointer<ObjNode>! {
+func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z: Float, _ scale: Float, _ rot: Float, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) -> UnsafeMutablePointer<ObjNode>! {
     // MAKE NEW SKELETON OBJECT
 
     var def = NewObjectDefinitionType()
@@ -71,8 +67,7 @@ public func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Floa
 }
 
 // OUTPUT: true if was on spline, false if wasnt
-@c @implementation
-public func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
+func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
     guard theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 else { // must be on spline
         return
     }
@@ -84,8 +79,7 @@ public func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ m
 }
 
 // OUTPUT: nil if no enemies
-@c @implementation
-public func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMutablePointer<Float>!) -> UnsafeMutablePointer<ObjNode>! {
+func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMutablePointer<Float>!) -> UnsafeMutablePointer<ObjNode>! {
     var best: UnsafeMutablePointer<ObjNode>?
     var minDist: Float = 10_000_000
 
@@ -112,8 +106,7 @@ public func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: Un
 }
 
 // coord is in gCoord
-@c @implementation
-public func IsWaterInFrontOfEnemy(_ r: Float) -> UInt8 {
+func IsWaterInFrontOfEnemy(_ r: Float) -> UInt8 {
     let x = gCoord.x - sin(r) * 30.0
     let z = gCoord.z - cos(r) * 30.0
 
@@ -123,8 +116,7 @@ public func IsWaterInFrontOfEnemy(_ r: Float) -> UInt8 {
 // For use by non-skeleton enemies.
 //
 // OUTPUT: true = was deleted
-@c @implementation
-public func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype: UInt32, _ useBBoxBottom: UInt8) -> UInt8 {
+func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype: UInt32, _ useBBoxBottom: UInt8) -> UInt8 {
     var ctype = ctype
     let wasInWater = theEnemy.pointee.StatusBits & UInt32(STATUS_BIT_UNDERWATER) // see if was in H2O on previous frame
 
@@ -218,8 +210,7 @@ public func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _
     return 0
 }
 
-@c @implementation
-public func EnemyTouchedPlayer(_ enemy: UnsafeMutablePointer<ObjNode>!, _ player: UnsafeMutablePointer<ObjNode>!) {
+func EnemyTouchedPlayer(_ enemy: UnsafeMutablePointer<ObjNode>!, _ player: UnsafeMutablePointer<ObjNode>!) {
     switch enemy.pointee.Kind {
     // case ENEMY_KIND_COMPUTERBUG: ComputerBugTouchedPlayer(enemy, player)
     default:
@@ -227,8 +218,7 @@ public func EnemyTouchedPlayer(_ enemy: UnsafeMutablePointer<ObjNode>!, _ player
     }
 }
 
-@c @implementation
-public func MoveEnemySkipChunk(_ chunk: UnsafeMutablePointer<ObjNode>!) {
+func MoveEnemySkipChunk(_ chunk: UnsafeMutablePointer<ObjNode>!) {
     let fps = gFramesPerSecondFrac
 
     chunk.getInfo()

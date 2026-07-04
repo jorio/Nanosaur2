@@ -82,15 +82,11 @@ enum
 
 //============================================================================================
 
-void InitInput(void);
-void InvalidateAllInputs(void);
-void InvalidateNeedState(int need);
+
 
 int GetKeyState(uint16_t sdlScancode);
 int GetClickState(int mouseButton);
 int GetNeedState(int needID, int playerID);
-float GetNeedAnalogValue(int needID, int playerID);
-float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID);
 
 #define IsKeyDown(scancode) (KEYSTATE_DOWN == GetKeyState((scancode)))
 #define IsKeyHeld(scancode) (KEYSTATE_HELD == GetKeyState((scancode)))
@@ -108,16 +104,10 @@ float GetNeedAnalogSteering(int negativeNeedID, int positiveNeedID, int playerID
 
 OGLVector2D GetAnalogSteering(int playerID);
 
-Boolean UserWantsOut(void);
-Boolean IsCmdQDown(void);
-Boolean IsCheatKeyComboDown(void);
 
-void DoSDLMaintenance(void);
 
-int GetNumGamepad(void);
 SDL_Gamepad* GetGamepad(int n);
-int GetLastControllerForNeedAnyP(int needID);		// last controller that triggered a need with ANY_PLAYER
-void SetMainController(int oldControllerSlot);
+// last controller that triggered a need with ANY_PLAYER
 void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms, int playerID);
 
 void LockPlayerControllerMapping(void);
@@ -129,11 +119,7 @@ void ResetDefaultKeyboardBindings(void);
 void ResetDefaultGamepadBindings(void);
 void ResetDefaultMouseBindings(void);
 
-OGLVector2D GetMouseDelta(void);
-OGLPoint2D GetMouseCoords640x480(void);
-void GrabMouse(Boolean capture);
 void SetMacLinearMouse(Boolean linear);
 
-void BackupRestoreCursorCoord(Boolean backup);
 
 #define KBMFallbackPlayer() (gNumPlayers-1)

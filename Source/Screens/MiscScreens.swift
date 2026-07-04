@@ -70,8 +70,7 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     }
 }
 
-@c @implementation
-public func DoWarmUpScreen() {
+func DoWarmUpScreen() {
     var viewDef = OGLSetupInputType()
 
     // SETUP VIEW
@@ -93,8 +92,7 @@ public func DoWarmUpScreen() {
     OGL_DisposeGameView()
 }
 
-@c @implementation
-public func DoLegalScreen() {
+func DoLegalScreen() {
     var viewDef = OGLSetupInputType()
     var timeout: Float = 10.0
 
@@ -178,8 +176,7 @@ public func DoLegalScreen() {
     OGL_DisposeGameView()
 }
 
-@c @implementation
-public func DrawLoading(_ percent: Float) {
+func DrawLoading(_ percent: Float) {
     // Prevent the OS from thinking our process has locked up
     DoSDLMaintenance()
 

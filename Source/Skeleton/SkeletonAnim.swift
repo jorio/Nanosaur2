@@ -41,8 +41,7 @@ private func setObjNodeFlag(_ node: UnsafeMutablePointer<ObjNode>, _ flagNum: UI
     }
 }
 
-@c @implementation
-public func SetSkeletonAnimTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ timeRatio: Float) {
+func SetSkeletonAnimTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ timeRatio: Float) {
     let def = skeleton.pointee.skeletonDefinition!
     let time = skeleton.pointee.MaxAnimTime * timeRatio
     skeleton.pointee.CurrentAnimTime = time
@@ -62,8 +61,7 @@ public func SetSkeletonAnimTime(_ skeleton: UnsafeMutablePointer<SkeletonObjData
     }
 }
 
-@c @implementation
-public func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ animNum: Int) {
+func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ animNum: Int) {
     setSkeletonAnimGuts(skeleton, animNum)
 
     GetModelCurrentPosition(skeleton) // update matrices
@@ -88,8 +86,7 @@ private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
     skeleton.pointee.AnimSpeed = 1.0
 }
 
-@c @implementation
-public func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ animNum: Int, _ speed: Float) {
+func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ animNum: Int, _ speed: Float) {
     // SET THE USUAL STUFF FIRST
 
     guard let skeleton else { return }
@@ -126,8 +123,7 @@ public func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjData
     GetModelCurrentPosition(skeleton) // update matrices
 }
 
-@c @implementation
-public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     guard let skeleton = theNode.pointee.Skeleton else { return }
     let skeletonDef = skeleton.pointee.skeletonDefinition!
     let fps = gFramesPerSecondFrac
@@ -274,8 +270,7 @@ public func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     GetModelCurrentPosition(skeleton)
 }
 
-@c @implementation
-public func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!) {
+func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!) {
     let animNum = Int(skeleton.pointee.AnimNum)
     let currentAnimTime = skeleton.pointee.CurrentAnimTime
     let currentAnimTimeInt = Int32(currentAnimTime)
@@ -477,8 +472,7 @@ private func getNextAnimEventAtTime(_ skeleton: UnsafeMutablePointer<SkeletonObj
     return 0
 }
 
-@c @implementation
-public func CalcAccelerationSplineCurve() {
+func CalcAccelerationSplineCurve() {
     let accelerationCurve = GetAccelerationCurvePtr()!
     for i in 0..<curveSize {
         let x = Float(i) / Float(curveSize)
@@ -506,8 +500,7 @@ private func accelerationPercent(_ percent: Float) -> Float {
     return accelerationCurve[i]
 }
 
-@c @implementation
-public func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float) {
+func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float) {
     let fps = gFramesPerSecondFrac
     var groupDef = NewParticleGroupDefType()
     var newParticleDef = NewParticleDefType()

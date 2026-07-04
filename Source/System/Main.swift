@@ -36,8 +36,7 @@ private let gLevelSongs: [Int16] = [
 
 // MARK: - Toolbox init
 
-@c @implementation
-public func ToolBoxInit() {
+func ToolBoxInit() {
     MyFlushEvents()
 
     // FIRST VERIFY SYSTEM BEFORE GOING TOO FAR
@@ -60,8 +59,7 @@ public func ToolBoxInit() {
 
 // MARK: - Init default prefs
 
-@c @implementation
-public func InitDefaultPrefs() {
+func InitDefaultPrefs() {
     withUnsafeMutableBytes(of: &gGamePrefs) { raw in
         _ = SDL_memset(raw.baseAddress, 0, raw.count)
     }
@@ -570,8 +568,7 @@ private func cleanupLevel() {
 
 // MARK: - Move everything
 
-@c @implementation
-public func MoveEverything() {
+func MoveEverything() {
     MoveObjects()
     MoveSplineObjects()
     UpdateCameras() // update camera
@@ -597,8 +594,7 @@ public func MoveEverything() {
 
 // MARK: - Start level completion
 
-@c @implementation
-public func StartLevelCompletion(_ coolDownTimer: Float) {
+func StartLevelCompletion(_ coolDownTimer: Float) {
     if gLevelCompleted == 0 {
         gLevelCompleted = 1
         gLevelCompletedCoolDownTimer = coolDownTimer
@@ -609,8 +605,7 @@ public func StartLevelCompletion(_ coolDownTimer: Float) {
 
 // MARK: - Prime time demo spline
 
-@c @implementation
-public func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     if gTimeDemo == 0 { // are we in time demo mode?
         return 0
     }
@@ -711,8 +706,7 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
 
 // MARK: - Load/dispose font used throughout the game
 
-@c @implementation
-public func LoadGlobalAssets() {
+func LoadGlobalAssets() {
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
     LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_CURSOR), ":Sprites:menu:cursor", 0)
@@ -723,8 +717,7 @@ public func LoadGlobalAssets() {
     BlendAllSpritesInGroup(Int16(SPRITE_GROUP_PARTICLES))
 }
 
-@c @implementation
-public func DisposeGlobalAssets() {
+func DisposeGlobalAssets() {
     DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT1))
     DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT2))
     DisposeSpriteGroup(Int32(SPRITE_GROUP_CURSOR))

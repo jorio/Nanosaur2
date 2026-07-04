@@ -46,8 +46,7 @@ private var gRibOffset = [OGLPoint3D](repeating: OGLPoint3D(), count: numRibs * 
 
 // MARK: - Init dust devil memory
 
-@c @implementation
-public func InitDustDevilMemory() {
+func InitDustDevilMemory() {
     gNumDustDevils = 0 // none build yet
 
     for d in 0..<maxDevils {
@@ -202,8 +201,7 @@ public func InitDustDevilMemory() {
 // need to modify this buffer's UV's based on the other buffer's UV's.  So, we read from the
 // old to modify the new.
 
-@c @implementation
-public func UpdateDustDevilUVAnimation() {
+func UpdateDustDevilUVAnimation() {
     let fps = gFramesPerSecondFrac
 
     if gNumDustDevils > 0 { // only bother if there are dirt devils around
@@ -458,8 +456,7 @@ private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Prime dust devil
 
-@c @implementation
-public func PrimeDustDevil(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeDustDevil(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     // GET SPLINE INFO
 
     let placement = itemPtr.pointee.placement

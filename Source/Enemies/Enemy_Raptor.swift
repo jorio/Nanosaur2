@@ -445,8 +445,7 @@ private func updateRaptor(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Prime raptor enemy
 
-@c @implementation
-public func PrimeEnemy_Raptor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeEnemy_Raptor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     // GET SPLINE INFO
 
     let placement = itemPtr.pointee.placement

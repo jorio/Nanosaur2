@@ -21,9 +21,5 @@ extern  CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
 //=================
 
 
-void InitSplineManager(void);
-void FreeAllCustomSplines(void);
-short GenerateCustomSpline(short numNubs, OGLPoint3D *nubPoints, long pointsPerSpan) ;
-void FreeACustomSpline(short splineNum);
 
 #pragma clang assume_nonnull end

@@ -71,38 +71,14 @@ static inline float* GetAccelerationCurvePtr(void) { return gAccelerationCurve; 
 
 //===============================
 
-extern	ObjNode	*MakeNewSkeletonObject(NewObjectDefinitionType *newObjDef);
-extern	void AllocSkeletonDefinitionMemory(SkeletonDefType *skeleton);
-extern	void InitSkeletonManager(void);
-void LoadASkeleton(Byte num);
-extern	void FreeSkeletonFile(Byte skeletonType);
-extern	void FreeAllSkeletonFiles(short skipMe);
-void FreeSkeletonBaseData(SkeletonObjDataType *skeletonData, short skeletonType);
-void DrawSkeleton(ObjNode *theNode);
 
 
 
-extern	void UpdateSkeletonAnimation(ObjNode *theNode);
-extern	void SetSkeletonAnim(SkeletonObjDataType *skeleton, long animNum);
-extern	void GetModelCurrentPosition(SkeletonObjDataType *skeleton);
-extern	void MorphToSkeletonAnim(SkeletonObjDataType *skeleton, long animNum, float speed);
-extern	void CalcAccelerationSplineCurve(void);
-void SetSkeletonAnimTime(SkeletonObjDataType *skeleton, float timeRatio);
-
-void BurnSkeleton(ObjNode *theNode, float flameScale);
 
 
-extern	void UpdateJointTransforms(SkeletonObjDataType * _Nonnull skeleton,long jointNum);
-void FindCoordOfJoint(ObjNode * _Nonnull theNode, long jointNum, OGLPoint3D * _Nonnull outPoint);
-void FindCoordOnJoint(ObjNode * _Nonnull theNode, long jointNum, const OGLPoint3D * _Nonnull inPoint, OGLPoint3D * _Nonnull outPoint);
-void FindJointFullMatrix(ObjNode * _Nonnull theNode, long jointNum, OGLMatrix4x4 * _Nonnull outMatrix);
-void FindCoordOnJointAtFlagEvent(ObjNode * _Nonnull theNode, long jointNum, const OGLPoint3D * _Nonnull inPoint, OGLPoint3D * _Nonnull outPoint);
-void FindJointMatrixAtFlagEvent(ObjNode * _Nonnull theNode, long jointNum, Byte flagNum, OGLMatrix4x4 * _Nonnull m);
 
 
-void LoadBonesReferenceModel(FSSpec	*inSpec, SkeletonDefType *skeleton, int skeletonType);
-extern	void UpdateSkinnedGeometry(ObjNode *theNode);
-extern	void PrimeBoneData(SkeletonDefType *skeleton);
+
 
 
 #endif

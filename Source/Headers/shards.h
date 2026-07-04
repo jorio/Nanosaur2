@@ -16,8 +16,6 @@ typedef enum SWIFT_FLAG_ENUM ShardMode
 
 
 
-void InitShardSystem(void);
-void ExplodeGeometry(ObjNode *theNode, float boomForce, ShardMode particleMode, long particleDensity, float particleDecaySpeed);
 
 
 #endif

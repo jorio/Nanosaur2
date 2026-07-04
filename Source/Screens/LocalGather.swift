@@ -26,8 +26,7 @@ private func UpdateGatherPrompt(_ numControllersMissing: Int32) {
 }
 
 // Return true if user aborts.
-@c @implementation
-public func DoLocalGatherScreen() -> UInt8 {
+func DoLocalGatherScreen() -> UInt8 {
     gNumControllersMissing = Int32(gNumPlayers)
     // UnlockPlayerControllerMapping();
 

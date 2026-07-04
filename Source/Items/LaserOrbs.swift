@@ -635,8 +635,7 @@ private func updateLaserOrbSparkles(_ orb: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Prime laser orb
 
-@c @implementation
-public func PrimeLaserOrb(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeLaserOrb(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     // GET SPLINE INFO
 
     let placement = itemPtr.pointee.placement

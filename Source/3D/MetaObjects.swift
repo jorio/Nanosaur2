@@ -32,8 +32,7 @@ private var gNumMetaObjects = 0
     UnsafeMutableRawPointer(data.pointer(to: \.textureName)!).assumingMemoryBound(to: GLuint.self)
 }
 
-@c @implementation
-public func MO_InitHandler() {
+func MO_InitHandler() {
     gFirstMetaObject = nil // no meta object nodes yet
     gLastMetaObject = nil
     gNumMetaObjects = 0
@@ -44,8 +43,7 @@ public func MO_InitHandler() {
 // INPUT:	type = type of mo to create
 //			subType = subtype to create (optional)
 //			data = pointer to any data needed to create the mo (optional)
-@c @implementation
-public func MO_CreateNewObjectOfType(_ type: MetaObjectType, _ subType: Int, _ data: UnsafeMutableRawPointer!) -> MetaObjectPtr! {
+func MO_CreateNewObjectOfType(_ type: MetaObjectType, _ subType: Int, _ data: UnsafeMutableRawPointer!) -> MetaObjectPtr! {
     // ALLOCATE EMPTY OBJECT
 
     guard let mo = allocateEmptyMetaObject(type, subType) else {
@@ -284,8 +282,7 @@ private func setMetaObjectToSprite(_ spriteObj: UnsafeMutablePointer<MOSpriteObj
 // MARK: - Groups
 
 // Attach new object to end of group
-@c @implementation
-public func MO_AppendToGroup(_ group: UnsafeMutablePointer<MOGroupObject>!, _ newObject: MetaObjectPtr!) {
+func MO_AppendToGroup(_ group: UnsafeMutablePointer<MOGroupObject>!, _ newObject: MetaObjectPtr!) {
     // VERIFY COOKIE
 
     if (group.pointee.objectHeader.cookie != UInt32(MO_COOKIE)) || (newObject.assumingMemoryBound(to: MetaObjectHeader.self).pointee.cookie != UInt32(MO_COOKIE)) {
@@ -303,8 +300,7 @@ public func MO_AppendToGroup(_ group: UnsafeMutablePointer<MOGroupObject>!, _ ne
 }
 
 // Attach new object to START of group
-@c @implementation
-public func MO_AttachToGroupStart(_ group: UnsafeMutablePointer<MOGroupObject>!, _ newObject: MetaObjectPtr!) {
+func MO_AttachToGroupStart(_ group: UnsafeMutablePointer<MOGroupObject>!, _ newObject: MetaObjectPtr!) {
     // VERIFY COOKIE
 
     if (group.pointee.objectHeader.cookie != UInt32(MO_COOKIE)) || (newObject.assumingMemoryBound(to: MetaObjectHeader.self).pointee.cookie != UInt32(MO_COOKIE)) {
@@ -334,8 +330,7 @@ public func MO_AttachToGroupStart(_ group: UnsafeMutablePointer<MOGroupObject>!,
 // MARK: - Draw
 
 // This recursive function will draw any objects submitted and parses groups.
-@c @implementation
-public func MO_DrawObject(_ object: MetaObjectPtr!) {
+func MO_DrawObject(_ object: MetaObjectPtr!) {
     let objHead = object.assumingMemoryBound(to: MetaObjectHeader.self)
 
     // VERIFY COOKIE
@@ -376,8 +371,7 @@ public func MO_DrawObject(_ object: MetaObjectPtr!) {
     }
 }
 
-@c @implementation
-public func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
+func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
     let object = UnsafeMutablePointer(mutating: objectC)!
 
     // VERIFY OBJECT TYPE
@@ -404,8 +398,7 @@ public func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
     OGL_PopState()
 }
 
-@c @implementation
-public func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
+func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     let data = UnsafeMutablePointer(mutating: dataC)!
     var useTexture = false
     var multiTexture = false
@@ -637,8 +630,7 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
     }
 }
 
-@c @implementation
-public func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
+func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
     let matData = matObj.pointer(to: \.objectData)! // point to material data
 
     if matObj.pointee.objectHeader.cookie != UInt32(MO_COOKIE) { // verify cookie
@@ -728,8 +720,7 @@ public func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
     gMostRecentMaterial = matObj
 }
 
-@c @implementation
-public func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
+func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
     // MULTIPLY CURRENT MATRIX BY THIS
 
     withUnsafePointer(to: matObj.pointee.matrix) {
@@ -739,8 +730,7 @@ public func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
     }
 }
 
-@c @implementation
-public func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
+func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
     let picObj = UnsafeMutablePointer(mutating: picObjC)!
     let picData = picObj.pointer(to: \.objectData)!
 
@@ -793,8 +783,7 @@ public func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 // Assume that the matrices are already set to identity
 //
 // Also, assume that the projection matrix is already the identity matrix.
-@c @implementation
-public func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
+func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
     let spriteObj = UnsafeMutablePointer(mutating: spriteObjC)!
     let spriteData = spriteObj.pointer(to: \.objectData)!
     var p = [OGLPoint2D](repeating: OGLPoint2D(), count: 4)
@@ -862,8 +851,7 @@ public func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
 // MARK: - Reference Counting
 
-@c @implementation
-public func MO_GetNewReference(_ mo: MetaObjectPtr!) -> MetaObjectPtr! {
+func MO_GetNewReference(_ mo: MetaObjectPtr!) -> MetaObjectPtr! {
     let h = mo.assumingMemoryBound(to: MetaObjectHeader.self)
 
     h.pointee.refCount += 1
@@ -872,8 +860,7 @@ public func MO_GetNewReference(_ mo: MetaObjectPtr!) -> MetaObjectPtr! {
 }
 
 // NOTE:  	Groups and other objects are NOT sub-recursed.  When a group is de-referenced, only that group object is affected.
-@c @implementation
-public func MO_DisposeObjectReference(_ obj: MetaObjectPtr!) {
+func MO_DisposeObjectReference(_ obj: MetaObjectPtr!) {
     guard let obj else {
         SwFatal("MO_DisposeObjectReference: obj == nil")
         return
@@ -1005,8 +992,7 @@ private func disposeObjectSprite(_ obj: UnsafeMutablePointer<MOSpriteObject>) {
 }
 
 // Assumes the contents (the materials) have already been dereferenced!
-@c @implementation
-public func MO_DeleteObjectInfo_Geometry_VertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>!) {
+func MO_DeleteObjectInfo_Geometry_VertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>!) {
     let varType = data.pointee.VARtype
     let usingVAR = varType != -1 // were these arrays stored in VAR memory?
 
@@ -1103,8 +1089,7 @@ private func deleteObjectInfoPicture(_ obj: UnsafeMutablePointer<MOPictureObject
 // Duplicates all of the data associated with a VertexArray definition.
 // varType determines how we want to handle the new arrays.  If varType == -1 then we just
 // allocate them in regular RAM.  Otherwise, we're using Vertex Array Range memory.
-@c @implementation
-public func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayData>!, _ outData: UnsafeMutablePointer<MOVertexArrayData>!, _ varType: Int16) {
+func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayData>!, _ outData: UnsafeMutablePointer<MOVertexArrayData>!, _ varType: Int16) {
     let usingVAR = varType != -1
 
     // GET NEW REFERENCES TO MATERIALS
@@ -1215,8 +1200,7 @@ public func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexA
 
 // INPUT:
 //			m = transform matrix to apply to verts or nil.
-@c @implementation
-public func MO_CalcBoundingBox(_ object: MetaObjectPtr!, _ bBox: UnsafeMutablePointer<OGLBoundingBox>!, _ m: UnsafeMutablePointer<OGLMatrix4x4>!) {
+func MO_CalcBoundingBox(_ object: MetaObjectPtr!, _ bBox: UnsafeMutablePointer<OGLBoundingBox>!, _ m: UnsafeMutablePointer<OGLMatrix4x4>!) {
     // INIT BBOX TO BOGUS VALUES
 
     bBox.pointee.min.x = 100000000
@@ -1325,8 +1309,7 @@ private func calcBoundingBoxRecurse(_ object: MetaObjectPtr, _ bBox: UnsafeMutab
     }
 }
 
-@c @implementation
-public func MO_CalcBoundingSphere(_ object: MetaObjectPtr!, _ bSphere: UnsafeMutablePointer<Float>!) {
+func MO_CalcBoundingSphere(_ object: MetaObjectPtr!, _ bSphere: UnsafeMutablePointer<Float>!) {
     bSphere.pointee = 0
 
     // RECURSIVELY CALC SPHERE
@@ -1387,8 +1370,7 @@ private func calcBoundingSphereRecurse(_ object: MetaObjectPtr, _ bSphere: Unsaf
 
 // MARK: - UV Offsetting
 
-@c @implementation
-public func MO_Object_OffsetUVs(_ object: MetaObjectPtr!, _ du: Float, _ dv: Float) {
+func MO_Object_OffsetUVs(_ object: MetaObjectPtr!, _ du: Float, _ dv: Float) {
     let objHead = object.assumingMemoryBound(to: MetaObjectHeader.self)
 
     // VERIFY COOKIE
@@ -1428,8 +1410,7 @@ public func MO_Object_OffsetUVs(_ object: MetaObjectPtr!, _ du: Float, _ dv: Flo
     }
 }
 
-@c @implementation
-public func MO_VertexArray_OffsetUVs(_ object: MetaObjectPtr!, _ du: Float, _ dv: Float) {
+func MO_VertexArray_OffsetUVs(_ object: MetaObjectPtr!, _ du: Float, _ dv: Float) {
     let objHead = object.assumingMemoryBound(to: MetaObjectHeader.self)
 
     // VERIFY COOKIE

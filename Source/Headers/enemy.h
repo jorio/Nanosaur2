@@ -39,34 +39,21 @@ typedef enum SWIFT_ENUM_CLOSED EnemyKind
 
 			/* ENEMY */
 
-ObjNode *MakeEnemySkeleton(Byte skeletonType, short animNum, float x, float z, float scale, float rot, void (*moveCall)(ObjNode*));
-extern	void DeleteEnemy(ObjNode *theEnemy);
-Boolean DoEnemyCollisionDetect(ObjNode *theEnemy, uint32_t ctype, Boolean useBBoxBottom);
-void EnemyTouchedPlayer(ObjNode *enemy, ObjNode *player);
-extern	void UpdateEnemy(ObjNode *theNode);
-extern	void InitEnemyManager(void);
-void DetachEnemyFromSpline(ObjNode *theNode, void (*moveCall)(ObjNode*));
-ObjNode *FindClosestEnemy(OGLPoint3D *pt, float *dist);
-Boolean	IsWaterInFrontOfEnemy(float r);
-void MoveEnemySkipChunk(ObjNode *chunk);
 
 
 
 
 		/* RAPTOR */
 
-Boolean PrimeEnemy_Raptor(long splineNum, SplineItemType *itemPtr);
 
 
 
 				/* BRACH */
 
-Boolean PrimeEnemy_Brach(long splineNum, SplineItemType *itemPtr);
 
 
 		/* RAMPHOR */
 
-Boolean PrimeEnemy_Ramphor(long splineNum, SplineItemType *itemPtr);
 
 
 

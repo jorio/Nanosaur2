@@ -26,8 +26,4 @@ typedef struct
 
 //============================================
 
-void PrimeFences(void);
-void UpdateFences(void);
-Boolean DoFenceCollision(ObjNode *theNode);
-void DisposeFences(void);
 //Boolean SeeIfLineSegmentHitsFence(const OGLPoint3D *endPoint1, const OGLPoint3D *endPoint2, OGLPoint3D *intersect, Boolean *overTop, float *fenceTopY);

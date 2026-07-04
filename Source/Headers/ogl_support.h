@@ -282,57 +282,17 @@ typedef enum SWIFT_ENUM_CLOSED SplitscreenMode
 
 //=====================================================================
 
-void OGL_Boot(void);
-void OGL_Shutdown(void);
-void OGL_NewViewDef(OGLSetupInputType *viewDef);
-void OGL_SetupGameView(OGLSetupInputType *setupDefPtr);
-void OGL_DisposeGameView(void);
-void OGL_DrawScene(void (*drawRoutine)(void));
-void OGL_MoveCameraFromTo(float fromDX, float fromDY, float fromDZ, float toDX, float toDY, float toDZ, int camNum);
-void OGL_UpdateCameraFromTo(OGLPoint3D *from, OGLPoint3D *to, int camNum);
-void OGL_MoveCameraFrom(float fromDX, float fromDY, float fromDZ, Byte camNum);
-void OGL_UpdateCameraFromToUp(OGLPoint3D *from, OGLPoint3D *to, const OGLVector3D *up, int camNum);
-void OGL_Camera_SetPlacementAndUpdateMatrices(int camNum);
-void OGL_Texture_SetOpenGLTexture(GLuint textureName);
-GLuint OGL_TextureMap_Load(void *imageMemory, int width, int height, GLint destFormat, GLint srcFormat, GLint dataType);
-GLuint OGL_TextureMap_LoadImageFile(const char* path, int* outWidth, int* outHeight, int* outHasAlpha);
-void OGL_RAMTextureHasChanged(GLuint textureName, short width, short height, uint32_t *pixels);
-GLenum OGL_CheckError_Impl(const char* file, int line);
 #define OGL_CheckError() OGL_CheckError_Impl(__FILE__, __LINE__)
-void OGL_GetCurrentViewport(int *x, int *y, int *w, int *h, Byte whichPane);
-
-void OGL_PushState(void);
-void OGL_PopState(void);
-
-void OGL_EnableLighting(void);
-void OGL_DisableLighting(void);
-void OGL_EnableBlend(void);
-void OGL_DisableBlend(void);
-void OGL_EnableTexture2D(void);
-void OGL_DisableTexture2D(void);
-void OGL_ActiveTextureUnit(uint32_t texUnit);
-void OGL_SetColor4fv(OGLColorRGBA *color);
-void OGL_SetColor4f(float r, float g, float b, float a);
-void OGL_EnableCullFace(void);
-void OGL_DisableCullFace(void);
-void OGL_BlendFunc(GLenum sfactor, GLenum dfactor);
-void OGL_EnableFog(void);
-void OGL_DisableFog(void);
 
 
-void OGL_DrawString(const char* s, GLint x, GLint y);
-void OGL_DrawFloat(float f, GLint x, GLint y);
-void OGL_DrawInt(int f, GLint x, GLint y);
 
-void *OGL_AllocVertexArrayMemory(long size, Byte type);
-void OGL_FreeVertexArrayMemory(void *pointer, Byte type);
-void OGL_SetVertexArrayRangeDirty(short buffer);
+
+
 #if VERTEXARRAYRANGES
 void AssignVertexArrayRangeMemory(long size, void *pointer, Byte type);
 void ReleaseVertexArrayRangeMemory(Byte type);
 #endif
 
 
-void ColorBalanceRGBForAnaglyph(uint32_t *rr, uint32_t *gg, uint32_t *bb, Boolean doChannelBalancing);
 
 #define GetOverlayPaneNumber() (gNumPlayers)

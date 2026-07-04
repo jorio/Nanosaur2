@@ -27,8 +27,7 @@ private func moveMainMenu() {
 
 // MARK: - Do mainmenu screen
 
-@c @implementation
-public func DoMainMenuScreen() {
+func DoMainMenuScreen() {
     gPlayNow = 0
 
     while gPlayNow == 0 {
@@ -75,8 +74,7 @@ public func DoMainMenuScreen() {
 // We need to expose this to AnaglyphCalibration.c so the background texture
 // always reflects the current anaglyph settings
 
-@c @implementation
-public func BuildMainMenuObjects() {
+func BuildMainMenuObjects() {
     if let gMainMenuBackground {
         DeleteObject(gMainMenuBackground)
     }

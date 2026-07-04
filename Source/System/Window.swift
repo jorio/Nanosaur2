@@ -4,8 +4,7 @@ private let kFaderMode_FadeOut: Int32 = 0
 private let kFaderMode_FadeIn: Int32 = 1
 private let kFaderMode_Done: Int32 = 2
 
-@c @implementation
-public func InitWindowStuff() {
+func InitWindowStuff() {
     gGameWindowWidth = 640
     gGameWindowHeight = 480
 }
@@ -64,8 +63,7 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_PopState()
 }
 
-@c @implementation
-public func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCall: (@convention(c) () -> Void)!) {
+func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCall: (@convention(c) () -> Void)!) {
     let fader = MakeFadeEvent(UInt8(kFadeFlags_Out), 3.0)!
 
     var pFaderFrameCount = fader.pointee.Special.0
@@ -101,8 +99,7 @@ public func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCal
     }
 }
 
-@c @implementation
-public func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePointer<ObjNode>? {
+func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePointer<ObjNode>? {
     var newObj: UnsafeMutablePointer<ObjNode>?
     let fadeIn = fadeFlags & UInt8(kFadeFlags_In) != 0
 
@@ -167,8 +164,7 @@ public func Exit2D() {
     SDL_HideCursor()
 }
 
-@c @implementation
-public func GetDefaultWindowSize(_ display: SDL_DisplayID, _ width: UnsafeMutablePointer<Int32>!, _ height: UnsafeMutablePointer<Int32>!) {
+func GetDefaultWindowSize(_ display: SDL_DisplayID, _ width: UnsafeMutablePointer<Int32>!, _ height: UnsafeMutablePointer<Int32>!) {
     let aspectRatio: Float = 16.0 / 10.0
     let screenCoverage: Float = 0.8
 

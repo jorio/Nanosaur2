@@ -216,8 +216,7 @@ private let gTerrainItemAddRoutines: [(@convention(c) (UnsafeMutablePointer<Terr
 // This takes the input item list and resorts it according to supertile grid number
 // such that the items on any supertile are all sequential in the list instead of scattered.
 
-@c @implementation
-public func BuildTerrainItemList() {
+func BuildTerrainItemList() {
     // ALLOC MEMORY FOR SUPERTILE ITEM INDEX GRID
 
     gSuperTileItemIndexGrid = alloc2DArray(SuperTileItemIndexType.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide))
@@ -330,8 +329,7 @@ private func findPlayerStartCoordItems() {
 // Called by DoPlayerTerrainUpdate() per each supertile needed.
 // This scans all of the items on this supertile and attempts to add them.
 
-@c @implementation
-public func AddTerrainItemsOnSuperTile(_ row: Int, _ col: Int) {
+func AddTerrainItemsOnSuperTile(_ row: Int, _ col: Int) {
     let numItems = Int(gSuperTileItemIndexGrid[row]![col].numItems) // see how many items are on this supertile
     if numItems == 0 {
         return
@@ -374,8 +372,7 @@ private extension UInt32 {
 //
 // Returns true if theNode is out of range
 
-@c @implementation
-public func TrackTerrainItem(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func TrackTerrainItem(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DONTPURGE) != 0 { // see if non-purgable
         return 0
     }
@@ -388,8 +385,7 @@ public func TrackTerrainItem(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8
 // Returns true if the given x/z coords are outside the item delete
 // window of any of the players.
 
-@c @implementation
-public func SeeIfCoordsOutOfRange(_ x: Float, _ z: Float) -> UInt8 {
+func SeeIfCoordsOutOfRange(_ x: Float, _ z: Float) -> UInt8 {
     // SEE IF OUT OF RANGE
 
     if x < 0 || z < 0 {
@@ -417,8 +413,7 @@ public func SeeIfCoordsOutOfRange(_ x: Float, _ z: Float) -> UInt8 {
 //
 // INPUT: surfaceNormal == optional input normal to use.
 
-@c @implementation
-public func RotateOnTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset: Float, _ surfaceNormal: UnsafeMutablePointer<OGLVector3D>?) {
+func RotateOnTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset: Float, _ surfaceNormal: UnsafeMutablePointer<OGLVector3D>?) {
     var up = OGLVector3D()
     var to = OGLPoint3D()
     var m2 = OGLMatrix4x4()
@@ -467,8 +462,7 @@ public func RotateOnTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset
 //
 // Same as above except it averages normals around the center.
 
-@c @implementation
-public func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset: Float, _ radius: Float) {
+func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset: Float, _ radius: Float) {
     // GET CENTER Y COORD & TERRAIN NORMAL
 
     let x = theNode.pointee.Coord.x
@@ -501,8 +495,7 @@ public func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, 
 //
 // Given a row, col coord, calculate the face normals for the 2 triangles.
 
-@c @implementation
-public func CalcTileNormals(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVector3D>!, _ n2: UnsafeMutablePointer<OGLVector3D>!) {
+func CalcTileNormals(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVector3D>!, _ n2: UnsafeMutablePointer<OGLVector3D>!) {
     var p1 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p2 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p3 = OGLPoint3D(x: 0, y: 0, z: 0)
@@ -545,8 +538,7 @@ public func CalcTileNormals(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<O
 //
 // Given a row, col coord, calculate the face normals for the 2 triangles.
 
-@c @implementation
-public func CalcTileNormals_NotNormalized(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVector3D>!, _ n2: UnsafeMutablePointer<OGLVector3D>!) {
+func CalcTileNormals_NotNormalized(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVector3D>!, _ n2: UnsafeMutablePointer<OGLVector3D>!) {
     var p1 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p2 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p3 = OGLPoint3D(x: 0, y: 0, z: 0)
@@ -592,8 +584,7 @@ public func CalcTileNormals_NotNormalized(_ row: Int, _ col: Int, _ n1: UnsafeMu
 // Scans thru item list and casts a shadown onto the terrain
 // by darkening the vertex colors of the terrain.
 
-@c @implementation
-public func DoItemShadowCasting() {
+func DoItemShadowCasting() {
     let up = OGLVector3D(x: 0, y: 1, z: 0)
     let shadeFactor: Float = 0.7
 
@@ -706,8 +697,7 @@ public func DoItemShadowCasting() {
 
 // MARK: - See if crossed line marker
 
-@c @implementation
-public func SeeIfCrossedLineMarker(_ theNode: UnsafeMutablePointer<ObjNode>!, _ whichLine: UnsafeMutablePointer<Int>!) -> UInt8 {
+func SeeIfCrossedLineMarker(_ theNode: UnsafeMutablePointer<ObjNode>!, _ whichLine: UnsafeMutablePointer<Int>!) -> UInt8 {
     // GET PLAYER'S MOVEMENT LINE SEGMENT
 
     let fromX = theNode.pointee.OldCoord.x

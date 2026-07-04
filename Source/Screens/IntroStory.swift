@@ -177,8 +177,7 @@ private let gSlides: [SlideType] = [
 
 // MARK: - Do intro story
 
-@c @implementation
-public func DoIntroStoryScreen() {
+func DoIntroStoryScreen() {
     // SETUP
 
     setupIntroStoryScreen()

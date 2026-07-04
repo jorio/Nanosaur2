@@ -24,8 +24,7 @@ private func PlayerCompletedRace(_ playerNum: Int16) {
 
 // Called from the player's update function to see which line markers we've crossed as part of the
 // race placement testing.
-@c @implementation
-public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
+func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
     var newCheckpoint: Int32 = 0
     let p = Int32(player.pointee.PlayerNum)
     var c: Int = 0
@@ -194,8 +193,7 @@ public func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 }
 
 // Determine placing by counting how many players are in front of each player.
-@c @implementation
-public func CalcPlayerPlaces() {
+func CalcPlayerPlaces() {
     for p in 0..<Int32(gNumPlayers) {
         let pi = GetPlayerInfoPtr(p)
         if pi.pointee.raceComplete != 0 { // if player already done, then dont do anything

@@ -20,8 +20,7 @@ private let cMoveShockwaveRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
     UpdateObjectTransforms(theNode)
 }
 
-@c @implementation
-public func InitEffects() {
+func InitEffects() {
     InitParticleSystem()
     InitConfettiManager()
     InitShardSystem()
@@ -30,8 +29,7 @@ public func InitEffects() {
     BlendASprite(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_Splash))
 }
 
-@c @implementation
-public func MakeShockwaveRing(_ coord: UnsafeMutablePointer<OGLPoint3D>, _ scale: Float) -> UnsafeMutablePointer<ObjNode> {
+func MakeShockwaveRing(_ coord: UnsafeMutablePointer<OGLPoint3D>, _ scale: Float) -> UnsafeMutablePointer<ObjNode> {
     var def = NewObjectDefinitionType()
     def.group = UInt8(MODEL_GROUP_GLOBAL)
     def.type = UInt8(GLOBAL_ObjType_ShockwaveRing)

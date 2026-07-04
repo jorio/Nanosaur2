@@ -32,8 +32,7 @@ private func isStereoAnaglyph() -> Bool {
 
 // MARK: - Do level intro screen
 
-@c @implementation
-public func DoLevelIntroScreen(_ mode: UInt8) {
+func DoLevelIntroScreen(_ mode: UInt8) {
     var bail = false
     var timer: Float = 5.0
 

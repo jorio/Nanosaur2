@@ -78,8 +78,7 @@ private func atlasGetGlyphPtr(_ atlas: UnsafePointer<Atlas>, _ codepoint: UInt32
     return atlas.pointee.glyphPages![page]! + Int(codepoint & 0xFF)
 }
 
-@c @implementation
-public func Atlas_GetGlyph(_ atlas: UnsafePointer<Atlas>, _ codepoint: UInt32) -> UnsafePointer<AtlasGlyph>? {
+func Atlas_GetGlyph(_ atlas: UnsafePointer<Atlas>, _ codepoint: UInt32) -> UnsafePointer<AtlasGlyph>? {
     UnsafePointer(atlasGetGlyphPtr(atlas, codepoint))
 }
 
@@ -223,8 +222,7 @@ private func parseKerningFile(_ atlas: UnsafeMutablePointer<Atlas>, _ dataPtr: U
 
 // MARK: - Init/shutdown
 
-@c @implementation
-public func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: UnsafePointer<CChar>, _ flags: Int32) {
+func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: UnsafePointer<CChar>, _ flags: Int32) {
     if let existing = gAtlases[Int(groupNum)] {
         // Sprite group busy
         if strncmp(atlasName, withUnsafePointer(to: existing.pointee.name) { UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self) }, MemoryLayout.size(ofValue: existing.pointee.name)) == 0 {
@@ -240,23 +238,20 @@ public func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: UnsafePointer<CChar>
     gAtlases[Int(groupNum)] = Atlas_Load(atlasName, flags)
 }
 
-@c @implementation
-public func DisposeSpriteAtlas(_ groupNum: Int32) {
+func DisposeSpriteAtlas(_ groupNum: Int32) {
     if let atlas = gAtlases[Int(groupNum)] {
         Atlas_Dispose(atlas)
         gAtlases[Int(groupNum)] = nil
     }
 }
 
-@c @implementation
-public func DisposeAllSpriteAtlases() {
+func DisposeAllSpriteAtlases() {
     for i in 0..<Int(MAX_ATLASES) {
         DisposeSpriteAtlas(Int32(i))
     }
 }
 
-@c @implementation
-public func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> UnsafeMutablePointer<Atlas> {
+func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> UnsafeMutablePointer<Atlas> {
     let atlas = AllocPtrClear(MemoryLayout<Atlas>.size)!.assumingMemoryBound(to: Atlas.self)
 
     if flags & Int32(kAtlasLoadFont) != 0 {
@@ -344,8 +339,7 @@ public func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> Unsa
     return atlas
 }
 
-@c @implementation
-public func Atlas_Dispose(_ atlas: UnsafeMutablePointer<Atlas>) {
+func Atlas_Dispose(_ atlas: UnsafeMutablePointer<Atlas>) {
     MO_DisposeObjectReference(UnsafeMutableRawPointer(atlas.pointee.material))
     atlas.pointee.material = nil
 
@@ -621,8 +615,7 @@ private func getExtentsFromMetrics(_ metrics: TextMetrics) -> OGLRect {
     return rect
 }
 
-@c @implementation
-public func TextMesh_Update(_ text: UnsafePointer<CChar>, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
+func TextMesh_Update(_ text: UnsafePointer<CChar>, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
     let font = gAtlases[Int(textNode.pointee.Group)]!
 
     // Get mesh from ObjNode
@@ -668,8 +661,7 @@ public func TextMesh_Update(_ text: UnsafePointer<CChar>, _ flags: Int32, _ text
 
 // MARK: - API implementation
 
-@c @implementation
-public func TextMesh_NewEmpty(_ capacity: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
+func TextMesh_NewEmpty(_ capacity: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
     // Patch newObjDef with bare minimum flags for TextMesh
     newObjDef.pointee.genre = UInt8(TEXTMESH_GENRE)
     newObjDef.pointee.flags |= UInt32(SwStatusBitsFor2D)
@@ -689,8 +681,7 @@ public func TextMesh_New(_ text: UnsafePointer<CChar>, _ align: Int32, _ newObjD
     return textNode
 }
 
-@c @implementation
-public func TextMesh_GetExtents(_ textNode: UnsafeMutablePointer<ObjNode>) -> OGLRect {
+func TextMesh_GetExtents(_ textNode: UnsafeMutablePointer<ObjNode>) -> OGLRect {
     SwGameAssert(Int32(textNode.pointee.Genre) == Int32(TEXTMESH_GENRE))
 
     var rect = OGLRect()
@@ -717,8 +708,7 @@ private func drawExtents(_ extents: OGLRect, _ z: Float) {
     OGL_PopState()
 }
 
-@c @implementation
-public func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
+func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
     SwGameAssert(Int32(textNode.pointee.Genre) == Int32(TEXTMESH_GENRE))
 
     OGL_PushState() // keep state
@@ -739,8 +729,7 @@ public func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
     OGL_PopState()
 }
 
-@c @implementation
-public func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flags: UInt32) {
+func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flags: UInt32) {
     SwGameAssert(Int(groupNum) < Int(MAX_ATLASES))
 
     let font = gAtlases[Int(groupNum)]!
@@ -778,8 +767,7 @@ public func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>,
     gPolysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
 }
 
-@c @implementation
-public func Atlas_DrawString2(
+func Atlas_DrawString2(
     _ groupNum: Int32,
     _ text: UnsafePointer<CChar>,
     _ x: Float,

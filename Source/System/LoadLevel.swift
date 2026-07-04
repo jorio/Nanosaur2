@@ -1,8 +1,7 @@
 // LoadLevel.swift - Port of LoadLevel.c to Swift
 // The level/biome lookup tables stay in LoadLevel.c; see LoadLevelInternal.h.
 
-@c @implementation
-public func LoadLevelArt() {
+func LoadLevelArt() {
     let currentBiome = GetLevelBiome(Int32(gLevelNum))
 
     var timeStartLoad = UnsignedWide()

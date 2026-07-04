@@ -77,8 +77,7 @@ private var gFenceObj: UnsafeMutablePointer<ObjNode>?
 // MARK: - Prime fences
 
 // Called during terrain prime function to initialize
-@c @implementation
-public func PrimeFences() {
+func PrimeFences() {
     if gNumFences > Int32(maxFences) {
         SwFatal("PrimeFences: gNumFences > MAX_FENCES")
     }
@@ -308,8 +307,7 @@ private func makeFenceGeometry() {
 
 // MARK: - Dispose fences
 
-@c @implementation
-public func DisposeFences() {
+func DisposeFences() {
     if gFenceList == nil {
         return
     }
@@ -343,8 +341,7 @@ public func DisposeFences() {
 
 // MARK: - Update fences
 
-@c @implementation
-public func UpdateFences() {
+func UpdateFences() {
     let autoFadeStart = gAutoFadeStartDist
     let autoFadeEndDist = gAutoFadeEndDist
     let autoFadeRangeFrac = gAutoFadeRange_Frac
@@ -459,8 +456,7 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 // MARK: - Do fence collision
 
 // returns True if hit a fence
-@c @implementation
-public func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     // SEE IF WE HAVE AN ENEMY
 
     let isEnemy = (theNode.pointee.CType & UInt32(CTYPE_ENEMY)) != 0

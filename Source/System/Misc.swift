@@ -49,8 +49,7 @@ public func CleanQuit() -> Never {
 
 // MARK: - Random number generator
 
-@c @implementation
-public func MyRandomLong() -> UInt32 {
+func MyRandomLong() -> UInt32 {
     gSeed1 ^= (gSeed2 >> 5) &* 1568397607
     gSeed0 = (gSeed0 &+ 1) &* 3141592621
     let sum = (gSeed1 >> 7) &+ gSeed0
@@ -59,8 +58,7 @@ public func MyRandomLong() -> UInt32 {
 }
 
 // THE RANGE *IS* INCLUSIVE OF MIN AND MAX
-@c @implementation
-public func RandomRange(_ min: UInt16, _ max: UInt16) -> UInt16 {
+func RandomRange(_ min: UInt16, _ max: UInt16) -> UInt16 {
     let qdRdm = UInt16(truncatingIfNeeded: MyRandomLong()) // treat return value as 0-65536
     let range = UInt32(max) + 1 - UInt32(min)
     let t = (UInt32(qdRdm) &* range) >> 16 // now 0 <= t <= range
@@ -69,8 +67,7 @@ public func RandomRange(_ min: UInt16, _ max: UInt16) -> UInt16 {
 }
 
 // returns a random float between 0 and 1
-@c @implementation
-public func RandomFloat() -> Float {
+func RandomFloat() -> Float {
     let r = MyRandomLong() & 0xfff
     if r == 0 {
         return 0
@@ -82,8 +79,7 @@ public func RandomFloat() -> Float {
 }
 
 // returns a random float between -1 and +1
-@c @implementation
-public func RandomFloat2() -> Float {
+func RandomFloat2() -> Float {
     let r = MyRandomLong() & 0xfff
     if r == 0 {
         return 0
@@ -95,15 +91,13 @@ public func RandomFloat2() -> Float {
     return f
 }
 
-@c @implementation
-public func SetMyRandomSeed(_ seed: UInt32) {
+func SetMyRandomSeed(_ seed: UInt32) {
     gSeed0 = seed
     gSeed1 = 0
     gSeed2 = 0
 }
 
-@c @implementation
-public func InitMyRandomSeed() {
+func InitMyRandomSeed() {
     gSeed0 = 0x2a80ce30
     gSeed1 = 0
     gSeed2 = 0
@@ -134,8 +128,7 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     return p! + PTRCOOKIE_SIZE
 }
 
-@c @implementation
-public func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
+func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 >= 0)
     SwGameAssert(size0 <= 0x7FFFFFFF)
 
@@ -204,13 +197,11 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
 
 // MARK: - Misc
 
-@c @implementation
-public func VerifySystem() {
+func VerifySystem() {
 }
 
 // This version uses UpTime() which is only available on PCI Macs.
-@c @implementation
-public func CalcFramesPerSecond() {
+func CalcFramesPerSecond() {
     struct Statics {
         static var time = UnsignedWide()
         static var sampIndex: Int32 = 0
@@ -274,8 +265,7 @@ public func CalcFramesPerSecond() {
     Statics.time = currTime // reset for next time interval
 }
 
-@c @implementation
-public func IsPowerOf2(_ num: Int32) -> UInt8 {
+func IsPowerOf2(_ num: Int32) -> UInt8 {
     var i: Int32 = 2
     repeat {
         if i == num { // see if this power of 2 matches
@@ -287,19 +277,16 @@ public func IsPowerOf2(_ num: Int32) -> UInt8 {
     return 0
 }
 
-@c @implementation
-public func MyFlushEvents() {
+func MyFlushEvents() {
 }
 
 // MARK: - Swizzling
 
-@c @implementation
-public func SwizzleShort(_ shortPtr: UnsafePointer<Int16>?) -> Int16 {
+func SwizzleShort(_ shortPtr: UnsafePointer<Int16>?) -> Int16 {
     Int16(bitPattern: SwizzleUShort(UnsafeRawPointer(shortPtr)?.assumingMemoryBound(to: UInt16.self)))
 }
 
-@c @implementation
-public func SwizzleUShort(_ shortPtr: UnsafePointer<UInt16>?) -> UInt16 {
+func SwizzleUShort(_ shortPtr: UnsafePointer<UInt16>?) -> UInt16 {
     // The original C used `#if __LITTLE_ENDIAN__`, which Swift's #if can't
     // see (it's a C preprocessor macro, not a Swift compilation condition).
     // All of this project's actual build targets (Apple Silicon/x86_64
@@ -312,13 +299,11 @@ public func SwizzleUShort(_ shortPtr: UnsafePointer<UInt16>?) -> UInt16 {
     return (b1 << 8) | b2
 }
 
-@c @implementation
-public func SwizzleLong(_ longPtr: UnsafePointer<Int32>?) -> Int32 {
+func SwizzleLong(_ longPtr: UnsafePointer<Int32>?) -> Int32 {
     Int32(bitPattern: SwizzleULong(UnsafeRawPointer(longPtr)?.assumingMemoryBound(to: UInt32.self)))
 }
 
-@c @implementation
-public func SwizzleULong(_ longPtr: UnsafePointer<UInt32>?) -> UInt32 {
+func SwizzleULong(_ longPtr: UnsafePointer<UInt32>?) -> UInt32 {
     // See SwizzleUShort: unconditional swap since every real build target
     // of this project is little-endian.
     let theLong = longPtr!.pointee
@@ -331,8 +316,7 @@ public func SwizzleULong(_ longPtr: UnsafePointer<UInt32>?) -> UInt32 {
     return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
 }
 
-@c @implementation
-public func SwizzleFloat(_ floatPtr: UnsafePointer<Float>?) -> Float {
+func SwizzleFloat(_ floatPtr: UnsafePointer<Float>?) -> Float {
     var theLong = SwizzleULong(UnsafeRawPointer(floatPtr)?.assumingMemoryBound(to: UInt32.self))
     return withUnsafePointer(to: &theLong) { $0.withMemoryRebound(to: Float.self, capacity: 1) { $0.pointee } }
 }

@@ -249,8 +249,7 @@ private func updateBrach(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Prime Brach
 
-@c @implementation
-public func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
+func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     // GET SPLINE INFO
 
     let placement = itemPtr.pointee.placement

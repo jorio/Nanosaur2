@@ -26,8 +26,7 @@
 //
 // Called once at beginning of game
 
-@c @implementation
-public func InitPlayerInfo_Game() {
+func InitPlayerInfo_Game() {
     for i in 0..<Int(MAX_PLAYERS) {
         let pi = GetPlayerInfoEntry(Int32(i))!
 
@@ -76,8 +75,7 @@ public func InitPlayerInfo_Game() {
 
 // MARK: - Init player at start of level
 
-@c @implementation
-public func InitPlayerAtStartOfLevel() {
+func InitPlayerAtStartOfLevel() {
     // FIRST PRIME THE TERRAIN TO CAUSE ALL OBJECTS TO BE GENERATED BEFORE WE PUT THE PLAYER DOWN
     InitCurrentScrollSettings()
     DoPlayerTerrainUpdate()
@@ -172,8 +170,7 @@ public func InitPlayerAtStartOfLevel() {
 
 // MARK: - Disorient player
 
-@c @implementation
-public func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
+func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     let playerNum = player.pointee.PlayerNum
 
     if gGamePrefs.kiddieMode == 0 { // don't drop eggs in kiddie mode
@@ -191,8 +188,7 @@ public func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 //
 // where is usually gCoord, but if nil then use coord from player's objNode
 
-@c @implementation
-public func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
+func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
     var killed: UInt8 = 0
 
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
@@ -231,8 +227,7 @@ public func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: U
 //
 // where is usually gCoord, but if nil then use coord from player's objNode
 
-@c @implementation
-public func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
+func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let player = pi.pointee.objNode!
 
@@ -286,8 +281,7 @@ public func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeM
 
 // MARK: - Hide player
 
-@c @implementation
-public func HidePlayer(_ player: UnsafeMutablePointer<ObjNode>) {
+func HidePlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     var node: UnsafeMutablePointer<ObjNode>? = player
 
     while let n = node {
@@ -300,8 +294,7 @@ public func HidePlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Show player
 
-@c @implementation
-public func ShowPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
+func ShowPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     var node: UnsafeMutablePointer<ObjNode>? = player
 
     while let n = node {
@@ -314,8 +307,7 @@ public func ShowPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 //
 // Return true if player is now invisible / hidden
 
-@c @implementation
-public func FadePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ rate: Float) -> UInt8 {
+func FadePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ rate: Float) -> UInt8 {
     var a = player.pointee.ColorFilter.a
     a += rate
 
@@ -337,8 +329,7 @@ public func FadePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ rate: Float) -
 
 // MARK: - Reset player @ best checkpoint
 
-@c @implementation
-public func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
+func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let player = pi.pointee.objNode!
 
@@ -434,8 +425,7 @@ public func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
 
 // MARK: - Update carried object
 
-@c @implementation
-public func UpdateCarriedObject(_ player: UnsafeMutablePointer<ObjNode>, _ held: UnsafeMutablePointer<ObjNode>) {
+func UpdateCarriedObject(_ player: UnsafeMutablePointer<ObjNode>, _ held: UnsafeMutablePointer<ObjNode>) {
     // CALC SCALE MATRIX
     let scale = held.pointee.Scale.x / player.pointee.Scale.x // to adjust from player's scale to held's scale
     var mst = OGLMatrix4x4()
@@ -481,8 +471,7 @@ public func UpdateCarriedObject(_ player: UnsafeMutablePointer<ObjNode>, _ held:
 
 // MARK: - Calc distance to closest player
 
-@c @implementation
-public func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playerNum: UnsafeMutablePointer<Int16>?) -> Float {
+func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playerNum: UnsafeMutablePointer<Int16>?) -> Float {
     // CHECK PLAYER 1
     var d1: Float
     if GetPlayerIsDead(0) != 0 { // ignore dead player
@@ -513,8 +502,7 @@ public func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, 
 //
 // where is usually gCoord, but if nil then use coord from player's objNode
 
-@c @implementation
-public func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
+func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let x: Float, y: Float, z: Float
     if let where_ {
         x = where_.pointee.x
@@ -673,8 +661,7 @@ public func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: 
 //
 // This callback is invoked whenever a trap's weapon hits a player object (such as gun turret blaster bullets)
 
-@c @implementation
-public func PlayerHitByWeaponCallback(_ weapon: UnsafeMutablePointer<ObjNode>, _ player: UnsafeMutablePointer<ObjNode>, _ hitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
+func PlayerHitByWeaponCallback(_ weapon: UnsafeMutablePointer<ObjNode>, _ player: UnsafeMutablePointer<ObjNode>, _ hitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
     let p = player.pointee.PlayerNum
     var playerKilled: UInt8 = 0
 
@@ -706,8 +693,7 @@ private let cDoTrig_Player: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
     DoTrig_Player(trigger!, theNode!)
 }
 
-@c @implementation
-public func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
+func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
     PlayEffect3D(Int16(EFFECT_BODYHIT), &trigger.pointee.Coord)
 
     // THE ANGLE OF IMPACT WILL DETERMINE THE DAMAGE INFLICTED
@@ -766,8 +752,7 @@ public func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: U
 // has some shield power. It remains invisible until the shield is hit by something which
 // causes it to momentarily become visible.
 
-@c @implementation
-public func CreatePlayerShield(_ playerNum: Int16) {
+func CreatePlayerShield(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let player = pi.pointee.objNode!
 
@@ -798,8 +783,7 @@ public func CreatePlayerShield(_ playerNum: Int16) {
 
 // MARK: - Update player shield
 
-@c @implementation
-public func UpdatePlayerShield(_ playerNum: Int16) {
+func UpdatePlayerShield(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     guard let shield = pi.pointee.shieldObj else { // do we have a shield?
         return
@@ -866,8 +850,7 @@ private func playerShieldHitByWeaponCallback(_ bullet: UnsafeMutablePointer<ObjN
 
 // MARK: - Hit player shield
 
-@c @implementation
-public func HitPlayerShield(_ playerNum: Int16, _ damage: Float, _ shieldGlowDuration: Float, _ disorientPlayer: UInt8) {
+func HitPlayerShield(_ playerNum: Int16, _ damage: Float, _ shieldGlowDuration: Float, _ disorientPlayer: UInt8) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let shield = pi.pointee.shieldObj
 
@@ -936,8 +919,7 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // MARK: - Calc max altitude
 
-@c @implementation
-public func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
+func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
     var maxAlt: Float
 
     switch gLevelNum {
@@ -956,8 +938,7 @@ public func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
 
 // MARK: - Update player steering
 
-@c @implementation
-public func UpdatePlayerSteering(_ playerNum: Int32) {
+func UpdatePlayerSteering(_ playerNum: Int32) {
     let playerInfo = GetPlayerInfoEntry(playerNum)!
 
     // SET PLAYER AXIS CONTROLS

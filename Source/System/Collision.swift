@@ -12,8 +12,7 @@ private var gTriggerSides: UInt8 = 0
 }
 
 // INPUT: startNumCollisions = value to start gNumCollisions at should we need to keep existing data in collision list
-@c @implementation
-public func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32, _ startNumCollisions: Int16) {
+func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32, _ startNumCollisions: Int16) {
     gNumCollisions = startNumCollisions // clear list
 
     // GET BASE BOX INFO
@@ -230,8 +229,7 @@ public func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType:
 // INPUT:  cType = CType bit mask for collision matching
 //
 // OUTPUT: totalSides
-@c @implementation
-public func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32, _ deltaBounce: Float) -> UInt8 {
+func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32, _ deltaBounce: Float) -> UInt8 {
     var deltaBounce = deltaBounce
     var totalSides: UInt8 = 0
     var hitImpenetrable = false
@@ -506,8 +504,7 @@ public func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType:
 //	INPUT:	pt_x,pt_y	:	point x,y coords
 //			cnt			:	# points in poly
 //			polypts		:	ptr to array of 2D points
-@c @implementation
-public func IsPointInPoly2D(_ pt_x: Float, _ pt_y: Float, _ numVerts: UInt8, _ polypts: UnsafeMutablePointer<OGLPoint2D>!) -> UInt8 {
+func IsPointInPoly2D(_ pt_x: Float, _ pt_y: Float, _ numVerts: UInt8, _ polypts: UnsafeMutablePointer<OGLPoint2D>!) -> UInt8 {
     var oldquad: UInt8
     var newquad: UInt8
     var wind: Int8 = 0 // current winding number
@@ -579,8 +576,7 @@ public func IsPointInPoly2D(_ pt_x: Float, _ pt_y: Float, _ numVerts: UInt8, _ p
 //	INPUT:	pt_x,pt_y	:	point x,y coords
 //			cnt			:	# points in poly
 //			polypts		:	ptr to array of 2D points
-@c @implementation
-public func IsPointInTriangle(_ pt_x: Float, _ pt_y: Float, _ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ x2: Float, _ y2: Float) -> UInt8 {
+func IsPointInTriangle(_ pt_x: Float, _ pt_y: Float, _ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ x2: Float, _ y2: Float) -> UInt8 {
     var oldquad: UInt8
     var newquad: UInt8
     var wind: Int8
@@ -731,8 +727,7 @@ public func IsPointInTriangle(_ pt_x: Float, _ pt_y: Float, _ x0: Float, _ y0: F
 // INPUT:  except == objNode to skip
 //
 // OUTPUT: # collisions detected
-@c @implementation
-public func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!, _ cType: UInt32, _ except: UnsafeMutablePointer<ObjNode>!) -> Int16 {
+func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!, _ cType: UInt32, _ except: UnsafeMutablePointer<ObjNode>!) -> Int16 {
     gNumCollisions = 0
 
     var thisNode = gFirstNodePtr // start on 1st node
@@ -813,8 +808,7 @@ public func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!
 }
 
 // OUTPUT: # collisions detected
-@c @implementation
-public func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float, _ cType: UInt32) -> Int16 {
+func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float, _ cType: UInt32) -> Int16 {
     gNumCollisions = 0
 
     var thisNode = gFirstNodePtr // start on 1st node
@@ -887,8 +881,7 @@ public func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _
     return gNumCollisions
 }
 
-@c @implementation
-public func DoSimpleBoxCollisionAgainstPlayer(_ playerNum: Int16, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) -> UInt8 {
+func DoSimpleBoxCollisionAgainstPlayer(_ playerNum: Int16, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) -> UInt8 {
     if GetPlayerIsDead(Int32(playerNum)) != 0 { // if dead then blown up and can't be hit
         return 0
     }
@@ -938,8 +931,7 @@ public func DoSimpleBoxCollisionAgainstPlayer(_ playerNum: Int16, _ top: Float, 
 }
 
 // OUTPUT: 	x,y = coords
-@c @implementation
-public func DoSimplePointCollisionAgainstPlayer(_ playerNum: Int16, _ thePoint: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
+func DoSimplePointCollisionAgainstPlayer(_ playerNum: Int16, _ thePoint: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
     if GetPlayerIsDead(Int32(playerNum)) != 0 { // if dead then blown up and can't be hit
         return 0
     }
@@ -988,8 +980,7 @@ public func DoSimplePointCollisionAgainstPlayer(_ playerNum: Int16, _ thePoint: 
     return 0
 }
 
-@c @implementation
-public func DoSimpleBoxCollisionAgainstObject(_ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float, _ targetNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func DoSimpleBoxCollisionAgainstObject(_ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float, _ targetNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     // GET BOX INFO FOR THIS NODE
 
     let targetNumBoxes = targetNode.pointee.NumCollisionBoxes // if target has no boxes, then skip
@@ -1035,8 +1026,7 @@ public func DoSimpleBoxCollisionAgainstObject(_ top: Float, _ bottom: Float, _ l
 
 // Given the XY input, this returns the highest Y coordinate of any collision
 // box here.
-@c @implementation
-public func FindHighestCollisionAtXZ(_ x: Float, _ z: Float, _ cType: UInt32) -> Float {
+func FindHighestCollisionAtXZ(_ x: Float, _ z: Float, _ cType: UInt32) -> Float {
     var topY: Float = -10000000
 
     var thisNode = gFirstNodePtr // start on 1st node
@@ -1134,8 +1124,7 @@ private func finishFindHighestCollisionAtXZ(_ topYIn: Float, _ x: Float, _ z: Fl
 //			hitPt = coordinate of the hit
 //			TRUE if a collision occurred
 //			cTypes = set to CTYPE_TERRAIN or CTYPE_FENCE or left alone depending on what we hit
-@c @implementation
-public func HandleLineSegmentCollision(_ lineSeg: UnsafePointer<OGLLineSegment>!, _ hitObj: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!, _ hitPt: UnsafeMutablePointer<OGLPoint3D>!, _ hitNormal: UnsafeMutablePointer<OGLVector3D>!, _ cTypes: UnsafeMutablePointer<UInt32>!, _ allowBBoxTests: UInt8) -> UInt8 {
+func HandleLineSegmentCollision(_ lineSeg: UnsafePointer<OGLLineSegment>!, _ hitObj: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!, _ hitPt: UnsafeMutablePointer<OGLPoint3D>!, _ hitNormal: UnsafeMutablePointer<OGLVector3D>!, _ cTypes: UnsafeMutablePointer<UInt32>!, _ allowBBoxTests: UInt8) -> UInt8 {
     var coord = OGLPoint3D()
     var normal = OGLVector3D()
     var dist: Float = 0
@@ -1203,8 +1192,7 @@ public func HandleLineSegmentCollision(_ lineSeg: UnsafePointer<OGLLineSegment>!
 //			hitPt = coordinate of the hit
 //			TRUE if a collision occurred
 //			cTypes = set to CTYPE_TERRAIN or CTYPE_FENCE or left alone depending on what we hit
-@c @implementation
-public func HandleRayCollision(_ ray: UnsafeMutablePointer<OGLRay>!, _ hitObj: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!, _ hitPt: UnsafeMutablePointer<OGLPoint3D>!, _ hitNormal: UnsafeMutablePointer<OGLVector3D>!, _ cTypes: UnsafeMutablePointer<UInt32>!) -> UInt8 {
+func HandleRayCollision(_ ray: UnsafeMutablePointer<OGLRay>!, _ hitObj: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!, _ hitPt: UnsafeMutablePointer<OGLPoint3D>!, _ hitNormal: UnsafeMutablePointer<OGLVector3D>!, _ cTypes: UnsafeMutablePointer<UInt32>!) -> UInt8 {
     var coord = OGLPoint3D()
     var normal = OGLVector3D()
     var bestDist: Float = 1000000

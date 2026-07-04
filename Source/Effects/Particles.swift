@@ -62,8 +62,7 @@ private var gNumActiveParticleGroups: Int16 = 0
 
 // MARK: - Init particle system
 
-@c @implementation
-public func InitParticleSystem() {
+func InitParticleSystem() {
     // INIT GROUP ARRAY
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
@@ -94,15 +93,13 @@ public func InitParticleSystem() {
 
 // MARK: - Dispose particle system
 
-@c @implementation
-public func DisposeParticleSystem() {
+func DisposeParticleSystem() {
     DeleteAllParticleGroups()
 }
 
 // MARK: - Delete all particle groups
 
-@c @implementation
-public func DeleteAllParticleGroups() {
+func DeleteAllParticleGroups() {
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
         deleteParticleGroup(i)
     }
@@ -160,8 +157,7 @@ private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
 // INPUT:	type 	=	group type to create
 //
 // OUTPUT:	group ID#
-@c @implementation
-public func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> Int16 {
+func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> Int16 {
     // SCAN FOR A FREE GROUP
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
@@ -279,8 +275,7 @@ public func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType
 // MARK: - Add particle to group
 
 // Returns true if particle group was invalid or is full.
-@c @implementation
-public func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
+func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
     let group = Int(def.pointee.groupNum)
 
     SwGameAssertMessage(group >= 0 && group < Int(MAX_PARTICLE_GROUPS), "Illegal group #")
@@ -321,8 +316,7 @@ public func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UIn
 
 // MARK: - Set which panes to draw the particle group in
 
-@c @implementation
-public func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ visibleForPlayer2: Bool) {
+func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ visibleForPlayer2: Bool) {
     SwGameAssertMessage(group >= 0 && group < Int16(MAX_PARTICLE_GROUPS), "Illegal group #")
 
     if let g = gParticleGroups[Int(group)] {
@@ -737,8 +731,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
 // MARK: - Verify particle group magic num
 
-@c @implementation
-public func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
+func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
     guard let g = gParticleGroups[Int(group)] else {
         return 0
     }
@@ -753,8 +746,7 @@ public func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> U
 // MARK: - Particle hit object
 
 // INPUT:	inFlags = flags to check particle types against
-@c @implementation
-public func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UInt16) -> UInt8 {
+func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UInt16) -> UInt8 {
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
         guard let group = gParticleGroups[i] else { // see if group active
             continue
@@ -795,8 +787,7 @@ public func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFla
 
 // MARK: - Make puff
 
-@c @implementation
-public func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float, _ texNum: Int16, _ src: Int32, _ dst: Int32, _ decayRate: Float) {
+func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float, _ texNum: Int16, _ src: Int32, _ dst: Int32, _ decayRate: Float) {
     // white sparks
 
     gNewParticleGroupDef.magicNum = 0
@@ -848,8 +839,7 @@ public func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3
 
 // MARK: - Make spark explosion
 
-@c @implementation
-public func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ scale: Float, _ sparkTexture: Int16, _ quantityLimit: Int16, _ fadeRate: Float) {
+func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ scale: Float, _ sparkTexture: Int16, _ quantityLimit: Int16, _ fadeRate: Float) {
     let x = coord.pointee.x
     let y = coord.pointee.y
     let z = coord.pointee.z
@@ -918,8 +908,7 @@ public func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Flo
 
 // MARK: - Make steam
 
-@c @implementation
-public func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
+func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
     let fps = gFramesPerSecondFrac
     let scale: Float = 1.8
 
@@ -991,8 +980,7 @@ public func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y
 
 // MARK: - Make bomb explosion
 
-@c @implementation
-public func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePointer<OGLVector3D>!) {
+func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePointer<OGLVector3D>!) {
     var where_ = OGLPoint3D()
     where_.x = x
     where_.z = z
@@ -1052,8 +1040,7 @@ public func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePoin
 
 // MARK: - Make splash
 
-@c @implementation
-public func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
+func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
     let x = where_.pointee.x
     let z = where_.pointee.z
     var pt = OGLPoint3D()
@@ -1110,8 +1097,7 @@ public func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Flo
 
 // MARK: - Spray water
 
-@c @implementation
-public func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
+func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
     let fps = gFramesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps // see if time to spew water
@@ -1184,8 +1170,7 @@ public func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ 
 
 // MARK: - Burn fire
 
-@c @implementation
-public func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float, _ doSmoke: UInt8, _ particleType: Int16, _ scale: Float, _ moreFlags: UInt32) {
+func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float, _ doSmoke: UInt8, _ particleType: Int16, _ scale: Float, _ moreFlags: UInt32) {
     let fps = gFramesPerSecondFrac
 
     // MAKE SMOKE
@@ -1321,8 +1306,7 @@ public func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y:
 
 // MARK: - Make fire explosion
 
-@c @implementation
-public func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
+func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // FIRST MAKE FLAMES
 
     gNewParticleGroupDef.magicNum = 0
@@ -1387,8 +1371,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 // MARK: - Make smoker
 
-@c @implementation
-public func MakeSmoker(_ x: Float, _ z: Float, _ kind: Int32) -> UnsafeMutablePointer<ObjNode>? {
+func MakeSmoker(_ x: Float, _ z: Float, _ kind: Int32) -> UnsafeMutablePointer<ObjNode>? {
     var def = NewObjectDefinitionType()
     def.genre = UInt8(EVENT_GENRE)
     def.coord.x = x
@@ -1503,8 +1486,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
 // MARK: - Do player ground scrape
 
-@c @implementation
-public func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum: Int16) {
+func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum: Int16) {
     let fps = gFramesPerSecondFrac
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
 
@@ -1693,8 +1675,7 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
 // MARK: - Make fire ring
 
-@c @implementation
-public func MakeFireRing(_ x: Float, _ y: Float, _ z: Float) -> UnsafeMutablePointer<ObjNode>? {
+func MakeFireRing(_ x: Float, _ y: Float, _ z: Float) -> UnsafeMutablePointer<ObjNode>? {
     // MAKE CUSTOM OBJECT
 
     var def = NewObjectDefinitionType()

@@ -28,8 +28,7 @@ private let gJetpackButtOff = OGLPoint3D(x: 0, y: 11.3, z: 33)
 // INPUT:
 //			where = floor coord where to init the player.
 //			rotY = rotation to assign to player if oldObj is nil.
-@c @implementation
-public func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ rotY: Float) {
+func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ rotY: Float) {
     let where_ = where_!
 
     // MAKE SKELETON
@@ -919,8 +918,7 @@ private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>,
 // MARK: - Jetpack off
 
 // Called once per frame when jetpack is off.
-@c @implementation
-public func JetpackOff(_ playerNum: Int16) {
+func JetpackOff(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))!
     let player = pi.pointee.objNode!
 
@@ -936,8 +934,7 @@ public func JetpackOff(_ playerNum: Int16) {
 // MARK: - Move player jetpack
 
 // Called to align jetpack on the player's body.
-@c @implementation
-public func MovePlayerJetpack(_ jetpackOpt: UnsafeMutablePointer<ObjNode>?) {
+func MovePlayerJetpack(_ jetpackOpt: UnsafeMutablePointer<ObjNode>?) {
     guard let jetpack = jetpackOpt else { return }
     let player = jetpack.pointee.ChainHead!
     let blue = jetpack.pointee.ChainNode!
@@ -1429,8 +1426,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 // MARK: - Player smacked into object
 
 // Returns true if player was killed by impact
-@c @implementation
-public func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: Int16) -> UInt8 {
+func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: Int16) -> UInt8 {
     let player = playerOpt!
     let hitObj = hitObjOpt!
 
@@ -1478,8 +1474,7 @@ public func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?,
 
 // MARK: - Set player flying anim
 
-@c @implementation
-public func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
+func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
     let currentAnim = UInt32(player.pointee.Skeleton!.pointee.AnimNum)
     var desiredAnim: Int32 = -1
     var bestDist: Float = 100_000_000
@@ -1600,8 +1595,7 @@ private func SetPlayerFlyingAnim_WithEgg(_ player: UnsafeMutablePointer<ObjNode>
 
 // MARK: - Handle player line marker crossing
 
-@c @implementation
-public func HandlePlayerLineMarkerCrossing(_ playerOpt: UnsafeMutablePointer<ObjNode>?) {
+func HandlePlayerLineMarkerCrossing(_ playerOpt: UnsafeMutablePointer<ObjNode>?) {
     let player = playerOpt!
     var markerNum: Int = 0
 
@@ -1618,8 +1612,7 @@ public func HandlePlayerLineMarkerCrossing(_ playerOpt: UnsafeMutablePointer<Obj
 
 // MARK: - Set reincarnation checkpoint at marker
 
-@c @implementation
-public func SetReincarnationCheckpointAtMarker(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ markerNum: Int16) {
+func SetReincarnationCheckpointAtMarker(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ markerNum: Int16) {
     let player = playerOpt!
     let playerNum = Int32(player.pointee.PlayerNum)
 

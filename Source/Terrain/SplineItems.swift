@@ -65,8 +65,7 @@ private let gSplineItemPrimeRoutines: [(Int, UnsafeMutablePointer<SplineItemType
 
 // Called during terrain prime function to initialize
 // all items on the splines and recalc spline coords
-@c @implementation
-public func PrimeSplines() {
+func PrimeSplines() {
     // ADJUST SPLINE TO GAME COORDINATES
 
     for s in 0..<gNumSplines {
@@ -102,8 +101,7 @@ public func PrimeSplines() {
 
 // nothing prime
 
-@c @implementation
-public func GetCoordOnSplineFromIndex(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ findex: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
+func GetCoordOnSplineFromIndex(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ findex: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
     // CALC INDEX OF THIS PT AND NEXT
 
     let numPointsInSpline = Int(splinePtr.pointee.numPoints) // get # points in the spline
@@ -124,8 +122,7 @@ public func GetCoordOnSplineFromIndex(_ splinePtr: UnsafeMutablePointer<SplineDe
     z.pointee = points[i].z * oneMinusRatio + points[i2].z * ratio
 }
 
-@c @implementation
-public func GetCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
+func GetCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
     let numPointsInSpline = Int(splinePtr.pointee.numPoints) // get # points in the spline
     let findex = Float(numPointsInSpline) * placement // calc float index
 
@@ -134,8 +131,7 @@ public func GetCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, 
 
 // Same as above except returns coord of the next point on the spline instead of the exact
 // current one.
-@c @implementation
-public func GetNextCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
+func GetNextCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline
 
     var findex = numPointsInSpline * placement // get index
@@ -149,8 +145,7 @@ public func GetNextCoordOnSpline(_ splinePtr: UnsafeMutablePointer<SplineDefType
 }
 
 // Same as above except takes in input spline index offset
-@c @implementation
-public func GetCoordOnSpline2(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ offset: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
+func GetCoordOnSpline2(_ splinePtr: UnsafeMutablePointer<SplineDefType>!, _ placement: Float, _ offset: Float, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline
 
     var findex = numPointsInSpline * placement // get index
@@ -166,8 +161,7 @@ public func GetCoordOnSpline2(_ splinePtr: UnsafeMutablePointer<SplineDefType>!,
 // Returns true if the input objnode is in visible range.
 // Also, this function handles the attaching and detaching of the objnode
 // as needed.
-@c @implementation
-public func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     var visible = true
 
     // IF IS ON AN ACTIVE SUPERTILE, THEN ASSUME VISIBLE
@@ -204,8 +198,7 @@ public func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>
 
 // Called by object's primer function to add the detached node to the spline item master
 // list so that it can be maintained.
-@c @implementation
-public func AddToSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!, _ setAim: UInt8) {
+func AddToSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!, _ setAim: UInt8) {
     if gNumSplineObjects >= maxSplineObjects {
         SwFatal("AddToSplineObjectList: too many spline objects")
     }
@@ -222,8 +215,7 @@ public func AddToSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!, _ s
     }
 }
 
-@c @implementation
-public func SetSplineAim(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func SetSplineAim(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     var x: Float = 0
     var z: Float = 0
 
@@ -233,8 +225,7 @@ public func SetSplineAim(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
 // OUTPUT:  true = the obj was on a spline and it was removed from it
 //			false = the obj was not on a spline.
-@c @implementation
-public func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
+func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
     theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_ONSPLINE) // make sure this flag is off
 
     if theNode.pointee.SplineObjectIndex != -1 {
@@ -249,8 +240,7 @@ public func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!
 }
 
 // Called by level cleanup to dispose of the detached ObjNode's in this list.
-@c @implementation
-public func EmptySplineObjectList() {
+func EmptySplineObjectList() {
     for i in 0..<gNumSplineObjects {
         if let o = gSplineObjectList[i] {
             DeleteObject(o) // This will dispose of all memory used by the node.
@@ -260,8 +250,7 @@ public func EmptySplineObjectList() {
     gNumSplineObjects = 0
 }
 
-@c @implementation
-public func MoveSplineObjects() {
+func MoveSplineObjects() {
     for i in 0..<gNumSplineObjects {
         guard let theNode = gSplineObjectList[i] else { continue }
 
@@ -289,8 +278,7 @@ public func MoveSplineObjects() {
 }
 
 // OUTPUT: 	x,y = coords
-@c @implementation
-public func GetObjectCoordOnSpline(_ theNode: UnsafeMutablePointer<ObjNode>!) {
+func GetObjectCoordOnSpline(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     var placement = theNode.pointee.SplinePlacement // get placement
     if placement < 0.0 {
         placement = 0
@@ -307,8 +295,7 @@ public func GetObjectCoordOnSpline(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     theNode.pointee.Delta.y = 0
 }
 
-@c @implementation
-public func GetObjectCoordOnSpline2(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
+func GetObjectCoordOnSpline2(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: UnsafeMutablePointer<Float>!, _ z: UnsafeMutablePointer<Float>!) {
     var placement = theNode.pointee.SplinePlacement // get placement
     if placement < 0.0 {
         placement = 0
@@ -324,8 +311,7 @@ public func GetObjectCoordOnSpline2(_ theNode: UnsafeMutablePointer<ObjNode>!, _
 // Moves objects on spline at given speed
 //
 // Returns true if increase caused item to wrap to beginning of spline
-@c @implementation
-public func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) -> UInt8 {
+func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) -> UInt8 {
     var speed = speed
     speed *= gFramesPerSecondFrac
 
@@ -344,8 +330,7 @@ public func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ spe
 }
 
 // Moves objects on spline at given speed, but zigzags
-@c @implementation
-public func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) {
+func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) {
     var speed = speed
     speed *= gFramesPerSecondFrac
 
@@ -373,8 +358,7 @@ public func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!,
     }
 }
 
-@c @implementation
-public func DetachObjectFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
+func DetachObjectFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
     if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 {
         return
     }

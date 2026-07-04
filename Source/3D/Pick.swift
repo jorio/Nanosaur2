@@ -38,8 +38,7 @@ private let maxSupertiles = (9 * 2 * 9 * 2) * 2 * 2 // MAX_SUPERTILES: (MAX_SUPE
 //			worldHitCoord = world-space coords of the pick intersection
 //			hitNormal = normal of the triangle we hit (or nil)
 //			ray->distance = distance from ray origin to the intersection point
-@c @implementation
-public func OGL_DoRayCollision_ObjNodes(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ statusFilter: UInt32, _ cTypes: UInt32, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UnsafeMutablePointer<ObjNode>? {
+func OGL_DoRayCollision_ObjNodes(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ statusFilter: UInt32, _ cTypes: UInt32, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UnsafeMutablePointer<ObjNode>? {
     let ray = rayOpt!
     var bestObj: UnsafeMutablePointer<ObjNode>?
     var bestDist: Float = 1_000_000
@@ -124,8 +123,7 @@ public func OGL_DoRayCollision_ObjNodes(_ rayOpt: UnsafeMutablePointer<OGLRay>?,
 //
 // OUTPUT:
 //			ray->distance = distance from ray origin to the intersection point
-@c @implementation
-public func OGL_DoRayCollision_Terrain(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ terrainNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
+func OGL_DoRayCollision_Terrain(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ terrainNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
     let ray = rayOpt!
     var returnTrue = false
     var hitCoord = OGLPoint3D()
@@ -177,8 +175,7 @@ public func OGL_DoRayCollision_Terrain(_ rayOpt: UnsafeMutablePointer<OGLRay>?, 
 
 // MARK: - Is object in front of ray
 
-@c @implementation
-public func OGL_IsObjectInFrontOfRay(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?) -> UInt8 {
+func OGL_IsObjectInFrontOfRay(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?) -> UInt8 {
     let theNode = theNodeOpt!
     let ray = rayOpt!
     var v = OGLVector3D()
@@ -367,8 +364,7 @@ private func OGL_DoesRayIntersectMesh(_ ray: UnsafeMutablePointer<OGLRay>, _ mes
 // Called from above when we know we've picked a Display Group genre objNode.
 // Now we just need to see if our pick ray hits anything.
 // Then we keep track of the closest hit coord and that's what we'll return.
-@c @implementation
-public func OGL_RayGetHitInfo_DisplayGroup(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ theNodeOpt: UnsafeMutablePointer<ObjNode>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
+func OGL_RayGetHitInfo_DisplayGroup(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ theNodeOpt: UnsafeMutablePointer<ObjNode>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
     let ray = rayOpt!
     let theNode = theNodeOpt!
     var bestDist: Float = 1_000_000
@@ -412,8 +408,7 @@ public func OGL_RayGetHitInfo_DisplayGroup(_ rayOpt: UnsafeMutablePointer<OGLRay
 
 // Used for picking, this function returns the world-space ray at the screenCoord.
 // screenCoord is in grafPort coordinates.
-@c @implementation
-public func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<OGLPoint2D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?) {
+func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<OGLPoint2D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?) {
     let screenCoord = screenCoordOpt!
     let ray = rayOpt!
 
@@ -452,8 +447,7 @@ public func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<
 
 // MARK: - OGL: Ray intersects triangle
 
-@c @implementation
-public func OGL_RayIntersectsTriangle(_ trianglePoints: UnsafeMutablePointer<OGLPoint3D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?, _ intersectPt: UnsafeMutablePointer<OGLPoint3D>?, _ triangleNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
+func OGL_RayIntersectsTriangle(_ trianglePoints: UnsafeMutablePointer<OGLPoint3D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?, _ intersectPt: UnsafeMutablePointer<OGLPoint3D>?, _ triangleNormal: UnsafeMutablePointer<OGLVector3D>?) -> UInt8 {
     let ray = rayOpt!
     let intersectPt = intersectPt!
     let triangleNormal = triangleNormal!
@@ -483,8 +477,7 @@ public func OGL_RayIntersectsTriangle(_ trianglePoints: UnsafeMutablePointer<OGL
 // MARK: - OGL: Does ray intersect triangle plane
 
 // Returns true if the input ray intersects the plane of the triangle.
-@c @implementation
-public func OGL_DoesRayIntersectTrianglePlane(_ triWorldPoints: UnsafePointer<OGLPoint3D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?, _ planeEquation: UnsafeMutablePointer<OGLPlaneEquation>?) -> UInt8 {
+func OGL_DoesRayIntersectTrianglePlane(_ triWorldPoints: UnsafePointer<OGLPoint3D>?, _ rayOpt: UnsafeMutablePointer<OGLRay>?, _ planeEquation: UnsafeMutablePointer<OGLPlaneEquation>?) -> UInt8 {
     let ray = rayOpt!
     let planeEquation = planeEquation!
 
@@ -515,8 +508,7 @@ public func OGL_DoesRayIntersectTrianglePlane(_ triWorldPoints: UnsafePointer<OG
 // MARK: - OGL Point3D: Inside triangle 3D
 
 // Is the point which lies on the triangle plane insdie the triangle?
-@c @implementation
-public func OGLPoint3D_InsideTriangle3D(_ point3D: UnsafePointer<OGLPoint3D>?, _ trianglePoints: UnsafePointer<OGLPoint3D>?, _ triangleNormal: UnsafePointer<OGLVector3D>?) -> UInt8 {
+func OGLPoint3D_InsideTriangle3D(_ point3D: UnsafePointer<OGLPoint3D>?, _ trianglePoints: UnsafePointer<OGLPoint3D>?, _ triangleNormal: UnsafePointer<OGLVector3D>?) -> UInt8 {
     var point2D = OGLPoint2D()
     var verts = [OGLPoint2D](repeating: OGLPoint2D(), count: 3)
     var intersects = false
@@ -630,8 +622,7 @@ private func OGLTriangle_3D2DComponentProjectionPoints(_ triangleNormal: UnsafeP
 // OUTPUT:  ObjNode of object picked or nil
 //			worldHitCoord = world-space coords of the pick intersection
 //			ray->distance = distance from ray origin to the intersection point
-@c @implementation
-public func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ statusFilter: UInt32, _ cTypes: UInt32, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ worldHitFaceNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?, _ allowBBoxTests: UInt8) -> UnsafeMutablePointer<ObjNode>? {
+func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ statusFilter: UInt32, _ cTypes: UInt32, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ worldHitFaceNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?, _ allowBBoxTests: UInt8) -> UnsafeMutablePointer<ObjNode>? {
     let lineSeg = lineSegOpt!
     var bestObj: UnsafeMutablePointer<ObjNode>?
     var bestDist: Float = 10_000_000
@@ -763,8 +754,7 @@ public func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLL
 // MARK: - OGL: Line segment collision on terrain
 
 // Determines if the input line segment intersects any terrain geometry
-@c @implementation
-public func OGL_LineSegmentCollision_Terrain(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ terrainNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
+func OGL_LineSegmentCollision_Terrain(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ terrainNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
     let lineSeg = lineSegOpt!
     var hit = false
     var hitCoord = OGLPoint3D()
@@ -824,8 +814,7 @@ public func OGL_LineSegmentCollision_Terrain(_ lineSegOpt: UnsafePointer<OGLLine
 // MARK: - OGL: Line segment collision on fences
 
 // Determines if the input line segment intersects any fence geometry
-@c @implementation
-public func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
+func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
     let lineSeg = lineSegOpt!
     var hit = false
     var hitCoord = OGLPoint3D()
@@ -908,8 +897,7 @@ public func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSe
 // MARK: - OGL: Line segment collision on water
 
 // Determines if the input line segment intersects any water geometry
-@c @implementation
-public func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
+func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ worldHitCoord: UnsafeMutablePointer<OGLPoint3D>?, _ hitNormal: UnsafeMutablePointer<OGLVector3D>?, _ distToHit: UnsafeMutablePointer<Float>?) -> UInt8 {
     let lineSeg = lineSegOpt!
     var hit = false
     var hitCoord = OGLPoint3D()
@@ -1040,8 +1028,7 @@ private func OGL_LineSegGetHitInfo_DisplayGroup(_ lineSeg: UnsafePointer<OGLLine
 //
 // This is actually a variant of the Ray intersect function above.  A line segment
 // is actually 2 opposite rays.
-@c @implementation
-public func OGL_DoesLineSegmentIntersectSphere(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ segVector: UnsafePointer<OGLVector3D>?, _ sphereCenter: UnsafeMutablePointer<OGLPoint3D>?, _ sphereRadius: Float, _ intersectPt: UnsafeMutablePointer<OGLPoint3D>?) -> UInt8 {
+func OGL_DoesLineSegmentIntersectSphere(_ lineSegOpt: UnsafePointer<OGLLineSegment>?, _ segVector: UnsafePointer<OGLVector3D>?, _ sphereCenter: UnsafeMutablePointer<OGLPoint3D>?, _ sphereRadius: Float, _ intersectPt: UnsafeMutablePointer<OGLPoint3D>?) -> UInt8 {
     let lineSeg = lineSegOpt!
     let sphereCenter = sphereCenter!
     var sphereToEndpoint = OGLVector3D()
@@ -1448,8 +1435,7 @@ private func OGL_LineSegGetHitInfo_Skeleton(_ lineSeg: UnsafePointer<OGLLineSegm
 // MARK: - OGL: Do sphere collision on objnodes
 
 // Checks to see if the input bounding sphere hits any eligible objNodes in the scene.
-@c @implementation
-public func OGL_DoSphereCollision_ObjNodes(_ sphereOpt: UnsafePointer<OGLBoundingSphere>?, _ statusFilter: UInt32, _ cTypes: UInt32) -> UnsafeMutablePointer<ObjNode>? {
+func OGL_DoSphereCollision_ObjNodes(_ sphereOpt: UnsafePointer<OGLBoundingSphere>?, _ statusFilter: UInt32, _ cTypes: UInt32) -> UnsafeMutablePointer<ObjNode>? {
     let sphere = sphereOpt!
     var sphere2 = OGLBoundingSphere()
 

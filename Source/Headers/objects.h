@@ -63,67 +63,19 @@ typedef enum SWIFT_ENUM_CLOSED WhatType
 
 //========================================================
 
-extern	void InitObjectManager(void);
-extern	ObjNode	* _Nullable MakeNewObject(NewObjectDefinitionType * _Nonnull newObjDef);
-extern	void MoveObjects(void);
-void DrawObjects(void);
 
-extern	void DeleteAllObjects(void);
 extern	void DeleteObject(ObjNode * _Nullable theNode);
-void DetachObject(ObjNode * _Nullable theNode, Boolean subrecurse);
-extern	void GetObjectInfo(ObjNode * _Nonnull theNode);
-extern	void UpdateObject(ObjNode * _Nonnull theNode);
-void SetObjectGridLocation(ObjNode * _Nonnull theNode);
-extern	ObjNode * _Nullable MakeNewDisplayGroupObject(NewObjectDefinitionType * _Nonnull newObjDef);
-extern	void CreateBaseGroup(ObjNode * _Nonnull theNode);
-extern	void UpdateObjectTransforms(ObjNode * _Nonnull theNode);
-extern	void SetObjectTransformMatrix(ObjNode * _Nonnull theNode);
-extern	void DisposeObjectBaseGroup(ObjNode * _Nonnull theNode);
-extern	void ResetDisplayGroupObject(ObjNode * _Nonnull theNode);
-void AttachObject(ObjNode * _Nullable theNode, Boolean recurse);
-void CalcObjectRadiusFromBBox(ObjNode * _Nonnull theNode);
 
-void MoveStaticObject(ObjNode * _Nullable theNode);
-void MoveStaticObject2(ObjNode * _Nullable theNode);
-void MoveStaticObject3(ObjNode * _Nullable theNode);
 
-void CalcNewTargetOffsets(ObjNode * _Nonnull theNode, float scale);
 
 //===================
 
 
-void CalcObjectBoxFromNode(ObjNode * _Nonnull theNode);
-void CalcObjectBoxFromGlobal(ObjNode * _Nullable theNode);
-void SetObjectCollisionBounds(ObjNode * _Nonnull theNode, float top, float bottom, float left,
-							 float right, float front, float back);
-ObjNode	* _Nonnull AttachStaticShadowToObject(ObjNode * _Nonnull theNode, ShadowType shadowType, float scaleX, float scaleZ);
-void UpdateShadow(ObjNode * _Nullable theNode);
 
-void CullTestAllObjects(void);
-Boolean	IsObjectTotallyCulled(ObjNode * _Nonnull theNode);
 
-ObjNode	* _Nullable AttachShadowToObject(ObjNode * _Nonnull theNode, ShadowType shadowType, float scaleX, float scaleZ, Boolean checkBlockers);
-void CreateCollisionBoxFromBoundingBox(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
-void CreateCollisionBoxFromBoundingBox_Maximized(ObjNode * _Nonnull theNode, float scaleMag);
-void CreateCollisionBoxFromBoundingBox_Rotated(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
-void CreateCollisionBoxFromBoundingBox_Update(ObjNode * _Nonnull theNode, float tweakXZ, float tweakY);
-void KeepOldCollisionBoxes(ObjNode * _Nonnull theNode);
-void AddCollisionBoxToObject(ObjNode * _Nonnull theNode, float top, float bottom, float left,
-							 float right, float front, float back);
-void AttachGeometryToDisplayGroupObject(ObjNode * _Nonnull theNode, MetaObjectPtr _Nullable geometry);
-void CalcDisplayGroupWorldPoints(ObjNode * _Nonnull theNode);
 
-void HideObjectChain(ObjNode * _Nullable theNode);
-void ShowObjectChain(ObjNode * _Nullable theNode);
 
-Boolean SetObjectVisible(ObjNode * _Nonnull theNode, Boolean visible);
 
-int GetNodeChainLength(ObjNode* _Nullable start);
-ObjNode* _Nullable GetNthChainedNode(ObjNode* _Nullable start, int targetIndex, ObjNode* _Nullable * _Nullable outPrevNode);
-ObjNode* _Nullable GetChainTailNode(ObjNode* _Nullable start);
-void AppendNodeToChain(ObjNode* _Nonnull start, ObjNode* _Nonnull newTail);
-void UnchainNode(ObjNode* _Nullable theNode);
 
-ObjNode* _Nonnull MakeBackgroundPictureObject(const char* _Nonnull imagePath);
 
 void SendNodeToOverlayPane(ObjNode* _Nonnull theNode);

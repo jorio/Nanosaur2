@@ -179,50 +179,23 @@ extern	NewConfettiGroupDefType	gNewConfettiGroupDef;
 		/* MISC EFFECTS */
 
 
-void InitEffects(void);
-ObjNode * _Nonnull MakeShockwaveRing(OGLPoint3D * _Nonnull coord, float scale);
 
 
 			/* PARTICLES */
 
-void InitParticleSystem(void);
-void DeleteAllParticleGroups(void);
-short NewParticleGroup(NewParticleGroupDefType *def);
-Boolean AddParticleToGroup(const NewParticleDefType *def);
-Boolean VerifyParticleGroupMagicNum(short group, uint32_t magicNum);
-Boolean ParticleHitObject(ObjNode *theNode, uint16_t inFlags);
-void DisposeParticleSystem(void);
-void SetParticleGroupVisiblePanes(short group, bool visibleForPlayer1, bool visibleForPlayer2);
-
-void MakePuff(short numPuffs, OGLPoint3D *where, float scale, short texNum, GLint src, GLint dst, float decayRate);
-void MakeSparkExplosion(const OGLPoint3D *coord, float force, float scale, short sparkTexture, short quantityLimit, float fadeRate);
-
-void MakeBombExplosion(float x, float z, OGLVector3D *delta);
-void MakeSplash(OGLPoint3D *where, float scale);
-
-void SprayWater(ObjNode *theNode, float x, float y, float z);
-void BurnFire(ObjNode *theNode, float x, float y, float z, Boolean doSmoke, short particleType, float scale, uint32_t moreFlags);
 
 
-void MakeFireExplosion(OGLPoint3D *where);
 
-void MakeSteam(ObjNode *blob, float x, float y, float z);
-ObjNode *MakeSmoker(float  x, float z, int kind);
 
-ObjNode *MakeFireRing(float x, float y, float z);
+
+
+
 
 
 
 
 		/* CONFETTI */
 
-void InitConfettiManager(void);
-void DeleteAllConfettiGroups(void);
-short NewConfettiGroup(NewConfettiGroupDefType * _Nonnull def);
-Boolean AddConfettiToGroup(NewConfettiDefType * _Nonnull def);
-Boolean VerifyConfettiGroupMagicNum(short group, uint32_t magicNum);
-void MakeConfettiExplosion(float x, float y, float z, float force, float scale, short texture, short quantityLimit);
-void DoPlayerGroundScrape(ObjNode *player, short playerNum);
 
 
 		/* CONTRAILS */

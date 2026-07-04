@@ -23,6 +23,11 @@ static inline void SwLog(const char* msg) { SDL_Log("%s", msg); }
 // DoAlert is variadic, which Swift can't call directly.
 static inline void SwAlert(const char* msg) { DoAlert("%s", msg); }
 
+// DoFatalAlert is variadic, which Swift can't call directly. Callers that
+// need dynamic content should build the string with Swift interpolation
+// first, then pass the finished string here.
+static inline void SwFatalAlert(const char* msg) { DoFatalAlert("%s", msg); }
+
 // gPlayerInfo is a fixed-size C array (`PlayerInfoType gPlayerInfo[MAX_PLAYERS]`),
 // which Swift imports as a non-subscriptable tuple. Hand out an element
 // pointer instead so it can be dynamically indexed by playerNum.

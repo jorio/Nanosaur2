@@ -771,7 +771,7 @@ public func GameMain() {
 
     var someLong: UInt = 0
     GetDateTime(&someLong) // init random seed
-    SetMyRandomSeed(UInt32(someLong))
+    SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong)) // matches original C's implicit truncation on cast
 
     // PRELOAD SPRITES FOR ENTIRE GAME
 

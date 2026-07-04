@@ -301,11 +301,11 @@ private func updateWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>, _ spline
 
             // TRANSFORM JOINT'S MATRIX TO WORLD COORDS
 
-            OGLMatrix4x4_SetScale(&m, scale, scale, scale)
+            m.setScale(scale, scale, scale)
             var coordVar = coord
             var prevCoordVar = prevCoord
             SetLookAtMatrixAndTranslate(&m2, &up, &coordVar, &prevCoordVar)
-            OGLMatrix4x4_Multiply(&m, &m2, jointMatricesBase + jointNum)
+            (jointMatricesBase + jointNum).pointee = m.multiplied(by: m2)
         }
 
         prevCoord = coord

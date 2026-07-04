@@ -308,22 +308,18 @@ public func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
         SwFatal("CreateBaseGroup: A scale component == 0")
     }
 
-    OGLMatrix4x4_SetScale(&scaleMatrix, theNode.pointee.Scale.x, theNode.pointee.Scale.y, // make scale matrix
+    scaleMatrix.setScale(theNode.pointee.Scale.x, theNode.pointee.Scale.y, // make scale matrix
                            theNode.pointee.Scale.z)
 
-    OGLMatrix4x4_SetRotate_XYZ(&rotMatrix, theNode.pointee.Rot.x, theNode.pointee.Rot.y, // make rotation matrix
+    rotMatrix.setRotateXYZ(theNode.pointee.Rot.x, theNode.pointee.Rot.y, // make rotation matrix
                                 theNode.pointee.Rot.z)
 
-    OGLMatrix4x4_SetTranslate(&transMatrix, theNode.pointee.Coord.x, theNode.pointee.Coord.y, // make translate matrix
+    transMatrix.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, // make translate matrix
                                theNode.pointee.Coord.z)
 
-    OGLMatrix4x4_Multiply(&scaleMatrix, // mult scale & rot matrices
-                           &rotMatrix,
-                           &theNode.pointee.BaseTransformMatrix)
+    theNode.pointee.BaseTransformMatrix = scaleMatrix.multiplied(by: rotMatrix) // mult scale & rot matrices
 
-    OGLMatrix4x4_Multiply(&theNode.pointee.BaseTransformMatrix, // mult by trans matrix
-                           &transMatrix,
-                           &theNode.pointee.BaseTransformMatrix)
+    theNode.pointee.BaseTransformMatrix = theNode.pointee.BaseTransformMatrix.multiplied(by: transMatrix) // mult by trans matrix
 
     // CREATE A MATRIX XFORM
 
@@ -1286,7 +1282,7 @@ public func UpdateObjectTransforms(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SET SCALE MATRIX
 
-    OGLMatrix4x4_SetScale(&m, theNode.pointee.Scale.x, theNode.pointee.Scale.y, theNode.pointee.Scale.z)
+    m.setScale(theNode.pointee.Scale.x, theNode.pointee.Scale.y, theNode.pointee.Scale.z)
 
     // NOW ROTATE & TRANSLATE IT
 
@@ -1297,39 +1293,39 @@ public func UpdateObjectTransforms(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if bits & UInt32(STATUS_BIT_USEALIGNMENTMATRIX) != 0 {
         m2 = theNode.pointee.AlignmentMatrix
     } else if bits & UInt32(STATUS_BIT_ROTXZY) != 0 { // DO XZY ROTATION
-        OGLMatrix4x4_SetRotate_X(&mx, theNode.pointee.Rot.x)
-        OGLMatrix4x4_SetRotate_Y(&my, theNode.pointee.Rot.y)
-        OGLMatrix4x4_SetRotate_Z(&mz, theNode.pointee.Rot.z)
+        mx.setRotateX(theNode.pointee.Rot.x)
+        my.setRotateY(theNode.pointee.Rot.y)
+        mz.setRotateZ(theNode.pointee.Rot.z)
 
-        OGLMatrix4x4_Multiply(&mx, &mz, &mxz)
+        mxz = mx.multiplied(by: mz)
         m2 = OGLMatrix4x4()
-        OGLMatrix4x4_Multiply(&mxz, &my, &m2)
+        m2 = mxz.multiplied(by: my)
     } else if bits & UInt32(STATUS_BIT_ROTYZX) != 0 { // DO YZX ROTATION
-        OGLMatrix4x4_SetRotate_X(&mx, theNode.pointee.Rot.x)
-        OGLMatrix4x4_SetRotate_Y(&my, theNode.pointee.Rot.y)
-        OGLMatrix4x4_SetRotate_Z(&mz, theNode.pointee.Rot.z)
+        mx.setRotateX(theNode.pointee.Rot.x)
+        my.setRotateY(theNode.pointee.Rot.y)
+        mz.setRotateZ(theNode.pointee.Rot.z)
 
-        OGLMatrix4x4_Multiply(&my, &mz, &mxz)
+        mxz = my.multiplied(by: mz)
         m2 = OGLMatrix4x4()
-        OGLMatrix4x4_Multiply(&mxz, &mx, &m2)
+        m2 = mxz.multiplied(by: mx)
     } else if bits & UInt32(STATUS_BIT_ROTZXY) != 0 { // DO ZXY ROTATION
-        OGLMatrix4x4_SetRotate_X(&mx, theNode.pointee.Rot.x)
-        OGLMatrix4x4_SetRotate_Y(&my, theNode.pointee.Rot.y)
-        OGLMatrix4x4_SetRotate_Z(&mz, theNode.pointee.Rot.z)
+        mx.setRotateX(theNode.pointee.Rot.x)
+        my.setRotateY(theNode.pointee.Rot.y)
+        mz.setRotateZ(theNode.pointee.Rot.z)
 
-        OGLMatrix4x4_Multiply(&mz, &mx, &mxz)
+        mxz = mz.multiplied(by: mx)
         m2 = OGLMatrix4x4()
-        OGLMatrix4x4_Multiply(&mxz, &my, &m2)
+        m2 = mxz.multiplied(by: my)
     } else { // STANDARD XYZ ROTATION
         m2 = OGLMatrix4x4()
-        OGLMatrix4x4_SetRotate_XYZ(&m2, theNode.pointee.Rot.x, theNode.pointee.Rot.y, theNode.pointee.Rot.z)
+        m2.setRotateXYZ(theNode.pointee.Rot.x, theNode.pointee.Rot.y, theNode.pointee.Rot.z)
     }
 
     setMatValue(&m2, M03, theNode.pointee.Coord.x)
     setMatValue(&m2, M13, theNode.pointee.Coord.y)
     setMatValue(&m2, M23, theNode.pointee.Coord.z)
 
-    OGLMatrix4x4_Multiply(&m, &m2, &theNode.pointee.BaseTransformMatrix)
+    theNode.pointee.BaseTransformMatrix = m.multiplied(by: m2)
 
     // UPDATE TRANSFORM OBJECT
 

@@ -439,7 +439,7 @@ public func UpdateCarriedObject(_ player: UnsafeMutablePointer<ObjNode>, _ held:
     // CALC SCALE MATRIX
     let scale = held.pointee.Scale.x / player.pointee.Scale.x // to adjust from player's scale to held's scale
     var mst = OGLMatrix4x4()
-    OGLMatrix4x4_SetScale(&mst, scale, scale, scale)
+    mst.setScale(scale, scale, scale)
 
     // CALC TRANSLATE MATRIX
     setMatValue(&mst, M03, held.pointee.HoldOffset.x) // insert translation into scale matrix
@@ -448,15 +448,15 @@ public func UpdateCarriedObject(_ player: UnsafeMutablePointer<ObjNode>, _ held:
 
     // CALC ROTATE MATRIX
     var rm = OGLMatrix4x4()
-    OGLMatrix4x4_SetRotate_XYZ(&rm, held.pointee.HoldRot.x, held.pointee.HoldRot.y, held.pointee.HoldRot.z)
+    rm.setRotateXYZ(held.pointee.HoldRot.x, held.pointee.HoldRot.y, held.pointee.HoldRot.z)
     var m2 = OGLMatrix4x4()
-    OGLMatrix4x4_Multiply(&rm, &mst, &m2)
+    m2 = rm.multiplied(by: mst)
 
     // GET ALIGNMENT MATRIX
     var m = OGLMatrix4x4()
     FindJointFullMatrix(player, Int(PlayerJoint.eggHold.rawValue), &m) // get joint's matrix
 
-    OGLMatrix4x4_Multiply(&m2, &m, &held.pointee.BaseTransformMatrix)
+    held.pointee.BaseTransformMatrix = m2.multiplied(by: m)
     SetObjectTransformMatrix(held)
 
     // GET COORDS FOR OBJECT & KEEP COLLISION BOX

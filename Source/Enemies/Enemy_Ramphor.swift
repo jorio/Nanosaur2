@@ -166,8 +166,8 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
         var sm = OGLMatrix4x4()
         var up = gUp
         SetLookAtMatrixAndTranslate(&m, &up, &theNode.pointee.OldCoord, &theNode.pointee.Coord)
-        OGLMatrix4x4_SetScale(&sm, ramphorScale, ramphorScale, ramphorScale)
-        OGLMatrix4x4_Multiply(&sm, &m, &theNode.pointee.BaseTransformMatrix)
+        sm.setScale(ramphorScale, ramphorScale, ramphorScale)
+        theNode.pointee.BaseTransformMatrix = sm.multiplied(by: m)
 
         SetObjectTransformMatrix(theNode) // update transforms
         UpdateShadow(theNode)

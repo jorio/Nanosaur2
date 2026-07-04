@@ -445,20 +445,20 @@ private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>
 
         // TRANSFORM JOINT'S MATRIX TO WORLD COORDS
 
-        OGLMatrix4x4_SetScale(&m, scale, scale, scale)
+        m.setScale(scale, scale, scale)
 
         if jointNum > 0 {
             var coordVar = coord
             withUnsafePointer(to: up) { upPtr in
                 SetLookAtMatrix(&m2, upPtr, &prevCoord, &coordVar)
             }
-            OGLMatrix4x4_Multiply(&m, &m2, &m3)
+            m3 = m.multiplied(by: m2)
         } else {
             m3 = m
         }
 
-        OGLMatrix4x4_SetTranslate(&m, coord.x, coord.y, coord.z)
-        OGLMatrix4x4_Multiply(&m3, &m, &jointMatricesBase[jointNum])
+        m.setTranslate(coord.x, coord.y, coord.z)
+        jointMatricesBase[jointNum] = m3.multiplied(by: m)
     }
 }
 

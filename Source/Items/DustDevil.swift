@@ -315,7 +315,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
         // TRANSLATE
 
         var m = OGLMatrix4x4()
-        OGLMatrix4x4_SetTranslate(&m, theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+        m.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
         glMultMatrixf(&m.value.0)
 
         // SCALE DOWN AND DRAW INNER SHELL
@@ -324,10 +324,10 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
             glPushMatrix()
             OGL_SetColor4f(1, 1, 1, 0.5)
 
-            OGLMatrix4x4_SetScale(&m, 0.8, 1, 0.8)
+            m.setScale(0.8, 1, 0.8)
             glMultMatrixf(&m.value.0)
 
-            OGLMatrix4x4_SetRotate_Y(&m, Float.pi)
+            m.setRotateY(Float.pi)
             glMultMatrixf(&m.value.0)
 
             MO_DrawGeometry_VertexArray(&gDustDevilMeshes[buffNum])

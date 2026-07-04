@@ -393,7 +393,7 @@ private func drawConfettiGroups() {
 
             // TRANSFORM THIS CONFETTI'S VERTICES & ADD TO TRIMESH
             var m = OGLMatrix4x4()
-            OGLMatrix4x4_SetRotate_XYZ(&m, rot[p].x, rot[p].y, rot[p].z)
+            m.setRotateXYZ(rot[p].x, rot[p].y, rot[p].z)
             setMatValue(&m, M03, coord[p].x) // set translate
             setMatValue(&m, M13, coord[p].y)
             setMatValue(&m, M23, coord[p].z)

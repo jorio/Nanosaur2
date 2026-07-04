@@ -449,7 +449,7 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
             let zrot = RandomFloat2() * 0.15
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
-            OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
+            m.setRotateXYZ(0, yrot, zrot)
             let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 70.0 + RandomFloat() * 900.0
@@ -508,7 +508,7 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
             let zrot = RandomFloat2() * 0.15
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
-            OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
+            m.setRotateXYZ(0, yrot, zrot)
             let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 300.0
@@ -624,7 +624,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
         let zrot = RandomFloat2() * 0.4
         let yrot = RandomFloat2() * 0.4
         var m = OGLMatrix4x4()
-        OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
+        m.setRotateXYZ(0, yrot, zrot)
         let v = aim.transformed(by: m)
 
         newObj.pointee.Delta.x = v.x * clusterBulletSpeed

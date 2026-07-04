@@ -24,7 +24,7 @@ public func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDa
     if kfPtr.pointee.scale.x != 1.0 || kfPtr.pointee.scale.y != 1.0 || kfPtr.pointee.scale.z != 1.0 { // SEE IF CAN IGNORE SCALE
         // ROTATE IT
         var matrix1 = OGLMatrix4x4()
-        OGLMatrix4x4_SetRotate_XYZ(&matrix1, kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot
+        matrix1.setRotateXYZ(kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot
 
         // SCALE & TRANSLATE
         setMatValue(&gScaleTranslateMatrix, M00, kfPtr.pointee.scale.x)
@@ -34,10 +34,10 @@ public func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDa
         setMatValue(&gScaleTranslateMatrix, M13, kfPtr.pointee.coord.y)
         setMatValue(&gScaleTranslateMatrix, M23, kfPtr.pointee.coord.z)
 
-        OGLMatrix4x4_Multiply(&matrix1, &gScaleTranslateMatrix, destMatPtr)
+        destMatPtr.pointee = matrix1.multiplied(by: gScaleTranslateMatrix)
     } else {
         // ROTATE IT
-        OGLMatrix4x4_SetRotate_XYZ(destMatPtr, kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot
+        destMatPtr.pointee.setRotateXYZ(kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot
 
         // NOW TRANSLATE IT
         setMatValue(&destMatPtr.pointee, M03, kfPtr.pointee.coord.x)
@@ -162,7 +162,7 @@ public func FindJointFullMatrix(_ theNode: UnsafeMutablePointer<ObjNode>, _ join
 
     let skeletonPtr = theNode.pointee.Skeleton // point to skeleton
     guard let skeletonPtr else { // if nothing, then return coord matrix
-        OGLMatrix4x4_SetTranslate(outMatrix, theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+        outMatrix.pointee.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
         return
     }
 
@@ -178,12 +178,12 @@ public func FindJointFullMatrix(_ theNode: UnsafeMutablePointer<ObjNode>, _ join
         jointNum = Int(bonePtr[jointNum].parentBone)
 
         let jointsBase = UnsafeMutableRawPointer(skeletonPtr.pointer(to: \.jointTransformMatrix)!).assumingMemoryBound(to: OGLMatrix4x4.self)
-        OGLMatrix4x4_Multiply(outMatrix, jointsBase + jointNum, outMatrix)
+        outMatrix.pointee = outMatrix.pointee.multiplied(by: (jointsBase + jointNum).pointee)
     }
 
     // ALSO FACTOR IN THE BASE MATRIX
     //
     // Caller should make sure this is up to date!
 
-    OGLMatrix4x4_Multiply(outMatrix, theNode.pointer(to: \.BaseTransformMatrix)!, outMatrix)
+    outMatrix.pointee = outMatrix.pointee.multiplied(by: theNode.pointer(to: \.BaseTransformMatrix)!.pointee)
 }

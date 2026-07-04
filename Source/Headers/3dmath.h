@@ -34,7 +34,6 @@ Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, 
 
 Boolean PointsAreCloseEnough(const OGLPoint3D *v1, const OGLPoint3D *v2);
 float IntersectionOfYAndPlane_Func(float x, float z, const OGLPlaneEquation *p);
-void OGLMatrix4x4_Invert(const OGLMatrix4x4 *inMatrix, OGLMatrix4x4 *result);
 
 extern	Boolean IsPointInTriangle3D(const OGLPoint3D *point3D,	const OGLPoint3D *trianglePoints, OGLVector3D *normal);
 void OGLCreateFromToRotationMatrix(OGLMatrix4x4 *matrix4x4,	const OGLVector3D *v1, const OGLVector3D *v2);
@@ -57,23 +56,11 @@ void ReflectVector3D(const OGLVector3D *vec, OGLVector3D *N, OGLVector3D *out);
 
 float CalcVectorLength(OGLVector3D *v);
 float CalcVectorLength2D(const OGLVector2D *v);
-void OGLMatrix4x4_SetScale(OGLMatrix4x4 *m, float x, float y, float z);
-void OGLMatrix4x4_SetRotate_X(OGLMatrix4x4	*m, float angle);
-void OGLMatrix4x4_SetRotate_Y(OGLMatrix4x4	*m, float angle);
-void OGLMatrix4x4_SetRotate_Z(OGLMatrix4x4	*m, float angle);
-void OGLMatrix4x4_SetRotateAboutPoint(OGLMatrix4x4 *matrix4x4, const OGLPoint3D	*origin,
-									float xAngle, float yAngle, float zAngle);
-void OGLMatrix4x4_GetFrustumToWindow(OGLMatrix4x4 *m, int pane);
-
-void OGLMatrix4x4_Multiply(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result);
-void OGLMatrix4x4_SetRotate_XYZ(OGLMatrix4x4 *m, float rx, float ry, float rz);
 void OGLMatrix3x3_SetRotate(OGLMatrix3x3 *m, double angle);
 void OGLMatrix3x3_SetIdentity(OGLMatrix3x3 *m);
 void OGLPoint2D_Transform(OGLPoint2D *p, const OGLMatrix3x3 *m, OGLPoint2D *result);
 float OGLVector2D_Dot(const OGLVector2D	*v1,  const OGLVector2D	*v2);
 float OGLVector2D_Cross(const OGLVector2D *v1, const OGLVector2D *v2);
-void OGLMatrix4x4_Transpose(const OGLMatrix4x4 *matrix4x4, OGLMatrix4x4 *result);
-void OGLMatrix4x4_SetRotateAboutAxis(OGLMatrix4x4	*m, const OGLVector3D	*axis, float angle);
 
 void OGLMatrix3x3_Multiply(const OGLMatrix3x3	*matrixA,
 							const OGLMatrix3x3	*matrixB,
@@ -83,8 +70,6 @@ void OGLMatrix3x3_SetRotateAboutPoint(OGLMatrix3x3 *m, OGLPoint2D *origin, doubl
 void OGLVector2D_Transform(const OGLVector2D *vector2D,
 							const OGLMatrix3x3	*matrix3x3,
 							OGLVector2D			*result);
-void OGLMatrix4x4_SetTranslate(OGLMatrix4x4 *m, float x, float y, float z);
-void OGLMatrix4x4_SetIdentity(OGLMatrix4x4 *m);
 void OGLMatrix3x3_SetTranslate(OGLMatrix3x3 *m, float x, float y);
 
 void OGLPoint3D_To4DTransformArray(const OGLPoint3D *inVertex, const OGLMatrix4x4  *matrix,

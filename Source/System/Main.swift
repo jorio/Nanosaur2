@@ -686,11 +686,11 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
                                         theNode.pointee.Coord.x, theNode.pointee.Coord.z)
     player.pointee.Rot.y = r
 
-    OGLMatrix4x4_SetTranslate(&player.pointee.BaseTransformMatrix, theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    player.pointee.BaseTransformMatrix.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
     var m = OGLMatrix4x4()
-    OGLMatrix4x4_SetRotate_Y(&m, r)
+    m.setRotateY(r)
     var result = OGLMatrix4x4()
-    OGLMatrix4x4_Multiply(&m, &player.pointee.BaseTransformMatrix, &result)
+    result = m.multiplied(by: player.pointee.BaseTransformMatrix)
     player.pointee.BaseTransformMatrix = result
 
     theNode.pointee.OldCoord = theNode.pointee.Coord // remember coord also

@@ -455,11 +455,11 @@ public func RotateOnTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset
 
     // SET SCALE
 
-    OGLMatrix4x4_SetScale(&m2, theNode.pointee.Scale.x, // make scale matrix
-                           theNode.pointee.Scale.y,
-                           theNode.pointee.Scale.z)
+    m2.setScale(theNode.pointee.Scale.x, // make scale matrix
+                theNode.pointee.Scale.y,
+                theNode.pointee.Scale.z)
     var result = OGLMatrix4x4()
-    OGLMatrix4x4_Multiply(&m2, &theNode.pointee.BaseTransformMatrix, &result)
+    result = m2.multiplied(by: theNode.pointee.BaseTransformMatrix)
     theNode.pointee.BaseTransformMatrix = result
 }
 

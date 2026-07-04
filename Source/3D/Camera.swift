@@ -421,7 +421,7 @@ public func UpdateCameras() {
         } else {
             var mm = OGLMatrix4x4()
 
-            OGLMatrix4x4_SetRotateAboutPoint(&mm, &playerObj.pointee.Coord, 0, fps * 0.4, 0)
+            mm.setRotateAboutPoint(playerObj.pointee.Coord, xAngle: 0, yAngle: fps * 0.4, zAngle: 0)
             from = placement.pointee.cameraLocation.transformed(by: mm)
             from.y += fps * 100.0
         }
@@ -452,9 +452,9 @@ public func UpdateCameras() {
         pi.pointee.camera.cameraAim = v
 
         if isStereo() { // exaggerate z-rot in anaglyph mode
-            OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj.pointee.Rot.z * 0.3)
+            m.setRotateAboutAxis(v, angle: playerObj.pointee.Rot.z * 0.3)
         } else {
-            OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj.pointee.Rot.z * 0.2)
+            m.setRotateAboutAxis(v, angle: playerObj.pointee.Rot.z * 0.2)
         }
 
         v = up.transformed(by: m) // transform the "up" vector to give us tilt

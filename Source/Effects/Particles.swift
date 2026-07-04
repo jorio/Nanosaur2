@@ -623,9 +623,9 @@ private func updateParticleGroupsGeometry() {
                 if rot != 0.0 { // see if need to apply rotation matrix
                     var rm = OGLMatrix4x4()
 
-                    OGLMatrix4x4_SetRotate_Z(&rm, rot)
+                    rm.setRotateZ(rot)
                     var rmResult = OGLMatrix4x4()
-                    OGLMatrix4x4_Multiply(&rm, &m, &rmResult)
+                    rmResult = rm.multiplied(by: m)
                     rm = rmResult
                     v.withUnsafeMutableBufferPointer { vBuf in
                         OGLPoint3D.transformArray(vBuf.baseAddress, by: rm, into: points + n * 4, count: 4) // transform w/ rot

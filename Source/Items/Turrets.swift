@@ -567,7 +567,7 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
             let zrot = RandomFloat2() * 0.15
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
-            OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
+            m.setRotateXYZ(0, yrot, zrot)
             let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 900.0
@@ -626,7 +626,7 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
             let zrot = RandomFloat2() * 0.15
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
-            OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
+            m.setRotateXYZ(0, yrot, zrot)
             let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 300.0

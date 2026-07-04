@@ -221,7 +221,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
                 egg.pointee.Coord = egg.pointee.InitCoord // move back to init coord (this gets zapped at update below if bboxvisible() fails)
                 UpdateObjectTransforms(egg)
-                OGLMatrix4x4_Multiply(&egg.pointee.BaseTransformMatrix, &gWorldToFrustumMatrix, &m)
+                m = egg.pointee.BaseTransformMatrix.multiplied(by: gWorldToFrustumMatrix)
 
                 if OGL_IsBBoxVisible(bbox, nil) == 0 { // see if it would be culled there
                     resetEggToNest(egg)

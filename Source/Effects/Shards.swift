@@ -100,17 +100,17 @@ private func updateShardTransformMatrix(_ shard: inout ShardType) {
 
     // SET SCALE MATRIX
 
-    OGLMatrix4x4_SetScale(&shard.matrix, shard.scale, shard.scale, shard.scale)
+    shard.matrix.setScale(shard.scale, shard.scale, shard.scale)
 
     // NOW ROTATE IT
 
-    OGLMatrix4x4_SetRotate_XYZ(&m1, shard.rot.x, shard.rot.y, shard.rot.z)
-    OGLMatrix4x4_Multiply(&shard.matrix, &m1, &m2)
+    m1.setRotateXYZ(shard.rot.x, shard.rot.y, shard.rot.z)
+    m2 = shard.matrix.multiplied(by: m1)
 
     // NOW TRANSLATE IT
 
-    OGLMatrix4x4_SetTranslate(&m1, shard.coord.x, shard.coord.y, shard.coord.z)
-    OGLMatrix4x4_Multiply(&m2, &m1, &shard.matrix)
+    m1.setTranslate(shard.coord.x, shard.coord.y, shard.coord.z)
+    shard.matrix = m2.multiplied(by: m1)
 }
 
 @c @implementation
@@ -120,7 +120,7 @@ public func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomFor
     gShardMode = particleMode
     gShardDensity = particleDensity
     gShardDecaySpeed = particleDecaySpeed
-    OGLMatrix4x4_SetIdentity(&gWorkMatrix) // init to identity matrix
+    gWorkMatrix.setIdentity() // init to identity matrix
 
     // SKELETON
 
@@ -195,7 +195,7 @@ private func explodeGeometryRecurse(_ obj: MetaObjectPtr?) {
         let transform = matObj.pointer(to: \.matrix)! // point to matrix
         var currentMatrix = gWorkMatrix
         var multipliedMatrix = OGLMatrix4x4()
-        OGLMatrix4x4_Multiply(transform, &currentMatrix, &multipliedMatrix) // multiply it in
+        multipliedMatrix = transform.pointee.multiplied(by: currentMatrix) // multiply it in
         gWorkMatrix = multipliedMatrix
 
     default:

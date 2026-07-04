@@ -156,7 +156,7 @@ public func SetAlignmentMatrixWithZRot(_ m: UnsafeMutablePointer<OGLMatrix4x4>!,
 
     // CALC THE ROT MATRIX
 
-    OGLMatrix4x4_SetRotate_Z(&rm, rotZ)
+    rm.setRotateZ(rotZ)
 
     // CALC THE REGULAR MATRIX
 
@@ -164,127 +164,406 @@ public func SetAlignmentMatrixWithZRot(_ m: UnsafeMutablePointer<OGLMatrix4x4>!,
 
     // MULTIPLY TOGETHER
 
-    OGLMatrix4x4_Multiply(&rm, m, m)
+    m.pointee = rm.multiplied(by: m.pointee)
 }
 
 // MARK: -
 
-// MARK: - Matrix4x4 transpose
+// MARK: - OGLMatrix4x4 extension: converted from free C-ABI functions
 
-@c @implementation
-public func OGLMatrix4x4_Transpose(_ matrix4x4: UnsafePointer<OGLMatrix4x4>!, _ result: UnsafeMutablePointer<OGLMatrix4x4>!) {
-    var source = OGLMatrix4x4()
-    let sourcePtr: UnsafePointer<OGLMatrix4x4>
+extension OGLMatrix4x4 {
+    // MARK: - Matrix4x4 transpose
 
-    if UnsafeRawPointer(result) == UnsafeRawPointer(matrix4x4) {
-        source = matrix4x4.pointee
-        sourcePtr = withUnsafePointer(to: &source) { $0 }
-    } else {
-        sourcePtr = matrix4x4
+    public func transposed() -> OGLMatrix4x4 {
+        var result = OGLMatrix4x4()
+        var src = self
+        for row in 0..<4 {
+            for column in 0..<4 {
+                let a = Int32(column * 4 + row)
+                let b = Int32(row * 4 + column)
+                setMatValue(&result, a, matValue(&src, b))
+            }
+        }
+        return result
     }
 
-    var src = sourcePtr.pointee
-    for row in 0..<4 {
-        for column in 0..<4 {
-            let a = Int32(column * 4 + row)
-            let b = Int32(row * 4 + column)
-            setMatValue(&result.pointee, a, matValue(&src, b))
+    // MARK: - GLMatrix4x4: SetScale
+
+    public mutating func setScale(_ x: Float, _ y: Float, _ z: Float) {
+        setMatValue(&self, M00, x)
+        setMatValue(&self, M11, y)
+        setMatValue(&self, M22, z)
+        setMatValue(&self, M33, 1)
+
+        setMatValue(&self, M01, 0)
+        setMatValue(&self, M02, 0)
+        setMatValue(&self, M03, 0)
+
+        setMatValue(&self, M10, 0)
+        setMatValue(&self, M12, 0)
+        setMatValue(&self, M13, 0)
+
+        setMatValue(&self, M20, 0)
+        setMatValue(&self, M21, 0)
+        setMatValue(&self, M23, 0)
+
+        setMatValue(&self, M30, 0)
+        setMatValue(&self, M31, 0)
+        setMatValue(&self, M32, 0)
+    }
+
+    // MARK: - GLMatrix4x4: set rotate X
+
+    public mutating func setRotateX(_ angle: Float) {
+        let s = sin(angle)
+        let c = cos(angle)
+
+        setIdentity()
+
+        setMatValue(&self, M11, c)
+        setMatValue(&self, M12, -s)
+        setMatValue(&self, M21, s)
+        setMatValue(&self, M22, c)
+    }
+
+    // MARK: - GLMatrix4x4: set rotate Y
+
+    public mutating func setRotateY(_ angle: Float) {
+        let s = sin(angle)
+        let c = cos(angle)
+
+        setIdentity()
+
+        setMatValue(&self, M00, c)
+        setMatValue(&self, M02, s)
+        setMatValue(&self, M20, -s)
+        setMatValue(&self, M22, c)
+    }
+
+    // MARK: - GLMatrix4x4: set rotate Z
+
+    public mutating func setRotateZ(_ angle: Float) {
+        let s = sin(angle)
+        let c = cos(angle)
+
+        setIdentity()
+
+        setMatValue(&self, M00, c)
+        setMatValue(&self, M01, -s)
+        setMatValue(&self, M10, s)
+        setMatValue(&self, M11, c)
+    }
+
+    // MARK: - GL matrix 4x4: set rotate about point
+
+    public mutating func setRotateAboutPoint(_ origin: OGLPoint3D, xAngle: Float, yAngle: Float, zAngle: Float) {
+        var negTransM = OGLMatrix4x4()
+        var rotM = OGLMatrix4x4()
+
+        negTransM.setTranslate(-origin.x, -origin.y, -origin.z)
+        setTranslate(origin.x, origin.y, origin.z)
+
+        rotM.setRotateXYZ(xAngle, yAngle, zAngle)
+
+        self = rotM.multiplied(by: self)
+        self = negTransM.multiplied(by: self)
+    }
+
+    // MARK: - OGL matrix 4x4 multiply
+
+    public func multiplied(by other: OGLMatrix4x4) -> OGLMatrix4x4 {
+        var result = OGLMatrix4x4()
+        var selfCopy = self
+        var otherCopy = other
+        withUnsafePointer(to: &selfCopy) { mA in
+            withUnsafePointer(to: &otherCopy) { mB in
+                withUnsafeMutablePointer(to: &result) { r in
+                    oglMatrix4x4MultiplyFloat(mA, mB, r)
+                }
+            }
+        }
+        return result
+    }
+
+    // MARK: - Matrix4x4 set translate
+
+    public mutating func setTranslate(_ x: Float, _ y: Float, _ z: Float) {
+        setMatValue(&self, M03, x)
+        setMatValue(&self, M13, y)
+        setMatValue(&self, M23, z)
+
+        setMatValue(&self, M00, 1)
+        setMatValue(&self, M11, 1)
+        setMatValue(&self, M22, 1)
+        setMatValue(&self, M33, 1)
+
+        setMatValue(&self, M01, 0)
+        setMatValue(&self, M02, 0)
+        setMatValue(&self, M10, 0)
+        setMatValue(&self, M12, 0)
+        setMatValue(&self, M20, 0)
+        setMatValue(&self, M21, 0)
+        setMatValue(&self, M30, 0)
+        setMatValue(&self, M31, 0)
+        setMatValue(&self, M32, 0)
+    }
+
+    // MARK: - Matrix 4x4: get frustum to window
+
+    public mutating func setFrustumToWindow(pane: Int32) {
+        var x: Int32 = 0
+        var y: Int32 = 0
+        var w: Int32 = 0
+        var h: Int32 = 0
+
+        OGL_GetCurrentViewport(&x, &y, &w, &h, UInt8(pane))
+
+        let width = Float(w)
+        let height = Float(h)
+
+        setIdentity()
+
+        setMatValue(&self, M00, width * 0.5)
+        setMatValue(&self, M11, -height * 0.5)
+        setMatValue(&self, M03, width * 0.5)
+        setMatValue(&self, M13, height * 0.5)
+    }
+
+    // MARK: - Matrix 4x4 set identity
+
+    public mutating func setIdentity() {
+        setMatValue(&self, M00, 1)
+        setMatValue(&self, M11, 1)
+        setMatValue(&self, M22, 1)
+        setMatValue(&self, M33, 1)
+
+        setMatValue(&self, M01, 0)
+        setMatValue(&self, M02, 0)
+        setMatValue(&self, M03, 0)
+        setMatValue(&self, M10, 0)
+        setMatValue(&self, M12, 0)
+        setMatValue(&self, M13, 0)
+        setMatValue(&self, M20, 0)
+        setMatValue(&self, M21, 0)
+        setMatValue(&self, M23, 0)
+        setMatValue(&self, M30, 0)
+        setMatValue(&self, M31, 0)
+        setMatValue(&self, M32, 0)
+    }
+
+    // MARK: - Set quick XYZ-rotation matrix
+    //
+    // Does a quick precomputation to calculate an XYZ rotation matrix
+
+    public mutating func setRotateXYZ(_ rx: Float, _ ry: Float, _ rz: Float) {
+        let sx = sin(rx)
+        let sy = sin(ry)
+        let sz = sin(rz)
+        let cx = cos(rx)
+        let cy = cos(ry)
+        let cz = cos(rz)
+
+        let sxsy = sx * sy
+        let cxsy = cx * sy
+
+        setMatValue(&self, M00, cy * cz); setMatValue(&self, M10, cy * sz); setMatValue(&self, M20, -sy); setMatValue(&self, M30, 0)
+        setMatValue(&self, M01, (sxsy * cz) + (cx * -sz)); setMatValue(&self, M11, (sxsy * sz) + (cx * cz)); setMatValue(&self, M21, sx * cy); setMatValue(&self, M31, 0)
+        setMatValue(&self, M02, (cxsy * cz) + (-sx * -sz)); setMatValue(&self, M12, (cxsy * sz) + (-sx * cz)); setMatValue(&self, M22, cx * cy); setMatValue(&self, M32, 0)
+        setMatValue(&self, M03, 0); setMatValue(&self, M13, 0); setMatValue(&self, M23, 0); setMatValue(&self, M33, 1)
+    }
+
+    // MARK: - Set rotate about axis
+
+    public mutating func setRotateAboutAxis(_ axis: OGLVector3D, angle: Float) {
+        let ax = axis.x
+        let ay = axis.y
+        let az = axis.z
+        let ax2 = ax * ax
+        let ay2 = ay * ay
+        let az2 = az * az
+
+        let axy = ax * ay
+        let axz = ax * az
+        let ayz = ay * az
+
+        let sine = sin(angle)
+        let cosine = cos(angle)
+        let t = 1.0 - cosine
+
+        setIdentity()
+
+        setMatValue(&self, M00, t * ax2 + cosine)
+        setMatValue(&self, M10, t * axy + sine * az)
+        setMatValue(&self, M20, t * axz - sine * ay)
+
+        setMatValue(&self, M01, t * axy - sine * az)
+        setMatValue(&self, M11, t * ay2 + cosine)
+        setMatValue(&self, M21, t * ayz + sine * ax)
+
+        setMatValue(&self, M02, t * axz + sine * ay)
+        setMatValue(&self, M12, t * ayz - sine * ax)
+        setMatValue(&self, M22, t * az2 + cosine)
+    }
+
+    // MARK: - OGL matrix 4x4: invert
+
+    public func inverted() -> OGLMatrix4x4 {
+        var mt2 = OGLMatrix4x4()
+        mt2.setIdentity()
+        var mt1 = self // copy in matrix
+
+        var failed = false
+
+        outer: for i in 0..<4 {
+            var val = matValue(&mt1, Int32((i << 2) + i))
+            var ind = i
+
+            let i4 = i + 4
+            let i8 = i + 8
+            let i12 = i + 12
+
+            for j in (i + 1)..<4 {
+                if abs(matValue(&mt1, Int32((i << 2) + j))) > abs(val) {
+                    ind = j
+                    val = matValue(&mt1, Int32((i << 2) + j))
+                }
+            }
+
+            if ind != i {
+                var val2 = matValue(&mt2, Int32(i))
+                let tmp1 = matValue(&mt2, Int32(i))
+                setMatValue(&mt2, Int32(i), matValue(&mt2, Int32(ind)))
+                setMatValue(&mt2, Int32(ind), tmp1)
+
+                val2 = matValue(&mt1, Int32(i))
+                let tmp2 = matValue(&mt1, Int32(i))
+                setMatValue(&mt1, Int32(i), matValue(&mt1, Int32(ind)))
+                setMatValue(&mt1, Int32(ind), tmp2)
+                _ = val2
+
+                var indVar = ind + 4
+
+                var t2 = matValue(&mt2, Int32(i4))
+                setMatValue(&mt2, Int32(i4), matValue(&mt2, Int32(indVar)))
+                setMatValue(&mt2, Int32(indVar), t2)
+
+                t2 = matValue(&mt1, Int32(i4))
+                setMatValue(&mt1, Int32(i4), matValue(&mt1, Int32(indVar)))
+                setMatValue(&mt1, Int32(indVar), t2)
+
+                indVar += 4
+
+                t2 = matValue(&mt2, Int32(i8))
+                setMatValue(&mt2, Int32(i8), matValue(&mt2, Int32(indVar)))
+                setMatValue(&mt2, Int32(indVar), t2)
+
+                t2 = matValue(&mt1, Int32(i8))
+                setMatValue(&mt1, Int32(i8), matValue(&mt1, Int32(indVar)))
+                setMatValue(&mt1, Int32(indVar), t2)
+
+                indVar += 4
+
+                t2 = matValue(&mt2, Int32(i12))
+                setMatValue(&mt2, Int32(i12), matValue(&mt2, Int32(indVar)))
+                setMatValue(&mt2, Int32(indVar), t2)
+
+                t2 = matValue(&mt1, Int32(i12))
+                setMatValue(&mt1, Int32(i12), matValue(&mt1, Int32(indVar)))
+                setMatValue(&mt1, Int32(indVar), t2)
+            }
+
+            if val == 0.0 {
+                failed = true
+                break outer
+            }
+
+            let valInv = 1.0 / val
+
+            setMatValue(&mt1, Int32(i), matValue(&mt1, Int32(i)) * valInv)
+            setMatValue(&mt2, Int32(i), matValue(&mt2, Int32(i)) * valInv)
+
+            setMatValue(&mt1, Int32(i4), matValue(&mt1, Int32(i4)) * valInv)
+            setMatValue(&mt2, Int32(i4), matValue(&mt2, Int32(i4)) * valInv)
+
+            setMatValue(&mt1, Int32(i8), matValue(&mt1, Int32(i8)) * valInv)
+            setMatValue(&mt2, Int32(i8), matValue(&mt2, Int32(i8)) * valInv)
+
+            setMatValue(&mt1, Int32(i12), matValue(&mt1, Int32(i12)) * valInv)
+            setMatValue(&mt2, Int32(i12), matValue(&mt2, Int32(i12)) * valInv)
+
+            if i != 0 {
+                val = matValue(&mt1, Int32(i << 2))
+
+                setMatValue(&mt1, 0, matValue(&mt1, 0) - matValue(&mt1, Int32(i)) * val)
+                setMatValue(&mt2, 0, matValue(&mt2, 0) - matValue(&mt2, Int32(i)) * val)
+
+                setMatValue(&mt1, 4, matValue(&mt1, 4) - matValue(&mt1, Int32(i4)) * val)
+                setMatValue(&mt2, 4, matValue(&mt2, 4) - matValue(&mt2, Int32(i4)) * val)
+
+                setMatValue(&mt1, 8, matValue(&mt1, 8) - matValue(&mt1, Int32(i8)) * val)
+                setMatValue(&mt2, 8, matValue(&mt2, 8) - matValue(&mt2, Int32(i8)) * val)
+
+                setMatValue(&mt1, 12, matValue(&mt1, 12) - matValue(&mt1, Int32(i12)) * val)
+                setMatValue(&mt2, 12, matValue(&mt2, 12) - matValue(&mt2, Int32(i12)) * val)
+            }
+
+            if i != 1 {
+                val = matValue(&mt1, Int32((i << 2) + 1))
+
+                setMatValue(&mt1, 1, matValue(&mt1, 1) - matValue(&mt1, Int32(i)) * val)
+                setMatValue(&mt2, 1, matValue(&mt2, 1) - matValue(&mt2, Int32(i)) * val)
+
+                setMatValue(&mt1, 5, matValue(&mt1, 5) - matValue(&mt1, Int32(i4)) * val)
+                setMatValue(&mt2, 5, matValue(&mt2, 5) - matValue(&mt2, Int32(i4)) * val)
+
+                setMatValue(&mt1, 9, matValue(&mt1, 9) - matValue(&mt1, Int32(i8)) * val)
+                setMatValue(&mt2, 9, matValue(&mt2, 9) - matValue(&mt2, Int32(i8)) * val)
+
+                setMatValue(&mt1, 13, matValue(&mt1, 13) - matValue(&mt1, Int32(i12)) * val)
+                setMatValue(&mt2, 13, matValue(&mt2, 13) - matValue(&mt2, Int32(i12)) * val)
+            }
+
+            if i != 2 {
+                val = matValue(&mt1, Int32((i << 2) + 2))
+
+                setMatValue(&mt1, 2, matValue(&mt1, 2) - matValue(&mt1, Int32(i)) * val)
+                setMatValue(&mt2, 2, matValue(&mt2, 2) - matValue(&mt2, Int32(i)) * val)
+
+                setMatValue(&mt1, 6, matValue(&mt1, 6) - matValue(&mt1, Int32(i4)) * val)
+                setMatValue(&mt2, 6, matValue(&mt2, 6) - matValue(&mt2, Int32(i4)) * val)
+
+                setMatValue(&mt1, 10, matValue(&mt1, 10) - matValue(&mt1, Int32(i8)) * val)
+                setMatValue(&mt2, 10, matValue(&mt2, 10) - matValue(&mt2, Int32(i8)) * val)
+
+                setMatValue(&mt1, 14, matValue(&mt1, 14) - matValue(&mt1, Int32(i12)) * val)
+                setMatValue(&mt2, 14, matValue(&mt2, 14) - matValue(&mt2, Int32(i12)) * val)
+            }
+
+            if i != 3 {
+                val = matValue(&mt1, Int32((i << 2) + 3))
+
+                setMatValue(&mt1, 3, matValue(&mt1, 3) - matValue(&mt1, Int32(i)) * val)
+                setMatValue(&mt2, 3, matValue(&mt2, 3) - matValue(&mt2, Int32(i)) * val)
+
+                setMatValue(&mt1, 7, matValue(&mt1, 7) - matValue(&mt1, Int32(i4)) * val)
+                setMatValue(&mt2, 7, matValue(&mt2, 7) - matValue(&mt2, Int32(i4)) * val)
+
+                setMatValue(&mt1, 11, matValue(&mt1, 11) - matValue(&mt1, Int32(i8)) * val)
+                setMatValue(&mt2, 11, matValue(&mt2, 11) - matValue(&mt2, Int32(i8)) * val)
+
+                setMatValue(&mt1, 15, matValue(&mt1, 15) - matValue(&mt1, Int32(i12)) * val)
+                setMatValue(&mt2, 15, matValue(&mt2, 15) - matValue(&mt2, Int32(i12)) * val)
+            }
+        }
+
+        if failed {
+            var result = OGLMatrix4x4()
+            result.setIdentity() // error, so set result to identity
+            return result
+        } else {
+            return mt2 // copy to result
         }
     }
-}
-
-// MARK: - GLMatrix4x4: SetScale
-
-@c @implementation
-public func OGLMatrix4x4_SetScale(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ x: Float, _ y: Float, _ z: Float) {
-    setMatValue(&m.pointee, M00, x)
-    setMatValue(&m.pointee, M11, y)
-    setMatValue(&m.pointee, M22, z)
-    setMatValue(&m.pointee, M33, 1)
-
-    setMatValue(&m.pointee, M01, 0)
-    setMatValue(&m.pointee, M02, 0)
-    setMatValue(&m.pointee, M03, 0)
-
-    setMatValue(&m.pointee, M10, 0)
-    setMatValue(&m.pointee, M12, 0)
-    setMatValue(&m.pointee, M13, 0)
-
-    setMatValue(&m.pointee, M20, 0)
-    setMatValue(&m.pointee, M21, 0)
-    setMatValue(&m.pointee, M23, 0)
-
-    setMatValue(&m.pointee, M30, 0)
-    setMatValue(&m.pointee, M31, 0)
-    setMatValue(&m.pointee, M32, 0)
-}
-
-// MARK: - GLMatrix4x4: set rotate X
-
-@c @implementation
-public func OGLMatrix4x4_SetRotate_X(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ angle: Float) {
-    let s = sin(angle)
-    let c = cos(angle)
-
-    OGLMatrix4x4_SetIdentity(m)
-
-    setMatValue(&m.pointee, M11, c)
-    setMatValue(&m.pointee, M12, -s)
-    setMatValue(&m.pointee, M21, s)
-    setMatValue(&m.pointee, M22, c)
-}
-
-// MARK: - GLMatrix4x4: set rotate Y
-
-@c @implementation
-public func OGLMatrix4x4_SetRotate_Y(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ angle: Float) {
-    let s = sin(angle)
-    let c = cos(angle)
-
-    OGLMatrix4x4_SetIdentity(m)
-
-    setMatValue(&m.pointee, M00, c)
-    setMatValue(&m.pointee, M02, s)
-    setMatValue(&m.pointee, M20, -s)
-    setMatValue(&m.pointee, M22, c)
-}
-
-// MARK: - GLMatrix4x4: set rotate Z
-
-@c @implementation
-public func OGLMatrix4x4_SetRotate_Z(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ angle: Float) {
-    let s = sin(angle)
-    let c = cos(angle)
-
-    OGLMatrix4x4_SetIdentity(m)
-
-    setMatValue(&m.pointee, M00, c)
-    setMatValue(&m.pointee, M01, -s)
-    setMatValue(&m.pointee, M10, s)
-    setMatValue(&m.pointee, M11, c)
-}
-
-// MARK: - GL matrix 4x4: set rotate about point
-
-@c @implementation
-public func OGLMatrix4x4_SetRotateAboutPoint(_ matrix4x4: UnsafeMutablePointer<OGLMatrix4x4>!, _ origin: UnsafePointer<OGLPoint3D>!, _ xAngle: Float, _ yAngle: Float, _ zAngle: Float) {
-    var negTransM = OGLMatrix4x4()
-    var rotM = OGLMatrix4x4()
-
-    OGLMatrix4x4_SetTranslate(&negTransM, -origin.pointee.x, -origin.pointee.y, -origin.pointee.z)
-    OGLMatrix4x4_SetTranslate(matrix4x4, origin.pointee.x, origin.pointee.y, origin.pointee.z)
-
-    OGLMatrix4x4_SetRotate_XYZ(&rotM, xAngle, yAngle, zAngle)
-
-    OGLMatrix4x4_Multiply(&rotM, matrix4x4, matrix4x4)
-    OGLMatrix4x4_Multiply(&negTransM, matrix4x4, matrix4x4)
-}
-
-// MARK: - OGL matrix 4x4 multiply
-
-@c @implementation
-public func OGLMatrix4x4_Multiply(_ mA: UnsafePointer<OGLMatrix4x4>!, _ mB: UnsafePointer<OGLMatrix4x4>!, _ result: UnsafeMutablePointer<OGLMatrix4x4>!) {
-    oglMatrix4x4MultiplyFloat(mA, mB, result)
 }
 
 // MARK: - OGL matrix 4x4 multiply float
@@ -334,52 +613,6 @@ private func oglMatrix4x4MultiplyFloat(_ mA: UnsafePointer<OGLMatrix4x4>!, _ mB:
     result.pointee = r
 }
 
-// MARK: - Matrix4x4 set translate
-
-@c @implementation
-public func OGLMatrix4x4_SetTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ x: Float, _ y: Float, _ z: Float) {
-    setMatValue(&m.pointee, M03, x)
-    setMatValue(&m.pointee, M13, y)
-    setMatValue(&m.pointee, M23, z)
-
-    setMatValue(&m.pointee, M00, 1)
-    setMatValue(&m.pointee, M11, 1)
-    setMatValue(&m.pointee, M22, 1)
-    setMatValue(&m.pointee, M33, 1)
-
-    setMatValue(&m.pointee, M01, 0)
-    setMatValue(&m.pointee, M02, 0)
-    setMatValue(&m.pointee, M10, 0)
-    setMatValue(&m.pointee, M12, 0)
-    setMatValue(&m.pointee, M20, 0)
-    setMatValue(&m.pointee, M21, 0)
-    setMatValue(&m.pointee, M30, 0)
-    setMatValue(&m.pointee, M31, 0)
-    setMatValue(&m.pointee, M32, 0)
-}
-
-// MARK: - Matrix 4x4: get frustum to window
-
-@c @implementation
-public func OGLMatrix4x4_GetFrustumToWindow(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ pane: Int32) {
-    var x: Int32 = 0
-    var y: Int32 = 0
-    var w: Int32 = 0
-    var h: Int32 = 0
-
-    OGL_GetCurrentViewport(&x, &y, &w, &h, UInt8(pane))
-
-    let width = Float(w)
-    let height = Float(h)
-
-    OGLMatrix4x4_SetIdentity(m)
-
-    setMatValue(&m.pointee, M00, width * 0.5)
-    setMatValue(&m.pointee, M11, -height * 0.5)
-    setMatValue(&m.pointee, M03, width * 0.5)
-    setMatValue(&m.pointee, M13, height * 0.5)
-}
-
 // MARK: - Matrix3x3 set translate
 
 @c @implementation
@@ -397,85 +630,6 @@ public func OGLMatrix3x3_SetTranslate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, 
     setMat3Value(&m.pointee, N12, 0)
     setMat3Value(&m.pointee, N20, 0)
     setMat3Value(&m.pointee, N21, 0)
-}
-
-// MARK: - Matrix 4x4 set identity
-
-@c @implementation
-public func OGLMatrix4x4_SetIdentity(_ m: UnsafeMutablePointer<OGLMatrix4x4>!) {
-    setMatValue(&m.pointee, M00, 1)
-    setMatValue(&m.pointee, M11, 1)
-    setMatValue(&m.pointee, M22, 1)
-    setMatValue(&m.pointee, M33, 1)
-
-    setMatValue(&m.pointee, M01, 0)
-    setMatValue(&m.pointee, M02, 0)
-    setMatValue(&m.pointee, M03, 0)
-    setMatValue(&m.pointee, M10, 0)
-    setMatValue(&m.pointee, M12, 0)
-    setMatValue(&m.pointee, M13, 0)
-    setMatValue(&m.pointee, M20, 0)
-    setMatValue(&m.pointee, M21, 0)
-    setMatValue(&m.pointee, M23, 0)
-    setMatValue(&m.pointee, M30, 0)
-    setMatValue(&m.pointee, M31, 0)
-    setMatValue(&m.pointee, M32, 0)
-}
-
-// MARK: - Set quick XYZ-rotation matrix
-//
-// Does a quick precomputation to calculate an XYZ rotation matrix
-
-@c @implementation
-public func OGLMatrix4x4_SetRotate_XYZ(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ rx: Float, _ ry: Float, _ rz: Float) {
-    let sx = sin(rx)
-    let sy = sin(ry)
-    let sz = sin(rz)
-    let cx = cos(rx)
-    let cy = cos(ry)
-    let cz = cos(rz)
-
-    let sxsy = sx * sy
-    let cxsy = cx * sy
-
-    setMatValue(&m.pointee, M00, cy * cz); setMatValue(&m.pointee, M10, cy * sz); setMatValue(&m.pointee, M20, -sy); setMatValue(&m.pointee, M30, 0)
-    setMatValue(&m.pointee, M01, (sxsy * cz) + (cx * -sz)); setMatValue(&m.pointee, M11, (sxsy * sz) + (cx * cz)); setMatValue(&m.pointee, M21, sx * cy); setMatValue(&m.pointee, M31, 0)
-    setMatValue(&m.pointee, M02, (cxsy * cz) + (-sx * -sz)); setMatValue(&m.pointee, M12, (cxsy * sz) + (-sx * cz)); setMatValue(&m.pointee, M22, cx * cy); setMatValue(&m.pointee, M32, 0)
-    setMatValue(&m.pointee, M03, 0); setMatValue(&m.pointee, M13, 0); setMatValue(&m.pointee, M23, 0); setMatValue(&m.pointee, M33, 1)
-}
-
-// MARK: - Set rotate about axis
-
-@c @implementation
-public func OGLMatrix4x4_SetRotateAboutAxis(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ axis: UnsafePointer<OGLVector3D>!, _ angle: Float) {
-    let ax = axis.pointee.x
-    let ay = axis.pointee.y
-    let az = axis.pointee.z
-    let ax2 = ax * ax
-    let ay2 = ay * ay
-    let az2 = az * az
-
-    let axy = ax * ay
-    let axz = ax * az
-    let ayz = ay * az
-
-    let sine = sin(angle)
-    let cosine = cos(angle)
-    let t = 1.0 - cosine
-
-    OGLMatrix4x4_SetIdentity(m)
-
-    setMatValue(&m.pointee, M00, t * ax2 + cosine)
-    setMatValue(&m.pointee, M10, t * axy + sine * az)
-    setMatValue(&m.pointee, M20, t * axz - sine * ay)
-
-    setMatValue(&m.pointee, M01, t * axy - sine * az)
-    setMatValue(&m.pointee, M11, t * ay2 + cosine)
-    setMatValue(&m.pointee, M21, t * ayz + sine * ax)
-
-    setMatValue(&m.pointee, M02, t * axz + sine * ay)
-    setMatValue(&m.pointee, M12, t * ayz - sine * ax)
-    setMatValue(&m.pointee, M22, t * az2 + cosine)
 }
 
 // MARK: - OGL matrix3x3 set rotate about point
@@ -563,167 +717,6 @@ public func OGLMatrix3x3_Multiply(_ mA: UnsafePointer<OGLMatrix3x3>!, _ mB: Unsa
     result.pointee = r
 }
 
-// MARK: -
-
-// MARK: - OGL matrix 4x4: invert
-
-@c @implementation
-public func OGLMatrix4x4_Invert(_ inMatrix: UnsafePointer<OGLMatrix4x4>!, _ result: UnsafeMutablePointer<OGLMatrix4x4>!) {
-    var mt2 = OGLMatrix4x4()
-    OGLMatrix4x4_SetIdentity(&mt2)
-    var mt1 = inMatrix.pointee // copy in matrix
-
-    var failed = false
-
-    outer: for i in 0..<4 {
-        var val = matValue(&mt1, Int32((i << 2) + i))
-        var ind = i
-
-        let i4 = i + 4
-        let i8 = i + 8
-        let i12 = i + 12
-
-        for j in (i + 1)..<4 {
-            if abs(matValue(&mt1, Int32((i << 2) + j))) > abs(val) {
-                ind = j
-                val = matValue(&mt1, Int32((i << 2) + j))
-            }
-        }
-
-        if ind != i {
-            var val2 = matValue(&mt2, Int32(i))
-            let tmp1 = matValue(&mt2, Int32(i))
-            setMatValue(&mt2, Int32(i), matValue(&mt2, Int32(ind)))
-            setMatValue(&mt2, Int32(ind), tmp1)
-
-            val2 = matValue(&mt1, Int32(i))
-            let tmp2 = matValue(&mt1, Int32(i))
-            setMatValue(&mt1, Int32(i), matValue(&mt1, Int32(ind)))
-            setMatValue(&mt1, Int32(ind), tmp2)
-            _ = val2
-
-            var indVar = ind + 4
-
-            var t2 = matValue(&mt2, Int32(i4))
-            setMatValue(&mt2, Int32(i4), matValue(&mt2, Int32(indVar)))
-            setMatValue(&mt2, Int32(indVar), t2)
-
-            t2 = matValue(&mt1, Int32(i4))
-            setMatValue(&mt1, Int32(i4), matValue(&mt1, Int32(indVar)))
-            setMatValue(&mt1, Int32(indVar), t2)
-
-            indVar += 4
-
-            t2 = matValue(&mt2, Int32(i8))
-            setMatValue(&mt2, Int32(i8), matValue(&mt2, Int32(indVar)))
-            setMatValue(&mt2, Int32(indVar), t2)
-
-            t2 = matValue(&mt1, Int32(i8))
-            setMatValue(&mt1, Int32(i8), matValue(&mt1, Int32(indVar)))
-            setMatValue(&mt1, Int32(indVar), t2)
-
-            indVar += 4
-
-            t2 = matValue(&mt2, Int32(i12))
-            setMatValue(&mt2, Int32(i12), matValue(&mt2, Int32(indVar)))
-            setMatValue(&mt2, Int32(indVar), t2)
-
-            t2 = matValue(&mt1, Int32(i12))
-            setMatValue(&mt1, Int32(i12), matValue(&mt1, Int32(indVar)))
-            setMatValue(&mt1, Int32(indVar), t2)
-        }
-
-        if val == 0.0 {
-            failed = true
-            break outer
-        }
-
-        let valInv = 1.0 / val
-
-        setMatValue(&mt1, Int32(i), matValue(&mt1, Int32(i)) * valInv)
-        setMatValue(&mt2, Int32(i), matValue(&mt2, Int32(i)) * valInv)
-
-        setMatValue(&mt1, Int32(i4), matValue(&mt1, Int32(i4)) * valInv)
-        setMatValue(&mt2, Int32(i4), matValue(&mt2, Int32(i4)) * valInv)
-
-        setMatValue(&mt1, Int32(i8), matValue(&mt1, Int32(i8)) * valInv)
-        setMatValue(&mt2, Int32(i8), matValue(&mt2, Int32(i8)) * valInv)
-
-        setMatValue(&mt1, Int32(i12), matValue(&mt1, Int32(i12)) * valInv)
-        setMatValue(&mt2, Int32(i12), matValue(&mt2, Int32(i12)) * valInv)
-
-        if i != 0 {
-            val = matValue(&mt1, Int32(i << 2))
-
-            setMatValue(&mt1, 0, matValue(&mt1, 0) - matValue(&mt1, Int32(i)) * val)
-            setMatValue(&mt2, 0, matValue(&mt2, 0) - matValue(&mt2, Int32(i)) * val)
-
-            setMatValue(&mt1, 4, matValue(&mt1, 4) - matValue(&mt1, Int32(i4)) * val)
-            setMatValue(&mt2, 4, matValue(&mt2, 4) - matValue(&mt2, Int32(i4)) * val)
-
-            setMatValue(&mt1, 8, matValue(&mt1, 8) - matValue(&mt1, Int32(i8)) * val)
-            setMatValue(&mt2, 8, matValue(&mt2, 8) - matValue(&mt2, Int32(i8)) * val)
-
-            setMatValue(&mt1, 12, matValue(&mt1, 12) - matValue(&mt1, Int32(i12)) * val)
-            setMatValue(&mt2, 12, matValue(&mt2, 12) - matValue(&mt2, Int32(i12)) * val)
-        }
-
-        if i != 1 {
-            val = matValue(&mt1, Int32((i << 2) + 1))
-
-            setMatValue(&mt1, 1, matValue(&mt1, 1) - matValue(&mt1, Int32(i)) * val)
-            setMatValue(&mt2, 1, matValue(&mt2, 1) - matValue(&mt2, Int32(i)) * val)
-
-            setMatValue(&mt1, 5, matValue(&mt1, 5) - matValue(&mt1, Int32(i4)) * val)
-            setMatValue(&mt2, 5, matValue(&mt2, 5) - matValue(&mt2, Int32(i4)) * val)
-
-            setMatValue(&mt1, 9, matValue(&mt1, 9) - matValue(&mt1, Int32(i8)) * val)
-            setMatValue(&mt2, 9, matValue(&mt2, 9) - matValue(&mt2, Int32(i8)) * val)
-
-            setMatValue(&mt1, 13, matValue(&mt1, 13) - matValue(&mt1, Int32(i12)) * val)
-            setMatValue(&mt2, 13, matValue(&mt2, 13) - matValue(&mt2, Int32(i12)) * val)
-        }
-
-        if i != 2 {
-            val = matValue(&mt1, Int32((i << 2) + 2))
-
-            setMatValue(&mt1, 2, matValue(&mt1, 2) - matValue(&mt1, Int32(i)) * val)
-            setMatValue(&mt2, 2, matValue(&mt2, 2) - matValue(&mt2, Int32(i)) * val)
-
-            setMatValue(&mt1, 6, matValue(&mt1, 6) - matValue(&mt1, Int32(i4)) * val)
-            setMatValue(&mt2, 6, matValue(&mt2, 6) - matValue(&mt2, Int32(i4)) * val)
-
-            setMatValue(&mt1, 10, matValue(&mt1, 10) - matValue(&mt1, Int32(i8)) * val)
-            setMatValue(&mt2, 10, matValue(&mt2, 10) - matValue(&mt2, Int32(i8)) * val)
-
-            setMatValue(&mt1, 14, matValue(&mt1, 14) - matValue(&mt1, Int32(i12)) * val)
-            setMatValue(&mt2, 14, matValue(&mt2, 14) - matValue(&mt2, Int32(i12)) * val)
-        }
-
-        if i != 3 {
-            val = matValue(&mt1, Int32((i << 2) + 3))
-
-            setMatValue(&mt1, 3, matValue(&mt1, 3) - matValue(&mt1, Int32(i)) * val)
-            setMatValue(&mt2, 3, matValue(&mt2, 3) - matValue(&mt2, Int32(i)) * val)
-
-            setMatValue(&mt1, 7, matValue(&mt1, 7) - matValue(&mt1, Int32(i4)) * val)
-            setMatValue(&mt2, 7, matValue(&mt2, 7) - matValue(&mt2, Int32(i4)) * val)
-
-            setMatValue(&mt1, 11, matValue(&mt1, 11) - matValue(&mt1, Int32(i8)) * val)
-            setMatValue(&mt2, 11, matValue(&mt2, 11) - matValue(&mt2, Int32(i8)) * val)
-
-            setMatValue(&mt1, 15, matValue(&mt1, 15) - matValue(&mt1, Int32(i12)) * val)
-            setMatValue(&mt2, 15, matValue(&mt2, 15) - matValue(&mt2, Int32(i12)) * val)
-        }
-    }
-
-    if failed {
-        OGLMatrix4x4_SetIdentity(result) // error, so set result to identity
-    } else {
-        result.pointee = mt2 // copy to result
-    }
-}
-
 // MARK: - OGL: is bbox visible
 //
 // Transform all the vertices into homogenous co-ordinates, and do
@@ -739,7 +732,7 @@ public func OGL_IsBBoxVisible(_ bBox: UnsafePointer<OGLBoundingBox>!, _ localToW
 
     var m: UnsafeMutablePointer<OGLMatrix4x4>
     if let localToWorld {
-        OGLMatrix4x4_Multiply(localToWorld, &gWorldToFrustumMatrix, &m2)
+        m2 = localToWorld.pointee.multiplied(by: gWorldToFrustumMatrix)
         m = withUnsafeMutablePointer(to: &m2) { $0 }
     } else {
         m = withUnsafeMutablePointer(to: &gWorldToFrustumMatrix) { $0 }
@@ -926,7 +919,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
             setMatValue(&matrix4x4.pointee, M33, one)
         } else {
             // Vectors are equal
-            OGLMatrix4x4_SetIdentity(matrix4x4)
+            matrix4x4.pointee.setIdentity()
         }
     } else {
         let versTheta = 1.0 - cosTheta
@@ -1039,10 +1032,8 @@ public func OGL_GluUnProject(_ winPt: UnsafePointer<OGLPoint3D>!, _ modelview: U
     var m = OGLMatrix4x4()
     var inPt = OGLPoint3D()
 
-    OGLMatrix4x4_Multiply(modelview, projection, &m)
-    var mInv = OGLMatrix4x4()
-    OGLMatrix4x4_Invert(&m, &mInv)
-    m = mInv
+    m = modelview.pointee.multiplied(by: projection.pointee)
+    m = m.inverted()
 
     inPt = winPt.pointee
 

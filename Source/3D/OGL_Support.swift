@@ -1469,13 +1469,13 @@ public func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
     withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
         UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), $0) }
     }
-    OGLMatrix4x4_Multiply(&gLocalToViewMatrix, &gViewToFrustumMatrix, &gLocalToFrustumMatrix)
-    OGLMatrix4x4_Multiply(&gWorldToViewMatrix, &gViewToFrustumMatrix, &gWorldToFrustumMatrix)
+    gLocalToFrustumMatrix = gLocalToViewMatrix.multiplied(by: gViewToFrustumMatrix)
+    gWorldToFrustumMatrix = gWorldToViewMatrix.multiplied(by: gViewToFrustumMatrix)
 
     let frustumToWindow = gFrustumToWindowMatrixBase()
-    OGLMatrix4x4_GetFrustumToWindow(&frustumToWindow[Int(camNum)], camNum)
+    (frustumToWindow + Int(camNum)).pointee.setFrustumToWindow(pane: camNum)
     let worldToWindow = gWorldToWindowMatrixBase()
-    OGLMatrix4x4_Multiply(&gLocalToFrustumMatrix, &frustumToWindow[Int(camNum)], &worldToWindow[Int(camNum)])
+    (worldToWindow + Int(camNum)).pointee = gLocalToFrustumMatrix.multiplied(by: (frustumToWindow + Int(camNum)).pointee)
 
     UpdateListenerLocation()
 }

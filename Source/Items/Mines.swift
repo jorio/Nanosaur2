@@ -158,14 +158,14 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     origin.y = base.pointee.Coord.y + (40.0 * airMineScale)
     origin.z = base.pointee.Coord.z
 
-    OGLMatrix4x4_SetRotateAboutPoint(&m, &origin, chain.pointee.Rot.x, chain.pointee.Rot.y, 0)
+    m.setRotateAboutPoint(origin, xAngle: chain.pointee.Rot.x, yAngle: chain.pointee.Rot.y, zAngle: 0)
 
-    OGLMatrix4x4_SetScale(&m2, chain.pointee.Scale.x, chain.pointee.Scale.y, chain.pointee.Scale.z)
+    m2.setScale(chain.pointee.Scale.x, chain.pointee.Scale.y, chain.pointee.Scale.z)
     setMatValue(&m2, M03, chain.pointee.Coord.x)
     setMatValue(&m2, M13, chain.pointee.Coord.y)
     setMatValue(&m2, M23, chain.pointee.Coord.z)
 
-    OGLMatrix4x4_Multiply(&m2, &m, &chain.pointee.BaseTransformMatrix)
+    chain.pointee.BaseTransformMatrix = m2.multiplied(by: m)
 
     SetObjectTransformMatrix(chain)
 

@@ -144,7 +144,7 @@ public func CreateCollisionBoxFromBoundingBox_Rotated(_ theNode: UnsafeMutablePo
 
     // CALC ROTATED BBOX
     var m = OGLMatrix4x4()
-    OGLMatrix4x4_SetRotate_XYZ(&m, theNode.pointee.Rot.x, theNode.pointee.Rot.y, theNode.pointee.Rot.z) // make rot matrix
+    m.setRotateXYZ(theNode.pointee.Rot.x, theNode.pointee.Rot.y, theNode.pointee.Rot.z) // make rot matrix
 
     var bBox = OGLBoundingBox()
     if Int32(theNode.pointee.Genre) == Int32(SKELETON_GENRE) { // calc bbox
@@ -475,10 +475,10 @@ public func CullTestAllObjects() {
 
             if Int32(node.pointee.Genre) == Int32(SKELETON_GENRE) { // skeletons are already oriented, just need translation
                 var m2 = OGLMatrix4x4()
-                OGLMatrix4x4_SetTranslate(&m2, node.pointee.Coord.x, node.pointee.Coord.y, node.pointee.Coord.z)
-                OGLMatrix4x4_Multiply(&m2, &gWorldToFrustumMatrix, &m)
+                m2.setTranslate(node.pointee.Coord.x, node.pointee.Coord.y, node.pointee.Coord.z)
+                m = m2.multiplied(by: gWorldToFrustumMatrix)
             } else { // non-skeletons need full transform
-                OGLMatrix4x4_Multiply(&node.pointee.BaseTransformMatrix, &gWorldToFrustumMatrix, &m)
+                m = node.pointee.BaseTransformMatrix.multiplied(by: gWorldToFrustumMatrix)
             }
 
             let m00 = matValue(&m, M00), m01 = matValue(&m, M01), m02 = matValue(&m, M02), m03 = matValue(&m, M03)

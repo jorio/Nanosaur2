@@ -1,0 +1,492 @@
+// IntroStory.swift - Port of IntroStory.c to Swift
+//
+// SDL_snprintf/SDL_strchr are unusable from Swift (SDL_snprintf is
+// variadic); MakeSubtitleObjects' cursor-walking C string logic is
+// reimplemented using Swift string splitting instead.
+
+private let INTROSTORY_SObjType_PangeaLogo: Int16 = 0
+private let INTROSTORY_SObjType_Image1: Int16 = 1
+private let INTROSTORY_SObjType_Image2: Int16 = 2
+private let INTROSTORY_SObjType_Image3: Int16 = 3
+private let INTROSTORY_SObjType_Image4: Int16 = 4
+private let INTROSTORY_SObjType_Image5: Int16 = 5
+private let INTROSTORY_SObjType_Image6: Int16 = 6
+private let INTROSTORY_SObjType_Image7: Int16 = 7
+private let INTROSTORY_SObjType_NanoLogo: Int16 = 8
+private let NUM_SLIDES = 9
+
+private let slideFadeRate: Float = 0.8
+
+private var gEndSlideShow = false
+
+private var gSlideActive = [Bool](repeating: false, count: NUM_SLIDES)
+
+private let gSlides: [SlideType] = [
+    // PANGEA LOGO
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_PangeaLogo, // sprite #
+        x: 0.5, y: 0.5, // x / y
+        scale: 250, // scale
+        rotz: 0, // rotz
+        alpha: 0, // alpha
+        delayToNext: 4.0, // delay to next
+        delayToVanish: 2.5, // delay to fade
+        zoomSpeed: 20.0, // zoom speed
+        dx: 0, dy: 0, // dx / dy
+        drot: 0, // drot
+        delayUntilEffect: 0, // delay to play effect
+        narrationSound: Int32(EFFECT_NULL), // effect #
+        subtitleKey: 0
+    ),
+
+    // IN THE YEAR 4222...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image1, // sprite #
+        x: 0.5, y: 0.5, // x / y
+        scale: 500, // scale
+        rotz: -0.2, // rotz
+        alpha: 0, // alpha
+        delayToNext: 9.0, // delay to next
+        delayToVanish: 9.0, // delay to fade
+        zoomSpeed: 35.0, // zoom speed
+        dx: 0, dy: 0, // dx / dy
+        drot: 0.03, // drot
+        delayUntilEffect: 0.5, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY1),
+        subtitleKey: Int32(STR_STORY_1.rawValue)
+    ),
+
+    // HIS MISSION WAS TO...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image2, // sprite #
+        x: -0.1, y: 0.8, // x / y
+        scale: 350, // scale
+        rotz: 0.2, // rotz
+        alpha: 0, // alpha
+        delayToNext: 12.0, // delay to next
+        delayToVanish: 12.0, // delay to fade
+        zoomSpeed: 35.0, // zoom speed
+        dx: 35, dy: -12, // dx / dy
+        drot: -0.02, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY2),
+        subtitleKey: Int32(STR_STORY_2.rawValue)
+    ),
+
+    // THE MISSION WAS A SUCCESS
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image3, // sprite #
+        x: 0.9, y: 0.5, // x / y
+        scale: 400, // scale
+        rotz: -0.3, // rotz
+        alpha: 0, // alpha
+        delayToNext: 8.0, // delay to next
+        delayToVanish: 7.5, // delay to fade
+        zoomSpeed: 35.0, // zoom speed
+        dx: -40, dy: 0, // dx / dy
+        drot: 0.05, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY3),
+        subtitleKey: Int32(STR_STORY_3.rawValue)
+    ),
+
+    // BUT BEFORE...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image4, // sprite #
+        x: 0.5, y: 0.5, // x / y
+        scale: 350, // scale
+        rotz: 0, // rotz
+        alpha: 0, // alpha
+        delayToNext: 8.0, // delay to next
+        delayToVanish: 8.0, // delay to fade
+        zoomSpeed: 35.0, // zoom speed
+        dx: 0, dy: 0, // dx / dy
+        drot: 0, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY4),
+        subtitleKey: Int32(STR_STORY_4.rawValue)
+    ),
+
+    // THE EGGS WERE TAKEN TO...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image5, // sprite #
+        x: 1.0, y: 0.5, // x / y
+        scale: 500, // scale
+        rotz: -0.2, // rotz
+        alpha: 0, // alpha
+        delayToNext: 14.0, // delay to next
+        delayToVanish: 12.0, // delay to fade
+        zoomSpeed: 20.0, // zoom speed
+        dx: -40, dy: 0, // dx / dy
+        drot: 0.02, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY5),
+        subtitleKey: Int32(STR_STORY_5.rawValue)
+    ),
+
+    // BUT THE REBELS LEFT...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image6, // sprite #
+        x: 0.5, y: 0.5, // x / y
+        scale: 350, // scale
+        rotz: 0.2, // rotz
+        alpha: 0, // alpha
+        delayToNext: 8.5, // delay to next
+        delayToVanish: 8.5, // delay to fade
+        zoomSpeed: 30.0, // zoom speed
+        dx: 0, dy: 0, // dx / dy
+        drot: -0.02, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY6),
+        subtitleKey: Int32(STR_STORY_6.rawValue)
+    ),
+
+    // THIS HATCHLING...
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_Image7, // sprite #
+        x: 0.5, y: 0, // x / y
+        scale: 400, // scale
+        rotz: 0.3, // rotz
+        alpha: 0, // alpha
+        delayToNext: 9.0, // delay to next
+        delayToVanish: 9.0, // delay to fade
+        zoomSpeed: 40.0, // zoom speed
+        dx: 0, dy: 20, // dx / dy
+        drot: -0.05, // drot
+        delayUntilEffect: 1.0, // delay to play effect
+        narrationSound: Int32(EFFECT_STORY7),
+        subtitleKey: Int32(STR_STORY_7.rawValue)
+    ),
+
+    SlideType(
+        spriteNum: INTROSTORY_SObjType_NanoLogo, // sprite #
+        x: 0.5, y: 0.5, // x / y
+        scale: 300, // scale
+        rotz: 0, // rotz
+        alpha: 0, // alpha
+        delayToNext: 8.0, // delay to next
+        delayToVanish: 5.0, // delay to fade
+        zoomSpeed: 30.0, // zoom speed
+        dx: 0, dy: 0, // dx / dy
+        drot: 0, // drot
+        delayUntilEffect: 0.0, // delay to play effect
+        narrationSound: Int32(EFFECT_NULL),
+        subtitleKey: 0
+    ),
+]
+
+// MARK: - Do intro story
+
+@c @implementation
+public func DoIntroStoryScreen() {
+    // SETUP
+
+    setupIntroStoryScreen()
+    _ = MakeFadeEvent(UInt8(kFadeFlags_In), 2.0)
+
+    PlaySong(Int16(SONG_INTRO), 1)
+
+    // LOOP
+
+    gEndSlideShow = false
+
+    while !gEndSlideShow {
+        CalcFramesPerSecond()
+        DoSDLMaintenance()
+        if UserWantsOut() != 0 {
+            gGameViewInfoPtr!.pointee.fadeSound = 1
+            break
+        }
+
+        // MOVE
+
+        MoveObjects()
+
+        // DRAW
+
+        OGL_DrawScene(DrawObjects)
+    }
+
+    // FADE OUT
+
+    OGL_FadeOutScene(DrawObjects, nil)
+
+    // CLEANUP
+
+    freeIntroStoryScreen()
+}
+
+// MARK: - Setup intro story
+
+private func setupIntroStoryScreen() {
+    var viewDef = OGLSetupInputType()
+
+    // SETUP VIEW
+
+    OGL_NewViewDef(&viewDef)
+
+    viewDef.camera.fov = 0.8
+
+    viewDef.camera.hither = 10
+    viewDef.camera.yon = 1000
+
+    viewDef.styles.useFog = 0
+    viewDef.view.clearColor.r = 0
+    viewDef.view.clearColor.g = 0
+    viewDef.view.clearColor.b = 0
+
+    viewDef.view.clearBackBuffer = 1
+
+    OGL_SetupGameView(&viewDef)
+
+    // LOAD ART
+
+    // LOAD SPRITES
+
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(NUM_SLIDES), "story")
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT3), ":Sprites:fonts:swiss", Int32(kAtlasLoadFont))
+
+    LoadSoundBank(UInt8(SOUND_BANK_NARRATION))
+
+    // MAKE OBJECTS
+
+    buildSlideShowObjects()
+}
+
+// MARK: - Free intro story
+
+private func freeIntroStoryScreen() {
+    MyFlushEvents()
+    DeleteAllObjects()
+    FreeAllSkeletonFiles(-1)
+    DisposeSpriteGroup(Int32(SPRITE_GROUP_LEVELSPECIFIC))
+    DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT3))
+    DisposeAllBG3DContainers()
+    DisposeTerrain()
+    DisposeSoundBank(UInt8(SOUND_BANK_NARRATION))
+
+    OGL_DisposeGameView()
+}
+
+// MARK: -
+
+// MARK: - Build slide show objects
+
+private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
+    OGL_PushState()
+    SetInfobarSpriteState(0, 1)
+    OGL_DisableTexture2D()
+    OGL_EnableBlend()
+
+    let y: Float = 320
+
+    glBegin(GLenum(GL_QUADS))
+    glColor4f(0, 0, 0, 0)
+    glVertex2f(gLogicalRect.left, y)
+    glVertex2f(gLogicalRect.right, y)
+    glColor4f(0, 0, 0, 1)
+    glVertex2f(gLogicalRect.right, gLogicalRect.bottom)
+    glVertex2f(gLogicalRect.left, gLogicalRect.bottom)
+    glEnd()
+
+    OGL_PopState()
+}
+
+private func buildSlideShowObjects() {
+    for i in 0..<NUM_SLIDES {
+        var def = NewObjectDefinitionType()
+        def.group = UInt8(SPRITE_GROUP_LEVELSPECIFIC)
+        def.type = UInt8(gSlides[i].spriteNum)
+        def.coord.x = 640.0 * gSlides[i].x
+        def.coord.y = 480.0 * gSlides[i].y
+        def.coord.z = 0
+        def.flags = UInt32(STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOZBUFFER)
+        def.slot = Int16(SPRITE_SLOT) - Int16(i)
+        def.moveCall = cMoveSlide
+        def.rot = gSlides[i].rotz
+        def.scale = gSlides[i].scale
+
+        let slideObj = MakeSpriteObject(&def, 1)!
+
+        slideObj.pointee.Kind = Int32(i)
+
+        slideObj.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN) // hide all slides @ start
+
+        slideObj.pointee.ColorFilter.a = gSlides[i].alpha
+
+        gSlideActive[i] = i == 0 // (this sets which frame we start on)
+
+        slideObj.pointee.Timer = gSlides[i].delayToNext // set time to show before starting next slide
+        slideObj.pointee.Health = gSlides[i].delayToVanish // time to show before start fadeout of this slide
+
+        slideObj.pointee.SpecialF.0 = gSlides[i].zoomSpeed // ZoomSpeed
+        slideObj.pointee.Delta.x = gSlides[i].dx
+        slideObj.pointee.Delta.y = gSlides[i].dy
+        slideObj.pointee.DeltaRot.z = gSlides[i].drot
+        slideObj.pointee.SpecialF.1 = gSlides[i].delayUntilEffect // EffectTimer
+
+        slideObj.pointee.AnaglyphZ = -10 // make appear deep in the monitor
+    }
+
+    if gGamePrefs.cutsceneSubtitles != 0 {
+        var gradientDef = NewObjectDefinitionType()
+        gradientDef.genre = UInt8(CUSTOM_GENRE)
+        gradientDef.coord = OGLPoint3D(x: 0, y: 0, z: 0)
+        gradientDef.slot = Int16(SPRITE_SLOT)
+        gradientDef.scale = 1
+        gradientDef.drawCall = cDrawBottomGradient
+        _ = MakeNewObject(&gradientDef)
+    }
+}
+
+// MARK: - Move slide
+
+private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
+    let theNode = theNodeOpt!
+    let fps = gFramesPerSecondFrac
+    let slideNum = Int(theNode.pointee.Kind)
+    let isLastSlide = slideNum >= NUM_SLIDES - 1
+
+    if !gSlideActive[slideNum] { // is this slide still waiting?
+        return
+    }
+
+    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+
+    // MOVE IT
+
+    theNode.pointee.Coord.x += fps * theNode.pointee.Delta.x
+    theNode.pointee.Coord.y += fps * theNode.pointee.Delta.y
+
+    theNode.pointee.Scale.y += fps * theNode.pointee.SpecialF.0 // ZoomSpeed
+    theNode.pointee.Scale.x = theNode.pointee.Scale.y
+    theNode.pointee.Rot.y += fps * theNode.pointee.DeltaRot.z
+
+    // SEE IF TIME TO TRIGGER NEXT SLIDE
+
+    theNode.pointee.Timer -= fps
+    if !isLastSlide && theNode.pointee.Timer <= 0.0 {
+        gSlideActive[slideNum + 1] = true
+    }
+
+    // SEE IF FADE OUT/IN
+
+    theNode.pointee.Health -= fps
+    if theNode.pointee.Health < 0.0 {
+        theNode.pointee.ColorFilter.a -= fps * slideFadeRate
+        if theNode.pointee.ColorFilter.a <= 0.0 {
+            theNode.pointee.ColorFilter.a = 0
+            if theNode.pointee.Timer <= 0.0 { // dont delete until the other timer is also done
+                DeleteObject(theNode)
+                if isLastSlide { // was that the last slide?
+                    gEndSlideShow = true
+                }
+                return
+            }
+        }
+    }
+
+    // FADE IN
+    else {
+        theNode.pointee.ColorFilter.a += fps * slideFadeRate
+        if theNode.pointee.ColorFilter.a > 1.0 {
+            theNode.pointee.ColorFilter.a = 1.0
+        }
+    }
+
+    // PLAY EFFECT?
+
+    if gSlides[slideNum].narrationSound != Int32(EFFECT_NULL) // does it have an effect?
+        && theNode.pointee.Flag.0 == 0 { // has it been played yet?
+        theNode.pointee.SpecialF.1 -= fps // EffectTimer
+        if theNode.pointee.SpecialF.1 <= 0.0 { // is it time to play it?
+            let volume = UInt32(FULL_CHANNEL_VOLUME) * 175 / 100
+            PlayEffect_Parms(Int16(gSlides[slideNum].narrationSound), volume, volume, UInt(NORMAL_CHANNEL_RATE))
+            theNode.pointee.Flag.0 = 1
+
+            makeSubtitleObjects(slideNum)
+        }
+    }
+}
+
+private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
+
+// MARK: -
+
+private let cMoveSubtitle: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
+    let theNode = theNodeOpt!
+    let fps = gFramesPerSecondFrac
+
+    if floorf(theNode.pointee.SpecialF.0 * 100) >= 0 {
+        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        theNode.pointee.SpecialF.0 -= fps
+        theNode.pointee.ColorFilter.a = 0
+    } else {
+        theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        theNode.pointee.Health -= fps
+
+        if theNode.pointee.Health < 0.25 {
+            theNode.pointee.ColorFilter.a -= fps * 5
+        } else {
+            theNode.pointee.ColorFilter.a += fps * 5
+        }
+
+        if theNode.pointee.ColorFilter.a > 1 {
+            theNode.pointee.ColorFilter.a = 1
+        } else if theNode.pointee.ColorFilter.a < 0 {
+            theNode.pointee.ColorFilter.a = 0
+        }
+
+        if floorf(theNode.pointee.Health * 100) < 0 {
+            DeleteObject(theNode)
+        }
+    }
+}
+
+private func makeSubtitleObjects(_ slideNum: Int) {
+    if gGamePrefs.cutsceneSubtitles == 0 {
+        return
+    }
+
+    let text = String(cString: Localize(LocStrID(rawValue: UInt32(gSlides[slideNum].subtitleKey))))
+
+    if text.isEmpty {
+        return
+    }
+
+    var subRow: Int32 = 0
+    var subDuration: Float = 0
+    var subDelay: Float = 0
+
+    for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+        if line.first == "#" {
+            subDelay += subDuration
+            subDuration = 0
+            subRow = 0
+
+            let digits = line.dropFirst()
+            for ch in digits {
+                subDuration *= 10
+                subDuration += Float(ch.asciiValue! - Character("0").asciiValue!)
+            }
+            subDuration *= 0.001
+        } else if !line.isEmpty {
+            var def = NewObjectDefinitionType()
+            def.coord = OGLPoint3D(x: 640 / 2, y: 480 - 60 + 22 * Float(subRow), z: 0)
+            def.scale = 35 * 0.5 * 0.015
+            def.slot = Int16(SPRITE_SLOT)
+            def.group = UInt8(ATLAS_GROUP_FONT3)
+            def.flags = UInt32(STATUS_BIT_HIDDEN)
+
+            let textNode = TextMesh_New(String(line), 0, &def)
+            textNode.pointee.SpecialF.0 = subDelay
+            textNode.pointee.Health = subDuration
+            textNode.pointee.MoveCall = cMoveSubtitle
+            textNode.pointee.ColorFilter = OGLColorRGBA(r: 1, g: 1, b: 0.7, a: 1)
+
+            subRow += 1
+        } else {
+            subRow += 1
+        }
+    }
+}

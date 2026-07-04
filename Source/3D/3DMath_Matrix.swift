@@ -3,8 +3,7 @@
 
 // MARK: - Set lookat matrix
 
-@c @implementation
-public func SetLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector: UnsafePointer<OGLVector3D>!, _ from: UnsafePointer<OGLPoint3D>!, _ to: UnsafePointer<OGLPoint3D>!) {
+func SetLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector: UnsafePointer<OGLVector3D>!, _ from: UnsafePointer<OGLPoint3D>!, _ to: UnsafePointer<OGLPoint3D>!) {
     var lookAt = OGLVector3D()
     var theXAxis = OGLVector3D()
 
@@ -59,8 +58,7 @@ public func SetLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector
 
 // MARK: - Set lookat matrix and translate
 
-@c @implementation
-public func SetLookAtMatrixAndTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector: UnsafePointer<OGLVector3D>!, _ from: UnsafePointer<OGLPoint3D>!, _ to: UnsafePointer<OGLPoint3D>!) {
+func SetLookAtMatrixAndTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector: UnsafePointer<OGLVector3D>!, _ from: UnsafePointer<OGLPoint3D>!, _ to: UnsafePointer<OGLPoint3D>!) {
     var lookAt = OGLVector3D()
     var theXAxis = OGLVector3D()
     var newUp = OGLVector3D()
@@ -109,8 +107,7 @@ public func SetLookAtMatrixAndTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!
 //
 // NOTE:  This will break if aim vector is straight up or down.
 
-@c @implementation
-public func SetAlignmentMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: UnsafePointer<OGLVector3D>!) {
+func SetAlignmentMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: UnsafePointer<OGLVector3D>!) {
     var theXAxis = OGLVector3D()
     var yAxis = OGLVector3D()
     let up = OGLVector3D(x: 0, y: 1, z: 0)
@@ -150,8 +147,7 @@ public func SetAlignmentMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: 
 
 // MARK: - Set alignment matrix with Z rot
 
-@c @implementation
-public func SetAlignmentMatrixWithZRot(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: UnsafePointer<OGLVector3D>!, _ rotZ: Float) {
+func SetAlignmentMatrixWithZRot(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: UnsafePointer<OGLVector3D>!, _ rotZ: Float) {
     var rm = OGLMatrix4x4()
 
     // CALC THE ROT MATRIX
@@ -615,8 +611,7 @@ private func oglMatrix4x4MultiplyFloat(_ mA: UnsafePointer<OGLMatrix4x4>!, _ mB:
 
 // MARK: - Matrix3x3 set translate
 
-@c @implementation
-public func OGLMatrix3x3_SetTranslate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ x: Float, _ y: Float) {
+func OGLMatrix3x3_SetTranslate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ x: Float, _ y: Float) {
     setMat3Value(&m.pointee, N02, x)
     setMat3Value(&m.pointee, N12, y)
 
@@ -634,8 +629,7 @@ public func OGLMatrix3x3_SetTranslate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, 
 
 // MARK: - OGL matrix3x3 set rotate about point
 
-@c @implementation
-public func OGLMatrix3x3_SetRotateAboutPoint(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ origin: UnsafeMutablePointer<OGLPoint2D>!, _ angle: Double) {
+func OGLMatrix3x3_SetRotateAboutPoint(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ origin: UnsafeMutablePointer<OGLPoint2D>!, _ angle: Double) {
     let sine = sin(angle)
     let cosine = cos(angle)
 
@@ -652,8 +646,7 @@ public func OGLMatrix3x3_SetRotateAboutPoint(_ m: UnsafeMutablePointer<OGLMatrix
 
 // MARK: - OGL matrix3x3 set rotate
 
-@c @implementation
-public func OGLMatrix3x3_SetRotate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ angle: Double) {
+func OGLMatrix3x3_SetRotate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ angle: Double) {
     let sine = Float(sin(angle))
     let cosine = Float(cos(angle))
 
@@ -667,8 +660,7 @@ public func OGLMatrix3x3_SetRotate(_ m: UnsafeMutablePointer<OGLMatrix3x3>!, _ a
 
 // MARK: - OGL matrix 3x3 set identity
 
-@c @implementation
-public func OGLMatrix3x3_SetIdentity(_ m: UnsafeMutablePointer<OGLMatrix3x3>!) {
+func OGLMatrix3x3_SetIdentity(_ m: UnsafeMutablePointer<OGLMatrix3x3>!) {
     setMat3Value(&m.pointee, N00, 1)
     setMat3Value(&m.pointee, N11, 1)
     setMat3Value(&m.pointee, N22, 1)
@@ -683,8 +675,7 @@ public func OGLMatrix3x3_SetIdentity(_ m: UnsafeMutablePointer<OGLMatrix3x3>!) {
 
 // MARK: - OGL matrix 3x3 multiply
 
-@c @implementation
-public func OGLMatrix3x3_Multiply(_ mA: UnsafePointer<OGLMatrix3x3>!, _ mB: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLMatrix3x3>!) {
+func OGLMatrix3x3_Multiply(_ mA: UnsafePointer<OGLMatrix3x3>!, _ mB: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLMatrix3x3>!) {
     var a = mA.pointee
     var b = mB.pointee
 
@@ -836,8 +827,7 @@ func OGL_IsBBoxVisible(_ bBox: UnsafePointer<OGLBoundingBox>!, _ localToWorld: U
 // The matrix rotates about v2xv1, by the angle between them.  If the vectors are opposing
 // then rotation is done about some vector that is orthogonal to both.
 
-@c @implementation
-public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLMatrix4x4>!, _ v1: UnsafePointer<OGLVector3D>!, _ v2: UnsafePointer<OGLVector3D>!) {
+func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLMatrix4x4>!, _ v1: UnsafePointer<OGLVector3D>!, _ v2: UnsafePointer<OGLVector3D>!) {
     var axis = OGLVector3D()
     var orth = OGLVector3D()
     var proj = OGLVector3D()
@@ -976,8 +966,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
 // Result equivalent to matrix produced by gluPerspective
 // Unlike the GLU version, fov is in RADIANS, not degrees!
 
-@c @implementation
-public func OGL_SetGluPerspectiveMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ fov: Float, _ aspect: Float, _ hither: Float, _ yon: Float) {
+func OGL_SetGluPerspectiveMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ fov: Float, _ aspect: Float, _ hither: Float, _ yon: Float) {
     let cotan = 1.0 / tanf(fov / 2.0)
     let depth = hither - yon
 
@@ -991,8 +980,7 @@ public func OGL_SetGluPerspectiveMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!
 //
 // Result equivalent to matrix produced by gluLookAt
 
-@c @implementation
-public func OGL_SetGluLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ eye: UnsafePointer<OGLPoint3D>!, _ target: UnsafePointer<OGLPoint3D>!, _ upDir: UnsafePointer<OGLVector3D>!) {
+func OGL_SetGluLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ eye: UnsafePointer<OGLPoint3D>!, _ target: UnsafePointer<OGLPoint3D>!, _ upDir: UnsafePointer<OGLVector3D>!) {
     // Forward = target - eye
     var fwd = OGLVector3D()
     fwd.x = target.pointee.x - eye.pointee.x
@@ -1026,8 +1014,7 @@ public func OGL_SetGluLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ e
 //
 // Result equivalent to point produced by gluUnProject
 
-@c @implementation
-public func OGL_GluUnProject(_ winPt: UnsafePointer<OGLPoint3D>!, _ modelview: UnsafePointer<OGLMatrix4x4>!, _ projection: UnsafePointer<OGLMatrix4x4>!, _ vpOffset: UnsafePointer<OGLPoint2D>!, _ vpSize: UnsafePointer<OGLVector2D>!, _ objPt: UnsafeMutablePointer<OGLPoint3D>!) {
+func OGL_GluUnProject(_ winPt: UnsafePointer<OGLPoint3D>!, _ modelview: UnsafePointer<OGLMatrix4x4>!, _ projection: UnsafePointer<OGLMatrix4x4>!, _ vpOffset: UnsafePointer<OGLPoint2D>!, _ vpSize: UnsafePointer<OGLVector2D>!, _ objPt: UnsafeMutablePointer<OGLPoint3D>!) {
     var m = OGLMatrix4x4()
     var inPt = OGLPoint3D()
 

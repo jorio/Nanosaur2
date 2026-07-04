@@ -31,22 +31,12 @@
 // Swift-only functions in 3DMath_Geometry.swift - nothing in C calls them
 // anymore, so they're no longer declared here.
 
-void OGLCreateFromToRotationMatrix(OGLMatrix4x4 *matrix4x4,	const OGLVector3D *v1, const OGLVector3D *v2);
-void SetLookAtMatrix(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to);
-void SetLookAtMatrixAndTranslate(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to);
-void SetAlignmentMatrix(OGLMatrix4x4 *m, const OGLVector3D *aim);
-void SetAlignmentMatrixWithZRot(OGLMatrix4x4 *m, const OGLVector3D *aim, float rotZ);
-
-void OGLMatrix3x3_SetRotate(OGLMatrix3x3 *m, double angle);
-void OGLMatrix3x3_SetIdentity(OGLMatrix3x3 *m);
-
-void OGLMatrix3x3_Multiply(const OGLMatrix3x3	*matrixA,
-							const OGLMatrix3x3	*matrixB,
-							OGLMatrix3x3		*result);
-
-void OGLMatrix3x3_SetRotateAboutPoint(OGLMatrix3x3 *m, OGLPoint2D *origin, double angle);
-void OGLMatrix3x3_SetTranslate(OGLMatrix3x3 *m, float x, float y);
-
+// OGLCreateFromToRotationMatrix/SetLookAtMatrix/SetLookAtMatrixAndTranslate/
+// SetAlignmentMatrix/SetAlignmentMatrixWithZRot/OGLMatrix3x3_SetRotate/
+// OGLMatrix3x3_SetIdentity/OGLMatrix3x3_Multiply/
+// OGLMatrix3x3_SetRotateAboutPoint/OGLMatrix3x3_SetTranslate are now plain
+// Swift-only functions in 3DMath_Matrix.swift - nothing in C calls them
+// anymore, so they're no longer declared here.
 
 extern	const 	OGLVector3D	gUp;
 
@@ -462,25 +452,6 @@ static inline void OGLPoint3D_Subtract(const OGLPoint3D *v1, const OGLPoint3D *v
 		(_v2)->z = (_v1)->z * (_s);
 
 
-/************* GLU REPLACEMENTS ***********************/
-
-void OGL_SetGluPerspectiveMatrix(
-		OGLMatrix4x4* m,
-		float fov,
-		float aspect,
-		float hither,
-		float yon);
-
-void OGL_SetGluLookAtMatrix(
-		OGLMatrix4x4* m,
-		const OGLPoint3D* eye,
-		const OGLPoint3D* target,
-		const OGLVector3D* upDir);
-
-void OGL_GluUnProject(
-		const OGLPoint3D* winPt,
-		const OGLMatrix4x4* modelview,
-		const OGLMatrix4x4* projection,
-		const OGLPoint2D* vpOffset,
-		const OGLVector2D* vpSize,
-		OGLPoint3D* objPt);
+// OGL_SetGluPerspectiveMatrix/OGL_SetGluLookAtMatrix/OGL_GluUnProject are now
+// plain Swift-only functions in 3DMath_Matrix.swift - nothing in C calls
+// them anymore, so they're no longer declared here.

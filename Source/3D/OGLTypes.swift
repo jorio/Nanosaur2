@@ -44,3 +44,36 @@ struct OGLLineSegment {
 struct OGLMatrix3x3 {
     var value: (Float, Float, Float, Float, Float, Float, Float, Float, Float) = (0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
+
+struct OGLViewDefType {
+    var clearBackBuffer: UInt8 = 0
+    var clearColor = OGLColorRGBA()
+    var clip = Rect()
+    var numPanes: Int32 = 0
+}
+
+struct OGLStyleDefType {
+    var useFog: UInt8 = 0
+    var fogStart: Float = 0
+    var fogEnd: Float = 0
+    var fogDensity: Float = 0
+    var fogMode: Int16 = 0
+}
+
+struct OGLCameraDefType {
+    var from: (OGLPoint3D, OGLPoint3D, OGLPoint3D) = (OGLPoint3D(), OGLPoint3D(), OGLPoint3D())
+    var to: (OGLPoint3D, OGLPoint3D, OGLPoint3D) = (OGLPoint3D(), OGLPoint3D(), OGLPoint3D())
+    var up: (OGLVector3D, OGLVector3D, OGLVector3D) = (OGLVector3D(), OGLVector3D(), OGLVector3D())
+    var hither: Float = 0
+    var yon: Float = 0
+    var fov: Float = 0
+}
+
+struct OGLSetupInputType {
+    var view = OGLViewDefType()
+    var styles = OGLStyleDefType()
+    var camera = OGLCameraDefType()
+    var lights = OGLLightDefType()
+    var useFog: UInt8 = 0
+    var clearBackBuffer: UInt8 = 0
+}

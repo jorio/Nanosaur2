@@ -149,35 +149,9 @@ typedef struct
 
 //========================
 
-typedef	struct
-{
-	Boolean					clearBackBuffer;
-	OGLColorRGBA			clearColor;
-	Rect					clip;			// left = amount to clip off left, etc.
-	int						numPanes;
-}OGLViewDefType;
-
-
-typedef	struct
-{
-	Boolean			useFog;
-	float			fogStart;
-	float			fogEnd;
-	float			fogDensity;
-	short			fogMode;
-
-}OGLStyleDefType;
-
-
-typedef struct
-{
-	OGLPoint3D				from[MAX_VIEWPORTS];			// 2 cameras, one for each viewport/player
-	OGLPoint3D				to[MAX_VIEWPORTS];
-	OGLVector3D				up[MAX_VIEWPORTS];
-	float					hither;
-	float					yon;
-	float					fov;
-}OGLCameraDefType;
+// OGLViewDefType/OGLStyleDefType/OGLCameraDefType are now plain Swift
+// structs in OGLTypes.swift - nothing in C touches them, so they're no
+// longer declared here.
 
 typedef	struct
 {
@@ -188,17 +162,8 @@ typedef	struct
 }OGLLightDefType;
 
 
-		/* OGLSetupInputType */
-
-typedef struct
-{
-	OGLViewDefType		view;
-	OGLStyleDefType		styles;
-	OGLCameraDefType	camera;
-	OGLLightDefType		lights;
-	Boolean					useFog;
-	Boolean					clearBackBuffer;
-}OGLSetupInputType;
+// OGLSetupInputType is now a plain Swift struct in OGLTypes.swift -
+// nothing in C touches it, so it's no longer declared here.
 
 
 		/* OGLSetupOutputType */

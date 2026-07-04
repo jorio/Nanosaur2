@@ -28,7 +28,7 @@ public func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
 
 @c @implementation
 public func UpdateEnemy(_ theNode: UnsafeMutablePointer<ObjNode>!) {
-    theNode.pointee.Speed = CalcVectorLength(&gDelta)
+    theNode.pointee.Speed = gDelta.length
 
     theNode.update()
 }

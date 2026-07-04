@@ -724,8 +724,7 @@ public func OGLMatrix3x3_Multiply(_ mA: UnsafePointer<OGLMatrix3x3>!, _ mB: Unsa
 //
 // INPUT: localToWorld = optional local->world transform matrix to be applied if bbox is not in world coords
 
-@c @implementation
-public func OGL_IsBBoxVisible(_ bBox: UnsafePointer<OGLBoundingBox>!, _ localToWorld: UnsafeMutablePointer<OGLMatrix4x4>?) -> UInt8 {
+func OGL_IsBBoxVisible(_ bBox: UnsafePointer<OGLBoundingBox>!, _ localToWorld: UnsafeMutablePointer<OGLMatrix4x4>?) -> UInt8 {
     var m2 = OGLMatrix4x4()
 
     // SEE IF FACTOR IN A LOCAL->WORLD MATRIX

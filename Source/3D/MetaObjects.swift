@@ -1354,10 +1354,8 @@ private func calcBoundingSphereRecurse(_ object: MetaObjectPtr, _ bSphere: Unsaf
             let numPoints = Int(geoData.pointee.numPoints)
 
             for i in 0..<numPoints {
-                var point = geoData.pointee.points![i]
-                let d = withUnsafeMutablePointer(to: &point) { ptr -> Float in
-                    ptr.withMemoryRebound(to: OGLVector3D.self, capacity: 1) { CalcVectorLength($0) }
-                } // calc this radius
+                let point = geoData.pointee.points![i]
+                let d = OGLVector3D(x: point.x, y: point.y, z: point.z).length // calc this radius
                 if d > bSphere.pointee { // is this the best?
                     bSphere.pointee = d
                 }

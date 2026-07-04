@@ -493,7 +493,7 @@ private let cMoveRaptorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     if isInRange != 0 {
         // CALC ANIM SPEED
 
-        theNode.pointee.Speed = CalcVectorLength(&theNode.pointee.Delta)
+        theNode.pointee.Speed = theNode.pointee.Delta.length
         theNode.pointee.Skeleton!.pointee.AnimSpeed = theNode.pointee.Speed * raptorWalkAnimSpeedFactor
 
         // AIM ALONG SPLINE

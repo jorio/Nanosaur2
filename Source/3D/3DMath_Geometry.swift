@@ -10,8 +10,7 @@ private let VectorComponent_Z: Int32 = 2
 //
 // Returns true if the input line segment intersects the plane.
 
-@c @implementation
-public func IntersectionOfLineSegAndPlane(_ plane: UnsafePointer<OGLPlaneEquation>!, _ v1x: Float, _ v1y: Float, _ v1z: Float, _ v2x: Float, _ v2y: Float, _ v2z: Float, _ outPoint: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
+func IntersectionOfLineSegAndPlane(_ plane: UnsafePointer<OGLPlaneEquation>!, _ v1x: Float, _ v1y: Float, _ v1z: Float, _ v2x: Float, _ v2y: Float, _ v2z: Float, _ outPoint: UnsafeMutablePointer<OGLPoint3D>!) -> UInt8 {
     let nx = plane.pointee.normal.x
     let ny = plane.pointee.normal.y
     let nz = plane.pointee.normal.z
@@ -74,25 +73,26 @@ public func IntersectionOfLineSegAndPlane(_ plane: UnsafePointer<OGLPlaneEquatio
 // *** IMPORTANT-->  This function does not check for divides by 0!! As such, there should be no
 //					"vertical" polygons (polys with normal->y == 0).
 
-@c @implementation
-public func IntersectionOfYAndPlane_Func(_ x: Float, _ z: Float, _ p: UnsafePointer<OGLPlaneEquation>!) -> Float {
+func IntersectionOfYAndPlane_Func(_ x: Float, _ z: Float, _ p: UnsafePointer<OGLPlaneEquation>!) -> Float {
     (p.pointee.constant - ((p.pointee.normal.x * x) + (p.pointee.normal.z * z))) / p.pointee.normal.y
 }
 
 // MARK: - Calc vector length
 
-@c @implementation
-public func CalcVectorLength(_ v: UnsafeMutablePointer<OGLVector3D>!) -> Float {
-    let d = (v.pointee.x * v.pointee.x) + (v.pointee.y * v.pointee.y) + (v.pointee.z * v.pointee.z)
-    return sqrt(d)
+extension OGLVector3D {
+    var length: Float {
+        let d = (x * x) + (y * y) + (z * z)
+        return sqrt(d)
+    }
 }
 
 // MARK: - Calc vector length 2D
 
-@c @implementation
-public func CalcVectorLength2D(_ v: UnsafePointer<OGLVector2D>!) -> Float {
-    let d = (v.pointee.x * v.pointee.x) + (v.pointee.y * v.pointee.y)
-    return sqrt(d)
+extension OGLVector2D {
+    var length: Float {
+        let d = (x * x) + (y * y)
+        return sqrt(d)
+    }
 }
 
 // MARK: - Apply friction to deltas (OGLVector3D methods; no longer C-callable, see 3dmath.h)
@@ -214,8 +214,7 @@ extension OGLVector3D {
 //			trianglePoints	= triangle's 3 points
 //			normal			= triangle's normal
 
-@c @implementation
-public func IsPointInTriangle3D(_ point3D: UnsafePointer<OGLPoint3D>!, _ trianglePoints: UnsafePointer<OGLPoint3D>!, _ normal: UnsafeMutablePointer<OGLVector3D>!) -> UInt8 {
+func IsPointInTriangle3D(_ point3D: UnsafePointer<OGLPoint3D>!, _ trianglePoints: UnsafePointer<OGLPoint3D>!, _ normal: UnsafeMutablePointer<OGLVector3D>!) -> UInt8 {
     let maximalComponent: Int32
 
     // DETERMINE LONGEST COMPONENT OF NORMAL
@@ -297,8 +296,7 @@ public func IsPointInTriangle3D(_ point3D: UnsafePointer<OGLPoint3D>!, _ triangl
 // OUTPUT: x,y = coords of intersection
 //			true = yes, intersection occured
 
-@c @implementation
-public func IntersectLineSegments(_ x1: Float, _ y1: Float, _ x2: Float, _ y2: Float,
+func IntersectLineSegments(_ x1: Float, _ y1: Float, _ x2: Float, _ y2: Float,
                                    _ x3: Float, _ y3: Float, _ x4: Float, _ y4: Float,
                                    _ x: UnsafeMutablePointer<Float>!, _ y: UnsafeMutablePointer<Float>!) -> UInt8 {
     var max1: Float
@@ -431,8 +429,7 @@ public func IntersectLineSegments(_ x1: Float, _ y1: Float, _ x2: Float, _ y2: F
 //
 // OUTPUT:	normal = normal to the line
 
-@c @implementation
-public func CalcLineNormal2D(_ p0x: Float, _ p0y: Float, _ p1x: Float, _ p1y: Float,
+func CalcLineNormal2D(_ p0x: Float, _ p0y: Float, _ p1x: Float, _ p1y: Float,
                               _ px: Float, _ py: Float, _ normal: UnsafeMutablePointer<OGLVector2D>!) {
     var normalA = OGLVector2D()
     var normalB = OGLVector2D()
@@ -461,8 +458,7 @@ public func CalcLineNormal2D(_ p0x: Float, _ p0y: Float, _ p1x: Float, _ p1y: Fl
 // OUTPUT:	TRUE = valid normal, FALSE = could not calculate
 //			normal = normal to the line
 
-@c @implementation
-public func CalcRayNormal2D(_ vec: UnsafePointer<OGLVector2D>!, _ p0x: Float, _ p0y: Float,
+func CalcRayNormal2D(_ vec: UnsafePointer<OGLVector2D>!, _ p0x: Float, _ p0y: Float,
                              _ px: Float, _ py: Float, _ normal: UnsafeMutablePointer<OGLVector2D>!) -> UInt8 {
     var v = OGLVector3D()
 
@@ -504,8 +500,7 @@ public func CalcRayNormal2D(_ vec: UnsafePointer<OGLVector2D>!, _ p0x: Float, _ 
 //
 // OUTPUT:	theVector = reflected vector, scaled to magnitude of original
 
-@c @implementation
-public func ReflectVector2D(_ theVector: UnsafeMutablePointer<OGLVector2D>!, _ N: UnsafePointer<OGLVector2D>!, _ outVec: UnsafeMutablePointer<OGLVector2D>!) {
+func ReflectVector2D(_ theVector: UnsafeMutablePointer<OGLVector2D>!, _ N: UnsafePointer<OGLVector2D>!, _ outVec: UnsafeMutablePointer<OGLVector2D>!) {
     var x = theVector.pointee.x
     var y = theVector.pointee.y
 
@@ -549,8 +544,7 @@ public func ReflectVector2D(_ theVector: UnsafeMutablePointer<OGLVector2D>!, _ N
 // N - Surface Normal
 // vec = vector aiming at the normal.
 
-@c @implementation
-public func ReflectVector3D(_ vec: UnsafePointer<OGLVector3D>!, _ N: UnsafeMutablePointer<OGLVector3D>!, _ out: UnsafeMutablePointer<OGLVector3D>!) {
+func ReflectVector3D(_ vec: UnsafePointer<OGLVector3D>!, _ N: UnsafeMutablePointer<OGLVector3D>!, _ out: UnsafeMutablePointer<OGLVector3D>!) {
     let normalX = N.pointee.x
     let normalY = N.pointee.y
     let normalZ = N.pointee.z
@@ -620,8 +614,7 @@ extension OGLPoint3D {
 
 // MARK: - OGL: point 2D transform
 
-@c @implementation
-public func OGLPoint2D_Transform(_ p: UnsafeMutablePointer<OGLPoint2D>!, _ m: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLPoint2D>!) {
+func OGLPoint2D_Transform(_ p: UnsafeMutablePointer<OGLPoint2D>!, _ m: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLPoint2D>!) {
     var mVar = m.pointee
     let newx = (p.pointee.x * mat3Value(&mVar, N00)) + (p.pointee.y * mat3Value(&mVar, N01)) + mat3Value(&mVar, N02)
     let newy = (p.pointee.x * mat3Value(&mVar, N10)) + (p.pointee.y * mat3Value(&mVar, N11)) + mat3Value(&mVar, N12)
@@ -639,8 +632,7 @@ public func OGLPoint2D_Transform(_ p: UnsafeMutablePointer<OGLPoint2D>!, _ m: Un
 
 // MARK: - OGL vector 2D transform
 
-@c @implementation
-public func OGLVector2D_Transform(_ vector2D: UnsafePointer<OGLVector2D>!, _ matrix3x3: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLVector2D>!) {
+func OGLVector2D_Transform(_ vector2D: UnsafePointer<OGLVector2D>!, _ matrix3x3: UnsafePointer<OGLMatrix3x3>!, _ result: UnsafeMutablePointer<OGLVector2D>!) {
     var s = OGLVector2D()
     let sPtr: UnsafePointer<OGLVector2D>
 
@@ -685,8 +677,7 @@ extension OGLVector3D {
 //
 // 0.0 == perpendicular, 1.0 = parallel
 
-@c @implementation
-public func OGLVector2D_Dot(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePointer<OGLVector2D>!) -> Float {
+func OGLVector2D_Dot(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePointer<OGLVector2D>!) -> Float {
     var dot = v1.pointee.x * v2.pointee.x + v1.pointee.y * v2.pointee.y
 
     // CHECK FOR FLOATING POINT PRECISION PROBLEMS
@@ -725,8 +716,7 @@ extension OGLVector3D {
 
 // MARK: - Vector 2D normalize
 
-@c @implementation
-public func OGLVector2D_Normalize(_ vector2D: UnsafePointer<OGLVector2D>!, _ result: UnsafeMutablePointer<OGLVector2D>!) {
+func OGLVector2D_Normalize(_ vector2D: UnsafePointer<OGLVector2D>!, _ result: UnsafeMutablePointer<OGLVector2D>!) {
     var length = (vector2D.pointee.x * vector2D.pointee.x) + (vector2D.pointee.y * vector2D.pointee.y)
 
     length = sqrt(length)
@@ -838,8 +828,7 @@ extension OGLVector3D {
 
 // MARK: - Vector 2D cross
 
-@c @implementation
-public func OGLVector2D_Cross(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePointer<OGLVector2D>!) -> Float {
+func OGLVector2D_Cross(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePointer<OGLVector2D>!) -> Float {
     (v1.pointee.x * v2.pointee.y) - (v1.pointee.y * v2.pointee.x)
 }
 
@@ -857,8 +846,7 @@ extension OGLPoint3D {
 
 // MARK: - Point 2D distance
 
-@c @implementation
-public func OGLPoint2D_Distance(_ p1: UnsafeMutablePointer<OGLPoint2D>!, _ p2: UnsafeMutablePointer<OGLPoint2D>!) -> Float {
+func OGLPoint2D_Distance(_ p1: UnsafeMutablePointer<OGLPoint2D>!, _ p2: UnsafeMutablePointer<OGLPoint2D>!) -> Float {
     let dx = p1.pointee.x - p2.pointee.x
     let dy = p1.pointee.y - p2.pointee.y
 
@@ -920,8 +908,7 @@ extension OGLPoint3D {
 
 // MARK: - OGL: point 3D to 4D transform array
 
-@c @implementation
-public func OGLPoint3D_To4DTransformArray(_ inVertex: UnsafePointer<OGLPoint3D>!, _ matrix: UnsafePointer<OGLMatrix4x4>!, _ outVertex: UnsafeMutablePointer<OGLPoint4D>!, _ numVertices: Int) {
+func OGLPoint3D_To4DTransformArray(_ inVertex: UnsafePointer<OGLPoint3D>!, _ matrix: UnsafePointer<OGLMatrix4x4>!, _ outVertex: UnsafeMutablePointer<OGLPoint4D>!, _ numVertices: Int) {
     var m = matrix.pointee
     let m00 = matValue(&m, M00); let m01 = matValue(&m, M01); let m02 = matValue(&m, M02); let m03 = matValue(&m, M03)
     let m10 = matValue(&m, M10); let m11 = matValue(&m, M11); let m12 = matValue(&m, M12); let m13 = matValue(&m, M13)
@@ -985,8 +972,7 @@ extension OGLPoint3D {
 
 // MARK: - OGL: point 2D transform array
 
-@c @implementation
-public func OGLPoint2D_TransformArray(_ inVertex: UnsafePointer<OGLPoint2D>!, _ matrix: UnsafePointer<OGLMatrix3x3>!, _ outVertex: UnsafeMutablePointer<OGLPoint2D>!, _ numVertices: Int) {
+func OGLPoint2D_TransformArray(_ inVertex: UnsafePointer<OGLPoint2D>!, _ matrix: UnsafePointer<OGLMatrix3x3>!, _ outVertex: UnsafeMutablePointer<OGLPoint2D>!, _ numVertices: Int) {
     var m = matrix.pointee
 
     for i in 0..<numVertices {
@@ -1016,8 +1002,7 @@ extension OGLPoint3D {
 
 // MARK: - OGL: point 2D line distance
 
-@c @implementation
-public func OGLPoint2D_LineDistance(_ point: UnsafeMutablePointer<OGLPoint2D>!, _ p1x: Float, _ p1y: Float, _ p2x: Float, _ p2y: Float, _ t: UnsafeMutablePointer<Float>!) -> Float {
+func OGLPoint2D_LineDistance(_ point: UnsafeMutablePointer<OGLPoint2D>!, _ p1x: Float, _ p1y: Float, _ p2x: Float, _ p2y: Float, _ t: UnsafeMutablePointer<Float>!) -> Float {
     let XJ = point.pointee.x
     let YJ = point.pointee.y
 
@@ -1043,8 +1028,7 @@ public func OGLPoint2D_LineDistance(_ point: UnsafeMutablePointer<OGLPoint2D>!, 
 
 // MARK: - OGL: bounding box transform
 
-@c @implementation
-public func OGLBoundingBox_Transform(_ inBox: UnsafeMutablePointer<OGLBoundingBox>!, _ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ outBox: UnsafeMutablePointer<OGLBoundingBox>!) {
+func OGLBoundingBox_Transform(_ inBox: UnsafeMutablePointer<OGLBoundingBox>!, _ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ outBox: UnsafeMutablePointer<OGLBoundingBox>!) {
     var p = [OGLPoint3D](repeating: OGLPoint3D(), count: 8)
     var pp = [OGLPoint3D](repeating: OGLPoint3D(), count: 8)
 
@@ -1120,8 +1104,7 @@ public func OGLBoundingBox_Transform(_ inBox: UnsafeMutablePointer<OGLBoundingBo
 
 // MARK: - Decay to zero
 
-@c @implementation
-public func DecayToZero(_ numberIn: Float, _ decay: Float) -> Float {
+func DecayToZero(_ numberIn: Float, _ decay: Float) -> Float {
     var number = numberIn
     if number > 0.0 {
         number -= decay
@@ -1141,8 +1124,7 @@ public func DecayToZero(_ numberIn: Float, _ decay: Float) -> Float {
 
 // MARK: - OGL: compute triangle plane equation
 
-@c @implementation
-public func OGL_ComputeTrianglePlaneEquation(_ trianglePoints: UnsafePointer<OGLPoint3D>!, _ planeEquation: UnsafeMutablePointer<OGLPlaneEquation>!) {
+func OGL_ComputeTrianglePlaneEquation(_ trianglePoints: UnsafePointer<OGLPoint3D>!, _ planeEquation: UnsafeMutablePointer<OGLPlaneEquation>!) {
     // 1. Compute cross product of trianglePoints
     // 2. Normalize this vector for planeEquation.normal (sqrt)
     // 3. Compute planeEquation.constant:

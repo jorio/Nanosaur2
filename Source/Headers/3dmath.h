@@ -6,17 +6,18 @@
 
 #define OGLMath_RadiansToDegrees(x)	((float)((x) * 180.0f / PI))
 
-float OGLPoint2D_LineDistance(OGLPoint2D *point, float p1x, float p1y, float p2x, float p2y, float *t);
-
 // OGLPoint3D_DistanceToPlane/Distance/Transform/TransformArray/
 // CalcBoundingBox are now plain OGLPoint3D methods in
 // 3DMath_Geometry.swift - nothing in C calls them anymore, so they're no
 // longer declared here.
 
-void OGL_ComputeTrianglePlaneEquation(const OGLPoint3D	*trianglePoints, OGLPlaneEquation *planeEquation);
-
-Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, float v1y, float v1z,
-								 float v2x, float v2y, float v2z, OGLPoint3D *outPoint);
+// OGL_ComputeTrianglePlaneEquation/IntersectionOfLineSegAndPlane/
+// IsPointInTriangle3D/IntersectLineSegments/CalcLineNormal2D/CalcRayNormal2D/
+// ReflectVector2D/ReflectVector3D/OGLPoint2D_LineDistance/
+// OGLBoundingBox_Transform/DecayToZero/OGL_IsBBoxVisible/CalcVectorLength/
+// CalcVectorLength2D are now plain Swift-only functions in
+// 3DMath_Geometry.swift/3DMath_Matrix.swift - nothing in C calls them
+// anymore, so they're no longer declared here.
 
 // ApplyFrictionToDeltas/ApplyFrictionToDeltasXZ/ApplyFrictionToRotation/
 // VectorsAreCloseEnough/OGLVector3D_Cross/OGLVector3D_Dot/OGLVector3D_Normalize/
@@ -24,57 +25,27 @@ Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, 
 // now plain OGLVector3D methods in 3DMath_Geometry.swift/3DMath_Angles.swift -
 // nothing in C calls them anymore, so they're no longer declared here.
 
-float IntersectionOfYAndPlane_Func(float x, float z, const OGLPlaneEquation *p);
+// IntersectionOfYAndPlane_Func/OGLPoint2D_Transform/OGLVector2D_Transform/
+// OGLVector2D_Dot/OGLVector2D_Normalize/OGLVector2D_Cross/OGLPoint2D_Distance/
+// OGLPoint3D_To4DTransformArray/OGLPoint2D_TransformArray are now plain
+// Swift-only functions in 3DMath_Geometry.swift - nothing in C calls them
+// anymore, so they're no longer declared here.
 
-extern	Boolean IsPointInTriangle3D(const OGLPoint3D *point3D,	const OGLPoint3D *trianglePoints, OGLVector3D *normal);
 void OGLCreateFromToRotationMatrix(OGLMatrix4x4 *matrix4x4,	const OGLVector3D *v1, const OGLVector3D *v2);
 void SetLookAtMatrix(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to);
 void SetLookAtMatrixAndTranslate(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to);
 void SetAlignmentMatrix(OGLMatrix4x4 *m, const OGLVector3D *aim);
 void SetAlignmentMatrixWithZRot(OGLMatrix4x4 *m, const OGLVector3D *aim, float rotZ);
 
-Boolean IntersectLineSegments(float x1, float y1, float x2, float y2,
-		                     float x3, float y3, float x4, float y4,
-                             float *x, float *y);
-
-void CalcLineNormal2D(float p0x, float p0y, float p1x, float p1y,
-					 float	px, float py, OGLVector2D *normal);
-Boolean CalcRayNormal2D(const OGLVector2D *vec, float p0x, float p0y,
-					 float	px, float py, OGLVector2D *normal);
-
-void ReflectVector2D(OGLVector2D *theVector, const OGLVector2D *N, OGLVector2D *outVec);
-void ReflectVector3D(const OGLVector3D *vec, OGLVector3D *N, OGLVector3D *out);
-
-float CalcVectorLength(OGLVector3D *v);
-float CalcVectorLength2D(const OGLVector2D *v);
 void OGLMatrix3x3_SetRotate(OGLMatrix3x3 *m, double angle);
 void OGLMatrix3x3_SetIdentity(OGLMatrix3x3 *m);
-void OGLPoint2D_Transform(OGLPoint2D *p, const OGLMatrix3x3 *m, OGLPoint2D *result);
-float OGLVector2D_Dot(const OGLVector2D	*v1,  const OGLVector2D	*v2);
-float OGLVector2D_Cross(const OGLVector2D *v1, const OGLVector2D *v2);
 
 void OGLMatrix3x3_Multiply(const OGLMatrix3x3	*matrixA,
 							const OGLMatrix3x3	*matrixB,
 							OGLMatrix3x3		*result);
 
 void OGLMatrix3x3_SetRotateAboutPoint(OGLMatrix3x3 *m, OGLPoint2D *origin, double angle);
-void OGLVector2D_Transform(const OGLVector2D *vector2D,
-							const OGLMatrix3x3	*matrix3x3,
-							OGLVector2D			*result);
 void OGLMatrix3x3_SetTranslate(OGLMatrix3x3 *m, float x, float y);
-
-void OGLPoint3D_To4DTransformArray(const OGLPoint3D *inVertex, const OGLMatrix4x4  *matrix,
-									OGLPoint4D *outVertex,  long numVertices);
-void OGLPoint2D_TransformArray(const OGLPoint2D *inVertex, const OGLMatrix3x3  *matrix,
-									OGLPoint2D *outVertex,  long numVertices);
-
-
-Boolean OGL_IsBBoxVisible(const OGLBoundingBox *bBox, OGLMatrix4x4	*localToWorld);
-void OGLVector2D_Normalize(const OGLVector2D *vector2D, OGLVector2D	*result);
-float OGLPoint2D_Distance(OGLPoint2D *p1, OGLPoint2D *p2);
-
-void OGLBoundingBox_Transform(OGLBoundingBox *inBox, OGLMatrix4x4 *m, OGLBoundingBox *outBox);
-float DecayToZero(float number, float decay);
 
 
 extern	const 	OGLVector3D	gUp;

@@ -246,7 +246,7 @@ public func CalcFramesPerSecond() {
         }
 
         #if _DEBUG
-        if SwIsKeyDown(Int32(SDL_SCANCODE_KP_PLUS.rawValue)) { // debug speed-up with KP_PLUS
+        if SwIsKeyDown(Int(SDL_SCANCODE_KP_PLUS.rawValue)) { // debug speed-up with KP_PLUS
             fps = DEFAULT_FPS
         }
         #endif

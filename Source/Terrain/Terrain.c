@@ -4,10 +4,11 @@
 /* By Brian Greenstone      */
 /****************************/
 
-// All function implementations are now in Terrain.swift. Most of the
-// globals below stay here because many other already-ported and
-// still-unported files read/write them directly via `extern` (including
-// PickInternal.h's GetSuperTileMemoryEntry shim for gSuperTileMemoryList).
+// All function implementations are now in Terrain.swift (and Terrain2.c's
+// in Terrain2.swift). Most of the globals below stay here because many
+// other already-ported and still-unported files read/write them directly
+// via `extern` (including PickInternal.h's GetSuperTileMemoryEntry shim
+// for gSuperTileMemoryList).
 
 #include "game.h"
 
@@ -37,3 +38,18 @@ long			gNumSuperTilesDeep,gNumSuperTilesWide;	  		// dimensions of terrain in te
 SuperTileMemoryType	gSuperTileMemoryList[MAX_SUPERTILES];
 
 OGLVector3D		gRecentTerrainNormal;							// from _Planar
+
+// Terrain2.c's globals - also shared here since many other files reference
+// them directly via `extern` (game.h).
+
+int						gNumTerrainItems;
+TerrainItemEntryType 	*gMasterItemList = nil;
+
+float					**gMapYCoords = nil;			// 2D array of map vertex y coords
+float					**gMapYCoordsOriginal = nil;	// copy of gMapYCoords data as it was when file was loaded
+Byte					**gMapSplitMode = nil;
+
+SuperTileItemIndexType	**gSuperTileItemIndexGrid = nil;
+
+int						gNumLineMarkers;
+LineMarkerDefType		gLineMarkerList[MAX_LINEMARKERS];

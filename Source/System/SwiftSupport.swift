@@ -41,6 +41,31 @@ func setMatValue(_ m: inout OGLMatrix4x4, _ i: Int32, _ v: Float) {
     }
 }
 
+// OGLMatrix3x3 value[9] indices (see ogl_support.h's N00..N22 enum).
+let N00: Int32 = 0
+let N10: Int32 = 1
+let N20: Int32 = 2
+let N01: Int32 = 3
+let N11: Int32 = 4
+let N21: Int32 = 5
+let N02: Int32 = 6
+let N12: Int32 = 7
+let N22: Int32 = 8
+
+@inline(__always)
+func mat3Value(_ m: inout OGLMatrix3x3, _ i: Int32) -> Float {
+    withUnsafeMutablePointer(to: &m) {
+        UnsafeMutableRawPointer($0).assumingMemoryBound(to: Float.self)[Int(i)]
+    }
+}
+
+@inline(__always)
+func setMat3Value(_ m: inout OGLMatrix3x3, _ i: Int32, _ v: Float) {
+    withUnsafeMutablePointer(to: &m) {
+        UnsafeMutableRawPointer($0).assumingMemoryBound(to: Float.self)[Int(i)] = v
+    }
+}
+
 // Reimplements the Alloc_2d_array/Free_2d_array parameterized macros
 // (globals.h), which aren't importable as Swift symbols. Allocates `rows`
 // row pointers plus one contiguous `rows * cols` backing block, with each

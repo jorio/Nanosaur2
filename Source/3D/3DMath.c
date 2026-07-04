@@ -52,7 +52,6 @@ enum
 /*********************/
 
 const 	OGLVector3D	gUp = {0,1,0};
-static void OGLMatrix4x4_Multiply_Float(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result);
 
 
 
@@ -153,110 +152,10 @@ float IntersectionOfYAndPlane_Func(float x, float z, const OGLPlaneEquation *p)
 
 /********************* SET LOOKAT MATRIX ********************/
 
-void SetLookAtMatrix(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to)
-{
-OGLVector3D	lookAt,theXAxis;
-			/* SET UP VECTOR */
-
-	m->value[M01] = upVector->x;
-	m->value[M11] = upVector->y;
-	m->value[M21] = upVector->z;
-
-
-		/* CALC THE X-AXIS VECTOR */
-
-	FastNormalizeVector(from->x - to->x, from->y - to->y, from->z - to->z, &lookAt);	// calc temporary look-at vector
-
-	theXAxis.x = 	upVector->y * lookAt.z - lookAt.y * upVector->z;					// calc cross product
-	theXAxis.y =  -(upVector->x	* lookAt.z - lookAt.x * upVector->z);
-	theXAxis.z = 	upVector->x * lookAt.y - lookAt.x * upVector->y;
-	OGLVector3D_Normalize(&theXAxis, &theXAxis);
-
-	m->value[M00] = theXAxis.x;
-	m->value[M10] = theXAxis.y;
-	m->value[M20] = theXAxis.z;
-
-
-	{									// recompute a fixed up vector to ensure orthonormal
-		OGLVector3D	newUp;
-		OGLVector3D_Cross(&lookAt, &theXAxis, &newUp);
-		m->value[M01] = newUp.x;
-		m->value[M11] = newUp.y;
-		m->value[M21] = newUp.z;
-	}
-
-
-		/* CALC LOOK-AT VECTOR */
-		//
-		// We totally recompute this since the input "to" is not probably orthonormal to other axes.
-		//
-
-	lookAt.x = 	-(upVector->y    * theXAxis.z - theXAxis.y * upVector->z);		// calc reversed cross product
-	lookAt.y =  (upVector->x  * theXAxis.z - theXAxis.x * upVector->z);
-	lookAt.z = 	-(upVector->x    * theXAxis.y - theXAxis.x * upVector->y);
-
-	m->value[M02] = lookAt.x;
-	m->value[M12] = lookAt.y;
-	m->value[M22] = lookAt.z;
-
-
-			/* SET OTHER THINGS */
-	m->value[M30] =
-	m->value[M31] =
-	m->value[M32] =
-	m->value[M03] = m->value[M13] = m->value[M23] = 0;
-	m->value[M33] = 1;
-}
 
 
 /********************* SET LOOKAT MATRIX AND TRANSLATE ********************/
 
-void SetLookAtMatrixAndTranslate(OGLMatrix4x4 *m, const OGLVector3D *upVector, const OGLPoint3D *from, const OGLPoint3D *to)
-{
-OGLVector3D	lookAt, theXAxis;
-OGLVector3D	newUp;
-
-			/* CALC LOOK-AT VECTOR */
-
-	FastNormalizeVector((from->x - to->x), (from->y - to->y), (from->z - to->z), &lookAt);
-	m->value[M02] = lookAt.x;
-	m->value[M12] = lookAt.y;
-	m->value[M22] = lookAt.z;
-
-
-		/* CALC THE X-AXIS VECTOR */
-
-	theXAxis.x = 	upVector->y * lookAt.z - lookAt.y * upVector->z;					// calc cross product
-	theXAxis.y =  -(upVector->x	* lookAt.z - lookAt.x * upVector->z);
-	theXAxis.z = 	upVector->x * lookAt.y - lookAt.x * upVector->y;
-	OGLVector3D_Normalize(&theXAxis, &theXAxis);
-//	FastNormalizeVector(theXAxis.x, theXAxis.y, theXAxis.z, &theXAxis);		// (this normalize shouldnt be needed, but do it to be safe)
-
-	m->value[M00] = theXAxis.x;
-	m->value[M10] = theXAxis.y;
-	m->value[M20] = theXAxis.z;
-
-
-			/* RE-CALC UP VECTOR */
-
-													// recompute a fixed up vector to ensure orthonormal
-	OGLVector3D_Cross(&lookAt, &theXAxis, &newUp);
-	m->value[M01] = newUp.x;
-	m->value[M11] = newUp.y;
-	m->value[M21] = newUp.z;
-
-
-			/* SET OTHER THINGS */
-
-	m->value[M30] =
-	m->value[M31] =
-	m->value[M32] = 0;
-
-	m->value[M03] = from->x;					// set translate
-	m->value[M13] = from->y;
-	m->value[M23] = from->z;
-	m->value[M33] = 1;
-}
 
 
 /********************* SET ALIGNMENT MATRIX ********************/
@@ -266,67 +165,11 @@ OGLVector3D	newUp;
 // NOTE:  This will break if aim vector is straight up or down.
 //
 
-void SetAlignmentMatrix(OGLMatrix4x4 *m, const OGLVector3D *aim)
-{
-OGLVector3D	theXAxis,yAxis;
-static const OGLVector3D	up = {0,1,0};
-
-
-		/* SET LOOK-AT VECTOR (Z-AXIS) */
-
-	m->value[M02] = -aim->x;
-	m->value[M12] = -aim->y;
-	m->value[M22] = -aim->z;
-
-
-		/* CALC X-AXIS */
-
-	OGLVector3D_Cross(aim, &up, &theXAxis);
-	m->value[M00] = theXAxis.x;
-	m->value[M10] = theXAxis.y;
-	m->value[M20] = theXAxis.z;
-
-		/* CALC Y-AXIS */
-
-	OGLVector3D_Cross(&theXAxis, aim, &yAxis);
-	m->value[M01] = yAxis.x;
-	m->value[M11] = yAxis.y;
-	m->value[M21] = yAxis.z;
-
-
-			/* SET OTHER THINGS */
-
-	m->value[M30] =
-	m->value[M31] =
-	m->value[M32] =
-	m->value[M03] = m->value[M13] = m->value[M23] = 0;
-	m->value[M33] = 1;
-}
 
 
 
 /******************** SET ALIGNMENT MATRIX WITH Z ROT ***********************/
 
-void SetAlignmentMatrixWithZRot(OGLMatrix4x4 *m, const OGLVector3D *aim, float rotZ)
-{
-OGLMatrix4x4	rm;
-
-			/* CALC THE ROT MATRIX */
-
-	OGLMatrix4x4_SetRotate_Z(&rm, rotZ);
-
-
-
-			/* CALC THE REGULAR MATRIX */
-
-	SetAlignmentMatrix(m, aim);
-
-
-		/* MULTIPLY TOGETHER */
-
-	OGLMatrix4x4_Multiply(&rm, m, m);
-
-}
 
 
 
@@ -988,32 +831,6 @@ float	vx,vy,vz;
 
 /***************** MATRIX4X4 TRANSPOSE *********************/
 
-void OGLMatrix4x4_Transpose(const OGLMatrix4x4 *matrix4x4, OGLMatrix4x4 *result)
-{
-OGLMatrix4x4 		source;
-const OGLMatrix4x4	*sourcePtr;
-uint32_t 			row, column;
-
-	if (result == matrix4x4)
-	{
-		source = *matrix4x4;
-		sourcePtr = &source;
-	}
-	else
-		sourcePtr = matrix4x4;
-
-	for (row = 0; row < 4; row++)
-	{
-		for (column = 0; column < 4; column++)
-		{
-			int	a,b;
-
-			a = column*4 + row;
-			b = row*4 + column;
-			result->value[a] = sourcePtr->value[b];
-		}
-	}
-}
 
 #pragma mark -
 
@@ -1067,242 +884,47 @@ register float				inverseW;
 
 /**************** GLMATRIX4X4: SETSCALE ********************/
 
-void OGLMatrix4x4_SetScale(OGLMatrix4x4 *m, float x, float y, float z)
-{
-	m->value[M00] = x;
-	m->value[M11] = y;
-	m->value[M22] = z;
-	m->value[M33] = 1;
-
-	m->value[M01] = 0;
-	m->value[M02] = 0;
-	m->value[M03] = 0;
-
-	m->value[M10] = 0;
-	m->value[M12] = 0;
-	m->value[M13] = 0;
-
-	m->value[M20] = 0;
-	m->value[M21] = 0;
-	m->value[M23] = 0;
-
-	m->value[M30] = 0;
-	m->value[M31] = 0;
-	m->value[M32] = 0;
-}
 
 
 /**************** GLMATRIX4X4: SET ROTATE X ******************/
 
-void OGLMatrix4x4_SetRotate_X(OGLMatrix4x4	*m, float angle)
-{
-float s = sin(angle);
-float c = cos(angle);
-
-	OGLMatrix4x4_SetIdentity(m);
-
-	m->value[M11] = c;
-	m->value[M12] = -s;
-	m->value[M21] = s;
-	m->value[M22] = c;
-}
 
 
 /**************** GLMATRIX4X4: SET ROTATE Y ******************/
 
-void OGLMatrix4x4_SetRotate_Y(OGLMatrix4x4	*m, float angle)
-{
-float s = sin(angle);
-float c = cos(angle);
-
-	OGLMatrix4x4_SetIdentity(m);
-
-	m->value[M00] = c;
-	m->value[M02] = s;
-	m->value[M20] = -s;
-	m->value[M22] = c;
-}
 
 
 /**************** GLMATRIX4X4: SET ROTATE Z ******************/
 
-void OGLMatrix4x4_SetRotate_Z(OGLMatrix4x4	*m, float angle)
-{
-float s = sin(angle);
-float c = cos(angle);
-
-	OGLMatrix4x4_SetIdentity(m);
-
-	m->value[M00] = c;
-	m->value[M01] = -s;
-	m->value[M10] = s;
-	m->value[M11] = c;
-}
 
 
 /*************** GL MATRIX 4X4: SET ROTATE ABOUT POINT ******************/
 
-void OGLMatrix4x4_SetRotateAboutPoint(OGLMatrix4x4 *matrix4x4, const OGLPoint3D	*origin,
-									float xAngle, float yAngle, float zAngle)
-{
-OGLMatrix4x4		negTransM, rotM;
-
-	OGLMatrix4x4_SetTranslate(&negTransM, -origin->x, -origin->y, -origin->z);
-	OGLMatrix4x4_SetTranslate(matrix4x4, origin->x, origin->y, origin->z);
-
-	OGLMatrix4x4_SetRotate_XYZ(&rotM, xAngle, yAngle, zAngle);
-
-	OGLMatrix4x4_Multiply(&rotM, matrix4x4, matrix4x4);
-	OGLMatrix4x4_Multiply(&negTransM, matrix4x4, matrix4x4);
-}
 
 
 /****************** OGL MATRIX 4X4 MULTIPLY ********************/
 
-void OGLMatrix4x4_Multiply(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result)
-{
-	OGLMatrix4x4_Multiply_Float(mA,mB, result);
-}
 
 
 /****************** OGL MATRIX 4X4 MULTIPLY FLOAT ********************/
 
-static void OGLMatrix4x4_Multiply_Float(const OGLMatrix4x4	*mA, const OGLMatrix4x4 *mB, OGLMatrix4x4	*result)
-{
-	float	b00, b01, b02, b03;
-	float	b10, b11, b12, b13;
-	float	b20, b21, b22, b23;
-	float	b30, b31, b32, b33;
-	float	ax0, ax1, ax2, ax3;
-
-	b00 = mB->value[M00];	b01 = mB->value[M10];	b02 = mB->value[M20];	b03 = mB->value[M30];
-	b10 = mB->value[M01];	b11 = mB->value[M11];	b12 = mB->value[M21];	b13 = mB->value[M31];
-	b20 = mB->value[M02];	b21 = mB->value[M12];	b22 = mB->value[M22];	b23 = mB->value[M32];
-	b30 = mB->value[M03];	b31 = mB->value[M13];	b32 = mB->value[M23];	b33 = mB->value[M33];
-
-	ax0 = mA->value[M00];	ax1 = mA->value[M10];
-	ax2 = mA->value[M20];	ax3 = mA->value[M30];
-
-	result->value[M00] = ax0*b00 + ax1*b10 + ax2*b20 + ax3*b30;
-	result->value[M10] = ax0*b01 + ax1*b11 + ax2*b21 + ax3*b31;
-	result->value[M20] = ax0*b02 + ax1*b12 + ax2*b22 + ax3*b32;
-	result->value[M30] = ax0*b03 + ax1*b13 + ax2*b23 + ax3*b33;
-
-	ax0 = mA->value[M01];	ax1 = mA->value[M11];
-	ax2 = mA->value[M21];	ax3 = mA->value[M31];
-
-	result->value[M01] = ax0*b00 + ax1*b10 + ax2*b20 + ax3*b30;
-	result->value[M11] = ax0*b01 + ax1*b11 + ax2*b21 + ax3*b31;
-	result->value[M21] = ax0*b02 + ax1*b12 + ax2*b22 + ax3*b32;
-	result->value[M31] = ax0*b03 + ax1*b13 + ax2*b23 + ax3*b33;
-
-	ax0 = mA->value[M02];	ax1 = mA->value[M12];
-	ax2 = mA->value[M22];	ax3 = mA->value[M32];
-
-	result->value[M02] = ax0*b00 + ax1*b10 + ax2*b20 + ax3*b30;
-	result->value[M12] = ax0*b01 + ax1*b11 + ax2*b21 + ax3*b31;
-	result->value[M22] = ax0*b02 + ax1*b12 + ax2*b22 + ax3*b32;
-	result->value[M32] = ax0*b03 + ax1*b13 + ax2*b23 + ax3*b33;
-
-	ax0 = mA->value[M03];	ax1 = mA->value[M13];
-	ax2 = mA->value[M23];	ax3 = mA->value[M33];
-
-	result->value[M03] = ax0*b00 + ax1*b10 + ax2*b20 + ax3*b30;
-	result->value[M13] = ax0*b01 + ax1*b11 + ax2*b21 + ax3*b31;
-	result->value[M23] = ax0*b02 + ax1*b12 + ax2*b22 + ax3*b32;
-	result->value[M33] = ax0*b03 + ax1*b13 + ax2*b23 + ax3*b33;
-}
 
 
 /************** MATRIX4X4 SET TRANSLATE ******************/
 
-void OGLMatrix4x4_SetTranslate(OGLMatrix4x4 *m, float x, float y, float z)
-{
-	m->value[M03] = x;
-	m->value[M13] = y;
-	m->value[M23] = z;
-
-	m->value[M00] = 1;
-	m->value[M11] = 1;
-	m->value[M22] = 1;
-	m->value[M33] = 1;
-
-	m->value[M01] = 0;
-	m->value[M02] = 0;
-	m->value[M10] = 0;
-	m->value[M12] = 0;
-	m->value[M20] = 0;
-	m->value[M21] = 0;
-	m->value[M30] = 0;
-	m->value[M31] = 0;
-	m->value[M32] = 0;
-}
 
 
 /***************** MATRIX 4X4: GET FRUSTUM TO WINDOW *****************/
 
-void OGLMatrix4x4_GetFrustumToWindow(OGLMatrix4x4 *m, int pane)
-{
-int		x,y,w,h;
-float	width, height;
-
-	OGL_GetCurrentViewport(&x, &y, &w, &h, pane);
-
-	width = w;
-	height = h;
-
-	OGLMatrix4x4_SetIdentity(m);
-
-	m->value[M00] =	width  * 0.5f;
-	m->value[M11] = -height * 0.5f;
-	m->value[M03] = width  * 0.5f;
-	m->value[M13] = height  * 0.5f;
-}
 
 
 
 /************** MATRIX3X3 SET TRANSLATE ******************/
 
-void OGLMatrix3x3_SetTranslate(OGLMatrix3x3 *m, float x, float y)
-{
-	m->value[N02] = x;
-	m->value[N12] = y;
-
-	m->value[N00] = 1;
-	m->value[N11] = 1;
-	m->value[N22] = 1;
-
-	m->value[N01] = 0;
-	m->value[N02] = 0;
-	m->value[N10] = 0;
-	m->value[N12] = 0;
-	m->value[N20] = 0;
-	m->value[N21] = 0;
-}
 
 
 /************* MATRIX 4X4 SET IDENTITY ******************/
 
-void OGLMatrix4x4_SetIdentity(OGLMatrix4x4 *m)
-{
-	m->value[M00] = 1;
-	m->value[M11] = 1;
-	m->value[M22] = 1;
-	m->value[M33] = 1;
-
-	m->value[M01] = 0;
-	m->value[M02] = 0;
-	m->value[M03] = 0;
-	m->value[M10] = 0;
-	m->value[M12] = 0;
-	m->value[M13] = 0;
-	m->value[M20] = 0;
-	m->value[M21] = 0;
-	m->value[M23] = 0;
-	m->value[M30] = 0;
-	m->value[M31] = 0;
-	m->value[M32] = 0;
-}
 
 
 /******************* SET QUICK XYZ-ROTATION MATRIX ************************/
@@ -1310,154 +932,28 @@ void OGLMatrix4x4_SetIdentity(OGLMatrix4x4 *m)
 // Does a quick precomputation to calculate an XYZ rotation matrix
 //
 
-void OGLMatrix4x4_SetRotate_XYZ(OGLMatrix4x4 *m, float rx, float ry, float rz)
-{
-float	sx,cx,sy,sz,cy,cz,sxsy,cxsy;
-
-	sx = sin(rx);
-	sy = sin(ry);
-	sz = sin(rz);
-	cx = cos(rx);
-	cy = cos(ry);
-	cz = cos(rz);
-
-	sxsy = sx*sy;
-	cxsy = cx*sy;
-
-	m->value[M00] = cy*cz;					m->value[M10] = cy*sz; 				m->value[M20] = -sy; 	m->value[M30] = 0;
-	m->value[M01] = (sxsy*cz)+(cx*-sz);		m->value[M11] = (sxsy*sz)+(cx*cz);	m->value[M21] = sx*cy;	m->value[M31] = 0;
-	m->value[M02] = (cxsy*cz)+(-sx*-sz);	m->value[M12] = (cxsy*sz)+(-sx*cz);	m->value[M22] = cx*cy;	m->value[M32] = 0;
-	m->value[M03] = 0;						m->value[M13] = 0;					m->value[M23] = 0;		m->value[M33] = 1;
-}
 
 
 /********************* SET ROTATE ABOUT AXIS ***************************/
 
-void OGLMatrix4x4_SetRotateAboutAxis(OGLMatrix4x4	*m, const OGLVector3D	*axis, float angle)
-{
-float			sine,cosine,t,axy,axz,ayz;
-float	ax	= axis->x;
-float	ay	= axis->y;
-float	az	= axis->z;
-float	ax2 = ax * ax;
-float	ay2 = ay * ay;
-float	az2	= az * az;
-
-	axy = ax * ay;
-	axz = ax * az;
-	ayz = ay * az;
-
-	sine   = sin(angle);
-	cosine = cos(angle);
-	t = 1.0f - cosine;
-
-	OGLMatrix4x4_SetIdentity(m);
-
-	m->value[M00] = t * ax2 + cosine;
-	m->value[M10] = t * axy + sine * az;
-	m->value[M20] = t * axz - sine * ay;
-
-	m->value[M01] = t * axy - sine * az;
-	m->value[M11] = t * ay2 + cosine;
-	m->value[M21] = t * ayz + sine * ax;
-
-	m->value[M02] = t * axz + sine * ay;
-	m->value[M12] = t * ayz - sine * ax;
-	m->value[M22] = t * az2 + cosine;
-}
 
 
 
 /***************** OGL MATRIX3X3 SET ROTATE ABOUT POINT *******************/
 
-void OGLMatrix3x3_SetRotateAboutPoint(OGLMatrix3x3 *m, OGLPoint2D *origin, double angle)
-{
-double 			sine 	= sin(angle);
-double		 	cosine 	= cos(angle);
-
-	OGLMatrix3x3_SetIdentity(m);
-
-	m->value[N00] = cosine;
-	m->value[N10]  = sine;
-	m->value[N01]  = -sine;
-	m->value[N11]  = cosine;
-	m->value[N02]  = -(origin->x * cosine) + (origin->y * sine) + origin->x;
-	m->value[N12]  = -(origin->x * sine) - (origin->y * cosine) + origin->y;
-	m->value[N22]  = 1.0f;
-
-}
 
 
 /***************** OGL MATRIX3X3 SET ROTATE *******************/
 
-void OGLMatrix3x3_SetRotate(OGLMatrix3x3 *m, double angle)
-{
-float 			sine 	= sin(angle);
-float		 	cosine 	= cos(angle);
-
-	OGLMatrix3x3_SetIdentity(m);
-
-	m->value[N00] =  cosine;
-	m->value[N10] =  sine;
-	m->value[N01] = -sine;
-	m->value[N11] =  cosine;
-}
 
 
 
 /******************* OGL MATRIX 3X3 SET IDENTITY ****************/
 
-void OGLMatrix3x3_SetIdentity(OGLMatrix3x3 *m)
-{
-	m->value[N00] = 1;
-	m->value[N11] = 1;
-	m->value[N22] = 1;
-
-	m->value[N01] = 0;
-	m->value[N02] = 0;
-	m->value[N10] = 0;
-	m->value[N12] = 0;
-	m->value[N20] = 0;
-	m->value[N21] = 0;
-}
 
 
 /***************** OGL MATRIX 3X3 MULTIPLY **********************/
 
-void OGLMatrix3x3_Multiply(const OGLMatrix3x3	*mA,
-							const OGLMatrix3x3	*mB,
-							OGLMatrix3x3		*result)
-{
-float	b00, b01, b02;
-float	b10, b11, b12;
-float	b20, b21, b22;
-float	ax0, ax1, ax2;
-
-	b00 = mB->value[N00];	b01 = mB->value[N10];	b02 = mB->value[N20];
-	b10 = mB->value[N01];	b11 = mB->value[N11];	b12 = mB->value[N21];
-	b20 = mB->value[N02];	b21 = mB->value[N12];	b22 = mB->value[N22];
-
-	ax0 = mA->value[N00];	ax1 = mA->value[N10];
-	ax2 = mA->value[N20];
-
-	result->value[N00] = ax0*b00 + ax1*b10 + ax2*b20;
-	result->value[N10] = ax0*b01 + ax1*b11 + ax2*b21;
-	result->value[N20] = ax0*b02 + ax1*b12 + ax2*b22;
-
-	ax0 = mA->value[N01];	ax1 = mA->value[N11];
-	ax2 = mA->value[N21];
-
-	result->value[N01] = ax0*b00 + ax1*b10 + ax2*b20;
-	result->value[N11] = ax0*b01 + ax1*b11 + ax2*b21;
-	result->value[N21] = ax0*b02 + ax1*b12 + ax2*b22;
-
-	ax0 = mA->value[N02];	ax1 = mA->value[N12];
-	ax2 = mA->value[N22];
-
-	result->value[N02] = ax0*b00 + ax1*b10 + ax2*b20;
-	result->value[N12] = ax0*b01 + ax1*b11 + ax2*b21;
-	result->value[N22] = ax0*b02 + ax1*b12 + ax2*b22;
-}
 
 /************** OGL:  POINT 2D TRANSFORM ******************/
 
@@ -1962,167 +1458,6 @@ float	x,y;
 
 /******************** OGL MATRIX 4X4: INVERT **********************/
 
-void OGLMatrix4x4_Invert(const OGLMatrix4x4 *inMatrix, OGLMatrix4x4 *result)
-{
-register float 	val, val2, val_inv;
-register GLint 	i, i4, i8, i12, j, ind;
-OGLMatrix4x4 	mt1, mt2;
-
-
-	OGLMatrix4x4_SetIdentity(&mt2);
-	mt1 = *inMatrix;									// copy in matrix
-
-	for(i = 0; i != 4; i++)
-	{
-		val = mt1.value[(i << 2) + i];
-		ind = i;
-
-		i4  = i + 4;
-		i8  = i + 8;
-		i12 = i + 12;
-
-		for (j = i + 1; j != 4; j++)
-		{
-			if (fabs(mt1.value[(i << 2) + j]) > fabs(val))
-			{
-				ind = j;
-				val = mt1.value[(i << 2) + j];
-			}
-		}
-
-		if (ind != i)
-		{
-			val2      = mt2.value[i];
-			mt2.value[i]    = mt2.value[ind];
-			mt2.value[ind]  = val2;
-
-			val2      = mt1.value[i];
-			mt1.value[i]    = mt1.value[ind];
-			mt1.value[ind]  = val2;
-
-			ind += 4;
-
-			val2      = mt2.value[i4];
-			mt2.value[i4]   = mt2.value[ind];
-			mt2.value[ind]  = val2;
-
-			val2      = mt1.value[i4];
-			mt1.value[i4]   = mt1.value[ind];
-			mt1.value[ind]  = val2;
-
-			ind += 4;
-
-			val2      = mt2.value[i8];
-			mt2.value[i8]   = mt2.value[ind];
-			mt2.value[ind]  = val2;
-
-			val2      = mt1.value[i8];
-			mt1.value[i8]   = mt1.value[ind];
-			mt1.value[ind]  = val2;
-
-			ind += 4;
-
-			val2      		= mt2.value[i12];
-			mt2.value[i12]  = mt2.value[ind];
-			mt2.value[ind]  = val2;
-
-			val2     		= mt1.value[i12];
-			mt1.value[i12]  = mt1.value[ind];
-			mt1.value[ind]  = val2;
-		}
-
-		if (val == 0.0f)
-			goto err;
-
-		val_inv = 1.0f / val;
-
-		mt1.value[i]   *= val_inv;
-		mt2.value[i]   *= val_inv;
-
-		mt1.value[i4]  *= val_inv;
-		mt2.value[i4]  *= val_inv;
-
-		mt1.value[i8]  *= val_inv;
-		mt2.value[i8]  *= val_inv;
-
-		mt1.value[i12] *= val_inv;
-		mt2.value[i12] *= val_inv;
-
-		if (i != 0)
-		{
-			val = mt1.value[i << 2];
-
-			mt1.value[0]  -= mt1.value[i]   * val;
-			mt2.value[0]  -= mt2.value[i]   * val;
-
-			mt1.value[4]  -= mt1.value[i4]  * val;
-			mt2.value[4]  -= mt2.value[i4]  * val;
-
-			mt1.value[8]  -= mt1.value[i8]  * val;
-			mt2.value[8]  -= mt2.value[i8]  * val;
-
-			mt1.value[12] -= mt1.value[i12] * val;
-			mt2.value[12] -= mt2.value[i12] * val;
-		}
-
-		if (i != 1)
-		{
-			val = mt1.value[(i << 2) + 1];
-
-			mt1.value[1]  -= mt1.value[i]   * val;
-			mt2.value[1]  -= mt2.value[i]   * val;
-
-			mt1.value[5]  -= mt1.value[i4]  * val;
-			mt2.value[5]  -= mt2.value[i4]  * val;
-
-			mt1.value[9]  -= mt1.value[i8]  * val;
-			mt2.value[9]  -= mt2.value[i8]  * val;
-
-			mt1.value[13] -= mt1.value[i12] * val;
-			mt2.value[13] -= mt2.value[i12] * val;
-		}
-
-		if (i != 2)
-		{
-			val = mt1.value[(i << 2) + 2];
-
-			mt1.value[2]  -= mt1.value[i]   * val;
-			mt2.value[2]  -= mt2.value[i]   * val;
-
-			mt1.value[6]  -= mt1.value[i4]  * val;
-			mt2.value[6]  -= mt2.value[i4]  * val;
-
-			mt1.value[10] -= mt1.value[i8]  * val;
-			mt2.value[10] -= mt2.value[i8]  * val;
-
-			mt1.value[14] -= mt1.value[i12] * val;
-			mt2.value[14] -= mt2.value[i12] * val;
-		}
-
-		if (i != 3)
-		{
-			val = mt1.value[(i << 2) + 3];
-
-			mt1.value[3]  -= mt1.value[i]   * val;
-			mt2.value[3]  -= mt2.value[i]   * val;
-
-			mt1.value[7]  -= mt1.value[i4]  * val;
-			mt2.value[7]  -= mt2.value[i4]  * val;
-
-			mt1.value[11] -= mt1.value[i8]  * val;
-			mt2.value[11] -= mt2.value[i8]  * val;
-
-			mt1.value[15] -= mt1.value[i12] * val;
-			mt2.value[15] -= mt2.value[i12] * val;
-		}
-	}
-
-	*result = mt2;								// copy to result
-	return;
-
-err:
-	OGLMatrix4x4_SetIdentity(result);			// error, so set result to identity
-}
 
 
 /******************** OGL:  IS BBOX VISIBLE ****************************/
@@ -2133,123 +1468,6 @@ err:
 // INPUT: localToWorld = optional local->world transform matrix to be applied if bbox is not in world coords
 //
 
-Boolean OGL_IsBBoxVisible(const OGLBoundingBox *bBox, OGLMatrix4x4	*localToWorld)
-{
-float			m00, m01, m02, m03;		// Transform matrix 4x4
-float			m10, m11, m12, m13;
-float			m20, m21, m22, m23;
-float			m30, m31, m32, m33;
-
-float			lX, lY, lZ;				// Local space co-ordinates
-float			hX, hY, hZ, hW;			// Homogeneous co-ordinates
-float			minusHW;				// -hW
-
-uint32_t		clipFlags;				// Clip in/out tests for point
-uint32_t		clipCodeAND;			// Clip test for entire object
-
-long			i;
-float			minX,minY,minZ,maxX,maxY,maxZ;
-
-OGLMatrix4x4	m2,*m;
-
-			/* SEE IF FACTOR IN A LOCAL->WORLD MATRIX */
-
-	if (localToWorld)
-	{
-		m = &m2;
-		OGLMatrix4x4_Multiply(localToWorld, &gWorldToFrustumMatrix, m);
-	}
-	else
-		m = &gWorldToFrustumMatrix;
-
-		/* GET LOCAL->FRUSTUM MATRIX */
-
-	m00 = m->value[M00];
-	m01 = m->value[M01];
-	m02 = m->value[M02];
-	m03 = m->value[M03];
-	m10 = m->value[M10];
-	m11 = m->value[M11];
-	m12 = m->value[M12];
-	m13 = m->value[M13];
-	m20 = m->value[M20];
-	m21 = m->value[M21];
-	m22 = m->value[M22];
-	m23 = m->value[M23];
-	m30 = m->value[M30];
-	m31 = m->value[M31];
-	m32 = m->value[M32];
-	m33 = m->value[M33];
-
-
-		/* TRANSFORM THE BOUNDING BOX */
-
-	minX = bBox->min.x;								// load bbox into registers
-	minY = bBox->min.y;
-	minZ = bBox->min.z;
-	maxX = bBox->max.x;
-	maxY = bBox->max.y;
-	maxZ = bBox->max.z;
-
-	clipCodeAND = ~0u;
-
-	for (i = 0; i < 8; i++)
-	{
-		switch (i)									// load current bbox corner in IX,IY,IZ
-		{
-			case	0:	lX = minX;	lY = minY;	lZ = minZ;	break;
-			case	1:	lX = minX;	lY = minY;	lZ = maxZ;	break;
-			case	2:	lX = minX;	lY = maxY;	lZ = minZ;	break;
-			case	3:	lX = minX;	lY = maxY;	lZ = maxZ;	break;
-			case	4:	lX = maxX;	lY = minY;	lZ = minZ;	break;
-			case	5:	lX = maxX;	lY = minY;	lZ = maxZ;	break;
-			case	6:	lX = maxX;	lY = maxY;	lZ = minZ;	break;
-			default:	lX = maxX;	lY = maxY;	lZ = maxZ;
-		}
-
-		hW = lX * m30 + lY * m31 + lZ * m32 + m33;
-		hY = lX * m10 + lY * m11 + lZ * m12 + m13;
-		hZ = lX * m20 + lY * m21 + lZ * m22 + m23;
-		hX = lX * m00 + lY * m01 + lZ * m02 + m03;
-
-		minusHW = -hW;
-
-				/* CHECK Y */
-
-		if (hY < minusHW)
-			clipFlags = 0x8;
-		else
-		if (hY > hW)
-			clipFlags = 0x4;
-		else
-			clipFlags = 0;
-
-
-				/* CHECK Z */
-
-		if (hZ > hW)
-			clipFlags |= 0x20;
-		else
-		if (hZ < 0.0f)
-			clipFlags |= 0x10;
-
-
-				/* CHECK X */
-
-		if (hX < minusHW)
-			clipFlags |= 0x2;
-		else
-		if (hX > hW)
-			clipFlags |= 0x1;
-
-		clipCodeAND &= clipFlags;
-	}
-
-	if (clipCodeAND)
-		return(false);
-	else
-		return(true);
-}
 
 
 #pragma mark -
@@ -2262,153 +1480,6 @@ OGLMatrix4x4	m2,*m;
 // then rotation is done about some vector that is orthogonal to both.
 //
 
-void OGLCreateFromToRotationMatrix(OGLMatrix4x4 *matrix4x4,	const OGLVector3D *v1, const OGLVector3D *v2)
-{
-OGLVector3D			axis;
-OGLVector3D			orth;
-OGLVector3D			proj;
-float				cosTheta;
-float				sinTheta;
-float				scale;
-float				x,y,z;
-float				zero = 0.0f, one = 1.0f, two = 2.0f;
-
-
-	/* Determine the axis and the rotation angle */
-
-	OGLVector3D_Cross (v2, v1, &axis);
-
-	cosTheta = OGLVector3D_Dot(v2, v1);
-	sinTheta = OGLVector3D_Dot(&axis, &axis);
-
-	if (sinTheta <= EPS)
-	{
-		/* Vectors are either opposing or equal */
-
-		if (cosTheta < zero)
-		{
-			/* Vectors are opposing */
-
-			OGLVector3D_Normalize(v2, &axis);
-//			FastNormalizeVector(v2->x, v2->y, v2->z, &axis);
-
-			x = fabs(axis.x);
-			orth.x = one;
-			orth.y = zero;
-			orth.z = zero;
-
-			y = fabs(axis.y);
-			if (x > y)
-			{
-				x = y;
-				orth.x = zero;
-				orth.y = one;
-				orth.z = zero;
-			}
-
-			z = fabs(axis.z);
-			if (x > z)
-			{
-				orth.x = zero;
-				orth.y = zero;
-				orth.z = one;
-			}
-
-			scale = OGLVector3D_Dot(&axis, &orth);
-			proj.x = axis.x * scale;
-			proj.y = axis.y * scale;
-			proj.z = axis.z * scale;
-
-			axis.x = orth.x - proj.x;
-			axis.y = orth.y - proj.y;
-			axis.z = orth.z - proj.z;
-			OGLVector3D_Normalize(&axis, &axis);
-//			FastNormalizeVector(axis.x, axis.y, axis.z, &axis);
-
-			x = axis.x;
-			y = axis.y;
-			z = axis.z;
-
-			matrix4x4->value[M00] = two * x * x - one;
-			matrix4x4->value[M10] = two * x * y;
-			matrix4x4->value[M20] = two * x * z;
-			matrix4x4->value[M30] = zero;
-
-			matrix4x4->value[M01] = two * x * y;
-			matrix4x4->value[M11] = two * y * y - one;
-			matrix4x4->value[M21] = two * y * z;
-			matrix4x4->value[M31] = zero;
-
-			matrix4x4->value[M02] = two * x * z;
-			matrix4x4->value[M12] = two * y * z;
-			matrix4x4->value[M22] = two * z * z - one;
-			matrix4x4->value[M32] = zero;
-
-			matrix4x4->value[M03] = zero;
-			matrix4x4->value[M13] = zero;
-			matrix4x4->value[M23] = zero;
-			matrix4x4->value[M33] = one;
-
-		}
-		else
-		{
-			/* Vectors are equal */
-			OGLMatrix4x4_SetIdentity (matrix4x4);
-		}
-
-	}
-	else
-	{
-		float q1, q2;
-		float versTheta;
-
-		versTheta = 1.0f - cosTheta;
-		sinTheta = sqrt(sinTheta);
-
-		scale = one / sinTheta;
-		axis.x = axis.x * scale;
-		axis.y = axis.y * scale;
-		axis.z = axis.z * scale;
-
-		scale = one / OGLVector3D_Dot(v2, v2);
-		cosTheta *= scale;
-		sinTheta *= scale;
-
-		x = axis.x;
-		y = axis.y;
-		z = axis.z;
-
-		/* Diagonal terms */
-		matrix4x4->value[M00] = versTheta * (x * x) + cosTheta;
-		matrix4x4->value[M11] = versTheta * (y * y) + cosTheta;
-		matrix4x4->value[M22] = versTheta * (z * z) + cosTheta;
-
-		/* Skew terms */
-		q1 = versTheta * x * y;
-		q2 = sinTheta * z;
-		matrix4x4->value[M10] = q1 - q2;
-		matrix4x4->value[M01] = q1 + q2;
-
-		q1 = versTheta * x * z;
-		q2 = sinTheta * y;
-		matrix4x4->value[M20] = q1 + q2;
-		matrix4x4->value[M02] = q1 - q2;
-
-		q1 = versTheta * y * z;
-		q2 = sinTheta * x;
-		matrix4x4->value[M21] = q1 - q2;
-		matrix4x4->value[M12] = q1 + q2;
-
-		/* 4x4 border around 3x3 */
-		matrix4x4->value[M30] = zero;
-		matrix4x4->value[M31] = zero;
-		matrix4x4->value[M32] = zero;
-		matrix4x4->value[M03] = zero;
-		matrix4x4->value[M13] = zero;
-		matrix4x4->value[M23] = zero;
-		matrix4x4->value[M33] = one;
-	}
-}
 
 
 
@@ -2833,93 +1904,15 @@ double t1,t2,t3;
 // Unlike the GLU version, fov is in RADIANS, not degrees!
 //
 
-void OGL_SetGluPerspectiveMatrix(
-		OGLMatrix4x4* m,
-		float fov,
-		float aspect,
-		float hither,
-		float yon)
-{
-	float cotan = 1.0f / tanf(fov/2.0f);
-	float depth = hither - yon;
-
-#define M m->value
-	M[M00] = cotan/aspect;	M[M01] = 0;			M[M02] = 0;						M[M03] = 0;
-	M[M10] = 0;				M[M11] = cotan;		M[M12] = 0;						M[M13] = 0;
-	M[M20] = 0;				M[M21] = 0;			M[M22] = (yon+hither)/depth;	M[M23] = 2*yon*hither/depth;
-	M[M30] = 0;				M[M31] = 0;			M[M32] = -1;					M[M33] = 0;
-#undef M
-}
 
 /********************** FILL LOOKAT MATRIX ************************/
 //
 // Result equivalent to matrix produced by gluLookAt
 //
 
-void OGL_SetGluLookAtMatrix(
-		OGLMatrix4x4* m,
-		const OGLPoint3D* eye,
-		const OGLPoint3D* target,
-		const OGLVector3D* upDir)
-{
-	// Forward = target - eye
-	OGLVector3D fwd;
-	fwd.x = target->x - eye->x;
-	fwd.y = target->y - eye->y;
-	fwd.z = target->z - eye->z;
-	OGLVector3D_Normalize(&fwd, &fwd);
-
-	// Side = forward x up
-	OGLVector3D side;
-	OGLVector3D_Cross_NoPin(&fwd, upDir, &side);
-	OGLVector3D_Normalize(&side, &side);
-
-	// Recompute up as: up = side x forward
-	OGLVector3D up;
-	OGLVector3D_Cross_NoPin(&side, &fwd, &up);
-
-	// Premultiply by translation to eye position
-	float tx = OGLVector3D_Dot_NoPin(&side,	(OGLVector3D*)eye);
-	float ty = OGLVector3D_Dot_NoPin(&up,	(OGLVector3D*)eye);
-	float tz = OGLVector3D_Dot_NoPin(&fwd,	(OGLVector3D*)eye);
-
-#define M m->value
-	M[M00] = side.x;	M[M01] = side.y;	M[M02] = side.z;	M[M03] = -tx;
-	M[M10] = up.x;		M[M11] = up.y;		M[M12] = up.z;		M[M13] = -ty;
-	M[M20] = -fwd.x;	M[M21] = -fwd.y;	M[M22] = -fwd.z;	M[M23] = tz;
-	M[M30] = 0;			M[M31] = 0;			M[M32] = 0;			M[M33] = 1;
-#undef M
-}
 
 /********************** UNPROJECT ************************/
 //
 // Result equivalent to point produced by gluUnProject
 //
 
-void OGL_GluUnProject(
-		const OGLPoint3D* winPt,
-		const OGLMatrix4x4* modelview,
-		const OGLMatrix4x4* projection,
-		const OGLPoint2D* vpOffset,
-		const OGLVector2D* vpSize,
-		OGLPoint3D* objPt)
-{
-	OGLMatrix4x4 m;
-	OGLPoint3D in;
-
-	OGLMatrix4x4_Multiply(modelview, projection, &m);
-	OGLMatrix4x4_Invert(&m, &m);
-
-	in = *winPt;
-
-	// Map x and y from window coordinates
-	in.x = (in.x - vpOffset->x) / vpSize->x;
-	in.y = (in.y - vpOffset->y) / vpSize->y;
-
-	// Map to range -1 to 1
-	in.x = in.x * 2 - 1;
-	in.y = in.y * 2 - 1;
-	in.z = in.z * 2 - 1;
-
-	OGLPoint3D_Transform(&in, &m, objPt);
-}

@@ -6,7 +6,7 @@
 // were plain (non-extern) globals only ever touched from this file, so they
 // move into a private Swift array instead.
 
-private var gConfettiGroups: [UnsafeMutablePointer<ConfettiGroupType>?] = Array(repeating: nil, count: Int(MAX_CONFETTI_GROUPS))
+private var gConfettiGroups = InlineArray<50, UnsafeMutablePointer<ConfettiGroupType>?>(repeating: nil)
 private var gNumActiveConfettiGroups: Int16 = 0
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)

@@ -13,7 +13,7 @@ private let fireBlastRadius: Float = gTerrainPolygonSize * 1.5 // unused by any 
 private let fireTimer: Float = 0.05
 private let smokeTimer: Float = 0.07
 
-private var gParticleGroups: [UnsafeMutablePointer<ParticleGroupType>?] = Array(repeating: nil, count: Int(MAX_PARTICLE_GROUPS))
+private var gParticleGroups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
 private var gGravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
 private var gNumActiveParticleGroups: Int16 = 0
 

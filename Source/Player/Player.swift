@@ -664,7 +664,8 @@ public func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: 
     SetDeathTimer(Int32(playerNum), t)
     GetPlayerInfoEntry(Int32(playerNum))!.pointee.invincibilityTimer = t
 
-    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.5)
+    var explosionPt = OGLPoint3D(x: x, y: y, z: z)
+    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &explosionPt, UInt32(NORMAL_CHANNEL_RATE), 0.5)
     PlayRumbleEffect(Int16(EFFECT_PLANECRASH), Int32(playerNum))
 }
 

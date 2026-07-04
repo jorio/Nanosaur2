@@ -623,16 +623,12 @@ private func updateParticleGroupsGeometry() {
                     var rmResult = OGLMatrix4x4()
                     OGLMatrix4x4_Multiply(&rm, &m, &rmResult)
                     rm = rmResult
-                    withUnsafeMutablePointer(to: &v) {
-                        $0.withMemoryRebound(to: OGLPoint3D.self, capacity: 4) { vPtr in
-                            OGLPoint3D_TransformArray(vPtr, &rm, points + n * 4, 4) // transform w/ rot
-                        }
+                    v.withUnsafeMutableBufferPointer { vBuf in
+                        OGLPoint3D_TransformArray(vBuf.baseAddress, &rm, points + n * 4, 4) // transform w/ rot
                     }
                 } else {
-                    withUnsafeMutablePointer(to: &v) {
-                        $0.withMemoryRebound(to: OGLPoint3D.self, capacity: 4) { vPtr in
-                            OGLPoint3D_TransformArray(vPtr, &m, points + n * 4, 4) // transform no-rot
-                        }
+                    v.withUnsafeMutableBufferPointer { vBuf in
+                        OGLPoint3D_TransformArray(vBuf.baseAddress, &m, points + n * 4, 4) // transform no-rot
                     }
                 }
 
@@ -1657,10 +1653,8 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
             SetLookAtMatrixAndTranslate(&m, upPtr, &theNode.pointee.Coord, camPtr) // aim at camera & translate
         }
     }
-    withUnsafeMutablePointer(to: &frame) {
-        $0.withMemoryRebound(to: OGLPoint3D.self, capacity: 4) { framePtr in
-            OGLPoint3D_TransformArray(framePtr, &m, framePtr, 4)
-        }
+    frame.withUnsafeMutableBufferPointer { frameBuf in
+        OGLPoint3D_TransformArray(frameBuf.baseAddress, &m, frameBuf.baseAddress, 4)
     }
 
     // SUBMIT TEXTURE

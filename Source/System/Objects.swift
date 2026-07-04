@@ -72,7 +72,7 @@ private func CreateDummyInitObject() {
 
     gClearedObj.pointee.BoundingSphereRadius = 100
 
-    gClearedObj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS) // assume this object's vertex data is in the cached/static mode
+    gClearedObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.bg3dModels.rawValue) // assume this object's vertex data is in the cached/static mode
 
     gClearedObj.pointee.EffectChannel = -1 // no streaming sound effect
     gClearedObj.pointee.ParticleGroup = -1 // no particle group

@@ -87,7 +87,7 @@ public func MakeNewSkeletonObject(_ newObjDef: UnsafeMutablePointer<NewObjectDef
 
     newNode.calcRadiusFromBBox() // set correct bounding sphere
 
-    newNode.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_SKELETONS)
+    newNode.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.skeletons.rawValue)
 
     return newNode
 }
@@ -206,8 +206,8 @@ private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePoint
     let deformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
 
     for i in 0..<numDecomp {
-        MO_DuplicateVertexArrayData(srcTriMeshesBase + i, deformedMeshesBase + (0 * deformedMeshesStride + i), Int16(VERTEX_ARRAY_RANGE_TYPE_SKELETONS))
-        MO_DuplicateVertexArrayData(srcTriMeshesBase + i, deformedMeshesBase + (1 * deformedMeshesStride + i), Int16(VERTEX_ARRAY_RANGE_TYPE_SKELETONS) + 1)
+        MO_DuplicateVertexArrayData(srcTriMeshesBase + i, deformedMeshesBase + (0 * deformedMeshesStride + i), Int16(VertexArrayRangeType.skeletons.rawValue))
+        MO_DuplicateVertexArrayData(srcTriMeshesBase + i, deformedMeshesBase + (1 * deformedMeshesStride + i), Int16(VertexArrayRangeType.skeletons.rawValue) + 1)
     }
 
     return skeletonData

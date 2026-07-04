@@ -51,7 +51,7 @@ private let gFlareImageTable: [UInt8] = [
 ]
 
 // IsStereo is a parameterized C macro, which Swift can't import as a callable symbol.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
@@ -312,7 +312,7 @@ public func UpdateCameras() {
 
         if SwIsNeedDown(Int(kNeed_CameraMode), Int(playerNum)) { // is button pressed?
             SetCameraMode(Int32(playerNum), GetCameraMode(Int32(playerNum)) + 1)
-            if false { // gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
+            if false { // gGamePrefs.stereoGlassesMode != StereoGlassesMode.off.rawValue)
                 if GetCameraMode(Int32(playerNum)) > UInt8(CameraMode.anaglyphClose.rawValue) {
                     SetCameraMode(Int32(playerNum), 0)
                 }

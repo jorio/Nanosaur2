@@ -217,7 +217,7 @@ public func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // TOGGLE VERTEX ARRAY DOUBLE-BUFFER
 
-    theNode.pointee.VertexArrayMode = UInt8(Int32(VERTEX_ARRAY_RANGE_TYPE_SKELETONS) + Int32(gGameViewInfoPtr!.pointee.frameCount & 1))
+    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.skeletons.rawValue) + Int32(gGameViewInfoPtr!.pointee.frameCount & 1))
 
     // INIT BBOX
     //
@@ -411,7 +411,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
         gMatrix = oldM // pop matrix
     }
 
-    OGL_SetVertexArrayRangeDirty(Int16(VERTEX_ARRAY_RANGE_TYPE_SKELETONS) + Int16(buffNum)) // remember to update VAR
+    OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.skeletons.rawValue) + Int16(buffNum)) // remember to update VAR
 }
 
 // After a skeleton file is loaded, this will calc some other needed things.

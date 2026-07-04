@@ -402,7 +402,7 @@ public func InitZaps() {
     def.scale = 1
 
     let newObj = MakeNewObject(&def)!
-    newObj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1)
+    newObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.zaps1.rawValue)
     newObj.pointee.Damage = 1.0
 }
 
@@ -422,7 +422,7 @@ private func allocateZapGeometry(_ zapSlot: Int) {
     let numTriangles = numVerts - 2
 
     for b in 0..<2 { // allocate for both double-buffers
-        gZaps[zapSlot].triMesh[b].VARtype = Int16(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + Int16(b)
+        gZaps[zapSlot].triMesh[b].VARtype = Int16(VertexArrayRangeType.zaps1.rawValue) + Int16(b)
         gZaps[zapSlot].triMesh[b].numMaterials = 1
         vertexArrayMaterialsBase(&gZaps[zapSlot].triMesh[b])[0] = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_ZapBeam)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // set illegal ref
         gZaps[zapSlot].triMesh[b].numPoints = Int32(numVerts)
@@ -430,9 +430,9 @@ private func allocateZapGeometry(_ zapSlot: Int) {
 
         // ALLOCATE VARS
 
-        gZaps[zapSlot].triMesh[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * numVerts), UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))?.assumingMemoryBound(to: OGLPoint3D.self)
-        vertexArrayUVsBase(&gZaps[zapSlot].triMesh[b])[0] = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerts), UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))?.assumingMemoryBound(to: OGLTextureCoord.self)
-        gZaps[zapSlot].triMesh[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTriangles), UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))?.assumingMemoryBound(to: MOTriangleIndecies.self)
+        gZaps[zapSlot].triMesh[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLPoint3D.self)
+        vertexArrayUVsBase(&gZaps[zapSlot].triMesh[b])[0] = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLTextureCoord.self)
+        gZaps[zapSlot].triMesh[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTriangles), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: MOTriangleIndecies.self)
 
         gZaps[zapSlot].triMesh[b].normals = nil
         gZaps[zapSlot].triMesh[b].colorsFloat = nil
@@ -526,7 +526,7 @@ private let cMoveZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
             p += 2
         }
 
-        OGL_SetVertexArrayRangeDirty(Int16(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + gZapBuffer)
+        OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.zaps1.rawValue) + gZapBuffer)
 
         // SEE IF HIT PLAYER
 
@@ -573,9 +573,9 @@ private func freeZap(_ zapNum: Int) {
     SwGameAssert(gZaps[zapNum].isUsed != 0)
 
     for b in 0..<2 {
-        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].points, UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))
-        OGL_FreeVertexArrayMemory(vertexArrayUVsBase(&gZaps[zapNum].triMesh[b])[0], UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))
-        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].triangles, UInt8(VERTEX_ARRAY_RANGE_TYPE_ZAPS1) + UInt8(b))
+        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].points, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
+        OGL_FreeVertexArrayMemory(vertexArrayUVsBase(&gZaps[zapNum].triMesh[b])[0], UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
+        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].triangles, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
 
         gZaps[zapNum].triMesh[b].points = nil
         vertexArrayUVsBase(&gZaps[zapNum].triMesh[b])[0] = nil

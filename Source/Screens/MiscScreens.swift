@@ -37,7 +37,7 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     let x = THERMO_LEFT + w
 
     let stereoMode = gGamePrefs.stereoGlassesMode
-    if stereoMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_COLOR) || stereoMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO) {
+    if stereoMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) || stereoMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) {
         OGL_SetColor4f(0.3, 0.3, 0.2, 1)
     } else {
         OGL_SetColor4f(0.8, 0, 0, 1)

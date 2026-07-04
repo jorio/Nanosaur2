@@ -76,7 +76,7 @@ public func InitDefaultPrefs() {
 
     gGamePrefs.lowRenderQuality = 0
     gGamePrefs.splitScreenMode = UInt8(SplitscreenMode.vertical.rawValue)
-    gGamePrefs.stereoGlassesMode = UInt8(STEREO_GLASSES_MODE_OFF)
+    gGamePrefs.stereoGlassesMode = UInt8(StereoGlassesMode.off.rawValue)
     gGamePrefs.anaglyphCalibrationRed = UInt8(DEFAULT_ANAGLYPH_R)
     gGamePrefs.anaglyphCalibrationGreen = UInt8(DEFAULT_ANAGLYPH_G)
     gGamePrefs.anaglyphCalibrationBlue = UInt8(DEFAULT_ANAGLYPH_B)
@@ -537,9 +537,9 @@ private let cUpdateTerrainForFadeOut: @convention(c) () -> Void = {
 
 // IsStereo/IsStereoAnaglyphMono/IsStereoShutter are parameterized C macros,
 // which Swift can't import as callable symbols.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
-private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO) }
-private func isStereoShutter() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_SHUTTER) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
+private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) }
+private func isStereoShutter() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.shutter.rawValue) }
 
 // MARK: - Cleanup level
 

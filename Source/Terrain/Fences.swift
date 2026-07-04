@@ -168,7 +168,7 @@ public func PrimeFences() {
 
     let fenceObj = MakeNewObject(&def)!
     gFenceObj = fenceObj
-    fenceObj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_USER_FENCES)
+    fenceObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue)
 
     // (VERTEXARRAYRANGES is hardcoded off, so the "assign memory to vertex
     // array range" block here is dead code and dropped.)
@@ -207,7 +207,7 @@ private func makeFenceGeometry() {
         for b in 0..<2 { // make geometry for each double-buffer
             let triMeshData = GetFenceTriMeshDataEntry(Int32(f), Int32(b))!
 
-            triMeshData.pointee.VARtype = Int16(VERTEX_ARRAY_RANGE_TYPE_USER_FENCES) + Int16(b)
+            triMeshData.pointee.VARtype = Int16(VertexArrayRangeType.userFences.rawValue) + Int16(b)
 
             triMeshData.pointee.numMaterials = -1 // we submit these manually
             triMeshData.pointee.materials.0 = nil
@@ -352,7 +352,7 @@ public func UpdateFences() {
     // UPDATE VAR TYPE FOR THE CURRENT FRAME'S DOUBLE-BUFFER
 
     let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
-    gFenceObj!.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_USER_FENCES) + UInt8(buffNum)
+    gFenceObj!.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue) + UInt8(buffNum)
 
     // UPDATE THE AUTO-FADE FOR EACH FENCE
     //

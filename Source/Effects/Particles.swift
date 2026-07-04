@@ -89,7 +89,7 @@ public func InitParticleSystem() {
     def.drawCall = cDrawParticleGroups
 
     let obj = MakeNewObject(&def)!
-    obj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_PARTICLES1)
+    obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.particles1.rawValue)
 }
 
 // MARK: - Dispose particle system
@@ -212,7 +212,7 @@ public func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType
 
                     var vertexArrayData = MOVertexArrayData()
 
-                    let varType = Int16(VERTEX_ARRAY_RANGE_TYPE_PARTICLES1) + Int16(b)
+                    let varType = Int16(VertexArrayRangeType.particles1.rawValue) + Int16(b)
                     vertexArrayData.VARtype = varType
 
                     vertexArrayData.numMaterials = 1
@@ -345,7 +345,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
-    let varMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_PARTICLES1) + UInt8(buffNum) // update the VAR range info
+    let varMode = UInt8(VertexArrayRangeType.particles1.rawValue) + UInt8(buffNum) // update the VAR range info
     theNode.pointee.VertexArrayMode = varMode
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {

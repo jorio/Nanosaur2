@@ -43,7 +43,7 @@ public func InitContrails() {
         // INIT THE DOUBLE-BUFFERED MESH DATA
 
         for b in 0..<2 {
-            let varType = UInt8(Int32(VERTEX_ARRAY_RANGE_TYPE_CONTRAILS1) + Int32(b))
+            let varType = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(b))
             gContrails[i].meshData[b].VARtype = Int16(varType)
             gContrails[i].meshData[b].numMaterials = 0
             gContrails[i].meshData[b].numPoints = 0
@@ -70,7 +70,7 @@ public func InitContrails() {
     def.drawCall = cDrawContrails
 
     let obj = MakeNewObject(&def)!
-    obj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_CONTRAILS1)
+    obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.contrails1.rawValue)
 }
 
 @c @implementation
@@ -177,7 +177,7 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
     let fps = gFramesPerSecondFrac
     let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
-    theNode.pointee.VertexArrayMode = UInt8(Int32(VERTEX_ARRAY_RANGE_TYPE_CONTRAILS1) + Int32(buffNum)) // update the VAR range info
+    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(buffNum)) // update the VAR range info
 
     for i in 0..<maxContrails {
         if gContrails[i].isUsed == 0 {

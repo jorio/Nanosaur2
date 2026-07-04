@@ -12,7 +12,7 @@ private let SPLITSCREEN_DIVIDER_THICKNESS: Float = 1
 private var g640x480Scaling: Float = 1
 private var gHideInfobar: UInt8 = 0
 
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 
 private let MAP_SCALE: Float = 80.0
 private let MAP_SCALE2: Float = MAP_SCALE * 0.8 * 0.5

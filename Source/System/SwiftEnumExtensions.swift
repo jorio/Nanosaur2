@@ -138,3 +138,15 @@ extension SplitscreenMode: @retroactive Sendable, @retroactive CaseIterable {
 extension PowType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [PowType] = [.stunPulse, .health, .jumpJet, .fuel, .supernova, .freeze, .magnet, .growth, .flame, .flare, .dart, .freeLife] // NUM_POW_TYPES (_count) intentionally excluded
 }
+
+// MARK: - VertexArrayRangeType (ogl_support.h)
+
+extension VertexArrayRangeType: @retroactive Sendable, @retroactive CaseIterable {
+    public static let allCases: [VertexArrayRangeType] = [.particles1, .particles2, .terrain, .bg3dModels, .skeletons, .skeletons2, .contrails1, .contrails2, .zaps1, .zaps2, .user1, .userFences, .userFences2, .userWater, .userDustDevil] // NUM_VERTEX_ARRAY_RANGES (_count) intentionally excluded
+}
+
+// MARK: - StereoGlassesMode (ogl_support.h)
+
+extension StereoGlassesMode: @retroactive Sendable, @retroactive CaseIterable {
+    public static let allCases: [StereoGlassesMode] = [.off, .anaglyphColor, .anaglyphMono, .shutter]
+}

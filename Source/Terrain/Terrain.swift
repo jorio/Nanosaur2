@@ -57,7 +57,7 @@ private var gSuperTileNormals: UnsafeMutablePointer<OGLVector3D>?
 private var gSuperTileColors: UnsafeMutablePointer<OGLColorRGBA>?
 
 // IsStereo is a parameterized C macro, which Swift can't import as a callable symbol.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 
 // MARK: - Init terrain manager
 
@@ -139,7 +139,7 @@ public func InitCurrentScrollSettings() {
     def.scale = 1
 
     let obj = MakeNewObject(&def)!
-    obj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN)
+    obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.terrain.rawValue)
 }
 
 // gCurrentSuperTileRow/Col and gPreviousSuperTileRow/Col were `static int[MAX_PLAYERS]`
@@ -271,27 +271,27 @@ public func CreateSuperTileMemoryList() {
 
     // ALLOC TRIANGLE ARRAYS ALL SUPERTILES
 
-    let triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTrisInSupertile * maxSupertiles), UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))!.assumingMemoryBound(to: MOTriangleIndecies.self)
+    let triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTrisInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: MOTriangleIndecies.self)
     gSuperTileTriangles = triangles
 
     // ALLOC POINTS FOR ALL SUPERTILES
 
-    let coords = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))!.assumingMemoryBound(to: OGLPoint3D.self)
+    let coords = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLPoint3D.self)
     gSuperTileCoords = coords
 
     // ALLOC VERTEX NORMALS FOR ALL SUPERTILES
 
-    let normals = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLVector3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))!.assumingMemoryBound(to: OGLVector3D.self)
+    let normals = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLVector3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLVector3D.self)
     gSuperTileNormals = normals
 
     // ALLOC UVS FOR ALL SUPERTILES
 
-    let uvs = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerticesInSupertile * maxSupertiles), UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))!.assumingMemoryBound(to: OGLTextureCoord.self)
+    let uvs = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerticesInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLTextureCoord.self)
     gSuperTileUVs = uvs
 
     // ALLOC VERTEX COLORS FOR ALL SUPERTILES
 
-    let colors = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLColorRGBA>.size * numVerticesInSupertile * maxSupertiles), UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))!.assumingMemoryBound(to: OGLColorRGBA.self)
+    let colors = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLColorRGBA>.size * numVerticesInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLColorRGBA.self)
     gSuperTileColors = colors
 
     // FOR EACH POSSIBLE SUPERTILE SET INFO
@@ -319,7 +319,7 @@ public func CreateSuperTileMemoryList() {
 
         // SET MESH STRUCTURE
 
-        meshPtr.pointee.VARtype = Int16(VERTEX_ARRAY_RANGE_TYPE_TERRAIN)
+        meshPtr.pointee.VARtype = Int16(VertexArrayRangeType.terrain.rawValue)
         meshPtr.pointee.numMaterials = -1 // textures will be manually submitted in drawing function!
         meshPtr.pointee.numPoints = Int32(numVerticesInSupertile)
         meshPtr.pointee.numTriangles = Int32(numTrisInSupertile)
@@ -363,27 +363,27 @@ public func DisposeSuperTileMemoryList() {
     gSuperTileMeshData = nil
 
     if let triangles = gSuperTileTriangles {
-        OGL_FreeVertexArrayMemory(triangles, UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+        OGL_FreeVertexArrayMemory(triangles, UInt8(VertexArrayRangeType.terrain.rawValue))
         gSuperTileTriangles = nil
     }
 
     if let coords = gSuperTileCoords {
-        OGL_FreeVertexArrayMemory(coords, UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+        OGL_FreeVertexArrayMemory(coords, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
     gSuperTileCoords = nil
 
     if let normals = gSuperTileNormals {
-        OGL_FreeVertexArrayMemory(normals, UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+        OGL_FreeVertexArrayMemory(normals, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
     gSuperTileNormals = nil
 
     if let uvs = gSuperTileUVs {
-        OGL_FreeVertexArrayMemory(uvs, UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+        OGL_FreeVertexArrayMemory(uvs, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
     gSuperTileUVs = nil
 
     if let colors = gSuperTileColors {
-        OGL_FreeVertexArrayMemory(colors, UInt8(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+        OGL_FreeVertexArrayMemory(colors, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
     gSuperTileColors = nil
 }
@@ -643,7 +643,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
 
     // WE'VE MODIFIED DATA IN THE VERTEX ARRAY RANGE, SO FORCE AN UPDATE
 
-    OGL_SetVertexArrayRangeDirty(Int16(VERTEX_ARRAY_RANGE_TYPE_TERRAIN))
+    OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.terrain.rawValue))
 
     return superTileNum >= 0 ? UInt16(superTileNum) : 0
 }

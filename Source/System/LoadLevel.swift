@@ -17,13 +17,13 @@ public func LoadLevelArt() {
     var spec = FSSpec()
 
     _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:global.bg3d", &spec)
-    ImportBG3D(&spec, Int32(MODEL_GROUP_GLOBAL), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+    ImportBG3D(&spec, Int32(MODEL_GROUP_GLOBAL), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec)
-    ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+    ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:weapons.bg3d", &spec)
-    ImportBG3D(&spec, Int32(MODEL_GROUP_WEAPONS), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+    ImportBG3D(&spec, Int32(MODEL_GROUP_WEAPONS), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_PLAYER), Int16(PLAYER_ObjType_JetPack),
                                     -1, UInt16(MULTI_TEXTURE_COMBINE_ADD), UInt16(SPHEREMAP_SObjType_Satin))
@@ -33,7 +33,7 @@ public func LoadLevelArt() {
     do {
         let path = ":Models:\(String(cString: GetBiomeName(currentBiome))).bg3d"
         _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
-        ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELSPECIFIC), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+        ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELSPECIFIC), Int16(VertexArrayRangeType.bg3dModels.rawValue))
     }
 
     for (i, _) in EggColor.allCases.enumerated() {

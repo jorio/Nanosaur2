@@ -25,9 +25,9 @@ private var gIntroMode: UInt8 = 0
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
 // IsStereo/IsStereoAnaglyph are parameterized C macros, which Swift can't import as callable symbols.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 private func isStereoAnaglyph() -> Bool {
-    gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_COLOR) || gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO)
+    gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) || gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue)
 }
 
 // MARK: - Do level intro screen
@@ -153,10 +153,10 @@ private func setupLevelIntroScreen() {
     // LOAD MODELS
 
     FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec)
-    ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+    ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:levelintro.bg3d", &spec)
-    ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELINTRO), Int16(VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS))
+    ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELINTRO), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     // LOAD SPRITES
 

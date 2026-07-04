@@ -6,9 +6,9 @@ private var gAnaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
 
 // IsStereo/IsStereoAnaglyphColor/IsStereoAnaglyphMono are parameterized
 // C macros, which Swift can't import as callable symbols.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
-private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_COLOR) }
-private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
+private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) }
+private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) }
 
 private let cMoveAnaglyphScreenHeadObject: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
     if GetCurrentMenu() != 0x6361_6C69 { // 'cali'

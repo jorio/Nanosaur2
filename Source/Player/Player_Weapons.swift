@@ -20,7 +20,7 @@ private var gPlayerMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1) // aim vector o
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
 // IsStereo is a parameterized C macro, which Swift can't import as a callable symbol.
-private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
+private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 
 @inline(__always) private func weaponQuantityBase(_ p: UnsafeMutablePointer<PlayerInfoType>) -> UnsafeMutablePointer<Int16> {
     UnsafeMutableRawPointer(p.pointer(to: \.weaponQuantity)!).assumingMemoryBound(to: Int16.self)

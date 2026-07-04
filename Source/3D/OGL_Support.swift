@@ -99,10 +99,10 @@ private var gMyState_BlendFuncD: GLenum = 0
 
 // MARK: - Macro shims (parameterless/parameterized macros aren't importable)
 
-@inline(__always) private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(STEREO_GLASSES_MODE_OFF) }
-@inline(__always) private func isStereoShutter() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_SHUTTER) }
-@inline(__always) private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_COLOR) }
-@inline(__always) private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(STEREO_GLASSES_MODE_ANAGLYPH_MONO) }
+@inline(__always) private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
+@inline(__always) private func isStereoShutter() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.shutter.rawValue) }
+@inline(__always) private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) }
+@inline(__always) private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) }
 @inline(__always) private func isStereoAnaglyph() -> Bool { isStereoAnaglyphColor() || isStereoAnaglyphMono() }
 @inline(__always) private func getOverlayPaneNumber() -> Int { Int(gNumPlayers) }
 
@@ -1862,14 +1862,14 @@ private func OGL_InitVertexArrayMemory() {
 
     // INIT THE LINKED LIST HEAD & TAIL PTRS
 
-    gVertexArrayMemory_Head = [UnsafeMutablePointer<VertexArrayMemoryNode>?](repeating: nil, count: Int(NUM_VERTEX_ARRAY_RANGES))
-    gVertexArrayMemory_Tail = [UnsafeMutablePointer<VertexArrayMemoryNode>?](repeating: nil, count: Int(NUM_VERTEX_ARRAY_RANGES))
-    gVertexArrayMemoryBlock = [UnsafeMutableRawPointer?](repeating: nil, count: Int(NUM_VERTEX_ARRAY_RANGES))
+    gVertexArrayMemory_Head = [UnsafeMutablePointer<VertexArrayMemoryNode>?](repeating: nil, count: Int(VertexArrayRangeType._count.rawValue))
+    gVertexArrayMemory_Tail = [UnsafeMutablePointer<VertexArrayMemoryNode>?](repeating: nil, count: Int(VertexArrayRangeType._count.rawValue))
+    gVertexArrayMemoryBlock = [UnsafeMutableRawPointer?](repeating: nil, count: Int(VertexArrayRangeType._count.rawValue))
 
     // ALLOCATE MASTER BLOCK FOR NON-"USER" V.A.R. TYPES
 
-    for i in 0..<Int(VERTEX_ARRAY_RANGE_TYPE_USER1) {
-        gVertexArrayMemoryBlock[i] = AllocPtrClear(OGL_MaxMemForVARType(UInt8(i)))
+    for i in 0..<Int(VertexArrayRangeType.user1.rawValue) {
+        gVertexArrayMemoryBlock[i] = AllocPtrClear(OGL_MaxMemForVARType(VertexArrayRangeType(rawValue: UInt32(i))!))
     }
 
     // WE'RE DONE
@@ -1887,7 +1887,7 @@ private func OGL_DisableVertexArrayRanges() {
     // FREE UP THE MEMORY
     // Only for non-"User" types. "User" types don't have allocated memory.
 
-    for i in 0..<Int(VERTEX_ARRAY_RANGE_TYPE_USER1) {
+    for i in 0..<Int(VertexArrayRangeType.user1.rawValue) {
         if gVertexArrayMemoryBlock[i] != nil {
             SafeDisposePtr(gVertexArrayMemoryBlock[i])
             gVertexArrayMemoryBlock[i] = nil
@@ -1903,7 +1903,7 @@ private func OGL_DisableVertexArrayRanges() {
 
 @c @implementation
 public func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawPointer! {
-    if type >= UInt8(VERTEX_ARRAY_RANGE_TYPE_USER1) { // can't allocate memory for the "User" Types
+    if type >= UInt8(VertexArrayRangeType.user1.rawValue) { // can't allocate memory for the "User" Types
         SwFatalAlert("OGL_AllocVertexArrayMemory: illegal type")
     }
 
@@ -1973,7 +1973,7 @@ public func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMuta
     let tail = gVertexArrayMemory_Tail[Int(type)]!
     prevEndPtr = tail.pointee.pointer!.advanced(by: tail.pointee.size - 1) // calc end of allocations
 
-    if UInt(bitPattern: prevEndPtr) + UInt(roundedSize) >= UInt(bitPattern: gVertexArrayMemoryBlock[Int(type)]!) + UInt(OGL_MaxMemForVARType(type)) { // would this allocation go over our master block's range?
+    if UInt(bitPattern: prevEndPtr) + UInt(roundedSize) >= UInt(bitPattern: gVertexArrayMemoryBlock[Int(type)]!) + UInt(OGL_MaxMemForVARType(VertexArrayRangeType(rawValue: UInt32(type))!)) { // would this allocation go over our master block's range?
         SafeDisposePtr(UnsafeMutableRawPointer(newNode))
 
         SwFatalAlert("OGL_AllocVertexArrayMemory:  Master Block is full! Type \(type)")
@@ -1999,7 +1999,7 @@ public func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMuta
 
 @c @implementation
 public func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt8) {
-    if type >= UInt8(VERTEX_ARRAY_RANGE_TYPE_USER1) { // can't free memory for the "User" Types
+    if type >= UInt8(VertexArrayRangeType.user1.rawValue) { // can't free memory for the "User" Types
         SwFatalAlert("OGL_FreeVertexArrayMemory: illegal type")
     }
 
@@ -2058,21 +2058,21 @@ public func OGL_SetVertexArrayRangeDirty(_ buffer: Int16) {
 
 // Defines how much RAM to allocate for the Vertex Array Range buffers.
 
-private func OGL_MaxMemForVARType(_ varType: UInt8) -> Int {
-    switch Int(varType) {
-    case VERTEX_ARRAY_RANGE_TYPE_PARTICLES1, VERTEX_ARRAY_RANGE_TYPE_PARTICLES2:
+private func OGL_MaxMemForVARType(_ varType: VertexArrayRangeType) -> Int {
+    switch varType {
+    case .particles1, .particles2:
         return 6_000_000
 
-    case VERTEX_ARRAY_RANGE_TYPE_BG3DMODELS:
+    case .bg3dModels:
         return 6_000_000
 
-    case VERTEX_ARRAY_RANGE_TYPE_TERRAIN:
+    case .terrain:
         return 8_000_000
 
-    case VERTEX_ARRAY_RANGE_TYPE_ZAPS1, VERTEX_ARRAY_RANGE_TYPE_ZAPS2:
+    case .zaps1, .zaps2:
         return 300_000
 
-    case VERTEX_ARRAY_RANGE_TYPE_SKELETONS, VERTEX_ARRAY_RANGE_TYPE_SKELETONS2:
+    case .skeletons, .skeletons2:
         return 5_000_000
 
     default:

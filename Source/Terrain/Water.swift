@@ -195,7 +195,7 @@ public func PrimeTerrainWater() {
     def.scale = 1
 
     let obj = MakeNewObject(&def)!
-    obj.pointee.VertexArrayMode = UInt8(VERTEX_ARRAY_RANGE_TYPE_USER_WATER)
+    obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userWater.rawValue)
 
     // (VERTEXARRAYRANGES is 0 - AssignVertexArrayRangeMemory block omitted, see file header comment)
 }
@@ -214,7 +214,7 @@ private func makeWaterGeometry() {
 
         // SET VERTEX ARRAY HEADER
         let tri = GetWaterTriMeshDataEntry(Int32(f))
-        tri.pointee.VARtype = Int16(VERTEX_ARRAY_RANGE_TYPE_USER_WATER)
+        tri.pointee.VARtype = Int16(VertexArrayRangeType.userWater.rawValue)
         tri.pointee.points = gWaterPointsBuf + waterIdx(f, 0)
         tri.pointee.triangles = gWaterTrianglesBuf + waterIdx(f, 0)
         tri.pointee.uvs.0 = gWaterUvs1Buf + waterIdx(f, 0)

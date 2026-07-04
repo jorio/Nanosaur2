@@ -2,8 +2,7 @@
 
 private var gPlayerSparkleColor: Float = 0
 
-@c @implementation
-public func InitSparkles() {
+func InitSparkles() {
     for i in 0..<Int32(MAX_SPARKLES) {
         GetSparkleSlot(i)!.pointee.isActive = 0
     }
@@ -14,8 +13,7 @@ public func InitSparkles() {
 }
 
 // OUTPUT: -1 if none
-@c @implementation
-public func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>?) -> Int16 {
+func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>?) -> Int16 {
     // FIND A FREE SLOT
     var i: Int32 = 0
     while i < Int32(MAX_SPARKLES) {
@@ -31,8 +29,7 @@ public func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>?) -> Int16 {
     return -1
 }
 
-@c @implementation
-public func DeleteSparkle(_ i: Int16) {
+func DeleteSparkle(_ i: Int16) {
     if i == -1 {
         return
     }
@@ -46,8 +43,7 @@ public func DeleteSparkle(_ i: Int16) {
     }
 }
 
-@c @implementation
-public func DrawSparkles() {
+func DrawSparkles() {
     let up = OGLVector3D(x: 0, y: 1, z: 0)
     var frame: InlineArray<4, OGLPoint3D> = [
         OGLPoint3D(x: -130, y: 130, z: 0),

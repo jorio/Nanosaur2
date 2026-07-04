@@ -30,9 +30,4 @@ typedef struct
 }SparkleType;
 
 
-void InitSparkles(void);
-short GetFreeSparkle(ObjNode * _Nullable theNode);
-void DeleteSparkle(short i);
-void DrawSparkles(void);
-
 #endif

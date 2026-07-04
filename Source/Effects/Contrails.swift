@@ -33,8 +33,7 @@ private var gContrails: InlineArray<15, ContrailType> = InlineArray(repeating: C
     UnsafeMutableRawPointer(triangle.pointer(to: \.vertexIndices)!).assumingMemoryBound(to: GLuint.self)
 }
 
-@c @implementation
-public func InitContrails() {
+func InitContrails() {
     // INIT THE CONTRAIL LISTS
 
     for i in 0..<maxContrails {
@@ -73,8 +72,7 @@ public func InitContrails() {
     obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.contrails1.rawValue)
 }
 
-@c @implementation
-public func DisposeContrails() {
+func DisposeContrails() {
     for i in 0..<maxContrails {
         for b in 0..<2 {
             let mesh = gContrails[i].meshData[b]
@@ -90,8 +88,7 @@ public func DisposeContrails() {
     }
 }
 
-@c @implementation
-public func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!) {
+func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!) {
     // SCAN FOR A FREE CONTRAIL
 
     var foundIndex = -1
@@ -123,8 +120,7 @@ public func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<
     contrailNum.pointee = Int16(i)
 }
 
-@c @implementation
-public func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!, _ aim: UnsafeMutablePointer<OGLVector3D>!, _ alpha: Float) {
+func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!, _ aim: UnsafeMutablePointer<OGLVector3D>!, _ alpha: Float) {
     let contrailNum = Int(contrailNum)
     if gContrails[contrailNum].isUsed == 0 {
         SwFatal("AddPointToContrail:  bad contrailNum")
@@ -146,8 +142,7 @@ public func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePo
     gContrails[contrailNum].nextPointIndex = Int16(p) // set where next pt will go
 }
 
-@c @implementation
-public func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!) {
+func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!) {
     let contrailNum = Int(contrailNum)
     if contrailNum < 0 {
         SwFatal("ModifyContrailPreviousAddition:  bad contrailNum")
@@ -164,8 +159,7 @@ public func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: Uns
     gContrails[contrailNum].refPoints[p] = wherePtr.pointee // set coord of ref pt.
 }
 
-@c @implementation
-public func DisconnectContrail(_ contrailNum: Int16) {
+func DisconnectContrail(_ contrailNum: Int16) {
     if contrailNum != -1 {
         gContrails[Int(contrailNum)].indexPtr = nil
     }
@@ -342,8 +336,7 @@ private let cDrawContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
     }
 }
 
-@c @implementation
-public func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
+func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
     var pt = OGLPoint3D()
     var aim = OGLVector3D()
     let tipOff: InlineArray<2, OGLPoint3D> = [

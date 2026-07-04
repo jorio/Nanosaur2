@@ -226,11 +226,3 @@ void DoPlayerGroundScrape(ObjNode *player, short playerNum);
 
 
 		/* CONTRAILS */
-
-void InitContrails(void);
-void MakeNewContrail(float width, short *contrailNum);
-void AddPointToContrail(short contrailNum, OGLPoint3D *where, OGLVector3D *aim, float alpha);
-void ModifyContrailPreviousAddition(short contrailNum, OGLPoint3D *where);
-void DisposeContrails(void);
-void DisconnectContrail(short contrailNum);
-void UpdatePlayerContrails(ObjNode *player);

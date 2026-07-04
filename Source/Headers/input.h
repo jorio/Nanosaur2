@@ -102,9 +102,6 @@ int GetNeedState(int needID, int playerID);
 #define IsNeedActive(needID, playerID) (KEYSTATE_ACTIVE_BIT & GetNeedState((needID), (playerID)))
 #define IsNeedUp(needID, playerID) (KEYSTATE_UP == GetNeedState((needID), (playerID)))
 
-OGLVector2D GetAnalogSteering(int playerID);
-
-
 
 SDL_Gamepad* GetGamepad(int n);
 // last controller that triggered a need with ANY_PLAYER

@@ -58,10 +58,8 @@ enum
 
 		/* 3D STRUCTURES */
 
-typedef struct
-{
-	float 	x,y,z,w;
-}OGLPoint4D;
+// OGLPoint4D is now a plain Swift struct in OGLTypes.swift - nothing in C
+// touches it (directly or transitively), so it's no longer declared here.
 
 typedef struct
 {
@@ -83,17 +81,8 @@ typedef struct
 	GLfloat	x,y;
 }OGLVector2D;
 
-typedef struct
-{
-	OGLPoint3D			origin;
-	OGLVector3D			direction;
-	float				distance;
-}OGLRay;
-
-typedef struct
-{
-	OGLPoint3D	p1, p2;
-}OGLLineSegment;
+// OGLRay/OGLLineSegment are now plain Swift structs in OGLTypes.swift -
+// nothing in C touches them, so they're no longer declared here.
 
 typedef struct
 {
@@ -110,10 +99,8 @@ typedef struct
 	GLfloat	r,g,b,a;
 }OGLColorRGBA;
 
-typedef struct
-{
-	GLubyte	r,g,b,a;
-}OGLColorRGBA_Byte;
+// OGLColorRGBA_Byte is now a plain Swift struct in OGLTypes.swift - nothing
+// in C touches it, so it's no longer declared here.
 
 typedef union
 {
@@ -123,10 +110,8 @@ typedef union
 	#endif
 }OGLMatrix4x4;
 
-typedef struct
-{
-	GLfloat	value[9];
-}OGLMatrix3x3;
+// OGLMatrix3x3 is now a plain Swift struct in OGLTypes.swift - nothing in C
+// touches it, so it's no longer declared here.
 
 typedef struct
 {
@@ -134,12 +119,8 @@ typedef struct
 	float 							constant;
 }OGLPlaneEquation;
 
-typedef struct
-{
-	OGLPoint3D			point;
-	OGLTextureCoord		uv;
-	OGLColorRGBA		color;
-}OGLVertex;
+// OGLVertex is now a plain Swift struct in OGLTypes.swift - nothing in C
+// touches it, so it's no longer declared here.
 
 typedef struct
 {
@@ -157,12 +138,8 @@ typedef struct
 }OGLBoundingBox;
 
 
-typedef struct
-{
-	OGLPoint3D 			origin;
-	float 				radius;
-	Boolean 			isEmpty;
-}OGLBoundingSphere;
+// OGLBoundingSphere is now a plain Swift struct in OGLTypes.swift - nothing
+// in C touches it, so it's no longer declared here.
 
 
 typedef struct

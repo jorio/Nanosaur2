@@ -587,9 +587,9 @@ public func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePoi
 private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ volAdjust: Float, _ leftVolOut: UnsafeMutablePointer<UInt32>!, _ rightVolOut: UnsafeMutablePointer<UInt32>!) {
     var whichEar = 0
 
-    var dist = OGLPoint3D_Distance(where_, &gEarCoords[0]) // calc dist to sound for pane 0
+    var dist = where_.pointee.distance(to: gEarCoords[0]) // calc dist to sound for pane 0
     if gNumPlayers > 1 { // see if other pane is closer (thus louder)
-        let dist2 = OGLPoint3D_Distance(where_, &gEarCoords[1])
+        let dist2 = where_.pointee.distance(to: gEarCoords[1])
 
         if dist2 < dist {
             dist = dist2

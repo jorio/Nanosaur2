@@ -1055,5 +1055,5 @@ public func OGL_GluUnProject(_ winPt: UnsafePointer<OGLPoint3D>!, _ modelview: U
     inPt.y = inPt.y * 2 - 1
     inPt.z = inPt.z * 2 - 1
 
-    OGLPoint3D_Transform(&inPt, &m, objPt)
+    objPt.pointee = inPt.transformed(by: m)
 }

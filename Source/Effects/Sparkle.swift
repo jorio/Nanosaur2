@@ -90,7 +90,7 @@ public func DrawSparkles() {
             // SEE IF TRANSFORM WITH OWNER
 
             if (flags & UInt32(SPARKLE_FLAG_TRANSFORMWITHOWNER)) != 0 {
-                OGLPoint3D_Transform(&sparkle.pointee.`where`, &owner.pointee.BaseTransformMatrix, &where_)
+                where_ = sparkle.pointee.`where`.transformed(by: owner.pointee.BaseTransformMatrix)
                 if !omni {
                     aim = sparkle.pointee.aim.transformed(by: owner.pointee.BaseTransformMatrix)
                 }
@@ -144,14 +144,8 @@ public func DrawSparkles() {
         var up_ = up
         SetLookAtMatrixAndTranslate(&m, &up_, &where_, cam.pointer(to: \.cameraLocation)!) // aim at camera & translate
         var tc: InlineArray<4, OGLPoint3D> = InlineArray(repeating: OGLPoint3D(x: 0, y: 0, z: 0))
-        withUnsafeMutablePointer(to: &frame) { framePtr in
-            withUnsafeMutablePointer(to: &tc) { tcPtr in
-                OGLPoint3D_TransformArray(
-                    UnsafeMutableRawPointer(framePtr).assumingMemoryBound(to: OGLPoint3D.self),
-                    &m,
-                    UnsafeMutableRawPointer(tcPtr).assumingMemoryBound(to: OGLPoint3D.self),
-                    4)
-            }
+        for i in 0..<4 {
+            tc[i] = frame[i].transformed(by: m)
         }
 
         // DRAW IT

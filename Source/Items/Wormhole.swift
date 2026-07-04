@@ -199,7 +199,7 @@ public func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutabl
                 if dot < 0.0 {
                     // POINT MUST BE CLOSE ENOUGH
 
-                    let d = OGLPoint3D_Distance(pt, &mouthPt2) // calc dist to mouth
+                    let d = pt.pointee.distance(to: mouthPt2) // calc dist to mouth
                     if d < minDist {
                         minDist = d
                         best = thisNodePtr
@@ -424,7 +424,7 @@ private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNod
 
     // SEE IF PLAYER IS IN RANGE
 
-    if OGLPoint3D_Distance(&player.pointee.Coord, &wormhole.pointee.Coord) > 1000.0 {
+    if player.pointee.Coord.distance(to: wormhole.pointee.Coord) > 1000.0 {
         return
     }
 

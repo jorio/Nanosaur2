@@ -152,7 +152,7 @@ public func InitPlayerAtStartOfLevel() {
         let wormhole = MakeEntryWormhole(0)!
 
         // CALC COORD AND VECTOR OF PLAYER AT START OF WORMHOLE
-        OGLPoint3D_Transform(&wormStartOff, &wormhole.pointee.BaseTransformMatrix, &player.pointee.Coord)
+        player.pointee.Coord = wormStartOff.transformed(by: wormhole.pointee.BaseTransformMatrix)
         player.pointee.Delta = wormVector.transformed(by: wormhole.pointee.BaseTransformMatrix)
 
         player.pointee.Speed = 2500.0
@@ -488,7 +488,7 @@ public func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, 
     if GetPlayerIsDead(0) != 0 { // ignore dead player
         d1 = 10_000_000
     } else {
-        d1 = OGLPoint3D_Distance(pt, &GetPlayerInfoEntry(0)!.pointee.coord) // get player 1 dist
+        d1 = pt.pointee.distance(to: GetPlayerInfoEntry(0)!.pointee.coord) // get player 1 dist
     }
 
     playerNum?.pointee = 0
@@ -499,7 +499,7 @@ public func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, 
             return d1
         }
 
-        let d2 = OGLPoint3D_Distance(pt, &GetPlayerInfoEntry(1)!.pointee.coord)
+        let d2 = pt.pointee.distance(to: GetPlayerInfoEntry(1)!.pointee.coord)
         if d2 < d1 {
             playerNum?.pointee = 1
             return d2

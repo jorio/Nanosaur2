@@ -156,11 +156,9 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         let shootDist: Float = (gLevelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
 
         if dist < (shootDist * 1.2) { // see if player is close enough for turret to aim
-            var aimPt = OGLPoint3D()
-            var muzzleCoord = OGLPoint3D()
             let player = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
-            OGLPoint3D_Transform(&aimOff, &player.pointee.BaseTransformMatrix, &aimPt) // calc pt in front of player to aim ag
-            OGLPoint3D_Transform(&gTurretMuzzleTipOff, &gun.pointee.BaseTransformMatrix, &muzzleCoord) // calc coord of muzzle for more accurate rotation next
+            var aimPt = aimOff.transformed(by: player.pointee.BaseTransformMatrix) // calc pt in front of player to aim ag
+            var muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
             let angle = TurnObjectTowardTarget(turret, &muzzleCoord, aimPt.x, aimPt.z, Float.pi / 2, 0, nil) // turn turret on y-axis
 
             turret.updateTransforms()
@@ -196,14 +194,14 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // UPDATE WHEEL
 
-    OGLPoint3D_Transform(&wheelOff, &turret.pointee.BaseTransformMatrix, &wheel.pointee.Coord)
+    wheel.pointee.Coord = wheelOff.transformed(by: turret.pointee.BaseTransformMatrix)
     wheel.pointee.Rot.z += fps * SwPI2
     wheel.pointee.Rot.y = turret.pointee.Rot.y
     wheel.updateTransforms()
 
     // UPDATE GUN
 
-    OGLPoint3D_Transform(&gunOff, &turret.pointee.BaseTransformMatrix, &gun.pointee.Coord)
+    gun.pointee.Coord = gunOff.transformed(by: turret.pointee.BaseTransformMatrix)
     gun.pointee.Rot.y = turret.pointee.Rot.y
 
     gun.updateTransforms()
@@ -401,8 +399,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
     // CALC COORD & VECTOR OF MUZZLE
 
-    var muzzleCoord = OGLPoint3D()
-    OGLPoint3D_Transform(&gTurretMuzzleTipOff, &gun.pointee.BaseTransformMatrix, &muzzleCoord)
+    let muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix)
     var muzzleVector = gTurretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
 
     // MAKE OBJECT

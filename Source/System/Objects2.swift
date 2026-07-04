@@ -676,7 +676,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
     }
 
     // TRANSFORM EACH POINT INTO THE BUFFER
-    OGLPoint3D_TransformArray(data.pointee.points, &localToWorld, worldBuffer, numPoints)
+    OGLPoint3D.transformArray(data.pointee.points, by: localToWorld, into: worldBuffer, count: numPoints)
 
     // CALCULATE THE PLANE EQ FOR ALL OF THE TRIANGLES
     let numTriangles = Int(data.pointee.numTriangles) // get # triangles

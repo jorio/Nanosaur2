@@ -236,18 +236,9 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
         gShards[i].points[1] = data.pointee.points![ind1]
         gShards[i].points[2] = data.pointee.points![ind2]
 
-        var point0 = gShards[i].points[0]
-        var point1 = gShards[i].points[1]
-        var point2 = gShards[i].points[2]
-        var transformedPoint0 = OGLPoint3D()
-        var transformedPoint1 = OGLPoint3D()
-        var transformedPoint2 = OGLPoint3D()
-        OGLPoint3D_Transform(&point0, &gWorkMatrix, &transformedPoint0) // transform points
-        OGLPoint3D_Transform(&point1, &gWorkMatrix, &transformedPoint1)
-        OGLPoint3D_Transform(&point2, &gWorkMatrix, &transformedPoint2)
-        gShards[i].points[0] = transformedPoint0
-        gShards[i].points[1] = transformedPoint1
-        gShards[i].points[2] = transformedPoint2
+        gShards[i].points[0] = gShards[i].points[0].transformed(by: gWorkMatrix) // transform points
+        gShards[i].points[1] = gShards[i].points[1].transformed(by: gWorkMatrix)
+        gShards[i].points[2] = gShards[i].points[2].transformed(by: gWorkMatrix)
 
         centerPt.x = (gShards[i].points[0].x + gShards[i].points[1].x + gShards[i].points[2].x) * 0.3333 // calc center of polygon
         centerPt.y = (gShards[i].points[0].y + gShards[i].points[1].y + gShards[i].points[2].y) * 0.3333

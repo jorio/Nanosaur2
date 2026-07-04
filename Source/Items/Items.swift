@@ -315,9 +315,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
         }
 
         if particleGroup != -1 {
-            var p = OGLPoint3D()
-            var ventOffVar = ventOff[Int(theNode.pointee.Kind)]
-            OGLPoint3D_Transform(&ventOffVar, &theNode.pointee.BaseTransformMatrix, &p)
+            var p = ventOff[Int(theNode.pointee.Kind)].transformed(by: theNode.pointee.BaseTransformMatrix)
 
             let x = p.x
             let y = p.y

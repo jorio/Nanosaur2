@@ -887,8 +887,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
         } else {
             // UPDATE AIM TO TARGET
 
-            var targetPt = OGLPoint3D()
-            OGLPoint3D_Transform(&target.pointee.HeatSeekHotSpotOff, &target.pointee.BaseTransformMatrix, &targetPt) // calc coord of hotspot we're shooting for
+            var targetPt = target.pointee.HeatSeekHotSpotOff.transformed(by: target.pointee.BaseTransformMatrix) // calc coord of hotspot we're shooting for
 
             var v = OGLVector3D()
             OGLPoint3D_Subtract(&targetPt, &gCoord, &v) // calc vector from bullet to target
@@ -934,10 +933,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
         theNode.pointee.ParticleTimer += 0.015 // reset timer
 
         let buttOff = OGLPoint3D(x: 0, y: 0, z: heatSeekerButtOff)
-        var buttPt = OGLPoint3D()
-        withUnsafePointer(to: buttOff) { buttOffPtr in
-            OGLPoint3D_Transform(buttOffPtr, &theNode.pointee.BaseTransformMatrix, &buttPt) // calc butt coord where smoke comes from
-        }
+        let buttPt = buttOff.transformed(by: theNode.pointee.BaseTransformMatrix) // calc butt coord where smoke comes from
 
         var particleGroup = theNode.pointee.ParticleGroup
         let magicNum = theNode.pointee.ParticleMagicNum
@@ -1027,7 +1023,7 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
         if thisNode.pointee.CType & ctype != 0 {
             // IS THIS BEST DIST
 
-            let d = OGLPoint3D_Distance(&gCoord, &thisNode.pointee.Coord)
+            let d = gCoord.distance(to: thisNode.pointee.Coord)
             if d < minDist {
                 // IS GOOD ANGLE
 
@@ -1815,14 +1811,14 @@ private func CalcPlayerGunMuzzleInfo(_ player: UnsafeMutablePointer<ObjNode>!, _
     // LEFT
 
     if pi.pointee.turretSide != 0 {
-        withUnsafePointer(to: muzzleTipOff_Left) { OGLPoint3D_Transform($0, &player.pointee.BaseTransformMatrix, muzzleCoord) }
+        muzzleCoord.pointee = muzzleTipOff_Left.transformed(by: player.pointee.BaseTransformMatrix)
         muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // RIGHT
 
     else {
-        withUnsafePointer(to: muzzleTipOff_Right) { OGLPoint3D_Transform($0, &player.pointee.BaseTransformMatrix, muzzleCoord) }
+        muzzleCoord.pointee = muzzleTipOff_Right.transformed(by: player.pointee.BaseTransformMatrix)
         muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 

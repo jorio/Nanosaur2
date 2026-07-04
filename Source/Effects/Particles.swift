@@ -628,11 +628,11 @@ private func updateParticleGroupsGeometry() {
                     OGLMatrix4x4_Multiply(&rm, &m, &rmResult)
                     rm = rmResult
                     v.withUnsafeMutableBufferPointer { vBuf in
-                        OGLPoint3D_TransformArray(vBuf.baseAddress, &rm, points + n * 4, 4) // transform w/ rot
+                        OGLPoint3D.transformArray(vBuf.baseAddress, by: rm, into: points + n * 4, count: 4) // transform w/ rot
                     }
                 } else {
                     v.withUnsafeMutableBufferPointer { vBuf in
-                        OGLPoint3D_TransformArray(vBuf.baseAddress, &m, points + n * 4, 4) // transform no-rot
+                        OGLPoint3D.transformArray(vBuf.baseAddress, by: m, into: points + n * 4, count: 4) // transform no-rot
                     }
                 }
 
@@ -1658,7 +1658,7 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
         }
     }
     frame.withUnsafeMutableBufferPointer { frameBuf in
-        OGLPoint3D_TransformArray(frameBuf.baseAddress, &m, frameBuf.baseAddress, 4)
+        OGLPoint3D.transformArray(frameBuf.baseAddress, by: m, into: frameBuf.baseAddress, count: 4)
     }
 
     // SUBMIT TEXTURE

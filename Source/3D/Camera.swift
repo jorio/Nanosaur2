@@ -127,8 +127,7 @@ public func DrawLensFlare() {
 
     // CALC SCREEN COORDINATE OF LIGHT
 
-    var sunScreenCoord = OGLPoint3D()
-    OGLPoint3D_Transform(&gSunCoord, GetWorldToWindowMatrixEntry(Int32(gCurrentSplitScreenPane)), &sunScreenCoord)
+    let sunScreenCoord = gSunCoord.transformed(by: GetWorldToWindowMatrixEntry(Int32(gCurrentSplitScreenPane)).pointee)
 
     // CALC CENTER OF VIEWPORT
 
@@ -354,8 +353,7 @@ public func UpdateCameras() {
 
         // CALC LOOK AT POINT
 
-        var noseOffVar = noseOff
-        OGLPoint3D_Transform(&noseOffVar, &playerObj.pointee.BaseTransformMatrix, &target)
+        target = noseOff.transformed(by: playerObj.pointee.BaseTransformMatrix)
 
         var distX = target.x - oldPointOfInterestX
         var distY = target.y - oldPointOfInterestY
@@ -394,8 +392,7 @@ public func UpdateCameras() {
 
                 fromAcc *= 0.4 // don't go so fast
             } else {
-                var tailOffVar = tailOff
-                OGLPoint3D_Transform(&tailOffVar, &playerObj.pointee.BaseTransformMatrix, &target)
+                target = tailOff.transformed(by: playerObj.pointee.BaseTransformMatrix)
             }
 
             // MOVE CAMERA TOWARDS POINT
@@ -425,7 +422,7 @@ public func UpdateCameras() {
             var mm = OGLMatrix4x4()
 
             OGLMatrix4x4_SetRotateAboutPoint(&mm, &playerObj.pointee.Coord, 0, fps * 0.4, 0)
-            OGLPoint3D_Transform(&placement.pointee.cameraLocation, &mm, &from)
+            from = placement.pointee.cameraLocation.transformed(by: mm)
             from.y += fps * 100.0
         }
 

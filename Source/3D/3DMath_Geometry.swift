@@ -579,47 +579,41 @@ public func ReflectVector3D(_ vec: UnsafePointer<OGLVector3D>!, _ N: UnsafeMutab
 
 // MARK: -
 
-// MARK: - OGL point 3D: transform
+// MARK: - OGL point 3D: transform (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLPoint3D_Transform(_ point3D: UnsafePointer<OGLPoint3D>!, _ matrix4x4: UnsafePointer<OGLMatrix4x4>!, _ result: UnsafeMutablePointer<OGLPoint3D>!) {
-    var s = OGLPoint3D()
-    let sPtr: UnsafePointer<OGLPoint3D>
+extension OGLPoint3D {
+    func transformed(by matrix4x4: OGLMatrix4x4) -> OGLPoint3D {
+        var m = matrix4x4
+        var result = OGLPoint3D()
 
-    if UnsafeRawPointer(point3D) == UnsafeRawPointer(result) {
-        s = point3D.pointee
-        sPtr = withUnsafePointer(to: &s) { $0 }
-    } else {
-        sPtr = point3D
+        result.x = x * matValue(&m, M00) +
+            y * matValue(&m, M01) +
+            z * matValue(&m, M02) +
+            matValue(&m, M03)
+
+        result.y = x * matValue(&m, M10) +
+            y * matValue(&m, M11) +
+            z * matValue(&m, M12) +
+            matValue(&m, M13)
+
+        result.z = x * matValue(&m, M20) +
+            y * matValue(&m, M21) +
+            z * matValue(&m, M22) +
+            matValue(&m, M23)
+
+        let w = x * matValue(&m, M30) +
+            y * matValue(&m, M31) +
+            z * matValue(&m, M32) +
+            matValue(&m, M33)
+
+        let inverseW = 1.0 / w
+
+        result.x *= inverseW
+        result.y *= inverseW
+        result.z *= inverseW
+
+        return result
     }
-
-    var m = matrix4x4.pointee
-
-    result.pointee.x = sPtr.pointee.x * matValue(&m, M00) +
-        sPtr.pointee.y * matValue(&m, M01) +
-        sPtr.pointee.z * matValue(&m, M02) +
-        matValue(&m, M03)
-
-    result.pointee.y = sPtr.pointee.x * matValue(&m, M10) +
-        sPtr.pointee.y * matValue(&m, M11) +
-        sPtr.pointee.z * matValue(&m, M12) +
-        matValue(&m, M13)
-
-    result.pointee.z = sPtr.pointee.x * matValue(&m, M20) +
-        sPtr.pointee.y * matValue(&m, M21) +
-        sPtr.pointee.z * matValue(&m, M22) +
-        matValue(&m, M23)
-
-    let w = sPtr.pointee.x * matValue(&m, M30) +
-        sPtr.pointee.y * matValue(&m, M31) +
-        sPtr.pointee.z * matValue(&m, M32) +
-        matValue(&m, M33)
-
-    let inverseW = 1.0 / w
-
-    result.pointee.x *= inverseW
-    result.pointee.y *= inverseW
-    result.pointee.z *= inverseW
 }
 
 // MARK: -
@@ -849,15 +843,16 @@ public func OGLVector2D_Cross(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePoi
     (v1.pointee.x * v2.pointee.y) - (v1.pointee.y * v2.pointee.x)
 }
 
-// MARK: - Point 3D distance
+// MARK: - Point 3D distance (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLPoint3D_Distance(_ p1: UnsafePointer<OGLPoint3D>!, _ p2: UnsafePointer<OGLPoint3D>!) -> Float {
-    let dx = p1.pointee.x - p2.pointee.x
-    let dy = p1.pointee.y - p2.pointee.y
-    let dz = p1.pointee.z - p2.pointee.z
+extension OGLPoint3D {
+    func distance(to other: OGLPoint3D) -> Float {
+        let dx = x - other.x
+        let dy = y - other.y
+        let dz = z - other.z
 
-    return sqrt(dx * dx + dy * dy + dz * dz)
+        return sqrt(dx * dx + dy * dy + dz * dz)
+    }
 }
 
 // MARK: - Point 2D distance
@@ -872,50 +867,55 @@ public func OGLPoint2D_Distance(_ p1: UnsafeMutablePointer<OGLPoint2D>!, _ p2: U
 
 // MARK: -
 
-// MARK: - OGL: point 3D calc bounding box
+// MARK: - OGL: point 3D calc bounding box (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLPoint3D_CalcBoundingBox(_ points: UnsafePointer<OGLPoint3D>!, _ numPoints: Int32, _ bBox: UnsafeMutablePointer<OGLBoundingBox>!) {
-    if numPoints == 0 {
-        bBox.pointee.isEmpty = 1
-        return
+extension OGLPoint3D {
+    static func calcBoundingBox(_ points: UnsafePointer<OGLPoint3D>!, count numPoints: Int) -> OGLBoundingBox {
+        var bBox = OGLBoundingBox()
+
+        if numPoints == 0 {
+            bBox.isEmpty = 1
+            return bBox
+        }
+
+        // INIT BBOX TO BOGUS VALUES
+
+        var minx: Float = 100_000_000
+        var miny: Float = 100_000_000
+        var minz: Float = 100_000_000
+        var maxx: Float = -minx
+        var maxy: Float = -miny
+        var maxz: Float = -minz
+
+        // CALC BBOX
+
+        for i in 0..<numPoints {
+            let px = points[i].x
+            let py = points[i].y
+            let pz = points[i].z
+
+            if px < minx { minx = px }
+            if px > maxx { maxx = px }
+
+            if py < miny { miny = py }
+            if py > maxy { maxy = py }
+
+            if pz < minz { minz = pz }
+            if pz > maxz { maxz = pz }
+        }
+
+        // SAVE BBOX
+
+        bBox.min.x = minx
+        bBox.min.y = miny
+        bBox.min.z = minz
+        bBox.max.x = maxx
+        bBox.max.y = maxy
+        bBox.max.z = maxz
+        bBox.isEmpty = 0
+
+        return bBox
     }
-
-    // INIT BBOX TO BOGUS VALUES
-
-    var minx: Float = 100_000_000
-    var miny: Float = 100_000_000
-    var minz: Float = 100_000_000
-    var maxx: Float = -minx
-    var maxy: Float = -miny
-    var maxz: Float = -minz
-
-    // CALC BBOX
-
-    for i in 0..<Int(numPoints) {
-        let px = points[i].x
-        let py = points[i].y
-        let pz = points[i].z
-
-        if px < minx { minx = px }
-        if px > maxx { maxx = px }
-
-        if py < miny { miny = py }
-        if py > maxy { maxy = py }
-
-        if pz < minz { minz = pz }
-        if pz > maxz { maxz = pz }
-    }
-
-    // SAVE BBOX
-
-    bBox.pointee.min.x = minx
-    bBox.pointee.min.y = miny
-    bBox.pointee.min.z = minz
-    bBox.pointee.max.x = maxx
-    bBox.pointee.max.y = maxy
-    bBox.pointee.max.z = maxz
-    bBox.pointee.isEmpty = 0
 }
 
 // MARK: - OGL: point 3D to 4D transform array
@@ -951,34 +951,35 @@ public func OGLPoint3D_To4DTransformArray(_ inVertex: UnsafePointer<OGLPoint3D>!
     }
 }
 
-// MARK: - OGL: point 3D transform array
+// MARK: - OGL: point 3D transform array (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLPoint3D_TransformArray(_ inVertex: UnsafePointer<OGLPoint3D>!, _ matrix: UnsafePointer<OGLMatrix4x4>!, _ outVertex: UnsafeMutablePointer<OGLPoint3D>!, _ numVertices: Int) {
-    var m = matrix.pointee
-    let m00 = matValue(&m, M00); let m01 = matValue(&m, M01); let m02 = matValue(&m, M02); let m03 = matValue(&m, M03)
-    let m10 = matValue(&m, M10); let m11 = matValue(&m, M11); let m12 = matValue(&m, M12); let m13 = matValue(&m, M13)
-    let m20 = matValue(&m, M20); let m21 = matValue(&m, M21); let m22 = matValue(&m, M22); let m23 = matValue(&m, M23)
+extension OGLPoint3D {
+    static func transformArray(_ inVertex: UnsafePointer<OGLPoint3D>!, by matrix: OGLMatrix4x4, into outVertex: UnsafeMutablePointer<OGLPoint3D>!, count numVertices: Int) {
+        var m = matrix
+        let m00 = matValue(&m, M00); let m01 = matValue(&m, M01); let m02 = matValue(&m, M02); let m03 = matValue(&m, M03)
+        let m10 = matValue(&m, M10); let m11 = matValue(&m, M11); let m12 = matValue(&m, M12); let m13 = matValue(&m, M13)
+        let m20 = matValue(&m, M20); let m21 = matValue(&m, M21); let m22 = matValue(&m, M22); let m23 = matValue(&m, M23)
 
-    for i in 0..<numVertices {
-        let x = inVertex[i].x
-        let y = inVertex[i].y
-        let z = inVertex[i].z
+        for i in 0..<numVertices {
+            let x = inVertex[i].x
+            let y = inVertex[i].y
+            let z = inVertex[i].z
 
-        var accum = x * m00
-        accum += y * m01
-        accum += z * m02
-        outVertex[i].x = accum + m03
+            var accum = x * m00
+            accum += y * m01
+            accum += z * m02
+            outVertex[i].x = accum + m03
 
-        accum = x * m10
-        accum += y * m11
-        accum += z * m12
-        outVertex[i].y = accum + m13
+            accum = x * m10
+            accum += y * m11
+            accum += z * m12
+            outVertex[i].y = accum + m13
 
-        accum = x * m20
-        accum += y * m21
-        accum += z * m22
-        outVertex[i].z = accum + m23
+            accum = x * m20
+            accum += y * m21
+            accum += z * m22
+            outVertex[i].z = accum + m23
+        }
     }
 }
 
@@ -999,18 +1000,18 @@ public func OGLPoint2D_TransformArray(_ inVertex: UnsafePointer<OGLPoint2D>!, _ 
 
 // MARK: -
 
-// MARK: - OGL: point 3D distance to plane
+// MARK: - OGL: point 3D distance to plane (no longer C-callable, see 3dmath.h)
 //
 // Returns a SIGNED distance!
 
-@c @implementation
-public func OGLPoint3D_DistanceToPlane(_ point: UnsafePointer<OGLPoint3D>!, _ plane: UnsafePointer<OGLPlaneEquation>!) -> Float {
-    let normal = plane.pointee.normal
-    let pointAsVector = OGLVector3D(x: point.pointee.x, y: point.pointee.y, z: point.pointee.z)
-    var d = normal.dot(pointAsVector)
-    d += plane.pointee.constant
+extension OGLPoint3D {
+    func distance(toPlane plane: OGLPlaneEquation) -> Float {
+        let pointAsVector = OGLVector3D(x: x, y: y, z: z)
+        var d = plane.normal.dot(pointAsVector)
+        d += plane.constant
 
-    return d
+        return d
+    }
 }
 
 // MARK: - OGL: point 2D line distance
@@ -1083,7 +1084,7 @@ public func OGLBoundingBox_Transform(_ inBox: UnsafeMutablePointer<OGLBoundingBo
 
     p.withUnsafeBufferPointer { pBuf in
         pp.withUnsafeMutableBufferPointer { ppBuf in
-            OGLPoint3D_TransformArray(pBuf.baseAddress, m, ppBuf.baseAddress, 8)
+            OGLPoint3D.transformArray(pBuf.baseAddress, by: m.pointee, into: ppBuf.baseAddress, count: 8)
         }
     }
 

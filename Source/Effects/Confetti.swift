@@ -399,7 +399,7 @@ private func drawConfettiGroups() {
             setMatValue(&m, M23, coord[p].z)
             withUnsafeMutablePointer(to: &v) {
                 $0.withMemoryRebound(to: OGLPoint3D.self, capacity: 4) { vPtr in
-                    OGLPoint3D_TransformArray(vPtr, &m, points + n * 4, 4) // transform
+                    OGLPoint3D.transformArray(vPtr, by: m, into: points + n * 4, count: 4) // transform
                 }
             }
 

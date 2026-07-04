@@ -276,7 +276,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
 
     // DETERMINE HOW MANY ENDPOINTS
 
-    let dist = OGLPoint3D_Distance(&fromObj.pointee.Coord, &toObj.pointee.Coord)
+    let dist = fromObj.pointee.Coord.distance(to: toObj.pointee.Coord)
 
     var x = fromObj.pointee.Coord.x
     var y = fromObj.pointee.Coord.y + RandomFloat() * electrodeTop

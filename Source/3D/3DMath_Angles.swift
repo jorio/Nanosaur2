@@ -382,9 +382,7 @@ public func TurnPointTowardPoint(_ rotY: UnsafeMutablePointer<Float>!, _ from: U
 
 @c @implementation
 public func CalcPointOnObject(_ theNode: UnsafePointer<ObjNode>!, _ inPt: UnsafePointer<OGLPoint3D>!, _ outPt: UnsafeMutablePointer<OGLPoint3D>!) {
-    var m = theNode.pointee.BaseTransformMatrix
-    var inPtVar = inPt.pointee
-    OGLPoint3D_Transform(&inPtVar, &m, outPt)
+    outPt.pointee = inPt.pointee.transformed(by: theNode.pointee.BaseTransformMatrix)
 }
 
 // MARK: - Vectors are close enough (no longer C-callable, see 3dmath.h)

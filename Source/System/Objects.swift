@@ -851,17 +851,9 @@ private func DrawBoundingBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         corners[7].y = theNode.pointee.LocalBBox.min.y
         corners[7].z = theNode.pointee.LocalBBox.max.z
 
-        var transformedCorners = corners
-        withUnsafeMutablePointer(to: &corners) { cornersPtr in
-            withUnsafeMutablePointer(to: &transformedCorners) { transformedCornersPtr in
-                OGLPoint3D_TransformArray(
-                    UnsafeMutableRawPointer(cornersPtr).assumingMemoryBound(to: OGLPoint3D.self),
-                    &theNode.pointee.BaseTransformMatrix,
-                    UnsafeMutableRawPointer(transformedCornersPtr).assumingMemoryBound(to: OGLPoint3D.self),
-                    8)
-            }
+        for i in 0..<8 {
+            corners[i] = corners[i].transformed(by: theNode.pointee.BaseTransformMatrix)
         }
-        corners = transformedCorners
 
         // FIND NEW BOUNDS
 

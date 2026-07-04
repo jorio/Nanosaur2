@@ -282,7 +282,7 @@ private func makeFenceGeometry() {
                 // CALC UV COORDS
 
                 if i > 0 {
-                    u += OGLPoint3D_Distance(&points[j], &points[j - 2]) * textureUOff
+                    u += points[j].distance(to: points[j - 2]) * textureUOff
                 }
 
                 uvs[j].v = (1 + fenceStretchSinkFactor) // bottom

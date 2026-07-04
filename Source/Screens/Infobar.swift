@@ -1516,8 +1516,7 @@ private func infobarDrawCrosshairs() {
     let lockedOn = pi.pointee.crosshairTargetObj != nil // see if an object is targeted
 
     // CALC SCREEN COORD
-    var screenCoord = OGLPoint3D()
-    OGLPoint3D_Transform(crosshairCoordBase(pi) + 0, GetWorldToWindowMatrixEntry(Int32(playerNum)), &screenCoord)
+    var screenCoord = (crosshairCoordBase(pi) + 0).pointee.transformed(by: GetWorldToWindowMatrixEntry(Int32(playerNum)).pointee)
     screenCoord.x = screenCoord.x * screenToPaneX
     screenCoord.y = screenCoord.y * screenToPaneY
     screenCoord.x += gLogicalRect.left
@@ -1545,7 +1544,7 @@ private func infobarDrawCrosshairs() {
     // DRAW FAR TARGET
     gGlobalTransparency = 1.0
 
-    OGLPoint3D_Transform(crosshairCoordBase(pi) + 1, GetWorldToWindowMatrixEntry(Int32(playerNum)), &screenCoord)
+    screenCoord = (crosshairCoordBase(pi) + 1).pointee.transformed(by: GetWorldToWindowMatrixEntry(Int32(playerNum)).pointee)
     screenCoord.x = screenCoord.x * screenToPaneX
     screenCoord.y = screenCoord.y * screenToPaneY
     screenCoord.x += gLogicalRect.left

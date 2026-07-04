@@ -245,7 +245,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
                 var footCoord = OGLPoint3D()
                 FindCoordOfJoint(player, Int(PlayerJoint.eggHold.rawValue), &footCoord) // get coord of joint
-                if OGLPoint3D_Distance(&footCoord, &gCoord) < 150.0 { // is coord close enough to egg?
+                if footCoord.distance(to: gCoord) < 150.0 { // is coord close enough to egg?
                     playerPickedUpEgg(egg, Int16(i))
                     break
                 }
@@ -366,7 +366,7 @@ private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?
     v2raw.z = jointCoord.z - gCoord.z
     let v2 = v2raw.normalized()
 
-    let dist = OGLPoint3D_Distance(&gCoord, &jointCoord) // get current dist to joint
+    let dist = gCoord.distance(to: jointCoord) // get current dist to joint
 
     // MOVE IT
 
@@ -380,7 +380,7 @@ private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
     // SEE IF TIME TO DO NEXT JOINT
 
-    let dist2 = OGLPoint3D_Distance(&gCoord, &jointCoord)
+    let dist2 = gCoord.distance(to: jointCoord)
     if (dist2 > dist) || (dist2 < 40.0) { // if dist suddenly got larger, then we must have overshot the coord, or see if in range of joint
         egg.pointee.Special.1 += 1 // TargetJoint++
 

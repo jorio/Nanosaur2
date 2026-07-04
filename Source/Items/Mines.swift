@@ -171,7 +171,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
 
     mine.pointee.Rot.x = chain.pointee.Rot.x // match x rot
 
-    var mineOffVar: OGLPoint3D
+    let mineOffVar: OGLPoint3D
     switch gLevelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         mineOffVar = mineOff // calc coord of mine @ end of chain
@@ -179,7 +179,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     default:
         mineOffVar = mineOff2
     }
-    OGLPoint3D_Transform(&mineOffVar, &chain.pointee.BaseTransformMatrix, &mine.pointee.Coord)
+    mine.pointee.Coord = mineOffVar.transformed(by: chain.pointee.BaseTransformMatrix)
 
     mine.updateTransforms()
     CalcObjectBoxFromNode(mine)
@@ -188,7 +188,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
 
     // CALC COORD OF LIGHT
 
-    var lightOffVar: OGLPoint3D
+    let lightOffVar: OGLPoint3D
     switch gLevelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         lightOffVar = lightOff
@@ -196,7 +196,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     default:
         lightOffVar = lightOff2
     }
-    OGLPoint3D_Transform(&lightOffVar, &chain.pointee.BaseTransformMatrix, &origin)
+    origin = lightOffVar.transformed(by: chain.pointee.BaseTransformMatrix)
 
     // MAKE NEW SPARKLE
 

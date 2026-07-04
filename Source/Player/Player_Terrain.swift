@@ -344,7 +344,7 @@ private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF GO STRAIGHT UP
 
-    let dist = OGLPoint3D_Distance(&gCoord, &gExitWormhole!.pointee.Coord) // get current dist to joint
+    let dist = gCoord.distance(to: gExitWormhole!.pointee.Coord) // get current dist to joint
     if dist < 50.0 {
         let up = OGLVector3D(x: 0, y: 1, z: 0)
         player.pointee.MotionVector = up.transformed(by: gExitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
@@ -486,7 +486,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if gVSMode == .race {
         let pi0 = GetPlayerInfoEntry(0)!
         let pi1 = GetPlayerInfoEntry(1)!
-        let dist = OGLPoint3D_Distance(&pi0.pointee.coord, &pi1.pointee.coord)
+        let dist = pi0.pointee.coord.distance(to: pi1.pointee.coord)
 
         let pi = GetPlayerInfoEntry(playerNum)!
         if pi.pointee.jetpackActive == 0 {
@@ -667,7 +667,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     if gVSMode != .none {
         if gCurrentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
             let otherPi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
-            var size = OGLPoint3D_Distance(&theNode.pointee.Coord, &otherPi.pointee.coord) * 0.12
+            var size = theNode.pointee.Coord.distance(to: otherPi.pointee.coord) * 0.12
             if size > 600.0 {
                 size = 600.0
             }
@@ -1036,7 +1036,7 @@ private func MakeJetpackExhaust(_ jetpack: UnsafeMutablePointer<ObjNode>) {
     if jetpack.pointee.ParticleTimer <= 0.0 {
         jetpack.pointee.ParticleTimer += 0.02 // reset timer
 
-        withUnsafePointer(to: gJetpackButtOff) { OGLPoint3D_Transform($0, &jetpack.pointee.BaseTransformMatrix, &buttPt) } // calc butt coord where smoke comes from
+        buttPt = gJetpackButtOff.transformed(by: jetpack.pointee.BaseTransformMatrix) // calc butt coord where smoke comes from
 
         var particleGroup = jetpack.pointee.ParticleGroup
         let magicNum = jetpack.pointee.ParticleMagicNum
@@ -1500,7 +1500,7 @@ public func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
         if thisNode.pointee.CType & UInt32(CTYPE_POWERUP | CTYPE_EGG) != 0 {
             // IS IT IN RANGE?
 
-            let dist = OGLPoint3D_Distance(&gCoord, &thisNode.pointee.Coord)
+            let dist = gCoord.distance(to: thisNode.pointee.Coord)
             if (dist < bestDist) && (dist < 900.0) { // see if this is in range & is closest so far
                 var v = OGLVector3D()
 

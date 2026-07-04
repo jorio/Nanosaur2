@@ -50,10 +50,10 @@ public func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDa
 @c @implementation
 public func FindCoordOfJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNum: Int, _ outPoint: UnsafeMutablePointer<OGLPoint3D>) {
     var matrix = OGLMatrix4x4()
-    var point3D = OGLPoint3D(x: 0, y: 0, z: 0) // use joint's origin @ 0,0,0
+    let point3D = OGLPoint3D(x: 0, y: 0, z: 0) // use joint's origin @ 0,0,0
 
     FindJointFullMatrix(theNode, jointNum, &matrix) // calc matrix
-    OGLPoint3D_Transform(&point3D, &matrix, outPoint) // apply matrix to origin @ 0,0,0 to get new 3-space coords
+    outPoint.pointee = point3D.transformed(by: matrix) // apply matrix to origin @ 0,0,0 to get new 3-space coords
 }
 
 // Returns the 3-space coord of a point on the given joint.
@@ -67,7 +67,7 @@ public func FindCoordOnJoint(_ theNode: UnsafeMutablePointer<ObjNode>, _ jointNu
     var matrix = OGLMatrix4x4()
 
     FindJointFullMatrix(theNode, jointNum, &matrix) // calc matrix
-    OGLPoint3D_Transform(inPoint, &matrix, outPoint) // apply matrix to origin @ 0,0,0 to get new 3-space coords
+    outPoint.pointee = inPoint.pointee.transformed(by: matrix) // apply matrix to origin @ 0,0,0 to get new 3-space coords
 }
 
 // Same as above except that it finds the coordinate on the skeleton structure
@@ -104,7 +104,7 @@ public func FindCoordOnJointAtFlagEvent(_ theNode: UnsafeMutablePointer<ObjNode>
     // CALC THE COORD
 
     FindJointFullMatrix(theNode, jointNum, &matrix) // calc matrix
-    OGLPoint3D_Transform(inPoint, &matrix, outPoint) // apply matrix to origin @ 0,0,0 to get new 3-space coords
+    outPoint.pointee = inPoint.pointee.transformed(by: matrix) // apply matrix to origin @ 0,0,0 to get new 3-space coords
 
     // SET THINGS BACK TO NORMAL
 

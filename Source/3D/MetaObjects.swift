@@ -1264,7 +1264,7 @@ private func calcBoundingBoxRecurse(_ object: MetaObjectPtr, _ bBox: UnsafeMutab
                 }
 
                 tpoints.withUnsafeMutableBufferPointer { buf in
-                    OGLPoint3D_TransformArray(geoData.pointee.points, m, buf.baseAddress, numPoints)
+                    OGLPoint3D.transformArray(geoData.pointee.points, by: m.pointee, into: buf.baseAddress, count: numPoints)
                 }
                 for i in 0..<numPoints {
                     let x = tpoints[i].x

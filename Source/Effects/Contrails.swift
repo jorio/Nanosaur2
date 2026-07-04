@@ -406,7 +406,7 @@ public func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
         // CHECK IF WE'VE GONE FAR ENOUGH TO ADD A NEW REF PT TO EXISTING CONTRAIL
 
         else {
-            let dist = OGLPoint3D_Distance(&pt, previousWingContrailPt + i) // calc dist from prev contrail pt to this
+            let dist = pt.distance(to: (previousWingContrailPt + i).pointee) // calc dist from prev contrail pt to this
             if dist < 15.0 {
                 ModifyContrailPreviousAddition(contrailSlots[i], &pt) // instead of adding a new ref pt, just modify the last one so we don't get the popping effect
                 continue

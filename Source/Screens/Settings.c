@@ -3,6 +3,13 @@
 /* (c)2022 Iliyas Jorio     */
 /****************************/
 
+// This file stays entirely in C, same as Paused.c: gSettingsMenuTree uses
+// MenuItem's anonymous-union designated initializers (.cycler, .slider,
+// sparse .choices) and four-char-code literals, none of which Swift can
+// construct - and every function here is a callback embedded in that tree
+// by function pointer, so there's nothing to separably port. Already-ported
+// Swift files (Paused.swift, MainMenu.swift) call RegisterSettingsMenu()
+// as a plain C extern.
 
 #include "game.h"
 #include "uieffects.h"

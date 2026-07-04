@@ -129,6 +129,17 @@ endif()
 
 add_executable(${GAME_TARGET} ${GAME_SOURCES})
 
+if(ENABLE_SWIFT AND CMAKE_GENERATOR STREQUAL "Xcode")
+	# InlineArray (a few narrow Swift-side usages, e.g. WinScreen.swift's
+	# gSlideActive) requires macOS 26+ for availability checking, which the
+	# Xcode generator enforces strictly (unlike Ninja). The project-wide
+	# CMAKE_OSX_DEPLOYMENT_TARGET stays at 10.13 to match SDL3's
+	# LSMinimumSystemVersion for actual app packaging/distribution; this
+	# override only affects the Xcode IDE project used for local debugging.
+	set_target_properties(${GAME_TARGET} PROPERTIES
+		XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "26.0")
+endif()
+
 target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers)
 
 # Swift include paths come from bridging header configuration below

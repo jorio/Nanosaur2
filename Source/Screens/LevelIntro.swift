@@ -366,9 +366,7 @@ private func moveLevelIntroNano(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.Coord = gWormholeDeformPoints[1]
 
     OGLPoint3D_Subtract(&gWormholeDeformPoints[4], &gWormholeDeformPoints[8], &v)
-    var vNorm = OGLVector3D()
-    OGLVector3D_Normalize(&v, &vNorm)
-    v = vNorm
+    v = v.normalized()
 
     SetAlignmentMatrix(&theNode.pointee.AlignmentMatrix, &v)
 

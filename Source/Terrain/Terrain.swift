@@ -588,7 +588,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
                 var g = ambientG
                 var b = ambientB
 
-                var dot = OGLVector3D_Dot(&vertexNormals[i], &fillDir0)
+                var dot = vertexNormals[i].dot(fillDir0)
                 if dot > 0.0 {
                     r += fillR0 * dot
                     g += fillG0 * dot
@@ -596,7 +596,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
                 }
 
                 if numFillLights > 1 {
-                    dot = OGLVector3D_Dot(&vertexNormals[i], &fillDir1)
+                    dot = vertexNormals[i].dot(fillDir1)
                     if dot > 0.0 {
                         r += fillR1 * dot
                         g += fillG1 * dot

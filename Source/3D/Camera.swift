@@ -115,7 +115,7 @@ public func DrawLensFlare() {
                          placement.pointee.pointOfInterest.z - from.z,
                          &lookAtVector)
 
-    var dot = OGLVector3D_Dot(&lookAtVector, &sunVector)
+    var dot = lookAtVector.dot(sunVector)
     if dot >= 0.0 {
         gGlobalTransparency = 1.0
         OGL_PopState()
@@ -460,8 +460,7 @@ public func UpdateCameras() {
             OGLMatrix4x4_SetRotateAboutAxis(&m, &v, playerObj.pointee.Rot.z * 0.2)
         }
 
-        var upVar = up
-        OGLVector3D_Transform(&upVar, &m, &v) // transform the "up" vector to give us tilt
+        v = up.transformed(by: m) // transform the "up" vector to give us tilt
         OGL_UpdateCameraFromToUp(&from, &to, &v, Int32(playerNum)) // update camera settings
 
         // UPDATE PLAYER'S CAMERA INFO
@@ -518,12 +517,11 @@ private func updateCamera_FirstPerson(_ i: Int16) {
 
     // CALC FORWARD VECTOR
 
-    var forwardVar = forward
-    OGLVector3D_Transform(&forwardVar, &player.pointee.BaseTransformMatrix, &v)
+    v = forward.transformed(by: player.pointee.BaseTransformMatrix)
 
     // CALC UP VECTOR
 
-    withUnsafePointer(to: gUp) { gUpPtr in OGLVector3D_Transform(gUpPtr, &player.pointee.BaseTransformMatrix, &up) }
+    up = gUp.transformed(by: player.pointee.BaseTransformMatrix)
 
     to.x = player.pointee.Coord.x + v.x
     to.y = player.pointee.Coord.y + v.y
@@ -575,12 +573,9 @@ public func CalcAnaglyphCameraOffset(_ pane: UInt8, _ pass: UInt8) {
     aim.x = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.x - gAnaglyphCameraBackup[Int(pane)].cameraLocation.x
     aim.y = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.y - gAnaglyphCameraBackup[Int(pane)].cameraLocation.y
     aim.z = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.z - gAnaglyphCameraBackup[Int(pane)].cameraLocation.z
-    var aimNorm = OGLVector3D()
-    OGLVector3D_Normalize(&aim, &aimNorm)
-    aim = aimNorm
+    aim = aim.normalized()
 
-    var xaxis = OGLVector3D()
-    OGLVector3D_Cross(&gAnaglyphCameraBackup[Int(pane)].upVector, &aim, &xaxis)
+    let xaxis = gAnaglyphCameraBackup[Int(pane)].upVector.cross(aim)
 
     // OFFSET CAMERA FROM
 

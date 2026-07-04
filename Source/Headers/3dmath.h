@@ -21,12 +21,15 @@ float TurnObjectTowardPlayer(short playerNum, ObjNode *theNode, const OGLPoint3D
 void CalcPointOnObject(const ObjNode *theNode, const OGLPoint3D *inPt, OGLPoint3D *outPt);
 Boolean IntersectionOfLineSegAndPlane(const OGLPlaneEquation *plane, float v1x, float v1y, float v1z,
 								 float v2x, float v2y, float v2z, OGLPoint3D *outPoint);
-void ApplyFrictionToDeltas(float f,OGLVector3D *d);
 
-Boolean VectorsAreCloseEnough(const OGLVector3D *v1, const OGLVector3D *v2);
+// ApplyFrictionToDeltas/ApplyFrictionToDeltasXZ/ApplyFrictionToRotation/
+// VectorsAreCloseEnough/OGLVector3D_Cross/OGLVector3D_Dot/OGLVector3D_Normalize/
+// OGLVector3D_Transform/OGLVector3D_TransformArray/OGLVector3D_MoveToVector are
+// now plain OGLVector3D methods in 3DMath_Geometry.swift/3DMath_Angles.swift -
+// nothing in C calls them anymore, so they're no longer declared here.
+
 Boolean PointsAreCloseEnough(const OGLPoint3D *v1, const OGLPoint3D *v2);
 float IntersectionOfYAndPlane_Func(float x, float z, const OGLPlaneEquation *p);
-void OGLVector3D_Cross(const OGLVector3D *v1, const OGLVector3D	*v2, OGLVector3D *result);
 void OGLMatrix4x4_Invert(const OGLMatrix4x4 *inMatrix, OGLMatrix4x4 *result);
 
 extern	Boolean IsPointInTriangle3D(const OGLPoint3D *point3D,	const OGLPoint3D *trianglePoints, OGLVector3D *normal);
@@ -65,12 +68,9 @@ void OGLMatrix4x4_SetRotate_XYZ(OGLMatrix4x4 *m, float rx, float ry, float rz);
 void OGLMatrix3x3_SetRotate(OGLMatrix3x3 *m, double angle);
 void OGLMatrix3x3_SetIdentity(OGLMatrix3x3 *m);
 void OGLPoint2D_Transform(OGLPoint2D *p, const OGLMatrix3x3 *m, OGLPoint2D *result);
-float OGLVector3D_Dot(const OGLVector3D	*v1, const OGLVector3D	*v2);
 float OGLVector2D_Dot(const OGLVector2D	*v1,  const OGLVector2D	*v2);
 float OGLVector2D_Cross(const OGLVector2D *v1, const OGLVector2D *v2);
 void OGLMatrix4x4_Transpose(const OGLMatrix4x4 *matrix4x4, OGLMatrix4x4 *result);
-void OGLVector3D_Normalize(const OGLVector3D *vector3D, OGLVector3D	*result);
-void OGLVector3D_Transform(const OGLVector3D *vector3D,	const OGLMatrix4x4	*matrix4x4, OGLVector3D *result);
 void OGLMatrix4x4_SetRotateAboutAxis(OGLMatrix4x4	*m, const OGLVector3D	*axis, float angle);
 void OGLPoint3D_CalcBoundingBox(const OGLPoint3D *points, int numPoints, OGLBoundingBox *bBox);
 
@@ -92,17 +92,12 @@ void OGLPoint3D_TransformArray(const OGLPoint3D *inVertex, const OGLMatrix4x4  *
 									OGLPoint3D *outVertex,  long numVertices);
 void OGLPoint2D_TransformArray(const OGLPoint2D *inVertex, const OGLMatrix3x3  *matrix,
 									OGLPoint2D *outVertex,  long numVertices);
-void OGLVector3D_TransformArray(const OGLVector3D *inVectors, const OGLMatrix4x4 *m,
-								 OGLVector3D *outVectors, int numVectors);
-void OGLVector3D_MoveToVector(OGLVector3D *from, OGLVector3D *to, OGLVector3D *out, float ratio);
 
 
 Boolean OGL_IsBBoxVisible(const OGLBoundingBox *bBox, OGLMatrix4x4	*localToWorld);
 void OGLVector2D_Normalize(const OGLVector2D *vector2D, OGLVector2D	*result);
 float OGLPoint3D_Distance(const OGLPoint3D *p1, const OGLPoint3D *p2);
 float OGLPoint2D_Distance(OGLPoint2D *p1, OGLPoint2D *p2);
-void ApplyFrictionToRotation(float f,OGLVector3D *d);
-void ApplyFrictionToDeltasXZ(float f,OGLVector3D *d);
 
 void OGLBoundingBox_Transform(OGLBoundingBox *inBox, OGLMatrix4x4 *m, OGLBoundingBox *outBox);
 float DecayToZero(float number, float decay);

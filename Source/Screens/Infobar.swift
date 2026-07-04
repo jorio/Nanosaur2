@@ -1490,9 +1490,9 @@ private func infobarDrawCrosshairs() {
     let v1 = pi.pointee.objNode!.pointee.MotionVector
     let v2 = pi.pointee.camera.cameraAim
 
-    var v1m = v1
-    var v2m = v2
-    let dot = OGLVector3D_Dot(&v1m, &v2m)
+    let v1m = v1
+    let v2m = v2
+    let dot = v1m.dot(v2m)
     if dot < -0.1 {
         return
     }
@@ -1530,8 +1530,7 @@ private func infobarDrawCrosshairs() {
     } else {
         DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale, Int16(INFOBAR_SObjType_GunSight_Normal))
 
-        var v3 = OGLVector3D()
-        OGLVector3D_Cross(&v1m, &v2m, &v3)
+        let v3 = v1m.cross(v2m)
         var r: Float
         if v3.y > 0.0 {
             r = -dot + 1.0

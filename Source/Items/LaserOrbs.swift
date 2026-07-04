@@ -264,7 +264,7 @@ private func CalcLaserVectorToPlayer(_ orb: UnsafeMutablePointer<ObjNode>, _ p: 
 
     // SEE IF ANGLE IS TOO STEEP
 
-    let dot = withUnsafePointer(to: gUp) { upPtr in OGLVector3D_Dot(upPtr, &orb.pointee.MotionVector) }
+    let dot = gUp.dot(orb.pointee.MotionVector)
     if dot > 0.5 || dot < -0.5 {
         return 1
     }
@@ -479,7 +479,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
         // DRAW HORIZONTAL QUAD
 
-        withUnsafePointer(to: gUp) { upPtr in OGLVector3D_Cross(upPtr, &orb.pointee.MotionVector, &side) } // calc side x-axis vector
+        side = gUp.cross(orb.pointee.MotionVector) // calc side x-axis vector
 
         p[0].x = x + side.x * laserBeamSize
         p[0].y = y

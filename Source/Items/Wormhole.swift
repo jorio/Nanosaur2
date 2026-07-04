@@ -187,17 +187,15 @@ public func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutabl
                 vraw.x = mouthPt2.x - mouthPt.x
                 vraw.y = mouthPt2.y - mouthPt.y
                 vraw.z = mouthPt2.z - mouthPt.z
-                var v = OGLVector3D()
-                OGLVector3D_Normalize(&vraw, &v)
+                let v = vraw.normalized()
 
                 var v2raw = OGLVector3D() // calc vector from pt to mouth
                 v2raw.x = mouthPt2.x - pt.pointee.x
                 v2raw.y = mouthPt2.y - pt.pointee.y
                 v2raw.z = mouthPt2.z - pt.pointee.z
-                var v2 = OGLVector3D()
-                OGLVector3D_Normalize(&v2raw, &v2)
+                let v2 = v2raw.normalized()
 
-                let dot = OGLVector3D_Dot(&v, &v2) // calc angle between vectors to determine if in front
+                let dot = v.dot(v2) // calc angle between vectors to determine if in front
                 if dot < 0.0 {
                     // POINT MUST BE CLOSE ENOUGH
 
@@ -422,7 +420,7 @@ private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
 private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNode>) {
     let player = GetPlayerInfoEntry(0)!.pointee.objNode!
-    var down = OGLVector3D(x: 0, y: -1, z: 0)
+    let down = OGLVector3D(x: 0, y: -1, z: 0)
 
     // SEE IF PLAYER IS IN RANGE
 
@@ -432,17 +430,15 @@ private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNod
 
     // PLAYER MUST BE IN FRONT OF MOUTH
 
-    var v = OGLVector3D()
-    OGLVector3D_Transform(&down, &wormhole.pointee.BaseTransformMatrix, &v) // calc aim vector of mouth
+    let v = down.transformed(by: wormhole.pointee.BaseTransformMatrix) // calc aim vector of mouth
 
     var v2raw = OGLVector3D() // calc vector from player to mouth
     v2raw.x = wormhole.pointee.Coord.x - player.pointee.Coord.x
     v2raw.y = wormhole.pointee.Coord.y - player.pointee.Coord.y
     v2raw.z = wormhole.pointee.Coord.z - player.pointee.Coord.z
-    var v2 = OGLVector3D()
-    OGLVector3D_Normalize(&v2raw, &v2)
+    let v2 = v2raw.normalized()
 
-    let dot = OGLVector3D_Dot(&v, &v2) // calc angle between vectors to determine if in front or back
+    let dot = v.dot(v2) // calc angle between vectors to determine if in front or back
     if dot > 0.0 {
         return
     }

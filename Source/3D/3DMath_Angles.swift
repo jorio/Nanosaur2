@@ -16,9 +16,7 @@ public func CalcXAngleFromPointToPoint(_ oldRot: Float, _ from: UnsafePointer<OG
     aim.x = to.pointee.x - from.pointee.x
     aim.y = to.pointee.y - from.pointee.y
     aim.z = to.pointee.z - from.pointee.z
-    var aimNorm = OGLVector3D()
-    OGLVector3D_Normalize(&aim, &aimNorm)
-    aim = aimNorm
+    aim = aim.normalized()
 
     if aim.x == 0.0 && aim.z == 0.0 { // verify vector
         return oldRot
@@ -33,21 +31,17 @@ public func CalcXAngleFromPointToPoint(_ oldRot: Float, _ from: UnsafePointer<OG
     flat.x = aim.x
     flat.z = aim.z
     flat.y = 0
-    var flatNorm = OGLVector3D()
-    OGLVector3D_Normalize(&flat, &flatNorm)
-    flat = flatNorm
+    flat = flat.normalized()
 
     // CALC ANGLE
 
-    let dot = OGLVector3D_Dot(&aim, &flat)
+    let dot = aim.dot(flat)
     var angle = acos(dot)
 
     // NOW SEE IF WRAPPED PAST 180 DEGREES
 
-    OGLVector3D_Cross(&aim, &flat, &cross) // get x-axis vector
-    var crossNorm = OGLVector3D()
-    OGLVector3D_Cross(&cross, &flat, &crossNorm) // get y-axis
-    cross = crossNorm
+    cross = aim.cross(flat) // get x-axis vector
+    cross = cross.cross(flat) // get y-axis
 
     if cross.y < 0.0 {
         angle = SwPI2 - angle
@@ -299,9 +293,7 @@ public func TurnObjectTowardTargetOnX(_ theNode: UnsafeMutablePointer<ObjNode>!,
     targetVec.x = to.pointee.x - from.pointee.x // calc vector to target
     targetVec.y = to.pointee.y - from.pointee.y
     targetVec.z = to.pointee.z - from.pointee.z
-    var targetVecNorm = OGLVector3D()
-    OGLVector3D_Normalize(&targetVec, &targetVecNorm) // do ACCURATE normalize to avoid jitter!!!
-    targetVec = targetVecNorm
+    targetVec = targetVec.normalized() // do ACCURATE normalize to avoid jitter!!!
 
     if targetVec.x == 0.0 && targetVec.y == 0.0 {
         return 0
@@ -310,15 +302,11 @@ public func TurnObjectTowardTargetOnX(_ theNode: UnsafeMutablePointer<ObjNode>!,
     targetVecFlat.x = targetVec.x // x/z plane aim vector
     targetVecFlat.z = targetVec.z
     targetVecFlat.y = sin(theNode.pointee.Rot.x)
-    var targetVecFlatNorm = OGLVector3D()
-    OGLVector3D_Normalize(&targetVecFlat, &targetVecFlatNorm)
-    targetVecFlat = targetVecFlatNorm
+    targetVecFlat = targetVecFlat.normalized()
 
-    let angle = acos(OGLVector3D_Dot(&targetVecFlat, &targetVec)) // calc angle between them
-    OGLVector3D_Cross(&targetVecFlat, &targetVec, &cross) // calc perpendicular vector
-    var crossNorm2 = OGLVector3D()
-    OGLVector3D_Cross(&cross, &targetVecFlat, &crossNorm2) // calc another vector who's y will tell us direction to rotate
-    cross = crossNorm2
+    let angle = acos(targetVecFlat.dot(targetVec)) // calc angle between them
+    cross = targetVecFlat.cross(targetVec) // calc perpendicular vector
+    cross = cross.cross(targetVecFlat) // calc another vector who's y will tell us direction to rotate
 
     // DO THE TURN
 
@@ -399,19 +387,12 @@ public func CalcPointOnObject(_ theNode: UnsafePointer<ObjNode>!, _ inPt: Unsafe
     OGLPoint3D_Transform(&inPtVar, &m, outPt)
 }
 
-// MARK: - Vectors are close enough
+// MARK: - Vectors are close enough (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func VectorsAreCloseEnough(_ v1: UnsafePointer<OGLVector3D>!, _ v2: UnsafePointer<OGLVector3D>!) -> UInt8 {
-    if abs(v1.pointee.x - v2.pointee.x) < 0.02 { // WARNING: If change, must change in BioOreoPro also!!
-        if abs(v1.pointee.y - v2.pointee.y) < 0.02 {
-            if abs(v1.pointee.z - v2.pointee.z) < 0.02 {
-                return 1
-            }
-        }
+extension OGLVector3D {
+    func isCloseEnough(to other: OGLVector3D) -> Bool {
+        abs(x - other.x) < 0.02 && abs(y - other.y) < 0.02 && abs(z - other.z) < 0.02 // WARNING: If change, must change in BioOreoPro also!!
     }
-
-    return 0
 }
 
 // MARK: - Points are close enough

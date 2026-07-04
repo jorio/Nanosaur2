@@ -274,7 +274,7 @@ private func MovePlayer_DeathDive(_ player: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
     gDelta.y -= 800.0 * fps
-    ApplyFrictionToDeltasXZ(300, &gDelta) // air friction
+    gDelta.applyFrictionXZ(300) // air friction
 
     // MOVE IT
 
@@ -310,10 +310,7 @@ private func MovePlayer_AppearWormhole(_ player: UnsafeMutablePointer<ObjNode>) 
 
     // CALC NEW DELTA
 
-    let oldDelta = gDelta
-    var normalizedDelta = OGLVector3D()
-    withUnsafePointer(to: oldDelta) { OGLVector3D_Normalize($0, &normalizedDelta) }
-    gDelta = normalizedDelta
+    gDelta = gDelta.normalized()
     gDelta.x *= player.pointee.Speed
     gDelta.y *= player.pointee.Speed
     gDelta.z *= player.pointee.Speed
@@ -350,7 +347,7 @@ private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
     let dist = OGLPoint3D_Distance(&gCoord, &gExitWormhole!.pointee.Coord) // get current dist to joint
     if dist < 50.0 {
         let up = OGLVector3D(x: 0, y: 1, z: 0)
-        withUnsafePointer(to: up) { OGLVector3D_Transform($0, &gExitWormhole!.pointee.BaseTransformMatrix, &player.pointee.MotionVector) } // make aim up wormhole
+        player.pointee.MotionVector = up.transformed(by: gExitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
     }
 
     // MOVE IT
@@ -448,9 +445,7 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
             v.z = gCoord.z - devil.pointee.Coord.z
             FastNormalizeVector(v.x, 0, v.z, &v)
 
-            var crossed = OGLVector3D()
-            withUnsafePointer(to: up) { OGLVector3D_Cross($0, &v, &crossed) } // calc cross product to get ejection vector
-            v = crossed
+            v = up.cross(v) // calc cross product to get ejection vector
 
             gDelta.x = v.x * speed // calc delta
             gDelta.y = 0
@@ -1117,7 +1112,7 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
 
     // GET AIM & MOTION VECTORS
 
-    withUnsafePointer(to: forward) { OGLVector3D_Transform($0, &theNode.pointee.BaseTransformMatrix, &aim) } // calc aim vector - the direction we want to be moving
+    aim = forward.transformed(by: theNode.pointee.BaseTransformMatrix) // calc aim vector - the direction we want to be moving
     FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &deltaVec) // calc current motion vector
 
     // CALC INTERPOLATION BETWEEN AIM & MOTION
@@ -1317,7 +1312,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
         if gCoord.y > MAX_ALTITUDE { // kaboom is squeezed
             kaboom = true
         } else {
-            let dot = OGLVector3D_Dot(&theNode.pointee.MotionVector, &gRecentTerrainNormal) // see if smacked into terrain
+            let dot = theNode.pointee.MotionVector.dot(gRecentTerrainNormal) // see if smacked into terrain
 
             if (dot < -0.6) && (gGamePrefs.kiddieMode == 0) { // if hit head-on & not in kiddie mode
                 kaboom = true
@@ -1516,7 +1511,7 @@ public func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
                 v.z = thisNode.pointee.Coord.z - gCoord.z
                 FastNormalizeVector(v.x, v.y, v.z, &v)
 
-                let dot = OGLVector3D_Dot(&v, &player.pointee.MotionVector)
+                let dot = v.dot(player.pointee.MotionVector)
                 if dot > -0.1 {
                     desiredAnim = Int32(PlayerAnim.readyToGrab.rawValue)
                     bestDist = dist

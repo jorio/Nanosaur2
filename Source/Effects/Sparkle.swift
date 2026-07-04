@@ -92,7 +92,7 @@ public func DrawSparkles() {
             if (flags & UInt32(SPARKLE_FLAG_TRANSFORMWITHOWNER)) != 0 {
                 OGLPoint3D_Transform(&sparkle.pointee.`where`, &owner.pointee.BaseTransformMatrix, &where_)
                 if !omni {
-                    OGLVector3D_Transform(&sparkle.pointee.aim, &owner.pointee.BaseTransformMatrix, &aim)
+                    aim = sparkle.pointee.aim.transformed(by: owner.pointee.BaseTransformMatrix)
                 }
             } else {
                 where_ = sparkle.pointee.`where`
@@ -121,7 +121,7 @@ public func DrawSparkles() {
         where_.z += v.z * separation
 
         if !omni { // if not omni then calc alpha based on angle
-            let dot = OGLVector3D_Dot(&v, &aim) // calc angle between
+            let dot = v.dot(aim) // calc angle between
             if dot <= 0.0 {
                 continue
             }

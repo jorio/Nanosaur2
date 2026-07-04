@@ -45,7 +45,7 @@ public func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     // FIRST SEE IF RAY HITS ANY OBJNODES
 
     var ray = OGLRay()
-    OGLVector3D_Transform(&gPlayerMuzzleTipAim, &player.pointee.BaseTransformMatrix, &ray.direction)
+    ray.direction = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
 
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things which auto target the weapon
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(p) // and also other players
@@ -450,8 +450,7 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
             OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
-            var v = OGLVector3D()
-            OGLVector3D_Transform(surfaceNormal, &m, &v)
+            let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 70.0 + RandomFloat() * 900.0
             var delta = OGLVector3D()
@@ -510,8 +509,7 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
             OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
-            var v = OGLVector3D()
-            OGLVector3D_Transform(surfaceNormal, &m, &v)
+            let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 300.0
             var delta = OGLVector3D()
@@ -627,8 +625,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
         let yrot = RandomFloat2() * 0.4
         var m = OGLMatrix4x4()
         OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
-        var v = OGLVector3D()
-        OGLVector3D_Transform(&aim, &m, &v)
+        let v = aim.transformed(by: m)
 
         newObj.pointee.Delta.x = v.x * clusterBulletSpeed
         newObj.pointee.Delta.y = v.y * clusterBulletSpeed
@@ -897,7 +894,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
             OGLPoint3D_Subtract(&targetPt, &gCoord, &v) // calc vector from bullet to target
             FastNormalizeVector(v.x, v.y, v.z, &v)
 
-            OGLVector3D_MoveToVector(&theNode.pointee.MotionVector, &v, &theNode.pointee.MotionVector, heatSeekerTurnSpeed * fps)
+            theNode.pointee.MotionVector = theNode.pointee.MotionVector.moved(toward: v, ratio: heatSeekerTurnSpeed * fps)
         }
     }
 
@@ -1038,7 +1035,7 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
                 OGLPoint3D_Subtract(&thisNode.pointee.Coord, &gCoord, &v) // calc vector to target
                 FastNormalizeVector(v.x, v.y, v.z, &v)
 
-                let angle = acos(OGLVector3D_Dot(&v, &bullet.pointee.MotionVector)) // calc angle to target
+                let angle = acos(v.dot(bullet.pointee.MotionVector)) // calc angle to target
 
                 if angle < (Float.pi / 6) {
                     minDist = d
@@ -1474,7 +1471,7 @@ private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     gDelta.y -= 800.0 * fps // gravity
 
-    ApplyFrictionToDeltasXZ(500, &gDelta) // air friction
+    gDelta.applyFrictionXZ(500) // air friction
 
     gCoord.x += gDelta.x * fps
     gCoord.y += gDelta.y * fps
@@ -1819,14 +1816,14 @@ private func CalcPlayerGunMuzzleInfo(_ player: UnsafeMutablePointer<ObjNode>!, _
 
     if pi.pointee.turretSide != 0 {
         withUnsafePointer(to: muzzleTipOff_Left) { OGLPoint3D_Transform($0, &player.pointee.BaseTransformMatrix, muzzleCoord) }
-        OGLVector3D_Transform(&gPlayerMuzzleTipAim, &player.pointee.BaseTransformMatrix, muzzleVector)
+        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // RIGHT
 
     else {
         withUnsafePointer(to: muzzleTipOff_Right) { OGLPoint3D_Transform($0, &player.pointee.BaseTransformMatrix, muzzleCoord) }
-        OGLVector3D_Transform(&gPlayerMuzzleTipAim, &player.pointee.BaseTransformMatrix, muzzleVector)
+        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // MAKE THIS MUZZLE'S SPARKLE GLOW BRIGHTER

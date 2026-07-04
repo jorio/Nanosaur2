@@ -190,12 +190,8 @@ public func OGL_NewViewDef(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>!) 
     var fillDirection1 = OGLVector3D(x: 1, y: 0, z: -1)
     var fillDirection2 = OGLVector3D(x: -1, y: -0.3, z: -0.3)
 
-    var fillDirection1Norm = OGLVector3D()
-    OGLVector3D_Normalize(&fillDirection1, &fillDirection1Norm)
-    fillDirection1 = fillDirection1Norm
-    var fillDirection2Norm = OGLVector3D()
-    OGLVector3D_Normalize(&fillDirection2, &fillDirection2Norm)
-    fillDirection2 = fillDirection2Norm
+    fillDirection1 = fillDirection1.normalized()
+    fillDirection2 = fillDirection2.normalized()
 
     viewDef.pointee.view.clearColor = clearColor
     viewDef.pointee.view.clip.left = 0
@@ -562,7 +558,7 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 
         // SET FILL DIRECTION
 
-        OGLVector3D_Normalize(&fillDirection[i], &fillDirection[i])
+        fillDirection[i] = fillDirection[i].normalized()
         lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
         lightVec[1] = -fillDirection[i].y
         lightVec[2] = -fillDirection[i].z

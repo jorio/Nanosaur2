@@ -182,7 +182,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
     gDelta.y += -3000.0 * fps // gravity
 
     if onGround != 0 {
-        ApplyFrictionToDeltasXZ(300, &gDelta) // ground friction
+        gDelta.applyFrictionXZ(300) // ground friction
 
         if nest.pointee.Flag.1 != 0 {
             egg.pointee.Rot.x = 0 // keep up
@@ -190,7 +190,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
             egg.pointee.Rot.x = Float.pi / 2 // keep on side
         }
     } else {
-        ApplyFrictionToDeltasXZ(100, &gDelta) // air friction
+        gDelta.applyFrictionXZ(100) // air friction
         egg.pointee.Rot.x += fps * 1.5 // spin in air
     }
 
@@ -364,8 +364,7 @@ private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?
     v2raw.x = jointCoord.x - gCoord.x
     v2raw.y = jointCoord.y - gCoord.y
     v2raw.z = jointCoord.z - gCoord.z
-    var v2 = OGLVector3D()
-    OGLVector3D_Normalize(&v2raw, &v2)
+    let v2 = v2raw.normalized()
 
     let dist = OGLPoint3D_Distance(&gCoord, &jointCoord) // get current dist to joint
 

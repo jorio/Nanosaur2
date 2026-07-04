@@ -351,9 +351,7 @@ public func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, 
 
         r += Float.pi / 8
     }
-    var upNorm = OGLVector3D()
-    OGLVector3D_Normalize(&up, &upNorm)
-    up = upNorm
+    up = up.normalized()
 
     RotateOnTerrain(theNode, yOffset, &up)
 }
@@ -486,9 +484,9 @@ public func DoItemShadowCasting() {
     OGLVector2D_Normalize(&lightVector, &lightVectorNorm)
     lightVector = lightVectorNorm
 
-    var upVar = up
-    var fillDir = gGameViewInfoPtr!.pointee.lightList.fillDirection.0
-    var dot = OGLVector3D_Dot(&upVar, &fillDir)
+    let upVar = up
+    let fillDir = gGameViewInfoPtr!.pointee.lightList.fillDirection.0
+    var dot = upVar.dot(fillDir)
     dot = 1.0 - dot
 
     // SCAN THRU ITEM LIST

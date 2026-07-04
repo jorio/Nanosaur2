@@ -287,9 +287,7 @@ private func initLevel() {
     // SET LIGHTS
 
     viewDef.lights.numFillLights = 1
-    var normalizedSunDir = OGLVector3D()
-    OGLVector3D_Normalize(&gWorldSunDirection, &normalizedSunDir)
-    gWorldSunDirection = normalizedSunDir
+    gWorldSunDirection = gWorldSunDirection.normalized()
     viewDef.lights.fillDirection.0 = gWorldSunDirection
     viewDef.lights.fillColor.0 = gFillColor1
 
@@ -672,9 +670,7 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
     v.x = theNode.pointee.Coord.x - theNode.pointee.OldCoord.x // calc aim vector
     v.y = theNode.pointee.Coord.y - theNode.pointee.OldCoord.y
     v.z = theNode.pointee.Coord.z - theNode.pointee.OldCoord.z
-    var vNorm = OGLVector3D()
-    OGLVector3D_Normalize(&v, &vNorm)
-    v = vNorm
+    v = v.normalized()
 
     // AIM ALONG SPLINE
 

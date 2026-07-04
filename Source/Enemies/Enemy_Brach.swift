@@ -217,7 +217,7 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
 
     if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 { // if on ground, add friction
-        ApplyFrictionToDeltas(2000.0, &gDelta)
+        gDelta.applyFriction(2000.0)
     }
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
     gCoord.x += gDelta.x * fps

@@ -21,17 +21,14 @@ public func SetLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ upVector
     theXAxis.x = upVector.pointee.y * lookAt.z - lookAt.y * upVector.pointee.z // calc cross product
     theXAxis.y = -(upVector.pointee.x * lookAt.z - lookAt.x * upVector.pointee.z)
     theXAxis.z = upVector.pointee.x * lookAt.y - lookAt.x * upVector.pointee.y
-    var theXAxisNorm = OGLVector3D()
-    OGLVector3D_Normalize(&theXAxis, &theXAxisNorm)
-    theXAxis = theXAxisNorm
+    theXAxis = theXAxis.normalized()
 
     setMatValue(&m.pointee, M00, theXAxis.x)
     setMatValue(&m.pointee, M10, theXAxis.y)
     setMatValue(&m.pointee, M20, theXAxis.z)
 
     do { // recompute a fixed up vector to ensure orthonormal
-        var newUp = OGLVector3D()
-        OGLVector3D_Cross(&lookAt, &theXAxis, &newUp)
+        let newUp = lookAt.cross(theXAxis)
         setMatValue(&m.pointee, M01, newUp.x)
         setMatValue(&m.pointee, M11, newUp.y)
         setMatValue(&m.pointee, M21, newUp.z)
@@ -80,9 +77,7 @@ public func SetLookAtMatrixAndTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!
     theXAxis.x = upVector.pointee.y * lookAt.z - lookAt.y * upVector.pointee.z // calc cross product
     theXAxis.y = -(upVector.pointee.x * lookAt.z - lookAt.x * upVector.pointee.z)
     theXAxis.z = upVector.pointee.x * lookAt.y - lookAt.x * upVector.pointee.y
-    var theXAxisNorm = OGLVector3D()
-    OGLVector3D_Normalize(&theXAxis, &theXAxisNorm)
-    theXAxis = theXAxisNorm
+    theXAxis = theXAxis.normalized()
 
     setMatValue(&m.pointee, M00, theXAxis.x)
     setMatValue(&m.pointee, M10, theXAxis.y)
@@ -91,7 +86,7 @@ public func SetLookAtMatrixAndTranslate(_ m: UnsafeMutablePointer<OGLMatrix4x4>!
     // RE-CALC UP VECTOR
 
     // recompute a fixed up vector to ensure orthonormal
-    OGLVector3D_Cross(&lookAt, &theXAxis, &newUp)
+    newUp = lookAt.cross(theXAxis)
     setMatValue(&m.pointee, M01, newUp.x)
     setMatValue(&m.pointee, M11, newUp.y)
     setMatValue(&m.pointee, M21, newUp.z)
@@ -128,16 +123,16 @@ public func SetAlignmentMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ aim: 
 
     // CALC X-AXIS
 
-    var upVar = up
-    var aimVar = aim.pointee
-    OGLVector3D_Cross(&aimVar, &upVar, &theXAxis)
+    let upVar = up
+    let aimVar = aim.pointee
+    theXAxis = aimVar.cross(upVar)
     setMatValue(&m.pointee, M00, theXAxis.x)
     setMatValue(&m.pointee, M10, theXAxis.y)
     setMatValue(&m.pointee, M20, theXAxis.z)
 
     // CALC Y-AXIS
 
-    OGLVector3D_Cross(&theXAxis, &aimVar, &yAxis)
+    yAxis = theXAxis.cross(aimVar)
     setMatValue(&m.pointee, M01, yAxis.x)
     setMatValue(&m.pointee, M11, yAxis.y)
     setMatValue(&m.pointee, M21, yAxis.z)
@@ -861,12 +856,12 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
 
     // Determine the axis and the rotation angle
 
-    var v1Var = v1.pointee
-    var v2Var = v2.pointee
-    OGLVector3D_Cross(&v2Var, &v1Var, &axis)
+    let v1Var = v1.pointee
+    let v2Var = v2.pointee
+    axis = v2Var.cross(v1Var)
 
-    var cosTheta = OGLVector3D_Dot(&v2Var, &v1Var)
-    var sinTheta = OGLVector3D_Dot(&axis, &axis)
+    var cosTheta = v2Var.dot(v1Var)
+    var sinTheta = axis.dot(axis)
 
     if sinTheta <= Float(EPS) {
         // Vectors are either opposing or equal
@@ -874,9 +869,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
         if cosTheta < zero {
             // Vectors are opposing
 
-            var axisNorm = OGLVector3D()
-            OGLVector3D_Normalize(&v2Var, &axisNorm)
-            axis = axisNorm
+            axis = v2Var.normalized()
 
             var x = abs(axis.x)
             orth.x = one
@@ -898,7 +891,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
                 orth.z = one
             }
 
-            let scale = OGLVector3D_Dot(&axis, &orth)
+            let scale = axis.dot(orth)
             proj.x = axis.x * scale
             proj.y = axis.y * scale
             proj.z = axis.z * scale
@@ -906,9 +899,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
             axis.x = orth.x - proj.x
             axis.y = orth.y - proj.y
             axis.z = orth.z - proj.z
-            var axisNorm2 = OGLVector3D()
-            OGLVector3D_Normalize(&axis, &axisNorm2)
-            axis = axisNorm2
+            axis = axis.normalized()
 
             let ax = axis.x
             let ay = axis.y
@@ -946,7 +937,7 @@ public func OGLCreateFromToRotationMatrix(_ matrix4x4: UnsafeMutablePointer<OGLM
         axis.y *= scale
         axis.z *= scale
 
-        scale = one / OGLVector3D_Dot(&v2Var, &v2Var)
+        scale = one / v2Var.dot(v2Var)
         cosTheta *= scale
         sinTheta *= scale
 
@@ -1015,17 +1006,13 @@ public func OGL_SetGluLookAtMatrix(_ m: UnsafeMutablePointer<OGLMatrix4x4>!, _ e
     fwd.x = target.pointee.x - eye.pointee.x
     fwd.y = target.pointee.y - eye.pointee.y
     fwd.z = target.pointee.z - eye.pointee.z
-    var fwdNorm = OGLVector3D()
-    OGLVector3D_Normalize(&fwd, &fwdNorm)
-    fwd = fwdNorm
+    fwd = fwd.normalized()
 
     // Side = forward x up
     var side = OGLVector3D()
     var upDirVar = upDir.pointee
     OGLVector3D_Cross_NoPin(&fwd, &upDirVar, &side)
-    var sideNorm = OGLVector3D()
-    OGLVector3D_Normalize(&side, &sideNorm)
-    side = sideNorm
+    side = side.normalized()
 
     // Recompute up as: up = side x forward
     var up = OGLVector3D()

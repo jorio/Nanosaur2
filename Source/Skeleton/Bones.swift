@@ -173,7 +173,7 @@ private func decomposeVertexArrayGeometry(_ theTriMesh: UnsafeMutablePointer<MOV
 
         var normalIndex = -1
         for i in 0..<Int(skeleton.pointee.numDecomposedNormals) {
-            if VectorsAreCloseEnough(normalPtr + vertNum, &skeleton.pointee.decomposedNormalsList![i]) != 0 { // if already in list, then dont add it again
+            if (normalPtr + vertNum).pointee.isCloseEnough(to: skeleton.pointee.decomposedNormalsList![i]) { // if already in list, then dont add it again
                 normalIndex = i
                 break
             }

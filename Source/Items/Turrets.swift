@@ -402,9 +402,8 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
     // CALC COORD & VECTOR OF MUZZLE
 
     var muzzleCoord = OGLPoint3D()
-    var muzzleVector = OGLVector3D()
     OGLPoint3D_Transform(&gTurretMuzzleTipOff, &gun.pointee.BaseTransformMatrix, &muzzleCoord)
-    OGLVector3D_Transform(&gTurretMuzzleTipAim, &gun.pointee.BaseTransformMatrix, &muzzleVector)
+    var muzzleVector = gTurretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
 
     // MAKE OBJECT
 
@@ -570,8 +569,7 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
             OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
-            var v = OGLVector3D()
-            OGLVector3D_Transform(surfaceNormal, &m, &v)
+            let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 900.0
             var delta = OGLVector3D()
@@ -630,8 +628,7 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
             let yrot = RandomFloat2() * 0.15
             var m = OGLMatrix4x4()
             OGLMatrix4x4_SetRotate_XYZ(&m, 0, yrot, zrot)
-            var v = OGLVector3D()
-            OGLVector3D_Transform(surfaceNormal, &m, &v)
+            let v = surfaceNormal.pointee.transformed(by: m)
 
             let speed = 30.0 + RandomFloat() * 300.0
             var delta = OGLVector3D()

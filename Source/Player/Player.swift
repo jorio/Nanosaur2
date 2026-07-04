@@ -153,7 +153,7 @@ public func InitPlayerAtStartOfLevel() {
 
         // CALC COORD AND VECTOR OF PLAYER AT START OF WORMHOLE
         OGLPoint3D_Transform(&wormStartOff, &wormhole.pointee.BaseTransformMatrix, &player.pointee.Coord)
-        OGLVector3D_Transform(&wormVector, &wormhole.pointee.BaseTransformMatrix, &player.pointee.Delta)
+        player.pointee.Delta = wormVector.transformed(by: wormhole.pointee.BaseTransformMatrix)
 
         player.pointee.Speed = 2500.0
 
@@ -711,7 +711,7 @@ public func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: U
     PlayEffect3D(Int16(EFFECT_BODYHIT), &trigger.pointee.Coord)
 
     // THE ANGLE OF IMPACT WILL DETERMINE THE DAMAGE INFLICTED
-    let angle = acosf(OGLVector3D_Dot(&trigger.pointee.MotionVector, &theNode.pointee.MotionVector))
+    let angle = acosf(trigger.pointee.MotionVector.dot(theNode.pointee.MotionVector))
     var damage = angle / (Float(PI) / 2.0)
     if damage < 0.5 {
         damage = 0.5

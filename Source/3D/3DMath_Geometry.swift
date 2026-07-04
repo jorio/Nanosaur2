@@ -95,122 +95,115 @@ public func CalcVectorLength2D(_ v: UnsafePointer<OGLVector2D>!) -> Float {
     return sqrt(d)
 }
 
-// MARK: - Apply friction to deltas
+// MARK: - Apply friction to deltas (OGLVector3D methods; no longer C-callable, see 3dmath.h)
 //
 // INPUT: speed = precalculated length of d vector.
 
-@c @implementation
-public func ApplyFrictionToDeltas(_ fIn: Float, _ d: UnsafeMutablePointer<OGLVector3D>!) {
-    let f = fIn * gFramesPerSecondFrac
+extension OGLVector3D {
+    mutating func applyFriction(_ fIn: Float) {
+        let f = fIn * gFramesPerSecondFrac
 
-    let speed = sqrt((d.pointee.y * d.pointee.y) + (d.pointee.x * d.pointee.x) + (d.pointee.z * d.pointee.z)) // calc length of vector
+        let speed = sqrt((y * y) + (x * x) + (z * z)) // calc length of vector
 
-    if speed <= Float(EPS) { // avoid divides by 0
-        d.pointee.x = 0
-        d.pointee.y = 0
-        d.pointee.z = 0
-        return
-    }
-
-    let newSpeed = speed - f // calc target speed by reducing vector length value
-    if newSpeed < 0.0 {
-        d.pointee.x = 0
-        d.pointee.y = 0
-        d.pointee.z = 0
-        return
-    }
-
-    let ratio = newSpeed / speed // calc ratio of new to old
-
-    d.pointee.x *= ratio // reduce deltas by ratio
-    d.pointee.y *= ratio
-    d.pointee.z *= ratio
-}
-
-// MARK: - Apply friction to deltas XZ
-//
-// INPUT: speed = precalculated length of d vector.
-
-@c @implementation
-public func ApplyFrictionToDeltasXZ(_ fIn: Float, _ d: UnsafeMutablePointer<OGLVector3D>!) {
-    let f = fIn * gFramesPerSecondFrac
-
-    let speed = sqrt((d.pointee.z * d.pointee.z) + (d.pointee.x * d.pointee.x)) // calc length of vector
-
-    if speed <= Float(EPS) { // avoid divides by 0
-        d.pointee.x = 0
-        d.pointee.z = 0
-        return
-    }
-
-    let newSpeed = speed - f // calc target speed by reducing vector length value
-    if newSpeed < 0.0 {
-        d.pointee.x = 0
-        d.pointee.z = 0
-        return
-    }
-
-    let ratio = newSpeed / speed // calc ratio of new to old
-
-    d.pointee.x *= ratio // reduce deltas by ratio
-    d.pointee.z *= ratio
-}
-
-// MARK: - Apply friction to rotation
-
-@c @implementation
-public func ApplyFrictionToRotation(_ fIn: Float, _ d: UnsafeMutablePointer<OGLVector3D>!) {
-    let f = fIn * gFramesPerSecondFrac
-
-    var dx = d.pointee.x
-    var dy = d.pointee.y
-    var dz = d.pointee.z
-
-    // dx
-
-    if dx < 0.0 {
-        dx += f
-        if dx > 0.0 {
-            dx = 0
+        if speed <= Float(EPS) { // avoid divides by 0
+            x = 0
+            y = 0
+            z = 0
+            return
         }
-    } else if dx > 0.0 {
-        dx -= f
+
+        let newSpeed = speed - f // calc target speed by reducing vector length value
+        if newSpeed < 0.0 {
+            x = 0
+            y = 0
+            z = 0
+            return
+        }
+
+        let ratio = newSpeed / speed // calc ratio of new to old
+
+        x *= ratio // reduce deltas by ratio
+        y *= ratio
+        z *= ratio
+    }
+
+    mutating func applyFrictionXZ(_ fIn: Float) {
+        let f = fIn * gFramesPerSecondFrac
+
+        let speed = sqrt((z * z) + (x * x)) // calc length of vector
+
+        if speed <= Float(EPS) { // avoid divides by 0
+            x = 0
+            z = 0
+            return
+        }
+
+        let newSpeed = speed - f // calc target speed by reducing vector length value
+        if newSpeed < 0.0 {
+            x = 0
+            z = 0
+            return
+        }
+
+        let ratio = newSpeed / speed // calc ratio of new to old
+
+        x *= ratio // reduce deltas by ratio
+        z *= ratio
+    }
+
+    mutating func applyFrictionToRotation(_ fIn: Float) {
+        let f = fIn * gFramesPerSecondFrac
+
+        var dx = x
+        var dy = y
+        var dz = z
+
+        // dx
+
         if dx < 0.0 {
-            dx = 0
+            dx += f
+            if dx > 0.0 {
+                dx = 0
+            }
+        } else if dx > 0.0 {
+            dx -= f
+            if dx < 0.0 {
+                dx = 0
+            }
         }
-    }
 
-    // dY
+        // dY
 
-    if dy < 0.0 {
-        dy += f
-        if dy > 0.0 {
-            dy = 0
-        }
-    } else if dy > 0.0 {
-        dy -= f
         if dy < 0.0 {
-            dy = 0
+            dy += f
+            if dy > 0.0 {
+                dy = 0
+            }
+        } else if dy > 0.0 {
+            dy -= f
+            if dy < 0.0 {
+                dy = 0
+            }
         }
-    }
 
-    // dz
+        // dz
 
-    if dz < 0.0 {
-        dz += f
-        if dz > 0.0 {
-            dz = 0
-        }
-    } else if dz > 0.0 {
-        dz -= f
         if dz < 0.0 {
-            dz = 0
+            dz += f
+            if dz > 0.0 {
+                dz = 0
+            }
+        } else if dz > 0.0 {
+            dz -= f
+            if dz < 0.0 {
+                dz = 0
+            }
         }
-    }
 
-    d.pointee.x = dx
-    d.pointee.y = dy
-    d.pointee.z = dz
+        x = dx
+        y = dy
+        z = dz
+    }
 }
 
 // MARK: -
@@ -673,24 +666,25 @@ public func OGLVector2D_Transform(_ vector2D: UnsafePointer<OGLVector2D>!, _ mat
         sPtr.pointee.y * mat3Value(&m, N11)
 }
 
-// MARK: - OGLVector3D dot
+// MARK: - OGLVector3D dot (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLVector3D_Dot(_ v1: UnsafePointer<OGLVector3D>!, _ v2: UnsafePointer<OGLVector3D>!) -> Float {
-    var dot = (v1.pointee.x * v2.pointee.x) + (v1.pointee.y * v2.pointee.y) + (v1.pointee.z * v2.pointee.z) // calc dot
+extension OGLVector3D {
+    func dot(_ other: OGLVector3D) -> Float {
+        var dot = (x * other.x) + (y * other.y) + (z * other.z) // calc dot
 
-    // CHECK FOR FLOATING POINT PRECISION PROBLEMS
-    //
-    // Since the acos of anything >1.0 is a NaN, lets be careful
-    // that we return something valid!
+        // CHECK FOR FLOATING POINT PRECISION PROBLEMS
+        //
+        // Since the acos of anything >1.0 is a NaN, lets be careful
+        // that we return something valid!
 
-    if dot > 1.0 {
-        dot = 1.0
-    } else if dot < -1.0 {
-        dot = -1.0
+        if dot > 1.0 {
+            dot = 1.0
+        } else if dot < -1.0 {
+            dot = -1.0
+        }
+
+        return dot
     }
-
-    return dot
 }
 
 // MARK: - Vector 2D dot
@@ -715,31 +709,23 @@ public func OGLVector2D_Dot(_ v1: UnsafePointer<OGLVector2D>!, _ v2: UnsafePoint
     return dot
 }
 
-// MARK: - Vector 3D normalize
+// MARK: - Vector 3D normalize (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLVector3D_Normalize(_ vector3D: UnsafePointer<OGLVector3D>!, _ result: UnsafeMutablePointer<OGLVector3D>!) {
-    var length = (vector3D.pointee.x * vector3D.pointee.x) +
-        (vector3D.pointee.y * vector3D.pointee.y) +
-        (vector3D.pointee.z * vector3D.pointee.z)
+extension OGLVector3D {
+    func normalized() -> OGLVector3D {
+        var length = (x * x) + (y * y) + (z * z)
 
-    length = sqrt(length)
+        length = sqrt(length)
 
-    //  Check for zero-length vector
+        //  Check for zero-length vector
 
-    if length <= Float(EPS) {
-        result.pointee.x = 0
-        result.pointee.y = 0
-        result.pointee.z = 0
-    } else {
-        let oneOverLength = 1.0 / length
+        if length <= Float(EPS) {
+            return OGLVector3D(x: 0, y: 0, z: 0)
+        } else {
+            let oneOverLength = 1.0 / length
 
-        let x = vector3D.pointee.x * oneOverLength
-        let y = vector3D.pointee.y * oneOverLength
-        let z = vector3D.pointee.z * oneOverLength
-        result.pointee.x = x
-        result.pointee.y = y
-        result.pointee.z = z
+            return OGLVector3D(x: x * oneOverLength, y: y * oneOverLength, z: z * oneOverLength)
+        }
     }
 }
 
@@ -766,130 +752,94 @@ public func OGLVector2D_Normalize(_ vector2D: UnsafePointer<OGLVector2D>!, _ res
     }
 }
 
-// MARK: - Vector 3D cross
+// MARK: - Vector 3D cross (no longer C-callable, see 3dmath.h)
 
-@c @implementation
-public func OGLVector3D_Cross(_ v1: UnsafePointer<OGLVector3D>!, _ v2: UnsafePointer<OGLVector3D>!, _ result: UnsafeMutablePointer<OGLVector3D>!) {
-    var s1 = OGLVector3D()
-    var s2 = OGLVector3D()
-    var temp = OGLVector3D()
+extension OGLVector3D {
+    func cross(_ other: OGLVector3D) -> OGLVector3D {
+        var temp = OGLVector3D()
 
-    let s1Ptr: UnsafePointer<OGLVector3D>
-    let s2Ptr: UnsafePointer<OGLVector3D>
+        temp.x = y * other.z - other.y * z
+        temp.y = other.x * z - x * other.z
+        temp.z = x * other.y - other.x * y
 
-    if UnsafeRawPointer(v1) == UnsafeRawPointer(result) {
-        s1 = v1.pointee
-        s1Ptr = withUnsafePointer(to: &s1) { $0 }
-    } else {
-        s1Ptr = v1
+        return temp.normalized()
     }
 
-    if UnsafeRawPointer(v2) == UnsafeRawPointer(result) {
-        s2 = v2.pointee
-        s2Ptr = withUnsafePointer(to: &s2) { $0 }
-    } else {
-        s2Ptr = v2
+    // MARK: - Vector 3D transform
+
+    func transformed(by matrix4x4: OGLMatrix4x4) -> OGLVector3D {
+        var m = matrix4x4
+        var result = OGLVector3D()
+
+        result.x = x * matValue(&m, M00) +
+            y * matValue(&m, M01) +
+            z * matValue(&m, M02)
+
+        result.y = x * matValue(&m, M10) +
+            y * matValue(&m, M11) +
+            z * matValue(&m, M12)
+
+        result.z = x * matValue(&m, M20) +
+            y * matValue(&m, M21) +
+            z * matValue(&m, M22)
+
+        return result.normalized()
     }
 
-    temp.x = s1Ptr.pointee.y * s2Ptr.pointee.z - s2Ptr.pointee.y * s1Ptr.pointee.z
-    temp.y = s2Ptr.pointee.x * s1Ptr.pointee.z - s1Ptr.pointee.x * s2Ptr.pointee.z
-    temp.z = s1Ptr.pointee.x * s2Ptr.pointee.y - s2Ptr.pointee.x * s1Ptr.pointee.y
+    // MARK: - Vector 3D transform array
 
-    OGLVector3D_Normalize(&temp, result)
-}
+    static func transformArray(_ inVectors: UnsafePointer<OGLVector3D>, by m: OGLMatrix4x4, into outVectors: UnsafeMutablePointer<OGLVector3D>, count numVectors: Int) {
+        var mVar = m
+        let m00 = matValue(&mVar, M00); let m01 = matValue(&mVar, M01); let m02 = matValue(&mVar, M02)
+        let m10 = matValue(&mVar, M10); let m11 = matValue(&mVar, M11); let m12 = matValue(&mVar, M12)
+        let m20 = matValue(&mVar, M20); let m21 = matValue(&mVar, M21); let m22 = matValue(&mVar, M22)
 
-// MARK: - Vector 3D transform
+        for i in 0..<numVectors {
+            let x = inVectors[i].x
+            let y = inVectors[i].y
+            let z = inVectors[i].z
 
-@c @implementation
-public func OGLVector3D_Transform(_ vector3D: UnsafePointer<OGLVector3D>!, _ matrix4x4: UnsafePointer<OGLMatrix4x4>!, _ result: UnsafeMutablePointer<OGLVector3D>!) {
-    var s = OGLVector3D()
-    let sPtr: UnsafePointer<OGLVector3D>
+            // TRANSFORM IT
 
-    // SEE IF VECTOR BASHING
+            var accum = x * m00
+            accum += y * m01
+            let ox = accum + z * m02
 
-    if UnsafeRawPointer(vector3D) == UnsafeRawPointer(result) {
-        s = vector3D.pointee
-        sPtr = withUnsafePointer(to: &s) { $0 }
-    } else {
-        sPtr = vector3D
+            accum = x * m10
+            accum += y * m11
+            let oy = accum + z * m12
+
+            accum = x * m20
+            accum += y * m21
+            let oz = accum + z * m22
+
+            // NORMALIZE IT
+
+            outVectors[i] = OGLVector3D(x: ox, y: oy, z: oz).normalized()
+        }
     }
 
-    // TRANSFORM IT
+    // MARK: - OGL: vector 3D: move to vector
+    //
+    // Interpolates between two vectors based on input interpolation ratio
 
-    var m = matrix4x4.pointee
+    func moved(toward to: OGLVector3D, ratio ratioIn: Float) -> OGLVector3D {
+        var ratio = ratioIn
+        var v = OGLVector3D()
 
-    result.pointee.x = sPtr.pointee.x * matValue(&m, M00) +
-        sPtr.pointee.y * matValue(&m, M01) +
-        sPtr.pointee.z * matValue(&m, M02)
+        // CALC INTERPOLATION BETWEEN AIM & MOTION
 
-    result.pointee.y = sPtr.pointee.x * matValue(&m, M10) +
-        sPtr.pointee.y * matValue(&m, M11) +
-        sPtr.pointee.z * matValue(&m, M12)
+        if ratio > 1.0 {
+            ratio = 1.0
+        }
+        let oneMinusRatio = 1.0 - ratio
 
-    result.pointee.z = sPtr.pointee.x * matValue(&m, M20) +
-        sPtr.pointee.y * matValue(&m, M21) +
-        sPtr.pointee.z * matValue(&m, M22)
+        v.x = (x * oneMinusRatio) + (to.x * ratio) // interpolate it
+        v.y = (y * oneMinusRatio) + (to.y * ratio)
+        v.z = (z * oneMinusRatio) + (to.z * ratio)
 
-    // NORMALIZE IT
-
-    OGLVector3D_Normalize(result, result)
-}
-
-// MARK: - Vector 3D transform array
-
-@c @implementation
-public func OGLVector3D_TransformArray(_ inVectors: UnsafePointer<OGLVector3D>!, _ m: UnsafePointer<OGLMatrix4x4>!, _ outVectors: UnsafeMutablePointer<OGLVector3D>!, _ numVectors: Int32) {
-    var mVar = m.pointee
-    let m00 = matValue(&mVar, M00); let m01 = matValue(&mVar, M01); let m02 = matValue(&mVar, M02)
-    let m10 = matValue(&mVar, M10); let m11 = matValue(&mVar, M11); let m12 = matValue(&mVar, M12)
-    let m20 = matValue(&mVar, M20); let m21 = matValue(&mVar, M21); let m22 = matValue(&mVar, M22)
-
-    for i in 0..<Int(numVectors) {
-        let x = inVectors[i].x
-        let y = inVectors[i].y
-        let z = inVectors[i].z
-
-        // TRANSFORM IT
-
-        var accum = x * m00
-        accum += y * m01
-        outVectors[i].x = accum + z * m02
-
-        accum = x * m10
-        accum += y * m11
-        outVectors[i].y = accum + z * m12
-
-        accum = x * m20
-        accum += y * m21
-        outVectors[i].z = accum + z * m22
-
-        // NORMALIZE IT
-
-        OGLVector3D_Normalize(&outVectors[i], &outVectors[i])
+        return v.normalized()
     }
-}
-
-// MARK: - OGL: vector 3D: move to vector
-//
-// Interpolates between two vectors based on input interpolation ratio
-
-@c @implementation
-public func OGLVector3D_MoveToVector(_ from: UnsafeMutablePointer<OGLVector3D>!, _ to: UnsafeMutablePointer<OGLVector3D>!, _ out: UnsafeMutablePointer<OGLVector3D>!, _ ratioIn: Float) {
-    var ratio = ratioIn
-    var v = OGLVector3D()
-
-    // CALC INTERPOLATION BETWEEN AIM & MOTION
-
-    if ratio > 1.0 {
-        ratio = 1.0
-    }
-    let oneMinusRatio = 1.0 - ratio
-
-    v.x = (from.pointee.x * oneMinusRatio) + (to.pointee.x * ratio) // interpolate it
-    v.y = (from.pointee.y * oneMinusRatio) + (to.pointee.y * ratio)
-    v.z = (from.pointee.z * oneMinusRatio) + (to.pointee.z * ratio)
-
-    OGLVector3D_Normalize(&v, out)
 }
 
 // MARK: - Vector 2D cross
@@ -1055,9 +1005,9 @@ public func OGLPoint2D_TransformArray(_ inVertex: UnsafePointer<OGLPoint2D>!, _ 
 
 @c @implementation
 public func OGLPoint3D_DistanceToPlane(_ point: UnsafePointer<OGLPoint3D>!, _ plane: UnsafePointer<OGLPlaneEquation>!) -> Float {
-    var normal = plane.pointee.normal
-    var pointAsVector = OGLVector3D(x: point.pointee.x, y: point.pointee.y, z: point.pointee.z)
-    var d = OGLVector3D_Dot(&normal, &pointAsVector)
+    let normal = plane.pointee.normal
+    let pointAsVector = OGLVector3D(x: point.pointee.x, y: point.pointee.y, z: point.pointee.z)
+    var d = normal.dot(pointAsVector)
     d += plane.pointee.constant
 
     return d

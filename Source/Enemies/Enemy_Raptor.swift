@@ -335,7 +335,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
-    ApplyFrictionToDeltas(400.0, &gDelta)
+    gDelta.applyFriction(400.0)
 
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
 
@@ -371,7 +371,7 @@ private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveRaptorKnockedDown(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
-    ApplyFrictionToDeltas(700.0, &gDelta)
+    gDelta.applyFriction(700.0)
 
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
 
@@ -415,7 +415,7 @@ private func moveRaptorDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
 
     if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 { // if on ground, add friction
-        ApplyFrictionToDeltas(2000.0, &gDelta)
+        gDelta.applyFriction(2000.0)
     }
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
     gCoord.x += gDelta.x * fps

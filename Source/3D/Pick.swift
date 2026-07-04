@@ -16,17 +16,6 @@ private let maxSupertiles = (9 * 2 * 9 * 2) * 2 * 2 // MAX_SUPERTILES: (MAX_SUPE
     (a >= -Float(EPS)) && (a <= Float(EPS))
 }
 
-@inline(__always) private func normalized(_ v: OGLVector3D) -> OGLVector3D {
-    var input = v
-    var output = OGLVector3D()
-    withUnsafeMutablePointer(to: &input) { inPtr in
-        withUnsafeMutablePointer(to: &output) { outPtr in
-            OGLVector3D_Normalize(inPtr, outPtr)
-        }
-    }
-    return output
-}
-
 @inline(__always) private func worldMeshesBase(_ n: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<MOVertexArrayData> {
     UnsafeMutableRawPointer(n.pointer(to: \.WorldMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
 }
@@ -203,9 +192,9 @@ public func OGL_IsObjectInFrontOfRay(_ theNodeOpt: UnsafeMutablePointer<ObjNode>
     v.x = x - ray.pointee.origin.x // calc vector from origin to object coords
     v.y = y - ray.pointee.origin.y
     v.z = z - ray.pointee.origin.z
-    v = normalized(v)
+    v = v.normalized()
 
-    var dot = OGLVector3D_Dot(&v, &ray.pointee.direction) // calc angle between vectors
+    var dot = v.dot(ray.pointee.direction) // calc angle between vectors
     if dot < 0.0 {
         return 1
     }
@@ -221,9 +210,9 @@ public func OGL_IsObjectInFrontOfRay(_ theNodeOpt: UnsafeMutablePointer<ObjNode>
     v.x = pt.x - ray.pointee.origin.x // calc vector from origin to sphere coords
     v.y = pt.y - ray.pointee.origin.y
     v.z = pt.z - ray.pointee.origin.z
-    v = normalized(v)
+    v = v.normalized()
 
-    dot = OGLVector3D_Dot(&v, &ray.pointee.direction) // calc angle between vectors
+    dot = v.dot(ray.pointee.direction) // calc angle between vectors
     if dot < 0.0 {
         return 1
     }
@@ -458,7 +447,7 @@ public func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<
     ray.pointee.direction.x = result.x - ray.pointee.origin.x // calc vector of ray
     ray.pointee.direction.y = result.y - ray.pointee.origin.y
     ray.pointee.direction.z = result.z - ray.pointee.origin.z
-    OGLVector3D_Normalize(&ray.pointee.direction, &ray.pointee.direction) // normalize the ray vector
+    ray.pointee.direction = ray.pointee.direction.normalized() // normalize the ray vector
 }
 
 // MARK: - OGL: Ray intersects triangle
@@ -673,7 +662,7 @@ public func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLL
     segVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     segVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     segVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    segVec = normalized(segVec)
+    segVec = segVec.normalized()
 
     // TEST LINE SEGMENT AGAINST ALL OBJNODES
 
@@ -789,7 +778,7 @@ public func OGL_LineSegmentCollision_Terrain(_ lineSegOpt: UnsafePointer<OGLLine
     segVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     segVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     segVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    segVec = normalized(segVec)
+    segVec = segVec.normalized()
 
     // TEST AGAINST ALL SUPERTILES
 
@@ -853,7 +842,7 @@ public func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSe
     segVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     segVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     segVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    segVec = normalized(segVec)
+    segVec = segVec.normalized()
 
     // TEST AGAINST ALL FENCES
 
@@ -937,7 +926,7 @@ public func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSe
     segVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     segVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     segVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    segVec = normalized(segVec)
+    segVec = segVec.normalized()
 
     // TEST AGAINST ALL FENCES
 
@@ -1008,7 +997,7 @@ private func OGL_LineSegGetHitInfo_DisplayGroup(_ lineSeg: UnsafePointer<OGLLine
     lineVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     lineVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     lineVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    lineVec = normalized(lineVec)
+    lineVec = lineVec.normalized()
 
     // MAKE SURE WE HAVE WORLD-SPACE DATA FOR THIS OBJNODE
 
@@ -1068,7 +1057,7 @@ public func OGL_DoesLineSegmentIntersectSphere(_ lineSegOpt: UnsafePointer<OGLLi
         rayDir.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
         rayDir.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
         rayDir.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-        rayDir = normalized(rayDir)
+        rayDir = rayDir.normalized()
     }
 
     // Calculate the vector from the sphere to the p1 endpoint, its
@@ -1419,7 +1408,7 @@ private func OGL_LineSegGetHitInfo_Skeleton(_ lineSeg: UnsafePointer<OGLLineSegm
     lineVec.x = lineSeg.pointee.p2.x - lineSeg.pointee.p1.x
     lineVec.y = lineSeg.pointee.p2.y - lineSeg.pointee.p1.y
     lineVec.z = lineSeg.pointee.p2.z - lineSeg.pointee.p1.z
-    lineVec = normalized(lineVec)
+    lineVec = lineVec.normalized()
 
     // GET SKELETON DATA
 

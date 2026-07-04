@@ -221,8 +221,7 @@ private func makePaneDivider() -> UnsafeMutablePointer<ObjNode> {
 
 // MARK: - Init
 
-@c @implementation
-public func InitInfobar() {
+func InitInfobar() {
     gBlinkingEggType = -1
     gBlinkingEggTimer = 0
 
@@ -368,16 +367,14 @@ public func InitInfobar() {
     }
 }
 
-@c @implementation
-public func DisposeInfobar() {
+func DisposeInfobar() {
 }
 
 // MARK: - Set infobar sprite state
 //
 // anaglyphZ: +5...-5 where + values are in front of screen, and - values are in back
 
-@c @implementation
-public func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect {
+func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect {
     var dontcare1: Int32 = 0
     var dontcare2: Int32 = 0
     var drawableW: Int32 = 1
@@ -420,8 +417,7 @@ public func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect
     return rect
 }
 
-@c @implementation
-public func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
+func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     OGL_DisableLighting()
     OGL_DisableCullFace()
     glDisable(GLenum(GL_DEPTH_TEST)) // no z-buffer
@@ -462,8 +458,7 @@ private let cDrawInfobar: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     DrawInfobar(nil)
 }
 
-@c @implementation
-public func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // DRAW SOME OTHER GOODIES WHILE WE'RE HERE
     DrawLensFlare() // draw lens flare
 
@@ -527,8 +522,7 @@ public func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
 // MARK: - Draw infobar sprite
 
-@c @implementation
-public func DrawInfobarSprite(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
+func DrawInfobarSprite(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
     SwGameAssert(GetNumSpritesInGroup(Int32(SPRITE_GROUP_INFOBAR)) > Int32(texNum))
 
     // ACTIVATE THE MATERIAL
@@ -550,8 +544,7 @@ public func DrawInfobarSprite(_ x: Float, _ y: Float, _ size: Float, _ texNum: I
 //
 // Coords are for center of sprite, not upper left
 
-@c @implementation
-public func DrawInfobarSprite_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNum: Int16) {
+func DrawInfobarSprite_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNum: Int16) {
     // ACTIVATE THE MATERIAL
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(texNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
@@ -574,8 +567,7 @@ public func DrawInfobarSprite_Centered(_ x0: Float, _ y0: Float, _ size: Float, 
 //
 // This version lets user pass in the sprite group
 
-@c @implementation
-public func DrawInfobarSprite2(_ x: Float, _ y: Float, _ size: Float, _ group: Int16, _ texNum: Int16) {
+func DrawInfobarSprite2(_ x: Float, _ y: Float, _ size: Float, _ group: Int16, _ texNum: Int16) {
     // ACTIVATE THE MATERIAL
     let mo = GetSpriteGroupPtr(Int32(group))![Int(texNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
@@ -595,8 +587,7 @@ public func DrawInfobarSprite2(_ x: Float, _ y: Float, _ size: Float, _ group: I
 //
 // Same as above, but where size is the vertical size, not horiz.
 
-@c @implementation
-public func DrawInfobarSprite3(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
+func DrawInfobarSprite3(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
     // ACTIVATE THE MATERIAL
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(texNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
@@ -614,8 +605,7 @@ public func DrawInfobarSprite3(_ x: Float, _ y: Float, _ size: Float, _ texNum: 
 
 // MARK: - Draw infobar sprite 3: centered
 
-@c @implementation
-public func DrawInfobarSprite3_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNum: Int16) {
+func DrawInfobarSprite3_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNum: Int16) {
     // ACTIVATE THE MATERIAL
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(texNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
@@ -638,8 +628,7 @@ public func DrawInfobarSprite3_Centered(_ x0: Float, _ y0: Float, _ size: Float,
 //
 // This version lets user pass in the sprite group
 
-@c @implementation
-public func DrawInfobarSprite2_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ group: Int16, _ texNum: Int16) {
+func DrawInfobarSprite2_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ group: Int16, _ texNum: Int16) {
     if Int32(texNum) >= GetNumSpritesInGroup(Int32(group)) {
         SwFatal("DrawInfobarSprite2_Centered: sprite # > max in group!")
     }
@@ -700,8 +689,7 @@ private func drawInfobarSpriteRotated(_ x: Float, _ y: Float, _ size: Float, _ t
 
 // MARK: - Infobar: draw number
 
-@c @implementation
-public func Infobar_DrawNumber(_ number0: Int32, _ x0: Float, _ y0: Float, _ scale: Float, _ numDigits: Int32, _ showLeading: UInt8) {
+func Infobar_DrawNumber(_ number0: Int32, _ x0: Float, _ y0: Float, _ scale: Float, _ numDigits: Int32, _ showLeading: UInt8) {
     var number = number0
     var x = x0
     let sep = scale * DIGIT_WIDTH
@@ -976,8 +964,7 @@ private func infobarDrawFuel() {
 
 // MARK: - Start blinking egg
 
-@c @implementation
-public func HighlightInfobarEgg(_ eggType: Int32) {
+func HighlightInfobarEgg(_ eggType: Int32) {
     gBlinkingEggType = eggType
     gBlinkingEggTimer = 0
 }
@@ -1209,8 +1196,7 @@ private let cMoveLapMessage: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     moveLapMessage(theNode!)
 }
 
-@c @implementation
-public func ShowLapNum(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>? {
+func ShowLapNum(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>? {
     let lapNum = GetPlayerInfoEntry(Int32(playerNum))!.pointee.lapNum
 
     // SEE IF TELL LAP
@@ -1258,8 +1244,7 @@ private func moveLapMessage(_ theNode: UnsafeMutablePointer<ObjNode>) {
 //        mode 1 : lost
 //        mode 2 : draw
 
-@c @implementation
-public func ShowWinLose(_ playerNum: Int16, _ mode: UInt8) -> UnsafeMutablePointer<ObjNode>? {
+func ShowWinLose(_ playerNum: Int16, _ mode: UInt8) -> UnsafeMutablePointer<ObjNode>? {
     let spriteNum: Int32
     switch mode {
     case 0:

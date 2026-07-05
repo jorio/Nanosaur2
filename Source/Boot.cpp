@@ -2,6 +2,8 @@
 // (C) 2025 Iliyas Jorio
 // This file is part of Nanosaur 2. https://github.com/jorio/nanosaur2
 
+#include <cstring>
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
@@ -14,6 +16,8 @@ extern "C"
 	#include "game.h"
 
 	SDL_Window* gSDLWindow = nullptr;
+	SDL_Window* gSDLWindow2 = nullptr;
+	Boolean gDualScreenMode = false;
 	FSSpec gDataSpec;
 	int gCurrentAntialiasingLevel;
 }
@@ -81,6 +85,15 @@ static void Boot(int argc, char** argv)
 	// Start our "machine"
 	Pomme::Init();
 
+	// Scan command-line flags
+	for (int i = 1; i < argc; i++)
+	{
+		if (0 == strcmp(argv[i], "--dual-screen"))
+		{
+			gDualScreenMode = true;
+		}
+	}
+
 	// Find path to game data folder
 	const char* executablePath = argc > 0 ? argv[0] : NULL;
 	fs::path dataPath = FindGameData(executablePath);
@@ -128,6 +141,57 @@ retryVideo:
 		}
 	}
 
+	// If dual-screen mode was requested, set up a second window for the
+	// bottom screen (menus/HUD), and place both windows appropriately:
+	// on real dual-screen hardware (2+ displays reported), one fullscreen
+	// window per physical display; otherwise (dev machine, 1 display),
+	// two regular windows stacked vertically so the mode is still testable.
+	if (gDualScreenMode)
+	{
+		gSDLWindow2 = SDL_CreateWindow(
+			GAME_FULL_NAME " (" GAME_VERSION ") - Bottom Screen", 640, 480,
+			SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+
+		if (!gSDLWindow2)
+		{
+			throw std::runtime_error("Couldn't create second SDL window for dual-screen mode.");
+		}
+
+		int numDisplays = 0;
+		SDL_DisplayID* displays = SDL_GetDisplays(&numDisplays);
+
+		SDL_Rect topBounds, bottomBounds;
+		bool haveTwoDisplays = displays != nullptr
+			&& numDisplays >= 2
+			&& SDL_GetDisplayBounds(displays[0], &topBounds)
+			&& SDL_GetDisplayBounds(displays[1], &bottomBounds);
+
+		if (haveTwoDisplays)
+		{
+			// Real dual-screen hardware: one fullscreen window per physical display.
+			SDL_SetWindowPosition(gSDLWindow, topBounds.x, topBounds.y);
+			SDL_SetWindowFullscreen(gSDLWindow, true);
+			SDL_SyncWindow(gSDLWindow);
+
+			SDL_SetWindowPosition(gSDLWindow2, bottomBounds.x, bottomBounds.y);
+			SDL_SetWindowFullscreen(gSDLWindow2, true);
+			SDL_SyncWindow(gSDLWindow2);
+		}
+		else
+		{
+			// Dev machine with a single display: stack both windows vertically.
+			int topX = 0, topY = 0, topW = 640, topH = 480;
+			SDL_GetWindowPosition(gSDLWindow, &topX, &topY);
+			SDL_GetWindowSize(gSDLWindow, &topW, &topH);
+			SDL_SetWindowPosition(gSDLWindow2, topX, topY + topH + 40);
+		}
+
+		if (displays)
+		{
+			SDL_free(displays);
+		}
+	}
+
 	// Init gamepad subsystem
 	SDL_Init(SDL_INIT_GAMEPAD);
 	auto gamecontrollerdbPath8 = (dataPath / "System" / "gamecontrollerdb.txt").u8string();
@@ -143,6 +207,12 @@ static void Shutdown()
 	SetMacLinearMouse(false);
 
 	Pomme::Shutdown();
+
+	if (gSDLWindow2)
+	{
+		SDL_DestroyWindow(gSDLWindow2);
+		gSDLWindow2 = NULL;
+	}
 
 	if (gSDLWindow)
 	{

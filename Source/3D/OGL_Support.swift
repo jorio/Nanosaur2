@@ -106,6 +106,22 @@ private var gMyState_BlendFuncD: GLenum = 0
 @inline(__always) private func isStereoAnaglyph() -> Bool { isStereoAnaglyphColor() || isStereoAnaglyphMono() }
 @inline(__always) private func getOverlayPaneNumber() -> Int { Int(gNumPlayers) }
 
+// MARK: - Dual-screen mode (--dual-screen)
+//
+// When gDualScreenMode is set (Boot.cpp parses --dual-screen), gSDLWindow2/
+// gAGLContext2 are a second SDL window+GL context for the bottom screen.
+// Everything the game draws every frame (menus, 3D world, HUD, intro,
+// attract) renders on gSDLWindow/gAGLContext (the top screen) exactly as in
+// single-window mode - none of the per-frame draw path is aware of
+// dual-screen mode. The bottom screen is static: OGL_CreateDrawContext
+// draws the main menu background image to it once at boot and never
+// touches it again (see the dual-screen block in that function). Splitting
+// per-frame content (e.g. moving the HUD to the bottom window) was tried
+// and reverted - toggling which of two *separate* GL contexts is current
+// every frame desyncs the cached GL state flags (gMyState_*) this file
+// relies on to skip redundant GL calls, since those flags are per-process
+// but the real GL server state is now split across two contexts.
+
 @inline(__always) private func OGL_CheckError() -> GLenum {
     OGL_CheckError_Impl(#file, Int32(#line))
 }
@@ -363,6 +379,72 @@ private func OGL_CreateDrawContext() {
 
     gGlClientActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlClientActiveTextureProc != nil)
+
+    // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
+    // DRAW THE MAIN MENU BACKGROUND IMAGE TO IT ONCE
+    //
+    // Shares texture/VBO namespace with gAGLContext (set via
+    // SDL_GL_SHARE_WITH_CURRENT_CONTEXT while gAGLContext is current, right
+    // before creating the second context) though nothing besides this
+    // one-time draw actually needs that here. The bottom window is static:
+    // draw the image into both backbuffer slots, swap twice, then never
+    // touch gAGLContext2/gSDLWindow2 again for the rest of the process.
+
+    if gDualScreenMode != 0, let window2 = gSDLWindow2 {
+        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
+
+        gAGLContext2 = SDL_GL_CreateContext(window2)
+        if gAGLContext2 == nil {
+            SwFatalAlert(String(cString: SDL_GetError()))
+        }
+
+        let didMakeCurrent2 = SDL_GL_MakeCurrent(window2, gAGLContext2)
+        SwGameAssertMessage(didMakeCurrent2, String(cString: SDL_GetError()))
+
+        _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+
+        var window2Width: Int32 = 0
+        var window2Height: Int32 = 0
+        SDL_GetWindowSizeInPixels(window2, &window2Width, &window2Height)
+
+        var bgWidth: Int32 = 0
+        var bgHeight: Int32 = 0
+        let bgTexture = OGL_TextureMap_LoadImageFile(":Sprites:menu:menuback", &bgWidth, &bgHeight, nil)
+
+        glViewport(0, 0, window2Width, window2Height)
+        glMatrixMode(GLenum(GL_PROJECTION))
+        glLoadIdentity()
+        glOrtho(0, GLdouble(window2Width), GLdouble(window2Height), 0, -1, 1)
+        glMatrixMode(GLenum(GL_MODELVIEW))
+        glLoadIdentity()
+
+        func drawBackgroundQuad() {
+            glClearColor(0, 0, 0, 1)
+            glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+
+            glEnable(GLenum(GL_TEXTURE_2D))
+            glBindTexture(GLenum(GL_TEXTURE_2D), bgTexture)
+            glColor4f(1, 1, 1, 1)
+
+            glBegin(GLenum(GL_QUADS))
+            glTexCoord2f(0, 0); glVertex2f(0, 0)
+            glTexCoord2f(1, 0); glVertex2f(Float(window2Width), 0)
+            glTexCoord2f(1, 1); glVertex2f(Float(window2Width), Float(window2Height))
+            glTexCoord2f(0, 1); glVertex2f(0, Float(window2Height))
+            glEnd()
+
+            glDisable(GLenum(GL_TEXTURE_2D))
+        }
+
+        drawBackgroundQuad() // fill both backbuffer slots so neither shows garbage
+        SDL_GL_SwapWindow(window2)
+        drawBackgroundQuad()
+        SDL_GL_SwapWindow(window2)
+
+        // SWITCH BACK TO THE TOP WINDOW/CONTEXT SO BOOT CAN PROCEED AS NORMAL
+
+        _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+    }
 }
 
 // MARK: - OGL: Nuke draw context
@@ -373,6 +455,12 @@ private func OGL_CreateDrawContext() {
 private func OGL_DisposeDrawContext() {
     guard gAGLContext != nil else {
         return
+    }
+
+    if gAGLContext2 != nil, let window2 = gSDLWindow2 {
+        _ = SDL_GL_MakeCurrent(window2, nil)
+        SDL_GL_DestroyContext(gAGLContext2)
+        gAGLContext2 = nil
     }
 
     _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current

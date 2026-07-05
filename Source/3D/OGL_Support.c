@@ -25,6 +25,7 @@ float			gAnaglyphEyeSeparation 	= 40.0f;
 Byte			gAnaglyphPass;
 
 SDL_GLContext	gAGLContext = nil;
+SDL_GLContext	gAGLContext2 = nil;
 
 OGLMatrix4x4	gViewToFrustumMatrix,gWorldToViewMatrix,gWorldToFrustumMatrix, gLocalToViewMatrix, gLocalToFrustumMatrix;
 OGLMatrix4x4	gWorldToWindowMatrix[MAX_VIEWPORTS];

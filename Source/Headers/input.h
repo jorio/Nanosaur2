@@ -43,6 +43,7 @@ typedef struct
 	int16_t			key[MAX_BINDINGS_PER_NEED];
 	PadBinding		pad[MAX_BINDINGS_PER_NEED];
 	int8_t			mouseButton;
+	int8_t			_reservedAlignmentPadding; // makes the C compiler's implicit trailing alignment padding explicit, since arrays of this struct (e.g. PrefsType.bindings) need it accounted for in every sizeof/MemoryLayout computation
 } InputBinding;
 
 enum

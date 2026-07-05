@@ -70,6 +70,7 @@
 extern	Boolean					gDisableAnimSounds;
 extern	Boolean					gDisableHiccupTimer;
 extern	Boolean					gDrawLensFlare;
+extern	Boolean					gDualScreenMode;
 extern	Boolean					gGameOver;
 extern	Boolean					gGamePaused;
 extern	Boolean					gLevelCompleted;
@@ -124,7 +125,9 @@ extern	PlayerInfoType			gPlayerInfo[MAX_PLAYERS];
 extern	PrefsType				gGamePrefs;
 extern	Ptr						*gSuperTilePixelBuffers;			// temporary pixel buffers used to assemble seamless textures - freed after terrain is loaded
 extern	SDL_GLContext			gAGLContext;
+extern	SDL_GLContext			gAGLContext2;
 extern	SDL_Window*				gSDLWindow;
+extern	SDL_Window*				gSDLWindow2;
 extern	SparkleType				gSparkles[MAX_SPARKLES];
 extern	SpriteType				*gSpriteGroupList[MAX_SPRITE_GROUPS];
 extern	SuperTileItemIndexType	**gSuperTileItemIndexGrid;

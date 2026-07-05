@@ -106,6 +106,22 @@ private var gMyState_BlendFuncD: GLenum = 0
 @inline(__always) private func isStereoAnaglyph() -> Bool { isStereoAnaglyphColor() || isStereoAnaglyphMono() }
 @inline(__always) private func getOverlayPaneNumber() -> Int { Int(gNumPlayers) }
 
+// MARK: - Dual-screen mode (--dual-screen)
+//
+// When gDualScreenMode is set (Boot.cpp parses --dual-screen), gSDLWindow2/
+// gAGLContext2 are a second SDL window+GL context for the bottom screen.
+// Everything the game draws every frame (menus, 3D world, HUD, intro,
+// attract) renders on gSDLWindow/gAGLContext (the top screen) exactly as in
+// single-window mode - none of the per-frame draw path is aware of
+// dual-screen mode. The bottom screen is static: OGL_CreateDrawContext
+// draws the main menu background image to it once at boot and never
+// touches it again (see the dual-screen block in that function). Splitting
+// per-frame content (e.g. moving the HUD to the bottom window) was tried
+// and reverted - toggling which of two *separate* GL contexts is current
+// every frame desyncs the cached GL state flags (gMyState_*) this file
+// relies on to skip redundant GL calls, since those flags are per-process
+// but the real GL server state is now split across two contexts.
+
 @inline(__always) private func OGL_CheckError() -> GLenum {
     OGL_CheckError_Impl(#file, Int32(#line))
 }
@@ -363,6 +379,84 @@ private func OGL_CreateDrawContext() {
 
     gGlClientActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlClientActiveTextureProc != nil)
+
+    // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
+    // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT
+    //
+    // Shares texture/VBO namespace with gAGLContext (set via
+    // SDL_GL_SHARE_WITH_CURRENT_CONTEXT while gAGLContext is current, right
+    // before creating the second context). The background texture is
+    // redrawn every frame behind the minimap (see
+    // OGL_DrawDualScreenBackground/OGL_DrawDualScreenMinimap) rather than
+    // drawn once and left alone - with double buffering, a partial
+    // (map-only) update each frame only ever touches whichever backbuffer
+    // is current, so the other buffer's content lags a frame behind,
+    // producing a visible flicker; redrawing the full frame every time
+    // keeps both buffers identical.
+
+    if gDualScreenMode != 0, let window2 = gSDLWindow2 {
+        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
+
+        gAGLContext2 = SDL_GL_CreateContext(window2)
+        if gAGLContext2 == nil {
+            SwFatalAlert(String(cString: SDL_GetError()))
+        }
+
+        let didMakeCurrent2 = SDL_GL_MakeCurrent(window2, gAGLContext2)
+        SwGameAssertMessage(didMakeCurrent2, String(cString: SDL_GetError()))
+
+        _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+
+        var bgWidth: Int32 = 0
+        var bgHeight: Int32 = 0
+        gDualScreenBackgroundTexture = OGL_TextureMap_LoadImageFile(":Sprites:menu:menuback", &bgWidth, &bgHeight, nil)
+
+        var window2Width: Int32 = 0
+        var window2Height: Int32 = 0
+        SDL_GetWindowSizeInPixels(window2, &window2Width, &window2Height)
+        glViewport(0, 0, window2Width, window2Height)
+
+        OGL_DrawDualScreenBackground(window2Width, window2Height) // fill both backbuffer slots so neither shows garbage
+        SDL_GL_SwapWindow(window2)
+        OGL_DrawDualScreenBackground(window2Width, window2Height)
+        SDL_GL_SwapWindow(window2)
+
+        // SWITCH BACK TO THE TOP WINDOW/CONTEXT SO BOOT CAN PROCEED AS NORMAL
+
+        _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+    }
+}
+
+// MARK: - OGL draw scene (dual-screen background)
+
+private var gDualScreenBackgroundTexture: GLuint = 0
+
+// Draws the static main-menu background image full-screen into whichever
+// window2 context is currently current. Assumes an orthographic projection
+// matching (windowWidth, windowHeight) is already (or about to be) set up
+// by the caller - this only sets up the modelview matrix.
+private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
+    glMatrixMode(GLenum(GL_PROJECTION))
+    glLoadIdentity()
+    glOrtho(0, GLdouble(windowWidth), GLdouble(windowHeight), 0, -1, 1)
+    glMatrixMode(GLenum(GL_MODELVIEW))
+    glLoadIdentity()
+
+    glClearColor(0, 0, 0, 1)
+    glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+
+    glEnable(GLenum(GL_TEXTURE_2D))
+    glBindTexture(GLenum(GL_TEXTURE_2D), gDualScreenBackgroundTexture)
+    glColor4f(1, 1, 1, 1)
+
+    glBegin(GLenum(GL_QUADS))
+    glTexCoord2f(0, 0); glVertex2f(0, 0)
+    glTexCoord2f(1, 0); glVertex2f(Float(windowWidth), 0)
+    glTexCoord2f(1, 1); glVertex2f(Float(windowWidth), Float(windowHeight))
+    glTexCoord2f(0, 1); glVertex2f(0, Float(windowHeight))
+    glEnd()
+
+    glDisable(GLenum(GL_TEXTURE_2D))
 }
 
 // MARK: - OGL: Nuke draw context
@@ -373,6 +467,12 @@ private func OGL_CreateDrawContext() {
 private func OGL_DisposeDrawContext() {
     guard gAGLContext != nil else {
         return
+    }
+
+    if gAGLContext2 != nil, let window2 = gSDLWindow2 {
+        _ = SDL_GL_MakeCurrent(window2, nil)
+        SDL_GL_DestroyContext(gAGLContext2)
+        gAGLContext2 = nil
     }
 
     _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
@@ -774,6 +874,71 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     if isStereo() {
         RestoreCamerasFromAnaglyph()
     }
+
+    if gDualScreenMode != 0 {
+        OGL_DrawDualScreenMinimap()
+    }
+}
+
+// MARK: - OGL draw scene (dual-screen minimap)
+
+// The bottom window is otherwise static (see OGL_CreateDrawContext), but
+// while a level's overhead map is active, redraw it there every frame,
+// centered and enlarged. Runs as a self-contained excursion onto
+// gAGLContext2: OGL_PushState/PopState save and restore the cached GL
+// state flags (gMyState_*) around it, so nothing here can desync context1's
+// real GL state from what this file's cache believes it to be. Skips
+// entirely (no context switch, no swap) when there's no map to draw, so
+// the bottom window doesn't do needless work outside gameplay.
+private func OGL_DrawDualScreenMinimap() {
+    guard let window2 = gSDLWindow2, gAGLContext2 != nil, IsMinimapActive() else {
+        return
+    }
+
+    let savedWindowWidth = gGameWindowWidth
+    let savedWindowHeight = gGameWindowHeight
+
+    // Push while context1 is still current, so this saves ITS real state.
+    OGL_PushState()
+
+    _ = SDL_GL_MakeCurrent(window2, gAGLContext2)
+
+    // gMyState_* (and gMostRecentMaterial) reflect whatever context1 last
+    // set - but that's Swift-side bookkeeping, not real GL state, and
+    // context2's real GL state is its own (fresh/default until we've drawn
+    // on it). Force every flag the sprite-drawing helpers below consult to
+    // a value that's guaranteed to mismatch their desired target, so they
+    // reissue the real GL call against context2 instead of wrongly
+    // skipping it because the cache says "already set" (from context1).
+    gMyState_Lighting = 1
+    gMyState_CullFace = true
+    gMyState_Texture2D = false
+    gMyState_TextureUnit = UInt32(GL_TEXTURE0)
+    gMyState_Blend = false
+    gMyState_BlendFuncS = 0
+    gMyState_BlendFuncD = 0
+    gMyState_Color = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
+    gMostRecentMaterial = nil
+
+    SDL_GetWindowSizeInPixels(window2, &gGameWindowWidth, &gGameWindowHeight)
+    glViewport(0, 0, gGameWindowWidth, gGameWindowHeight)
+
+    // Redraw the full background every frame (not just the map region) so
+    // both backbuffers stay identical - see the comment on
+    // gDualScreenBackgroundTexture's creation for why a partial update
+    // flickers.
+    OGL_DrawDualScreenBackground(gGameWindowWidth, gGameWindowHeight)
+    DrawMinimapOnSecondaryScreen()
+
+    SDL_GL_SwapWindow(window2)
+
+    gGameWindowWidth = savedWindowWidth
+    gGameWindowHeight = savedWindowHeight
+
+    // Switch back to context1 BEFORE popping, so the restore calls PopState
+    // issues actually land on context1 (the context they're meant for).
+    _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+    OGL_PopState()
 }
 
 // MARK: - Draw blue line

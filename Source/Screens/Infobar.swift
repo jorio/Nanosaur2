@@ -368,6 +368,15 @@ func InitInfobar() {
 }
 
 func DisposeInfobar() {
+    // gOverheadMapMaterial borrows a pointer into SPRITE_GROUP_OVERHEADMAP
+    // (see InitInfobar) without a matching reference, and is otherwise only
+    // ever read from the infobar's own ObjNode draw callback, which stops
+    // getting called once the level's objects are torn down - so the
+    // dangling pointer was never actually dereferenced again. But
+    // DrawMinimapOnSecondaryScreen (dual-screen mode) checks it directly
+    // every frame regardless of ObjNode lifecycle, so it must be nilled out
+    // here to avoid reading freed memory after cleanup.
+    gOverheadMapMaterial = nil
 }
 
 // MARK: - Set infobar sprite state
@@ -484,7 +493,9 @@ func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     infobarDrawHealth()
     infobarDrawShield()
     infobarDrawFuel()
-    infobarDrawMap()
+    if gDualScreenMode == 0 { // dual-screen mode: minimap moves to the bottom screen instead (see DrawMinimapOnSecondaryScreen)
+        infobarDrawMap(mapX(), mapY())
+    }
 
     switch gVSMode {
     // ADVENTURE MODE
@@ -718,18 +729,20 @@ func Infobar_DrawNumber(_ number0: Int32, _ x0: Float, _ y0: Float, _ scale: Flo
 
 // MARK: - Draw map
 
-private func infobarDrawMap() {
+// mapXValue/y are the center of the map in logical HUD coordinates; scale
+// multiplies the base MAP_SCALE/MAP_SCALE2 constants. Defaults match the
+// original corner-anchored HUD call site; DrawMinimapOnSecondaryScreen
+// (dual-screen mode) passes an explicit center position and a larger scale.
+private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0) {
     guard gOverheadMapMaterial != nil else {
         return
     }
 
     let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.objNode!.pointee.Rot.y
 
-    let y = mapY()
-
     // SET COORDS OF THE QUAD
-    let xoff = MAP_SCALE2
-    let yoff = MAP_SCALE2
+    let xoff = MAP_SCALE2 * scale
+    let yoff = MAP_SCALE2 * scale
 
     var p2D = (OGLPoint2D(), OGLPoint2D(), OGLPoint2D(), OGLPoint2D())
     p2D.0.x = -xoff; p2D.0.y = yoff
@@ -745,7 +758,6 @@ private func infobarDrawMap() {
         }
     }
 
-    let mapXValue = mapX()
     gOHMPoints[0].x = p2D.0.x + mapXValue; gOHMPoints[0].y = p2D.0.y + y // translate and convert to 3D point variable
     gOHMPoints[1].x = p2D.1.x + mapXValue; gOHMPoints[1].y = p2D.1.y + y
     gOHMPoints[2].x = p2D.2.x + mapXValue; gOHMPoints[2].y = p2D.2.y + y
@@ -850,21 +862,58 @@ private func infobarDrawMap() {
 
     // DRAW SHADOW
     if gGamePrefs.lowRenderQuality == 0 {
-        DrawInfobarSprite_Centered(mapXValue + 3, y + 3, MAP_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
+        DrawInfobarSprite_Centered(mapXValue + 3, y + 3, MAP_SCALE * scale * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
     // DRAW BACK
-    DrawInfobarSprite_Centered(mapXValue, y, MAP_SCALE, Int16(INFOBAR_SObjType_MapLines))
+    DrawInfobarSprite_Centered(mapXValue, y, MAP_SCALE * scale, Int16(INFOBAR_SObjType_MapLines))
 
     // DRAW MAP
     MO_DrawGeometry_VertexArray(&gOHMTriMesh)
 
     // DRAW FRAME OVERLAY
-    drawInfobarSpriteRotated(mapXValue, y, MAP_SCALE, Int16(INFOBAR_SObjType_MapFrame), 0)
+    drawInfobarSpriteRotated(mapXValue, y, MAP_SCALE * scale, Int16(INFOBAR_SObjType_MapFrame), 0)
 
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
-    DrawInfobarSprite_Centered(mapXValue, y, MAP_SCALE, Int16(INFOBAR_SObjType_MapGlass))
+    DrawInfobarSprite_Centered(mapXValue, y, MAP_SCALE * scale, Int16(INFOBAR_SObjType_MapGlass))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
+}
+
+// MARK: - Draw minimap on secondary screen (dual-screen mode)
+
+// Called once per frame from OGL_Support.swift's dual-screen draw path,
+// with gAGLContext2/gSDLWindow2 already current and gGameWindowWidth/Height
+// temporarily overridden to the bottom window's own pixel size (so
+// SetInfobarSpriteState/Get2DLogicalRect - both keyed off those globals -
+// compute the right aspect/letterboxing for that window). Draws the map
+// centered instead of corner-anchored, and bigger than the normal HUD map.
+private let kSecondaryScreenMapScale: Float = 3.0
+
+// So OGL_Support.swift's dual-screen draw path can skip the whole
+// context-switch/swap excursion when there's nothing to draw (outside
+// gameplay) without needing access to the private gOverheadMapMaterial.
+func IsMinimapActive() -> Bool {
+    gOverheadMapMaterial != nil
+}
+
+// Caller (OGL_Support.swift) is responsible for OGL_PushState/PopState
+// around the whole context-switch excursion this runs inside of - doing
+// it here would push/pop while already on the secondary context, saving
+// and restoring the wrong context's state.
+func DrawMinimapOnSecondaryScreen() {
+    guard gOverheadMapMaterial != nil else {
+        return
+    }
+
+    let savedPane = gCurrentSplitScreenPane
+    gCurrentSplitScreenPane = 0
+    defer { gCurrentSplitScreenPane = savedPane }
+
+    SetInfobarSpriteState(0, 1.0)
+
+    let centerX = (gLogicalRect.left + gLogicalRect.right) * 0.5
+    let centerY = (gLogicalRect.top + gLogicalRect.bottom) * 0.5
+    infobarDrawMap(centerX, centerY, kSecondaryScreenMapScale)
 }
 
 // MARK: - Draw health

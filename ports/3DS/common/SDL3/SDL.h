@@ -10,12 +10,34 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 typedef struct SDL_Window SDL_Window;
 typedef void *SDL_GLContext;
 typedef struct SDL_Gamepad SDL_Gamepad;
 
 void SDL_Log(const char *fmt, ...);
+int SDL_snprintf(char *text, size_t maxlen, const char *fmt, ...);
+int SDL_vsnprintf(char *text, size_t maxlen, const char *fmt, va_list ap);
+const char *SDL_strchr(const char *str, int c);
+int SDL_strncmp(const char *str1, const char *str2, size_t maxlen);
+
+// MARK: - Locale (no real locale API on 3DS - see sdlcompat.c: always
+// reports "no preference", which Localization.c's callers already treat
+// as "default to English", a reasonable answer here)
+
+typedef struct {
+    const char *language;
+    const char *country;
+} SDL_Locale;
+
+SDL_Locale **SDL_GetPreferredLocales(int *count);
+
+// GL_RENDERER/GL_VERSION/glGetString are real picaGL declarations now
+// (<GL/gl.h>, included via SDL3/SDL_opengl.h) - no stub needed here.
+
+const char *SDL_GetCurrentVideoDriver(void);
+const char *SDL_GetGamepadName(SDL_Gamepad *gamepad);
 
 // MARK: - Basic types
 
@@ -196,6 +218,8 @@ typedef enum {
     SDL_GAMEPAD_BUTTON_EAST = 1,
     SDL_GAMEPAD_BUTTON_WEST = 2,
     SDL_GAMEPAD_BUTTON_NORTH = 3,
+    SDL_GAMEPAD_BUTTON_BACK = 4,
+    SDL_GAMEPAD_BUTTON_GUIDE = 5,
     SDL_GAMEPAD_BUTTON_START = 6,
     SDL_GAMEPAD_BUTTON_LEFT_STICK = 7,
     SDL_GAMEPAD_BUTTON_RIGHT_STICK = 8,
@@ -301,6 +325,7 @@ bool SDL_SyncWindow(SDL_Window *window);
 void *SDL_GL_GetProcAddress(const char *proc);
 int SDL_GL_SetSwapInterval(int interval);
 int SDL_GL_GetSwapInterval(int *interval);
+void SDL_GL_SwapWindow(SDL_Window *window); // AnaglyphCalibration.c's blank-frame flush - real presentation goes through CTRUGraphicsBackend.swap() instead, this is a no-op
 
 // MARK: - Time
 
@@ -311,6 +336,7 @@ bool SDL_TimeToDateTime(SDL_Time ticks, SDL_DateTime *dt, bool localTime);
 // MARK: - Misc
 
 #define SDL_MESSAGEBOX_WARNING 0x0010
+#define SDL_MESSAGEBOX_ERROR 0x0020
 int SDL_ShowSimpleMessageBox(uint32_t flags, const char *title, const char *message, SDL_Window *window);
 uint32_t SDL_StepUTF8(const char **pstr, size_t *pslen);
 

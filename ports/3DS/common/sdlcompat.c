@@ -18,6 +18,42 @@
 #include "SDL3/SDL.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+// MARK: - String/varargs (real implementations - naming shims only)
+
+int SDL_snprintf(char *text, size_t maxlen, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int result = vsnprintf(text, maxlen, fmt, ap);
+    va_end(ap);
+    return result;
+}
+
+int SDL_vsnprintf(char *text, size_t maxlen, const char *fmt, va_list ap)
+{
+    return vsnprintf(text, maxlen, fmt, ap);
+}
+
+const char *SDL_strchr(const char *str, int c) { return strchr(str, c); }
+int SDL_strncmp(const char *str1, const char *str2, size_t maxlen) { return strncmp(str1, str2, maxlen); }
+
+SDL_Locale **SDL_GetPreferredLocales(int *count)
+{
+    if (count) {
+        *count = 0;
+    }
+    return NULL;
+}
+
+// glGetString is picaGL's real implementation (source/get.c) now - no
+// stub needed here.
+
+const char *SDL_GetCurrentVideoDriver(void) { return "3ds"; }
+const char *SDL_GetGamepadName(SDL_Gamepad *gamepad) { (void)gamepad; return "Nintendo 3DS"; }
+
+void SDL_GL_SwapWindow(SDL_Window *window) { (void)window; } // see SDL.h's comment on this declaration
 
 // MARK: - Memory (real implementations - just naming shims for the
 // SDL_-prefixed names some call sites use instead of plain libc names)

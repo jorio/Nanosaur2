@@ -151,16 +151,16 @@ struct SDLInputBackend: InputBackend {
 
 // MARK: - 3DS conformances
 //
-// citro3d has no per-window GL-style context object: C3D_Init/C2D_Init set
-// up one global render pipeline for the whole app, and screens are
-// identified by C3D_RenderTarget, not a context handle you make current.
-// ContextHandle is a nominal placeholder rather than a real handle -
-// createContext/createSecondaryContext just record which screen a caller
-// means; the actual C3D_RenderTarget setup and glVertex-equivalent
-// citro2d/citro3d draw calls happen in Phase 3's renderer rewrite, not
-// here. This conformance exists now only to satisfy the protocol boundary
-// so OGL_Support.swift's call sites can be routed through
-// `gGraphicsBackend` unconditionally on every platform.
+// Backed by picaGL (ports/3DS/vendor/picaGL, see VENDORED.md) - a real
+// OpenGL 1.x-style implementation for the PICA200 that talks to the GPU
+// command queue directly, not citro3d. Like citro3d, it has no per-window
+// GL-style context object: `pglInit()` sets up one global render pipeline
+// for the whole app, and screens are selected by `pglSelectScreen(GFX_TOP/
+// GFX_BOTTOM, ...)`, not a context handle you make current. ContextHandle
+// is therefore a nominal placeholder distinguishing "the context that owns
+// the top screen" from "...the bottom screen" - `makeCurrent` is where
+// that distinction actually does something (calls `pglSelectScreen`),
+// unlike the real no-op it would be if there were truly nothing to select.
 //
 // ContextHandle MUST be `SDL_GLContext` (an `UnsafeMutableRawPointer?`),
 // matching `SDLGraphicsBackend`'s - NOT a 3DS-only type like `Bool`. The
@@ -171,30 +171,42 @@ struct SDLInputBackend: InputBackend {
 // in isolation (see the earlier `PlatformBackend.swift` update) but broke
 // the moment `OGL_Support.swift` - which only knows about `SDL_GLContext`,
 // not either backend's ContextHandle - tried to pass `gAGLContext` into
-// `makeCurrent`/`swap`/etc. The pointer values themselves are meaningless
-// on 3DS (never dereferenced), just distinct sentinels.
+// `makeCurrent`/`swap`/etc. The pointer values themselves are otherwise
+// meaningless (never dereferenced) - only their identity (1 vs. 2) matters,
+// to tell `makeCurrent` which screen to select.
+private let kTopScreenHandle = UnsafeMutableRawPointer(bitPattern: 1)!
+private let kBottomScreenHandle = UnsafeMutableRawPointer(bitPattern: 2)!
+
 struct CTRUGraphicsBackend: GraphicsBackend {
     typealias ContextHandle = SDL_GLContext
 
     mutating func createContext(window: OpaquePointer) -> ContextHandle {
-        UnsafeMutableRawPointer(bitPattern: 1)!
+        PGL_Init()
+        PGL_SelectTopScreen()
+        return kTopScreenHandle
     }
 
     mutating func createSecondaryContext(window: OpaquePointer, sharedWith: ContextHandle) -> ContextHandle {
-        UnsafeMutableRawPointer(bitPattern: 2)!
+        kBottomScreenHandle
     }
 
     func makeCurrent(_ context: ContextHandle, window: OpaquePointer) {
-        // No-op: citro3d has no current-context concept to switch.
+        if context == kBottomScreenHandle {
+            PGL_SelectBottomScreen()
+        } else {
+            PGL_SelectTopScreen()
+        }
     }
 
     func swap(_ context: ContextHandle, window: OpaquePointer) {
-        // Phase 3: C3D_FrameEnd(0) belongs here once frame begin/end is
-        // wired up to this call site instead of being main-loop-only.
+        PGL_SwapBuffers()
     }
 
     mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer) {
-        // No-op: nothing owned per-context to tear down.
+        // No-op: nothing owned per-context to tear down (picaGL itself has
+        // no matching pglExit-per-screen call - pglExit() tears down the
+        // whole GPU pipeline, called once at real app shutdown, not per
+        // context/screen).
     }
 }
 

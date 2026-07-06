@@ -66,20 +66,36 @@ LDFLAGS		:=	-specs=3dsx.specs -g $(ARCH) \
 			-Wl,-Map,$(TARGET).map -Wl,--gc-sections \
 			-L$(CTRULIB)/lib
 
-LIBS		:=	-lcitro2d -lcitro3d -lctru -lm
+LIBS		:=	-lctru -lm
 
 BIN2S		?=	bin2s
 
 #---------------------------------------------------------------------------------
-# PICA200 GPU shaders (Phase 3 of docs/3DS_PORT_PLAN.md: the GL-compatibility
-# shim backing OGL_Support.swift's immediate-mode calls needs a real compiled
-# vertex shader, since the PICA200 has no fixed-function vertex pipeline).
-# Each %.v.pica assembles to a %.shbin (via picasso), which then gets
-# embedded as linkable data the same way devkitPro's example Makefiles do it
-# (bin2s generates a .s + a _shbin.h with the byte array's extents, then the
-# .s assembles into a normal .o) - see $(DEVKITARM)/base_tools's `bin2o`.
+# picaGL (vendor/picaGL, see its VENDORED.md) - a real OpenGL 1.x-style
+# implementation for the PICA200 GPU (talks to the GPU command queue
+# directly, not citro3d/citro2d - so those libs aren't linked here at all).
+# Backs SDL3/SDL_opengl.h's real <GL/gl.h> forward and PlatformBackend.swift's
+# CTRUGraphicsBackend (via picaGL_shim.c). Its own vertex shader
+# (vendor/picaGL/source/shaders/vshader.v.pica + clear.v.pica) needs the
+# same picasso -> bin2s -> .o pipeline as any PICA200 shader.
 #---------------------------------------------------------------------------------
-SHADERS		:=	shaders/
+PICAGL		:=	vendor/picaGL/
+PICAGL_SOURCE	:=	$(PICAGL)source/
+PICAGL_UTILS	:=	$(PICAGL)source/utils/
+PICAGL_SHADERS	:=	$(PICAGL)source/shaders/
+PICAGL_INCLUDE	:=	$(PICAGL)include/
+
+# Kept as two separate lists (not one `source/**/*.c` glob) - source/ and
+# source/utils/ need distinct pattern rules below, and source/'s pattern
+# would otherwise ambiguously also match source/utils/*.c (it's a prefix
+# of that path), producing wrongly-named objects like
+# `picagl_utils/hashtable.o` (with the literal "utils/" in the name,
+# breaking the build - hit this exact bug when this was one combined list).
+PICAGL_MAIN_CFILES  := $(wildcard $(PICAGL_SOURCE)*.c)
+PICAGL_UTILS_CFILES := $(wildcard $(PICAGL_UTILS)*.c)
+PICAGL_OFILES	:=	$(patsubst $(PICAGL_SOURCE)%.c,$(BUILD)/picagl_%.o,$(PICAGL_MAIN_CFILES)) \
+			$(patsubst $(PICAGL_UTILS)%.c,$(BUILD)/picagl_%.o,$(PICAGL_UTILS_CFILES))
+PICAGL_SHADER_OFILES := $(BUILD)/picagl_vshader_shbin.o $(BUILD)/picagl_clear_shbin.o
 
 
 #---------------------------------------------------------------------------------
@@ -107,6 +123,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-Xcc -I$(CTRULIB)/include \
 			-Xcc -I$(POMME_SOURCE) \
 			-Xcc -I$(ENGINE_SOURCE)/Headers \
+			-Xcc -I$(PICAGL_INCLUDE) \
 			-Xcc -fmodule-map-file=$(COMMON)module.modulemap
 
 #---------------------------------------------------------------------------------
@@ -136,7 +153,8 @@ ENGINE_SWIFT	:=	$(ENGINE_SOURCE)/3D/OGLTypes.swift \
 			$(ENGINE_SOURCE)/System/MenuItemExtensions.swift \
 			$(ENGINE_SOURCE)/System/EmbeddedMath.swift
 
-OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o $(BUILD)/glcompat_shbin.o $(BUILD)/glcompat.o $(BUILD)/sdlcompat.o
+OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o $(BUILD)/sdlcompat.o $(BUILD)/picaGL_shim.o \
+			$(PICAGL_OFILES) $(PICAGL_SHADER_OFILES)
 
 #---------------------------------------------------------------------------------
 .PHONY: all clean
@@ -156,24 +174,52 @@ $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/glcompat.o: $(COMMON)glcompat.c $(COMMON)SDL3/SDL_opengl.h $(BUILD)/glcompat_shbin.h | $(BUILD)
-	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -I$(BUILD) -I$(COMMON) -c $< -o $@
-
 $(BUILD)/sdlcompat.o: $(COMMON)sdlcompat.c $(COMMON)SDL3/SDL.h | $(BUILD)
 	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -I$(COMMON) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(COMMON) -I$(PICAGL_INCLUDE) -c $< -o $@
 
-$(SHADERS)glcompat.shbin $(SHADERS)glcompat_shbin.h: $(SHADERS)glcompat.v.pica
+$(BUILD)/picaGL_shim.o: $(COMMON)picaGL_shim.c $(COMMON)picaGL_shim.h | $(BUILD)
 	@echo $(notdir $<)
-	picasso -o $(SHADERS)glcompat.shbin -h $(SHADERS)glcompat_shbin.h $<
+	$(CC) $(CFLAGS) -I$(COMMON) -I$(PICAGL_INCLUDE) -c $< -o $@
 
-$(BUILD)/glcompat_shbin.h $(BUILD)/glcompat_shbin.s: $(SHADERS)glcompat.shbin | $(BUILD)
+#---------------------------------------------------------------------------------
+# picaGL: its own vertex/clear shaders (picasso -> bin2s -> .o, same
+# pipeline as any PICA200 shader - see the earlier version of this
+# Makefile's now-removed glcompat shader rules for the from-scratch
+# explanation), then its C sources (need the shaders' generated headers,
+# per state.c's own #include "vshader_shbin.h"/"clear_shbin.h").
+#---------------------------------------------------------------------------------
+# state.c does `#include "vshader_shbin.h"`/`"clear_shbin.h"` (unprefixed -
+# it's vendored code, not patched to match this Makefile's picagl_ naming
+# convention for its .o files). bin2s derives the byte-array symbol names
+# (vshader_shbin/vshader_shbin_size) from the .shbin file's own name, so
+# that file (not just the header) must be named unprefixed too, or the
+# symbols wouldn't match what state.c references.
+$(BUILD)/vshader_shbin.h $(BUILD)/picagl_vshader_shbin.s: $(PICAGL_SHADERS)vshader.v.pica | $(BUILD)
 	@echo $(notdir $<)
-	$(BIN2S) -a 4 -H $(BUILD)/glcompat_shbin.h $< > $(BUILD)/glcompat_shbin.s
+	picasso -o $(BUILD)/vshader.shbin -h $(BUILD)/vshader_shbin.h $<
+	$(BIN2S) -a 4 -H $(BUILD)/vshader_shbin.h $(BUILD)/vshader.shbin > $(BUILD)/picagl_vshader_shbin.s
 
-$(BUILD)/glcompat_shbin.o: $(BUILD)/glcompat_shbin.s
+$(BUILD)/clear_shbin.h $(BUILD)/picagl_clear_shbin.s: $(PICAGL_SHADERS)clear.v.pica | $(BUILD)
+	@echo $(notdir $<)
+	picasso -o $(BUILD)/clear.shbin -h $(BUILD)/clear_shbin.h $<
+	$(BIN2S) -a 4 -H $(BUILD)/clear_shbin.h $(BUILD)/clear.shbin > $(BUILD)/picagl_clear_shbin.s
+
+$(BUILD)/picagl_vshader_shbin.o: $(BUILD)/picagl_vshader_shbin.s
 	$(CC) -x assembler-with-cpp $(CFLAGS) -c $< -o $@
+
+$(BUILD)/picagl_clear_shbin.o: $(BUILD)/picagl_clear_shbin.s
+	$(CC) -x assembler-with-cpp $(CFLAGS) -c $< -o $@
+
+# picaGL still uses its original -DARM11 -D_3DS defines (not __3DS__) -
+# kept as-is rather than patched, since it's vendored code (see VENDORED.md).
+$(BUILD)/picagl_%.o: $(PICAGL_SOURCE)%.c $(BUILD)/vshader_shbin.h $(BUILD)/clear_shbin.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -DARM11 -D_3DS -I$(PICAGL_INCLUDE) -I$(PICAGL_SOURCE) -I$(BUILD) -c $< -o $@
+
+$(BUILD)/picagl_%.o: $(PICAGL_UTILS)%.c | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -DARM11 -D_3DS -I$(PICAGL_INCLUDE) -I$(PICAGL_SOURCE) -c $< -o $@
 
 $(TARGET).elf: $(OFILES)
 	@echo linking $(notdir $@)
@@ -189,4 +235,4 @@ $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh
 
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).3dsx $(TARGET).map $(SHADERS)glcompat.shbin $(SHADERS)glcompat_shbin.h
+	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).3dsx $(TARGET).map

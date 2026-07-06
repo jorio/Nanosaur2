@@ -3,55 +3,58 @@
 //  Nanosaur 2 for Nintendo 3DS -- Embedded Swift ARM11 binary.
 //
 //  This is a MINIMAL BOOT smoke test, not the real game (see
-//  docs/3DS_PORT_PLAN.md, Phase 2): it exists to prove the toolchain/link
-//  pipeline works end to end - Embedded Swift compiling against citro2d/
-//  citro3d, linking against libctru, and packaging into a .3dsx - before
-//  any of the actual Nanosaur2 engine (Source/) is wired in. The real
-//  engine's Swift files are pervasively SDL3/Pomme-typed (not cleanly
-//  isolated behind a couple of files the way junkbot-swift's engine was),
-//  so integrating them is a separate, much larger follow-up pass, not
-//  something this file attempts.
+//  docs/3DS_PORT_PLAN.md, Phase 2/3): it exists to prove the toolchain/link
+//  pipeline works end to end - Embedded Swift compiling against picaGL
+//  (ports/3DS/vendor/picaGL, a real OpenGL 1.x-style implementation for the
+//  PICA200 GPU), linking against libctru, and packaging into a .3dsx -
+//  before any of the actual Nanosaur2 engine (Source/) is wired in.
 //
-//  Draws a solid color to both screens and reads the D-pad/buttons so the
-//  citro2d render-target/frame pipeline and hidScanInput are both
-//  exercised, then exits on START.
+//  Previously used citro2d/citro3d directly (import CTRU); switched to
+//  picaGL because the real engine's Swift/C code only ever calls standard
+//  gl* functions (glBegin/glVertex/glTexEnvi/etc.), never citro2d's own
+//  API - and picaGL/citro3d can't coexist in the same app anyway (both
+//  directly own the same GPU command queue). See PlatformBackend.swift's
+//  CTRUGraphicsBackend for the same picaGL wiring the real engine uses.
+//
+//  Draws a solid-colored rectangle to both screens via real GL immediate-
+//  mode calls, and reads the D-pad/buttons via hidScanInput, then exits on
+//  START.
 //
 //---------------------------------------------------------------------------------
 
-import CTRU
-
-gfxInitDefault()
-C3D_Init(Int(C3D_DEFAULT_CMDBUF_SIZE))
-C2D_Init(Int(C2D_DEFAULT_MAX_OBJECTS))
-C2D_Prepare()
-
-let topTarget = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT)
-let bottomTarget = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT)
-
-let topColor = C2D_Color32(0x20, 0x40, 0xA0, 0xFF) // dark blue
-let bottomColor = C2D_Color32(0x20, 0xA0, 0x40, 0xFF) // dark green
-let rectColor = C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF) // white
+PGL_Init()
 
 while aptMainLoop() {
     hidScanInput()
-    let keysDown = hidKeysDown()
-    if keysDown & KEY_START != 0 {
+    if hidKeysDown() & UInt32(NANOSAUR_3DS_KEY_START) != 0 {
         break
     }
 
-    C3D_FrameBegin(UInt8(C3D_FRAME_SYNCDRAW))
+    PGL_SelectTopScreen()
+    glClearColor(0.125, 0.25, 0.625, 1.0) // dark blue
+    glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+    drawTestRect()
+    PGL_SwapBuffers()
 
-    C2D_TargetClear(topTarget, topColor)
-    C2D_SceneBegin(topTarget)
-    C2D_DrawRectSolid(60, 40, 0, 280, 120, rectColor)
-
-    C2D_TargetClear(bottomTarget, bottomColor)
-    C2D_SceneBegin(bottomTarget)
-    C2D_DrawRectSolid(60, 80, 0, 200, 80, rectColor)
-
-    C3D_FrameEnd(0)
+    PGL_SelectBottomScreen()
+    glClearColor(0.125, 0.625, 0.25, 1.0) // dark green
+    glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+    drawTestRect()
+    PGL_SwapBuffers()
 }
 
-C2D_Fini()
-C3D_Fini()
-gfxExit()
+private func drawTestRect() {
+    glMatrixMode(GLenum(GL_PROJECTION))
+    glLoadIdentity()
+    glOrtho(0, 400, 240, 0, -1, 1)
+    glMatrixMode(GLenum(GL_MODELVIEW))
+    glLoadIdentity()
+
+    glColor4f(1, 1, 1, 1)
+    glBegin(GLenum(GL_QUADS))
+    glVertex2f(60, 40)
+    glVertex2f(340, 40)
+    glVertex2f(340, 200)
+    glVertex2f(60, 200)
+    glEnd()
+}

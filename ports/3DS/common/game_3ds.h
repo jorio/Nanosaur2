@@ -25,6 +25,16 @@
 // of libctru than this.
 extern void hidScanInput(void);
 extern unsigned int hidKeysHeld(void);
+extern unsigned int hidKeysDown(void);
+extern void gfxInitDefault(void);
+extern void gfxExit(void);
+extern _Bool aptMainLoop(void);
+#define NANOSAUR_3DS_KEY_START 8 // BIT(3), from libctru's hid.h KEY_START - not included via <3ds.h> here (see above)
+
+// picaGL's real GPU init/screen-select/swap, for PlatformBackend.swift's
+// CTRUGraphicsBackend - see picaGL_shim.h for why this is a plain wrapper
+// header rather than picaGL's own <GL/picaGL.h> (which pulls in <3ds.h>).
+#include "picaGL_shim.h"
 
 // Swift-only helper declarations (SwFatal/SwGameAssert/GetPlayerInfoEntry/
 // gNav/etc.) from the real Nanosaur2-Bridging-Header.h - not part of

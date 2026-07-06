@@ -376,12 +376,23 @@ private func OGL_CreateDrawContext() {
 
     // GET GL PROCEDURES
     // Necessary on Windows
-
+    //
+    // 3DS: picaGL statically links glActiveTexture/glClientActiveTexture as
+    // ordinary C functions (not an extension a driver may or may not
+    // expose), so there's nothing to dynamically look up - real SDL3's 3DS
+    // backend is software-rendering-only and doesn't implement
+    // SDL_GL_GetProcAddress at all, which would otherwise return nil here
+    // and fail the assert below at runtime.
+    #if NANOSAUR_3DS
+    gGlActiveTextureProc = glActiveTexture
+    gGlClientActiveTextureProc = glClientActiveTexture
+    #else
     gGlActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlActiveTextureProc != nil)
 
     gGlClientActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlClientActiveTextureProc != nil)
+    #endif
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
     // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT

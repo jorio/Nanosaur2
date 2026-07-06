@@ -1,0 +1,5 @@
+// Exposes libctru + citro2d/citro3d to Swift as `import CTRU`.
+module CTRU {
+    header "ctru_umbrella.h"
+    export *
+}

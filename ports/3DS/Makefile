@@ -69,23 +69,45 @@ LDFLAGS		:=	-specs=3dsx.specs -g $(ARCH) \
 LIBS		:=	-lcitro2d -lcitro3d -lctru -lm
 
 #---------------------------------------------------------------------------------
+# Real-engine paths. game_3ds.h (see common/) is the 3DS-specific substitute
+# for Source/Headers/game.h + Nanosaur2-Bridging-Header.h - see its header
+# comment and docs/3DS_PORT_PLAN.md, Phase 2.
+#---------------------------------------------------------------------------------
+ENGINE_ROOT	:=	../..
+ENGINE_SOURCE	:=	$(ENGINE_ROOT)/Source
+POMME_SOURCE	:=	$(ENGINE_ROOT)/extern/Pomme/src
+
+#---------------------------------------------------------------------------------
 # Embedded Swift flags, targeting armv6-none-none-eabi.
 #---------------------------------------------------------------------------------
 SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-enable-experimental-feature Embedded \
 			-wmo -Osize \
 			-module-name Nanosaur2 \
+			-DNANOSAUR_3DS \
+			-import-objc-header $(COMMON)game_3ds.h \
 			-Xcc -D__3DS__ \
 			-Xcc -march=armv6k -Xcc -mtune=mpcore -Xcc -mfloat-abi=hard \
 			-Xcc -isystem -Xcc $(DEVKITARM)/arm-none-eabi/include \
 			-Xcc -I$(COMMON) \
 			-Xcc -I$(CTRULIB)/include \
+			-Xcc -I$(POMME_SOURCE) \
+			-Xcc -I$(ENGINE_SOURCE)/Headers \
 			-Xcc -fmodule-map-file=$(COMMON)module.modulemap
 
 #---------------------------------------------------------------------------------
-# Sources: just the minimal boot smoke test for now (see header comment).
+# Sources: the minimal boot smoke test (source/*.swift) plus real engine
+# files being wired in one at a time as they're proven to compile+link for
+# 3DS (see docs/3DS_PORT_PLAN.md, Phase 2 "first real engine file linked").
+# Add to ENGINE_SWIFT as more files are confirmed to work, in the same
+# incremental spirit - do not just `find $(ENGINE_SOURCE) -name '*.swift'`
+# here, since most of it still needs SDL/GL rewriting first.
 #---------------------------------------------------------------------------------
 PORT_SWIFT	:=	$(wildcard source/*.swift)
+ENGINE_SWIFT	:=	$(ENGINE_SOURCE)/3D/OGLTypes.swift \
+			$(ENGINE_SOURCE)/System/GameEnums.swift \
+			$(ENGINE_SOURCE)/System/SwiftEnumExtensions.swift \
+			$(ENGINE_SOURCE)/System/MenuItemExtensions.swift
 
 OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o
 
@@ -97,10 +119,11 @@ all: $(TARGET).3dsx
 $(BUILD):
 	@mkdir -p $@
 
-# All Swift (just the port for now) -> one object, whole-module.
-$(BUILD)/nanosaur2.swift.o: $(PORT_SWIFT) $(COMMON)module.modulemap $(COMMON)ctru_umbrella.h | $(BUILD)
+# All Swift (port smoke-test files + wired-in real engine files) -> one
+# object, whole-module.
+$(BUILD)/nanosaur2.swift.o: $(PORT_SWIFT) $(ENGINE_SWIFT) $(COMMON)module.modulemap $(COMMON)ctru_umbrella.h $(COMMON)game_3ds.h | $(BUILD)
 	@echo compiling Swift
-	$(SWIFTC) $(SWIFTFLAGS) -c $(PORT_SWIFT) -o $@
+	$(SWIFTC) $(SWIFTFLAGS) -c $(PORT_SWIFT) $(ENGINE_SWIFT) -o $@
 
 $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)

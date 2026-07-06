@@ -15,6 +15,17 @@
 // they'll compile for 3DS; tracked separately in docs/3DS_PORT_PLAN.md).
 #include "game.h"
 
+// libctru's hid API, used by PlatformBackend.swift's CTRUInputBackend.
+// Declared directly rather than `#include <3ds.h>`: libctru's
+// <3ds/types.h> defines `Handle` as `u32`, which collides with the Mac
+// Toolbox's `Handle` (`Ptr*`, i.e. `char**`) already declared via
+// game.h/Pomme.h above - "typedef redefinition with different types".
+// Only the two functions actually called need to resolve here, so a full
+// module/header reconciliation isn't worth doing until Phase 3 needs more
+// of libctru than this.
+extern void hidScanInput(void);
+extern unsigned int hidKeysHeld(void);
+
 // Swift-only helper declarations (SwFatal/SwGameAssert/GetPlayerInfoEntry/
 // gNav/etc.) from the real Nanosaur2-Bridging-Header.h - not part of
 // game.h itself.

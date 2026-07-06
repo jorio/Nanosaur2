@@ -192,10 +192,45 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	glDrawRangeElements(mode, first, count, count, GL_UNSIGNED_SHORT, NULL);
 }
 
+// The PICA200 GPU's index buffer is 16-bit only - there's no hardware
+// path for 32-bit indices at all. The engine's BG3D-derived geometry
+// (MOTriangleIndecies) stores GLuint (32-bit) indices and always calls
+// glDrawElements with GL_UNSIGNED_INT, which this file used to silently
+// no-op on (only GL_UNSIGNED_SHORT was ever accepted) - meaning every
+// single vertex-array mesh draw in the whole engine was a no-op. Convert
+// 32-bit indices down to 16-bit here instead of requiring every caller to
+// pre-convert; real model index counts are always well under 65536.
+static const GLvoid* _downcastIndicesToUShort(const GLvoid *indices, GLsizei count)
+{
+	const GLuint *src = (const GLuint*)indices;
+	GLushort *dst = (GLushort*)_bufferArray(NULL, sizeof(GLushort) * count);
+
+	for(int i = 0; i < count; i++)
+		dst[i] = (GLushort)src[i];
+
+	return dst;
+}
+
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
-	if(type != GL_UNSIGNED_SHORT || pglState->vertexArrayState == GL_FALSE)
+	if((type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT) || pglState->vertexArrayState == GL_FALSE)
 		return;
+
+	if(type == GL_UNSIGNED_INT)
+	{
+		const GLuint *indices32 = (const GLuint*)indices;
+		uint32_t end = 0;
+
+		for(int i = 0; i < count; i++)
+			if(end < indices32[i])
+				end = indices32[i];
+
+		end++;
+
+		indices = _downcastIndicesToUShort(indices, count);
+		glDrawRangeElements(mode, 0, end, count, GL_UNSIGNED_SHORT, indices);
+		return;
+	}
 
 	uint32_t end = 0;
 
@@ -212,6 +247,12 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indic
 
 void glDrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices )
 {
+	if(type == GL_UNSIGNED_INT)
+	{
+		indices = _downcastIndicesToUShort(indices, count);
+		type = GL_UNSIGNED_SHORT;
+	}
+
 	if(type != GL_UNSIGNED_SHORT || pglState->vertexArrayState == GL_FALSE)
 		return;
 

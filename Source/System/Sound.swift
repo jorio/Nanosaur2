@@ -262,7 +262,7 @@ func LoadSoundBank(_ bank: UInt8) {
 
         for ext in kSoundExts {
             let path = ":Audio:\(gSoundBankNames[Int(effectDef.bank)] ?? ""):\(effectDef.name ?? "").\(ext)"
-            iErr = path.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+            iErr = ResolveDataFileSpec(path, &spec)
             if iErr == kNoErr { // if the file exists, stop; otherwise try next extension
                 break
             }
@@ -400,7 +400,7 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 
     let song = gSongs[Int(songNum)]
 
-    var iErr = song.path.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+    var iErr = ResolveDataFileSpec(song.path, &spec)
     SwGameAssert(iErr == kNoErr)
 
     iErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &musicFileRefNum)

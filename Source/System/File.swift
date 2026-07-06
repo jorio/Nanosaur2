@@ -1192,11 +1192,36 @@ func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
     return iErr
 }
 
+// Resolves an engine-relative colon-path (e.g. ":Models:global.bg3d") to an
+// FSSpec rooted at the game's Data folder (gDataSpec). Every direct-FSSpec
+// caller in the game (Bg3d.swift/Sound.swift/LevelIntro.swift/LoadLevel.swift/
+// OGL_Support.swift), not just LoadDataFile below, goes through this instead
+// of duplicating the FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ...)
+// call, so a future alternate File.swift (e.g. a 3DS RomFS-backed one) only
+// needs to change this one function's root, not every call site - even
+// though most of those callers still stream the file themselves via
+// FSpOpenDF/refNum (BG3D/audio parsing) rather than going through
+// LoadDataFile's whole-buffer read.
+@discardableResult
+func ResolveDataFileSpec(_ path: UnsafePointer<CChar>!, _ outSpec: UnsafeMutablePointer<FSSpec>!) -> OSErr {
+    FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, outSpec)
+}
+
+// String overload: FSMakeFSSpec's C import lets Swift bridge a String to its
+// UnsafePointer<CChar> parameter implicitly at the call site, but that magic
+// doesn't extend to a plain Swift function like the one above, so callers
+// with a String path (LevelIntro.swift/LoadLevel.swift/OGL_Support.swift)
+// need this instead of manually reaching for withCString each time.
+@discardableResult
+func ResolveDataFileSpec(_ path: String, _ outSpec: UnsafeMutablePointer<FSSpec>!) -> OSErr {
+    path.withCString { ResolveDataFileSpec($0, outSpec) }
+}
+
 // Use SafeDisposePtr when done.
 func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
     var spec = FSSpec()
 
-    let err = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+    let err = ResolveDataFileSpec(path, &spec)
     if err != kNoErr {
         return nil
     }

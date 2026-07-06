@@ -41,7 +41,9 @@ public func CleanQuit() -> Never {
         ShutdownSound() // cleanup sound stuff
     }
 
-    SDL_ShowCursor()
+    #if !NANOSAUR_3DS
+    SDL_ShowCursor() // no pointer cursor to restore on a 3DS touchscreen
+    #endif
     MyFlushEvents()
 
     ExitToShell()
@@ -113,7 +115,11 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 <= 0x7FFFFFFF)
 
     let size = size0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
+    #if NANOSAUR_3DS
+    let p = malloc(size)
+    #else
     let p = SDL_malloc(size)
+    #endif
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
@@ -133,7 +139,11 @@ func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 <= 0x7FFFFFFF)
 
     let size = size0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
+    #if NANOSAUR_3DS
+    let p = calloc(1, size)
+    #else
     let p = SDL_calloc(1, size)
+    #endif
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
@@ -160,7 +170,11 @@ public func ReallocPtr(_ initialPtr: UnsafeMutableRawPointer?, _ newSize0: Int) 
     var p = initialPtr - PTRCOOKIE_SIZE // back up pointer to cookie
     let newSize = newSize0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
+    #if NANOSAUR_3DS
+    p = realloc(p, newSize)! // reallocate it
+    #else
     p = SDL_realloc(p, newSize)! // reallocate it
+    #endif
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
     SwGameAssert(cookiePtr[0] == 0x46414345) // realloc shouldn't have touched our cookie ('FACE')
@@ -190,7 +204,11 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
 
     cookiePtr[0] = 0x44454144 // zap cookie ('DEAD')
 
+    #if NANOSAUR_3DS
+    free(p)
+    #else
     SDL_free(p)
+    #endif
 
     gNumPointers -= 1
 }
@@ -230,13 +248,20 @@ func CalcFramesPerSecond() {
                 fps = DEFAULT_FPS
             } else if fps > MAX_FPS { // limit to avoid issue
                 if fps - MAX_FPS > 1000 { // try to sneak in some sleep if we have 1 ms to spare
+                    #if !NANOSAUR_3DS
                     SDL_Delay(1)
+                    #endif
+                    // 3DS: no real sleep call available without pulling in
+                    // <3ds.h> wholesale (see game_3ds.h's Handle-collision
+                    // comment) - just busy-spin instead, matching what
+                    // happens here today whenever this branch fires without
+                    // 1ms to spare anyway.
                 }
                 continue
             }
         }
 
-        #if _DEBUG
+        #if _DEBUG && !NANOSAUR_3DS
         if SwIsKeyDown(Int(SDL_SCANCODE_KP_PLUS.rawValue)) { // debug speed-up with KP_PLUS
             fps = DEFAULT_FPS
         }

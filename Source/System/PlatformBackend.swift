@@ -46,6 +46,14 @@ protocol GraphicsBackend {
     mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer)
 }
 
+// Gated out entirely (not just unselected via the typealias below) on 3DS:
+// the struct bodies below reference real SDL_* symbols, which the 3DS
+// build's bridging header (ports/3DS/common/game_3ds.h) deliberately never
+// declares (only opaque SDL_Window/SDL_GLContext/SDL_Gamepad stand-ins) -
+// Swift type-checks every declaration in a file regardless of which
+// typealias ends up selected, so these would fail to compile on 3DS even
+// though nothing calls them there.
+#if !NANOSAUR_3DS
 struct SDLGraphicsBackend: GraphicsBackend {
     typealias ContextHandle = OpaquePointer?
 
@@ -80,6 +88,7 @@ struct SDLGraphicsBackend: GraphicsBackend {
         SDL_GL_DestroyContext(context)
     }
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - Input: raw digital-input polling only
 //
@@ -107,6 +116,7 @@ protocol InputBackend {
     var digitalInputCount: Int { get }
 }
 
+#if !NANOSAUR_3DS
 struct SDLInputBackend: InputBackend {
     var digitalInputCount: Int { Int(SDL_SCANCODE_COUNT.rawValue) }
 
@@ -126,6 +136,7 @@ struct SDLInputBackend: InputBackend {
         }
     }
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - Platform selection
 //
@@ -137,8 +148,83 @@ struct SDLInputBackend: InputBackend {
 // identifier, and "3DS" isn't a valid Swift identifier token to begin with
 // (it starts with a digit).
 #if NANOSAUR_3DS
-// typealias PlatformGraphics = CTRUGraphicsBackend // Phase 2
-// typealias PlatformInput = CTRUInputBackend // Phase 2
+
+// MARK: - 3DS conformances
+//
+// citro3d has no per-window GL-style context object: C3D_Init/C2D_Init set
+// up one global render pipeline for the whole app, and screens are
+// identified by C3D_RenderTarget, not a context handle you make current.
+// ContextHandle is a nominal placeholder rather than a real handle -
+// createContext/createSecondaryContext just record which screen a caller
+// means; the actual C3D_RenderTarget setup and glVertex-equivalent
+// citro2d/citro3d draw calls happen in Phase 3's renderer rewrite, not
+// here. This conformance exists now only to satisfy the protocol boundary
+// so OGL_Support.swift's call sites can be routed through
+// `gGraphicsBackend` unconditionally on every platform.
+//
+// ContextHandle MUST be `SDL_GLContext` (an `UnsafeMutableRawPointer?`),
+// matching `SDLGraphicsBackend`'s - NOT a 3DS-only type like `Bool`. The
+// real `game.h` (shared by both platforms) declares the global
+// `gAGLContext`/`gAGLContext2` storage that callers pass into these
+// methods as `SDL_GLContext`, so both conformances' `ContextHandle` need
+// to be assignable to/from that same global storage. `Bool` compiled fine
+// in isolation (see the earlier `PlatformBackend.swift` update) but broke
+// the moment `OGL_Support.swift` - which only knows about `SDL_GLContext`,
+// not either backend's ContextHandle - tried to pass `gAGLContext` into
+// `makeCurrent`/`swap`/etc. The pointer values themselves are meaningless
+// on 3DS (never dereferenced), just distinct sentinels.
+struct CTRUGraphicsBackend: GraphicsBackend {
+    typealias ContextHandle = SDL_GLContext
+
+    mutating func createContext(window: OpaquePointer) -> ContextHandle {
+        UnsafeMutableRawPointer(bitPattern: 1)!
+    }
+
+    mutating func createSecondaryContext(window: OpaquePointer, sharedWith: ContextHandle) -> ContextHandle {
+        UnsafeMutableRawPointer(bitPattern: 2)!
+    }
+
+    func makeCurrent(_ context: ContextHandle, window: OpaquePointer) {
+        // No-op: citro3d has no current-context concept to switch.
+    }
+
+    func swap(_ context: ContextHandle, window: OpaquePointer) {
+        // Phase 3: C3D_FrameEnd(0) belongs here once frame begin/end is
+        // wired up to this call site instead of being main-loop-only.
+    }
+
+    mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer) {
+        // No-op: nothing owned per-context to tear down.
+    }
+}
+
+// Maps the fixed SDL_SCANCODE_* indices Input.swift's KEYSTATE machine
+// already polls by index into libctru's KEY_* bitmask via hidKeysHeld().
+// Only the subset of scancodes InputBindings.swift's default bindings
+// actually reference need real mappings; everything else reports "never
+// held" (index out of libctru's range, e.g. keyboard letter keys with no
+// physical 3DS equivalent).
+struct CTRUInputBackend: InputBackend {
+    // Matches SDL_SCANCODE_COUNT (512) rather than importing the SDL enum,
+    // which isn't declared at all in the 3DS build's stub SDL3 headers -
+    // updateRawKeyboardStates sizes gRawDigitalInputStates off this value on
+    // every platform, so it needs to stay in lockstep with SDLInputBackend's.
+    var digitalInputCount: Int { 512 }
+
+    func pollDigitalInputs(into states: inout [Bool]) {
+        hidScanInput()
+        let held = hidKeysHeld()
+        for i in states.indices {
+            states[i] = false
+        }
+        _ = held // Phase 2: map KEY_* bits onto the scancode indices used
+                 // by kDefaultInputBindings once 3DS-specific bindings
+                 // replace the desktop keyboard/gamepad defaults.
+    }
+}
+
+typealias PlatformGraphics = CTRUGraphicsBackend
+typealias PlatformInput = CTRUInputBackend
 #else
 typealias PlatformGraphics = SDLGraphicsBackend
 typealias PlatformInput = SDLInputBackend

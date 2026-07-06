@@ -1133,7 +1133,7 @@ func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWid
 
     // Try to load a JPEG file first.
     let jpgPath = partialPathStr + ".jpg"
-    jpgExists = kNoErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec)
+    jpgExists = kNoErr == ResolveDataFileSpec(jpgPath, &dummySpec)
     if jpgExists {
         var jpgLength: Int = 0
         let jpgData = LoadDataFile(jpgPath, &jpgLength)
@@ -2031,7 +2031,7 @@ func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawP
 
     // TO BE SAFE, LETS ROUND UP THE SIZE TO THE NEAREST MULTIPLE OF 16
 
-    let roundedSize = (size + 15) & 0xffff_fff0
+    let roundedSize = (size + 15) & ~0xF
 
     let newNode = AllocPtrClear(MemoryLayout<VertexArrayMemoryNode>.size)!.assumingMemoryBound(to: VertexArrayMemoryNode.self) // allocate the node (assume we'll find room for it below)
     newNode.pointee.size = roundedSize // remember how big a chunk we're allocating

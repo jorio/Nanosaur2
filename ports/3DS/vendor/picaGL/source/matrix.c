@@ -44,8 +44,15 @@ void glRotatef(GLfloat angle,  GLfloat x,  GLfloat y,  GLfloat z)
 
 void glMatrixMode(GLenum mode)
 {
+	// NOTE: previously anything != GL_MODELVIEW (including GL_TEXTURE) fell
+	// through to matrix_projection - any caller doing GL_TEXTURE-mode
+	// texture-coordinate scrolling (glMatrixMode(GL_TEXTURE);
+	// glTranslatef(...)) was silently corrupting the real projection
+	// matrix instead, since there was no distinct texture matrix at all.
 	if(mode == GL_MODELVIEW)
 		pglState->matrix_current = &pglState->matrix_modelview;
+	else if(mode == GL_TEXTURE)
+		pglState->matrix_current = &pglState->matrix_texture;
 	else
 		pglState->matrix_current = &pglState->matrix_projection;
 
@@ -69,7 +76,7 @@ void glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLd
 }
 
 void glPopMatrix(void)
-{	
+{
 	matrix4x4 *matrix = pglState->matrix_current;
 
 	if(matrix == &pglState->matrix_projection)
@@ -77,6 +84,12 @@ void glPopMatrix(void)
 		matrix4x4_copy(matrix, &pglState->matrix_projection_stack[pglState->matrix_projection_stack_counter]);
 		if(pglState->matrix_projection_stack_counter > 0)
 			--pglState->matrix_projection_stack_counter;
+	}
+	else if(matrix == &pglState->matrix_texture)
+	{
+		matrix4x4_copy(matrix, &pglState->matrix_texture_stack[pglState->matrix_texture_stack_counter]);
+		if(pglState->matrix_texture_stack_counter > 0)
+			--pglState->matrix_texture_stack_counter;
 	}
 	else
 	{
@@ -98,6 +111,13 @@ void glPushMatrix(void)
 			++pglState->matrix_projection_stack_counter;
 
 		matrix4x4_copy(&pglState->matrix_projection_stack[pglState->matrix_projection_stack_counter], matrix);
+	}
+	else if(matrix == &pglState->matrix_texture)
+	{
+		if(pglState->matrix_texture_stack_counter < (MATRIX_STACK_SIZE - 1))
+			++pglState->matrix_texture_stack_counter;
+
+		matrix4x4_copy(&pglState->matrix_texture_stack[pglState->matrix_texture_stack_counter], matrix);
 	}
 	else
 	{

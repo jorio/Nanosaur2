@@ -32,6 +32,11 @@ func LoadASkeleton(_ num: UInt8) {
     gNumDecomposedTriMeshesInSkeleton[Int(num)] = Int16(loaded.pointee.numDecomposedTriMeshes) // keep easy access version of this value
 }
 
+// TEMP diagnostic accessor - remove once wormhole rendering is confirmed working.
+func DebugGetNumDecomposedTriMeshes(_ num: UInt8) -> Int16 {
+    gNumDecomposedTriMeshesInSkeleton[Int(num)]
+}
+
 // Disposes of all memory used by a skeleton file (from File.c)
 func FreeSkeletonFile(_ skeletonType: UInt8) {
     if let skeleton = gLoadedSkeletonsList[Int(skeletonType)] { // make sure this really exists

@@ -166,6 +166,24 @@ private func setupLevelIntroScreen() {
     LoadASkeleton(UInt8(SkeletonType.bonusWormhole.rawValue))
     LoadASkeleton(UInt8(SkeletonType.player.rawValue))
 
+    #if NANOSAUR_3DS
+    // TEMP diagnostic: red if bonusWormhole decomposed to 0 trimeshes,
+    // green if player did, blue if both are nonzero (expected/healthy).
+    // glClearColor() directly - OGL_SetupGameView's glClearColor only ever
+    // runs once at scene setup, so poking gGameViewInfoPtr's stored value
+    // afterward (as a first attempt at this diagnostic did) has no effect
+    // on the actual GL clear color state.
+    let wormN = DebugGetNumDecomposedTriMeshes(UInt8(SkeletonType.bonusWormhole.rawValue))
+    let playerN = DebugGetNumDecomposedTriMeshes(UInt8(SkeletonType.player.rawValue))
+    if wormN == 0 {
+        glClearColor(1, 0, 0, 1)
+    } else if playerN == 0 {
+        glClearColor(0, 1, 0, 1)
+    } else {
+        glClearColor(0, 0, 1, 1)
+    }
+    #endif
+
     // MAKE WORMHOLE
 
     var wormholeDef = NewObjectDefinitionType()
@@ -174,7 +192,9 @@ private func setupLevelIntroScreen() {
     wormholeDef.coord.x = 0.0
     wormholeDef.coord.y = 0
     wormholeDef.coord.z = 0
-    wormholeDef.flags = UInt32(STATUS_BIT_DONTCULL | STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING)
+    // TEMP diagnostic: dropped STATUS_BIT_GLOW (additive blend) to rule out
+    // "geometry is drawing but invisible due to near-zero additive alpha".
+    wormholeDef.flags = UInt32(STATUS_BIT_DONTCULL | STATUS_BIT_DOUBLESIDED | STATUS_BIT_UVTRANSFORM | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING)
     wormholeDef.slot = 100
     wormholeDef.moveCall = cMoveLevelIntroWorm
     wormholeDef.rot = 0

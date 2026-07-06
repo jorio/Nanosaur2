@@ -119,6 +119,9 @@ typedef struct {
 	matrix4x4			matrix_projection;
 	matrix4x4			matrix_projection_stack[MATRIX_STACK_SIZE];
 	GLuint				matrix_projection_stack_counter;
+	matrix4x4			matrix_texture;
+	matrix4x4			matrix_texture_stack[MATRIX_STACK_SIZE];
+	GLuint				matrix_texture_stack_counter;
 	matrix4x4			*matrix_current;
 
 	GLboolean			scissorState;

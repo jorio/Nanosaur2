@@ -174,8 +174,14 @@ struct SDLInputBackend: InputBackend {
 // `makeCurrent`/`swap`/etc. The pointer values themselves are otherwise
 // meaningless (never dereferenced) - only their identity (1 vs. 2) matters,
 // to tell `makeCurrent` which screen to select.
-private let kTopScreenHandle = UnsafeMutableRawPointer(bitPattern: 1)!
-private let kBottomScreenHandle = UnsafeMutableRawPointer(bitPattern: 2)!
+// `SDL_GLContext` imports as `OpaquePointer` (real SDL3 declares it
+// `typedef struct SDL_GLContextState *SDL_GLContext;`, a pointer to a
+// named-but-opaque struct - not `void*`, which is what this project's own
+// earlier SDL.h stub declared it as, importing as `UnsafeMutableRawPointer`
+// instead. Switching to real SDL3 (see docs/3DS_PORT_PLAN.md) changed
+// this type, so the sentinel constructors below had to change with it.
+private let kTopScreenHandle = OpaquePointer(bitPattern: 1)!
+private let kBottomScreenHandle = OpaquePointer(bitPattern: 2)!
 
 struct CTRUGraphicsBackend: GraphicsBackend {
     typealias ContextHandle = SDL_GLContext

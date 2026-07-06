@@ -36,6 +36,14 @@ extern _Bool aptMainLoop(void);
 // header rather than picaGL's own <GL/picaGL.h> (which pulls in <3ds.h>).
 #include "picaGL_shim.h"
 
+// RomFS mount (romfs_shim.c) + Pomme's real file-manager init/gDataSpec
+// setup (pomme_shim.cpp) - see those files' own comments for why they're
+// two separate translation units. Call Romfs3DS_Mount() before
+// Pomme3DS_InitFileSystem() - the latter chdir()s into the RomFS root,
+// which only exists once the former has mounted it.
+#include "romfs_shim.h"
+void Pomme3DS_InitFileSystem(void);
+
 // Swift-only helper declarations (SwFatal/SwGameAssert/GetPlayerInfoEntry/
 // gNav/etc.) from the real Nanosaur2-Bridging-Header.h - not part of
 // game.h itself.

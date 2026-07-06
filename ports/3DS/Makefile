@@ -44,7 +44,11 @@ CTRULIB		?=	$(DEVKITPRO)/libctru
 
 PREFIX		:=	$(DEVKITARM)/bin/arm-none-eabi-
 CC		:=	$(PREFIX)gcc
-LD		:=	$(PREFIX)gcc
+CXX		:=	$(PREFIX)g++
+# Linking with g++ (not gcc) once Pomme's C++ file-manager objects are in
+# OFILES - g++ pulls in libstdc++/libsupc++ needed by std::filesystem/
+# iostream/exceptions, which plain gcc linking wouldn't add automatically.
+LD		:=	$(PREFIX)g++
 
 # devkitPro's 3ds-tools (3dsxtool, smdhtool) install to $(DEVKITPRO)/tools/bin,
 # which a standard devkitPro environment already has on PATH.
@@ -62,13 +66,27 @@ CTRUDEFS	:=	-D__3DS__ -I$(COMMON) -I$(CTRULIB)/include
 CFLAGS		:=	-g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
 			$(ARCH) $(CTRUDEFS)
 
+BIN2S		?=	bin2s
+
+#---------------------------------------------------------------------------------
+# Real SDL3 (vendor/SDL3, see its VENDORED.md) - the official upstream 3DS
+# backend (src/video|audio|joystick/n3ds), built from libsdl-org/SDL via
+# devkitPro's own $DEVKITPRO/cmake/3DS.cmake toolchain file. Replaces this
+# project's own hand-rolled common/SDL3/SDL.h stub + sdlcompat.c (deleted -
+# every function in it duplicated something real SDL3 already implements,
+# which would now be a duplicate-symbol link error) for events/audio/
+# joystick/timers/locale. Software rendering only (no GPU/OpenGL from SDL3
+# itself) - common/SDL3/SDL_opengl.h still forwards to picaGL for that, not
+# real SDL3's own copy of that header.
+#---------------------------------------------------------------------------------
+SDL3_INCLUDE	:=	vendor/SDL3/include/
+SDL3_LIB	:=	vendor/SDL3/lib/
+
 LDFLAGS		:=	-specs=3dsx.specs -g $(ARCH) \
 			-Wl,-Map,$(TARGET).map -Wl,--gc-sections \
-			-L$(CTRULIB)/lib
+			-L$(CTRULIB)/lib -L$(SDL3_LIB)
 
-LIBS		:=	-lctru -lm
-
-BIN2S		?=	bin2s
+LIBS		:=	-lSDL3 -lctru -lm
 
 #---------------------------------------------------------------------------------
 # picaGL (vendor/picaGL, see its VENDORED.md) - a real OpenGL 1.x-style
@@ -108,6 +126,24 @@ ENGINE_SOURCE	:=	$(ENGINE_ROOT)/Source
 POMME_SOURCE	:=	$(ENGINE_ROOT)/extern/Pomme/src
 
 #---------------------------------------------------------------------------------
+# Pomme's real file/resource-manager C++ implementation (milestone step 4,
+# File I/O) - compile-tested directly against this toolchain, confirmed to
+# compile+link with just a C++ standard bump (c++17 -> c++20, for
+# PommeSound.h's std::span - needed even though sound itself is compiled
+# out below, since Pomme.cpp's top-level Pomme.h include still parses that
+# header). Built with -DPOMME_NO_GRAPHICS -DPOMME_NO_SOUND_FORMATS
+# -DPOMME_NO_SOUND_MIXER -DPOMME_NO_INPUT so Pomme::Init() (in
+# ports/3DS/common/pomme_shim.cpp) only bootstraps the file layer -
+# graphics/sound/input on 3DS go through picaGL/PlatformBackend.swift's own
+# conformances instead, not Pomme's SDL-backed equivalents for those.
+# Explicit per-file rules below (not a pattern rule) - a pattern rule over
+# multiple source directories with only-sometimes-unique basenames is
+# exactly what broke picaGL's Makefile wiring earlier (see PICAGL_OFILES's
+# comment); not worth risking again for just 11 files.
+#---------------------------------------------------------------------------------
+POMME_DEFS	:=	-DPOMME_NO_GRAPHICS -DPOMME_NO_SOUND_FORMATS -DPOMME_NO_SOUND_MIXER -DPOMME_NO_INPUT
+
+#---------------------------------------------------------------------------------
 # Embedded Swift flags, targeting armv6-none-none-eabi.
 #---------------------------------------------------------------------------------
 SWIFTFLAGS	:=	-target armv6-none-none-eabi \
@@ -124,6 +160,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-Xcc -I$(POMME_SOURCE) \
 			-Xcc -I$(ENGINE_SOURCE)/Headers \
 			-Xcc -I$(PICAGL_INCLUDE) \
+			-Xcc -I$(SDL3_INCLUDE) \
 			-Xcc -fmodule-map-file=$(COMMON)module.modulemap
 
 #---------------------------------------------------------------------------------
@@ -153,7 +190,12 @@ ENGINE_SWIFT	:=	$(ENGINE_SOURCE)/3D/OGLTypes.swift \
 			$(ENGINE_SOURCE)/System/MenuItemExtensions.swift \
 			$(ENGINE_SOURCE)/System/EmbeddedMath.swift
 
-OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o $(BUILD)/sdlcompat.o $(BUILD)/picaGL_shim.o \
+OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o $(BUILD)/picaGL_shim.o \
+			$(BUILD)/romfs_shim.o $(BUILD)/pomme_shim.o \
+			$(BUILD)/pomme_Files.o $(BUILD)/pomme_HostVolume.o $(BUILD)/pomme_Resources.o \
+			$(BUILD)/pomme_Memory.o $(BUILD)/pomme_Pomme.o $(BUILD)/pomme_PommeDebug.o \
+			$(BUILD)/pomme_StringUtils.o $(BUILD)/pomme_bigendianstreams.o \
+			$(BUILD)/pomme_memstream.o $(BUILD)/pomme_structpack.o $(BUILD)/pomme_IEEEExtended.o \
 			$(PICAGL_OFILES) $(PICAGL_SHADER_OFILES)
 
 #---------------------------------------------------------------------------------
@@ -174,13 +216,70 @@ $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/sdlcompat.o: $(COMMON)sdlcompat.c $(COMMON)SDL3/SDL.h | $(BUILD)
-	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -I$(COMMON) -I$(PICAGL_INCLUDE) -c $< -o $@
-
 $(BUILD)/picaGL_shim.o: $(COMMON)picaGL_shim.c $(COMMON)picaGL_shim.h | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -I$(COMMON) -I$(PICAGL_INCLUDE) -c $< -o $@
+
+$(BUILD)/romfs_shim.o: $(COMMON)romfs_shim.c $(COMMON)romfs_shim.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -I$(COMMON) -c $< -o $@
+
+#---------------------------------------------------------------------------------
+# Pomme's real file/resource-manager C++ implementation - see this file's
+# earlier POMME_FILES_CFILES comment. -std=c++20 (not c++17) because
+# PommeSound.h uses std::span, even with sound compiled out via
+# POMME_DEFS - Pomme.h's own top-level include still parses that header.
+#---------------------------------------------------------------------------------
+POMME_CXXFLAGS := -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
+			$(ARCH) -D__3DS__ -std=c++20 $(POMME_DEFS) -I$(POMME_SOURCE)
+
+$(BUILD)/pomme_shim.o: $(COMMON)pomme_shim.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_Files.o: $(POMME_SOURCE)/Files/Files.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_HostVolume.o: $(POMME_SOURCE)/Files/HostVolume.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_Resources.o: $(POMME_SOURCE)/Files/Resources.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_Memory.o: $(POMME_SOURCE)/Memory/Memory.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_Pomme.o: $(POMME_SOURCE)/Pomme.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_PommeDebug.o: $(POMME_SOURCE)/PommeDebug.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_StringUtils.o: $(POMME_SOURCE)/Utilities/StringUtils.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_bigendianstreams.o: $(POMME_SOURCE)/Utilities/bigendianstreams.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_memstream.o: $(POMME_SOURCE)/Utilities/memstream.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_structpack.o: $(POMME_SOURCE)/Utilities/structpack.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+
+$(BUILD)/pomme_IEEEExtended.o: $(POMME_SOURCE)/Utilities/IEEEExtended.cpp | $(BUILD)
+	@echo $(notdir $<)
+	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
 
 #---------------------------------------------------------------------------------
 # picaGL: its own vertex/clear shaders (picasso -> bin2s -> .o, same

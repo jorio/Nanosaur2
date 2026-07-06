@@ -797,3 +797,54 @@ public func GameMain() {
         }
     }
 }
+
+// MARK: - 3DS proof-of-concept entry point (credits scene only)
+//
+// Temporary alternate entry point for bringing up the 3DS port
+// incrementally: skips warm-up/legal/intro-slideshow/main-menu/gameplay
+// entirely and jumps straight to the "flying through the wormhole" credits
+// scene (DoLevelIntroScreen(INTRO_MODE_CREDITS) - see LevelIntro.swift),
+// looping it forever. No audio init (InitSoundTools/InitTwitchSystem)
+// since Pomme's sound mixer is compiled out for this build
+// (-DPOMME_NO_SOUND_MIXER) and this scene doesn't need it. No
+// InitTerrainManager() either - unused by this scene. See
+// ports/3DS/source/main.cpp, which calls this instead of GameMain() for
+// this proof-of-concept build.
+#if NANOSAUR_3DS
+@c @implementation
+public func GameMainCreditsPOC() {
+    ToolBoxInit() // confirmed clean now (maxTexSize fix)
+
+    LoadLocalizedStrings(GameLanguageID(rawValue: Int32(gGamePrefs.language)))
+    InitSpriteManager()
+    InitBG3DManager()
+    InitWindowStuff()
+    InitSkeletonManager()
+    InitObjectManager()
+
+    var someLong: UInt = 0
+    GetDateTime(&someLong)
+    SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong))
+
+    // NOT calling the real LoadGlobalAssets(): it also loads cursor/
+    // infobar/global/spheremap sprite groups, none of which are in the
+    // trimmed romfs-poc RomFS (only fonts + particles are) - a missing
+    // file there was hanging boot the same way the maxTexSize bug did.
+    // Load only what the credits scene actually needs.
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_COUNT), "particle")
+    // NOTE: BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES) deliberately
+    // skipped - bisected to be the trigger for a SwFatal("material == nil"
+    // or "group is empty") that (like the maxTexSize/font-loading issues
+    // above) manifests as an unrecoverable APT/GSP hang via the
+    // message-box path. Only sets an always-blend flag on particle
+    // sprite materials (used for gun-turret sparkle glow) - cosmetic,
+    // not required for the credits scene to render correctly enough to
+    // prove the pipeline works. Worth root-causing properly later.
+
+    while true {
+        DoLevelIntroScreen(UInt8(INTRO_MODE_CREDITS))
+    }
+}
+#endif

@@ -28,15 +28,12 @@
 extern "C" {
     int Romfs3DS_Mount(void);
     void Pomme3DS_InitFileSystem(void);
-    void gfxInitDefault(void);
-    void PGL_Init(void);
-    void GameMain(void); // Source/System/Main.swift, @c @implementation
+    void GameMainCreditsPOC(void); // Source/System/Main.swift, @c @implementation - TEMPORARY, see its own comment
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
 }
 
 int main()
 {
-    gfxInitDefault();
     Romfs3DS_Mount();
     Pomme3DS_InitFileSystem();
 
@@ -48,11 +45,16 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
-    PGL_Init();
+    // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()
+    // -> OGL_CreateDrawContext() -> CTRUGraphicsBackend.createContext()
+    // (PlatformBackend.swift) already calls PGL_Init() itself. Calling it
+    // again here double-initializes picaGL/GSP state - the same bug
+    // pattern as the gfxInitDefault() double-init above, just one layer
+    // deeper.
 
     try
     {
-        GameMain();
+        GameMainCreditsPOC();
     }
     catch (Pomme::QuitRequest&)
     {

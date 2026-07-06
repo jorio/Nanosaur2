@@ -182,7 +182,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-DNANOSAUR_3DS \
 			-import-objc-header $(COMMON)game_3ds.h \
 			-Xllvm -relocation-model=static \
-			-Xcc -D__3DS__ \
+			-Xcc -D__3DS__ -Xcc -DNANOSAUR_3DS \
 			-Xcc -march=armv6k -Xcc -mtune=mpcore -Xcc -mfloat-abi=hard \
 			-Xcc -fno-pic -Xcc -fno-pie \
 			-Xcc -isystem -Xcc $(DEVKITARM)/arm-none-eabi/include \
@@ -452,7 +452,11 @@ $(BUILD)/icon.smdh: | $(BUILD)
 # these exact same bytes should parse identically once accessible via
 # RomFS - 3dsxtool builds the RomFS image directly from this directory,
 # no separate packaging tool needed.
-DATA_DIR	:=	$(ENGINE_ROOT)/Data
+# TEMPORARY: pointed at a trimmed asset subset (just what the credits-scene
+# proof-of-concept in GameMainCreditsPOC() needs) instead of the full
+# 119MB Data folder, for fast iteration. Revert to $(ENGINE_ROOT)/Data once
+# back to bringing up the full game.
+DATA_DIR	:=	romfs-poc
 
 $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh
 	@echo packaging $(notdir $@)

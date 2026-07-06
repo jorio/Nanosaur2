@@ -52,3 +52,7 @@ typedef enum SWIFT_ENUM_CLOSED VSMode
 
 
 void GameMain(void);
+
+#ifdef NANOSAUR_3DS
+void GameMainCreditsPOC(void); // Source/System/Main.swift - TEMPORARY 3DS proof-of-concept entry point
+#endif

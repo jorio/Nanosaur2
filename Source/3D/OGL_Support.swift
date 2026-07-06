@@ -367,12 +367,24 @@ private func OGL_CreateDrawContext() {
     _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
 
     // SEE IF SUPPORT 2048x2048 TEXTURES
-
+    //
+    // Skipped on 3DS: picaGL's glGetIntegerv(GL_MAX_TEXTURE_SIZE) is a
+    // stub that hardcodes 128 (ports/3DS/vendor/picaGL/source/get.c), not
+    // the real PICA200 capability - this tripped SwFatalAlert() on every
+    // single boot, whose message-box path (DoFatalAlert ->
+    // SDL_ShowSimpleMessageBox) requires a real 3DS system-applet handoff
+    // that never completes without system files installed, manifesting as
+    // an endless GSPGPU_ReleaseRight/APT-sleep-query retry loop right
+    // after OGL_Boot() - this was the actual root cause of the "hang"
+    // bisected at length this session, not any of the GSP/SDL-video
+    // theories tried earlier.
+    #if !NANOSAUR_3DS
     var maxTexSize: GLint = 0
     glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
     if maxTexSize < 2048 {
         SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
     }
+    #endif
 
     // GET GL PROCEDURES
     // Necessary on Windows
@@ -690,7 +702,16 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 // MARK: - OGL draw scene
 
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
+    // 3DS proof-of-concept: gSDLWindow is a non-nil sentinel, not a real
+    // SDL_Window (see ports/3DS/source/main.cpp) - picaGL's top screen
+    // framebuffer is a fixed 400x240, so use that instead of querying a
+    // window that doesn't exist.
+    #if NANOSAUR_3DS
+    gGameWindowWidth = 400
+    gGameWindowHeight = 240
+    #else
     SDL_GetWindowSizeInPixels(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight)
+    #endif
 
     if gGameViewInfoPtr!.pointee.isActive == 0 {
         SwFatalAlert("OGL_DrawScene isActive == false")

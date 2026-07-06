@@ -211,6 +211,18 @@ func DoSDLMaintenance() {
     var mouseWheelDeltaX: Int32 = 0
     var mouseWheelDeltaY: Int32 = 0
 
+    // 3DS: aptMainLoop() must be polled regularly to service APT's
+    // sleep/suspend/home-button protocol - without it, nothing ever acks
+    // APT's events and it gets stuck forever (observed as the app hanging
+    // partway through boot, spinning on GSPGPU_ReleaseRight/
+    // ReplySleepQuery with no further progress). Desktop has no equivalent
+    // requirement, so this only runs on 3DS.
+    #if NANOSAUR_3DS
+    if !aptMainLoop() {
+        CleanQuit() // throws Pomme::QuitRequest (noreturn)
+    }
+    #endif
+
     // DO SDL MAINTENANCE
 
     SDL_PumpEvents()

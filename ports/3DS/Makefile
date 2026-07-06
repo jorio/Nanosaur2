@@ -69,13 +69,27 @@ ICON		:=	$(CTRULIB)/default_icon.png
 
 #---------------------------------------------------------------------------------
 # code generation -- the 3DS's ARM11 application CPU, armv6k/mpcore, hard float.
+#
+# -fno-pic -fno-pie matter a lot more than they look: without them, Swift's
+# codegen for this target emits thousands of R_ARM_GOT_PREL/R_ARM_TLS_LE32/
+# R_ARM_TLS_LDO32 relocations (2747 GOT_PREL alone, found in
+# nanosaur2.swift.o via `arm-none-eabi-readelf -r`) that the .3dsx format's
+# relocation converter (3dsxtool) doesn't understand and silently drops -
+# not an error, just corrupted code at those addresses. This is why an
+# earlier build linked with zero errors/warnings about it, produced a
+# well-formed .3dsx (right magic bytes, sane header, correct file size),
+# and still failed to even launch in an emulator - the file format was
+# fine, the machine code inside wasn't. Confirmed fixed by recompiling and
+# checking relocation types dropped to zero GOT_PREL/TLS_LE32/TLS_LDO32
+# (a few R_ARM_TLS_IE32 remain, which 3dsxtool does support).
 #---------------------------------------------------------------------------------
 ARCH		:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
+PIC_FLAGS	:=	-fno-pic -fno-pie
 
 CTRUDEFS	:=	-D__3DS__ -I$(COMMON) -I$(CTRULIB)/include
 
 CFLAGS		:=	-g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-			$(ARCH) $(CTRUDEFS)
+			$(ARCH) $(PIC_FLAGS) $(CTRUDEFS)
 
 BIN2S		?=	bin2s
 
@@ -169,6 +183,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-import-objc-header $(COMMON)game_3ds.h \
 			-Xcc -D__3DS__ \
 			-Xcc -march=armv6k -Xcc -mtune=mpcore -Xcc -mfloat-abi=hard \
+			-Xcc -fno-pic -Xcc -fno-pie \
 			-Xcc -isystem -Xcc $(DEVKITARM)/arm-none-eabi/include \
 			-Xcc -I$(COMMON) \
 			-Xcc -I$(CTRULIB)/include \
@@ -236,14 +251,23 @@ $(BUILD)/nanosaur2.swift.o: $(ENGINE_SWIFT) $(COMMON)module.modulemap $(COMMON)c
 $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 	@echo $(notdir $<)
 	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-		$(ARCH) -D__3DS__ -std=c++20 -I$(POMME_SOURCE) -c $(PORT_CPP) -o $@
+		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(POMME_SOURCE) -c $(PORT_CPP) -o $@
 
 # Real engine C files (bg3d.c, Main.c, etc. - global-storage-only leftovers
 # after the Swift port, plus a couple of still-C functions like
 # DoAlert/DoFatalAlert that take C varargs Swift can't implement).
+#
+# -DSTBI_NO_THREAD_LOCALS: stb_image.h uses `thread_local`/`__thread` for
+# two static flip-on-load flags (real, deliberate C11 thread-local storage,
+# not a PIC-codegen artifact like the Swift/Unicode-tables GOT_PREL issue -
+# -fno-pic doesn't touch this). This engine is single-threaded on 3DS (no
+# threads ever load images concurrently), and those extra R_ARM_TLS_LE32/
+# R_ARM_TLS_LDO32 relocations are exactly the kind 3dsxtool's relocation
+# converter silently drops - this macro (stb_image.h's own supported
+# opt-out) makes them plain statics instead, functionally identical here.
 $(BUILD)/engine_%.o: %.c | $(BUILD)
 	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -I$(POMME_SOURCE) -I$(ENGINE_SOURCE)/Headers -I$(PICAGL_INCLUDE) -I$(SDL3_INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) -DSTBI_NO_THREAD_LOCALS -I$(POMME_SOURCE) -I$(ENGINE_SOURCE)/Headers -I$(PICAGL_INCLUDE) -I$(SDL3_INCLUDE) -c $< -o $@
 
 $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)
@@ -268,7 +292,7 @@ $(BUILD)/boot_shim.o: $(COMMON)boot_shim.c | $(BUILD)
 # POMME_DEFS - Pomme.h's own top-level include still parses that header.
 #---------------------------------------------------------------------------------
 POMME_CXXFLAGS := -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-			$(ARCH) -D__3DS__ -std=c++20 $(POMME_DEFS) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE)
+			$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 $(POMME_DEFS) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE)
 
 $(BUILD)/pomme_shim.o: $(COMMON)pomme_shim.cpp | $(BUILD)
 	@echo $(notdir $<)

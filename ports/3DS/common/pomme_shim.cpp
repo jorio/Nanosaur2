@@ -13,11 +13,13 @@
 // *effect* (making relative paths resolve against the RomFS mount) only
 // matters once romfs_shim.c's Romfs3DS_Mount() has already run.
 //
-// Compiled with -DPOMME_NO_GRAPHICS -DPOMME_NO_SOUND_FORMATS
-// -DPOMME_NO_SOUND_MIXER -DPOMME_NO_INPUT (see Pomme.cpp's Init()) so
-// Pomme::Init() only bootstraps the file layer - graphics/sound/input on
-// 3DS are handled by picaGL/PlatformBackend.swift's own conformances, not
-// Pomme's SDL-backed equivalents.
+// Compiled with -DPOMME_NO_GRAPHICS -DPOMME_NO_INPUT (see Pomme.cpp's
+// Init()) so Pomme::Init() skips its own QuickDraw-emulation graphics and
+// legacy Mac Toolbox input glue - unrelated to and unused alongside this
+// engine's own rendering (picaGL) and input (PlatformBackend.swift)
+// conformances. Sound IS initialized here: Pomme's SoundMixer calls real
+// SDL3 audio APIs directly, which real SDL3's n3ds backend backs for real
+// now - see the Makefile's POMME_DEFS comment.
 
 #include "Pomme.h"
 #include "PommeInit.h"

@@ -42,5 +42,16 @@ void Pomme3DS_InitFileSystem(void)
     // folder uses; the 3DS RomFS root plays the role of the desktop app
     // bundle's Data folder here (see romfs_shim.c / the eventual RomFS
     // packaging step for how that folder tree actually gets embedded).
-    gDataSpec = Pomme::Files::HostPathToFSSpec(fs::path("System"));
+    //
+    // MUST be the fully-qualified "romfs:/System", not a bare "System":
+    // HostVolume::ToFSSpec() strips the filename to get the parent dir,
+    // and GetDirectoryID() only skips its fs::exists() stat call when the
+    // parent matches an already-registered directory verbatim. A bare
+    // "System" strips down to an empty path "", which never matches
+    // directories[0] ("romfs:/") and falls through to fs::exists("") -
+    // stat-ing an empty path through the emulated RomFS archive backend,
+    // which is what hung boot indefinitely (desktop never hits this since
+    // Boot.cpp always passes an absolute dataPath, never a bare relative
+    // "System").
+    gDataSpec = Pomme::Files::HostPathToFSSpec(fs::path("romfs:/System"));
 }

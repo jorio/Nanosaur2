@@ -23,18 +23,31 @@
 
 #include <exception>
 #include "PommeInit.h" // for Pomme::QuitRequest only
+#include <SDL3/SDL.h>
 
 extern "C" {
     int Romfs3DS_Mount(void);
     void Pomme3DS_InitFileSystem(void);
+    void gfxInitDefault(void);
     void PGL_Init(void);
     void GameMain(void); // Source/System/Main.swift, @c @implementation
+    extern SDL_Window* gSDLWindow; // common/boot_shim.c
 }
 
 int main()
 {
+    gfxInitDefault();
     Romfs3DS_Mount();
     Pomme3DS_InitFileSystem();
+
+    // Real SDL_Window, even though picaGL (not SDL's own GL/renderer
+    // backend) does the actual drawing - several engine call sites
+    // (window-size queries, mouse cursor tracking, mouse warp/grab)
+    // dereference gSDLWindow as a real SDL_Window every frame. SDL_Init
+    // must run before SDL_CreateWindow (mirrors desktop's Boot.cpp).
+    SDL_Init(SDL_INIT_VIDEO);
+    gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
+
     PGL_Init();
 
     try

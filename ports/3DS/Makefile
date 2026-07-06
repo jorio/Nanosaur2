@@ -170,7 +170,7 @@ POMME_SOURCE	:=	$(ENGINE_ROOT)/extern/Pomme/src
 # exactly what broke picaGL's Makefile wiring earlier (see PICAGL_OFILES's
 # comment); not worth risking again for a modest file count.
 #---------------------------------------------------------------------------------
-POMME_DEFS	:=	-DPOMME_NO_GRAPHICS -DPOMME_NO_INPUT
+POMME_DEFS	:=	-DPOMME_NO_GRAPHICS -DPOMME_NO_INPUT -DPOMME_NO_SOUND_MIXER
 
 #---------------------------------------------------------------------------------
 # Embedded Swift flags, targeting armv6-none-none-eabi.
@@ -181,6 +181,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-module-name Nanosaur2 \
 			-DNANOSAUR_3DS \
 			-import-objc-header $(COMMON)game_3ds.h \
+			-Xllvm -relocation-model=static \
 			-Xcc -D__3DS__ \
 			-Xcc -march=armv6k -Xcc -mtune=mpcore -Xcc -mfloat-abi=hard \
 			-Xcc -fno-pic -Xcc -fno-pie \
@@ -246,12 +247,14 @@ $(BUILD)/nanosaur2.swift.o: $(ENGINE_SWIFT) $(COMMON)module.modulemap $(COMMON)c
 	$(SWIFTC) $(SWIFTFLAGS) -c $(ENGINE_SWIFT) -o $@
 
 # The real entry point (source/main.cpp) - needs Pomme.h (for
-# Pomme::QuitRequest) but not picaGL/SDL3, since it only declares plain
-# C-linkage functions for those, not their real headers.
+# Pomme::QuitRequest) but not picaGL, since it only declares plain
+# C-linkage functions for that, not its real headers. Does need real
+# SDL3/SDL.h now, to create the real (if GL-unused) SDL_Window several
+# engine call sites dereference every frame (see boot_shim.c's comment).
 $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 	@echo $(notdir $<)
 	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(POMME_SOURCE) -c $(PORT_CPP) -o $@
+		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
 
 # Real engine C files (bg3d.c, Main.c, etc. - global-storage-only leftovers
 # after the Swift port, plus a couple of still-C functions like

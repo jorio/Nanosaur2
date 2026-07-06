@@ -337,6 +337,14 @@ func OGL_DisposeGameView() {
 
 // MARK: - OGL: Create draw context
 
+// See PlatformBackend.swift - context creation/make-current/swap/destroy
+// (this function, OGL_DisposeDrawContext, and the SDL_GL_SwapWindow call
+// sites below) go through GraphicsBackend so a 3DS conformance can replace
+// them; the desktop-GL-specific capability queries just below (extension
+// function pointers, GL_MAX_TEXTURE_SIZE) have no citro3d equivalent and
+// deliberately stay here rather than in the protocol.
+private var gGraphicsBackend = PlatformGraphics()
+
 // Call this ONCE when booting the game.
 // The source port reuses a single draw context throughout the lifespan of the program.
 
@@ -346,18 +354,13 @@ private func OGL_CreateDrawContext() {
 
     // CREATE AGL CONTEXT & ATTACH TO WINDOW
 
-    gAGLContext = SDL_GL_CreateContext(gSDLWindow)
-
-    if gAGLContext == nil {
-        SwFatalAlert(String(cString: SDL_GetError()))
-    }
+    gAGLContext = gGraphicsBackend.createContext(window: gSDLWindow)
 
     SwGameAssert(glGetError() == GL_NO_ERROR)
 
     // ACTIVATE CONTEXT
 
-    let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
-    SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
+    gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
 
     // ENABLE VSYNC
 
@@ -395,15 +398,9 @@ private func OGL_CreateDrawContext() {
     // keeps both buffers identical.
 
     if gDualScreenMode != 0, let window2 = gSDLWindow2 {
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
+        gAGLContext2 = gGraphicsBackend.createSecondaryContext(window: window2, sharedWith: gAGLContext)
 
-        gAGLContext2 = SDL_GL_CreateContext(window2)
-        if gAGLContext2 == nil {
-            SwFatalAlert(String(cString: SDL_GetError()))
-        }
-
-        let didMakeCurrent2 = SDL_GL_MakeCurrent(window2, gAGLContext2)
-        SwGameAssertMessage(didMakeCurrent2, String(cString: SDL_GetError()))
+        gGraphicsBackend.makeCurrent(gAGLContext2, window: window2)
 
         _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
 
@@ -417,13 +414,13 @@ private func OGL_CreateDrawContext() {
         glViewport(0, 0, window2Width, window2Height)
 
         OGL_DrawDualScreenBackground(window2Width, window2Height) // fill both backbuffer slots so neither shows garbage
-        SDL_GL_SwapWindow(window2)
+        gGraphicsBackend.swap(gAGLContext2, window: window2)
         OGL_DrawDualScreenBackground(window2Width, window2Height)
-        SDL_GL_SwapWindow(window2)
+        gGraphicsBackend.swap(gAGLContext2, window: window2)
 
         // SWITCH BACK TO THE TOP WINDOW/CONTEXT SO BOOT CAN PROCEED AS NORMAL
 
-        _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+        gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
     }
 }
 
@@ -470,13 +467,11 @@ private func OGL_DisposeDrawContext() {
     }
 
     if gAGLContext2 != nil, let window2 = gSDLWindow2 {
-        _ = SDL_GL_MakeCurrent(window2, nil)
-        SDL_GL_DestroyContext(gAGLContext2)
+        gGraphicsBackend.destroyContext(gAGLContext2, window: window2)
         gAGLContext2 = nil
     }
 
-    _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
-    SDL_GL_DestroyContext(gAGLContext) // nuke context
+    gGraphicsBackend.destroyContext(gAGLContext, window: gSDLWindow) // nuke context
     gAGLContext = nil
 }
 
@@ -606,18 +601,18 @@ private func ClearAllBuffersToBlack() {
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        SDL_GL_SwapWindow(gSDLWindow)
+        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        SDL_GL_SwapWindow(gSDLWindow)
+        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
         _ = OGL_CheckError()
     } else {
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        SDL_GL_SwapWindow(gSDLWindow)
+        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        SDL_GL_SwapWindow(gSDLWindow)
+        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
 
         _ = OGL_CheckError()
     }
@@ -865,7 +860,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // SWAP THE BUFFS
 
-    SDL_GL_SwapWindow(gSDLWindow) // end render loop
+    gGraphicsBackend.swap(gAGLContext, window: gSDLWindow) // end render loop
 
     if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
         gGameViewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
@@ -901,7 +896,7 @@ private func OGL_DrawDualScreenMinimap() {
     // Push while context1 is still current, so this saves ITS real state.
     OGL_PushState()
 
-    _ = SDL_GL_MakeCurrent(window2, gAGLContext2)
+    gGraphicsBackend.makeCurrent(gAGLContext2, window: window2)
 
     // gMyState_* (and gMostRecentMaterial) reflect whatever context1 last
     // set - but that's Swift-side bookkeeping, not real GL state, and
@@ -930,14 +925,14 @@ private func OGL_DrawDualScreenMinimap() {
     OGL_DrawDualScreenBackground(gGameWindowWidth, gGameWindowHeight)
     DrawMinimapOnSecondaryScreen()
 
-    SDL_GL_SwapWindow(window2)
+    gGraphicsBackend.swap(gAGLContext2, window: window2)
 
     gGameWindowWidth = savedWindowWidth
     gGameWindowHeight = savedWindowHeight
 
     // Switch back to context1 BEFORE popping, so the restore calls PopState
     // issues actually land on context1 (the context they're meant for).
-    _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+    gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
     OGL_PopState()
 }
 

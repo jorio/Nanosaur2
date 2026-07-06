@@ -11,3 +11,18 @@ dist/
 .idea/
 .DS_Store
 *.user
+
+# Build
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.elf
+*.map
+*.3dsx
+*.a
+*.pica
+*.bin
+*.shbin
+

@@ -39,6 +39,11 @@ private var gGamepads = [Gamepad](repeating: Gamepad(), count: maxLocalPlayers)
 
 private var gKeyboardStates = [UInt8](repeating: 0, count: Int(SDL_SCANCODE_COUNT.rawValue))
 private var gMouseButtonStates = [UInt8](repeating: 0, count: Int(NUM_SUPPORTED_MOUSE_BUTTONS))
+
+// See PlatformBackend.swift - raw digital-input polling is the one seam in
+// this file that's genuinely swappable per-platform.
+private var gInputBackend = PlatformInput()
+private var gRawDigitalInputStates = [Bool](repeating: false, count: Int(SDL_SCANCODE_COUNT.rawValue))
 private var gNeedStates = [UInt8](repeating: 0, count: Int(NUM_CONTROL_NEEDS))
 private var gLastGamepadForNeedAnyP = [Int32](repeating: -1, count: Int(NUM_CONTROL_NEEDS))
 
@@ -85,20 +90,10 @@ func InvalidateAllInputs() {
 }
 
 private func updateRawKeyboardStates() {
-    var numkeys: Int32 = 0
-    guard let keystate = SDL_GetKeyboardState(&numkeys) else {
-        return
-    }
+    gInputBackend.pollDigitalInputs(into: &gRawDigitalInputStates)
 
-    let minNumKeys = min(Int(numkeys), Int(SDL_SCANCODE_COUNT.rawValue))
-
-    for i in 0..<minNumKeys {
-        updateKeyState(&gKeyboardStates[i], keystate[i])
-    }
-
-    // fill out the rest
-    for i in minNumKeys..<Int(SDL_SCANCODE_COUNT.rawValue) {
-        updateKeyState(&gKeyboardStates[i], false)
+    for i in 0..<gRawDigitalInputStates.count {
+        updateKeyState(&gKeyboardStates[i], gRawDigitalInputStates[i])
     }
 }
 

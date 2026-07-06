@@ -702,10 +702,10 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 // MARK: - OGL draw scene
 
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
-    // 3DS proof-of-concept: gSDLWindow is a non-nil sentinel, not a real
-    // SDL_Window (see ports/3DS/source/main.cpp) - picaGL's top screen
-    // framebuffer is a fixed 400x240, so use that instead of querying a
-    // window that doesn't exist.
+    // picaGL's top screen framebuffer is a fixed 400x240 regardless of
+    // what SDL3's software-only 3DS backend reports for the real
+    // gSDLWindow it creates (see ports/3DS/source/main.cpp) - use the
+    // known-correct hardware resolution rather than querying it.
     #if NANOSAUR_3DS
     gGameWindowWidth = 400
     gGameWindowHeight = 240

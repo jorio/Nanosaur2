@@ -707,14 +707,38 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
 // MARK: - Load/dispose font used throughout the game
 
 func LoadGlobalAssets() {
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: font atlases...")
+    #endif
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: cursor...")
+    #endif
     LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_CURSOR), ":Sprites:menu:cursor", 0)
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: infobar...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_INFOBAR), Int32(INFOBAR_SObjType_COUNT), "infobar")
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: global...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_GLOBAL), Int32(GLOBAL_SObjType_COUNT), "global")
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: spheremap...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_SPHEREMAPS), Int32(SPHEREMAP_SObjType_COUNT), "spheremap")
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: particle...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_COUNT), "particle")
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: BlendAllSpritesInGroup(particles)...")
+    #endif
     BlendAllSpritesInGroup(Int16(SPRITE_GROUP_PARTICLES))
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadGlobalAssets: done.")
+    #endif
 }
 
 func DisposeGlobalAssets() {
@@ -735,27 +759,60 @@ func DisposeGlobalAssets() {
 public func GameMain() {
     // BOOT STUFF
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: ToolBoxInit...")
+    #endif
     ToolBoxInit()
 
     #if !DEBUG
     SDL_HideCursor()
     #endif
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: DoWarmUpScreen...")
+    #endif
     DoWarmUpScreen()
 
     // INIT SOME OF MY STUFF
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: LoadLocalizedStrings...")
+    #endif
     LoadLocalizedStrings(GameLanguageID(rawValue: Int32(gGamePrefs.language)))
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitSpriteManager...")
+    #endif
     InitSpriteManager()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitBG3DManager...")
+    #endif
     InitBG3DManager()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitWindowStuff...")
+    #endif
     InitWindowStuff()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitTerrainManager...")
+    #endif
     InitTerrainManager()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitSkeletonManager...")
+    #endif
     InitSkeletonManager()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitSoundTools...")
+    #endif
     InitSoundTools()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitTwitchSystem...")
+    #endif
     InitTwitchSystem()
 
     // INIT MORE MY STUFF
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: InitObjectManager...")
+    #endif
     InitObjectManager()
 
     var someLong: UInt = 0
@@ -764,17 +821,29 @@ public func GameMain() {
 
     // PRELOAD SPRITES FOR ENTIRE GAME
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: LoadGlobalAssets...")
+    #endif
     LoadGlobalAssets()
 
     // SHOW TITLES
     // (SKIPFLUFF is hardcoded off in this build, so this block always runs.)
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: DoLegalScreen...")
+    #endif
     DoLegalScreen()
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: DoIntroStoryScreen...")
+    #endif
     DoIntroStoryScreen()
 
     // MAIN LOOP
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: entering main loop / DoMainMenuScreen...")
+    #endif
     while true {
         gTimeDemo = 0
 

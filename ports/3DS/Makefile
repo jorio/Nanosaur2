@@ -221,7 +221,8 @@ vpath %.c $(sort $(dir $(ENGINE_CFILES)))
 ENGINE_COFILES	:=	$(addprefix $(BUILD)/engine_,$(notdir $(ENGINE_CFILES:.c=.o)))
 
 OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/main.o $(BUILD)/shim.o $(BUILD)/picaGL_shim.o \
-			$(BUILD)/romfs_shim.o $(BUILD)/pomme_shim.o $(BUILD)/boot_shim.o \
+			$(BUILD)/romfs_shim.o $(BUILD)/pomme_shim.o $(BUILD)/boot_shim.o $(BUILD)/fatal_shim.o \
+			$(BUILD)/console_shim.o \
 			$(BUILD)/pomme_Files.o $(BUILD)/pomme_HostVolume.o $(BUILD)/pomme_Resources.o \
 			$(BUILD)/pomme_Memory.o $(BUILD)/pomme_Pomme.o $(BUILD)/pomme_PommeDebug.o \
 			$(BUILD)/pomme_StringUtils.o $(BUILD)/pomme_bigendianstreams.o \
@@ -254,7 +255,7 @@ $(BUILD)/nanosaur2.swift.o: $(ENGINE_SWIFT) $(COMMON)module.modulemap $(COMMON)c
 $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 	@echo $(notdir $<)
 	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
+		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(COMMON) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
 
 # Real engine C files (bg3d.c, Main.c, etc. - global-storage-only leftovers
 # after the Swift port, plus a couple of still-C functions like
@@ -287,6 +288,14 @@ $(BUILD)/romfs_shim.o: $(COMMON)romfs_shim.c $(COMMON)romfs_shim.h | $(BUILD)
 $(BUILD)/boot_shim.o: $(COMMON)boot_shim.c | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -c $< -o $@
+
+$(BUILD)/fatal_shim.o: $(COMMON)fatal_shim.c $(COMMON)fatal_shim.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/console_shim.o: $(COMMON)console_shim.c $(COMMON)console_shim.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -I$(SDL3_INCLUDE) -c $< -o $@
 
 #---------------------------------------------------------------------------------
 # Pomme's real file/resource-manager C++ implementation - see this file's
@@ -452,11 +461,7 @@ $(BUILD)/icon.smdh: | $(BUILD)
 # these exact same bytes should parse identically once accessible via
 # RomFS - 3dsxtool builds the RomFS image directly from this directory,
 # no separate packaging tool needed.
-# TEMPORARY: pointed at a trimmed asset subset (just what the credits-scene
-# proof-of-concept in GameMainCreditsPOC() needs) instead of the full
-# 119MB Data folder, for fast iteration. Revert to $(ENGINE_ROOT)/Data once
-# back to bringing up the full game.
-DATA_DIR	:=	romfs-poc
+DATA_DIR	:=	$(ENGINE_ROOT)/Data
 
 $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh
 	@echo packaging $(notdir $@)

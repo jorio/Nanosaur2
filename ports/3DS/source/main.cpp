@@ -23,12 +23,14 @@
 
 #include <exception>
 #include "PommeInit.h" // for Pomme::QuitRequest only
+#include "fatal_shim.h" // ports/3DS/common - so an uncaught C++ exception is visible instead of silently exiting
+#include "console_shim.h" // ports/3DS/common - mirrors SDL_Log output to the bottom screen live
 #include <SDL3/SDL.h>
 
 extern "C" {
     int Romfs3DS_Mount(void);
     void Pomme3DS_InitFileSystem(void);
-    void GameMainCreditsPOC(void); // Source/System/Main.swift, @c @implementation - TEMPORARY, see its own comment
+    void GameMain(void); // Source/System/Main.swift, @c @implementation
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
 }
 
@@ -45,6 +47,12 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
+    // Bottom-screen console mirroring every SDL_Log call, so the game's own
+    // extensive existing SDL_Log usage (not just fatal errors) is visible
+    // live during boot instead of guessing blind - the console log file
+    // Azahar itself writes never picks up guest output.
+    Console3DS_Init();
+
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()
     // -> OGL_CreateDrawContext() -> CTRUGraphicsBackend.createContext()
     // (PlatformBackend.swift) already calls PGL_Init() itself. Calling it
@@ -54,18 +62,20 @@ int main()
 
     try
     {
-        GameMainCreditsPOC();
+        GameMain();
     }
     catch (Pomme::QuitRequest&)
     {
         // No-op, the game may throw this exception to shut us down cleanly
         // (matches Boot.cpp's own handling of this exact exception).
     }
-    catch (std::exception&)
+    catch (std::exception& e)
     {
-        // Last-resort catch, matching Boot.cpp's release-build behavior -
-        // no error dialog UI on 3DS (yet) to show details, just exit
-        // cleanly instead of calling std::terminate().
+        // Last-resort catch, matching Boot.cpp's release-build behavior,
+        // but show what actually happened instead of silently exiting -
+        // an uncaught exception here used to just drop back to Azahar's
+        // frontend with zero indication of what went wrong.
+        Fatal3DS_Print(e.what());
     }
 
     return 0;

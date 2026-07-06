@@ -180,13 +180,25 @@ private let gSlides: [SlideType] = [
 func DoIntroStoryScreen() {
     // SETUP
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: setupIntroStoryScreen...")
+    #endif
     setupIntroStoryScreen()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: MakeFadeEvent...")
+    #endif
     _ = MakeFadeEvent(UInt8(kFadeFlags_In), 2.0)
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: PlaySong...")
+    #endif
     PlaySong(Int16(SONG_INTRO), 1)
 
     // LOOP
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: entering slideshow loop...")
+    #endif
     gEndSlideShow = false
 
     while !gEndSlideShow {
@@ -236,20 +248,38 @@ private func setupIntroStoryScreen() {
 
     viewDef.view.clearBackBuffer = 1
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: OGL_SetupGameView...")
+    #endif
     OGL_SetupGameView(&viewDef)
 
     // LOAD ART
 
     // LOAD SPRITES
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: LoadSpriteGroupFromSeries(story)...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(NUM_SLIDES), "story")
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: LoadSpriteAtlas(swiss)...")
+    #endif
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT3), ":Sprites:fonts:swiss", Int32(kAtlasLoadFont))
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: LoadSoundBank(narration)...")
+    #endif
     LoadSoundBank(UInt8(SOUND_BANK_NARRATION))
 
     // MAKE OBJECTS
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: buildSlideShowObjects...")
+    #endif
     buildSlideShowObjects()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("setupIntroStoryScreen: done.")
+    #endif
 }
 
 // MARK: - Free intro story

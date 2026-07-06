@@ -256,6 +256,10 @@ func LoadSoundBank(_ bank: UInt8) {
 
         // FIND FSSPEC TO EFFECT FILE
 
+        #if NANOSAUR_3DS
+        "LoadSoundBank: effect \(i): \(effectDef.name ?? "?")".withCString { Debug3DS_Log($0) }
+        #endif
+
         var spec = FSSpec()
         var refNum: Int16 = -1
         var iErr: OSErr = kNoErr
@@ -275,17 +279,26 @@ func LoadSoundBank(_ bank: UInt8) {
 
         iErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &refNum)
         SwGameAssert(iErr == kNoErr)
+        #if NANOSAUR_3DS
+        Debug3DS_Log("  ...opened")
+        #endif
 
         // LOAD SND REZ
 
         gSndHandles[i] = Pomme_SndLoadFileAsResource(refNum)
         SwGameAssert(gSndHandles[i] != nil)
+        #if NANOSAUR_3DS
+        Debug3DS_Log("  ...loaded as resource")
+        #endif
 
         // GET OFFSET INTO IT
 
         var offset = 0
         GetSoundHeaderOffset(gSndHandles[i], &offset)
         gSndOffsets[i] = offset
+        #if NANOSAUR_3DS
+        Debug3DS_Log("  ...got header offset")
+        #endif
 
         // PRE-DECOMPRESS IT
 
@@ -294,11 +307,17 @@ func LoadSoundBank(_ bank: UInt8) {
         _ = Pomme_DecompressSoundResource(&handle, &offsetForDecompress)
         gSndHandles[i] = handle
         gSndOffsets[i] = offsetForDecompress
+        #if NANOSAUR_3DS
+        Debug3DS_Log("  ...decompressed")
+        #endif
 
         // CLOSE DATA FORK
 
         FSClose(refNum)
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadSoundBank: all effects loaded.")
+    #endif
 }
 
 // MARK: - Dispose sound bank

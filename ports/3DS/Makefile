@@ -68,6 +68,20 @@ LDFLAGS		:=	-specs=3dsx.specs -g $(ARCH) \
 
 LIBS		:=	-lcitro2d -lcitro3d -lctru -lm
 
+BIN2S		?=	bin2s
+
+#---------------------------------------------------------------------------------
+# PICA200 GPU shaders (Phase 3 of docs/3DS_PORT_PLAN.md: the GL-compatibility
+# shim backing OGL_Support.swift's immediate-mode calls needs a real compiled
+# vertex shader, since the PICA200 has no fixed-function vertex pipeline).
+# Each %.v.pica assembles to a %.shbin (via picasso), which then gets
+# embedded as linkable data the same way devkitPro's example Makefiles do it
+# (bin2s generates a .s + a _shbin.h with the byte array's extents, then the
+# .s assembles into a normal .o) - see $(DEVKITARM)/base_tools's `bin2o`.
+#---------------------------------------------------------------------------------
+SHADERS		:=	shaders/
+
+
 #---------------------------------------------------------------------------------
 # Real-engine paths. game_3ds.h (see common/) is the 3DS-specific substitute
 # for Source/Headers/game.h + Nanosaur2-Bridging-Header.h - see its header
@@ -100,16 +114,29 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 # files being wired in one at a time as they're proven to compile+link for
 # 3DS (see docs/3DS_PORT_PLAN.md, Phase 2 "first real engine file linked").
 # Add to ENGINE_SWIFT as more files are confirmed to work, in the same
-# incremental spirit - do not just `find $(ENGINE_SOURCE) -name '*.swift'`
-# here, since most of it still needs SDL/GL rewriting first.
+# incremental spirit.
+#
+# As of the "GL-compat shim"/"SDL-compat shim" updates in the port plan,
+# the ENTIRE real engine (all Source/**/*.swift, not just this curated
+# subset) compile-checks cleanly against game_3ds.h and even compiles as a
+# whole into one real linkable object (verified via an ad hoc `swiftc -c`
+# invocation covering every file, not this Makefile) - but LINKING the
+# whole thing fails: the engine's C side (bg3d.c, main.c, and every other
+# still-unported .c file, plus Pomme's own C++ runtime) isn't part of this
+# Makefile at all, so the real gGamePrefs/DoFatalAlert/SndDoImmediate/etc.
+# symbols Swift calls into don't exist yet to link against. Bringing that
+# in is real, separate follow-up work (milestone steps 4/6 - File/Sound),
+# not something to flip on by widening this list - hence still a curated
+# subset here, not `find`, so `make` keeps producing a working `.3dsx`.
 #---------------------------------------------------------------------------------
 PORT_SWIFT	:=	$(wildcard source/*.swift)
 ENGINE_SWIFT	:=	$(ENGINE_SOURCE)/3D/OGLTypes.swift \
 			$(ENGINE_SOURCE)/System/GameEnums.swift \
 			$(ENGINE_SOURCE)/System/SwiftEnumExtensions.swift \
-			$(ENGINE_SOURCE)/System/MenuItemExtensions.swift
+			$(ENGINE_SOURCE)/System/MenuItemExtensions.swift \
+			$(ENGINE_SOURCE)/System/EmbeddedMath.swift
 
-OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o
+OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/shim.o $(BUILD)/glcompat_shbin.o $(BUILD)/glcompat.o $(BUILD)/sdlcompat.o
 
 #---------------------------------------------------------------------------------
 .PHONY: all clean
@@ -129,6 +156,25 @@ $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/glcompat.o: $(COMMON)glcompat.c $(COMMON)SDL3/SDL_opengl.h $(BUILD)/glcompat_shbin.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -I$(BUILD) -I$(COMMON) -c $< -o $@
+
+$(BUILD)/sdlcompat.o: $(COMMON)sdlcompat.c $(COMMON)SDL3/SDL.h | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -I$(COMMON) -c $< -o $@
+
+$(SHADERS)glcompat.shbin $(SHADERS)glcompat_shbin.h: $(SHADERS)glcompat.v.pica
+	@echo $(notdir $<)
+	picasso -o $(SHADERS)glcompat.shbin -h $(SHADERS)glcompat_shbin.h $<
+
+$(BUILD)/glcompat_shbin.h $(BUILD)/glcompat_shbin.s: $(SHADERS)glcompat.shbin | $(BUILD)
+	@echo $(notdir $<)
+	$(BIN2S) -a 4 -H $(BUILD)/glcompat_shbin.h $< > $(BUILD)/glcompat_shbin.s
+
+$(BUILD)/glcompat_shbin.o: $(BUILD)/glcompat_shbin.s
+	$(CC) -x assembler-with-cpp $(CFLAGS) -c $< -o $@
+
 $(TARGET).elf: $(OFILES)
 	@echo linking $(notdir $@)
 	$(LD) $(LDFLAGS) $(OFILES) $(LIBS) -o $@
@@ -143,4 +189,4 @@ $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh
 
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).3dsx $(TARGET).map
+	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).3dsx $(TARGET).map $(SHADERS)glcompat.shbin $(SHADERS)glcompat_shbin.h

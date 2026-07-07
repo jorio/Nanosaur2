@@ -99,10 +99,11 @@ func miSpacer(customHeight: Float, getLayoutFlags: (@convention(c) (UnsafePointe
     return item
 }
 
-func miCycler1(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, choices: [(LocStrID, UInt8)], callback: (@convention(c) () -> Void)? = nil) -> MenuItem {
+func miCycler1(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, choices: [(LocStrID, UInt8)], callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil) -> MenuItem {
     var item = baseItem(.cycler1)
     item.text = text
     item.callback = callback
+    item.getLayoutFlags = getLayoutFlags
     var cycler = MenuCyclerData()
     cycler.valuePtr = valuePtr
     cycler.isDynamicallyGenerated = false

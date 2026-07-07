@@ -290,8 +290,13 @@ func CreateSuperTileMemoryList() {
 
     // FOR EACH POSSIBLE SUPERTILE SET INFO
 
-    let seamlessTexmapSize: Float = 2.0 + Float(SUPERTILE_TEXMAP_SIZE)
-    let seamlessUVScale: Float = Float(SUPERTILE_TEXMAP_SIZE) / seamlessTexmapSize
+    // kSuperTileTexSize (File.swift) matches the actual in-memory/GPU
+    // resolution of the assembled seamless texture (256 on desktop, 128 on
+    // 3DS - see that file's top-of-file comment) - this MUST track it,
+    // since these are normalized UV values computed from the ratio between
+    // a supertile's own texels and the 1px seam border around it.
+    let seamlessTexmapSize: Float = 2.0 + Float(kSuperTileTexSize)
+    let seamlessUVScale: Float = Float(kSuperTileTexSize) / seamlessTexmapSize
     let seamlessUVTranslate: Float = 1.0 / seamlessTexmapSize
 
     for i in 0..<maxSupertiles {

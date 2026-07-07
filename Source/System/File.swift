@@ -1,5 +1,25 @@
 // File.swift - Port of File.c to Swift
 
+// In-memory resolution used for supertile texture decode/assembly/upload.
+// Desktop always uses the source JPEGs' native SUPERTILE_TEXMAP_SIZE (256)
+// - completely unchanged from before. On 3DS, this is halved to 128: a
+// level's full set of unique supertile decode buffers, kept concurrently
+// alive by the sliding window in readDataFromPlayfieldFile (a correctness
+// requirement of the seam-assembly math, not tunable further - see that
+// function's own comments), didn't fit even after maximizing available
+// heap and downsampling only the final GPU texture (see
+// LoadSuperTileTexture's history in this file / docs/3DS_PORT_PLAN.md).
+// stb_image still decodes each JPEG at its native embedded 256x256
+// resolution (LoadSuperTilePixelBuffer immediately downsamples the result
+// on 3DS before returning), so the source data and decode step aren't
+// affected - only the size of the buffer kept resident afterwards, and
+// everything downstream that assembles/uploads it.
+#if NANOSAUR_3DS
+let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE) / 2
+#else
+let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE)
+#endif
+
 private let SKELETON_FILE_VERS_NUM: Int16 = 0x0110 // v1.1
 
 // PLAYFIELD HEADER
@@ -404,19 +424,40 @@ func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
 
     // READ PLAYFIELD RESOURCES
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: readDataFromPlayfieldFile...")
+    #endif
     readDataFromPlayfieldFile(specPtr)
 
     // DO ADDITIONAL SETUP
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: CreateSuperTileMemoryList...")
+    #endif
     CreateSuperTileMemoryList() // allocate memory for the supertile geometry
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: CalculateSplitModeMatrix...")
+    #endif
     CalculateSplitModeMatrix() // precalc the tile split mode matrix
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: InitSuperTileGrid...")
+    #endif
     InitSuperTileGrid() // init the supertile state grid
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: BuildTerrainItemList...")
+    #endif
     BuildTerrainItemList() // build list of items & find player start coords
 
     // CAST ITEM SHADOWS
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: DoItemShadowCasting...")
+    #endif
     DoItemShadowCasting()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadPlayfield: done.")
+    #endif
 }
 
 private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) {
@@ -449,6 +490,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     gNumLineMarkers = SwizzleLong(&header.pointee.numCheckpoints)
 
     ReleaseResource(handHedr)
+    #if NANOSAUR_3DS
+    "readDataFromPlayfieldFile: header parsed. gNumUniqueSuperTiles=\(gNumUniqueSuperTiles)".withCString { Debug3DS_Log($0) }
+    #endif
 
     if gTerrainTileWidth % Int(SUPERTILE_SIZE) != 0 { // terrain must be non-fractional number of supertiles in w/h
         SwFatal("ReadDataFromPlayfieldFile: terrain width not a supertile multiple")
@@ -490,6 +534,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     } else {
         SwFatal("ReadDataFromPlayfieldFile: Error reading supertile rez resource!")
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: supertile grid done.")
+    #endif
 
     // READ HEIGHT DATA MATRIX
 
@@ -512,6 +559,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     } else {
         SwAlert("ReadDataFromPlayfieldFile: Error reading height data resource!")
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: height data done.")
+    #endif
 
     // ITEM RELATED RESOURCES
 
@@ -543,6 +593,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
         ReleaseResource(handItms) // nuke the rez
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: item list done.")
+    #endif
 
     // SPLINE RELATED RESOURCES
 
@@ -571,6 +624,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
 
     // READ SPLINE POINT LIST
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: spline list done. reading spline points...")
+    #endif
 
     for i in 0..<gNumSplines {
         let spline = gSplineList + i // point to Nth spline
@@ -591,6 +647,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
 
     // READ SPLINE ITEM LIST
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: spline points done. reading spline items...")
+    #endif
 
     for i in 0..<gNumSplines {
         let spline = gSplineList + i // point to Nth spline
@@ -616,6 +675,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
 
     // FENCE RELATED RESOURCES
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: spline items done.")
+    #endif
 
     // READ FENCE LIST
 
@@ -663,6 +725,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
 
     // WATER RELATED RESOURCES
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: fences done.")
+    #endif
 
     // READ WATER LIST
 
@@ -697,6 +762,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
 
     // LINE MARKER RESOURCES
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: water done.")
+    #endif
 
     if gNumLineMarkers > 0 {
         if gNumLineMarkers > Int32(MAX_LINEMARKERS) {
@@ -732,6 +800,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gNumLineMarkers = 0
         }
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: line markers done.")
+    #endif
 
     // CLOSE REZ FILE
 
@@ -751,7 +822,10 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     SwGameAssertMessage(gSuperTilePixelBuffers == nil, "gSuperTilePixelBuffers already allocated!")
     gSuperTilePixelBuffers = AllocPtrClear(MemoryLayout<Ptr?>.size * Int(gNumUniqueSuperTiles))?.assumingMemoryBound(to: Ptr?.self)
 
-    let seamlessTextureCanvas = AllocPtrClear(4 * (Int(SUPERTILE_TEXMAP_SIZE) + 2) * (Int(SUPERTILE_TEXMAP_SIZE) + 2))!.assumingMemoryBound(to: Int8.self)
+    let seamlessTextureCanvas = AllocPtrClear(4 * (kSuperTileTexSize + 2) * (kSuperTileTexSize + 2))!.assumingMemoryBound(to: Int8.self)
+    #if NANOSAUR_3DS
+    Debug3DS_Log("readDataFromPlayfieldFile: starting supertile texture assembly loop...")
+    #endif
 
     for row in 0..<(Int(gNumSuperTilesDeep) + 4) { // go 4 rows beyond terrain height so all 3 passes can run to completion
         // We could do the three passes below separately, but weaving them in a single for loop
@@ -766,6 +840,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             if 0 <= rowPass1 && rowPass1 < Int(gNumSuperTilesDeep) {
                 let stId = gSuperTileTextureGrid[rowPass1]![col]
                 if stId >= 0 {
+                    #if NANOSAUR_3DS
+                    "texloop: pass1 row=\(rowPass1) col=\(col) stId=\(stId)".withCString { Debug3DS_Log($0) }
+                    #endif
                     gSuperTilePixelBuffers[Int(stId)] = LoadSuperTilePixelBuffer(dataForkRefNum)
 
                     // Update loading screen here
@@ -777,8 +854,11 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             if 0 <= rowPass2 && rowPass2 < Int(gNumSuperTilesDeep) {
                 let stId = gSuperTileTextureGrid[rowPass2]![col]
                 if stId >= 0 {
+                    #if NANOSAUR_3DS
+                    "texloop: pass2 row=\(rowPass2) col=\(col) stId=\(stId)".withCString { Debug3DS_Log($0) }
+                    #endif
                     AssembleSeamlessSuperTileTexture(Int32(rowPass2), Int32(col), seamlessTextureCanvas)
-                    GetSuperTileTextureObjectSlot(Int32(stId))!.pointee = LoadSuperTileTexture(seamlessTextureCanvas, 2 + Int32(SUPERTILE_TEXMAP_SIZE))
+                    GetSuperTileTextureObjectSlot(Int32(stId))!.pointee = LoadSuperTileTexture(seamlessTextureCanvas, Int32(2 + kSuperTileTexSize))
                 }
             }
 
@@ -827,9 +907,15 @@ func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
             FSRead(fRefNum, &readSize, $0)
         }
     }
+    #if NANOSAUR_3DS
+    "LoadSuperTilePixelBuffer: iErr1=\(iErr1) readSize=\(readSize) requestedSize=\(size)".withCString { Debug3DS_Log($0) }
+    #endif
     SwGameAssert(iErr1 == 0)
 
     dataSize = SwizzleLong(&dataSize)
+    #if NANOSAUR_3DS
+    "LoadSuperTilePixelBuffer: dataSize=\(dataSize)".withCString { Debug3DS_Log($0) }
+    #endif
 
     // ALLOCATE JPEG BUFFER
 
@@ -840,11 +926,20 @@ func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
     size = dataSize
     readSize = Int(size)
     let iErr2 = FSRead(fRefNum, &readSize, jpegBuffer)
+    #if NANOSAUR_3DS
+    "LoadSuperTilePixelBuffer: iErr2=\(iErr2) readSize=\(readSize) requestedSize=\(size)".withCString { Debug3DS_Log($0) }
+    #endif
     SwGameAssert(iErr2 == 0)
 
     // DECOMPRESS THE IMAGE
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadSuperTilePixelBuffer: calling DecompressQTImage...")
+    #endif
     let textureBuffer = DecompressQTImage(jpegBuffer, Int32(dataSize), Int32(texSize), Int32(texSize))!
+    #if NANOSAUR_3DS
+    Debug3DS_Log("LoadSuperTilePixelBuffer: DecompressQTImage returned.")
+    #endif
 
     SafeDisposePtr(jpegBuffer)
 
@@ -874,7 +969,22 @@ func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
 
     SafeDisposePtr(topRowPixelsCopy)
 
+    #if NANOSAUR_3DS
+    // Downsample from the JPEG's native SUPERTILE_TEXMAP_SIZE (256) to
+    // kSuperTileTexSize (128) right away, before this buffer is stored in
+    // gSuperTilePixelBuffers - the sliding window in
+    // readDataFromPlayfieldFile keeps several rows' worth of these
+    // resident concurrently (a correctness requirement, not just a
+    // tunable), so shrinking the STORED size (not just the final GPU
+    // texture) is what actually relieves the regular heap. Desktop never
+    // takes this branch, so it keeps returning the full native-resolution
+    // buffer exactly as before.
+    let (downsampled, _) = downsample2x(textureBuffer, Int32(texSize))
+    SafeDisposePtr(textureBuffer)
+    return UnsafeMutableRawPointer(downsampled).assumingMemoryBound(to: Int8.self)
+    #else
     return textureBuffer
+    #endif
 }
 
 private func blit32(_ src: UnsafePointer<Int8>?, _ srcWidth: Int, _ srcHeight: Int, _ srcRectX: Int, _ srcRectY: Int, _ srcRectWidth: Int, _ srcRectHeight: Int, _ dst: UnsafeMutablePointer<Int8>, _ dstWidth: Int, _ dstHeight: Int, _ dstRectX: Int, _ dstRectY: Int) {
@@ -913,8 +1023,8 @@ private func getSuperTileImage(_ row: Int, _ col: Int) -> UnsafePointer<Int8>? {
 func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canvas: Ptr!) {
     SwGameAssert(getSuperTileImage(Int(row), Int(col)) != nil) // make sure we're not trying to do assemble a blank texture
 
-    let tw = Int(SUPERTILE_TEXMAP_SIZE) // supertile width & height
-    let th = Int(SUPERTILE_TEXMAP_SIZE)
+    let tw = kSuperTileTexSize // supertile width & height
+    let th = kSuperTileTexSize
     let cw = tw + 2 // canvas width & height
     let ch = th + 2
 
@@ -939,9 +1049,58 @@ func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canvas: Ptr!
     blit32(getSuperTileImage(Int(row) + 1, Int(col) + 1), tw, th, 0, 0, 1, 1, canvas, cw, ch, cw - 1, ch - 1)
 }
 
+// 3DS-only: box-filter downsample an RGBA8 buffer by exactly 2x before GPU
+// upload. Every unique supertile in a level keeps its GPU texture resident
+// for the whole level (correctly - any could become visible), and at full
+// SUPERTILE_TEXMAP_SIZE resolution (256, stored by picaGL as GPU_RGBA4 -
+// see picaGL/source/texture.c's _determineHardwareFormat - 2 bytes/pixel),
+// that's ~128KB per texture: a level with more than roughly 256 unique
+// supertiles doesn't fit in the 3DS's 32MB linear heap (root-caused via a
+// boot-time heap-size print + tracing exactly where LoadPlayfield's
+// texture-assembly loop ran out of memory). This isn't a leak - the
+// sliding window already frees the temporary per-supertile decode buffers
+// as designed - it's a genuine capacity problem, so the fix is a smaller
+// per-texture footprint, not a bigger disposal net. Halving each
+// dimension quarters memory (256KB -> ~32KB), leaving normalized UV
+// coordinates (0..1) - and therefore Terrain.swift's seam-assembly math -
+// untouched, since only the final uploaded texel resolution shrinks.
+#if NANOSAUR_3DS
+private func downsample2x(_ src: Ptr, _ srcSize: Int32) -> (buffer: UnsafeMutablePointer<UInt8>, size: Int32) {
+    let dstSize = srcSize / 2
+    let srcPtr = UnsafeRawPointer(src).assumingMemoryBound(to: UInt8.self)
+    let dst = AllocPtrClear(4 * Int(dstSize) * Int(dstSize))!.assumingMemoryBound(to: UInt8.self)
+
+    for y in 0..<Int(dstSize) {
+        let row0 = (y * 2) * Int(srcSize)
+        let row1 = (y * 2 + 1) * Int(srcSize)
+        for x in 0..<Int(dstSize) {
+            let col0 = x * 2
+            let col1 = x * 2 + 1
+            let dstOffset = (y * Int(dstSize) + x) * 4
+            for c in 0..<4 {
+                let p00 = Int(srcPtr[(row0 + col0) * 4 + c])
+                let p10 = Int(srcPtr[(row0 + col1) * 4 + c])
+                let p01 = Int(srcPtr[(row1 + col0) * 4 + c])
+                let p11 = Int(srcPtr[(row1 + col1) * 4 + c])
+                dst[dstOffset + c] = UInt8((p00 + p10 + p01 + p11) / 4)
+            }
+        }
+    }
+
+    return (dst, dstSize)
+}
+#endif
+
 func LoadSuperTileTexture(_ textureBuffer: Ptr!, _ texSize: Int32) -> UnsafeMutablePointer<MOMaterialObject>! {
     // LOAD GL TEXTURE
+    //
+    // No 3DS-specific downsampling needed here anymore: the canvas this
+    // receives is already sized off kSuperTileTexSize (128 on 3DS, 256 on
+    // desktop - see this file's top-of-file comment and
+    // LoadSuperTilePixelBuffer), so this function is identical on both
+    // platforms now.
 
+    let uploadSize = texSize
     let textureName = OGL_TextureMap_Load(textureBuffer, texSize, texSize, Int32(GL_RGBA), Int32(GL_RGBA), Int32(GL_UNSIGNED_BYTE))
 
     // CREATE MATERIAL OBJECT
@@ -952,8 +1111,8 @@ func LoadSuperTileTexture(_ textureBuffer: Ptr!, _ texSize: Int32) -> UnsafeMuta
     matData.multiTextureCombine = UInt16(MULTI_TEXTURE_COMBINE_ADD)
     matData.diffuseColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
     matData.numMipmaps = 1 // 1 texture
-    matData.width = UInt32(texSize)
-    matData.height = UInt32(texSize)
+    matData.width = UInt32(uploadSize)
+    matData.height = UInt32(uploadSize)
     matData.textureName.0 = textureName
 
     return withUnsafeMutablePointer(to: &matData) { ptr in
@@ -1367,6 +1526,9 @@ func DecompressQTImage(_ data: UnsafePointer<CChar>!, _ dataSize: Int32, _ w: In
     let pixelData = payload.withMemoryRebound(to: UInt8.self, capacity: Int(payloadSize)) {
         stbi_load_from_memory($0, payloadSize, &actualW, &actualH, nil, 4)
     }
+    #if NANOSAUR_3DS
+    "DecompressQTImage: offset=\(offset) payloadSize=\(payloadSize) pixelData==nil? \(pixelData == nil) actualW=\(actualW) actualH=\(actualH) expectedW=\(w) expectedH=\(h)".withCString { Debug3DS_Log($0) }
+    #endif
     SwGameAssert(pixelData != nil)
     SwGameAssert(actualW == w)
     SwGameAssert(actualH == h)

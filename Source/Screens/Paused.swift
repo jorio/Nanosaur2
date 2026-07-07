@@ -1,9 +1,46 @@
-// Paused.swift - Port of Paused.c to Swift (DoPaused/DoReallyQuit/OnExitPause)
-// The menu tree data tables stay in Paused.c; see PausedInternal.h.
+// Paused.swift - Port of Paused.c (menu trees + DoPaused/DoReallyQuit/OnExitPause)
+
+var gGamePaused: UInt8 = 0
 
 private let RESU_FOURCC: Int32 = 0x72657375
 private let BAIL_FOURCC: Int32 = 0x6261696C
 private let QUIT_FOURCC: Int32 = 0x71756974
+
+// MARK: - Pause menu trees
+
+private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
+    gNumPlayers >= 2 ? 0 : Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
+}
+
+private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
+    gActiveSplitScreenMode = gGamePrefs.splitScreenMode
+    PausedInternal_UpdateSplitscreenFOV()
+}
+
+private let gPauseMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("paus")),
+    miPick(STR_RESUME, next: fourCC("EXIT"), id: fourCC("resu")),
+    miSpacer(customHeight: 0.3, getLayoutFlags: cShouldDisplaySplitscreenModeCycler),
+    miCycler1(STR_SPLITSCREEN_MODE, valuePtr: PausedInternal_GetSplitScreenModePtr(),
+              choices: [
+                (STR_SPLITSCREEN_HORIZ, UInt8(SplitscreenMode.horizontal.rawValue)),
+                (STR_SPLITSCREEN_VERT,  UInt8(SplitscreenMode.vertical.rawValue)),
+              ],
+              callback: cOnToggleSplitscreenMode),
+    miPick(STR_SETTINGS, next: fourCC("sett")),
+    miSpacer(customHeight: 0.3, getLayoutFlags: cShouldDisplaySplitscreenModeCycler),
+    miPick(STR_RETIRE, next: fourCC("EXIT"), id: fourCC("bail")),
+    miRoot(),
+])
+
+private let gReallyQuitMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("rlyq")),
+    miLabel(STR_REALLY_QUIT, customHeight: 1),
+    miSpacer(customHeight: 0.5),
+    miPick(STR_RESUME, next: fourCC("EXIT"), id: fourCC("resu")),
+    miPick(STR_QUIT,   next: fourCC("EXIT"), id: fourCC("quit")),
+    miRoot(),
+])
 
 private var gMouseCursor: UnsafeMutablePointer<ObjNode>?
 
@@ -55,7 +92,7 @@ public func DoPaused() {
     style.darkenPaneOpacity = 0.5
     style.startButtonExits = true
     style.exitCall = cOnExitPause
-    MakeMenu(GetPauseMenuTree(), &style)
+    MakeMenu(gPauseMenuTreePtr, &style)
     RegisterSettingsMenu()
 }
 
@@ -73,6 +110,6 @@ public func DoReallyQuit() {
     style.darkenPaneOpacity = 0.5
     style.startButtonExits = true
     style.exitCall = cOnExitPause
-    MakeMenu(GetReallyQuitMenuTree(), &style)
+    MakeMenu(gReallyQuitMenuTreePtr, &style)
     RegisterSettingsMenu()
 }

@@ -153,6 +153,13 @@ static inline uint8_t MenuItem_GetCyclerChoiceValue(const MenuItem* mi, int i) {
 static inline int (* _Nullable MenuItem_GetGenNumChoices(const MenuItem* mi))(void) { return mi->cycler.generator.generateNumChoices; }
 static inline const char* (* _Nullable MenuItem_GetGenChoiceString(const MenuItem* mi))(Byte) { return mi->cycler.generator.generateChoiceString; }
 
+// ---- Setters for MenuCyclerData's anonymous union (Swift can't address these by name) ----
+
+static inline void MenuCyclerData_SetChoiceText(MenuCyclerData* c, int i, LocStrID text) { c->choices[i].text = text; }
+static inline void MenuCyclerData_SetChoiceValue(MenuCyclerData* c, int i, uint8_t value) { c->choices[i].value = value; }
+static inline void MenuCyclerData_SetGeneratorNumChoices(MenuCyclerData* c, int (* _Nullable fn)(void)) { c->generator.generateNumChoices = fn; }
+static inline void MenuCyclerData_SetGeneratorChoiceString(MenuCyclerData* c, const char* (* _Nullable fn)(Byte)) { c->generator.generateChoiceString = fn; }
+
 static inline Byte* _Nullable MenuItem_GetSliderValuePtr(const MenuItem* mi) { return mi->slider.valuePtr; }
 static inline Byte MenuItem_GetSliderEquilibrium(const MenuItem* mi) { return mi->slider.equilibrium; }
 static inline Byte MenuItem_GetSliderMin(const MenuItem* mi) { return mi->slider.minValue; }

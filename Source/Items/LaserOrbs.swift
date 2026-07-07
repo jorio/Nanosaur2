@@ -241,7 +241,7 @@ private func updateLaserOrbCollision(_ theNode: UnsafeMutablePointer<ObjNode>, _
 private func CalcLaserVectorToPlayer(_ orb: UnsafeMutablePointer<ObjNode>, _ p: Int32) -> UInt8 {
     var v = OGLVector3D()
 
-    let player = GetPlayerInfoEntry(p)!
+    let player = GetPlayerInfoEntry(p)
 
     let px = player.pointee.coord.x + orb.pointee.TargetOff.x // get player coords with offset
     let py = player.pointee.coord.y + orb.pointee.TargetOff.y
@@ -617,7 +617,7 @@ private func updateLaserOrbSparkles(_ orb: UnsafeMutablePointer<ObjNode>) {
 
         // UPDATE SOUND EFFECT WHILE WE'RE HERE
 
-        let player = GetPlayerInfoEntry(Int32(orb.pointee.PlayerNum))!
+        let player = GetPlayerInfoEntry(Int32(orb.pointee.PlayerNum))
 
         if orb.pointee.EffectChannel == -1 {
             orb.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_LASERBEAM), &player.pointee.coord, UInt32(NORMAL_CHANNEL_RATE) * 4 / 5, 0.5)

@@ -14,7 +14,7 @@ private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<M
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
     gActiveSplitScreenMode = gGamePrefs.splitScreenMode
-    PausedInternal_UpdateSplitscreenFOV(GetSplitscreenPaneFOV())
+    PausedInternal_UpdateSplitscreenFOV(GetSplitscreenPaneFOV(), Int32(gNumPlayers))
 }
 
 private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([

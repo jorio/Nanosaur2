@@ -307,7 +307,7 @@ private func findPlayerStartCoordItems() {
                 continue
             }
 
-            let pi = GetPlayerInfoEntry(Int32(p))!
+            let pi = GetPlayerInfoEntry(Int32(p))
             pi.pointee.coord.x = Float(itemPtr[i].x)
             pi.pointee.startX = Int32(itemPtr[i].x)
             pi.pointee.coord.z = Float(itemPtr[i].y)

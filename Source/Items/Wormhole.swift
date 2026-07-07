@@ -224,7 +224,7 @@ func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointe
 
 // Create an entry wormhole at Player 1's position.
 func MakeEntryWormhole(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>! {
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
     let x = playerInfo.pointee.coord.x
     let z = playerInfo.pointee.coord.z
 
@@ -327,7 +327,7 @@ private let cMoveEntryWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         theNode.pointee.Scale.y = theNode.pointee.Scale.z
         theNode.pointee.Scale.x = theNode.pointee.Scale.z
         if theNode.pointee.Scale.x <= 0.0 {
-            GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum))!.pointee.wormhole = nil
+            GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum)).pointee.wormhole = nil
             DeleteObject(theNode)
             return
         }
@@ -418,7 +418,7 @@ private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 }
 
 private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNode>) {
-    let player = GetPlayerInfoEntry(0)!.pointee.objNode!
+    let player = GetPlayerInfoEntry(0).pointee.objNode!
     let down = OGLVector3D(x: 0, y: -1, z: 0)
 
     // SEE IF PLAYER IS IN RANGE

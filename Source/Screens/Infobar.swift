@@ -738,7 +738,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
         return
     }
 
-    let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.objNode!.pointee.Rot.y
+    let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
 
     // SET COORDS OF THE QUAD
     let xoff = MAP_SCALE2 * scale
@@ -770,7 +770,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     //
     // Then we need to scale the scroll value to uv coords.
 
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
+    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
     var leftEdge = Double(pi.pointee.coord.x * gMapToUnitValueFrac) // convert world-coord to texture-pixel-coord
     var topEdge = Double(pi.pointee.coord.z * gMapToUnitValueFrac)
 
@@ -920,7 +920,7 @@ func DrawMinimapOnSecondaryScreen() {
 
 private func infobarDrawHealth() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.health * 0.5
+    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.health * 0.5
 
     // SET V'S FOR SCROLLING OF HEALTH BAR
     gHealthuv1[0].v = v; gHealthuv1[1].v = v
@@ -950,7 +950,7 @@ private func infobarDrawHealth() {
 // MARK: - Draw shield
 
 private func infobarDrawShield() {
-    let q = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
+    let q = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
 
     // CALC UV COORDS
     let v = q * 0.5
@@ -984,7 +984,7 @@ private func infobarDrawShield() {
 
 private func infobarDrawFuel() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.jetpackFuel * 0.5
+    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.jetpackFuel * 0.5
 
     // SET V'S FOR SCROLLING OF FUEL BAR
     gFueluv1[0].v = v; gFueluv1[1].v = v
@@ -1106,7 +1106,7 @@ private func infobarDrawMissionStatus() {
     }
 
     // PLAYER DEAD
-    if GetPlayerIsDead(0) != 0 && GetPlayerInfoEntry(0)!.pointee.numFreeLives <= 0 {
+    if GetPlayerIsDead(0) != 0 && GetPlayerInfoEntry(0).pointee.numFreeLives <= 0 {
         let x = anchorCenterX(0)
         let y = anchorCenterY(0)
         let text = Localize(STR_MISSION_FAILED)
@@ -1146,7 +1146,7 @@ private func infobarDrawMissionStatus() {
 private func infobarDrawLives() {
     var x = livesX()
 
-    for _ in 0..<GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.numFreeLives {
+    for _ in 0..<GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.numFreeLives {
         DrawInfobarSprite(x, livesY(), LIVES_SCALE, Int16(INFOBAR_SObjType_Life))
         x += LIVES_SCALE * 1.0
     }
@@ -1161,7 +1161,7 @@ private func infobarDrawWeaponInventory() {
     DrawInfobarSprite(weaponX(), weaponY(), WEAPON_SCALE, Int16(INFOBAR_SObjType_WeaponFrame))
 
     // DRAW ICON
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
+    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
     let weaponType = pi.pointee.currentWeapon
     if Int(weaponType) == Int(WeaponType.none.rawValue) {
         return
@@ -1215,7 +1215,7 @@ private func infobarDrawRaceInfo() {
     // DRAW PLACE
     let scale: Float = 60.0
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     let place = pi.pointee.place
     DrawInfobarSprite(playerX(), playerY(), scale, Int16(Int(INFOBAR_SObjType_Place1) + Int(place)))
 
@@ -1246,7 +1246,7 @@ private let cMoveLapMessage: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 }
 
 func ShowLapNum(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>? {
-    let lapNum = GetPlayerInfoEntry(Int32(playerNum))!.pointee.lapNum
+    let lapNum = GetPlayerInfoEntry(Int32(playerNum)).pointee.lapNum
 
     // SEE IF TELL LAP
     if lapNum <= 0 {
@@ -1330,8 +1330,8 @@ private func infobarDrawPlayerArrows() {
 
     // GET ANGLE TO P2
     if gCurrentSplitScreenPane == 0 {
-        let pi0 = GetPlayerInfoEntry(0)!
-        let pi1 = GetPlayerInfoEntry(1)!
+        let pi0 = GetPlayerInfoEntry(0)
+        let pi1 = GetPlayerInfoEntry(1)
 
         v.x = pi1.pointee.coord.x - pi0.pointee.coord.x // calc vector from P1 to P2
         v.y = pi1.pointee.coord.z - pi0.pointee.coord.z
@@ -1342,8 +1342,8 @@ private func infobarDrawPlayerArrows() {
     }
     // GET ANGLE TO P1
     else {
-        let pi0 = GetPlayerInfoEntry(0)!
-        let pi1 = GetPlayerInfoEntry(1)!
+        let pi0 = GetPlayerInfoEntry(0)
+        let pi1 = GetPlayerInfoEntry(1)
 
         v.x = pi0.pointee.coord.x - pi1.pointee.coord.x // calc vector from P2 to P1
         v.y = pi0.pointee.coord.z - pi1.pointee.coord.z
@@ -1389,7 +1389,7 @@ private func drawAnaglyphCrosshairs() {
         return
     }
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
     if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {
@@ -1508,7 +1508,7 @@ private func infobarDrawCrosshairs() {
         return
     }
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
     if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {

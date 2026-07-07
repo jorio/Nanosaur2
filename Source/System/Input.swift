@@ -598,7 +598,7 @@ func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms:
         UInt32(Float(ms) * rumbleIntensityFrac))
 
     // Prevent jetpack effect from kicking in while we're playing this
-    GetPlayerInfoEntry(playerID)!.pointee.jetpackRumbleCooldown = Float(ms) * (1.0 / 1000.0)
+    GetPlayerInfoEntry(playerID).pointee.jetpackRumbleCooldown = Float(ms) * (1.0 / 1000.0)
 
     _ = lowFrequencyStrength
     _ = highFrequencyStrength

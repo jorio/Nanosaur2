@@ -888,7 +888,7 @@ func DoSimpleBoxCollisionAgainstPlayer(_ playerNum: Int16, _ top: Float, _ botto
 
     // GET BOX INFO FOR THIS NODE
 
-    let playerObj = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
+    let playerObj = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
     let targetNumBoxes = playerObj.pointee.NumCollisionBoxes // if target has no boxes, then skip
     if targetNumBoxes == 0 {
         return 0
@@ -938,7 +938,7 @@ func DoSimplePointCollisionAgainstPlayer(_ playerNum: Int16, _ thePoint: UnsafeM
 
     // GET BOX INFO FOR THIS NODE
 
-    let playerObj = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
+    let playerObj = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
     let targetNumBoxes = playerObj.pointee.NumCollisionBoxes // if target has no boxes, then skip
     if targetNumBoxes == 0 {
         return 0

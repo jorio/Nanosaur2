@@ -241,7 +241,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         aimVec.x = -sin(r)
         aimVec.y = -cos(r)
 
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
         targetVec.x = pi.pointee.coord.x - fromX // get normalized vector to target object
         targetVec.y = pi.pointee.coord.z - fromZ
         var targetVecNorm = OGLVector2D()

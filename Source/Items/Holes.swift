@@ -138,7 +138,7 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
     var p: Int16 = 0
     var holeCoord = hole.pointee.Coord
     _ = CalcDistanceToClosestPlayer(&holeCoord, &p)
-    let playerY = GetPlayerInfoEntry(Int32(p))!.pointee.coord.y
+    let playerY = GetPlayerInfoEntry(Int32(p)).pointee.coord.y
     if (playerY - hole.pointee.Coord.y) < minY {
         nubs[2].y += minY // set to min height
     } else {

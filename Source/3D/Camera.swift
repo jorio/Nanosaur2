@@ -220,7 +220,7 @@ func DrawLensFlare() {
 // where to put the camera.
 
 func InitCamera_Terrain(_ playerNum: Int16) {
-    let playerObj = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode
+    let playerObj = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode
 
     resetCameraSettings()
 
@@ -236,7 +236,7 @@ func InitCamera_Terrain(_ playerNum: Int16) {
         // SPECIAL INIT FOR WORMHOLE START
 
         if Int(playerObj.pointee.Skeleton!.pointee.AnimNum) == Int(PlayerAnim.appearWormhole.rawValue) { // if coming out of a wormhole, move camera farther out to init
-            let wormhole = GetPlayerInfoEntry(Int32(playerNum))!.pointee.wormhole!
+            let wormhole = GetPlayerInfoEntry(Int32(playerNum)).pointee.wormhole!
 
             r += Float.pi * 0.8
 
@@ -306,7 +306,7 @@ func UpdateCameras() {
     // the camera from moving.  Once we're out of the wormhole, we
     // accelerate gCameraFromAccel to it's regular value.
 
-    if Int(GetPlayerInfoEntry(0)!.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.appearWormhole.rawValue) {
+    if Int(GetPlayerInfoEntry(0).pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.appearWormhole.rawValue) {
         gCameraFromAccel += fps * 0.6
         if gCameraFromAccel > maxCameraAccel {
             gCameraFromAccel = maxCameraAccel
@@ -314,7 +314,7 @@ func UpdateCameras() {
     }
 
     for playerNum in 0..<Int(gNumPlayers) {
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
         guard let playerObj = pi.pointee.objNode else {
             continue
         }
@@ -485,7 +485,7 @@ private func moveCamera_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     let p = player.pointee.PlayerNum
     let fps = gFramesPerSecondFrac
 
-    let devil = GetPlayerInfoEntry(Int32(p))!.pointee.dustDevilObj!
+    let devil = GetPlayerInfoEntry(Int32(p)).pointee.dustDevilObj!
 
     let placement = (cameraPlacementsBase() + Int(Int32(p)))
     var camCoord = placement.pointee.cameraLocation // get old cam coords
@@ -519,7 +519,7 @@ private func updateCamera_FirstPerson(_ i: Int16) {
     var up = OGLVector3D()
     let forward = OGLVector3D(x: 0, y: 0, z: -1)
 
-    let pi = GetPlayerInfoEntry(Int32(i))!
+    let pi = GetPlayerInfoEntry(Int32(i))
     guard let player = pi.pointee.objNode else {
         return
     }

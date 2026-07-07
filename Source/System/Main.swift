@@ -214,7 +214,7 @@ private func initLevel() {
 
     for i in 0..<Int(gNumPlayers) {
         SetBestCheckpointNum(Int32(i), -1)
-        GetPlayerInfoEntry(Int32(i))!.pointee.objNode = nil
+        GetPlayerInfoEntry(Int32(i)).pointee.objNode = nil
     }
 
     // MAKE VIEW
@@ -429,7 +429,7 @@ private func playLevel() {
 
                     if oldTimer > 0.0 { // if just now crossed zero then start fade
                         if gNumPlayers > 1
-                            || GetPlayerInfoEntry(Int32(i))!.pointee.numFreeLives > 0 { // ...only if hasn't lost adventure mode yet (gameover will freeze-frame fadeout)
+                            || GetPlayerInfoEntry(Int32(i)).pointee.numFreeLives > 0 { // ...only if hasn't lost adventure mode yet (gameover will freeze-frame fadeout)
                             _ = MakeFadeEvent(UInt8(kFadeFlags_Out) | (UInt8(kFadeFlags_P1) << i), fadeOutSpeed)
                         }
                     } else if deathTimer < -(1.0 / fadeOutSpeed) { // once fully faded out reset player @ checkpoint
@@ -653,7 +653,7 @@ func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Splin
 
 private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let player = GetPlayerInfoEntry(0)!.pointee.objNode!
+    let player = GetPlayerInfoEntry(0).pointee.objNode!
 
     // MOVE ALONG THE SPLINE
 
@@ -678,8 +678,8 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
         OGL_UpdateCameraFromToUp(&theNode.pointee.OldCoord, &theNode.pointee.Coord, upPtr, 0)
     }
 
-    GetPlayerInfoEntry(0)!.pointee.camera.cameraLocation = theNode.pointee.Coord
-    GetPlayerInfoEntry(0)!.pointee.coord = theNode.pointee.Coord // update player coord
+    GetPlayerInfoEntry(0).pointee.camera.cameraLocation = theNode.pointee.Coord
+    GetPlayerInfoEntry(0).pointee.coord = theNode.pointee.Coord // update player coord
     player.pointee.Coord = theNode.pointee.Coord
     player.pointee.MotionVector = v
     let r = CalcYAngleFromPointToPoint(0, theNode.pointee.OldCoord.x, theNode.pointee.OldCoord.z,
@@ -697,8 +697,8 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
 
     if (MyRandomLong() & 0xff) < 15 {
         let weapon = RandomRange(UInt16(WeaponType.blaster.rawValue), UInt16(WeaponType.bomb.rawValue))
-        GetPlayerInfoEntry(0)!.pointee.currentWeapon = Int16(weapon)
-        weaponQuantityBase(GetPlayerInfoEntry(0)!)[Int(weapon)] = 999
+        GetPlayerInfoEntry(0).pointee.currentWeapon = Int16(weapon)
+        weaponQuantityBase(GetPlayerInfoEntry(0))[Int(weapon)] = 999
         PlayerFireButtonPressed(player, 1)
     }
 }

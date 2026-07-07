@@ -172,7 +172,7 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     _ = CalcDistanceToClosestPlayer(&gCoord, &playerNum) // find out who's the closest player
 
     if GetPlayerIsDead(Int32(playerNum)) == 0 { // don't aim at dead players
-        let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+        let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
         _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
                                     turnSpeed: brachTurnSpeed, useOffsets: 0, crossOut: nil)
     }

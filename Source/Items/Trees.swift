@@ -163,7 +163,7 @@ private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
 
     if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
         let p = Int32(player.pointee.PlayerNum)
-        let pi = GetPlayerInfoEntry(p)!
+        let pi = GetPlayerInfoEntry(p)
 
         if pi.pointee.carriedObj == nil { // only if not carrying egg
             if pi.pointee.invincibilityTimer > 0.0 {
@@ -740,7 +740,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 private let cDoTrigFallenSwampTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { treeOpt, playerOpt in
     guard let tree = treeOpt, let player = playerOpt else { return 0 }
     let p = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(p)!
+    let pi = GetPlayerInfoEntry(p)
 
     if pi.pointee.invincibilityTimer > 0.0 {
         return 0

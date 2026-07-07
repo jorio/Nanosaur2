@@ -177,7 +177,7 @@ func SetTerrainScale(_ polygonSize: Int32) {
 
 func InitCurrentScrollSettings() {
     for i in 0..<Int(gNumPlayers) { // init settings for each player in game
-        let pi = GetPlayerInfoEntry(Int32(i))!
+        let pi = GetPlayerInfoEntry(Int32(i))
         let x = Int(pi.pointee.coord.x - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
         let y = Int(pi.pointee.coord.z - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
 
@@ -1189,7 +1189,7 @@ func DoPlayerTerrainUpdate() {
     gHiccupTimer = 0
 
     for playerNum in 0..<Int(gNumPlayers) {
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
 
         // CALC PIXEL COORDS OF FAR LEFT SUPER TILE
 
@@ -1316,7 +1316,7 @@ func DoPlayerTerrainUpdate() {
 // MARK: - Calc new item delete window
 
 private func calcNewItemDeleteWindow(_ playerNum: UInt8) {
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // CALC LEFT SIDE OF WINDOW
 

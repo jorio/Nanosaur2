@@ -158,7 +158,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         let shootDist: Float = (gLevelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
 
         if dist < (shootDist * 1.2) { // see if player is close enough for turret to aim
-            let player = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
+            let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
             var aimPt = aimOff.transformed(by: player.pointee.BaseTransformMatrix) // calc pt in front of player to aim ag
             var muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
             let angle = turret.turnTowardTarget(from: &muzzleCoord, toX: aimPt.x, toZ: aimPt.z, turnSpeed: Float.pi / 2, useOffsets: 0, crossOut: nil) // turn turret on y-axis

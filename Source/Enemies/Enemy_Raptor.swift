@@ -152,7 +152,7 @@ private func moveRaptorStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     var playerNum: Int16 = 0
     let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
 
     _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x,
                                 toZ: playerInfo.pointee.coord.z, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: nil)
@@ -207,7 +207,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
         var playerNum: Int16 = 0
         dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
-        let player = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode!
+        let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
 
         // SEE IF MOVING TOWARD POINT IN FRONT
 
@@ -568,7 +568,7 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
     let enemy = enemyOpt!
     let player = playerOpt!
     let playerNum = player.pointee.PlayerNum
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
 
     if playerInfo.pointee.invincibilityTimer <= 0.0 {
         // DOES PLAYER HAVE SHIELD?
@@ -645,7 +645,7 @@ private func checkIfRaptorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> B
     }
 
     for p in 0..<Int(gNumPlayers) {
-        let playerInfo = GetPlayerInfoEntry(Int32(p))!
+        let playerInfo = GetPlayerInfoEntry(Int32(p))
         if playerInfo.pointee.shieldPower > 0.0 { // if player has shield then skip since other collision code handles this
             continue
         }

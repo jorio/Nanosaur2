@@ -990,13 +990,13 @@ func SaveGame(_ fileSlot: Int32) -> UInt8 {
     var saveData = SaveGameType()
     saveData.timestamp = UInt64(Double(timestampNanoseconds) / 1e9)
     saveData.level = UInt8(gLevelNum) // save @ beginning of next level
-    saveData.numLives = UInt8(GetPlayerInfoEntry(0)!.pointee.numFreeLives)
-    saveData.health = GetPlayerInfoEntry(0)!.pointee.health
-    saveData.jetpackFuel = GetPlayerInfoEntry(0)!.pointee.jetpackFuel
-    saveData.shieldPower = GetPlayerInfoEntry(0)!.pointee.shieldPower
+    saveData.numLives = UInt8(GetPlayerInfoEntry(0).pointee.numFreeLives)
+    saveData.health = GetPlayerInfoEntry(0).pointee.health
+    saveData.jetpackFuel = GetPlayerInfoEntry(0).pointee.jetpackFuel
+    saveData.shieldPower = GetPlayerInfoEntry(0).pointee.shieldPower
 
     for (i, _) in WeaponType.allCases.enumerated() {
-        weaponQuantityBase(&saveData)[i] = UInt16(bitPattern: playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)[i])
+        weaponQuantityBase(&saveData)[i] = UInt16(bitPattern: playerWeaponQuantityBase(GetPlayerInfoEntry(0))[i])
     }
 
     // SAVE IT TO DISK
@@ -1049,13 +1049,13 @@ func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
 
 func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
     gLevelNum = Int16(saveData.pointee.level)
-    GetPlayerInfoEntry(0)!.pointee.numFreeLives = Int16(saveData.pointee.numLives)
-    GetPlayerInfoEntry(0)!.pointee.health = saveData.pointee.health
-    GetPlayerInfoEntry(0)!.pointee.jetpackFuel = saveData.pointee.jetpackFuel
-    GetPlayerInfoEntry(0)!.pointee.shieldPower = saveData.pointee.shieldPower
+    GetPlayerInfoEntry(0).pointee.numFreeLives = Int16(saveData.pointee.numLives)
+    GetPlayerInfoEntry(0).pointee.health = saveData.pointee.health
+    GetPlayerInfoEntry(0).pointee.jetpackFuel = saveData.pointee.jetpackFuel
+    GetPlayerInfoEntry(0).pointee.shieldPower = saveData.pointee.shieldPower
 
     let saveWeapons = UnsafeMutablePointer(mutating: saveData).map { weaponQuantityBase($0) }!
-    let playerWeapons = playerWeaponQuantityBase(GetPlayerInfoEntry(0)!)
+    let playerWeapons = playerWeaponQuantityBase(GetPlayerInfoEntry(0))
     for (i, _) in WeaponType.allCases.enumerated() {
         playerWeapons[i] = Int16(bitPattern: saveWeapons[i])
     }

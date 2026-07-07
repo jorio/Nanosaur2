@@ -7,7 +7,6 @@
 #include "SplineManagerInternal.h"
 #include "SparkleInternal.h"
 #include "AnaglyphCalibrationInternal.h"
-#include "PlayerRaceInternal.h"
 #include "SpritesInternal.h"
 #include "EnemyInternal.h"
 #include "UIEffectsInternal.h"

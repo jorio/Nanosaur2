@@ -6,12 +6,6 @@
 // Swift can't dynamically index fixed-size C arrays (they import as
 // tuples); hand out accessors instead.
 
-static inline float GetDeathTimer(int i) { return gDeathTimer[i]; }
-static inline void SetDeathTimer(int i, float v) { gDeathTimer[i] = v; }
-
-// GetPlayerIsDead already declared in SwiftInternal.h.
-static inline void SetPlayerIsDead(int i, Boolean v) { gPlayerIsDead[i] = v; }
-
 static inline OGLPoint3D GetBestCheckpointCoord(int i) { return gBestCheckpointCoord[i]; }
 static inline void SetBestCheckpointCoord(int i, OGLPoint3D v) { gBestCheckpointCoord[i] = v; }
 

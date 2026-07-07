@@ -241,7 +241,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
                 continue
             }
 
-            let playerInfo = GetPlayerInfoEntry(Int32(i))!
+            let playerInfo = GetPlayerInfoEntry(Int32(i))
             if playerInfo.pointee.carriedObj == nil { // is player already carrying anything?
                 let player = playerInfo.pointee.objNode!
 
@@ -285,7 +285,7 @@ private func playerPickedUpEgg(_ egg: UnsafeMutablePointer<ObjNode>, _ playerNum
 
     // GET THE EGG
 
-    GetPlayerInfoEntry(Int32(playerNum))!.pointee.carriedObj = egg // give egg to player
+    GetPlayerInfoEntry(Int32(playerNum)).pointee.carriedObj = egg // give egg to player
     egg.pointee.PlayerNum = UInt8(playerNum) // remember which player has it
     egg.pointee.MoveCall = cMoveEggCarried // change move call
     egg.pointee.Flag.0 = 1 // CanResetEgg: we can now reset it when needed
@@ -300,7 +300,7 @@ private func playerPickedUpEgg(_ egg: UnsafeMutablePointer<ObjNode>, _ playerNum
 private let cMoveEggCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { eggOpt in
     guard let egg = eggOpt else { return }
     let playerNum = egg.pointee.PlayerNum // which player # is carrying this egg?
-    let player = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode! // get holding player obj
+    let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode! // get holding player obj
 
     // ALIGN EGG IN PLAYER'S GRASP
 
@@ -325,7 +325,7 @@ private let cMoveEggCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
         egg.pointee.Delta.y = 0
         egg.pointee.Delta.z = 0
         egg.pointee.Speed = player.pointee.Speed
-        GetPlayerInfoEntry(Int32(playerNum))!.pointee.carriedObj = nil // player not holding anything
+        GetPlayerInfoEntry(Int32(playerNum)).pointee.carriedObj = nil // player not holding anything
         return
     }
 
@@ -339,7 +339,7 @@ private let cMoveEggCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 // Does a generic drop of the egg - when it doesn't need to
 // go into a wormhole.
 func DropEgg_NoWormhole(_ playerNum: Int16) {
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
     if let egg = playerInfo.pointee.carriedObj { // get egg
         egg.pointee.Timer = 1.0 // DelayUntilCanPickup: delay until can be picked back up
         egg.pointee.MoveCall = cMoveEggNotCarried

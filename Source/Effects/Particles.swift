@@ -1488,7 +1488,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
 func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum: Int16) {
     let fps = gFramesPerSecondFrac
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.dirtParticleTimer -= fps // see if add bubbles
     if pi.pointee.dirtParticleTimer <= 0.0 {

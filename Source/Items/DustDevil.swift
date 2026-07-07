@@ -529,7 +529,7 @@ private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
             continue
         }
 
-        let player = GetPlayerInfoEntry(Int32(p))!.pointee.objNode! // get player ObjNode
+        let player = GetPlayerInfoEntry(Int32(p)).pointee.objNode! // get player ObjNode
 
         let animNum = Int(player.pointee.Skeleton!.pointee.AnimNum)
         if animNum == Int(PlayerAnim.deathDive.rawValue) ||
@@ -576,7 +576,7 @@ private func putPlayerInDirtDevil(_ player: UnsafeMutablePointer<ObjNode>, _ dus
 
     player.pointee.Timer = 4.0 // set duration of time in dust devil
 
-    let pi = GetPlayerInfoEntry(Int32(p))!
+    let pi = GetPlayerInfoEntry(Int32(p))
     pi.pointee.dustDevilObj = dustDevil
     pi.pointee.dustDevilRotSpeed = 0
 

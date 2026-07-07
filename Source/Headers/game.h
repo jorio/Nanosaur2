@@ -56,11 +56,9 @@
 #include "enemy.h"
 #include "water.h"
 #include "miscscreens.h"
-#include	"infobar.h"
 #include	"pick.h"
 #include "splinemanager.h"
 #include "3dmath.h"
-#include "quadmesh.h"
 #include "atlas.h"
 #include "menu.h"
 

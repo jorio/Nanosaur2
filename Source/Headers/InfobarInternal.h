@@ -1,7 +1,6 @@
 #pragma once
 
 #include "game.h" // already pulls in camera.h; camera.h has no #pragma once, so don't include it again here
-#include "infobar.h"
 
 // Swift can't dynamically index fixed-size (or incomplete) C arrays (they
 // import as tuples, or are rejected outright); hand out accessors instead.

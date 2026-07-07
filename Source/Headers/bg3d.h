@@ -6,9 +6,6 @@
 #define BG3D_H
 
 
-#define	MAX_MULTITEXTURE_LAYERS		4			// max # of multi texture layers supported
-												// WARNING: changing this may alter file format!!
-
 #define	MAX_BG3D_MATERIALS			400			// max # of materials in a bg3d file
 
 #define	MAX_BG3D_GROUPS			((int)MODEL_GROUP_SKELETONBASE+(int)MAX_SKELETON_TYPES)	// skeletons are @ end of list, so can use these counts for max #
@@ -52,42 +49,10 @@ enum
 };
 
 
-		/* TAG TYPES */
-
-enum
-{
-	BG3D_TAGTYPE_MATERIALFLAGS				=	0,
-	BG3D_TAGTYPE_MATERIALDIFFUSECOLOR		=	1,
-	BG3D_TAGTYPE_TEXTUREMAP					=	2,
-	BG3D_TAGTYPE_GROUPSTART					=	3,
-	BG3D_TAGTYPE_GROUPEND					=	4,
-	BG3D_TAGTYPE_GEOMETRY					=	5,
-	BG3D_TAGTYPE_VERTEXARRAY				=	6,
-	BG3D_TAGTYPE_NORMALARRAY				=	7,
-	BG3D_TAGTYPE_UVARRAY					=	8,
-	BG3D_TAGTYPE_COLORARRAY					=	9,
-	BG3D_TAGTYPE_TRIANGLEARRAY				= 	10,
-	BG3D_TAGTYPE_ENDFILE					=	11,
-	BG3D_TAGTYPE_BOUNDINGBOX				=	12,
-	BG3D_TAGTYPE_JPEGTEXTURE				=	13
-};
-
-
-	/* GEOMETRY TYPES */
-
-enum
-{
-	BG3D_GEOMETRYTYPE_VERTEXELEMENTS
-
-};
-
-
-		/* BG3D GEOMETRY HEADER */
-
-
-
-
-//-----------------------------------
+// BG3D_TAGTYPE_* (tag stream chunk types) and BG3D_GEOMETRYTYPE_* are now
+// BG3DTag/BG3DGeometryType in the BG3DFile module (Sources/BG3DFile) -
+// nothing in C reads the file format directly anymore, and Bg3d.swift
+// switches on the Swift enums instead.
 
 
 

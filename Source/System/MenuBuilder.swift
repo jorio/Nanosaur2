@@ -74,11 +74,13 @@ func miPick(_ text: LocStrID, next: Int32 = 0, id: Int32 = 0, callback: (@conven
     return item
 }
 
-func miLabel(_ text: LocStrID = STR_NULL, rawText: UnsafePointer<CChar>? = nil, customHeight: Float = 0) -> MenuItem {
+func miLabel(_ text: LocStrID = STR_NULL, rawText: UnsafePointer<CChar>? = nil, id: Int32 = 0, customHeight: Float = 0, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil) -> MenuItem {
     var item = baseItem(.label)
     item.text = text
     item.rawText = rawText
+    item.id = id
     item.customHeight = customHeight
+    item.getLayoutFlags = getLayoutFlags
     return item
 }
 

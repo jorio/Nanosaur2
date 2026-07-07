@@ -1,7 +1,43 @@
 // LevelIntro.swift - Port of LevelIntro.c to Swift
-// MakeLevelIntroSaveSprites' menu tree (and the getLayoutFlags callback it
-// embeds by designated initializer) stays in LevelIntro.c; see
-// LevelIntroInternal.h.
+
+// MARK: - Level intro save menu
+
+private let cGetLevelSpecificMenuLayoutFlags: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { mi in
+    guard let mi = mi else { return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled) }
+    let id = mi.pointee.id
+    if (gLevelNum == 1 && id == fourCC("lvl1")) || (gLevelNum == 2 && id == fourCC("lvl2")) {
+        return 0
+    }
+    return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
+}
+
+private let gSaveMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("lvin")),
+    miPick(STR_SAVE_GAME, next: fourCC("save"), customHeight: 1),
+    miPick(STR_CONTINUE_WITHOUT_SAVING, next: fourCC("EXIT"), id: fourCC("nosv"), customHeight: 1),
+
+    miRoot(fourCC("save")),
+    miLabel(STR_ENTERING_LEVEL_2, id: fourCC("lvl1"), getLayoutFlags: cGetLevelSpecificMenuLayoutFlags),
+    miLabel(STR_ENTERING_LEVEL_3, id: fourCC("lvl2"), getLayoutFlags: cGetLevelSpecificMenuLayoutFlags),
+    miFileSlot(STR_FILE, id: fourCC("sf#0"), fileSlot: 0, next: fourCC("EXIT")),
+    miFileSlot(STR_FILE, id: fourCC("sf#1"), fileSlot: 1, next: fourCC("EXIT")),
+    miFileSlot(STR_FILE, id: fourCC("sf#2"), fileSlot: 2, next: fourCC("EXIT")),
+    miFileSlot(STR_FILE, id: fourCC("sf#3"), fileSlot: 3, next: fourCC("EXIT")),
+    miFileSlot(STR_FILE, id: fourCC("sf#4"), fileSlot: 4, next: fourCC("EXIT")),
+    miPick(STR_CONTINUE_WITHOUT_SAVING, next: fourCC("EXIT"), id: fourCC("nosv")),
+    miSpacer(customHeight: 1.5),
+    miRoot(),
+])
+
+func MakeLevelIntroSaveSprites() {
+    var style = kDefaultMenuStyle
+    style.darkenPaneOpacity = 0.6
+    style.yOffset = 400
+    style.standardScale *= 0.75
+    style.rowHeight *= 0.75
+    MakeMenu(gSaveMenuTreePtr, &style)
+    _ = MakeMouseCursorObject()
+}
 
 private let kCreditLineDuration: Float = 3.5
 private let kCreditLinePause: Float = 0.5

@@ -1,15 +1,36 @@
 // Bg3d.swift - Port of bg3d.c to Swift
 //
 // gBG3DContainerList/gBG3DGroupList/gNumObjectsInBG3DGroupList/
-// gObjectGroupBBoxList/gObjectGroupBSphereList stay defined in bg3d.c and
-// `extern`'d via game.h/BonesInternal.h: Items.c, Terrain.c, and Player.c
-// (still unported), plus already-ported Bones.swift, read/write them
-// directly. Swift accesses them through the Get*/Set* shims in
-// ObjectsInternal.h/BonesInternal.h since Swift can't dynamically index a
-// fixed-size (or 2D fixed-size) C array.
+// gObjectGroupBBoxList/gObjectGroupBSphereList are native Swift storage
+// (converted 2026-07-07): nothing in any .c file touches them anymore
+// (the header comment claiming Items.c/Terrain.c/Player.c still needed
+// them via extern was stale - those are stub files now, all real logic
+// already ported to Swift). The Get*/Set* accessor functions below keep
+// the same names/signatures as the old C shims in ObjectsInternal.h/
+// BonesInternal.h so none of their ~30 call sites elsewhere needed to
+// change - only the implementation moved from C-array-indexing to
+// native-Swift-array-indexing.
 //
 // Everything else here (gBG3D_* state, the group stack) was `static`
 // (file-private) in C, so it moves into private Swift state instead.
+
+private var gBG3DContainerList: [UnsafeMutablePointer<BG3DFileContainer>?] = Array(repeating: nil, count: Int(SwMAX_BG3D_GROUPS))
+private var gBG3DGroupList: [[MetaObjectPtr?]] = Array(repeating: Array(repeating: nil, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+private var gNumObjectsInBG3DGroupList: [Int32] = Array(repeating: 0, count: Int(SwMAX_BG3D_GROUPS))
+private var gObjectGroupBBoxList: [[OGLBoundingBox]] = Array(repeating: Array(repeating: OGLBoundingBox(), count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+private var gObjectGroupBSphereList: [[Float]] = Array(repeating: Array(repeating: 0, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+
+func GetBG3DContainerRoot(_ group: Int32) -> MetaObjectPtr? { gBG3DContainerList[Int(group)]!.pointee.root }
+func GetBG3DContainer(_ group: Int32) -> UnsafeMutablePointer<BG3DFileContainer>? { gBG3DContainerList[Int(group)] }
+func SetBG3DContainer(_ group: Int32, _ value: UnsafeMutablePointer<BG3DFileContainer>?) { gBG3DContainerList[Int(group)] = value }
+func GetNumObjectsInBG3DGroup(_ group: Int32) -> Int32 { gNumObjectsInBG3DGroupList[Int(group)] }
+func SetNumObjectsInBG3DGroup(_ group: Int32, _ value: Int32) { gNumObjectsInBG3DGroupList[Int(group)] = value }
+func GetBG3DGroupObject(_ group: Int32, _ type: Int32) -> MetaObjectPtr? { gBG3DGroupList[Int(group)][Int(type)] }
+func SetBG3DGroupObject(_ group: Int32, _ type: Int32, _ value: MetaObjectPtr?) { gBG3DGroupList[Int(group)][Int(type)] = value }
+func GetObjectGroupBBox(_ group: Int32, _ type: Int32) -> OGLBoundingBox { gObjectGroupBBoxList[Int(group)][Int(type)] }
+func SetObjectGroupBBox(_ group: Int32, _ type: Int32, _ value: OGLBoundingBox) { gObjectGroupBBoxList[Int(group)][Int(type)] = value }
+func GetObjectGroupBSphere(_ group: Int32, _ type: Int32) -> Float { gObjectGroupBSphereList[Int(group)][Int(type)] }
+func SetObjectGroupBSphere(_ group: Int32, _ type: Int32, _ value: Float) { gObjectGroupBSphereList[Int(group)][Int(type)] = value }
 
 private let BG3D_GROUP_STACK_SIZE = 50
 

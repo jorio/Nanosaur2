@@ -128,10 +128,11 @@ func miCycler2Dynamic(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, g
     return item
 }
 
-func miSlider(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, minValue: UInt8, maxValue: UInt8, equilibrium: UInt8, increment: UInt8, continuousCallback: Bool, callback: (@convention(c) () -> Void)? = nil) -> MenuItem {
+func miSlider(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, minValue: UInt8, maxValue: UInt8, equilibrium: UInt8, increment: UInt8, continuousCallback: Bool, callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil) -> MenuItem {
     var item = baseItem(.slider)
     item.text = text
     item.callback = callback
+    item.getLayoutFlags = getLayoutFlags
     var slider = MenuSliderData()
     slider.valuePtr = valuePtr
     slider.minValue = minValue

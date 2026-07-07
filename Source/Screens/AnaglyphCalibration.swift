@@ -1,13 +1,101 @@
 // AnaglyphCalibration.swift - Port of AnaglyphCalibration.c to Swift
-// The menu tree data tables and their embedded callbacks stay in
-// AnaglyphCalibration.c; see AnaglyphCalibrationInternal.h.
 
 private var gAnaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
 
-// IsStereo/IsStereoAnaglyphColor/IsStereoAnaglyphMono are parameterized
-// C macros, which Swift can't import as callable symbols.
+// MARK: - Anaglyph menu trees
+
+private let cOnChangeAnaglyphMode: @convention(c) () -> Void = {
+    gAnaglyphPass = 0
+    for _ in 0..<4 {
+        glColorMask(GLboolean(GL_TRUE), GLboolean(GL_TRUE), GLboolean(GL_TRUE), GLboolean(GL_TRUE))
+        glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
+        SDL_GL_SwapWindow(gSDLWindow)
+    }
+    SetUpAnaglyphCalibrationScreen()
+    LayoutCurrentMenuAgain(true)
+}
+
+private let cOnTweakAnaglyphLevels: @convention(c) () -> Void = {
+    SetUpAnaglyphCalibrationScreen()
+    LayoutCurrentMenuAgain(false)
+}
+
+private let cGetAnaglyphDisplayFlags: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
+    isStereoAnaglyph() ? 0 : Int32(kMILayoutFlagHidden)
+}
+
+private let cGetAnaglyphDisplayFlags_ColorOnly: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
+    isStereoAnaglyphColor() ? 0 : Int32(kMILayoutFlagHidden)
+}
+
+private let cResetAnaglyphSettings: @convention(c) () -> Void = {
+    gGamePrefs.doAnaglyphChannelBalancing = UInt8(1)
+    gGamePrefs.anaglyphCalibrationRed   = UInt8(DEFAULT_ANAGLYPH_R)
+    gGamePrefs.anaglyphCalibrationGreen = UInt8(DEFAULT_ANAGLYPH_G)
+    gGamePrefs.anaglyphCalibrationBlue  = UInt8(DEFAULT_ANAGLYPH_B)
+    SetUpAnaglyphCalibrationScreen()
+    LayoutCurrentMenuAgain(true)
+}
+
+private let cShouldShowResetAnaglyphSettings: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
+    isStereo() ? 0 : Int32(kMILayoutFlagHidden)
+}
+
+private let gInGameAnaglyphMenuPtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("cali")),
+    miSpacer(customHeight: 1.5),
+    miLabel(STR_NO_ANAGLYPH_CALIBRATION_IN_GAME, customHeight: 1.0),
+    miSpacer(customHeight: 1.5),
+    miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
+    miRoot(),
+])
+
+private let gAnaglyphMenuPtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("cali")),
+    miCycler2(STR_3D_GLASSES_MODE,
+              valuePtr: AnaglyphInternal_GetStereoGlassesModePtr(),
+              choices: [
+                (STR_3D_GLASSES_DISABLED,        UInt8(StereoGlassesMode.off.rawValue)),
+                (STR_3D_GLASSES_ANAGLYPH_COLOR,  UInt8(StereoGlassesMode.anaglyphColor.rawValue)),
+                (STR_3D_GLASSES_ANAGLYPH_MONO,   UInt8(StereoGlassesMode.anaglyphMono.rawValue)),
+              ],
+              callback: cOnChangeAnaglyphMode),
+    miSlider(STR_3D_GLASSES_R,
+             valuePtr: AnaglyphInternal_GetCalibRedPtr(),
+             minValue: 0, maxValue: 255, equilibrium: UInt8(DEFAULT_ANAGLYPH_R), increment: 5,
+             continuousCallback: false,
+             callback: cOnTweakAnaglyphLevels,
+             getLayoutFlags: cGetAnaglyphDisplayFlags),
+    miSlider(STR_3D_GLASSES_G,
+             valuePtr: AnaglyphInternal_GetCalibGreenPtr(),
+             minValue: 0, maxValue: 255, equilibrium: UInt8(DEFAULT_ANAGLYPH_G), increment: 5,
+             continuousCallback: false,
+             callback: cOnTweakAnaglyphLevels,
+             getLayoutFlags: cGetAnaglyphDisplayFlags_ColorOnly),
+    miSlider(STR_3D_GLASSES_B,
+             valuePtr: AnaglyphInternal_GetCalibBluePtr(),
+             minValue: 0, maxValue: 255, equilibrium: UInt8(DEFAULT_ANAGLYPH_B), increment: 5,
+             continuousCallback: false,
+             callback: cOnTweakAnaglyphLevels,
+             getLayoutFlags: cGetAnaglyphDisplayFlags),
+    miCycler2(STR_3D_GLASSES_CHANNEL_BALANCING,
+              valuePtr: AnaglyphInternal_GetChannelBalancingPtr(),
+              choices: [(STR_NO, 0), (STR_YES, 1)],
+              callback: cOnTweakAnaglyphLevels,
+              getLayoutFlags: cGetAnaglyphDisplayFlags_ColorOnly),
+    miPick(STR_RESTORE_DEFAULT_CONFIG,
+           callback: cResetAnaglyphSettings,
+           getLayoutFlags: cShouldShowResetAnaglyphSettings,
+           customHeight: 0.7),
+    miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
+    miSpacer(customHeight: 8),
+    miRoot(),
+])
+
+// IsStereo/IsStereoAnaglyphColor/IsStereoAnaglyphMono are C macros, not callable from Swift.
 private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) }
+private func isStereoAnaglyph() -> Bool { isStereoAnaglyphColor() || isStereoAnaglyphMono() }
 private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) }
 
 private let cMoveAnaglyphScreenHeadObject: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
@@ -31,10 +119,10 @@ public func SetUpAnaglyphCalibrationScreen() {
     // REGISTER MENU
 
     if gPlayNow != 0 {
-        RegisterMenu(GetInGameAnaglyphMenu()) // can't show actual menu in-game
+        RegisterMenu(gInGameAnaglyphMenuPtr) // can't show actual menu in-game
         return
     } else {
-        RegisterMenu(GetAnaglyphMenu())
+        RegisterMenu(gAnaglyphMenuPtr)
     }
 
     // NUKE AND RELOAD TEXTURES SO THE CURRENT ANAGLYPH FILTER APPLIES TO THEM

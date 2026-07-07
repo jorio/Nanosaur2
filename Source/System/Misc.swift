@@ -2,12 +2,16 @@
 //
 // DoAlert/DoFatalAlert stay in Misc.c because they take C variadic
 // arguments, which Swift can't implement (same reasoning as
-// LocalizeWithPlaceholder staying in Localization.c). gRAMAlloced,
-// gFramesPerSecond, gFramesPerSecondFrac, and gNumPointers also stay defined
-// in Misc.c so other still-unported C files can keep reading/writing them
-// via `extern`; Swift reads/writes them here the same way it already does
-// for gGameViewInfoPtr etc. gSeed0/1/2 aren't `extern`'d anywhere else, so
-// unlike those they don't need to stay C-linked.
+// LocalizeWithPlaceholder staying in Localization.c). gRAMAlloced/
+// gFramesPerSecond/gFramesPerSecondFrac/gNumPointers are native Swift
+// storage now (converted 2026-07-07): nothing in any .c file touches them
+// anymore. gSeed0/1/2 aren't `extern`'d anywhere else, so unlike those
+// they didn't need this treatment - already private Swift storage.
+
+var gRAMAlloced: Int = 0
+var gFramesPerSecond: Float = 13
+var gFramesPerSecondFrac: Float = 1.0 / 13
+var gNumPointers: Int32 = 0
 
 private let MAX_FPS: Float = 300 // mac original was 190
 private let DEFAULT_FPS: Float = 13

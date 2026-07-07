@@ -41,7 +41,6 @@
 #include "sound2.h"
 #include "sobjtypes.h"
 #include "sprites.h"
-#include "shards.h"
 #include "sparkle.h"
 #include "bg3d.h"
 #include "effects.h"

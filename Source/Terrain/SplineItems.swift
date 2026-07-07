@@ -1,5 +1,39 @@
 // SplineItems.swift - Port of SplineItems.c to Swift
 
+// SplinePointType, SplineDefType, and File_SplineDefType are native Swift
+// structs (converted from structs.h 2026-07-07) - nothing in any .c file
+// touches them. SplineItemType stays C-imported (pinned via ObjNode's
+// SplineItemPtr field), so SplineDefType's itemList field below still
+// refers to the ClangImporter-provided type.
+
+struct SplinePointType {
+    var x: Float = 0
+    var z: Float = 0
+}
+
+struct SplineDefType {
+    var numNubs: Int16 = 0
+    var nubList: UnsafeMutablePointer<SplinePointType>!
+    var numPoints: Int32 = 0
+    var pointList: UnsafeMutablePointer<SplinePointType>!
+    var numItems: Int16 = 0
+    var itemList: UnsafeMutablePointer<SplineItemType>!
+    var bBox = Rect()
+}
+
+struct File_SplineDefType {
+    var numNubs: Int16 = 0
+    var junk1: Int32 = 0
+    var numPoints: Int32 = 0
+    var junk2: Int32 = 0
+    var numItems: Int16 = 0
+    var junk3: Int32 = 0
+    var bBox = Rect()
+}
+
+var gSplineList: UnsafeMutablePointer<SplineDefType>!
+var gNumSplines: Int = 0
+
 private let maxSplineObjects = 100
 private let maxSplineItemNum = 49 // for error checking!
 

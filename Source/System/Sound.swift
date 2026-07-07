@@ -1,18 +1,24 @@
 // Sound.swift - Port of Sound.c to Swift
 //
-// gChannelInfo, gSongPlayingFlag, and gCurrentSong stay defined in the
-// stubbed Sound.c: gChannelInfo because SwiftInternal.h's
-// GetChannelInfoEntry shim references it directly, gSongPlayingFlag/
-// gCurrentSong because they're `extern`'d in game.h and gCurrentSong is
-// read by MainMenu.c (still unported). Every other global here (the
-// sound channel arrays, ear/eye vectors, volume state) has no `extern`
-// declaration anywhere and is only ever touched from this file, so it
-// all moves into private Swift storage. ToggleMusic is declared in
-// sound2.h but its entire implementation was already #if 0'd out in the
-// original (referencing globals that no longer exist), and nothing
-// calls it, so it's skipped.
+// gChannelInfo, gSongPlayingFlag, and gCurrentSong are native Swift storage
+// now: nothing in any .c file touches them anymore (verified 2026-07-07,
+// after MainMenu.c was deleted). ToggleMusic is declared in sound2.h but
+// its entire implementation was already #if 0'd out in the original
+// (referencing globals that no longer exist), and nothing calls it, so
+// it's skipped.
+
+struct ChannelInfoType {
+    var effectNum: Int16 = -1
+    var volumeAdjust: Float = 0
+    var leftVolume: Float = 0
+    var rightVolume: Float = 0
+}
 
 private let maxChannels = 40
+
+var gChannelInfo: [ChannelInfoType] = Array(repeating: ChannelInfoType(), count: maxChannels)
+var gSongPlayingFlag: UInt8 = 0
+var gCurrentSong: Int16 = -1
 private let maxEffects = 70
 private let maxAudioStreams = 9
 
@@ -345,7 +351,7 @@ func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
 
     channelNum.pointee = -1
 
-    GetChannelInfoEntry(Int32(c))!.pointee.effectNum = -1
+    gChannelInfo[Int(c)].effectNum = -1
 }
 
 // MARK: - Stop a channel if effect num
@@ -358,7 +364,7 @@ func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effec
         return 0
     }
 
-    if GetChannelInfoEntry(Int32(c))!.pointee.effectNum != effectNum { // make sure its the right effect
+    if gChannelInfo[Int(c)].effectNum != effectNum { // make sure its the right effect
         return 0
     }
 
@@ -495,7 +501,7 @@ func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(NORMAL_CHANNEL_RATE))
 
     if theChan != -1 {
-        GetChannelInfoEntry(Int32(theChan))!.pointee.volumeAdjust = 1.0 // full volume adjust
+        gChannelInfo[Int(theChan)].volumeAdjust = 1.0 // full volume adjust
     }
 
     return theChan // return channel #
@@ -525,7 +531,7 @@ func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(rateMultiplier))
 
     if theChan != -1 {
-        GetChannelInfoEntry(Int32(theChan))!.pointee.volumeAdjust = volumeAdjust // remember volume adjuster
+        gChannelInfo[Int(theChan)].volumeAdjust = volumeAdjust // remember volume adjuster
     }
 
     return theChan // return channel #
@@ -543,7 +549,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
 
     // MAKE SURE THE SAME SOUND IS STILL ON THIS CHANNEL
 
-    if effectNum != GetChannelInfoEntry(Int32(c))!.pointee.effectNum {
+    if effectNum != gChannelInfo[Int(c)].effectNum {
         channel.pointee = -1
         return 1
     }
@@ -559,7 +565,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
     if where_ != nil {
         var leftVol: UInt32 = 0
         var rightVol: UInt32 = 0
-        calc3DEffectVolume(GetChannelInfoEntry(Int32(c))!.pointee.effectNum, where_, GetChannelInfoEntry(Int32(c))!.pointee.volumeAdjust, &leftVol, &rightVol)
+        calc3DEffectVolume(gChannelInfo[Int(c)].effectNum, where_, gChannelInfo[Int(c)].volumeAdjust, &leftVol, &rightVol)
         if (leftVol + rightVol) == 0 { // if volume goes to 0, then kill channel
             StopAChannel(channel)
             return 0
@@ -756,10 +762,9 @@ func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: U
 
     // SET MY INFO
 
-    let info = GetChannelInfoEntry(Int32(theChan))!
-    info.pointee.effectNum = effectNum // remember what effect is playing on this channel
-    info.pointee.leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
-    info.pointee.rightVolume = Float(rightVolume)
+    gChannelInfo[Int(theChan)].effectNum = effectNum // remember what effect is playing on this channel
+    gChannelInfo[Int(theChan)].leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
+    gChannelInfo[Int(theChan)].rightVolume = Float(rightVolume)
     return theChan // return channel #
 }
 
@@ -775,8 +780,7 @@ func UpdateGlobalVolume() {
     // ADJUST VOLUMES OF ALL CHANNELS REGARDLESS IF THEY ARE PLAYING OR NOT
 
     for c in 0..<Int(gMaxChannels) {
-        let info = GetChannelInfoEntry(Int32(c))!
-        ChangeChannelVolume(Int16(c), info.pointee.leftVolume, info.pointee.rightVolume)
+        ChangeChannelVolume(Int16(c), gChannelInfo[c].leftVolume, gChannelInfo[c].rightVolume)
     }
 
     // UPDATE SONG VOLUME
@@ -816,9 +820,8 @@ func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: Float) 
     mySndCmd.param2 = Int((rv2 << 16) | lv2) // set volume left & right
     SndDoImmediate(chanPtr, &mySndCmd)
 
-    let info = GetChannelInfoEntry(Int32(channel))!
-    info.pointee.leftVolume = leftVol // remember requested volume (not the adjusted volume!)
-    info.pointee.rightVolume = rightVol
+    gChannelInfo[Int(channel)].leftVolume = leftVol // remember requested volume (not the adjusted volume!)
+    gChannelInfo[Int(channel)].rightVolume = rightVol
 }
 
 // MARK: - Change channel rate

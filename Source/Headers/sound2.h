@@ -5,15 +5,6 @@
 #pragma once
 
 
-typedef struct
-{
-	short	effectNum;
-	float	volumeAdjust;
-	float	leftVolume, rightVolume;
-}ChannelInfoType;
-
-
-
 #define		BASE_EFFECT_RESOURCE	10000
 
 #define		FULL_CHANNEL_VOLUME		kFullVolume
@@ -103,10 +94,6 @@ enum
 	NUM_SOUND_BANKS,
 };
 
-
-			/* EXTERNS */
-
-extern	ChannelInfoType				gChannelInfo[];
 
 //===================== PROTOTYPES ===================================
 

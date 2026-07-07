@@ -4,7 +4,6 @@
 #include "SwiftInternal.h"
 #include "MenuInternal.h"
 #include "PausedInternal.h"
-#include "SparkleInternal.h"
 #include "AnaglyphCalibrationInternal.h"
 #include "EnemyInternal.h"
 #include "UIEffectsInternal.h"

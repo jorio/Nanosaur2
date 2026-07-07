@@ -1,4 +1,10 @@
 // Wormhole.swift - Port of Wormhole.c to Swift
+//
+// gOpenPlayerWormhole/gExitWormhole are native Swift storage now
+// (converted 2026-07-07): nothing in any .c file touches them anymore.
+
+var gOpenPlayerWormhole: UInt8 = 0
+var gExitWormhole: UnsafeMutablePointer<ObjNode>!
 
 private let playerWormholeSize: Float = 4.0
 private let eggWormholeSize: Float = 4.0

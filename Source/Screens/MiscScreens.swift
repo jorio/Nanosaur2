@@ -1,4 +1,9 @@
 // MiscScreens.swift - Port of MiscScreens.c to Swift
+//
+// gLoadingThermoPercent is native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches it anymore.
+
+var gLoadingThermoPercent: Float = 0
 
 private let THERMO_WIDTH: Float = 80.0
 private let THERMO_HEIGHT: Float = 4.0

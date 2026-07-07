@@ -23,10 +23,6 @@
 		/* WORMHOLE */
 
 
-extern	Boolean			gOpenPlayerWormhole;
-extern	ObjNode			*gExitWormhole;
-
-
 
 		/* POWERUPS */
 

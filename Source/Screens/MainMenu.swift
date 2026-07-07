@@ -1,4 +1,10 @@
 // MainMenu.swift - Port of MainMenu.c to Swift
+//
+// gPlayNow is native Swift storage now (converted 2026-07-07): nothing in
+// any .c file touches it anymore (MainMenuGlobals.c, its last real C
+// owner, is deleted).
+
+var gPlayNow: UInt8 = 0
 
 // MARK: - Main menu tree
 

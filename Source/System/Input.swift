@@ -1,14 +1,17 @@
 // Input.swift - Port of Input.c to Swift
 //
-// gUserPrefersGamepad stays defined in Input.c because LevelIntro.c and
-// MainMenu.c (still unported) read/write it directly via `extern`. Every
-// other global in the original file (gGamepads, gKeyboardStates,
+// gUserPrefersGamepad/gCursorCoord are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore. Every other
+// global in the original file (gGamepads, gKeyboardStates,
 // gMouseButtonStates, gNeedStates, gLastGamepadForNeedAnyP,
 // gGamepadPlayerMappingLocked, gMouseMotionNow, gTextInput) has no
 // `extern` declaration anywhere and is only ever touched from this file,
-// so they all move into private Swift storage. The `Gamepad` struct
+// so they all stay private Swift storage. The `Gamepad` struct
 // itself was only ever defined in Input.c, so it becomes a plain Swift
 // struct here rather than a C type.
+
+var gUserPrefersGamepad: UInt8 = 0
+var gCursorCoord = OGLPoint2D()
 //
 // MOUSE_SMOOTHING and REQUIRE_LOCK_MAPPING are both hardcoded off in the
 // original file, so their guarded code (MouseSmoothing_*,

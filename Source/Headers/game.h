@@ -64,21 +64,17 @@
 #define GAME_ASSERT(condition) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, #condition); } while(0)
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
-extern	Boolean					gDisableAnimSounds;
 extern	Boolean					gDualScreenMode;
 extern	Boolean					gGameOver;
 extern	Boolean					gGamePaused;
 extern	Boolean					gLevelCompleted;
-extern	Boolean					gPlayNow;
 extern	Boolean					gPlayingFromSavedGame;
 extern	Boolean					gSkipLevelIntro;
 extern	Boolean					gTimeDemo;
-extern	Boolean					gUserPrefersGamepad;
 extern	Boolean					gUsingVertexArrayRange;
 extern	Byte					gDebugMode;
 extern	FSSpec					gDataSpec;
 extern	GLuint					gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
-extern	OGLPoint2D				gCursorCoord;
 extern	OGLPoint3D				gBestCheckpointCoord[MAX_PLAYERS];
 extern	OGLSetupOutputType		*gGameViewInfoPtr;
 extern	OGLVector3D				gWorldSunDirection;
@@ -86,17 +82,14 @@ extern	ParticleGroupType		*gParticleGroups[MAX_PARTICLE_GROUPS];
 extern	PrefsType				gGamePrefs;
 extern	SDL_Window*				gSDLWindow;
 extern	SDL_Window*				gSDLWindow2;
-extern	SparkleType				gSparkles[MAX_SPARKLES];
 extern	const InputBinding		kDefaultInputBindings[NUM_CONTROL_NEEDS];
 extern	float					gBestCheckpointAim[MAX_PLAYERS];
 extern	float					gFramesPerSecond;
 extern	float					gFramesPerSecondFrac;
-extern	float					gLoadingThermoPercent;
 extern	float					gRaceReadySetGoTimer;
 extern	int						gCurrentAntialiasingLevel;
 extern	int						gMenuOutcome;
 extern	int						gNumPointers;
-extern	int						gNumSparkles;
 extern	int						gNumWorldCalcsThisFrame;
 extern	long					gPrefsFolderDirID;
 extern	long					gRAMAlloced;

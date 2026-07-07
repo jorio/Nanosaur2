@@ -38,8 +38,6 @@
 // Swift-only functions in 3DMath_Matrix.swift - nothing in C calls them
 // anymore, so they're no longer declared here.
 
-extern	const 	OGLVector3D	gUp;
-
 
 
 

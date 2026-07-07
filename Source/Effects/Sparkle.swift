@@ -1,4 +1,22 @@
 // Sparkle.swift - Port of Sparkle.c to Swift
+//
+// gSparkles/gNumSparkles are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore. gSparkles was
+// a fixed-size C array exposed via SparkleInternal.h's GetSparkleSlot
+// shim; it's now a permanent, never-freed UnsafeMutablePointer buffer,
+// with the accessor reimplemented in plain Swift under the same name/
+// signature so its many call sites elsewhere didn't need to change.
+
+var gNumSparkles: Int32 = 0
+
+private let gSparklesBuf: UnsafeMutablePointer<SparkleType> = {
+    let buf = UnsafeMutablePointer<SparkleType>.allocate(capacity: 600)
+    buf.initialize(repeating: SparkleType(), count: 600)
+    return buf
+}()
+func GetSparkleSlot(_ i: Int32) -> UnsafeMutablePointer<SparkleType>! {
+    gSparklesBuf + Int(i)
+}
 
 private var gPlayerSparkleColor: Float = 0
 

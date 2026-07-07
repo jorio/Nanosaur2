@@ -47,12 +47,19 @@ private func setCyclerChoices(_ cycler: inout MenuCyclerData, _ pairs: [(LocStrI
 /// duration contract as the C `static`/file-scope arrays this replaces.
 /// `gNav.pointee.menu`/`gMenuRegistry` cache raw pointers into these for the
 /// menu's (or app's) lifetime, so this can't be a Swift `Array`.
-func makeMenuTreeBuffer(_ items: [MenuItem]) -> UnsafePointer<MenuItem> {
+func makeMenuTreeBuffer(_ items: [MenuItem]) -> UnsafeMutablePointer<MenuItem> {
     let buffer = UnsafeMutablePointer<MenuItem>.allocate(capacity: items.count)
     for (i, item) in items.enumerated() {
         buffer[i] = item
     }
-    return UnsafePointer(buffer)
+    return buffer
+}
+
+/// Returns a stable UnsafePointer<CChar> for a string literal.
+/// `StaticString.utf8Start` holds a pointer directly into the binary's read-only
+/// data, which has static storage duration — safe to store in a MenuItem.rawText field.
+func staticCStr(_ s: StaticString) -> UnsafePointer<CChar> {
+    UnsafeRawPointer(s.utf8Start).assumingMemoryBound(to: CChar.self)
 }
 
 // MARK: - MenuItem factories
@@ -63,9 +70,10 @@ private func baseItem(_ type: MenuItemType) -> MenuItem {
     return item
 }
 
-func miPick(_ text: LocStrID, next: Int32 = 0, id: Int32 = 0, callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil, customHeight: Float = 0) -> MenuItem {
+func miPick(_ text: LocStrID, next: Int32 = 0, id: Int32 = 0, rawText: UnsafePointer<CChar>? = nil, callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil, customHeight: Float = 0) -> MenuItem {
     var item = baseItem(.pick)
     item.text = text
+    item.rawText = rawText
     item.next = next
     item.id = id
     item.callback = callback

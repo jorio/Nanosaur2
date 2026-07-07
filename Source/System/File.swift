@@ -14,11 +14,27 @@
 // on 3DS before returning), so the source data and decode step aren't
 // affected - only the size of the buffer kept resident afterwards, and
 // everything downstream that assembles/uploads it.
+//
+// kSuperTileBorder is the 1px seam-bleed border the desktop wraps around
+// each supertile texture (so GL_LINEAR filtering across supertile edges
+// samples the neighbor's real pixels instead of clamping, hiding seams).
+// That border makes the assembled canvas 256+2 = 258 wide - fine on
+// desktop GL, but the PICA200 hardware REQUIRES power-of-two texture
+// dimensions (8..1024). 258 (and 128+2 = 130) are not powers of two, so
+// picaGL uploads them as garbage and the terrain draws solid white. On
+// 3DS we therefore drop the border (border = 0), making the canvas exactly
+// kSuperTileTexSize (128 - a clean power of two). The cost is that faint
+// seams between supertiles may now be visible; the win is terrain that
+// actually renders. kSuperTileCanvasSize generalizes both: content plus a
+// border on each side.
 #if NANOSAUR_3DS
-let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE) / 2
+let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE) / 2 // 128 (power of two)
+let kSuperTileBorder = 0
 #else
-let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE)
+let kSuperTileTexSize = Int(SUPERTILE_TEXMAP_SIZE) // 256
+let kSuperTileBorder = 1
 #endif
+let kSuperTileCanvasSize = kSuperTileTexSize + 2 * kSuperTileBorder // 258 desktop / 128 (POT) on 3DS
 
 private let SKELETON_FILE_VERS_NUM: Int16 = 0x0110 // v1.1
 
@@ -822,7 +838,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     SwGameAssertMessage(gSuperTilePixelBuffers == nil, "gSuperTilePixelBuffers already allocated!")
     gSuperTilePixelBuffers = AllocPtrClear(MemoryLayout<Ptr?>.size * Int(gNumUniqueSuperTiles))?.assumingMemoryBound(to: Ptr?.self)
 
-    let seamlessTextureCanvas = AllocPtrClear(4 * (kSuperTileTexSize + 2) * (kSuperTileTexSize + 2))!.assumingMemoryBound(to: Int8.self)
+    let seamlessTextureCanvas = AllocPtrClear(4 * kSuperTileCanvasSize * kSuperTileCanvasSize)!.assumingMemoryBound(to: Int8.self)
     #if NANOSAUR_3DS
     Debug3DS_Log("readDataFromPlayfieldFile: starting supertile texture assembly loop...")
     #endif
@@ -858,7 +874,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
                     "texloop: pass2 row=\(rowPass2) col=\(col) stId=\(stId)".withCString { Debug3DS_Log($0) }
                     #endif
                     AssembleSeamlessSuperTileTexture(Int32(rowPass2), Int32(col), seamlessTextureCanvas)
-                    GetSuperTileTextureObjectSlot(Int32(stId))!.pointee = LoadSuperTileTexture(seamlessTextureCanvas, Int32(2 + kSuperTileTexSize))
+                    GetSuperTileTextureObjectSlot(Int32(stId))!.pointee = LoadSuperTileTexture(seamlessTextureCanvas, Int32(kSuperTileCanvasSize))
                 }
             }
 
@@ -1025,28 +1041,34 @@ func AssembleSeamlessSuperTileTexture(_ row: Int32, _ col: Int32, _ canvas: Ptr!
 
     let tw = kSuperTileTexSize // supertile width & height
     let th = kSuperTileTexSize
-    let cw = tw + 2 // canvas width & height
-    let ch = th + 2
+    let cw = kSuperTileCanvasSize // canvas width & height (content + border on each side)
+    let ch = kSuperTileCanvasSize
+    let b = kSuperTileBorder
 
     // Clear canvas to black
     memset(canvas, 0, cw * ch * 4) // *4 => 32-bit RBGA
 
-    // Blit supertile image to middle of canvas
-    blit32(getSuperTileImage(Int(row), Int(col)), tw, th, 0, 0, tw, th, canvas, cw, ch, 1, 1)
+    // Blit supertile image to the middle of the canvas (offset by the
+    // border; on 3DS the border is 0, so this lands at (0,0) and the
+    // seam-stitching blits below are skipped entirely - see the constants'
+    // comment at the top of this file).
+    blit32(getSuperTileImage(Int(row), Int(col)), tw, th, 0, 0, tw, th, canvas, cw, ch, b, b)
 
-    // Stitch edges from neighboring supertiles on each side
-    //     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
-    blit32(getSuperTileImage(Int(row) - 1, Int(col)), tw, th, 0, th - 1, tw, 1, canvas, cw, ch, 1, 0)
-    blit32(getSuperTileImage(Int(row) + 1, Int(col)), tw, th, 0, 0, tw, 1, canvas, cw, ch, 1, ch - 1)
-    blit32(getSuperTileImage(Int(row), Int(col) - 1), tw, th, tw - 1, 0, 1, th, canvas, cw, ch, 0, 1)
-    blit32(getSuperTileImage(Int(row), Int(col) + 1), tw, th, 0, 0, 1, th, canvas, cw, ch, cw - 1, 1)
+    if b > 0 {
+        // Stitch edges from neighboring supertiles on each side
+        //     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
+        blit32(getSuperTileImage(Int(row) - 1, Int(col)), tw, th, 0, th - 1, tw, 1, canvas, cw, ch, 1, 0)
+        blit32(getSuperTileImage(Int(row) + 1, Int(col)), tw, th, 0, 0, tw, 1, canvas, cw, ch, 1, ch - 1)
+        blit32(getSuperTileImage(Int(row), Int(col) - 1), tw, th, tw - 1, 0, 1, th, canvas, cw, ch, 0, 1)
+        blit32(getSuperTileImage(Int(row), Int(col) + 1), tw, th, 0, 0, 1, th, canvas, cw, ch, cw - 1, 1)
 
-    // Copy 1px corners from diagonal neighbors
-    //     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
-    blit32(getSuperTileImage(Int(row) - 1, Int(col) + 1), tw, th, 0, th - 1, 1, 1, canvas, cw, ch, cw - 1, 0)
-    blit32(getSuperTileImage(Int(row) - 1, Int(col) - 1), tw, th, tw - 1, th - 1, 1, 1, canvas, cw, ch, 0, 0)
-    blit32(getSuperTileImage(Int(row) + 1, Int(col) - 1), tw, th, tw - 1, 0, 1, 1, canvas, cw, ch, 0, ch - 1)
-    blit32(getSuperTileImage(Int(row) + 1, Int(col) + 1), tw, th, 0, 0, 1, 1, canvas, cw, ch, cw - 1, ch - 1)
+        // Copy 1px corners from diagonal neighbors
+        //     srcBuf                           sW  sH    sX    sY  rW  rH  dstBuf  dW  dH    dX    dY
+        blit32(getSuperTileImage(Int(row) - 1, Int(col) + 1), tw, th, 0, th - 1, 1, 1, canvas, cw, ch, cw - 1, 0)
+        blit32(getSuperTileImage(Int(row) - 1, Int(col) - 1), tw, th, tw - 1, th - 1, 1, 1, canvas, cw, ch, 0, 0)
+        blit32(getSuperTileImage(Int(row) + 1, Int(col) - 1), tw, th, tw - 1, 0, 1, 1, canvas, cw, ch, 0, ch - 1)
+        blit32(getSuperTileImage(Int(row) + 1, Int(col) + 1), tw, th, 0, 0, 1, 1, canvas, cw, ch, cw - 1, ch - 1)
+    }
 }
 
 // 3DS-only: box-filter downsample an RGBA8 buffer by exactly 2x before GPU

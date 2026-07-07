@@ -77,12 +77,6 @@ extension EnemyKind: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [EnemyKind] = [.raptor, .brach, .ramphor] // NUM_ENEMY_KINDS (_count) intentionally excluded
 }
 
-// MARK: - LevelNum (main.h)
-
-extension LevelNum: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [LevelNum] = [.adventure1, .adventure2, .adventure3, .race1, .race2, .battle1, .battle2, .flag1, .flag2] // NUM_LEVELS (_count) intentionally excluded
-}
-
 // MARK: - SplitscreenMode (ogl_support.h)
 
 extension SplitscreenMode: @retroactive Sendable, @retroactive CaseIterable {

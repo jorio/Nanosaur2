@@ -172,3 +172,15 @@ enum PlayerJoint: Int32, CaseIterable {
     case eggHold = 27
 }
 
+enum LevelNum: Int16, CaseIterable {
+    case adventure1
+    case adventure2
+    case adventure3
+    case race1
+    case race2
+    case battle1
+    case battle2
+    case flag1
+    case flag2
+}
+

@@ -4,21 +4,9 @@
 
 #pragma once
 
-typedef enum SWIFT_ENUM_CLOSED LevelNum
-{
-	LEVEL_NUM_ADVENTURE1 SWIFT_NAME(adventure1) = 0,
-	LEVEL_NUM_ADVENTURE2 SWIFT_NAME(adventure2),
-	LEVEL_NUM_ADVENTURE3 SWIFT_NAME(adventure3),
-
-	LEVEL_NUM_RACE1 SWIFT_NAME(race1),
-	LEVEL_NUM_RACE2 SWIFT_NAME(race2),
-	LEVEL_NUM_BATTLE1 SWIFT_NAME(battle1),
-	LEVEL_NUM_BATTLE2 SWIFT_NAME(battle2),
-	LEVEL_NUM_FLAG1 SWIFT_NAME(flag1),
-	LEVEL_NUM_FLAG2 SWIFT_NAME(flag2),
-
-	NUM_LEVELS SWIFT_NAME(_count)
-} LevelNum;
+// LevelNum is now a native Swift enum in GameEnums.swift - nothing in any
+// .c file touches it (verified 2026-07-07: LoadLevel.c, the only real C
+// user of NUM_LEVELS/LEVEL_NUM_*, was ported to Swift and deleted).
 
 
 typedef enum SWIFT_ENUM_CLOSED Biome

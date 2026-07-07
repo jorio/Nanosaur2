@@ -13,7 +13,6 @@
 #include "UIEffectsInternal.h"
 #include "WaterInternal.h"
 #include "PlayerInternal.h"
-#include "InfobarInternal.h"
 #include "PickInternal.h"
 #include "LevelIntroInternal.h"
 #include "MainMenuInternal.h"

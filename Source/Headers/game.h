@@ -65,7 +65,6 @@
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
 extern	Boolean					gDisableAnimSounds;
-extern	Boolean					gDrawLensFlare;
 extern	Boolean					gDualScreenMode;
 extern	Boolean					gGameOver;
 extern	Boolean					gGamePaused;

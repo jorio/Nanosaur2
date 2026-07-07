@@ -1,9 +1,25 @@
 // Camera.swift - Port of Camera.c to Swift
 //
 // gCameraInExitMode, gDrawLensFlare, gCameraInDeathDiveMode, and
-// gCameraMode stay defined in the stubbed Camera.c because other
-// already-ported files read/write them directly via `extern` (including
-// PlayerInternal.h's/InfobarInternal.h's Get/Set shims).
+// gCameraMode are native Swift storage now (converted 2026-07-07): nothing
+// in any .c file touches them anymore. GetCameraMode/SetCameraMode
+// (formerly a shim in InfobarInternal.h) and GetCameraInDeathDiveMode/
+// SetCameraInDeathDiveMode (formerly a shim in PlayerInternal.h) are now
+// plain Swift functions with the same names/signatures, so their call
+// sites elsewhere (Infobar.swift, Main.swift, Player.swift,
+// Player_Terrain.swift) didn't need to change. This also frees CameraMode
+// itself to become a native Swift enum (GameEnums.swift) - its only real
+// C pin was Camera.c's compound-literal array init.
+
+var gCameraInExitMode: UInt8 = 0
+var gDrawLensFlare: UInt8 = 1
+var gCameraInDeathDiveMode: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+var gCameraMode: [UInt8] = Array(repeating: UInt8(CameraMode.normal.rawValue), count: Int(MAX_PLAYERS))
+
+func GetCameraMode(_ i: Int32) -> UInt8 { gCameraMode[Int(i)] }
+func SetCameraMode(_ i: Int32, _ v: UInt8) { gCameraMode[Int(i)] = v }
+func GetCameraInDeathDiveMode(_ i: Int32) -> UInt8 { gCameraInDeathDiveMode[Int(i)] }
+func SetCameraInDeathDiveMode(_ i: Int32, _ v: UInt8) { gCameraInDeathDiveMode[Int(i)] = v }
 
 private let numFlares = 6
 

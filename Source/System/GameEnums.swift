@@ -222,3 +222,9 @@ enum WeaponType: Int32, CaseIterable {
     case bomb
 }
 
+enum CameraMode: Int32, CaseIterable {
+    case normal
+    case firstPerson
+    case anaglyphClose
+}
+

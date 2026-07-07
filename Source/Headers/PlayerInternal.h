@@ -24,9 +24,6 @@ static inline void SetCurrentMaxSpeed(int i, float v) { gCurrentMaxSpeed[i] = v;
 static inline float GetTargetMaxSpeed(int i) { return gTargetMaxSpeed[i]; }
 static inline void SetTargetMaxSpeed(int i, float v) { gTargetMaxSpeed[i] = v; }
 
-static inline Boolean GetCameraInDeathDiveMode(int i) { return gCameraInDeathDiveMode[i]; }
-static inline void SetCameraInDeathDiveMode(int i, Boolean v) { gCameraInDeathDiveMode[i] = v; }
-
 static inline float GetAutoFireDelay(int i) { return gAutoFireDelay[i]; }
 static inline void SetAutoFireDelay(int i, float v) { gAutoFireDelay[i] = v; }
 

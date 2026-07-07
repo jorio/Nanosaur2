@@ -25,12 +25,6 @@ extension MouseState: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [MouseState] = [.off, .wandering, .hovering, .grabbing]
 }
 
-// MARK: - CameraMode (camera.h)
-
-extension CameraMode: @retroactive Sendable, @retroactive CaseIterable {
-    public static let allCases: [CameraMode] = [.normal, .firstPerson, .anaglyphClose]
-}
-
 // MARK: - MetaObjectType (metaobjects.h)
 
 extension MetaObjectType: @retroactive Sendable, @retroactive CaseIterable {

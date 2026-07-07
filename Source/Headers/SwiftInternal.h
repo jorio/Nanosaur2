@@ -35,7 +35,3 @@ static inline PlayerInfoType* GetPlayerInfoEntry(int i) { return &gPlayerInfo[i]
 
 // Same tuple-import issue as gPlayerInfo above.
 static inline Boolean GetPlayerIsDead(int i) { return gPlayerIsDead[i]; }
-
-// gSuperTileTextureObjects is a fixed-size C array, which Swift imports as a
-// non-subscriptable tuple. Hand out an element pointer instead.
-static inline MOMaterialObject** GetSuperTileTextureObjectSlot(int i) { return &gSuperTileTextureObjects[i]; }

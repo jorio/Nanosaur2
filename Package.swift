@@ -21,10 +21,7 @@ let package = Package(
         ),
         .testTarget(
             name: "BG3DFileTests",
-            dependencies: ["BG3DFile"],
-            resources: [
-                .copy("Fixtures")
-            ]
+            dependencies: ["BG3DFile"]
         )
     ]
 )

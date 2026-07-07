@@ -3,13 +3,24 @@ import Testing
 
 @testable import BG3DFile
 
+// Reads real assets directly from Data/Models and Data/Skeletons instead of
+// copying/symlinking them into a test bundle - this file's own path (via
+// #filePath) is Tests/BG3DFileTests/BG3DFileTests.swift, so the repo root is
+// two directories up.
 private func fixtureURLs() -> [URL] {
-    let root = Bundle.module.resourceURL!.appendingPathComponent("Fixtures")
+    let testFileURL = URL(fileURLWithPath: #filePath)
+    let repoRoot = testFileURL
+        .deletingLastPathComponent()  // BG3DFileTests.swift -> BG3DFileTests/
+        .deletingLastPathComponent()  // BG3DFileTests/ -> Tests/
+        .deletingLastPathComponent()  // Tests/ -> repo root
+    let dataDir = repoRoot.appendingPathComponent("Data")
+
     let fm = FileManager.default
-    let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: nil)!
-    return enumerator.compactMap { $0 as? URL }.filter { $0.pathExtension == "bg3d" }.sorted {
-        $0.lastPathComponent < $1.lastPathComponent
-    }
+    return ["Models", "Skeletons"].flatMap { subdir -> [URL] in
+        let dir = dataDir.appendingPathComponent(subdir)
+        let enumerator = fm.enumerator(at: dir, includingPropertiesForKeys: nil)!
+        return enumerator.compactMap { $0 as? URL }.filter { $0.pathExtension == "bg3d" }
+    }.sorted { $0.lastPathComponent < $1.lastPathComponent }
 }
 
 @Test func allFixturesHaveValidHeader() throws {

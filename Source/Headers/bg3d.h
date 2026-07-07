@@ -29,11 +29,13 @@ typedef struct
 
 		/* BG3D HEADER */
 
-typedef struct
-{
-	char			headerString[16];			// header string
-	NumVersion		version;					// version of file
-}BG3DHeaderType;
+// BG3DHeaderType, BG3DTextureHeader, BG3DJPEGTextureHeader, and
+// BG3DGeometryHeader are now defined as native Swift structs in the
+// BG3DFile module (Sources/BG3DFile, compiled flat into this game's single
+// Swift module - see CMakeLists.txt) instead of here. That module is a
+// tested, standalone parser for the BG3D tag-stream format (see
+// Tests/BG3DFileTests), verified byte-for-byte against every real .bg3d
+// asset in Data/Models and Data/Skeletons.
 
 
 	/* BG3D MATERIAL FLAGS */
@@ -71,24 +73,6 @@ enum
 };
 
 
-typedef struct
-{
-	uint32_t	width,height;					// dimensions of texture
-	GLint	srcPixelFormat;					// OGL format (GL_RGBA, etc.) for internal
-	GLint	dstPixelFormat;					// format for VRAM
-	uint32_t	bufferSize;						// size of texture data to follow
-	uint32_t	reserved[4];					// for future use
-}BG3DTextureHeader;
-
-
-typedef struct
-{
-	uint32_t	width,height;					// dimensions of texture
-	uint32_t	bufferSize;						// size of JPEG data to follow
-	uint32_t	hasAlphaChannel;				// true if alpha buffer follows JPEG data
-}BG3DJPEGTextureHeader;
-
-
 	/* GEOMETRY TYPES */
 
 enum
@@ -99,17 +83,6 @@ enum
 
 
 		/* BG3D GEOMETRY HEADER */
-
-typedef struct
-{
-	uint32_t	type;								// geometry type
-	int32_t		numMaterials;						// # material layers
-	uint32_t	layerMaterialNum[MAX_MULTITEXTURE_LAYERS];	// index into material list
-	uint32_t	flags;								// flags
-	uint32_t	numPoints;							// (if applicable)
-	uint32_t	numTriangles;						// (if applicable)
-	uint32_t	reserved[4];						// for future use
-}BG3DGeometryHeader;
 
 
 

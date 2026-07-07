@@ -32,18 +32,6 @@ private let kNoErr: OSErr = 0
     UnsafeMutableRawPointer(c.pointer(to: \.materials)!).assumingMemoryBound(to: UnsafeMutablePointer<MOMaterialObject>?.self)
 }
 
-// Reads a whole trivial struct's worth of bytes from the file, matching the
-// C idiom `count = sizeof(x); FSRead(refNum, &count, (Ptr)&x);`.
-@discardableResult
-private func fsReadStruct<T>(_ refNum: Int16, _ value: inout T) -> OSErr {
-    var readSize = MemoryLayout<T>.size
-    return withUnsafeMutablePointer(to: &value) {
-        $0.withMemoryRebound(to: Int8.self, capacity: 1) {
-            FSRead(refNum, &readSize, $0)
-        }
-    }
-}
-
 // MARK: - Init BG3D manager
 
 func InitBG3DManager() {
@@ -59,6 +47,14 @@ func InitBG3DManager() {
 //
 // varType == the Vertex Array Range group that we want to allocate the BG3D's vertex arrays with.
 // If it is -1 then we don't want it in VAR memory.
+//
+// The file is read fully into memory and parsed up front by BG3DFile (a
+// tested, standalone parser for the BG3D tag-stream format - see
+// Sources/BG3DFile and Tests/BG3DFileTests, verified byte-for-byte against
+// every real .bg3d asset in Data/Models and Data/Skeletons). This function
+// then walks the already-parsed, already-byte-swapped chunks to build the
+// same OpenGL/MetaObject state the original imperative FSRead-based reader
+// did, one chunk at a time.
 
 func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varType: Int16) {
     gImportBG3DVARType = varType
@@ -69,17 +65,81 @@ func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varTy
     gBG3D_GroupStackIndex = 0 // init the group stack
     initBG3DContainer()
 
-    // OPEN THE FILE & READ
+    // OPEN THE FILE & READ IT ALL INTO MEMORY
     var refNum: Int16 = 0
     if FSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) != kNoErr {
         SwFatal("ImportBG3D: FSpOpenDF failed")
     }
 
-    readBG3DHeader(refNum)
-    parseBG3DFile(refNum)
+    var fileLength = 0
+    GetEOF(refNum, &fileLength)
 
-    // CLOSE FILE
+    var fileBytes = [UInt8](repeating: 0, count: fileLength)
+    let readErr: OSErr = fileBytes.withUnsafeMutableBytes { buf in
+        var readBytes = fileLength
+        return FSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
+    }
     FSClose(refNum)
+
+    if readErr != kNoErr {
+        SwFatal("ImportBG3D: FSRead failed")
+    }
+
+    // PARSE THE WHOLE FILE
+
+    guard let file = try? BG3DFile(parsing: fileBytes) else {
+        SwFatal("ImportBG3D: BG3DFile parsing failed")
+        return
+    }
+
+    // WALK THE PARSED CHUNKS
+
+    for chunk in file.chunks {
+        switch chunk {
+        case .materialFlags(let flags):
+            readMaterialFlags(flags)
+
+        case .materialDiffuseColor(let color):
+            readMaterialDiffuseColor(color)
+
+        case .textureMap(let header, let pixels):
+            readMaterialTextureMap(header, pixels)
+
+        case .jpegTexture(let header, let jpegData, let alphaChannel):
+            readMaterialJPEGTextureMap(header, jpegData, alphaChannel)
+
+        case .groupStart:
+            readGroup()
+
+        case .groupEnd:
+            endGroup()
+
+        case .geometry(let geoHeader):
+            let newObj = readNewGeometry(geoHeader)
+            if let currentGroup = gBG3D_CurrentGroup { // add new geometry to current group
+                UnsafeMutableRawPointer(currentGroup).append(newObj)
+                MO_DisposeObjectReference(newObj) // nuke the extra reference
+            }
+
+        case .vertexArray(let points):
+            readVertexArray(points)
+
+        case .normalArray(let normals):
+            readNormalArray(normals)
+
+        case .uvArray(let uvs):
+            readUVArray(uvs)
+
+        case .colorArray(let colors):
+            readVertexColorArray(colors)
+
+        case .triangleArray(let triangles):
+            readTriangleArray(triangles)
+
+        case .boundingBox(let bbox):
+            readBoundingBox(bbox)
+        }
+    }
 
     // SETUP GROUP INFO
     //
@@ -122,102 +182,11 @@ func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varTy
     SetNumObjectsInBG3DGroup(groupNum, Int32(numObjects))
 }
 
-// MARK: - Read BG3D header
-
-private func readBG3DHeader(_ refNum: Int16) {
-    var headerData = BG3DHeaderType()
-    if fsReadStruct(refNum, &headerData) != kNoErr {
-        SwFatal("ReadBG3DHeader: FSRead failed")
-    }
-
-    // VERIFY FILE
-    let hs = headerData.headerString
-    if hs.0 != 66 || hs.1 != 71 || hs.2 != 51 || hs.3 != 68 { // 'B' 'G' '3' 'D'
-        SwFatal("ReadBG3DHeader: BG3D file has invalid header.")
-    }
-}
-
-// MARK: - Parse BG3D file
-
-private func parseBG3DFile(_ refNum: Int16) {
-    var done = false
-
-    repeat {
-        // READ A TAG
-        var tag: UInt32 = 0
-        if fsReadStruct(refNum, &tag) != kNoErr {
-            SwFatal("ParseBG3DFile: FSRead failed")
-        }
-
-        tag = SwizzleULong(&tag)
-
-        // HANDLE THE TAG
-        switch tag {
-        case UInt32(BG3D_TAGTYPE_MATERIALFLAGS):
-            readMaterialFlags(refNum)
-
-        case UInt32(BG3D_TAGTYPE_MATERIALDIFFUSECOLOR):
-            readMaterialDiffuseColor(refNum)
-
-        case UInt32(BG3D_TAGTYPE_TEXTUREMAP):
-            readMaterialTextureMap(refNum)
-
-        case UInt32(BG3D_TAGTYPE_GROUPSTART):
-            readGroup()
-
-        case UInt32(BG3D_TAGTYPE_GROUPEND):
-            endGroup()
-
-        case UInt32(BG3D_TAGTYPE_GEOMETRY):
-            let newObj = readNewGeometry(refNum)
-            if let currentGroup = gBG3D_CurrentGroup { // add new geometry to current group
-                UnsafeMutableRawPointer(currentGroup).append(newObj)
-                MO_DisposeObjectReference(newObj) // nuke the extra reference
-            }
-
-        case UInt32(BG3D_TAGTYPE_VERTEXARRAY):
-            readVertexArray(refNum)
-
-        case UInt32(BG3D_TAGTYPE_NORMALARRAY):
-            readNormalArray(refNum)
-
-        case UInt32(BG3D_TAGTYPE_UVARRAY):
-            readUVArray(refNum)
-
-        case UInt32(BG3D_TAGTYPE_COLORARRAY):
-            readVertexColorArray(refNum)
-
-        case UInt32(BG3D_TAGTYPE_TRIANGLEARRAY):
-            readTriangleArray(refNum)
-
-        case UInt32(BG3D_TAGTYPE_BOUNDINGBOX):
-            readBoundingBox(refNum)
-
-        case UInt32(BG3D_TAGTYPE_JPEGTEXTURE):
-            readMaterialJPEGTextureMap(refNum)
-
-        case UInt32(BG3D_TAGTYPE_ENDFILE):
-            done = true
-
-        default:
-            SwFatal("ParseBG3DFile: unrecognized tag")
-        }
-    } while !done
-}
-
 // MARK: - Read material flags
 //
 // Reading new material flags indicatest the start of a new material.
 
-private func readMaterialFlags(_ refNum: Int16) {
-    // READ FLAGS
-    var flags: UInt32 = 0
-    if fsReadStruct(refNum, &flags) != kNoErr {
-        SwFatal("ReadMaterialFlags: FSRead failed")
-    }
-
-    flags = SwizzleULong(&flags)
-
+private func readMaterialFlags(_ flags: UInt32) {
     // INIT NEW MATERIAL DATA
     var data = MOMaterialData()
     data.flags = flags
@@ -240,117 +209,74 @@ private func readMaterialFlags(_ refNum: Int16) {
 
 // MARK: - Read material diffuse color
 
-private func readMaterialDiffuseColor(_ refNum: Int16) {
+private func readMaterialDiffuseColor(_ color: BG3DColorRGBA) {
     guard let matObj = gBG3D_CurrentMaterialObj else {
         SwFatal("ReadMaterialDiffuseColor: gBG3D_CurrentMaterialObj == nil")
         return
     }
 
-    // READ COLOR VALUE
-    var color = OGLColorRGBA()
-    if fsReadStruct(refNum, &color) != kNoErr {
-        SwFatal("ReadMaterialDiffuseColor: FSRead failed")
-    }
-
     // ASSIGN COLOR TO CURRENT MATERIAL
-    matObj.diffuseColor = OGLColorRGBA(
-        r: SwizzleFloat(&color.r),
-        g: SwizzleFloat(&color.g),
-        b: SwizzleFloat(&color.b),
-        a: SwizzleFloat(&color.a)
-    )
+    matObj.diffuseColor = OGLColorRGBA(r: color.r, g: color.g, b: color.b, a: color.a)
 }
 
 // MARK: - Read material texture map
 //
 // NOTE: This may get called multiple times - once for each mipmap associated with the material.
 
-private func readMaterialTextureMap(_ refNum: Int16) {
+private func readMaterialTextureMap(_ header: BG3DTextureHeader, _ pixels: [UInt8]) {
     // GET PTR TO CURRENT MATERIAL
     guard let matObj = gBG3D_CurrentMaterialObj else {
         SwFatal("ReadMaterialTextureMap: gBG3D_CurrentMaterialObj == nil")
         return
     }
 
-    // READ TEXTURE HEADER
-    var textureHeader = BG3DTextureHeader()
-    fsReadStruct(refNum, &textureHeader) // read header
-
-    textureHeader.width = SwizzleULong(&textureHeader.width)
-    textureHeader.height = SwizzleULong(&textureHeader.height)
-    textureHeader.srcPixelFormat = SwizzleLong(&textureHeader.srcPixelFormat)
-    textureHeader.dstPixelFormat = SwizzleLong(&textureHeader.dstPixelFormat)
-    textureHeader.bufferSize = SwizzleULong(&textureHeader.bufferSize)
-
     // COPY BASIC INFO
     SwGameAssert(matObj.numMipmaps < UInt32(MO_MAX_MIPMAPS)) // see if overflow
 
     if matObj.numMipmaps == 0 { // see if this is the first texture
-        matObj.width = textureHeader.width
-        matObj.height = textureHeader.height
+        matObj.width = header.width
+        matObj.height = header.height
     }
-
-    // READ THE TEXTURE PIXELS
-    var count = Int(textureHeader.bufferSize) // get size of buffer to load
-
-    guard let texturePixels = AllocPtrClear(count) else { // alloc memory for buffer
-        SwFatal("ReadMaterialTextureMap: AllocPtr failed")
-        return
-    }
-
-    FSRead(refNum, &count, texturePixels.assumingMemoryBound(to: Int8.self)) // read pixel data
 
     // ASSIGN PIXELS TO CURRENT MATERIAL
     let i = Int(matObj.numMipmaps) // increment the mipmap count
     matObj.numMipmaps += 1
 
-    let w = Int32(textureHeader.width)
-    let h = Int32(textureHeader.height)
+    let w = Int32(header.width)
+    let h = Int32(header.height)
 
     // LOAD INTO OPENGL
-    switch textureHeader.srcPixelFormat {
-    // Source port note: most BG3Ds in Nanosaur 2 use JPEG textures;
-    // the few that don't use JPEG always use GL_RGBA in practice.
-    case GL_RGBA:
-        matObj.setTextureName(OGL_TextureMap_Load(texturePixels, w, h, GL_RGBA, GL_RGBA, GLint(GL_UNSIGNED_BYTE)), at: i)
+    var mutablePixels = pixels
+    mutablePixels.withUnsafeMutableBytes { pixelsBuf in
+        switch header.srcPixelFormat {
+        // Source port note: most BG3Ds in Nanosaur 2 use JPEG textures;
+        // the few that don't use JPEG always use GL_RGBA in practice.
+        case GL_RGBA:
+            matObj.setTextureName(OGL_TextureMap_Load(pixelsBuf.baseAddress, w, h, GL_RGBA, GL_RGBA, GLint(GL_UNSIGNED_BYTE)), at: i)
 
-    // Just in case we want to import models from other games or whatever...
-    case GL_UNSIGNED_SHORT_1_5_5_5_REV, // 16-bit packed pixel
-         GL_UNSIGNED_INT_8_8_8_8_REV: // ARGB (standard Mac)
-        // pass on format as dataType
-        matObj.setTextureName(OGL_TextureMap_Load(texturePixels, w, h, GL_RGBA, GL_RGBA, textureHeader.srcPixelFormat), at: i)
+        // Just in case we want to import models from other games or whatever...
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV, // 16-bit packed pixel
+             GL_UNSIGNED_INT_8_8_8_8_REV: // ARGB (standard Mac)
+            // pass on format as dataType
+            matObj.setTextureName(OGL_TextureMap_Load(pixelsBuf.baseAddress, w, h, GL_RGBA, GL_RGBA, header.srcPixelFormat), at: i)
 
-    default:
-        SwFatal("Unsupported BG3D srcPixelFormat")
+        default:
+            SwFatal("Unsupported BG3D srcPixelFormat")
+        }
     }
-
-    // DISPOSE ORIGINAL PIXELS
-    //
-    // OpenGL now has its own copy of the texture, so we don't need ours anymore.
-    SafeDisposePtr(texturePixels)
 }
 
 // MARK: - Read material JPEG texture map
 //
 // NOTE: This may get called multiple times - once for each mipmap associated with the material.
 
-private func readMaterialJPEGTextureMap(_ refNum: Int16) {
+private func readMaterialJPEGTextureMap(_ header: BG3DJPEGTextureHeader, _ jpegData: [UInt8], _ alphaChannel: [UInt8]?) {
     // GET PTR TO CURRENT MATERIAL
     SwGameAssert(gBG3D_CurrentMaterialObj != nil)
     let matObj = gBG3D_CurrentMaterialObj!
 
-    // READ TEXTURE HEADER
-    var textureHeader = BG3DJPEGTextureHeader()
-    fsReadStruct(refNum, &textureHeader) // read header
-
-    textureHeader.width = SwizzleULong(&textureHeader.width)
-    textureHeader.height = SwizzleULong(&textureHeader.height)
-    textureHeader.bufferSize = SwizzleULong(&textureHeader.bufferSize)
-    textureHeader.hasAlphaChannel = SwizzleULong(&textureHeader.hasAlphaChannel)
-
-    let w = Int32(textureHeader.width) // get dimensions of the texture
-    let h = Int32(textureHeader.height)
-    let hasAlpha = textureHeader.hasAlphaChannel != 0 // see if we'll need to read in the alpha channel
+    let w = Int32(header.width) // get dimensions of the texture
+    let h = Int32(header.height)
 
     // COPY BASIC INFO
     SwGameAssert(matObj.numMipmaps < UInt32(MO_MAX_MIPMAPS)) // see if overflow
@@ -360,35 +286,19 @@ private func readMaterialJPEGTextureMap(_ refNum: Int16) {
         matObj.height = UInt32(h)
     }
 
-    // READ THE JPEG DATA
-    var textureRGBA: Ptr!
-
-    do {
-        // ALLOC BUFFER FOR JPEG DATA
-        var count = Int(textureHeader.bufferSize) // get size of JPEG buffer to load
-        let jpegBuffer = AllocPtrClear(count)!.assumingMemoryBound(to: Int8.self) // alloc memory for buffer
-
-        FSRead(refNum, &count, jpegBuffer) // read JPEG data (image desc + compressed data)
-
-        // DECOMPRESS THE IMAGE
-        textureRGBA = DecompressQTImage(jpegBuffer, Int32(textureHeader.bufferSize), w, h)
-        SwGameAssert(textureRGBA != nil)
-
-        SafeDisposePtr(jpegBuffer)
+    // DECOMPRESS THE IMAGE
+    var mutableJpegData = jpegData
+    let textureRGBA: Ptr! = mutableJpegData.withUnsafeMutableBytes { jpegBuf in
+        DecompressQTImage(jpegBuf.baseAddress?.assumingMemoryBound(to: CChar.self), Int32(header.bufferSize), w, h)
     }
+    SwGameAssert(textureRGBA != nil)
 
-    // READ IN ALPHA CHANNEL IF IT HAS ONE
-    if hasAlpha {
-        var count = Int(w * h)
-        let alphaBuffer = AllocPtrClear(count)!.assumingMemoryBound(to: UInt8.self) // alloc buffer for alpha channel
-        FSRead(refNum, &count, UnsafeMutableRawPointer(alphaBuffer).assumingMemoryBound(to: Int8.self)) // read alpha buffer
-
+    // COPY IN ALPHA CHANNEL IF IT HAS ONE
+    if let alphaChannel {
         let textureAlphaBase = (UnsafeMutableRawPointer(textureRGBA) + 3).assumingMemoryBound(to: UInt8.self)
-        for p in 0..<count {
-            textureAlphaBase[p * 4] = alphaBuffer[p]
+        for p in 0..<alphaChannel.count {
+            textureAlphaBase[p * 4] = alphaChannel[p]
         }
-
-        SafeDisposePtr(alphaBuffer)
     }
 
     // ASSIGN PIXELS TO CURRENT MATERIAL
@@ -447,24 +357,11 @@ private func endGroup() {
 
 // MARK: - Read new geometry
 
-private func readNewGeometry(_ refNum: Int16) -> MetaObjectPtr? {
-    // READ GEOMETRY HEADER
-    var geoHeader = BG3DGeometryHeader()
-    fsReadStruct(refNum, &geoHeader) // read header
-
-    geoHeader.type = SwizzleULong(&geoHeader.type)
-    geoHeader.numMaterials = SwizzleLong(&geoHeader.numMaterials)
-    geoHeader.layerMaterialNum.0 = SwizzleULong(&geoHeader.layerMaterialNum.0)
-    geoHeader.layerMaterialNum.1 = SwizzleULong(&geoHeader.layerMaterialNum.1)
-    geoHeader.flags = SwizzleULong(&geoHeader.flags)
-    geoHeader.numPoints = SwizzleULong(&geoHeader.numPoints)
-    geoHeader.numTriangles = SwizzleULong(&geoHeader.numTriangles)
-
-    // CREATE NEW GEOMETRY OBJECT
-    switch geoHeader.type {
+private func readNewGeometry(_ header: BG3DGeometryHeader) -> MetaObjectPtr? {
+    switch BG3DGeometryType(rawValue: header.type) {
     // VERTEX ELEMENTS
-    case UInt32(BG3D_GEOMETRYTYPE_VERTEXELEMENTS):
-        return readVertexElementsGeometry(&geoHeader)
+    case .vertexElements:
+        return readVertexElementsGeometry(header)
 
     default:
         SwFatal("ReadNewGeometry: unknown geo type")
@@ -474,15 +371,15 @@ private func readNewGeometry(_ refNum: Int16) -> MetaObjectPtr? {
 
 // MARK: - Read vertex elements geometry
 
-private func readVertexElementsGeometry(_ header: UnsafeMutablePointer<BG3DGeometryHeader>) -> MetaObjectPtr? {
+private func readVertexElementsGeometry(_ header: BG3DGeometryHeader) -> MetaObjectPtr? {
     // SETUP DATA
     var vertexArrayData = MOVertexArrayData()
 
     vertexArrayData.VARtype = gImportBG3DVARType // which Vertex Array Range are we loading this into?
 
-    vertexArrayData.numMaterials = Int16(header.pointee.numMaterials)
-    vertexArrayData.numPoints = Int32(header.pointee.numPoints)
-    vertexArrayData.numTriangles = Int32(header.pointee.numTriangles)
+    vertexArrayData.numMaterials = Int16(header.numMaterials)
+    vertexArrayData.numPoints = Int32(header.numPoints)
+    vertexArrayData.numTriangles = Int32(header.numTriangles)
     vertexArrayData.points = nil // these arrays havnt been read in yet
     vertexArrayData.normals = nil
 
@@ -507,10 +404,10 @@ private func readVertexElementsGeometry(_ header: UnsafeMutablePointer<BG3DGeome
     let materials = materialsBase(container)
 
     if vertexArrayData.numMaterials >= 1 {
-        vertexArrayData.materials.0 = materials[Int(header.pointee.layerMaterialNum.0)]
+        vertexArrayData.materials.0 = materials[Int(header.layerMaterialNum.0)]
     }
     if vertexArrayData.numMaterials >= 2 {
-        vertexArrayData.materials.1 = materials[Int(header.pointee.layerMaterialNum.1)]
+        vertexArrayData.materials.1 = materials[Int(header.layerMaterialNum.1)]
     }
 
     // CREATE THE NEW GEO OBJECT
@@ -521,28 +418,24 @@ private func readVertexElementsGeometry(_ header: UnsafeMutablePointer<BG3DGeome
 
 // MARK: - Read vertex array
 
-private func readVertexArray(_ refNum: Int16) {
+private func readVertexArray(_ points: [BG3DPoint3D]) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     if data.pointee.points != nil { // see if points already assigned
         SwFatal("ReadVertexArray: points already assigned!")
     }
 
-    let numPoints = Int(data.pointee.numPoints) // get # points to expect to read
-    var count = MemoryLayout<OGLPoint3D>.size * numPoints // calc size of data to read
+    let numPoints = points.count
+    let byteCount = MemoryLayout<OGLPoint3D>.size * numPoints // calc size of data to allocate
 
     let pointList: UnsafeMutablePointer<OGLPoint3D>
     if gImportBG3DVARType == -1 {
-        pointList = AllocPtrClear(count)!.assumingMemoryBound(to: OGLPoint3D.self)
+        pointList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLPoint3D.self)
     } else {
-        pointList = OGL_AllocVertexArrayMemory(count, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLPoint3D.self) // alloc vertex array range buffer
+        pointList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLPoint3D.self) // alloc vertex array range buffer
     }
 
-    FSRead(refNum, &count, UnsafeMutableRawPointer(pointList).assumingMemoryBound(to: Int8.self)) // read the data
-
-    for i in 0..<numPoints { // swizzle
-        pointList[i].x = SwizzleFloat(&pointList[i].x)
-        pointList[i].y = SwizzleFloat(&pointList[i].y)
-        pointList[i].z = SwizzleFloat(&pointList[i].z)
+    for i in 0..<numPoints {
+        pointList[i] = OGLPoint3D(x: points[i].x, y: points[i].y, z: points[i].z)
     }
 
     data.pointee.points = pointList // assign point array to geometry header
@@ -550,25 +443,20 @@ private func readVertexArray(_ refNum: Int16) {
 
 // MARK: - Read normal array
 
-private func readNormalArray(_ refNum: Int16) {
+private func readNormalArray(_ normals: [BG3DPoint3D]) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
-    let numPoints = Int(data.pointee.numPoints) // get # normals to expect to read
-
-    var count = MemoryLayout<OGLVector3D>.size * numPoints // calc size of data to read
+    let numPoints = normals.count
+    let byteCount = MemoryLayout<OGLVector3D>.size * numPoints // calc size of data to allocate
 
     let normalList: UnsafeMutablePointer<OGLVector3D>
     if gImportBG3DVARType == -1 {
-        normalList = AllocPtrClear(count)!.assumingMemoryBound(to: OGLVector3D.self)
+        normalList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLVector3D.self)
     } else {
-        normalList = OGL_AllocVertexArrayMemory(count, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLVector3D.self) // alloc vertex array range buffer
+        normalList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLVector3D.self) // alloc vertex array range buffer
     }
 
-    FSRead(refNum, &count, UnsafeMutableRawPointer(normalList).assumingMemoryBound(to: Int8.self)) // read the data
-
-    for i in 0..<numPoints { // swizzle
-        normalList[i].x = SwizzleFloat(&normalList[i].x)
-        normalList[i].y = SwizzleFloat(&normalList[i].y)
-        normalList[i].z = SwizzleFloat(&normalList[i].z)
+    for i in 0..<numPoints {
+        normalList[i] = OGLVector3D(x: normals[i].x, y: normals[i].y, z: normals[i].z)
     }
 
     data.pointee.normals = normalList // assign normal array to geometry header
@@ -576,24 +464,20 @@ private func readNormalArray(_ refNum: Int16) {
 
 // MARK: - Read UV array
 
-private func readUVArray(_ refNum: Int16) {
+private func readUVArray(_ uvs: [BG3DTextureCoord]) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
-    let numPoints = Int(data.pointee.numPoints) // get # uv's to expect to read
-
-    var count = MemoryLayout<OGLTextureCoord>.size * numPoints // calc size of data to read
+    let numPoints = uvs.count
+    let byteCount = MemoryLayout<OGLTextureCoord>.size * numPoints // calc size of data to allocate
 
     let uvList: UnsafeMutablePointer<OGLTextureCoord>
     if gImportBG3DVARType == -1 {
-        uvList = AllocPtrClear(count)!.assumingMemoryBound(to: OGLTextureCoord.self)
+        uvList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLTextureCoord.self)
     } else {
-        uvList = OGL_AllocVertexArrayMemory(count, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLTextureCoord.self) // alloc vertex array range buffer
+        uvList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLTextureCoord.self) // alloc vertex array range buffer
     }
 
-    FSRead(refNum, &count, UnsafeMutableRawPointer(uvList).assumingMemoryBound(to: Int8.self)) // read the data
-
-    for i in 0..<numPoints { // swizzle
-        uvList[i].u = SwizzleFloat(&uvList[i].u)
-        uvList[i].v = SwizzleFloat(&uvList[i].v)
+    for i in 0..<numPoints {
+        uvList[i] = OGLTextureCoord(u: uvs[i].u, v: uvs[i].v)
     }
 
     data.pointee.uvs.0 = uvList // assign uv array to geometry header
@@ -603,55 +487,45 @@ private func readUVArray(_ refNum: Int16) {
 //
 // NOTE: The color data in the BG3D file is always stored as Byte values since it's more compact.
 
-private func readVertexColorArray(_ refNum: Int16) {
+private func readVertexColorArray(_ colors: [BG3DColorRGBAByte]) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
-    let numPoints = Int(data.pointee.numPoints) // get # colors to expect to read
+    let numPoints = colors.count
 
-    var count = MemoryLayout<OGLColorRGBA_Byte>.size * numPoints // calc size of data to read
-    let colorList = AllocPtrClear(count)!.assumingMemoryBound(to: OGLColorRGBA_Byte.self) // alloc buffer to read into
-    FSRead(refNum, &count, UnsafeMutableRawPointer(colorList).assumingMemoryBound(to: Int8.self)) // read the data
-
-    // NOW CREATE COLOR ARRAY IN FLOAT FORMAT
+    // CREATE COLOR ARRAY IN FLOAT FORMAT
     let colorsF: UnsafeMutablePointer<OGLColorRGBA>
+    let byteCount = MemoryLayout<OGLColorRGBA>.size * numPoints
     if gImportBG3DVARType == -1 {
-        colorsF = AllocPtrClear(MemoryLayout<OGLColorRGBA>.size * numPoints)!.assumingMemoryBound(to: OGLColorRGBA.self)
+        colorsF = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLColorRGBA.self)
     } else {
-        colorsF = OGL_AllocVertexArrayMemory(MemoryLayout<OGLColorRGBA>.size * numPoints, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLColorRGBA.self) // alloc vertex array range buffer
+        colorsF = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLColorRGBA.self) // alloc vertex array range buffer
     }
 
     data.pointee.colorsFloat = colorsF // assign color array to geometry header
 
-    for i in 0..<numPoints { // copy & convert bytes to floats
-        colorsF[i].r = Float(colorList[i].r) / 255.0
-        colorsF[i].g = Float(colorList[i].g) / 255.0
-        colorsF[i].b = Float(colorList[i].b) / 255.0
-        colorsF[i].a = Float(colorList[i].a) / 255.0
+    for i in 0..<numPoints { // convert bytes to floats
+        colorsF[i].r = Float(colors[i].r) / 255.0
+        colorsF[i].g = Float(colors[i].g) / 255.0
+        colorsF[i].b = Float(colors[i].b) / 255.0
+        colorsF[i].a = Float(colors[i].a) / 255.0
     }
-
-    SafeDisposePtr(colorList) // free the Byte color data we read in
 }
 
 // MARK: - Read triangle array
 
-private func readTriangleArray(_ refNum: Int16) {
+private func readTriangleArray(_ triangles: [BG3DTriangle]) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
-    let numTriangles = Int(data.pointee.numTriangles) // get # triangles expect to read
-
-    var count = MemoryLayout<MOTriangleIndecies>.size * numTriangles // calc size of data to read
+    let numTriangles = triangles.count
+    let byteCount = MemoryLayout<MOTriangleIndecies>.size * numTriangles // calc size of data to allocate
 
     let triList: UnsafeMutablePointer<MOTriangleIndecies>
     if gImportBG3DVARType == -1 {
-        triList = AllocPtrClear(count)!.assumingMemoryBound(to: MOTriangleIndecies.self)
+        triList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: MOTriangleIndecies.self)
     } else {
-        triList = OGL_AllocVertexArrayMemory(count, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: MOTriangleIndecies.self) // alloc vertex array range buffer
+        triList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: MOTriangleIndecies.self) // alloc vertex array range buffer
     }
 
-    FSRead(refNum, &count, UnsafeMutableRawPointer(triList).assumingMemoryBound(to: Int8.self)) // read the data
-
-    for i in 0..<numTriangles { // swizzle
-        triList[i].vertexIndices.0 = SwizzleULong(&triList[i].vertexIndices.0)
-        triList[i].vertexIndices.1 = SwizzleULong(&triList[i].vertexIndices.1)
-        triList[i].vertexIndices.2 = SwizzleULong(&triList[i].vertexIndices.2)
+    for i in 0..<numTriangles {
+        triList[i].vertexIndices = triangles[i].vertexIndices
     }
 
     data.pointee.triangles = triList // assign triangle array to geometry header
@@ -659,22 +533,12 @@ private func readTriangleArray(_ refNum: Int16) {
 
 // MARK: - Read bounding box
 
-private func readBoundingBox(_ refNum: Int16) {
+private func readBoundingBox(_ bbox: BG3DBoundingBox) {
     let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
-    let bboxPtr = data.pointer(to: \.bBox)!
 
-    var count = MemoryLayout<OGLBoundingBox>.size // calc size of data to read
-    _ = bboxPtr.withMemoryRebound(to: Int8.self, capacity: 1) {
-        FSRead(refNum, &count, $0) // read the bbox data directly into geometry header
-    }
-
-    data.pointee.bBox.min.x = SwizzleFloat(&data.pointee.bBox.min.x)
-    data.pointee.bBox.min.y = SwizzleFloat(&data.pointee.bBox.min.y)
-    data.pointee.bBox.min.z = SwizzleFloat(&data.pointee.bBox.min.z)
-
-    data.pointee.bBox.max.x = SwizzleFloat(&data.pointee.bBox.max.x)
-    data.pointee.bBox.max.y = SwizzleFloat(&data.pointee.bBox.max.y)
-    data.pointee.bBox.max.z = SwizzleFloat(&data.pointee.bBox.max.z)
+    data.pointee.bBox.min = OGLPoint3D(x: bbox.min.x, y: bbox.min.y, z: bbox.min.z)
+    data.pointee.bBox.max = OGLPoint3D(x: bbox.max.x, y: bbox.max.y, z: bbox.max.z)
+    data.pointee.bBox.isEmpty = bbox.isEmpty ? 1 : 0
 }
 
 // MARK: - Init BG3D container

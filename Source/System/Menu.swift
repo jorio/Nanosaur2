@@ -1,4 +1,55 @@
 // Menu.swift - Port of Menu.c to Swift using @c @implementation (Swift 6.3)
+//
+// gNav/gMenuOutcome/gNumMenusRegistered/gMenuRegistry/kDefaultMenuStyle are
+// native Swift storage now (converted 2026-07-07): nothing in any .c file
+// touches them anymore, so Menu.c is deleted entirely. gMenuRegistry was a
+// fixed-size C array exposed via MenuInternal.h's GetRegistryEntry/
+// SetRegistryEntry shims; those are now plain Swift functions with the
+// same names/signatures. kDefaultMenuStyle is a plain Swift struct literal
+// (MenuStyle has no union - its anonymous-struct bitfields get real
+// ClangImporter-synthesized property accessors that work by value, unlike
+// union members, so direct property assignment is safe here - already
+// proven by existing code like Paused.swift's `style.canBackOutOfRootMenu
+// = true`). MenuInternal.h's CopyDefaultMenuStyle shim (which could no
+// longer reach the now-Swift-only kDefaultMenuStyle from C) was replaced
+// with a plain Swift struct assignment at its one call site.
+
+var gNav: UnsafeMutablePointer<MenuNavigation>!
+var gMenuOutcome: Int32 = 0
+var gNumMenusRegistered: Int32 = 0
+
+private let maxRegisteredMenus = 32
+
+private let gMenuRegistryBuf: UnsafeMutablePointer<UnsafePointer<MenuItem>?> = {
+    let buf = UnsafeMutablePointer<UnsafePointer<MenuItem>?>.allocate(capacity: maxRegisteredMenus)
+    buf.initialize(repeating: nil, count: maxRegisteredMenus)
+    return buf
+}()
+func GetRegistryEntry(_ i: Int32) -> UnsafePointer<MenuItem>? { gMenuRegistryBuf[Int(i)] }
+func SetRegistryEntry(_ i: Int32, _ v: UnsafePointer<MenuItem>?) { gMenuRegistryBuf[Int(i)] = v }
+
+let kDefaultMenuStyle: MenuStyle = {
+    var s = MenuStyle()
+    s.darkenPaneOpacity = 0
+    s.fadeInSpeed = 1.0 / 0.3
+    s.fadeOutSpeed = 1.0 / 0.2
+    s.asyncFadeOut = true
+    s.fadeOutSceneOnExit = false
+    s.standardScale = 0.45
+    s.rowHeight = 38.0
+    s.startButtonExits = false
+    s.isInteractive = true
+    s.canBackOutOfRootMenu = false
+    s.textSlot = Int16(MENU_SLOT)
+    s.yOffset = 480 / 2
+    s.fontAtlas = Int32(ATLAS_GROUP_FONT1)
+    s.fontAtlas2 = Int32(ATLAS_GROUP_FONT2)
+    s.highlightColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    s.arrowColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    s.idleColor = OGLColorRGBA(r: 0.7, g: 0.6, b: 0.6, a: 1)
+    s.labelColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    return s
+}()
 
 // MARK: - Constants
 
@@ -64,7 +115,7 @@ private func initMenuNavigation() {
     SwGameAssert(gNav == nil)
     gNav = AllocPtrClear(MemoryLayout<MenuNavigation>.size)!.assumingMemoryBound(to: MenuNavigation.self)
     let nav = gNav!
-    CopyDefaultMenuStyle(&nav.pointee.style)
+    nav.pointee.style = kDefaultMenuStyle
     nav.pointee.menuPick = -1; nav.pointee.menuState = .off
     nav.pointee.mouseState = .off; nav.pointee.mouseFocusComponent = -1
     var arrowDef = NewObjectDefinitionType()

@@ -1,23 +1,49 @@
 // Main.swift - Port of Main.c to Swift
 //
-// Nearly every global in this file (gGamePrefs, gGameViewInfoPtr, gLevelNum,
-// gDebugMode, gAutoFadeStatusBits, gTimeDemo, gGameOver,
-// gLevelCompleted, gPlayingFromSavedGame, gSkipLevelIntro,
-// gRaceReadySetGoTimer, gPrefsFolderVRefNum/DirID, gWorldSunDirection,
-// gBestCheckpointNum/Coord/Aim) is read/written by many other already-
-// ported and still-unported files, so they all stay `extern`'d in the
-// stubbed Main.c. gBestCheckpointNum/Aim additionally have shim
-// accessors in PlayerInternal.h that reference them directly.
-//
-// gVSMode moved to native Swift storage (2026-07-07): no other .c file
-// read it via extern, so it's no longer declared in Main.c/game.h.
+// gGamePrefs is the only global left in Main.c: Boot.cpp reads/writes
+// gGamePrefs.antialiasingLevel directly, so PrefsType must stay a
+// C-visible extern global. Every other global that used to live in
+// Main.c (gGameViewInfoPtr, gLevelNum, gDebugMode, gAutoFadeStatusBits,
+// gTimeDemo, gGameOver, gLevelCompleted, gPlayingFromSavedGame,
+// gSkipLevelIntro, gRaceReadySetGoTimer, gPrefsFolderVRefNum/DirID,
+// gWorldSunDirection, gBestCheckpointNum/Coord/Aim, gVSMode) is native
+// Swift storage now (converted 2026-07-07): nothing in any .c file
+// touches them anymore. gBestCheckpointNum/Coord/Aim were exposed via
+// Get*/Set* shims in PlayerInternal.h; those are now plain Swift
+// functions with the same names/signatures.
 //
 // gTimeDemoStartTime/EndTime, gGameLevelTimer, gLevelCompletedCoolDownTimer,
 // gFillColor1, and gLevelSongs have no `extern` declaration anywhere and
-// are only ever touched from this file, so they move into private Swift
+// are only ever touched from this file, so they stay private Swift
 // storage.
 
 var gVSMode: VSMode = .none // nano vs. nano mode
+
+var gGameViewInfoPtr: UnsafeMutablePointer<OGLSetupOutputType>!
+var gGameFrameNum: UInt32 = 0
+var gLevelNum: Int16 = 0
+var gDebugMode: UInt8 = 0
+var gAutoFadeStatusBits: UInt32 = 0
+var gTimeDemo: UInt8 = 0
+var gGameOver: UInt8 = 0
+var gLevelCompleted: UInt8 = 0
+var gPlayingFromSavedGame: UInt8 = 0
+var gSkipLevelIntro: UInt8 = 0
+var gRaceReadySetGoTimer: Float = 0
+var gPrefsFolderVRefNum: Int16 = 0
+var gPrefsFolderDirID: Int = 0
+var gWorldSunDirection = OGLVector3D()
+
+private var gBestCheckpointNumArr: [Int16] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+private var gBestCheckpointCoordArr: [OGLPoint3D] = Array(repeating: OGLPoint3D(), count: Int(MAX_PLAYERS))
+private var gBestCheckpointAimArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+
+func GetBestCheckpointNum(_ i: Int32) -> Int16 { gBestCheckpointNumArr[Int(i)] }
+func SetBestCheckpointNum(_ i: Int32, _ v: Int16) { gBestCheckpointNumArr[Int(i)] = v }
+func GetBestCheckpointCoord(_ i: Int32) -> OGLPoint3D { gBestCheckpointCoordArr[Int(i)] }
+func SetBestCheckpointCoord(_ i: Int32, _ v: OGLPoint3D) { gBestCheckpointCoordArr[Int(i)] = v }
+func GetBestCheckpointAim(_ i: Int32) -> Float { gBestCheckpointAimArr[Int(i)] }
+func SetBestCheckpointAim(_ i: Int32, _ v: Float) { gBestCheckpointAimArr[Int(i)] = v }
 
 private var gTimeDemoStartTime: UInt32 = 0
 private var gTimeDemoEndTime: UInt32 = 0

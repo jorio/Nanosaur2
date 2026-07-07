@@ -107,5 +107,3 @@ typedef struct MenuStyle
 
 	void			(* _Nullable exitCall)(int);
 } MenuStyle;
-
-extern const MenuStyle kDefaultMenuStyle;

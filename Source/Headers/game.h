@@ -65,38 +65,20 @@
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
 extern	Boolean					gDualScreenMode;
-extern	Boolean					gGameOver;
 extern	Boolean					gGamePaused;
-extern	Boolean					gLevelCompleted;
-extern	Boolean					gPlayingFromSavedGame;
-extern	Boolean					gSkipLevelIntro;
-extern	Boolean					gTimeDemo;
 extern	Boolean					gUsingVertexArrayRange;
-extern	Byte					gDebugMode;
 extern	FSSpec					gDataSpec;
 extern	GLuint					gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
-extern	OGLPoint3D				gBestCheckpointCoord[MAX_PLAYERS];
-extern	OGLSetupOutputType		*gGameViewInfoPtr;
-extern	OGLVector3D				gWorldSunDirection;
 extern	ParticleGroupType		*gParticleGroups[MAX_PARTICLE_GROUPS];
 extern	PrefsType				gGamePrefs;
 extern	SDL_Window*				gSDLWindow;
 extern	SDL_Window*				gSDLWindow2;
 extern	const InputBinding		kDefaultInputBindings[NUM_CONTROL_NEEDS];
-extern	float					gBestCheckpointAim[MAX_PLAYERS];
 extern	float					gFramesPerSecond;
 extern	float					gFramesPerSecondFrac;
-extern	float					gRaceReadySetGoTimer;
 extern	int						gCurrentAntialiasingLevel;
-extern	int						gMenuOutcome;
 extern	int						gNumPointers;
 extern	int						gNumWorldCalcsThisFrame;
-extern	long					gPrefsFolderDirID;
 extern	long					gRAMAlloced;
-extern	short					gBestCheckpointNum[MAX_PLAYERS];
-extern	short					gLevelNum;
 extern	short					gNumActiveParticleGroups;
 extern	short					gNumSuperTilesDrawn;
-extern	short					gPrefsFolderVRefNum;
-extern	uint32_t				gGameFrameNum;
-extern	uint32_t 				gAutoFadeStatusBits;

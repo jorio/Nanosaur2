@@ -13,13 +13,9 @@
 
 extern "C"
 {
+	// gSDLWindow/gSDLWindow2/gDualScreenMode/gDataSpec/gCurrentAntialiasingLevel
+	// are now defined in BootGlobals.c (see that file for why).
 	#include "game.h"
-
-	SDL_Window* gSDLWindow = nullptr;
-	SDL_Window* gSDLWindow2 = nullptr;
-	Boolean gDualScreenMode = false;
-	FSSpec gDataSpec;
-	int gCurrentAntialiasingLevel;
 }
 
 static fs::path FindGameData(const char* executablePath)

@@ -17,8 +17,20 @@
 // moment any of them run. This is just extern storage; main.cpp assigns it.
 #include "PommeTypes.h"
 #include <SDL3/SDL.h>
+#include <stdint.h>
 
 SDL_Window *gSDLWindow = NULL;
 SDL_Window *gSDLWindow2 = NULL;
 Boolean gDualScreenMode = 0;
 int gCurrentAntialiasingLevel = 0;
+
+// NOTE: __ctru_heap_size/__ctru_linear_heap_size (libctru's weak-symbol
+// heap size overrides, see 3ds/env.h) were tried here as a workaround for
+// LoadPlayfield's supertile texture-assembly loop (Source/System/File.swift)
+// running out of linear memory after ~250 supertile textures. Measured
+// defaults: heap=89MiB, linearHeap=32MiB. But heap+linearHeap draw from one
+// fixed total pool - growing linearHeap by 16MiB shrank the regular heap by
+// exactly 16MiB, which regressed a DIFFERENT, previously-reliable code path
+// (LoadSoundBank crashed loading story7's effect instead). Reverted: this
+// needs a real fix (why isn't the sliding-window loop's disposal actually
+// freeing linear memory as it's designed to?), not a memory-budget shuffle.

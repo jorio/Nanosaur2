@@ -32,6 +32,14 @@ extern "C" {
     void Pomme3DS_InitFileSystem(void);
     void GameMain(void); // Source/System/Main.swift, @c @implementation
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
+
+    // libctru's crt0 startup code (weak symbols - see common/boot_shim.c's
+    // comment on __ctru_heap_size/__ctru_linear_heap_size for the full
+    // explanation). Declared directly here (not via <3ds/env.h>) to avoid
+    // pulling in libctru's Handle typedef, which collides with Pomme's own
+    // Handle (see game_3ds.h's comment on this exact issue).
+    extern unsigned int __ctru_heap_size;
+    extern unsigned int __ctru_linear_heap_size;
 }
 
 int main()
@@ -60,6 +68,14 @@ int main()
     // live during boot instead of guessing blind - the console log file
     // Azahar itself writes never picks up guest output.
     Console3DS_Init();
+
+    {
+        char msg[128];
+        SDL_snprintf(msg, sizeof(msg), "heap_size=%u (%u MiB) linear_heap_size=%u (%u MiB)",
+            __ctru_heap_size, __ctru_heap_size / (1024 * 1024),
+            __ctru_linear_heap_size, __ctru_linear_heap_size / (1024 * 1024));
+        Debug3DS_Log(msg);
+    }
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()
     // -> OGL_CreateDrawContext() -> CTRUGraphicsBackend.createContext()

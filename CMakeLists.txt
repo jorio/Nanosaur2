@@ -115,8 +115,27 @@ configure_file(${GAME_SRCDIR}/Headers/version.h.in ${GAME_SRCDIR}/Headers/versio
 # Glob all source files
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/*.c ${GAME_SRCDIR}/*.cpp ${GAME_SRCDIR}/*.h ${GAME_SRCDIR}/*.swift)
 
-# Make source groups match file tree
+if(ENABLE_SWIFT)
+	# BG3DFile (Sources/BG3DFile) is a tested, standalone Swift package (see
+	# Package.swift / Tests/BG3DFileTests) that parses the BG3D 3D-model file
+	# format. Its sources - along with its vendored swift-binary-parsing
+	# dependency (extern/swift-binary-parsing) - are compiled directly into
+	# the game's single Swift module here, rather than linked as a separate
+	# library product, to match this project's existing single-module Swift
+	# build. `import BinaryParsing` in Sources/BG3DFile is guarded by
+	# `#if canImport(BinaryParsing)` so the same source files work in both
+	# this flat build and the standalone SPM package used for testing.
+	file(GLOB_RECURSE BG3DFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/BG3DFile/*.swift)
+	file(GLOB_RECURSE BINARYPARSING_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/swift-binary-parsing/BinaryParsing/*.swift")
+endif()
+
+# Make source groups match file tree (GAME_SOURCES only - BG3DFile/BinaryParsing
+# sources live outside GAME_SRCDIR, so they're appended after grouping)
 source_group(TREE ${GAME_SRCDIR} PREFIX "" FILES ${GAME_SOURCES})
+
+if(ENABLE_SWIFT)
+	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${BINARYPARSING_SOURCES})
+endif()
 
 if(WIN32)
 	# Windows resource file
@@ -186,6 +205,11 @@ if(NOT MSVC)
 			$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>
 			$<$<COMPILE_LANGUAGE:Swift>:${GAME_SRCDIR}/Headers/Nanosaur2-Bridging-Header.h>
 			$<$<COMPILE_LANGUAGE:Swift>:-parse-as-library>
+			# Required by vendored swift-binary-parsing (extern/swift-binary-parsing),
+			# used by BG3DFile (Sources/BG3DFile) - see its own Package.swift for the
+			# same flag.
+			$<$<COMPILE_LANGUAGE:Swift>:-enable-experimental-feature>
+			$<$<COMPILE_LANGUAGE:Swift>:Lifetimes>
 		)
 	endif()
 

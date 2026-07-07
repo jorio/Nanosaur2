@@ -1,4 +1,12 @@
 // Window.swift - Port of Window.c to Swift
+//
+// gGammaFadeFrac/gGameWindowWidth/gGameWindowHeight are native Swift
+// storage now (converted 2026-07-07): nothing in any .c file touches them
+// anymore.
+
+var gGammaFadeFrac: Float = 1.0
+var gGameWindowWidth: Int32 = 640
+var gGameWindowHeight: Int32 = 480
 
 private let kFaderMode_FadeOut: Int32 = 0
 private let kFaderMode_FadeIn: Int32 = 1

@@ -1,11 +1,14 @@
 // Infobar.swift - Port of Infobar.c to Swift
 //
-// gLogicalRect stays defined in Infobar.c and `extern`'d via game.h:
-// LevelIntro.c and IntroStory.c (still unported) read it directly.
-// g640x480Scaling and gHideInfobar aren't referenced by any other file, so
-// they move into private Swift state along with everything else here (the
-// blinking-egg state, the overhead-map/health/shield/fuel mesh data), which
-// was all `static` (file-private) in C.
+// gLogicalRect is native Swift storage now (converted 2026-07-07): nothing
+// in any .c file touches it anymore (the old comment claiming LevelIntro.c/
+// IntroStory.c still needed it was stale - LevelIntro.c is deleted and
+// IntroStory.c is an empty stub). g640x480Scaling and gHideInfobar aren't
+// referenced by any other file, so they stay private Swift state along
+// with everything else here (the blinking-egg state, the overhead-map/
+// health/shield/fuel mesh data), which was all `static` (file-private) in C.
+
+var gLogicalRect = OGLRect()
 
 private let SPLITSCREEN_DIVIDER_THICKNESS: Float = 1
 

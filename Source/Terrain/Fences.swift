@@ -1,14 +1,29 @@
 // Fences.swift - Port of Fences.c to Swift
 //
-// gNumFences and gFenceList stay defined in the stubbed Fences.c because
-// Pick.swift and File.swift (already ported) read/write them directly via
-// `extern`. gFenceTriMeshData also stays because PickInternal.h's
-// GetFenceTriMeshDataEntry shim references it directly. gNumFencesDrawn
-// stays too since it's `extern`'d in game.h (conservatively, even though
-// nothing currently reads it). gFenceObj, gFenceMaterials, and the double-
-// buffered vertex-array storage (gFenceVertexArrays in the original C)
-// have no `extern` declaration anywhere and are only ever touched from
-// this file, so they move into private Swift storage.
+// gNumFences/gFenceList/gFenceTriMeshData/gNumFencesDrawn are native Swift
+// storage now (converted 2026-07-07): nothing in any .c file touches them
+// anymore. gFenceTriMeshData was a fixed-size 2D C array exposed via
+// PickInternal.h's GetFenceTriMeshDataEntry shim; it's now a permanent,
+// never-freed UnsafeMutablePointer buffer (row-major [MAX_FENCES][2]),
+// with the accessor reimplemented in plain Swift under the same name/
+// signature so its call sites in Pick.swift didn't need to change.
+// gFenceObj, gFenceMaterials, and the double-buffered vertex-array storage
+// (gFenceVertexArrays in the original C) have no `extern` declaration
+// anywhere and are only ever touched from this file, so they stay private
+// Swift storage.
+
+var gNumFences: Int = 0
+var gNumFencesDrawn: Int16 = 0
+var gFenceList: UnsafeMutablePointer<FenceDefType>!
+
+private let gFenceTriMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
+    let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 90 * 2)
+    buf.initialize(repeating: MOVertexArrayData(), count: 90 * 2)
+    return buf
+}()
+func GetFenceTriMeshDataEntry(_ fenceIndex: Int32, _ side: Int32) -> UnsafeMutablePointer<MOVertexArrayData>! {
+    gFenceTriMeshDataBuf + (Int(fenceIndex) * 2 + Int(side))
+}
 //
 // The double-buffered vertex arrays need a stable, never-moving address
 // (gFenceTriMeshData's points/triangles/uvs/colorsFloat fields hold raw

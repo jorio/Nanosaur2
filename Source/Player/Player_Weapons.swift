@@ -1,4 +1,13 @@
 // Player_Weapons.swift - Port of Player_Weapons.c to Swift
+//
+// gAutoFireDelay is native Swift storage now (converted 2026-07-07):
+// nothing in any .c file touches it anymore. GetAutoFireDelay/
+// SetAutoFireDelay (formerly a shim in PlayerInternal.h) are now plain
+// Swift functions with the same names/signatures.
+
+private var gAutoFireDelayArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+func GetAutoFireDelay(_ i: Int32) -> Float { gAutoFireDelayArr[Int(i)] }
+func SetAutoFireDelay(_ i: Int32, _ v: Float) { gAutoFireDelayArr[Int(i)] = v }
 
 private let blasterBulletSpeed: Float = 4000.0
 private let blasterAutoFireDelay: Float = 0.16

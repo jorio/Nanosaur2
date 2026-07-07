@@ -15,8 +15,6 @@ typedef struct
 	OGLPoint3D		* _Nullable splinePoints;
 }CustomSplineType;
 
-extern  CustomSplineType	gCustomSplines[MAX_CUSTOM_SPLINES];
-
 
 //=================
 

@@ -1,6 +1,27 @@
 // Collision.swift - Port of Collision.c to Swift
+//
+// gCollisionList/gNumCollisions/gTotalSides are native Swift storage now
+// (converted 2026-07-07): nothing in any .c file touches them anymore.
+// gCollisionList was a fixed-size C array exposed via EnemyInternal.h's
+// GetCollisionListEntry shim; it's now a permanent, never-freed
+// UnsafeMutablePointer buffer, with the accessor reimplemented in plain
+// Swift under the same name/signature so its call sites elsewhere
+// (Player_Terrain.swift, Enemy.swift, Player_Weapons.swift) didn't need
+// to change.
+
+var gNumCollisions: Int16 = 0
+var gTotalSides: UInt8 = 0
 
 private let maxCollisions = 60
+
+private let gCollisionListBuf: UnsafeMutablePointer<CollisionRec> = {
+    let buf = UnsafeMutablePointer<CollisionRec>.allocate(capacity: maxCollisions)
+    buf.initialize(repeating: CollisionRec(), count: maxCollisions)
+    return buf
+}()
+func GetCollisionListEntry(_ i: Int32) -> UnsafeMutablePointer<CollisionRec>! {
+    gCollisionListBuf + Int(i)
+}
 
 // Not extern'd in any header in the original C source, so nothing outside
 // Collision.c ever referenced them despite having external linkage there.

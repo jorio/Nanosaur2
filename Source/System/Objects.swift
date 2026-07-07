@@ -1,4 +1,19 @@
 // Objects.swift - Port of Objects.c to Swift
+//
+// gFirstNodePtr/gCurrentNode/gCoord/gDelta/gAutoFadeStartDist/
+// gAutoFadeEndDist/gAutoFadeRange_Frac/gNumObjectNodes/gNumObjectNodesPeak
+// are native Swift storage now (converted 2026-07-07): nothing in any .c
+// file touches them anymore.
+
+var gFirstNodePtr: UnsafeMutablePointer<ObjNode>?
+var gCurrentNode: UnsafeMutablePointer<ObjNode>?
+var gCoord = OGLPoint3D()
+var gDelta = OGLVector3D()
+var gAutoFadeStartDist: Float = 0
+var gAutoFadeEndDist: Float = 0
+var gAutoFadeRange_Frac: Float = 0
+var gNumObjectNodes: Int32 = 0
+var gNumObjectNodesPeak: Int32 = 0
 
 private let MAX_OBJECTS_COUNT = 5000
 private let OBJ_DEL_Q_SIZE_COUNT = 1500

@@ -1,6 +1,22 @@
 // SplineManager.swift - Port of SplineManager.c to Swift
 //
 // This is not code for the terrain splines! This does other custom spline management.
+//
+// gCustomSplines is native Swift storage now (converted 2026-07-07):
+// nothing in any .c file touches it anymore. It was a fixed-size C array
+// exposed via SplineManagerInternal.h's GetCustomSplineSlot shim; it's now
+// a permanent, never-freed UnsafeMutablePointer buffer, with the accessor
+// reimplemented in plain Swift under the same name/signature so its call
+// sites in Terrain.swift/Holes.swift didn't need to change.
+
+private let gCustomSplinesBuf: UnsafeMutablePointer<CustomSplineType> = {
+    let buf = UnsafeMutablePointer<CustomSplineType>.allocate(capacity: 40)
+    buf.initialize(repeating: CustomSplineType(), count: 40)
+    return buf
+}()
+func GetCustomSplineSlot(_ i: Int32) -> UnsafeMutablePointer<CustomSplineType> {
+    gCustomSplinesBuf + Int(i)
+}
 
 func InitSplineManager() {
     for i in 0..<Int32(MAX_CUSTOM_SPLINES) {

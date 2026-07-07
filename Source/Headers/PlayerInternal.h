@@ -12,14 +12,5 @@ static inline void SetBestCheckpointCoord(int i, OGLPoint3D v) { gBestCheckpoint
 static inline float GetBestCheckpointAim(int i) { return gBestCheckpointAim[i]; }
 static inline void SetBestCheckpointAim(int i, float v) { gBestCheckpointAim[i] = v; }
 
-static inline float GetCurrentMaxSpeed(int i) { return gCurrentMaxSpeed[i]; }
-static inline void SetCurrentMaxSpeed(int i, float v) { gCurrentMaxSpeed[i] = v; }
-
-static inline float GetTargetMaxSpeed(int i) { return gTargetMaxSpeed[i]; }
-static inline void SetTargetMaxSpeed(int i, float v) { gTargetMaxSpeed[i] = v; }
-
-static inline float GetAutoFireDelay(int i) { return gAutoFireDelay[i]; }
-static inline void SetAutoFireDelay(int i, float v) { gAutoFireDelay[i] = v; }
-
 static inline short GetBestCheckpointNum(int i) { return gBestCheckpointNum[i]; }
 static inline void SetBestCheckpointNum(int i, short v) { gBestCheckpointNum[i] = v; }

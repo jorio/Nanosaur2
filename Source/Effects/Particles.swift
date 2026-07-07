@@ -1,12 +1,14 @@
 // Particles.swift - Port of Particles.c to Swift
 //
-// gNewParticleGroupDef stays defined in Particles.c and `extern`'d via
-// effects.h: LaserOrbs.c, Turrets.c, and Mines.c (all still unported) write
-// to it directly by name, so it must stay C-linked. gParticleGroups and
+// gNewParticleGroupDef is native Swift storage now (converted 2026-07-07):
+// nothing in any .c file touches it anymore (LaserOrbs.c/Turrets.c/Mines.c,
+// its only real C users, are all deleted). gParticleGroups and
 // gNumActiveParticleGroups were plain (non-extern) globals only ever
-// touched from this file, so they move into private Swift storage instead.
+// touched from this file, so they stay private Swift storage.
 // gGravitoidDistBuffer (a big fixed 2D float array) is likewise file-local
 // only, so it becomes a plain Swift 2D array.
+
+var gNewParticleGroupDef = NewParticleGroupDefType()
 
 private let fireBlastRadius: Float = gTerrainPolygonSize * 1.5 // unused by any ported call site yet, kept for parity
 

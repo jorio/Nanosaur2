@@ -1,4 +1,13 @@
 // MetaObjects.swift - Port of MetaObjects.c to Swift
+//
+// gGlobalTransparency/gGlobalColorFilter/gGlobalMaterialFlags/
+// gMostRecentMaterial are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore.
+
+var gGlobalTransparency: Float = 1
+var gGlobalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
+var gGlobalMaterialFlags: UInt32 = 0
+var gMostRecentMaterial: UnsafeMutablePointer<MOMaterialObject>?
 
 @inline(__always) private func GAME_CLAMP(_ x: Float, _ lo: Float, _ hi: Float) -> Float {
     x < lo ? lo : (x > hi ? hi : x)

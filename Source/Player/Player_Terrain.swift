@@ -1,4 +1,18 @@
 // Player_Terrain.swift - Port of Player_Terrain.c to Swift
+//
+// gTargetMaxSpeed/gCurrentMaxSpeed are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore.
+// GetTargetMaxSpeed/SetTargetMaxSpeed/GetCurrentMaxSpeed/SetCurrentMaxSpeed
+// (formerly shims in PlayerInternal.h) are now plain Swift functions with
+// the same names/signatures.
+
+private var gTargetMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+private var gCurrentMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+
+func GetTargetMaxSpeed(_ i: Int32) -> Float { gTargetMaxSpeedArr[Int(i)] }
+func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gTargetMaxSpeedArr[Int(i)] = v }
+func GetCurrentMaxSpeed(_ i: Int32) -> Float { gCurrentMaxSpeedArr[Int(i)] }
+func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gCurrentMaxSpeedArr[Int(i)] = v }
 
 private let flightSlideFactor: Float = 15.0 // smaller == more slide, larger = less slide
 private let flightTurnSensitivity: Float = 1.9 // smaller == slower turns, larger == faster turns

@@ -1,4 +1,9 @@
 // Pick.swift - Port of Pick.c to Swift
+//
+// gPickAllTrianglesAsDoubleSided is native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches it anymore.
+
+var gPickAllTrianglesAsDoubleSided: UInt8 = 0
 
 private let gridSkipRange: Int32 = 2 // how many grid units away to just skip collisions between objects
 

@@ -1025,14 +1025,14 @@ private func infobarDrawEggs() {
 
     var x = eggsX()
     for (eggType, _) in EggColor.allCases.enumerated() {
-        if GetNumEggsToSaveSlot(Int32(eggType)).pointee <= 0 { // are there any eggs of this color?
+        if gNumEggsToSave[eggType] <= 0 { // are there any eggs of this color?
             continue
         }
 
         var y = eggsY()
 
-        for i in 0..<Int(GetNumEggsToSaveSlot(Int32(eggType)).pointee) {
-            if Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) > i {
+        for i in 0..<Int(gNumEggsToSave[eggType]) {
+            if Int(gNumEggsSaved[eggType]) > i {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
             } else {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallBlankEgg))
@@ -1041,7 +1041,7 @@ private func infobarDrawEggs() {
             // BLINKING HALO IF JUST SAVED THIS EGG
             if gBlinkingEggTimer < 4.66
                 && eggType == Int(gBlinkingEggType)
-                && i == Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) - 1 {
+                && i == Int(gNumEggsSaved[eggType]) - 1 {
                 let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
                 gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
@@ -1064,8 +1064,8 @@ private func infobarCaptureFlagEggs() {
 
     let y = capEggsY()
     var x = capEggsX()
-    for i in 0..<Int(GetNumEggsToSaveSlot(Int32(eggType)).pointee) {
-        if Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) > i {
+    for i in 0..<Int(gNumEggsToSave[eggType]) {
+        if Int(gNumEggsSaved[eggType]) > i {
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
         } else {
             if eggType == 0 {
@@ -1078,7 +1078,7 @@ private func infobarCaptureFlagEggs() {
         // BLINKING HALO IF JUST CAPTURED THIS EGG
         if gBlinkingEggTimer < 4.66
             && eggType == Int(gBlinkingEggType)
-            && i == Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) - 1 {
+            && i == Int(gNumEggsSaved[eggType]) - 1 {
             let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
             gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))

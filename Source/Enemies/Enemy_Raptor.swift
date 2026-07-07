@@ -54,7 +54,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         }
 
         if (pointee.parm.3 & 1) == 0 { // see if always add
-            if GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee >= maxRaptors {
+            if gNumEnemyOfKind[Int(EnemyKind.raptor.rawValue)] >= maxRaptors {
                 return 0
             }
         }
@@ -64,7 +64,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         newObj.pointee.TerrainItemPtr = self
 
         gNumEnemies += 1
-        GetNumEnemyOfKindSlot(Int32(EnemyKind.raptor.rawValue))!.pointee += 1
+        gNumEnemyOfKind[Int(EnemyKind.raptor.rawValue)] += 1
 
         return 1
     }

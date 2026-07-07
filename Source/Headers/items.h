@@ -14,21 +14,9 @@
 
 		/* EGGS */
 
-typedef enum SWIFT_ENUM_CLOSED EggColor
-{
-	EGG_COLOR_RED SWIFT_NAME(red),
-	EGG_COLOR_GREEN SWIFT_NAME(green),
-	EGG_COLOR_BLUE SWIFT_NAME(blue),
-	EGG_COLOR_YELLOW SWIFT_NAME(yellow),
-	EGG_COLOR_PURPLE SWIFT_NAME(purple),
-
-	NUM_EGG_TYPES SWIFT_NAME(_count)
-} EggColor;
-
-
-
-extern	Byte	gNumEggsToSave[NUM_EGG_TYPES];
-extern	Byte	gNumEggsSaved[NUM_EGG_TYPES];
+// EggColor is now a native Swift enum in GameEnums.swift; gNumEggsToSave/
+// gNumEggsSaved moved to Swift storage (Eggs.swift) - Eggs.c (their only
+// real C user) was ported to Swift and deleted (verified 2026-07-07).
 
 
 

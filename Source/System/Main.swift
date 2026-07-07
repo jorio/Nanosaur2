@@ -1,7 +1,7 @@
 // Main.swift - Port of Main.c to Swift
 //
 // Nearly every global in this file (gGamePrefs, gGameViewInfoPtr, gLevelNum,
-// gVSMode, gDebugMode, gAutoFadeStatusBits, gTimeDemo, gGameOver,
+// gDebugMode, gAutoFadeStatusBits, gTimeDemo, gGameOver,
 // gLevelCompleted, gPlayingFromSavedGame, gSkipLevelIntro,
 // gRaceReadySetGoTimer, gPrefsFolderVRefNum/DirID, gWorldSunDirection,
 // gBestCheckpointNum/Coord/Aim) is read/written by many other already-
@@ -9,10 +9,15 @@
 // stubbed Main.c. gBestCheckpointNum/Aim additionally have shim
 // accessors in PlayerInternal.h that reference them directly.
 //
+// gVSMode moved to native Swift storage (2026-07-07): no other .c file
+// read it via extern, so it's no longer declared in Main.c/game.h.
+//
 // gTimeDemoStartTime/EndTime, gGameLevelTimer, gLevelCompletedCoolDownTimer,
 // gFillColor1, and gLevelSongs have no `extern` declaration anywhere and
 // are only ever touched from this file, so they move into private Swift
 // storage.
+
+var gVSMode: VSMode = .none // nano vs. nano mode
 
 private var gTimeDemoStartTime: UInt32 = 0
 private var gTimeDemoEndTime: UInt32 = 0

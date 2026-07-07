@@ -1,13 +1,18 @@
 // OGL_Support.swift - Port of OGL_Support.c to Swift
 //
-// gAnaglyphFocallength, gAnaglyphEyeSeparation, gAnaglyphPass, gAGLContext,
-// gViewToFrustumMatrix, gWorldToViewMatrix, gWorldToFrustumMatrix,
-// gLocalToViewMatrix, gLocalToFrustumMatrix, gWorldToWindowMatrix,
-// gCurrentSplitScreenPane, gActiveSplitScreenMode, gCurrentPaneAspectRatio,
-// gMyState_Lighting, gMyState_Color, gPolysThisFrame, and
-// gVertexArrayRangeObjects/gUsingVertexArrayRange stay defined here (not as
-// private Swift storage) and `extern`'d via game.h: they're read/written
-// directly by other files (already-ported and still-C alike).
+// gAnaglyphFocallength/gAnaglyphEyeSeparation/gAnaglyphPass/gAGLContext/
+// gAGLContext2/gViewToFrustumMatrix/gWorldToViewMatrix/gWorldToFrustumMatrix/
+// gLocalToViewMatrix/gLocalToFrustumMatrix/gWorldToWindowMatrix/
+// gCurrentSplitScreenPane/gActiveSplitScreenMode/gCurrentPaneAspectRatio/
+// gMyState_Lighting/gMyState_Color/gPolysThisFrame are native Swift storage
+// (converted 2026-07-07): nothing in any .c file touches them anymore -
+// the old comment claiming other C files still needed them via extern was
+// stale (OGL_Support.c had no real remaining C readers, same pattern as
+// bg3d.c/Sound.c/etc. this session). gWorldToWindowMatrix is a 3-tuple
+// (MAX_VIEWPORTS), matching the tuple-not-Array pattern already used below
+// for gFrustumToWindowMatrix, so withUnsafeMutablePointer(to:) addresses
+// real contiguous storage instead of an Array's storage-reference header.
+//
 // gFrustumToWindowMatrix, gStateStack_*, gMyState_Blend/Fog/Texture2D/
 // CullFace/TextureUnit/BlendFuncS/BlendFuncD, gAnaglyphGreyTable,
 // gDoAnisotropy, gMaxAnisotropy, and the vertex-array-memory bookkeeping
@@ -16,6 +21,32 @@
 // non-static but referenced nowhere else) - they move into private Swift
 // storage instead, as plain Swift arrays where the C original used a fixed
 // array (nothing external needs pointer access to them).
+
+var gAnaglyphFocallength: Float = 450.0
+var gAnaglyphEyeSeparation: Float = 40.0
+var gAnaglyphPass: UInt8 = 0
+
+var gAGLContext: OpaquePointer?
+var gAGLContext2: OpaquePointer?
+
+var gViewToFrustumMatrix = OGLMatrix4x4()
+var gWorldToViewMatrix = OGLMatrix4x4()
+var gWorldToFrustumMatrix = OGLMatrix4x4()
+var gLocalToViewMatrix = OGLMatrix4x4()
+var gLocalToFrustumMatrix = OGLMatrix4x4()
+
+// MAX_VIEWPORTS is 3 (MAX_SPLITSCREENS+1); see gFrustumToWindowMatrix below
+// for why this is a tuple, not an Array.
+var gWorldToWindowMatrix: (OGLMatrix4x4, OGLMatrix4x4, OGLMatrix4x4) = (OGLMatrix4x4(), OGLMatrix4x4(), OGLMatrix4x4())
+
+var gCurrentSplitScreenPane: UInt8 = 0
+var gActiveSplitScreenMode: UInt8 = UInt8(SplitscreenMode.none.rawValue)
+var gCurrentPaneAspectRatio: Float = 1
+
+var gMyState_Lighting: UInt8 = 0
+var gMyState_Color = OGLColorRGBA()
+
+var gPolysThisFrame: Int32 = 0
 //
 // VERTEXARRAYRANGES is hardcoded to 0 in game.h (like Water.swift/others
 // already noted), so every `#if VERTEXARRAYRANGES` block is dead code and
@@ -132,6 +163,13 @@ private var gMyState_BlendFuncD: GLenum = 0
     withUnsafeMutablePointer(to: &gWorldToWindowMatrix) {
         UnsafeMutableRawPointer($0).assumingMemoryBound(to: OGLMatrix4x4.self)
     }
+}
+
+// Replaces the old InfobarInternal.h C shim of the same name/signature -
+// Infobar.swift/Camera.swift call this to index into gWorldToWindowMatrix,
+// which (as a tuple) isn't subscriptable by a variable index directly.
+func GetWorldToWindowMatrixEntry(_ i: Int32) -> UnsafeMutablePointer<OGLMatrix4x4> {
+    gWorldToWindowMatrixBase() + Int(i)
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {

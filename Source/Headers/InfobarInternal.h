@@ -7,5 +7,3 @@
 
 static inline Byte GetCameraMode(int i) { return gCameraMode[i]; }
 static inline void SetCameraMode(int i, Byte v) { gCameraMode[i] = v; }
-
-static inline OGLMatrix4x4* _Nonnull GetWorldToWindowMatrixEntry(int i) { return &gWorldToWindowMatrix[i]; }

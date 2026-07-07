@@ -437,8 +437,7 @@ func GetNumGamepad() -> Int32 {
     return count
 }
 
-@c @implementation
-public func GetGamepad(_ n: Int32) -> OpaquePointer? {
+func GetGamepad(_ n: Int32) -> OpaquePointer? {
     if gGamepads[Int(n)].open {
         return gGamepads[Int(n)].sdlGamepad
     } else {
@@ -564,8 +563,7 @@ private func tryOpenAnyUnusedGamepad(_ showMessage: Bool) -> OpaquePointer? {
     return newGamepad
 }
 
-@c @implementation
-public func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms: UInt32, _ playerID: Int32) {
+func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms: UInt32, _ playerID: Int32) {
     // Don't bother if rumble turned off in prefs
     if gGamePrefs.rumbleIntensity == 0 {
         return
@@ -706,8 +704,7 @@ private func onJoystickRemoved(_ joystickID: SDL_JoystickID) {
 
 // MARK: - Reset bindings
 
-@c @implementation
-public func ResetDefaultKeyboardBindings() {
+func ResetDefaultKeyboardBindings() {
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in
         let defaults = UnsafeRawPointer(defaultsPtr).assumingMemoryBound(to: InputBinding.self)
         for i in 0..<Int(NUM_CONTROL_NEEDS) {
@@ -722,8 +719,7 @@ public func ResetDefaultKeyboardBindings() {
     }
 }
 
-@c @implementation
-public func ResetDefaultGamepadBindings() {
+func ResetDefaultGamepadBindings() {
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in
         let defaults = UnsafeRawPointer(defaultsPtr).assumingMemoryBound(to: InputBinding.self)
         for i in 0..<Int(NUM_CONTROL_NEEDS) {
@@ -740,8 +736,7 @@ public func ResetDefaultGamepadBindings() {
     gGamePrefs.rumbleIntensity = 100
 }
 
-@c @implementation
-public func ResetDefaultMouseBindings() {
+func ResetDefaultMouseBindings() {
     gGamePrefs.mouseSensitivityLevel = UInt8(DEFAULT_MOUSE_SENSITIVITY_LEVEL)
 
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in

@@ -390,8 +390,7 @@ public func LoadPrefs() -> OSErr {
     return iErr
 }
 
-@c @implementation
-public func SavePrefs() -> OSErr {
+func SavePrefs() -> OSErr {
     var matches = false
     withUnsafeBytes(of: gDiskShadowPrefs) { a in
         withUnsafeBytes(of: gGamePrefs) { b in
@@ -1040,8 +1039,7 @@ func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameTy
     return 1
 }
 
-@c @implementation
-public func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
+func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
     let path = "File\(Character(UnicodeScalar(UInt8(65 + fileSlot))))"
 
     let iErr = path.withCString { DeleteUserDataFile($0) }

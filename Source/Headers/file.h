@@ -119,19 +119,11 @@ typedef struct
 
 //=================================================
 
-OSErr SavePrefs(void);
-
 #define IsStereoAnaglyphColor() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_COLOR)
 #define IsStereoAnaglyphMono() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_MONO)
 #define IsStereoAnaglyph() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_COLOR || gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_ANAGLYPH_MONO)
 #define IsStereoShutter() (gGamePrefs.stereoGlassesMode == STEREO_GLASSES_MODE_SHUTTER)
 #define IsStereo() (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 
-
-Boolean DeleteSavedGame(int fileSlot);
-
-
-
-
-
 OSErr LoadPrefs(void);
+

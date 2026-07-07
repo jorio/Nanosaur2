@@ -1,9 +1,10 @@
 // MainMenu.swift - Port of MainMenu.c to Swift
 
-// gPlayNow is defined here; Settings.c reads it via extern decl in game.h.
-// gCursorCoord is file-scope; Menu.swift reads it via extern decl in game.h.
-
 // MARK: - Main menu tree
+
+private let cDisableEmptyFileSlots: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { mi in
+    mi.map { DisableEmptyFileSlots($0) } ?? 0
+}
 
 private let cCheckForLevelCheat: @convention(c) () -> Void = {
     var i = 0
@@ -65,21 +66,21 @@ var gMainMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
 
     miRoot(fourCC("load")),
-    miFileSlot(STR_FILE, id: fourCC("lf#0"), fileSlot: 0, next: fourCC("EXIT"), getLayoutFlags: SwDisableEmptyFileSlots),
-    miFileSlot(STR_FILE, id: fourCC("lf#1"), fileSlot: 1, next: fourCC("EXIT"), getLayoutFlags: SwDisableEmptyFileSlots),
-    miFileSlot(STR_FILE, id: fourCC("lf#2"), fileSlot: 2, next: fourCC("EXIT"), getLayoutFlags: SwDisableEmptyFileSlots),
-    miFileSlot(STR_FILE, id: fourCC("lf#3"), fileSlot: 3, next: fourCC("EXIT"), getLayoutFlags: SwDisableEmptyFileSlots),
-    miFileSlot(STR_FILE, id: fourCC("lf#4"), fileSlot: 4, next: fourCC("EXIT"), getLayoutFlags: SwDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#0"), fileSlot: 0, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#1"), fileSlot: 1, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#2"), fileSlot: 2, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#3"), fileSlot: 3, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#4"), fileSlot: 4, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
     miPick(STR_DELETE_A_FILE, next: fourCC("dele")),
     miPick(STR_BACK_SYMBOL,   next: fourCC("BACK")),
 
     miRoot(fourCC("dele")),
     miLabel(STR_DELETE_WHICH, customHeight: 1.5),
-    miFileSlot(STR_DELETE, id: fourCC("df#0"), fileSlot: 0, next: fourCC("BACK"), getLayoutFlags: SwDisableEmptyFileSlots, callback: cDeleteFileSlot),
-    miFileSlot(STR_DELETE, id: fourCC("df#1"), fileSlot: 1, next: fourCC("BACK"), getLayoutFlags: SwDisableEmptyFileSlots, callback: cDeleteFileSlot),
-    miFileSlot(STR_DELETE, id: fourCC("df#2"), fileSlot: 2, next: fourCC("BACK"), getLayoutFlags: SwDisableEmptyFileSlots, callback: cDeleteFileSlot),
-    miFileSlot(STR_DELETE, id: fourCC("df#3"), fileSlot: 3, next: fourCC("BACK"), getLayoutFlags: SwDisableEmptyFileSlots, callback: cDeleteFileSlot),
-    miFileSlot(STR_DELETE, id: fourCC("df#4"), fileSlot: 4, next: fourCC("BACK"), getLayoutFlags: SwDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#0"), fileSlot: 0, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#1"), fileSlot: 1, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#2"), fileSlot: 2, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#3"), fileSlot: 3, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#4"), fileSlot: 4, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
     miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
 
     miRoot(),
@@ -374,8 +375,7 @@ private let cMoveMouseCursorObject: @convention(c) (UnsafeMutablePointer<ObjNode
 
 // MARK: - Make mouse cursor object
 
-@c @implementation
-public func MakeMouseCursorObject() -> UnsafeMutablePointer<ObjNode>! {
+func MakeMouseCursorObject() -> UnsafeMutablePointer<ObjNode>! {
     SwGameAssert(GetNumSpritesInGroup(Int32(SPRITE_GROUP_CURSOR)) != 0)
 
     var def = NewObjectDefinitionType()

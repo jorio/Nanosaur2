@@ -186,11 +186,5 @@ static inline int8_t InputBinding_GetPadType(const InputBinding* b, int i) { ret
 static inline int8_t InputBinding_GetPadID(const InputBinding* b, int i) { return b->pad[i].id; }
 static inline void InputBinding_SetPad(InputBinding* b, int i, int8_t type, int8_t id) { b->pad[i].type = type; b->pad[i].id = id; }
 
-// Nullable wrapper for DisableEmptyFileSlots so Swift can pass it as a
-// @convention(c) (UnsafePointer<MenuItem>?) -> Int32 getLayoutFlags callback.
-static inline int SwDisableEmptyFileSlots(const MenuItem* _Nullable mi) {
-    return mi ? DisableEmptyFileSlots(mi) : 0;
-}
-
 // Compound status-bit macro (Clang's macro-constant importer can't fold an OR of enum constants)
 static const int32_t SwStatusBitsFor2D = STATUS_BITS_FOR_2D;

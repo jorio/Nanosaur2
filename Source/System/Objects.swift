@@ -987,8 +987,7 @@ func DeleteAllObjects() {
     FlushObjectDeleteQueue()
 }
 
-@c @implementation
-public func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
+func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else { // see if passed a bogus node
         return
     }
@@ -1446,8 +1445,7 @@ func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
 // MARK: - Overlay pane
 
-@c @implementation
-public func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
+func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
     theNode.pointee.PlayerNum = gNumPlayers
 }

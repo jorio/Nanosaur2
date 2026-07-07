@@ -14,7 +14,7 @@ private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<M
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
     gActiveSplitScreenMode = gGamePrefs.splitScreenMode
-    PausedInternal_UpdateSplitscreenFOV()
+    PausedInternal_UpdateSplitscreenFOV(GetSplitscreenPaneFOV())
 }
 
 private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
@@ -71,8 +71,7 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     }
 }
 
-@c @implementation
-public func DoPaused() {
+func DoPaused() {
     // In single-player, reassign main controller to whoever pressed the start button
     if gVSMode == .none {
         let whoPressedStart = GetLastControllerForNeedAnyP(Int32(kNeed_UIPause))
@@ -97,8 +96,7 @@ public func DoPaused() {
     RegisterSettingsMenu()
 }
 
-@c @implementation
-public func DoReallyQuit() {
+func DoReallyQuit() {
     gGammaFadeFrac = 1
     gGamePaused = 1
     GrabMouse(0)

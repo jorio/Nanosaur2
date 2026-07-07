@@ -87,15 +87,13 @@ private func disposeMenuNavigation() {
 
 // MARK: - Public API
 
-@c @implementation
-public func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
+func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
 
 func GetMenuIdleTime() -> Float { gNav != nil ? gNav!.pointee.idleTime : 0.0 }
 
 func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != .off : false }
 
-@c @implementation
-public func GetCurrentMenuItemID() -> Int32 {
+func GetCurrentMenuItemID() -> Int32 {
     guard let nav = gNav, nav.pointee.focusRow >= 0 else { return -1 }
     return nav.pointee.menu![Int(nav.pointee.focusRow)].id
 }
@@ -105,13 +103,11 @@ func GetCurrentMenuItemObject() -> UnsafeMutablePointer<ObjNode>? {
     return mObj(Int(nav.pointee.focusRow))
 }
 
-@c @implementation
-public func IsMenuTreeEndSentinel(_ menuItem: UnsafePointer<MenuItem>) -> Bool {
+func IsMenuTreeEndSentinel(_ menuItem: UnsafePointer<MenuItem>) -> Bool {
     menuItem.pointee.id == 0 && menuItem.pointee.type == MenuItemType.sentinel
 }
 
-@c @implementation
-public func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>) -> Int32 {
+func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>) -> Int32 {
     let mask = gNav?.pointee.validSaveSlotMask ?? 0
     let need = Int64(MenuItem_GetInputNeed(menuItem))
     let isValid = (mask >> UInt64(need)) & 1
@@ -124,16 +120,14 @@ func KillMenu(_ returnCode: Int32) {
     }
 }
 
-@c @implementation
-public func LayoutCurrentMenuAgain(_ animate: Bool) {
+func LayoutCurrentMenuAgain(_ animate: Bool) {
     SwGameAssert(gNav != nil); SwGameAssert(gNav!.pointee.menu != nil)
     gNav!.pointee.sweepDelay = animate ? 0 : -100000
     saveSelectedRowInHistory()
     layOutMenu(gNav!.pointee.menuID)
 }
 
-@c @implementation
-public func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
+func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
     var mi = menuTree
     while mi.pointee.type != MenuItemType.sentinel || mi.pointee.id != 0 {
         if mi.pointee.type == MenuItemType.sentinel {
@@ -147,8 +141,7 @@ public func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
     }
 }
 
-@c @implementation
-public func MakeMenu(_ menu: UnsafePointer<MenuItem>, _ style: UnsafePointer<MenuStyle>?) -> UnsafeMutablePointer<ObjNode> {
+func MakeMenu(_ menu: UnsafePointer<MenuItem>, _ style: UnsafePointer<MenuStyle>?) -> UnsafeMutablePointer<ObjNode> {
     var driverDef = NewObjectDefinitionType()
     driverDef.scale = 1; driverDef.slot = Int16(MENU_SLOT); driverDef.genre = UInt8(EVENT_GENRE)
     driverDef.flags = UInt32(STATUS_BIT_MOVEINPAUSE | STATUS_BIT_DONTCULL)

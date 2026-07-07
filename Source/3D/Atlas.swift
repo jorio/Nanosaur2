@@ -674,8 +674,7 @@ func TextMesh_NewEmpty(_ capacity: Int32, _ newObjDef: UnsafeMutablePointer<NewO
     return MakeQuadMeshObject(newObjDef, capacity, material)
 }
 
-@c @implementation
-public func TextMesh_New(_ text: UnsafePointer<CChar>, _ align: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
+func TextMesh_New(_ text: UnsafePointer<CChar>, _ align: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
     let textNode = TextMesh_NewEmpty(0, newObjDef)
     TextMesh_Update(text, align, textNode)
     return textNode

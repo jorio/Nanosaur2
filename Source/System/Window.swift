@@ -180,8 +180,7 @@ func GetDefaultWindowSize(_ display: SDL_DisplayID, _ width: UnsafeMutablePointe
     }
 }
 
-@c @implementation
-public func GetNumDisplays() -> Int32 {
+func GetNumDisplays() -> Int32 {
     var numDisplays: Int32 = 0
     let displays = SDL_GetDisplays(&numDisplays)
     SDL_free(displays)
@@ -221,8 +220,7 @@ private func moveToPreferredDisplay() {
     _ = SDL_SyncWindow(gSDLWindow)
 }
 
-@c @implementation
-public func SetFullscreenMode(_ enforceDisplayPref: Bool) {
+func SetFullscreenMode(_ enforceDisplayPref: Bool) {
     if gGamePrefs.fullscreen == 0 {
         _ = SDL_SetWindowFullscreen(gSDLWindow, false)
         _ = SDL_SyncWindow(gSDLWindow)

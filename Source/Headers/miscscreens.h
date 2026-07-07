@@ -4,20 +4,6 @@
 
 #pragma once
 
-void DoPaused(void);
-void DoReallyQuit(void);
-
-
-
-
-		/* MAIN MENU */
-
-ObjNode* MakeMouseCursorObject(void);
-
-
-void RegisterSettingsMenu(void);
-
-
 		/* INTRO STORY */
 
 // SlideType is now a native Swift struct (IntroStory.swift) - nothing in
@@ -52,5 +38,3 @@ enum
 
 
 	/* ANAGLYPH CALIBRATION */
-
-void SetUpAnaglyphCalibrationScreen(void);

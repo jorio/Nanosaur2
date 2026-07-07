@@ -15,9 +15,3 @@ typedef enum SWIFT_ENUM_CLOSED CameraMode
 extern	Boolean		gCameraInDeathDiveMode[], gCameraInExitMode;
 extern  Byte		gCameraMode[];
 
-//================================
-
-float GetSplitscreenPaneFOV(void);
-
-
-

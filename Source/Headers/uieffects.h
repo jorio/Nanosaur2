@@ -81,5 +81,3 @@ typedef struct
 	float delay;
 	float seed;
 } Twitch;
-
-Twitch* _Nullable MakeTwitch(ObjNode* _Nullable puppet, int presetAndFlags);

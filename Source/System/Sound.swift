@@ -695,8 +695,7 @@ func PlayEffect(_ effectNum: Int16) -> Int16 {
 // Plays an effect with parameters
 //
 // OUTPUT: channel # used to play sound
-@c @implementation
-public func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: UInt32, _ rateMultiplier: UInt) -> Int16 {
+func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: UInt32, _ rateMultiplier: UInt) -> Int16 {
     SwGameAssert(effectNum >= 0)
     SwGameAssert(effectNum < Int16(maxEffects))
     SwGameAssertMessage(gSndHandles[Int(effectNum)] != nil, "sound effect wasn't loaded!")
@@ -770,8 +769,7 @@ public func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVo
 
 // Call this whenever gGlobalVolume is changed.  This will update
 // all of the sounds with the correct volume.
-@c @implementation
-public func UpdateGlobalVolume() {
+func UpdateGlobalVolume() {
     gEffectsVolume = fullEffectsVolume * (0.01 * Float(gGamePrefs.sfxVolumePercent)) * gGlobalVolumeFade
 
     // ADJUST VOLUMES OF ALL CHANNELS REGARDLESS IF THEY ARE PLAYING OR NOT

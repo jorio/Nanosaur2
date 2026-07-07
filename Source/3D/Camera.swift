@@ -60,8 +60,7 @@ private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGl
 
 // MARK: - Get FOV depending on splitscreen mode
 
-@c @implementation
-public func GetSplitscreenPaneFOV() -> Float {
+func GetSplitscreenPaneFOV() -> Float {
     if gVSMode == .none { // set FOV differently for multiplayer
         return 1.15
     } else {

@@ -113,6 +113,4 @@ extern	ChannelInfoType				gChannelInfo[];
 
 
 extern void	ToggleMusic(void);
-void UpdateGlobalVolume(void);
-short PlayEffect_Parms(short effectNum, uint32_t leftVolume, uint32_t rightVolume, unsigned long rateMultiplier);
 

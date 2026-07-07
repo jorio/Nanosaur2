@@ -12,12 +12,13 @@ static inline Byte* PausedInternal_GetSplitScreenModePtr(void) {
     return (Byte*)&gGamePrefs.splitScreenMode;
 }
 
-// Sets fov[0..gNumPlayers-1] on gGameViewInfoPtr to the splitscreen FOV.
+// Sets fov[0..gNumPlayers-1] on gGameViewInfoPtr to the given FOV value.
 // The fov field is float[MAX_VIEWPORTS], imported as a tuple in Swift and
-// not indexable by a variable, so this must live in C.
-static inline void PausedInternal_UpdateSplitscreenFOV(void) {
+// not indexable by a variable, so this must live in C. The FOV value itself
+// is computed in Swift (GetSplitscreenPaneFOV) and passed in.
+static inline void PausedInternal_UpdateSplitscreenFOV(float fov) {
     for (int i = 0; i < gNumPlayers; i++)
-        gGameViewInfoPtr->fov[i] = GetSplitscreenPaneFOV();
+        gGameViewInfoPtr->fov[i] = fov;
 }
 
 #pragma clang assume_nonnull end

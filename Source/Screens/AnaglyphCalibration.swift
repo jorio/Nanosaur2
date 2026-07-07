@@ -114,8 +114,7 @@ private func DisposeAnaglyphCalibrationScreen() {
     }
 }
 
-@c @implementation
-public func SetUpAnaglyphCalibrationScreen() {
+func SetUpAnaglyphCalibrationScreen() {
     // REGISTER MENU
 
     if gPlayNow != 0 {

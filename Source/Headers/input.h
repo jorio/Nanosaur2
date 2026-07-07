@@ -104,18 +104,10 @@ int GetNeedState(int needID, int playerID);
 #define IsNeedUp(needID, playerID) (KEYSTATE_UP == GetNeedState((needID), (playerID)))
 
 
-SDL_Gamepad* GetGamepad(int n);
-// last controller that triggered a need with ANY_PLAYER
-void Rumble(float lowFrequencyStrength, float highFrequencyStrength, uint32_t ms, int playerID);
-
 void LockPlayerControllerMapping(void);
 void UnlockPlayerControllerMapping(void);
 const char* GetPlayerName(int whichPlayer);
 const char* GetPlayerNameWithInputDeviceHint(int whichPlayer);
-
-void ResetDefaultKeyboardBindings(void);
-void ResetDefaultGamepadBindings(void);
-void ResetDefaultMouseBindings(void);
 
 void SetMacLinearMouse(Boolean linear);
 

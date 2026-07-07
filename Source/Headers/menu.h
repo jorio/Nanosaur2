@@ -109,13 +109,3 @@ typedef struct MenuStyle
 } MenuStyle;
 
 extern const MenuStyle kDefaultMenuStyle;
-
-void RegisterMenu(const MenuItem* _Nonnull menus);
-
-ObjNode* _Nonnull MakeMenu(const MenuItem* _Nonnull menu, const MenuStyle* _Nullable style);
-
-void LayoutCurrentMenuAgain(bool animate);
-int GetCurrentMenu(void);
-int GetCurrentMenuItemID(void);
-bool IsMenuTreeEndSentinel(const MenuItem* _Nonnull menuItem);
-int DisableEmptyFileSlots(const MenuItem* _Nonnull menuItem);

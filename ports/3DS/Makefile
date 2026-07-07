@@ -478,15 +478,20 @@ $(BUILD)/icon.smdh: | $(BUILD)
 # no separate packaging tool needed.
 
 # A separate, 3DS-only copy of Data/ (ports/3DS/Data), NOT the shared
-# desktop Data/ folder - images here are compressed to roughly 1/3 their
-# original linear dimensions (real PICA200 hardware caps textures at
-# 1024px/axis anyway, and the 3DS's tiny heap can't hold many full-size
-# desktop textures at once - see docs/3DS_PORT_PLAN.md). Font atlases
-# (font.png/font.alt1.png/swiss.png) are intentionally left at full size:
-# their companion .txt/.kerning.txt files encode pixel-exact glyph
-# coordinates that would desync if the atlas image were resized without
-# also rescaling those coordinates. Non-image assets (Models/*.bg3d,
-# Terrain/*.ter, Audio/*, Skeletons/*) are plain copies, untouched.
+# desktop Data/ folder. Only images wider or taller than 512px are real,
+# resized files (capped at 512px on the long edge) - those were the ones
+# either exceeding the real PICA200's 1024px/axis texture limit outright,
+# or big enough to meaningfully add to the 3DS's tight heap budget. Every
+# image already <=512px in both dimensions is a symlink back to the
+# original in the desktop Data/ folder (not a copy), so this directory
+# doesn't duplicate storage for assets that didn't need touching. Font
+# atlases (font.png/font.alt1.png/swiss.png) are ALWAYS symlinked
+# regardless of size, even swiss.png (1024x1024, otherwise past the
+# resize threshold): their companion .txt/.kerning.txt files encode
+# pixel-exact glyph coordinates that would desync if the atlas image
+# were resized without also rescaling those coordinates. Non-image
+# assets (Models/*.bg3d, Terrain/*.ter, Audio/*, Skeletons/*) are plain
+# copies, untouched.
 DATA_DIR	:=	Data
 
 $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh

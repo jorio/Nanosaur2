@@ -41,7 +41,7 @@ private let cShouldShowResetAnaglyphSettings: @convention(c) (UnsafePointer<Menu
     isStereo() ? 0 : Int32(kMILayoutFlagHidden)
 }
 
-private let gInGameAnaglyphMenuPtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+private let gInGameAnaglyphMenuPtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("cali")),
     miSpacer(customHeight: 1.5),
     miLabel(STR_NO_ANAGLYPH_CALIBRATION_IN_GAME, customHeight: 1.0),
@@ -50,7 +50,7 @@ private let gInGameAnaglyphMenuPtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer
     miRoot(),
 ])
 
-private let gAnaglyphMenuPtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+private let gAnaglyphMenuPtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("cali")),
     miCycler2(STR_3D_GLASSES_MODE,
               valuePtr: AnaglyphInternal_GetStereoGlassesModePtr(),

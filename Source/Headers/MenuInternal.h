@@ -158,7 +158,7 @@ static inline const char* (* _Nullable MenuItem_GetGenChoiceString(const MenuIte
 static inline void MenuCyclerData_SetChoiceText(MenuCyclerData* c, int i, LocStrID text) { c->choices[i].text = text; }
 static inline void MenuCyclerData_SetChoiceValue(MenuCyclerData* c, int i, uint8_t value) { c->choices[i].value = value; }
 static inline void MenuCyclerData_SetGeneratorNumChoices(MenuCyclerData* c, int (* _Nullable fn)(void)) { c->generator.generateNumChoices = fn; }
-static inline void MenuCyclerData_SetGeneratorChoiceString(MenuCyclerData* c, const char* (* _Nullable fn)(Byte)) { c->generator.generateChoiceString = fn; }
+static inline void MenuCyclerData_SetGeneratorChoiceString(MenuCyclerData* c, const char* _Nonnull (* _Nullable fn)(Byte)) { c->generator.generateChoiceString = fn; }
 
 static inline Byte* _Nullable MenuItem_GetSliderValuePtr(const MenuItem* mi) { return mi->slider.valuePtr; }
 static inline Byte MenuItem_GetSliderEquilibrium(const MenuItem* mi) { return mi->slider.equilibrium; }

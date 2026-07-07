@@ -11,7 +11,7 @@ private let cGetLevelSpecificMenuLayoutFlags: @convention(c) (UnsafePointer<Menu
     return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
 }
 
-private let gSaveMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+private let gSaveMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("lvin")),
     miPick(STR_SAVE_GAME, next: fourCC("save"), customHeight: 1),
     miPick(STR_CONTINUE_WITHOUT_SAVING, next: fourCC("EXIT"), id: fourCC("nosv"), customHeight: 1),

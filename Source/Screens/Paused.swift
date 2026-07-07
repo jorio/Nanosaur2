@@ -17,7 +17,7 @@ private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
     PausedInternal_UpdateSplitscreenFOV()
 }
 
-private let gPauseMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("paus")),
     miPick(STR_RESUME, next: fourCC("EXIT"), id: fourCC("resu")),
     miSpacer(customHeight: 0.3, getLayoutFlags: cShouldDisplaySplitscreenModeCycler),
@@ -33,7 +33,7 @@ private let gPauseMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(),
 ])
 
-private let gReallyQuitMenuTreePtr: UnsafePointer<MenuItem> = makeMenuTreeBuffer([
+private let gReallyQuitMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("rlyq")),
     miLabel(STR_REALLY_QUIT, customHeight: 1),
     miSpacer(customHeight: 0.5),

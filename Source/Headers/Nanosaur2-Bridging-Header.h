@@ -21,3 +21,4 @@
 #include "PickInternal.h"
 #include "LevelIntroInternal.h"
 #include "MainMenuInternal.h"
+#include "SettingsInternal.h"

@@ -124,7 +124,7 @@ func miCycler2(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, choices:
     return item
 }
 
-func miCycler2Dynamic(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, generateNumChoices: @convention(c) () -> Int32, generateChoiceString: @convention(c) (UInt8) -> UnsafePointer<CChar>?, callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil) -> MenuItem {
+func miCycler2Dynamic(_ text: LocStrID, valuePtr: UnsafeMutablePointer<UInt8>, generateNumChoices: @convention(c) () -> Int32, generateChoiceString: @convention(c) (UInt8) -> UnsafePointer<CChar>, callback: (@convention(c) () -> Void)? = nil, getLayoutFlags: (@convention(c) (UnsafePointer<MenuItem>?) -> Int32)? = nil) -> MenuItem {
     var item = baseItem(.cycler2)
     item.text = text
     item.callback = callback

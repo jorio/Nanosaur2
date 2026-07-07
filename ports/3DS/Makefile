@@ -83,7 +83,21 @@ ICON		:=	$(CTRULIB)/default_icon.png
 # checking relocation types dropped to zero GOT_PREL/TLS_LE32/TLS_LDO32
 # (a few R_ARM_TLS_IE32 remain, which 3dsxtool does support).
 #---------------------------------------------------------------------------------
-ARCH		:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
+# -fno-short-enums: devkitARM's default 3DS target ABI packs C enums into
+# the smallest integer type that fits their range (1 byte for e.g.
+# MenuItemType/LocStrID, which only have a handful of cases) - but Swift's
+# ClangImporter always assumes a plain C enum occupies a full 4 bytes when
+# computing struct field offsets for imported C types (Source/Headers/
+# menu.h's MenuItem, among others). Left at its default, every field after
+# an enum-typed field in a struct shared between C and Swift is offset by
+# however many bytes were "saved", so Swift reads garbage/zeroed padding
+# instead of the real field value (root-caused via a raw memory dump
+# showing MenuItem's id field 4 bytes earlier than Swift's accessor
+# expected). This must be applied consistently to BOTH the C/C++ compiler
+# (via $(ARCH), used by every C/C++ compile rule) and Swift's own
+# ClangImporter invocation (via -Xcc below in SWIFTFLAGS) - if only one
+# side used 4-byte enums, the mismatch would just move rather than go away.
+ARCH		:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -fno-short-enums
 PIC_FLAGS	:=	-fno-pic -fno-pie
 
 CTRUDEFS	:=	-D__3DS__ -I$(COMMON) -I$(CTRULIB)/include
@@ -184,6 +198,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-Xllvm -relocation-model=static \
 			-Xcc -D__3DS__ -Xcc -DNANOSAUR_3DS \
 			-Xcc -march=armv6k -Xcc -mtune=mpcore -Xcc -mfloat-abi=hard \
+			-Xcc -fno-short-enums \
 			-Xcc -fno-pic -Xcc -fno-pie \
 			-Xcc -isystem -Xcc $(DEVKITARM)/arm-none-eabi/include \
 			-Xcc -I$(COMMON) \
@@ -461,7 +476,18 @@ $(BUILD)/icon.smdh: | $(BUILD)
 # these exact same bytes should parse identically once accessible via
 # RomFS - 3dsxtool builds the RomFS image directly from this directory,
 # no separate packaging tool needed.
-DATA_DIR	:=	$(ENGINE_ROOT)/Data
+
+# A separate, 3DS-only copy of Data/ (ports/3DS/Data), NOT the shared
+# desktop Data/ folder - images here are compressed to roughly 1/3 their
+# original linear dimensions (real PICA200 hardware caps textures at
+# 1024px/axis anyway, and the 3DS's tiny heap can't hold many full-size
+# desktop textures at once - see docs/3DS_PORT_PLAN.md). Font atlases
+# (font.png/font.alt1.png/swiss.png) are intentionally left at full size:
+# their companion .txt/.kerning.txt files encode pixel-exact glyph
+# coordinates that would desync if the atlas image were resized without
+# also rescaling those coordinates. Non-image assets (Models/*.bg3d,
+# Terrain/*.ter, Audio/*, Skeletons/*) are plain copies, untouched.
+DATA_DIR	:=	Data
 
 $(TARGET).3dsx: $(TARGET).elf $(BUILD)/icon.smdh
 	@echo packaging $(notdir $@)

@@ -44,7 +44,15 @@ int main()
     // (window-size queries, mouse cursor tracking, mouse warp/grab)
     // dereference gSDLWindow as a real SDL_Window every frame. SDL_Init
     // must run before SDL_CreateWindow (mirrors desktop's Boot.cpp).
-    SDL_Init(SDL_INIT_VIDEO);
+    //
+    // SDL_INIT_GAMEPAD (which also brings up the joystick subsystem) is
+    // required too: Input.swift's default bindings (InputDefaults.c) rely
+    // entirely on .pad = {GB(SOUTH), ...}-style gamepad button checks via
+    // SDL_GetGamepadButton, read through the n3ds joystick backend - the
+    // 3DS build has no keyboard, so without this subsystem initialized,
+    // SDL_GetGamepads() never finds a controller and NO button input
+    // (A/B/X/Y/Start/D-pad) ever reaches the game at all.
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
     // Bottom-screen console mirroring every SDL_Log call, so the game's own

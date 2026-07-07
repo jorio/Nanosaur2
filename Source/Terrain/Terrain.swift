@@ -290,14 +290,17 @@ func CreateSuperTileMemoryList() {
 
     // FOR EACH POSSIBLE SUPERTILE SET INFO
 
-    // kSuperTileTexSize (File.swift) matches the actual in-memory/GPU
-    // resolution of the assembled seamless texture (256 on desktop, 128 on
-    // 3DS - see that file's top-of-file comment) - this MUST track it,
-    // since these are normalized UV values computed from the ratio between
-    // a supertile's own texels and the 1px seam border around it.
-    let seamlessTexmapSize: Float = 2.0 + Float(kSuperTileTexSize)
+    // These normalized UVs must track the assembled supertile texture's
+    // actual layout (File.swift's kSuperTile* constants): the content
+    // occupies kSuperTileTexSize texels inset by kSuperTileBorder inside a
+    // kSuperTileCanvasSize-wide texture. Desktop: 256 content, 1px border,
+    // 258 canvas (scale 256/258, translate 1/258 - unchanged). 3DS: 128
+    // content, 0 border, 128 canvas (scale 1.0, translate 0 - samples the
+    // whole POT texture, since the seam border is dropped there so the
+    // texture stays power-of-two; see File.swift's constants comment).
+    let seamlessTexmapSize: Float = Float(kSuperTileCanvasSize)
     let seamlessUVScale: Float = Float(kSuperTileTexSize) / seamlessTexmapSize
-    let seamlessUVTranslate: Float = 1.0 / seamlessTexmapSize
+    let seamlessUVTranslate: Float = Float(kSuperTileBorder) / seamlessTexmapSize
 
     for i in 0..<maxSupertiles {
         let superTile = GetSuperTileMemoryEntry(Int32(i))!

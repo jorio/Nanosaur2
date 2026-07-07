@@ -19,6 +19,20 @@ private struct PlayfieldHeaderType {
     var unused: (Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
+// SAVE GAME
+// Native Swift struct - was `typedef struct {...} SaveGameType;` in file.h.
+// Zero C callers/globals reference it (see project memory), so it moved
+// entirely off the C ABI. Also used by MainMenu.swift/Menu.swift.
+struct SaveGameType {
+    var timestamp: UInt64 = 0
+    var level: UInt8 = 0
+    var numLives: UInt8 = 0
+    var weaponQuantity: InlineArray<5, UInt16> = InlineArray(repeating: 0) // must match NUM_WEAPON_TYPES
+    var health: Float = 0
+    var jetpackFuel: Float = 0
+    var shieldPower: Float = 0
+}
+
 // FENCE STRUCTURE IN FILE
 //
 // note: we copy this data into our own fence list

@@ -110,16 +110,9 @@ typedef struct
 
 		/* SAVE GAME */
 
-typedef struct
-{
-	uint64_t	timestamp;
-	uint8_t		level;
-	uint8_t		numLives;
-	uint16_t	weaponQuantity[NUM_WEAPON_TYPES];
-	float		health;
-	float		jetpackFuel;
-	float		shieldPower;
-}SaveGameType;
+// SaveGameType is now a native Swift struct (File.swift) - nothing in
+// any .c file touches it (verified 2026-07-07: no extern globals, no
+// static-inline functions, no C-side construction).
 
 
 

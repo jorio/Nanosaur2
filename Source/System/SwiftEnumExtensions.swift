@@ -53,10 +53,6 @@ extension MenuItemType: @retroactive Sendable, @retroactive CaseIterable {
     public static let allCases: [MenuItemType] = [.sentinel, .pick, .label, .spacer, .cycler1, .cycler2, .slider, .keyBinding, .padBinding, .mouseBinding, .fileSlot] // kMI_COUNT (_count) intentionally excluded
 }
 
-// MARK: - ShardMode (shards.h)
-
-extension ShardMode: @retroactive Sendable {}
-
 // MARK: - WeaponType (player.h)
 
 extension WeaponType: @retroactive Sendable, @retroactive CaseIterable {

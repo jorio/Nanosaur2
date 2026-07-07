@@ -1,5 +1,17 @@
 // Shards.swift - Port of Shards.c to Swift
 
+// Native Swift OptionSet - was `typedef enum SWIFT_FLAG_ENUM ShardMode {...}
+// ShardMode;` in shards.h with zero C callers/globals (verified 2026-07-07),
+// so it moved entirely off the C ABI; shards.h is now deleted.
+struct ShardMode: OptionSet, Sendable {
+    let rawValue: Int32
+
+    static let upthrust = ShardMode(rawValue: 1)
+    static let heavyGravity = ShardMode(rawValue: 1 << 1)
+    static let bounce = ShardMode(rawValue: 1 << 2)
+    static let fromOrigin = ShardMode(rawValue: 1 << 3)
+}
+
 private let maxShards = 2500
 
 private struct ShardType {

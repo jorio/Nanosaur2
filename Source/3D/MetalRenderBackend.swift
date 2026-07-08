@@ -3,22 +3,24 @@
 // RenderBackend implementation that drives the MetalRenderer module instead
 // of real gl* calls. See docs/metal-renderer-plan.md Phase 2.
 //
-// IMPORTANT - how this coexists with the rest of the still-GL codebase: only
-// the call sites already migrated to `gRenderBackend.*` (see RenderBackend.swift's
-// header comment for what's covered) go through this class. Everything NOT
-// yet migrated (lighting setup in OGL_CreateLights, GL state introspection
-// in OGL_PushState/DrawBlueLine, the 3D vertex-array geometry path in
-// MetaObjects.swift's MO_DrawGeometry_VertexArray, stereo/dual-screen calls,
-// etc.) still makes real gl* calls. For that to be harmless rather than a
-// crash (no GL context) or a corrupted frame (writing into a context that's
-// also being presented), the game's normal OpenGL context is left fully
-// intact and created as usual - it just never gets SDL_GL_SwapWindow'd when
-// a Metal backend is active (this class's `present()` presents the Metal
-// layer instead). Any un-migrated gl* call still executes against a live,
-// valid context; its output is simply never shown, because nothing swaps
-// that context's framebuffer to the window. Only the Metal layer (a
-// separate CAMetalLayer on the same window, see MetalSpike.swift) is
-// actually presented.
+// IMPORTANT - there is NO GL context at all when this backend is active.
+// Tried keeping the game's normal GL context alive alongside a Metal-backed
+// view on the same window (just never SDL_GL_SwapWindow'd), so not-yet-
+// migrated raw gl* calls elsewhere could keep executing harmlessly - that
+// does NOT work empirically: SDL_Metal_CreateView on a window that also has
+// a GL context corrupts the GL side (hit "The specified window isn't an
+// OpenGL window" when Metal was set up before the GL context; glProcAddress
+// results came back nil when set up after). So under --metal,
+// OGL_CreateDrawContext() (OGL_Support.swift) skips SDL_GL_CreateContext
+// entirely and gSDLWindow is created SDL_WINDOW_METAL-only (Boot.cpp) - no
+// GL context exists, ever. This means every raw gl* call actually reachable
+// during boot + the menu screen's frame loop had to be migrated to
+// RenderBackend or explicitly skipped (see the `gMetalMode == 0` guards in
+// OGL_CreateLights/OGL_InitDrawContext/OGL_SetStyles/OGL_PushState/
+// OGL_PopState). Anything NOT reachable from there yet - the 3D vertex-array
+// geometry path (MO_DrawGeometry_VertexArray), stereo/dual-screen, the debug
+// DrawBlueLine path - is simply not safe to hit under --metal yet and will
+// crash (calling gl* with no current context) if it is.
 //
 // Known correctness gaps in this first cut (documented rather than silently
 // wrong):

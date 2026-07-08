@@ -781,7 +781,7 @@ func Atlas_DrawString2(
 
     OGL_DisableLighting()
     OGL_DisableCullFace()
-    gRenderBackend.disableDepthTest()
+    OGL_DisableDepthTest()
 
     if flags & UInt32(kTextMeshGlow) != 0 {
         OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))

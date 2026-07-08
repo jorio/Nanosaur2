@@ -188,12 +188,22 @@ retryVideo:
 	}
 
 	// Create window
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	//
+	// --metal (docs/metal-renderer-plan.md Phase 2): the window is created
+	// SDL_WINDOW_METAL-only, with NO GL attributes/context at all - mixing a
+	// Metal view and a GL context on the same SDL window doesn't work (see
+	// OGL_CreateDrawContext's comment for what was tried and why it broke).
+	// gGetIntegerv-based MSAA retry below doesn't apply in this mode since
+	// there's no GL context to fail to create with the requested MSAA level.
+	if (!gMetalMode)
+	{
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	}
 
 	gCurrentAntialiasingLevel = gGamePrefs.antialiasingLevel;
-	if (gCurrentAntialiasingLevel != 0)
+	if (!gMetalMode && gCurrentAntialiasingLevel != 0)
 	{
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 1 << gCurrentAntialiasingLevel);
@@ -201,11 +211,11 @@ retryVideo:
 
 	gSDLWindow = SDL_CreateWindow(
 		GAME_FULL_NAME " (" GAME_VERSION ")", 640, 480,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+		(gMetalMode ? SDL_WINDOW_METAL : SDL_WINDOW_OPENGL) | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
 	if (!gSDLWindow)
 	{
-		if (gCurrentAntialiasingLevel != 0)
+		if (!gMetalMode && gCurrentAntialiasingLevel != 0)
 		{
 			SDL_Log("Couldn't create SDL window with the requested MSAA level. Retrying without MSAA...");
 

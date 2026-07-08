@@ -124,6 +124,7 @@ private var gMyState_Blend = false
 private var gMyState_Fog = false
 private var gMyState_Texture2D = false
 private var gMyState_CullFace = false
+private var gMyState_DepthTest = false
 private var gMyState_TextureUnit: UInt32 = 0
 private var gMyState_BlendFuncS: GLenum = 0
 private var gMyState_BlendFuncD: GLenum = 0
@@ -382,6 +383,30 @@ private func OGL_CreateDrawContext() {
     SwGameAssertMessage(gAGLContext == nil, "GL context already exists")
     SwGameAssertMessage(gSDLWindow != nil, "Window must be created before the DC!")
 
+    // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal), AND SKIP GL
+    // CONTEXT CREATION ENTIRELY.
+    //
+    // Originally tried keeping the normal GL context alive (just never
+    // presented) alongside a second Metal-backed view on the same window,
+    // so not-yet-migrated raw gl* calls elsewhere could keep executing
+    // harmlessly. Empirically, that doesn't work: SDL_Metal_CreateView on a
+    // window that also has (or will have) a GL context breaks the GL side -
+    // hit "The specified window isn't an OpenGL window" when Metal was
+    // activated before GL context creation, and glProcAddress-resolved
+    // function pointers (gGlActiveTextureProc etc.) came back nil when
+    // activated after. So under --metal there is NO GL context at all -
+    // gSDLWindow is created with SDL_WINDOW_METAL only (see Boot.cpp) - and
+    // every raw gl* call that's actually reachable during boot/the frame
+    // loop must be migrated to RenderBackend or explicitly skipped (see the
+    // `gMetalMode == 0` guards added around OGL_CreateLights/
+    // OGL_InitDrawContext/OGL_SetStyles/OGL_PushState/OGL_PopState).
+    if gMetalMode != 0 {
+        if !SwMetalBackend_Activate() {
+            SwFatalAlert("--metal: SwMetalBackend_Activate failed")
+        }
+        return
+    }
+
     // CREATE AGL CONTEXT & ATTACH TO WINDOW
 
     gAGLContext = SDL_GL_CreateContext(gSDLWindow)
@@ -400,23 +425,6 @@ private func OGL_CreateDrawContext() {
     // ENABLE VSYNC
 
     try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
-
-    // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal)
-    //
-    // Must happen here, AFTER SDL_GL_CreateContext/MakeCurrent above, NOT
-    // before: adding a Metal-backed view to gSDLWindow before the GL context
-    // exists corrupts the window's surface for SDL_GL_CreateContext, which
-    // then fails with "The specified window isn't an OpenGL window" (hit
-    // this empirically - see docs/metal-renderer-plan.md). See
-    // MetalRenderBackend.swift's header comment for why keeping this GL
-    // context alive (just never presented) alongside the Metal view is the
-    // whole point - it's what lets not-yet-migrated raw gl* calls elsewhere
-    // in the codebase keep working harmlessly.
-    if gMetalMode != 0 {
-        if !SwMetalBackend_Activate() {
-            SwLog("--metal: SwMetalBackend_Activate failed, falling back to GL")
-        }
-    }
 
     // SEE IF SUPPORT 2048x2048 TEXTURES
 
@@ -568,15 +576,21 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
     // SET VARIOUS STATE INFO
 
     gRenderBackend.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
-    gRenderBackend.enableDepthTest() // use z-buffer
+    OGL_EnableDepthTest() // use z-buffer
 
-    var color: [GLfloat] = [1, 1, 1, 1] // set global material color to white
-    glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
+    // Fixed-function material/lighting/normalization state - no RenderBackend
+    // equivalent yet (lighting is a documented no-op under Metal, see
+    // MetalRenderBackend.swift), and unsafe to call with no GL context
+    // (--metal mode doesn't create one - see OGL_CreateDrawContext).
+    if gMetalMode == 0 {
+        var color: [GLfloat] = [1, 1, 1, 1] // set global material color to white
+        glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
 
-    glColorMaterial(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE))
-    glEnable(GLenum(GL_COLOR_MATERIAL))
+        glColorMaterial(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE))
+        glEnable(GLenum(GL_COLOR_MATERIAL))
 
-    glEnable(GLenum(GL_NORMALIZE))
+        glEnable(GLenum(GL_NORMALIZE))
+    }
 
     // INIT DEBUG FONT
 
@@ -588,9 +602,11 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
     gMyState_CullFace = false
     OGL_EnableCullFace()
-    glCullFace(GLenum(GL_BACK))
-    glFrontFace(GLenum(GL_CCW)) // CCW is front face
-    _ = OGL_CheckError()
+    if gMetalMode == 0 {
+        glCullFace(GLenum(GL_BACK))
+        glFrontFace(GLenum(GL_CCW)) // CCW is front face
+        _ = OGL_CheckError()
+    }
 
     // SET BLENDING DEFAULTS
 
@@ -600,16 +616,21 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 
     gMyState_Blend = true
     OGL_DisableBlend()
-    _ = OGL_CheckError()
 
-    glDisable(GLenum(GL_RESCALE_NORMAL))
-    _ = OGL_CheckError()
+    if gMetalMode == 0 {
+        _ = OGL_CheckError()
+
+        glDisable(GLenum(GL_RESCALE_NORMAL))
+        _ = OGL_CheckError()
+    }
 
     gMyState_TextureUnit = UInt32(GL_TEXTURE0_ARB)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0_ARB))
     gMyState_Texture2D = true
     OGL_DisableTexture2D()
-    _ = OGL_CheckError()
+    if gMetalMode == 0 {
+        _ = OGL_CheckError()
+    }
 
     gMyState_Color.r = 0.1
     gMyState_Color.g = 0.1
@@ -617,39 +638,53 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
     gMyState_Color.a = 0.1
     OGL_SetColor4f(1, 1, 1, 1)
 
-    // ENABLE ALPHA CHANNELS
+    // ENABLE ALPHA CHANNELS - no RenderBackend equivalent yet, unsafe with
+    // no GL context (--metal), and not needed by any migrated 2D draw.
 
-    glEnable(GLenum(GL_ALPHA_TEST))
-    glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
-    _ = OGL_CheckError()
+    if gMetalMode == 0 {
+        glEnable(GLenum(GL_ALPHA_TEST))
+        glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
+        _ = OGL_CheckError()
+    }
 
     // SET FOG
 
-    glHint(GLenum(GL_FOG_HINT), GLenum(GL_FASTEST))
+    if gMetalMode == 0 {
+        glHint(GLenum(GL_FOG_HINT), GLenum(GL_FASTEST))
+    }
 
     let styleDefPtr = setupDefPtr!.pointer(to: \.styles)!
     if styleDefPtr.pointee.useFog != 0 {
-        glFogi(GLenum(GL_FOG_MODE), GLint(styleDefPtr.pointee.fogMode))
-        glFogf(GLenum(GL_FOG_DENSITY), styleDefPtr.pointee.fogDensity)
-        glFogf(GLenum(GL_FOG_START), styleDefPtr.pointee.fogStart)
-        glFogf(GLenum(GL_FOG_END), styleDefPtr.pointee.fogEnd)
-        withUnsafeMutablePointer(to: &setupDefPtr!.pointee.view.clearColor.r) {
-            glFogfv(GLenum(GL_FOG_COLOR), $0)
+        if gMetalMode == 0 {
+            glFogi(GLenum(GL_FOG_MODE), GLint(styleDefPtr.pointee.fogMode))
+            glFogf(GLenum(GL_FOG_DENSITY), styleDefPtr.pointee.fogDensity)
+            glFogf(GLenum(GL_FOG_START), styleDefPtr.pointee.fogStart)
+            glFogf(GLenum(GL_FOG_END), styleDefPtr.pointee.fogEnd)
+            withUnsafeMutablePointer(to: &setupDefPtr!.pointee.view.clearColor.r) {
+                glFogfv(GLenum(GL_FOG_COLOR), $0)
+            }
         }
+        // RenderBackend has no fog model yet (documented no-op under Metal,
+        // see MetalRenderBackend.swift) - still flip the cached
+        // gMyState_Fog/call OGL_EnableFog() so state stays consistent for
+        // OGL_PushState/PopState.
         gMyState_Fog = false
         OGL_EnableFog()
     } else {
         gMyState_Fog = true
         OGL_DisableFog()
     }
-    _ = OGL_CheckError()
 
-    // ANISOTRIPIC FILTERING
+    if gMetalMode == 0 {
+        _ = OGL_CheckError()
 
-    if gDoAnisotropy {
-        glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gMaxAnisotropy)
+        // ANISOTRIPIC FILTERING
+
+        if gDoAnisotropy {
+            glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gMaxAnisotropy)
+        }
+        _ = OGL_CheckError()
     }
-    _ = OGL_CheckError()
 }
 
 // MARK: - Clear all buffers to black
@@ -685,6 +720,14 @@ private func ClearAllBuffersToBlack() {
 private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefType>!) {
     gMyState_Lighting = 0
     OGL_EnableLighting()
+
+    // RenderBackend has no lighting model yet (see MetalRenderBackend.swift's
+    // header comment: enableLighting/disableLighting are no-ops under
+    // Metal) - so actually programming GL_LIGHT0.. state is both pointless
+    // and, without a live GL context, unsafe under --metal. Skip entirely;
+    // OGL_EnableLighting() above still runs so gMyState_Lighting/the facade
+    // stay in sync.
+    guard gMetalMode == 0 else { return }
 
     // CREATE AMBIENT LIGHT
 
@@ -1709,17 +1752,26 @@ func OGL_PushState() {
 
     gStateStack_Lighting[i] = (gMyState_Lighting != 0)
     gStateStack_CullFace[i] = gMyState_CullFace
-    gStateStack_DepthTest[i] = glIsEnabled(GLenum(GL_DEPTH_TEST)) != 0
-    gStateStack_Normalize[i] = glIsEnabled(GLenum(GL_NORMALIZE)) != 0
+    gStateStack_DepthTest[i] = gMyState_DepthTest
     gStateStack_Texture2D[i] = gMyState_Texture2D
-    gStateStack_Fog[i] = glIsEnabled(GLenum(GL_FOG)) != 0
+    gStateStack_Fog[i] = gMyState_Fog
     gStateStack_Blend[i] = gMyState_Blend
     gStateStack_Color[i] = gMyState_Color
 
     gStateStack_BlendSrc[i] = GLint(gMyState_BlendFuncS)
     gStateStack_BlendDst[i] = GLint(gMyState_BlendFuncD)
 
-    glGetBooleanv(GLenum(GL_DEPTH_WRITEMASK), &gStateStack_DepthMask[i])
+    // GL_NORMALIZE and the depth write mask are never toggled by any
+    // RenderBackend-migrated 2D draw (only by the still-raw-GL 3D geometry
+    // path in Objects.swift/Terrain.swift) - reading them via GL
+    // introspection needs a live GL context, which --metal mode doesn't
+    // create, so skip capturing (and, symmetrically, restoring in
+    // OGL_PopState below) under Metal. Harmless: the save/restore pair is a
+    // no-op either way for every call site actually reached in that mode.
+    if gMetalMode == 0 {
+        gStateStack_Normalize[i] = glIsEnabled(GLenum(GL_NORMALIZE)) != 0
+        glGetBooleanv(GLenum(GL_DEPTH_WRITEMASK), &gStateStack_DepthMask[i])
+    }
 }
 
 // MARK: - Pop state
@@ -1754,15 +1806,9 @@ func OGL_PopState() {
     }
 
     if gStateStack_DepthTest[i] {
-        glEnable(GLenum(GL_DEPTH_TEST))
+        OGL_EnableDepthTest()
     } else {
-        glDisable(GLenum(GL_DEPTH_TEST))
-    }
-
-    if gStateStack_Normalize[i] {
-        glEnable(GLenum(GL_NORMALIZE))
-    } else {
-        glDisable(GLenum(GL_NORMALIZE))
+        OGL_DisableDepthTest()
     }
 
     if gStateStack_Texture2D[i] {
@@ -1783,7 +1829,16 @@ func OGL_PopState() {
         OGL_DisableFog()
     }
 
-    glDepthMask(gStateStack_DepthMask[i])
+    // See the matching comment in OGL_PushState above.
+    if gMetalMode == 0 {
+        if gStateStack_Normalize[i] {
+            glEnable(GLenum(GL_NORMALIZE))
+        } else {
+            glDisable(GLenum(GL_NORMALIZE))
+        }
+
+        glDepthMask(gStateStack_DepthMask[i])
+    }
 
     OGL_BlendFunc(GLenum(gStateStack_BlendSrc[i]), GLenum(gStateStack_BlendDst[i]))
     OGL_SetColor4fv(&gStateStack_Color[i])
@@ -1934,6 +1989,28 @@ func OGL_DisableFog() {
     if gMyState_Fog {
         gMyState_Fog = false
         gRenderBackend.disableFog()
+    }
+}
+
+// MARK: - OGL enable/disable depth test
+
+// Cached, unlike a plain gRenderBackend.enableDepthTest() call, so
+// OGL_PushState/OGL_PopState (below) can read back "is depth test on?"
+// without GL introspection (glIsEnabled) - needed so those functions (called
+// by every 2D draw: MO_DrawPicture, Atlas_DrawString2, ...) don't require a
+// live GL context, which --metal mode no longer creates.
+
+func OGL_EnableDepthTest() {
+    if !gMyState_DepthTest {
+        gMyState_DepthTest = true
+        gRenderBackend.enableDepthTest()
+    }
+}
+
+func OGL_DisableDepthTest() {
+    if gMyState_DepthTest {
+        gMyState_DepthTest = false
+        gRenderBackend.disableDepthTest()
     }
 }
 

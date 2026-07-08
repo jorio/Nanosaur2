@@ -3,24 +3,17 @@
 // Phase 2 "real" Metal activation (docs/metal-renderer-plan.md), as opposed
 // to MetalSpike.swift's Phase 0 throwaway clear-loop. Called once from
 // OGL_CreateDrawContext() (OGL_Support.swift) when gMetalMode is set - NOT
-// from Boot.cpp, and specifically AFTER SDL_GL_CreateContext/MakeCurrent
-// have already run there. Order matters: adding a Metal-backed view to
-// gSDLWindow before the GL context exists corrupts the window's surface for
-// SDL_GL_CreateContext, which then fails ("The specified window isn't an
-// OpenGL window" - hit this empirically). The GL context itself is
-// deliberately left alive once Metal is active (see
-// MetalRenderBackend.swift's header comment for why: any not-yet-migrated
-// raw gl* call elsewhere in the codebase needs a valid context to execute
-// against, even though nothing ever presents it once a Metal backend is
-// active).
-//
-// Creates a second CAMetalLayer-backed SDL Metal view on the SAME window
-// (alongside the existing GL-backed view), and switches gRenderBackend over
-// to a MetalRenderBackend driving it. From this point on, GameMain()'s
-// normal frame loop runs exactly as it always has - only gRenderBackend's
-// concrete type changed, which is what makes every already-migrated
-// RenderBackend call site (see RenderBackend.swift) draw via Metal instead
-// of GL, with zero changes needed to the frame loop itself.
+// from Boot.cpp - as a full REPLACEMENT for GL context creation, not an
+// addition to it: gSDLWindow was created SDL_WINDOW_METAL-only (Boot.cpp),
+// with no GL context ever created (see OGL_CreateDrawContext's comment for
+// why - a GL context and a Metal view on the same window don't coexist,
+// tried it, broke). Switches gRenderBackend over to a MetalRenderBackend.
+// From this point on, GameMain()'s normal frame loop runs exactly as it
+// always has - only gRenderBackend's concrete type changed, which is what
+// makes every already-migrated RenderBackend call site (see
+// RenderBackend.swift) draw via Metal instead of GL, with zero changes
+// needed to the frame loop itself. Anything NOT migrated must not be
+// reachable under --metal (see MetalRenderBackend.swift's header comment).
 
 import MetalRenderer
 

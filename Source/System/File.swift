@@ -104,7 +104,7 @@ private func rsrcCompanionSpec(of spec: UnsafeMutablePointer<FSSpec>) -> FSSpec 
 // Plain data-fork read of an already-resolved FSSpec (same SwFSpOpenDF/
 // SwGetEOF/SwFSRead/SwFSClose pattern already used elsewhere in this
 // codebase, e.g. ImportBG3D in Bg3d.swift).
-private func readWholeFile(_ spec: UnsafeMutablePointer<FSSpec>) -> [UInt8]? {
+func readWholeFile(_ spec: UnsafeMutablePointer<FSSpec>) -> [UInt8]? {
     var refNum: Int16 = 0
     guard SwFSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) == kNoErr else {
         return nil

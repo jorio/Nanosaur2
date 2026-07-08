@@ -4,6 +4,10 @@
 
 #pragma once
 
+// Declarations-only (MINIMP3_IMPLEMENTATION isn't defined here - see
+// Source/System/minimp3_impl.c for the one translation unit that generates
+// the implementation). Used by SoundEngine.swift to decode music files.
+#include "SoundFormats/minimp3.h"
 
 #define		BASE_EFFECT_RESOURCE	10000
 

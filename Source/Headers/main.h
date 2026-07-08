@@ -26,3 +26,9 @@
 
 
 void GameMain(void);
+
+// Phase 0 Metal spike (Source/3D/MetalSpike.swift) - see
+// docs/metal-renderer-plan.md. Exercised by `--metal` in Boot.cpp.
+bool SwMetalSpike_Init(void);
+void SwMetalSpike_ClearFrame(float red, float green, float blue);
+void SwMetalSpike_Shutdown(void);

@@ -17,7 +17,8 @@ private var gMetalRenderer: MetalRenderer?
 
 // Creates the SDL Metal view on the main game window, hands its CAMetalLayer
 // to the MetalRenderer module, and returns whether setup succeeded.
-func SwMetalSpike_Init() -> Bool {
+@c @implementation
+public func SwMetalSpike_Init() -> Bool {
     guard let window = gSDLWindow else { return false }
 
     let view = SDL_Metal_CreateView(window)
@@ -49,12 +50,14 @@ func SwMetalSpike_Init() -> Bool {
 
 // Clears the drawable to a colour and presents it. Call each frame during the
 // spike.
-func SwMetalSpike_ClearFrame(red: Float, green: Float, blue: Float) {
+@c @implementation
+public func SwMetalSpike_ClearFrame(_ red: Float, _ green: Float, _ blue: Float) {
     gMetalRenderer?.clearFrame(red: red, green: green, blue: blue)
 }
 
 // Tears down the spike renderer/view.
-func SwMetalSpike_Shutdown() {
+@c @implementation
+public func SwMetalSpike_Shutdown() {
     gMetalRenderer = nil
     if let view = gMetalView {
         SDL_Metal_DestroyView(view)

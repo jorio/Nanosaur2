@@ -248,16 +248,39 @@ because MetalRenderer's public API exposes zero Metal types. This is the load-
 bearing trick that makes the whole "native Swift Metal in this codebase"
 approach viable.
 
-Still TODO for a fully "live" Phase 0: wire `SwMetalSpike_Init` + a clear loop
-behind a `--metal` command-line flag in `Boot.cpp` and confirm the window
-actually clears to a colour via Metal on screen (currently only compile+link
-verified; the game still renders via GL).
+## Phase 0 COMPLETE (2026-07-08): `--metal` flag confirms a live Metal frame on screen.
+
+`Boot.cpp`'s `main()` now checks for `--metal` before anything else and, if
+present, calls `RunMetalSpike()` instead of the normal `Boot()`/`GameMain()`
+path. `RunMetalSpike()` deliberately does **not** reuse the normal boot
+sequence: it does its own minimal `SDL_Init(SDL_INIT_VIDEO)`, creates
+`gSDLWindow` with `SDL_WINDOW_METAL` (no `SDL_WINDOW_OPENGL`, no
+`SDL_GL_SetAttribute` calls), calls `SwMetalSpike_Init()`, then runs its own
+tiny event/present loop that calls `SwMetalSpike_ClearFrame(r, g, b)` every
+iteration with a cycling HSV-derived colour (so a static clear can't be
+mistaken for a live one), until the window is closed or Escape is pressed.
+This keeps the throwaway spike fully isolated from the real (still GL)
+boot/game path — no shared code changed, `Boot()`/`GameMain()`/`gSDLWindow`'s
+normal GL setup are untouched for the non-`--metal` path.
+
+The three `SwMetalSpike_*` functions (`Source/3D/MetalSpike.swift`) are
+exposed to C++ via `@c @implementation` (the same pattern as `GameMain`),
+declared in `Source/Headers/main.h`.
+
+**Verified on screen (computer-use screenshots):** launching
+`Nanosaur2 --metal` opens a window that logged
+`MetalSpike: renderer live on device 'Apple M1 Pro' (1280x960)` and visibly
+cycles through colours (green → blue captured a second apart), proving the
+full `SDL_Metal_CreateView` → `CAMetalLayer` → `MetalRenderer` (separate
+module) → `MTLCommandQueue`/render-pass → `presentDrawable` path is live end
+to end, not just compiling.
 
 ## What exists now on this branch
 
 - Branch `feature/metal`.
 - This plan.
-- Working separate-module native Swift Metal scaffold (compiles, links, game
-  still runs on GL): `MetalRenderer` module + `MetalSpike` glue + CMake wiring.
-- Next: wire the spike behind `--metal` to see a Metal-cleared frame on screen,
-  then start Phase 1 (renderer facade).
+- Working, **live-verified** separate-module native Swift Metal renderer:
+  `MetalRenderer` module + `MetalSpike` glue + CMake wiring + `--metal` flag
+  in `Boot.cpp` (`RunMetalSpike()`), confirmed on screen via screenshot.
+- Phase 0 is done. Next: Phase 1 (renderer facade over the current GL calls,
+  pure refactor, no Metal yet — see "Phased plan" above).

@@ -78,10 +78,78 @@ private let kPrefFourCC: OSType = 0x50726566 // 'Pref'
 private let kNoErr: OSErr = 0
 private let kBadFileFormat: OSErr = -208
 
-// Handle is `Ptr* = char**`; `*hand` in C is the same as `hand.pointee` in Swift.
-// This helper reinterprets that single-dereferenced data pointer as the given type.
-@inline(__always) private func handleData<T>(_ hand: Handle, _ type: T.Type) -> UnsafeMutablePointer<T> {
-    UnsafeMutableRawPointer(hand.pointee!).assumingMemoryBound(to: T.self)
+// MARK: - Resource-fork reading (ResourceFile, not Pomme's Resource Manager)
+//
+// Skeleton/playfield files store their tagged chunks ('Bone', 'Hedr', 'Item',
+// 'Spln', etc.) in a real classic-Mac resource fork, saved to disk as an
+// AppleDouble-wrapped ".rsrc" companion file (e.g. raptor.skeleton.rsrc,
+// battle1.ter.rsrc). This used to go through Pomme's GetResource/
+// FSpOpenResFile/Handle-based Resource Manager emulation; now it's read via
+// Sources/ResourceFile (a tested, standalone parser - see
+// Tests/ResourceFileTests) instead, to reduce this project's dependency on
+// Pomme. Only the resource-reading path changes: FSMakeFSSpec/FSpOpenDF/
+// FSRead/FSClose (plain file I/O, not the Resource Manager) are unchanged.
+
+// Appends ".rsrc" to `spec`'s filename and resolves the sibling FSSpec in the
+// same directory - the on-disk convention for a resource-fork companion file
+// (mirrors extern/Pomme/src/Files/HostVolume.cpp's OpenFork resource-fork
+// path derivation).
+private func rsrcCompanionSpec(of spec: UnsafeMutablePointer<FSSpec>) -> FSSpec {
+    // Despite the Str255 typedef, Pomme's FSSpec.cName is a plain
+    // NUL-terminated C string (see HostVolume::ToFSSpec's snprintf), not a
+    // Pascal string - no length-byte prefix.
+    let cNamePtr = UnsafeMutableRawPointer(spec.pointer(to: \.cName)!).assumingMemoryBound(to: Int8.self)
+    let filename = String(cString: cNamePtr) + ".rsrc"
+
+    var rsrcSpec = FSSpec()
+    _ = filename.withCString { FSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, $0, &rsrcSpec) }
+    return rsrcSpec
+}
+
+// Plain data-fork read of an already-resolved FSSpec (same FSpOpenDF/GetEOF/
+// FSRead/FSClose pattern already used elsewhere in this codebase, e.g.
+// ImportBG3D in Bg3d.swift).
+private func readWholeFile(_ spec: UnsafeMutablePointer<FSSpec>) -> [UInt8]? {
+    var refNum: Int16 = 0
+    guard FSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) == kNoErr else {
+        return nil
+    }
+    defer { FSClose(refNum) }
+
+    var fileLength = 0
+    GetEOF(refNum, &fileLength)
+
+    var fileBytes = [UInt8](repeating: 0, count: fileLength)
+    let readErr: OSErr = fileBytes.withUnsafeMutableBytes { buf in
+        var readBytes = fileLength
+        return FSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
+    }
+    guard readErr == kNoErr else { return nil }
+
+    return fileBytes
+}
+
+private func loadResourceFork(sibling spec: UnsafeMutablePointer<FSSpec>) -> ResourceFile? {
+    var rsrcSpec = rsrcCompanionSpec(of: spec)
+    guard let bytes = readWholeFile(&rsrcSpec) else { return nil }
+    return try? ResourceFile(parsing: bytes)
+}
+
+// Equivalent of GetResource(type,id) + HLock + handleData(hand, T.self): a
+// fresh AllocPtr'd copy of the resource's raw bytes, reinterpreted as T.
+// Dispose with SafeDisposePtr (in place of the old ReleaseResource call).
+private func loadResource<T>(_ resourceFile: ResourceFile, _ type: ResType, _ id: Int16, as: T.Type) -> UnsafeMutablePointer<T>? {
+    guard let bytes = resourceFile.resource(type: type, id: id) else { return nil }
+    guard let ptr = AllocPtr(max(bytes.count, 1)) else { return nil }
+    bytes.withUnsafeBytes { raw in
+        ptr.copyMemory(from: raw.baseAddress!, byteCount: bytes.count)
+    }
+    return ptr.assumingMemoryBound(to: T.self)
+}
+
+// Equivalent of GetHandleSize(hand) for a resource loaded via loadResource above.
+private func resourceByteCount(_ resourceFile: ResourceFile, _ type: ResType, _ id: Int16) -> Int {
+    resourceFile.resource(type: type, id: id)?.count ?? 0
 }
 
 private var gDiskShadowPrefs = PrefsType()
@@ -130,11 +198,10 @@ func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDef
 
     // OPEN THE FILE'S REZ FORK
 
-    let fRefNum = FSpOpenResFile(&fsSpecSkeleton, Int8(fsRdPerm.rawValue))
-    SwGameAssert(fRefNum != -1)
-
-    UseResFile(fRefNum)
-    SwGameAssert(kNoErr == ResError())
+    guard let resourceFile = loadResourceFork(sibling: &fsSpecSkeleton) else {
+        SwFatal("LoadSkeletonFile: couldn't read skeleton resource fork")
+        return nil
+    }
 
     // ALLOC MEMORY FOR SKELETON INFO STRUCTURE
 
@@ -142,25 +209,19 @@ func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDef
 
     // READ SKELETON RESOURCES
 
-    readDataFromSkeletonFile(skeleton, &fsSpecBG3D, Int32(skeletonType))
+    readDataFromSkeletonFile(resourceFile, skeleton, &fsSpecBG3D, Int32(skeletonType))
     PrimeBoneData(skeleton)
-
-    // CLOSE REZ FILE
-
-    CloseResFile(fRefNum)
 
     return skeleton
 }
 
-// Current rez file is set to the file.
-private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonDefType>, _ fsSpecBG3D: UnsafeMutablePointer<FSSpec>, _ skeletonType: Int32) {
+private func readDataFromSkeletonFile(_ resourceFile: ResourceFile, _ skeleton: UnsafeMutablePointer<SkeletonDefType>, _ fsSpecBG3D: UnsafeMutablePointer<FSSpec>, _ skeletonType: Int32) {
     // READ HEADER RESOURCE
 
-    guard let handHedr = GetResource(kResHedr, 1000) else {
+    guard let headerPtr = loadResource(resourceFile, kResHedr, 1000, as: SkeletonFile_Header_Type.self) else {
         SwFatal("ReadDataFromSkeletonFile: Error reading header resource!")
         return
     }
-    let headerPtr = handleData(handHedr, SkeletonFile_Header_Type.self)
     let version = SwizzleShort(&headerPtr.pointee.version)
     if version != SKELETON_FILE_VERS_NUM {
         SwFatal("Skeleton file has wrong version #")
@@ -170,7 +231,7 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
     skeleton.pointee.NumAnims = UInt8(numAnims)
     let numJoints = Int(SwizzleShort(&headerPtr.pointee.numJoints)) // get # joints in skeleton
     skeleton.pointee.NumBones = UInt8(numJoints)
-    ReleaseResource(handHedr)
+    SafeDisposePtr(headerPtr)
 
     if numJoints > Int(MAX_JOINTS) { // check for overload
         SwFatal("ReadDataFromSkeletonFile: numJoints > MAX_JOINTS")
@@ -191,12 +252,10 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
     for i in 0..<numJoints {
         // READ BONE DATA
 
-        guard let handBone = GetResource(kResBone, 1000 + Int16(i)) else {
+        guard let bonePtr = loadResource(resourceFile, kResBone, 1000 + Int16(i), as: File_BoneDefinitionType.self) else {
             SwFatal("Error reading Bone resource!")
             return
         }
-        HLock(handBone)
-        let bonePtr = handleData(handBone, File_BoneDefinitionType.self)
 
         // COPY BONE DATA INTO ARRAY
 
@@ -206,7 +265,7 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
         skeleton.pointee.Bones![i].coord.z = SwizzleFloat(&bonePtr.pointee.coord.z)
         skeleton.pointee.Bones![i].numPointsAttachedToBone = SwizzleUShort(&bonePtr.pointee.numPointsAttachedToBone) // # vertices/points that this bone has
         skeleton.pointee.Bones![i].numNormalsAttachedToBone = SwizzleUShort(&bonePtr.pointee.numNormalsAttachedToBone) // # vertex normals this bone has
-        ReleaseResource(handBone)
+        SafeDisposePtr(bonePtr)
 
         // ALLOC THE POINT & NORMALS SUB-ARRAYS
 
@@ -222,35 +281,31 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
 
         // READ POINT INDEX ARRAY
 
-        guard let handBonP = GetResource(kResBonP, 1000 + Int16(i)) else {
+        guard let bonPPtr = loadResource(resourceFile, kResBonP, 1000 + Int16(i), as: UInt16.self) else {
             SwFatal("Error reading BonP resource!")
             return
         }
-        HLock(handBonP)
-        var indexPtr = handleData(handBonP, UInt16.self)
 
         // COPY POINT INDEX ARRAY INTO BONE STRUCT
 
         for j in 0..<Int(skeleton.pointee.Bones![i].numPointsAttachedToBone) {
-            skeleton.pointee.Bones![i].pointList![j] = SwizzleUShort(indexPtr + j)
+            skeleton.pointee.Bones![i].pointList![j] = SwizzleUShort(bonPPtr + j)
         }
-        ReleaseResource(handBonP)
+        SafeDisposePtr(bonPPtr)
 
         // READ NORMAL INDEX ARRAY
 
-        guard let handBonN = GetResource(kResBonN, 1000 + Int16(i)) else {
+        guard let bonNPtr = loadResource(resourceFile, kResBonN, 1000 + Int16(i), as: UInt16.self) else {
             SwFatal("Error reading BonN resource!")
             return
         }
-        HLock(handBonN)
-        indexPtr = handleData(handBonN, UInt16.self)
 
         // COPY NORMAL INDEX ARRAY INTO BONE STRUCT
 
         for j in 0..<Int(skeleton.pointee.Bones![i].numNormalsAttachedToBone) {
-            skeleton.pointee.Bones![i].normalList![j] = SwizzleUShort(indexPtr + j)
+            skeleton.pointee.Bones![i].normalList![j] = SwizzleUShort(bonNPtr + j)
         }
-        ReleaseResource(handBonN)
+        SafeDisposePtr(bonNPtr)
     }
 
     // READ POINT RELATIVE OFFSETS
@@ -259,14 +314,12 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
     // which do not get rebuilt in the ModelDecompose function.
     // We need to restore these manually.
 
-    guard let handRelP = GetResource(kResRelP, 1000) else {
+    guard let pointPtr = loadResource(resourceFile, kResRelP, 1000, as: OGLPoint3D.self) else {
         SwFatal("Error reading RelP resource!")
         return
     }
-    HLock(handRelP)
-    let pointPtr = handleData(handRelP, OGLPoint3D.self)
 
-    let numRelPoints = Int(GetHandleSize(handRelP)) / MemoryLayout<OGLPoint3D>.size
+    let numRelPoints = resourceByteCount(resourceFile, kResRelP, 1000) / MemoryLayout<OGLPoint3D>.size
     if numRelPoints != Int(skeleton.pointee.numDecomposedPoints) {
         SwFatal("# of points in Reference Model has changed!")
     } else {
@@ -276,48 +329,45 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
             skeleton.pointee.decomposedPointList![i].boneRelPoint.z = SwizzleFloat(&(pointPtr + i).pointee.z)
         }
     }
-    ReleaseResource(handRelP)
+    SafeDisposePtr(pointPtr)
 
     // READ ANIM INFO
 
     for i in 0..<numAnims {
         // READ ANIM HEADER
 
-        guard let handAnHd = GetResource(kResAnHd, 1000 + Int16(i)) else {
+        guard let animHeaderPtr = loadResource(resourceFile, kResAnHd, 1000 + Int16(i), as: SkeletonFile_AnimHeader_Type.self) else {
             SwFatal("Error getting anim header resource")
             return
         }
-        HLock(handAnHd)
-        let animHeaderPtr = handleData(handAnHd, SkeletonFile_AnimHeader_Type.self)
 
         skeleton.pointee.NumAnimEvents![i] = UInt8(SwizzleShort(&animHeaderPtr.pointee.numAnimEvents)) // copy # anim events in anim
-        ReleaseResource(handAnHd)
+        SafeDisposePtr(animHeaderPtr)
 
         // READ ANIM-EVENT DATA
 
-        guard let handEvnt = GetResource(kResEvnt, 1000 + Int16(i)) else {
+        guard let animEventPtr0 = loadResource(resourceFile, kResEvnt, 1000 + Int16(i), as: AnimEventType.self) else {
             SwFatal("Error reading anim-event data resource!")
             return
         }
-        var animEventPtr = handleData(handEvnt, AnimEventType.self)
+        var animEventPtr = animEventPtr0
         for j in 0..<Int(skeleton.pointee.NumAnimEvents![i]) {
             skeleton.pointee.AnimEventsList![i]![j] = animEventPtr.pointee // copy whole thing
             skeleton.pointee.AnimEventsList![i]![j].time = SwizzleShort(&skeleton.pointee.AnimEventsList![i]![j].time) // then swizzle the 16-bit short value
             animEventPtr += 1
         }
-        ReleaseResource(handEvnt)
+        SafeDisposePtr(animEventPtr0)
 
         // READ # KEYFRAMES PER JOINT IN EACH ANIM
 
-        guard let handNumK = GetResource(kResNumK, 1000 + Int16(i)) else { // read array of #'s for this anim
+        guard let numKPtr = loadResource(resourceFile, kResNumK, 1000 + Int16(i), as: Int8.self) else { // read array of #'s for this anim
             SwFatal("Error reading # keyframes/joint resource!")
             return
         }
-        let numKPtr = handleData(handNumK, Int8.self)
         for j in 0..<numJoints {
             numKeyFramesBase(jointKeyframesBase(skeleton) + j)[i] = (numKPtr + j).pointee
         }
-        ReleaseResource(handNumK)
+        SafeDisposePtr(numKPtr)
     }
 
     for j in 0..<numJoints {
@@ -340,11 +390,11 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
 
             // READ A JOINT KEYFRAME
 
-            guard let handKeyF = GetResource(kResKeyF, 1000 + Int16(i * 100 + j)) else {
+            guard let keyFramePtr0 = loadResource(resourceFile, kResKeyF, 1000 + Int16(i * 100 + j), as: JointKeyframeType.self) else {
                 SwFatal("Error reading joint keyframes resource!")
                 return
             }
-            var keyFramePtr = handleData(handKeyF, JointKeyframeType.self)
+            var keyFramePtr = keyFramePtr0
             for k in 0..<numKeyframes { // copy this joint's keyframes for this anim
                 jointKeyframesBase(skeleton)[j].keyFrames![i]![k].tick = SwizzleLong(&keyFramePtr.pointee.tick)
                 jointKeyframesBase(skeleton)[j].keyFrames![i]![k].accelerationMode = SwizzleLong(&keyFramePtr.pointee.accelerationMode)
@@ -360,7 +410,7 @@ private func readDataFromSkeletonFile(_ skeleton: UnsafeMutablePointer<SkeletonD
 
                 keyFramePtr += 1
             }
-            ReleaseResource(handKeyF)
+            SafeDisposePtr(keyFramePtr0)
         }
     }
 }
@@ -435,20 +485,18 @@ func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
 private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) {
     // OPEN THE REZ-FORK
 
-    let fRefNum = FSpOpenResFile(specPtr, Int8(fsRdPerm.rawValue))
-    if fRefNum == -1 {
-        SwFatal("LoadPlayfield: FSpOpenResFile failed.  You seem to have a corrupt or missing file.  Please reinstall the game.")
+    guard let resourceFile = loadResourceFork(sibling: specPtr) else {
+        SwFatal("LoadPlayfield: couldn't read playfield resource fork.  You seem to have a corrupt or missing file.  Please reinstall the game.")
+        return
     }
-    UseResFile(fRefNum)
 
     // READ HEADER RESOURCE
 
-    guard let handHedr = GetResource(kResHedr, 1000) else {
+    guard let header = loadResource(resourceFile, kResHedr, 1000, as: PlayfieldHeaderType.self) else {
         SwAlert("ReadDataFromPlayfieldFile: Error reading header resource!")
         return
     }
 
-    let header = handleData(handHedr, PlayfieldHeaderType.self)
     gNumTerrainItems = SwizzleLong(&header.pointee.numItems)
     gTerrainTileWidth = Int(SwizzleLong(&header.pointee.mapWidth))
     gTerrainTileDepth = Int(SwizzleLong(&header.pointee.mapHeight))
@@ -461,7 +509,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     gNumUniqueSuperTiles = Int(SwizzleLong(&header.pointee.numUniqueSuperTiles))
     gNumLineMarkers = SwizzleLong(&header.pointee.numCheckpoints)
 
-    ReleaseResource(handHedr)
+    SafeDisposePtr(header)
 
     if gTerrainTileWidth % Int(SUPERTILE_SIZE) != 0 { // terrain must be non-fractional number of supertiles in w/h
         SwFatal("ReadDataFromPlayfieldFile: terrain width not a supertile multiple")
@@ -488,8 +536,8 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     }
     gSuperTileTextureGrid = alloc2DArray(Int16.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide))
 
-    if let handSTgd = GetResource(kResSTgd, 1000) { // load grid from rez
-        var src = handleData(handSTgd, Int16.self)
+    if let handSTgd = loadResource(resourceFile, kResSTgd, 1000, as: Int16.self) { // load grid from rez
+        var src = handSTgd
 
         for row in 0..<Int(gNumSuperTilesDeep) {
             for col in 0..<Int(gNumSuperTilesWide) {
@@ -499,7 +547,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             }
         }
 
-        ReleaseResource(handSTgd)
+        SafeDisposePtr(handSTgd)
     } else {
         SwFatal("ReadDataFromPlayfieldFile: Error reading supertile rez resource!")
     }
@@ -511,8 +559,8 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     gMapYCoords = alloc2DArray(Float.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1) // alloc 2D array for map
     gMapYCoordsOriginal = alloc2DArray(Float.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1) // and the copy of it
 
-    if let handYCrd = GetResource(kResYCrd, 1000) {
-        var src = handleData(handYCrd, Float.self)
+    if let handYCrd = loadResource(resourceFile, kResYCrd, 1000, as: Float.self) {
+        var src = handYCrd
         for row in 0...Int(gTerrainTileDepth) {
             for col in 0...Int(gTerrainTileWidth) {
                 let v = SwizzleFloat(src) * yScale
@@ -521,7 +569,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
                 gMapYCoords[row]![col] = v
             }
         }
-        ReleaseResource(handYCrd)
+        SafeDisposePtr(handYCrd)
     } else {
         SwAlert("ReadDataFromPlayfieldFile: Error reading height data resource!")
     }
@@ -530,14 +578,11 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // READ ITEM LIST
 
-    guard let handItms = GetResource(kResItms, 1000) else {
+    guard let rezItems = loadResource(resourceFile, kResItms, 1000, as: File_TerrainItemEntryType.self) else {
         SwFatal("ReadDataFromPlayfieldFile: Error reading itemlist resource!")
         return
     }
     do {
-        HLock(handItms)
-        let rezItems = handleData(handItms, File_TerrainItemEntryType.self)
-
         // COPY INTO OUR STRUCT
 
         gMasterItemList = AllocPtrClear(MemoryLayout<TerrainItemEntryType>.size * Int(gNumTerrainItems))?.assumingMemoryBound(to: TerrainItemEntryType.self) // alloc array of items
@@ -554,16 +599,14 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gMasterItemList[i].flags = SwizzleUShort(&rezItems[i].flags)
         }
 
-        ReleaseResource(handItms) // nuke the rez
+        SafeDisposePtr(rezItems) // nuke the rez
     }
 
     // SPLINE RELATED RESOURCES
 
     // READ SPLINE LIST
 
-    if let handSpln = GetResource(kResSpln, 1000) {
-        let splinePtr = handleData(handSpln, File_SplineDefType.self)
-
+    if let splinePtr = loadResource(resourceFile, kResSpln, 1000, as: File_SplineDefType.self) {
         gSplineList = AllocPtrClear(MemoryLayout<SplineDefType>.size * gNumSplines)?.assumingMemoryBound(to: SplineDefType.self) // allocate memory for spline data
 
         for i in 0..<gNumSplines {
@@ -577,7 +620,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gSplineList[i].bBox.right = SwizzleShort(&splinePtr[i].bBox.right)
         }
 
-        ReleaseResource(handSpln) // nuke the rez
+        SafeDisposePtr(splinePtr) // nuke the rez
     } else {
         gNumSplines = 0
         gSplineList = nil
@@ -588,16 +631,14 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     for i in 0..<gNumSplines {
         let spline = gSplineList + i // point to Nth spline
 
-        if let handSpPt = GetResource(kResSpPt, 1000 + Int16(i)) { // read this point list
-            let ptList = handleData(handSpPt, SplinePointType.self)
-
+        if let ptList = loadResource(resourceFile, kResSpPt, 1000 + Int16(i), as: SplinePointType.self) { // read this point list
             spline.pointee.pointList = AllocPtrClear(MemoryLayout<SplinePointType>.size * Int(spline.pointee.numPoints))?.assumingMemoryBound(to: SplinePointType.self) // alloc memory for point list
 
             for j in 0..<Int(spline.pointee.numPoints) { // swizzle
                 spline.pointee.pointList[j].x = SwizzleFloat(&ptList[j].x)
                 spline.pointee.pointList[j].z = SwizzleFloat(&ptList[j].z)
             }
-            ReleaseResource(handSpPt) // nuke the rez
+            SafeDisposePtr(ptList) // nuke the rez
         } else {
             SwFatal("ReadDataFromPlayfieldFile: cant get spline points rez")
         }
@@ -608,10 +649,8 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     for i in 0..<gNumSplines {
         let spline = gSplineList + i // point to Nth spline
 
-        if let handSpIt = GetResource(kResSpIt, 1000 + Int16(i)) {
-            SwGameAssert(GetHandleSize(handSpIt) == Int(MemoryLayout<SplineItemType>.size) * Int(spline.pointee.numItems))
-
-            let itemList = handleData(handSpIt, SplineItemType.self)
+        if let itemList = loadResource(resourceFile, kResSpIt, 1000 + Int16(i), as: SplineItemType.self) {
+            SwGameAssert(resourceByteCount(resourceFile, kResSpIt, 1000 + Int16(i)) == Int(MemoryLayout<SplineItemType>.size) * Int(spline.pointee.numItems))
 
             spline.pointee.itemList = AllocPtrClear(MemoryLayout<SplineItemType>.size * Int(spline.pointee.numItems))?.assumingMemoryBound(to: SplineItemType.self) // alloc memory for item list
 
@@ -622,7 +661,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
                 spline.pointee.itemList[j].type = SwizzleUShort(&itemList[j].type)
                 spline.pointee.itemList[j].flags = SwizzleUShort(&itemList[j].flags)
             }
-            ReleaseResource(handSpIt) // nuke the rez
+            SafeDisposePtr(itemList) // nuke the rez
         } else {
             SwFatal("ReadDataFromPlayfieldFile: cant get spline items rez")
         }
@@ -632,13 +671,11 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // READ FENCE LIST
 
-    if let handFenc = GetResource(kResFenc, 1000) {
+    if let inData = loadResource(resourceFile, kResFenc, 1000, as: FileFenceDefType.self) {
         gFenceList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gNumFences))?.assumingMemoryBound(to: FenceDefType.self) // alloc new ptr for fence data
         if gFenceList == nil {
             SwFatal("ReadDataFromPlayfieldFile: AllocPtr failed")
         }
-
-        let inData = handleData(handFenc, FileFenceDefType.self) // get ptr to input fence list
 
         for i in 0..<Int(gNumFences) { // copy data from rez to new list
             gFenceList[i].type = SwizzleUShort(&inData[i].type)
@@ -646,7 +683,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gFenceList[i].nubList = nil
             gFenceList[i].sectionVectors = nil
         }
-        ReleaseResource(handFenc)
+        SafeDisposePtr(inData)
     } else {
         gNumFences = 0
     }
@@ -654,13 +691,10 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     // READ FENCE NUB LIST
 
     for i in 0..<Int(gNumFences) {
-        guard let handFnNb = GetResource(kResFnNb, 1000 + Int16(i)) else { // get rez
+        guard let fileFencePoints = loadResource(resourceFile, kResFnNb, 1000 + Int16(i), as: FencePointType.self) else { // get rez
             SwFatal("ReadDataFromPlayfieldFile: cant get fence nub rez")
             return
         }
-        HLock(handFnNb)
-
-        let fileFencePoints = handleData(handFnNb, FencePointType.self)
 
         gFenceList[i].nubList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gFenceList[i].numNubs))?.assumingMemoryBound(to: OGLPoint3D.self) // alloc new ptr for nub array
         if gFenceList[i].nubList == nil {
@@ -672,18 +706,26 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gFenceList[i].nubList[j].z = Float(SwizzleLong(&fileFencePoints[j].z))
             gFenceList[i].nubList[j].y = 0
         }
-        ReleaseResource(handFnNb)
+        SafeDisposePtr(fileFencePoints)
     }
 
     // WATER RELATED RESOURCES
 
     // READ WATER LIST
+    //
+    // gWaterListHandle keeps this resource's data alive for the whole
+    // level's lifetime (not just this function), so instead of the
+    // temporary loadResource()/SafeDisposePtr() pair used elsewhere in this
+    // function, it gets its own permanent AllocPtrClear'd handle-shaped
+    // allocation (double indirection, matching gWaterListHandle's type) -
+    // disposed later via DisposeWaterListHandle (WaterInternal.h), which
+    // now calls SafeDisposePtr twice instead of Pomme's DisposeHandle.
 
-    if let handLiqd = GetResource(kResLiqd, 1000) {
-        DetachResource(handLiqd)
-        HLockHi(handLiqd)
-        gWaterListHandle = handLiqd.withMemoryRebound(to: UnsafeMutablePointer<WaterDefType>?.self, capacity: 1) { $0 }
-        gWaterList = gWaterListHandle!.pointee
+    if let waterData = loadResource(resourceFile, kResLiqd, 1000, as: WaterDefType.self) {
+        let handlePtr = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<WaterDefType>?>.size)!.assumingMemoryBound(to: UnsafeMutablePointer<WaterDefType>?.self)
+        handlePtr.pointee = waterData
+        gWaterListHandle = handlePtr
+        gWaterList = waterData
 
         for i in 0..<Int(gNumWaterPatches) { // swizzle
             gWaterList[i].type = SwizzleUShort(&gWaterList[i].type)
@@ -718,10 +760,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
         // READ CHECKPOINT LIST
 
-        if let handCkPt = GetResource(kResCkPt, 1000) {
-            HLock(handCkPt)
-            BlockMove(handCkPt.pointee, GetLineMarkerPtr(0), GetHandleSize(handCkPt))
-            ReleaseResource(handCkPt)
+        if let handCkPt = loadResource(resourceFile, kResCkPt, 1000, as: Int8.self) {
+            BlockMove(handCkPt, GetLineMarkerPtr(0), resourceByteCount(resourceFile, kResCkPt, 1000))
+            SafeDisposePtr(handCkPt)
 
             // CONVERT COORDINATES
 
@@ -745,10 +786,6 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             gNumLineMarkers = 0
         }
     }
-
-    // CLOSE REZ FILE
-
-    CloseResFile(fRefNum)
 
     // READ SUPERTILE IMAGE DATA FROM DATA FORK
 

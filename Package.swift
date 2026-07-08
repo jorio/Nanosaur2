@@ -1,12 +1,13 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-// Framework search path for the vendored extern/SDL3.framework (not an
-// xcframework, so it's linked via unsafe -F/-framework flags rather than a
-// binaryTarget). Paths in unsafe flags are resolved relative to the
-// package root.
-let sdlFrameworkSearchPath = ["-F", "extern"]
-let sdlLinkFlags = sdlFrameworkSearchPath + ["-framework", "SDL3"]
+// NOTE: this package currently only defines the standalone, independently
+// tested parser libraries (BG3DFile, ResourceFile). The full CNanosaur2Core/
+// Pomme/Nanosaur2Swift/Nanosaur2Exe targets from the CMake->SwiftPM migration
+// are commented out below - that migration is paused (see
+// project_nanosaur2_spm_migration in memory) and its file moves were
+// reverted, so those targets' `path:`s no longer exist. Re-enable them (and
+// restore the moves) when that migration resumes.
 
 let package = Package(
     name: "Nanosaur2",
@@ -15,7 +16,7 @@ let package = Package(
     ],
     products: [
         .library(name: "BG3DFile", type: .static, targets: ["BG3DFile"]),
-        .executable(name: "Nanosaur2", targets: ["Nanosaur2Exe"])
+        .library(name: "ResourceFile", type: .static, targets: ["ResourceFile"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-binary-parsing", from: "0.0.2")
@@ -33,6 +34,21 @@ let package = Package(
             name: "BG3DFileTests",
             dependencies: ["BG3DFile"]
         ),
+
+        // MARK: - ResourceFile (standalone, tested classic-Mac resource-fork parser)
+
+        .target(
+            name: "ResourceFile",
+            dependencies: [
+                .product(name: "BinaryParsing", package: "swift-binary-parsing")
+            ]
+        ),
+        .testTarget(
+            name: "ResourceFileTests",
+            dependencies: ["ResourceFile"]
+        ),
+
+        /* Paused pending SPM migration resuming - see note above.
 
         // MARK: - Pomme (Mac-toolbox-on-SDL compatibility layer)
         //
@@ -145,6 +161,7 @@ let package = Package(
                 .unsafeFlags(sdlLinkFlags),
             ]
         ),
+        */
     ],
     cxxLanguageStandard: .cxx20
 )

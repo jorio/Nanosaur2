@@ -127,14 +127,26 @@ if(ENABLE_SWIFT)
 	# this flat build and the standalone SPM package used for testing.
 	file(GLOB_RECURSE BG3DFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/BG3DFile/*.swift)
 	file(GLOB_RECURSE BINARYPARSING_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/swift-binary-parsing/BinaryParsing/*.swift")
+
+	# SDL3Swift (extern/SDL3Swift/SDL3) is PureSwift/SDL's SDL3 wrapper,
+	# vendored at commit 00c3f23 (see extern/SDL3Swift-gap-analysis.md for the
+	# wrapper gaps that were filled upstream before this was vendored). Same
+	# flat-compile-into-the-single-module treatment as BG3DFile/BinaryParsing
+	# above: its files all say `#if canImport(CSDL3) / import CSDL3 / #endif`
+	# (patched from the upstream `import CSDL3`), and since there's no
+	# separate CSDL3 module in this build, canImport(CSDL3) is false and the
+	# import is skipped - the C symbols it needs (SDL_Window, SDL_CreateWindow,
+	# etc.) are already ambiently visible via the bridging header, same as any
+	# other C symbol in this codebase.
+	file(GLOB_RECURSE SDL3SWIFT_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/SDL3Swift/SDL3/*.swift")
 endif()
 
-# Make source groups match file tree (GAME_SOURCES only - BG3DFile/BinaryParsing
-# sources live outside GAME_SRCDIR, so they're appended after grouping)
+# Make source groups match file tree (GAME_SOURCES only - BG3DFile/BinaryParsing/
+# SDL3Swift sources live outside GAME_SRCDIR, so they're appended after grouping)
 source_group(TREE ${GAME_SRCDIR} PREFIX "" FILES ${GAME_SOURCES})
 
 if(ENABLE_SWIFT)
-	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${BINARYPARSING_SOURCES})
+	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${BINARYPARSING_SOURCES} ${SDL3SWIFT_SOURCES})
 endif()
 
 if(WIN32)

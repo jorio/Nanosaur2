@@ -364,7 +364,17 @@ public final class MetalRenderer {
         guard let encoder, vertexCount > 0 else { return }
 
         let length = MemoryLayout<Float>.stride * kFloatsPerVertex * vertexCount
-        encoder.setVertexBytes(vertices, length: length, index: 0)
+        if length <= 4096 {
+            // Metal caps setVertexBytes at 4KB (hit in practice: a ~20-quad
+            // text mesh is 4320 bytes and trips the validation layer).
+            encoder.setVertexBytes(vertices, length: length, index: 0)
+        } else {
+            // Larger draws need a real buffer. Per-draw allocation is fine
+            // at menu-scale draw counts; revisit (ring buffer) if this ever
+            // handles per-frame 3D-world volume.
+            guard let buffer = device.makeBuffer(bytes: vertices, length: length, options: .storageModeShared) else { return }
+            encoder.setVertexBuffer(buffer, offset: 0, index: 0)
+        }
 
         switch primitive {
         case .triangles:

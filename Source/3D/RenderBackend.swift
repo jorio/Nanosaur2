@@ -69,12 +69,22 @@ protocol RenderBackend: AnyObject {
     /// for MetaObject group transforms.
     func multMatrix(_ m: UnsafePointer<Float>)
 
-    /// Binds a 2D texture so subsequent draws use it. Texture *creation*
-    /// (glGenTextures/glTexImage2D/glTexSubImage2D upload) is NOT covered
-    /// here - that's a much bigger Phase 2 design (maps to MTLTexture
-    /// creation + a copy pass, not a 1:1 verb) - this is only the per-draw
-    /// "make this existing texture current" step.
+    /// Binds a 2D texture so subsequent draws use it.
     func bindTexture(_ name: GLuint)
+
+    /// Creates a linear-filtered 2D texture from `width`x`height` pixels at
+    /// `imageMemory` and returns an opaque handle. The handle is typed
+    /// `GLuint` because every call site already treats texture names as
+    /// opaque 32-bit IDs (stored in `MOMaterialObject.objectData.textureName`
+    /// etc.) - nothing depends on it being a *real* GL object name, so a
+    /// future MetalRenderBackend can hand back a synthesized ID indexing its
+    /// own MTLTexture table instead of a GL name. `destFormat`/`srcFormat`/
+    /// `dataType` are GL enums (as glTexImage2D takes) describing the pixel
+    /// data's layout - always BGRA8/GL_UNSIGNED_INT_8_8_8_8_REV in practice.
+    func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint
+    /// Re-uploads pixels into an existing texture, keeping its size (used for
+    /// runtime-drawn/animated textures, e.g. the dual-screen minimap).
+    func updateTexture(_ name: GLuint, width: Int32, height: Int32, pixels: UnsafeRawPointer)
 
     func translate(_ x: Float, _ y: Float, _ z: Float)
     func scale(_ x: Float, _ y: Float, _ z: Float)
@@ -136,6 +146,24 @@ final class GLRenderBackend: RenderBackend {
     func multMatrix(_ m: UnsafePointer<Float>) { glMultMatrixf(m) }
 
     func bindTexture(_ name: GLuint) { glBindTexture(GLenum(GL_TEXTURE_2D), name) }
+
+    func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint {
+        var textureName: GLuint = 0
+        glGenTextures(1, &textureName)
+        glBindTexture(GLenum(GL_TEXTURE_2D), textureName)
+
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+
+        glTexImage2D(GLenum(GL_TEXTURE_2D), 0, destFormat, width, height, 0, GLenum(srcFormat), GLenum(dataType), imageMemory)
+
+        return textureName
+    }
+
+    func updateTexture(_ name: GLuint, width: Int32, height: Int32, pixels: UnsafeRawPointer) {
+        glBindTexture(GLenum(GL_TEXTURE_2D), name)
+        glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, width, height, GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
+    }
 
     func translate(_ x: Float, _ y: Float, _ z: Float) { glTranslatef(x, y, z) }
     func scale(_ x: Float, _ y: Float, _ z: Float) { glScalef(x, y, z) }

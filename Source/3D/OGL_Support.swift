@@ -1123,29 +1123,12 @@ func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32
         ConvertTextureToGrey(imageMemory, Int16(width), Int16(height), srcFormat, dataType)
     }
 
-    // GET A UNIQUE TEXTURE NAME & INITIALIZE IT
+    // GET A UNIQUE TEXTURE NAME & INITIALIZE IT, LOAD TEXTURE AND/OR MIPMAPS
 
-    var textureName: GLuint = 0
-    glGenTextures(1, &textureName)
-    _ = OGL_CheckError()
-
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName) // this is now the currently active texture
-    _ = OGL_CheckError()
-
-    // LOAD TEXTURE AND/OR MIPMAPS
-
-    glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
-    glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
-
-    glTexImage2D(GLenum(GL_TEXTURE_2D),
-                 0, // mipmap level
-                 destFormat, // format in OpenGL
-                 width, // width in pixels
-                 height, // height in pixels
-                 0, // border
-                 GLenum(srcFormat), // what my format is
-                 GLenum(dataType), // size of each r,g,b
-                 imageMemory) // pointer to the actual texture pixels
+    let textureName = gRenderBackend.createTexture(
+        width: width, height: height,
+        destFormat: destFormat, srcFormat: srcFormat, dataType: dataType,
+        imageMemory: imageMemory)
 
     // SEE IF RAN OUT OF MEMORY WHILE COPYING TO OPENGL
 
@@ -1469,9 +1452,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 // MARK: - OGL: RAM texture has changed
 
 func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
-    gRenderBackend.bindTexture(textureName) // this is now the currently active texture
-
-    glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, Int32(width), Int32(height), GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
+    gRenderBackend.updateTexture(textureName, width: Int32(width), height: Int32(height), pixels: pixels)
 }
 
 // MARK: - OGL: Texture set OpenGL texture

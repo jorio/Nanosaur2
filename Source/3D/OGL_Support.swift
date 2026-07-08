@@ -1800,7 +1800,7 @@ func OGL_PopState() {
 func OGL_EnableLighting() {
     if gMyState_Lighting == 0 {
         gMyState_Lighting = 1
-        glEnable(GLenum(GL_LIGHTING))
+        gRenderBackend.enableLighting()
     }
 }
 
@@ -1809,7 +1809,7 @@ func OGL_EnableLighting() {
 func OGL_DisableLighting() {
     if gMyState_Lighting != 0 {
         gMyState_Lighting = 0
-        glDisable(GLenum(GL_LIGHTING))
+        gRenderBackend.disableLighting()
     }
 }
 
@@ -1818,7 +1818,7 @@ func OGL_DisableLighting() {
 func OGL_EnableBlend() {
     if !gMyState_Blend {
         gMyState_Blend = true
-        glEnable(GLenum(GL_BLEND))
+        gRenderBackend.enableBlend()
     }
 }
 
@@ -1827,7 +1827,7 @@ func OGL_EnableBlend() {
 func OGL_DisableBlend() {
     if gMyState_Blend {
         gMyState_Blend = false
-        glDisable(GLenum(GL_BLEND))
+        gRenderBackend.disableBlend()
     }
 }
 
@@ -1839,12 +1839,12 @@ func OGL_EnableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if !gMyState_Texture2D {
             gMyState_Texture2D = true
-            glEnable(GLenum(GL_TEXTURE_2D))
+            gRenderBackend.enableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        glEnable(GLenum(GL_TEXTURE_2D))
+        gRenderBackend.enableTexture2D()
     }
 }
 
@@ -1856,12 +1856,12 @@ func OGL_DisableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if gMyState_Texture2D {
             gMyState_Texture2D = false
-            glDisable(GLenum(GL_TEXTURE_2D))
+            gRenderBackend.disableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        glDisable(GLenum(GL_TEXTURE_2D))
+        gRenderBackend.disableTexture2D()
     }
 }
 
@@ -1898,7 +1898,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
         b != gMyState_Color.b ||
         a != gMyState_Color.a
     {
-        glColor4f(r, g, b, a)
+        gRenderBackend.setColor4f(r, g, b, a)
 
         gMyState_Color.r = r
         gMyState_Color.g = g
@@ -1912,7 +1912,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
 func OGL_EnableCullFace() {
     if !gMyState_CullFace {
         gMyState_CullFace = true
-        glEnable(GLenum(GL_CULL_FACE))
+        gRenderBackend.enableCullFace()
     }
 }
 
@@ -1921,7 +1921,7 @@ func OGL_EnableCullFace() {
 func OGL_DisableCullFace() {
     if gMyState_CullFace {
         gMyState_CullFace = false
-        glDisable(GLenum(GL_CULL_FACE))
+        gRenderBackend.disableCullFace()
     }
 }
 
@@ -1930,7 +1930,7 @@ func OGL_DisableCullFace() {
 func OGL_EnableFog() {
     if !gMyState_Fog {
         gMyState_Fog = true
-        glEnable(GLenum(GL_FOG))
+        gRenderBackend.enableFog()
     }
 }
 
@@ -1939,7 +1939,7 @@ func OGL_EnableFog() {
 func OGL_DisableFog() {
     if gMyState_Fog {
         gMyState_Fog = false
-        glDisable(GLenum(GL_FOG))
+        gRenderBackend.disableFog()
     }
 }
 
@@ -1947,7 +1947,7 @@ func OGL_DisableFog() {
 
 func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
     if sfactor != gMyState_BlendFuncS || dfactor != gMyState_BlendFuncD {
-        glBlendFunc(sfactor, dfactor)
+        gRenderBackend.blendFunc(sfactor, dfactor)
 
         gMyState_BlendFuncS = sfactor
         gMyState_BlendFuncD = dfactor

@@ -401,6 +401,23 @@ private func OGL_CreateDrawContext() {
 
     try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
 
+    // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal)
+    //
+    // Must happen here, AFTER SDL_GL_CreateContext/MakeCurrent above, NOT
+    // before: adding a Metal-backed view to gSDLWindow before the GL context
+    // exists corrupts the window's surface for SDL_GL_CreateContext, which
+    // then fails with "The specified window isn't an OpenGL window" (hit
+    // this empirically - see docs/metal-renderer-plan.md). See
+    // MetalRenderBackend.swift's header comment for why keeping this GL
+    // context alive (just never presented) alongside the Metal view is the
+    // whole point - it's what lets not-yet-migrated raw gl* calls elsewhere
+    // in the codebase keep working harmlessly.
+    if gMetalMode != 0 {
+        if !SwMetalBackend_Activate() {
+            SwLog("--metal: SwMetalBackend_Activate failed, falling back to GL")
+        }
+    }
+
     // SEE IF SUPPORT 2048x2048 TEXTURES
 
     var maxTexSize: GLint = 0

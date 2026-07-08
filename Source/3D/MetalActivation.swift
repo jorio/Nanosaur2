@@ -2,12 +2,17 @@
 //
 // Phase 2 "real" Metal activation (docs/metal-renderer-plan.md), as opposed
 // to MetalSpike.swift's Phase 0 throwaway clear-loop. Called once from
-// Boot.cpp's main() when --metal is passed, AFTER the normal Boot() has
-// already created gSDLWindow with its usual OpenGL context - that context is
-// deliberately left alive (see MetalRenderBackend.swift's header comment for
-// why: any not-yet-migrated raw gl* call elsewhere in the codebase needs a
-// valid context to execute against, even though nothing ever presents it
-// once a Metal backend is active).
+// OGL_CreateDrawContext() (OGL_Support.swift) when gMetalMode is set - NOT
+// from Boot.cpp, and specifically AFTER SDL_GL_CreateContext/MakeCurrent
+// have already run there. Order matters: adding a Metal-backed view to
+// gSDLWindow before the GL context exists corrupts the window's surface for
+// SDL_GL_CreateContext, which then fails ("The specified window isn't an
+// OpenGL window" - hit this empirically). The GL context itself is
+// deliberately left alive once Metal is active (see
+// MetalRenderBackend.swift's header comment for why: any not-yet-migrated
+// raw gl* call elsewhere in the codebase needs a valid context to execute
+// against, even though nothing ever presents it once a Metal backend is
+// active).
 //
 // Creates a second CAMetalLayer-backed SDL Metal view on the SAME window
 // (alongside the existing GL-backed view), and switches gRenderBackend over

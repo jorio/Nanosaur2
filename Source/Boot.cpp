@@ -336,18 +336,12 @@ int main(int argc, char** argv)
 #if _DEBUG
 	// In debug builds, don't catch anything so a debugger can break on an
 	// uncaught exception.
+	// Real Metal integration (docs/metal-renderer-plan.md Phase 2): activating
+	// Metal (SwMetalBackend_Activate, called from OGL_CreateDrawContext once
+	// the GL context exists - see that function's comment for why it must
+	// come AFTER, not before) happens inside GameMain()'s normal screen
+	// setup, not here. gMetalMode just carries the flag through to there.
 	Boot(argc, argv);
-	// Real Metal integration (docs/metal-renderer-plan.md Phase 2): Boot()
-	// already created gSDLWindow with its normal GL context above (gMetalMode
-	// doesn't change that) - SwMetalBackend_Activate() adds a second,
-	// Metal-backed view on the same window and switches gRenderBackend over.
-	// See MetalRenderBackend.swift's header comment for why leaving the GL
-	// context alive (just never presented) is safe. Falls back to normal GL
-	// rendering (gRenderBackend stays GLRenderBackend) if activation fails.
-	if (gMetalMode && !SwMetalBackend_Activate())
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "--metal: SwMetalBackend_Activate failed, falling back to GL");
-	}
 	GameMain();
 	Shutdown();
 	return 0;
@@ -358,10 +352,6 @@ int main(int argc, char** argv)
 	try
 	{
 		Boot(argc, argv);
-		if (gMetalMode && !SwMetalBackend_Activate())
-		{
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "--metal: SwMetalBackend_Activate failed, falling back to GL");
-		}
 		GameMain();
 	}
 	catch (std::exception& ex)		// Last-resort catch

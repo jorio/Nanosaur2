@@ -199,6 +199,36 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
     gNumPointers -= 1
 }
 
+// MARK: - Time (replaces Pomme's Microseconds/TickCount - see extern/Pomme/src/Time/TimeManager.cpp)
+//
+// Both are only ever used for relative timing (frame-rate smoothing, level-
+// load duration logging, demo-recording elapsed time), always via
+// subtraction/wraparound arithmetic, so the exact epoch doesn't matter as
+// long as it's monotonic within a single run - SDL's own monotonic clock
+// (nanoseconds since SDL_Init, already running well before these are ever
+// called) is a fine substitute for Pomme's "static-init time" epoch.
+
+private let gSwBootTimeNS = SDL_GetTicksNS()
+
+// Matches Microseconds(UnsignedWide*)'s signature so call sites don't change.
+func SwMicroseconds(_ out: inout UnsignedWide) {
+    // Wrapping subtraction: gSwBootTimeNS's lazy initializer runs on this
+    // global's first reference, which happens a few nanoseconds *after* the
+    // SDL_GetTicksNS() call to its left in this same expression - so the
+    // very first call here would otherwise underflow (SDL_GetTicksNS() at
+    // init time > the value just captured) and trap.
+    let usecs = (SDL_GetTicksNS() &- gSwBootTimeNS) / 1000
+    out.lo = UInt32(truncatingIfNeeded: usecs)
+    out.hi = UInt32(truncatingIfNeeded: usecs >> 32)
+}
+
+// Matches TickCount()'s signature (ticks are ~1/60 sec) so call sites don't change.
+func SwTickCount() -> UInt32 {
+    // Wrapping subtraction - see SwMicroseconds above for why.
+    let usecs = (SDL_GetTicksNS() &- gSwBootTimeNS) / 1000
+    return UInt32(truncatingIfNeeded: 60 * usecs / 1_000_000)
+}
+
 // MARK: - Misc
 
 func VerifySystem() {
@@ -216,7 +246,7 @@ func CalcFramesPerSecond() {
     var currTime = UnsignedWide()
 
     while true {
-        Microseconds(&currTime)
+        SwMicroseconds(&currTime)
 
         if gTimeDemo != 0 {
             fps = 40

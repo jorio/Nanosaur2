@@ -46,7 +46,7 @@ func LoadLevelArt() {
     let currentBiome = GetLevelBiome(gLevelNum)
 
     var timeStartLoad = UnsignedWide()
-    Microseconds(&timeStartLoad)
+    SwMicroseconds(&timeStartLoad)
 
     gLoadingThermoPercent = 0
 
@@ -160,7 +160,7 @@ func LoadLevelArt() {
     }
 
     var timeEndLoad = UnsignedWide()
-    Microseconds(&timeEndLoad)
+    SwMicroseconds(&timeEndLoad)
 
     SwLog("\(#function): \((timeEndLoad.lo - timeStartLoad.lo) / 1000) ms")
 }

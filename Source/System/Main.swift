@@ -404,7 +404,7 @@ private func playLevel() {
     _ = MakeFadeEvent(UInt8(kFadeFlags_In), 1.0)
 
     if gTimeDemo != 0 {
-        gTimeDemoStartTime = TickCount()
+        gTimeDemoStartTime = SwTickCount()
     }
 
     GrabMouse(1)
@@ -508,7 +508,7 @@ private func playLevel() {
     }
 
     if gTimeDemo != 0 {
-        gTimeDemoEndTime = TickCount()
+        gTimeDemoEndTime = SwTickCount()
         let ticks = gTimeDemoEndTime - gTimeDemoStartTime
         let seconds = Float(ticks) / 60.0
 

@@ -57,10 +57,13 @@ tryAgain:
 	dataPath = dataPath.lexically_normal();
 
 	// Set data spec -- Lets the game know where to find its asset files
-	gDataSpec = Pomme::Files::HostPathToFSSpec(dataPath / "System");
+	gDataSpec = SwHostPathToFSSpec((const char*)(dataPath / "System").u8string().c_str());
+	// gPommeDataSpec: see its declaration in game.h for why this stays on
+	// Pomme's own HostPathToFSSpec - it's Sound.swift's exclusive use.
+	gPommeDataSpec = Pomme::Files::HostPathToFSSpec(dataPath / "System");
 
 	FSSpec someDataFileSpec;
-	OSErr iErr = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":System:gamecontrollerdb.txt", &someDataFileSpec);
+	OSErr iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":System:gamecontrollerdb.txt", &someDataFileSpec);
 	if (iErr)
 	{
 		goto tryAgain;

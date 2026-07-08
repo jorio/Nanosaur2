@@ -56,13 +56,13 @@ func LoadLevelArt() {
 
     var spec = FSSpec()
 
-    _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:global.bg3d", &spec)
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:global.bg3d", &spec)
     ImportBG3D(&spec, Int32(MODEL_GROUP_GLOBAL), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
-    _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec)
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec)
     ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
-    _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:weapons.bg3d", &spec)
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:weapons.bg3d", &spec)
     ImportBG3D(&spec, Int32(MODEL_GROUP_WEAPONS), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     BG3D_SphereMapGeomteryMaterial(Int16(MODEL_GROUP_PLAYER), Int16(PLAYER_ObjType_JetPack),
@@ -72,7 +72,7 @@ func LoadLevelArt() {
 
     do {
         let path = ":Models:\(GetBiomeName(currentBiome)).bg3d"
-        _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+        _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
         ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELSPECIFIC), Int16(VertexArrayRangeType.bg3dModels.rawValue))
     }
 
@@ -108,7 +108,7 @@ func LoadLevelArt() {
     // LOAD OVERHEAD MAP
     do {
         let path = ":Sprites:maps:\(GetLevelName(gLevelNum))"
-        _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+        _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
         LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_OVERHEADMAP), path, 0)
     }
 
@@ -128,7 +128,7 @@ func LoadLevelArt() {
 
     do {
         let path = ":Terrain:\(GetLevelName(gLevelNum)).ter"
-        _ = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+        _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
         LoadPlayfield(&spec)
     }
 

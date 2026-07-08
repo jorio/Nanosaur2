@@ -266,9 +266,14 @@ func LoadSoundBank(_ bank: UInt8) {
         var refNum: Int16 = -1
         var iErr: OSErr = kNoErr
 
+        // Pomme's real FSMakeFSSpec/FSpOpenDF/FSClose (via gPommeDataSpec,
+        // not gDataSpec) - not FileSystem.swift's native replacements - since
+        // the refNum below is handed straight into Pomme's own Sound Manager
+        // functions, which need Pomme's own file-stream table. See
+        // gPommeDataSpec's declaration in game.h.
         for ext in kSoundExts {
             let path = ":Audio:\(gSoundBankNames[Int(effectDef.bank)] ?? ""):\(effectDef.name ?? "").\(ext)"
-            iErr = path.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+            iErr = path.withCString { FSMakeFSSpec(gPommeDataSpec.vRefNum, gPommeDataSpec.parID, $0, &spec) }
             if iErr == kNoErr { // if the file exists, stop; otherwise try next extension
                 break
             }
@@ -406,7 +411,9 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 
     let song = gSongs[Int(songNum)]
 
-    var iErr = song.path.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+    // Pomme's real FSMakeFSSpec/FSpOpenDF (via gPommeDataSpec) - see the
+    // comment on the equivalent call in LoadSoundBank above.
+    var iErr = song.path.withCString { FSMakeFSSpec(gPommeDataSpec.vRefNum, gPommeDataSpec.parID, $0, &spec) }
     SwGameAssert(iErr == kNoErr)
 
     iErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &musicFileRefNum)

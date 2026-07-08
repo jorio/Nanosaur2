@@ -68,6 +68,14 @@ extern	Boolean					gDualScreenMode;
 extern	Boolean					gGamePaused;
 extern	Boolean					gUsingVertexArrayRange;
 extern	FSSpec					gDataSpec;
+// Sound.swift's file loading hands its refNum straight into Pomme's own
+// Sound Manager functions (Pomme_SndLoadFileAsResource, SndStartFilePlay),
+// which read from Pomme's own internal file-stream table - that only works
+// with an FSSpec built via Pomme's real HostPathToFSSpec/FSMakeFSSpec/
+// FSpOpenDF, not FileSystem.swift's native replacements (whose FSSpecs use
+// an unrelated directory-registry numbering). gPommeDataSpec is gDataSpec's
+// Pomme-native twin, kept alive solely for that.
+extern	FSSpec					gPommeDataSpec;
 extern	GLuint					gVertexArrayRangeObjects[NUM_VERTEX_ARRAY_RANGES];
 extern	ParticleGroupType		*gParticleGroups[MAX_PARTICLE_GROUPS];
 extern	PrefsType				gGamePrefs;

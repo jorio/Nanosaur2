@@ -91,19 +91,19 @@ func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varTy
 
     // OPEN THE FILE & READ IT ALL INTO MEMORY
     var refNum: Int16 = 0
-    if FSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) != kNoErr {
+    if SwFSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) != kNoErr {
         SwFatal("ImportBG3D: FSpOpenDF failed")
     }
 
     var fileLength = 0
-    GetEOF(refNum, &fileLength)
+    SwGetEOF(refNum, &fileLength)
 
     var fileBytes = [UInt8](repeating: 0, count: fileLength)
     let readErr: OSErr = fileBytes.withUnsafeMutableBytes { buf in
         var readBytes = fileLength
-        return FSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
+        return SwFSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
     }
-    FSClose(refNum)
+    SwFSClose(refNum)
 
     if readErr != kNoErr {
         SwFatal("ImportBG3D: FSRead failed")

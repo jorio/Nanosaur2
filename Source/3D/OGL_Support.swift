@@ -1176,7 +1176,7 @@ func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWid
 
     // Try to load a JPEG file first.
     let jpgPath = partialPathStr + ".jpg"
-    jpgExists = kNoErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec)
+    jpgExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec)
     if jpgExists {
         var jpgLength: Int = 0
         let jpgData = LoadDataFile(jpgPath, &jpgLength)
@@ -1192,7 +1192,7 @@ func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWid
     // If we've already loaded a JPEG, the PNG is used as an alpha mask.
     // Otherwise, load the PNG as an RGBA image.
     let pngPath = partialPathStr + ".png"
-    pngExists = kNoErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pngPath, &dummySpec)
+    pngExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pngPath, &dummySpec)
     if pngExists {
         var pngLength: Int = 0
         let pngData = LoadDataFile(pngPath, &pngLength)

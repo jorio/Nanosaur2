@@ -6,6 +6,38 @@
 
 #include "input.h"
 
+		/* POSIX I/O for FileSystem.swift's native file I/O */
+		//
+		// Hand-declared instead of #include <fcntl.h>/<unistd.h>/<sys/stat.h>:
+		// those headers belong to the SDK's "Darwin" Clang module, and pulling
+		// in any part of that module from the bridging header (which Swift's
+		// ClangImporter always validates using real Clang modules, even for a
+		// textual -import-objc-header) forces validation of the WHOLE Darwin
+		// module - including its MacTypes.h, whose Point/Rect/Boolean/FSSpec
+		// definitions collide with Pomme's own (same root cause as the
+		// SwiftPM migration's CoreServices blocker). The symbols themselves
+		// are already linked in via libSystem, so a bare prototype is enough.
+extern int open(const char* path, int flags, ...); // variadic - unusable from Swift directly, see SwOpen below
+extern long read(int fd, void* buf, unsigned long count);
+extern long write(int fd, const void* buf, unsigned long count);
+extern int close(int fd);
+extern long long lseek(int fd, long long offset, int whence);
+extern int mkdir(const char* path, unsigned short mode);
+extern int unlink(const char* path);
+extern int access(const char* path, int mode);
+
+// Swift can't call variadic C functions - this non-variadic wrapper always
+// passes a mode (harmless when SwO_CREAT isn't set, since it's ignored).
+static inline int SwOpen(const char* path, int flags, unsigned short mode) { return open(path, flags, mode); }
+
+#define SwO_RDONLY   0x0000
+#define SwO_RDWR     0x0002
+#define SwO_CREAT    0x0200
+#define SwSEEK_SET   0
+#define SwSEEK_CUR   1
+#define SwSEEK_END   2
+#define SwF_OK       0
+
 #define PREFS_FOLDER_NAME	"Nanosaur2"
 #define PREFS_MAGIC			"Nanosaur2 Prefs v0"
 #define PREFS_FILENAME		"Preferences"
@@ -126,4 +158,24 @@ typedef struct
 #define IsStereo() (gGamePrefs.stereoGlassesMode != STEREO_GLASSES_MODE_OFF)
 
 OSErr LoadPrefs(void);
+
+		/* NATIVE FILE I/O (FileSystem.swift) */
+		//
+		// Replaces Pomme's FSMakeFSSpec/FSpOpenDF/FSRead/FSWrite/FSClose/
+		// GetEOF/FSpDelete/FindFolder/DirCreate (Files/HostVolume Mac-toolbox
+		// emulation). SwHostPathToFSSpec is called once at boot (Boot.cpp) to
+		// build gDataSpec from a real host path; everything else mirrors the
+		// Pomme functions it replaces so callers only need a Sw-prefixed
+		// rename.
+
+FSSpec SwHostPathToFSSpec(const char* cFullPath);
+OSErr SwFSMakeFSSpec(short vRefNum, long parID, const char* cstrFileName, FSSpec* spec);
+OSErr SwFSpOpenDF(const FSSpec* spec, char permission, short* refNum);
+OSErr SwFSRead(short refNum, long* count, Ptr buffPtr);
+OSErr SwFSWrite(short refNum, long* count, Ptr buffPtr);
+OSErr SwFSClose(short refNum);
+OSErr SwGetEOF(short refNum, long* logEOF);
+OSErr SwFSpDelete(const FSSpec* spec);
+OSErr SwFindFolder(short vRefNum, OSType folderType, char createFolder, short* foundVRefNum, long* foundDirID);
+OSErr SwDirCreate(short vRefNum, long parentDirID, const char* cstrDirectoryName, long* createdDirID);
 

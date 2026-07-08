@@ -87,42 +87,37 @@ private let kBadFileFormat: OSErr = -208
 // FSpOpenResFile/Handle-based Resource Manager emulation; now it's read via
 // Sources/ResourceFile (a tested, standalone parser - see
 // Tests/ResourceFileTests) instead, to reduce this project's dependency on
-// Pomme. Only the resource-reading path changes: FSMakeFSSpec/FSpOpenDF/
-// FSRead/FSClose (plain file I/O, not the Resource Manager) are unchanged.
+// Pomme. Only the resource-reading path changes: SwFSMakeFSSpec/SwFSpOpenDF/
+// SwFSRead/SwFSClose (plain file I/O, see FileSystem.swift) are unchanged.
 
 // Appends ".rsrc" to `spec`'s filename and resolves the sibling FSSpec in the
-// same directory - the on-disk convention for a resource-fork companion file
-// (mirrors extern/Pomme/src/Files/HostVolume.cpp's OpenFork resource-fork
-// path derivation).
+// same directory - the on-disk convention for a resource-fork companion file.
 private func rsrcCompanionSpec(of spec: UnsafeMutablePointer<FSSpec>) -> FSSpec {
-    // Despite the Str255 typedef, Pomme's FSSpec.cName is a plain
-    // NUL-terminated C string (see HostVolume::ToFSSpec's snprintf), not a
-    // Pascal string - no length-byte prefix.
     let cNamePtr = UnsafeMutableRawPointer(spec.pointer(to: \.cName)!).assumingMemoryBound(to: Int8.self)
     let filename = String(cString: cNamePtr) + ".rsrc"
 
     var rsrcSpec = FSSpec()
-    _ = filename.withCString { FSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, $0, &rsrcSpec) }
+    _ = filename.withCString { SwFSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, $0, &rsrcSpec) }
     return rsrcSpec
 }
 
-// Plain data-fork read of an already-resolved FSSpec (same FSpOpenDF/GetEOF/
-// FSRead/FSClose pattern already used elsewhere in this codebase, e.g.
-// ImportBG3D in Bg3d.swift).
+// Plain data-fork read of an already-resolved FSSpec (same SwFSpOpenDF/
+// SwGetEOF/SwFSRead/SwFSClose pattern already used elsewhere in this
+// codebase, e.g. ImportBG3D in Bg3d.swift).
 private func readWholeFile(_ spec: UnsafeMutablePointer<FSSpec>) -> [UInt8]? {
     var refNum: Int16 = 0
-    guard FSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) == kNoErr else {
+    guard SwFSpOpenDF(spec, Int8(fsRdPerm.rawValue), &refNum) == kNoErr else {
         return nil
     }
-    defer { FSClose(refNum) }
+    defer { SwFSClose(refNum) }
 
     var fileLength = 0
-    GetEOF(refNum, &fileLength)
+    SwGetEOF(refNum, &fileLength)
 
     var fileBytes = [UInt8](repeating: 0, count: fileLength)
     let readErr: OSErr = fileBytes.withUnsafeMutableBytes { buf in
         var readBytes = fileLength
-        return FSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
+        return SwFSRead(refNum, &readBytes, buf.baseAddress!.assumingMemoryBound(to: Int8.self))
     }
     guard readErr == kNoErr else { return nil }
 
@@ -191,10 +186,10 @@ func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDef
     var fsSpecBG3D = FSSpec()
 
     var pathBuf = ":Skeletons:\(modelName).skeleton"
-    _ = pathBuf.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecSkeleton) }
+    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecSkeleton) }
 
     pathBuf = ":Skeletons:\(modelName).bg3d"
-    _ = pathBuf.withCString { FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecBG3D) }
+    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecBG3D) }
 
     // OPEN THE FILE'S REZ FORK
 
@@ -792,7 +787,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     // OPEN THE DATA FORK
 
     var dataForkRefNum: Int16 = 0
-    if FSpOpenDF(specPtr, Int8(fsRdPerm.rawValue), &dataForkRefNum) != kNoErr {
+    if SwFSpOpenDF(specPtr, Int8(fsRdPerm.rawValue), &dataForkRefNum) != kNoErr {
         SwFatal("ReadDataFromPlayfieldFile: FSpOpenDF failed!")
     }
 
@@ -858,7 +853,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // CLOSE THE FILE
 
-    FSClose(dataForkRefNum)
+    SwFSClose(dataForkRefNum)
 }
 
 // MARK: - Supertile Textures
@@ -874,7 +869,7 @@ func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
     var readSize = Int(size)
     let iErr1: OSErr = withUnsafeMutablePointer(to: &dataSize) {
         $0.withMemoryRebound(to: Int8.self, capacity: 4) {
-            FSRead(fRefNum, &readSize, $0)
+            SwFSRead(fRefNum, &readSize, $0)
         }
     }
     SwGameAssert(iErr1 == 0)
@@ -889,7 +884,7 @@ func LoadSuperTilePixelBuffer(_ fRefNum: Int16) -> Ptr! {
 
     size = dataSize
     readSize = Int(size)
-    let iErr2 = FSRead(fRefNum, &readSize, jpegBuffer)
+    let iErr2 = SwFSRead(fRefNum, &readSize, jpegBuffer)
     SwGameAssert(iErr2 == 0)
 
     // DECOMPRESS THE IMAGE
@@ -1103,13 +1098,13 @@ func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
     var createdDirID: Int = 0
 
-    let iErr = FindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gPrefsFolderVRefNum, &gPrefsFolderDirID) // locate the folder
+    let iErr = SwFindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gPrefsFolderVRefNum, &gPrefsFolderDirID) // locate the folder
     if iErr != kNoErr {
         SwAlert("Warning: Cannot locate the Preferences folder.")
     }
 
     if createIt != 0 {
-        return DirCreate(gPrefsFolderVRefNum, gPrefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
+        return SwDirCreate(gPrefsFolderVRefNum, gPrefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
     }
 
     return iErr
@@ -1117,7 +1112,7 @@ func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
 
 private func makeFSSpecForUserDataFile(_ filename: String, _ spec: UnsafeMutablePointer<FSSpec>) -> OSErr {
     let path = ":\(PREFS_FOLDER_NAME_SWIFT):\(filename)"
-    return path.withCString { FSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, $0, spec) }
+    return path.withCString { SwFSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, $0, spec) }
 }
 
 private let PREFS_FOLDER_NAME_SWIFT = "Nanosaur2"
@@ -1138,7 +1133,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
     var refNum: Int16 = 0
-    var iErr = FSpOpenDF(&file, Int8(fsRdPerm.rawValue), &refNum)
+    var iErr = SwFSpOpenDF(&file, Int8(fsRdPerm.rawValue), &refNum)
     if iErr != kNoErr {
         return iErr
     }
@@ -1146,21 +1141,21 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     // CHECK FILE LENGTH
 
     var eof: Int = 0
-    GetEOF(refNum, &eof)
+    SwGetEOF(refNum, &eof)
 
     if eof != magicLength + payloadLength {
         SwLog("File '\(String(cString: filename))' appears to be corrupt!")
-        FSClose(refNum)
+        SwFSClose(refNum)
         return kBadFileFormat
     }
 
     // READ HEADER
 
     var count = magicLength
-    iErr = fileMagic.withUnsafeMutableBufferPointer { FSRead(refNum, &count, $0.baseAddress) }
+    iErr = fileMagic.withUnsafeMutableBufferPointer { SwFSRead(refNum, &count, $0.baseAddress) }
     if iErr != kNoErr || count != magicLength || strncmp(magic, fileMagic, magicLength - 1) != 0 {
         SwLog("File '\(String(cString: filename))' appears to be corrupt!")
-        FSClose(refNum)
+        SwFSClose(refNum)
         return kBadFileFormat
     }
 
@@ -1169,11 +1164,11 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     let payloadCopy = AllocPtrClear(payloadLength)!.assumingMemoryBound(to: Int8.self)
 
     count = payloadLength
-    iErr = FSRead(refNum, &count, payloadCopy)
+    iErr = SwFSRead(refNum, &count, payloadCopy)
     if iErr != kNoErr || count != payloadLength {
         SwLog("File '\(String(cString: filename))' appears to be corrupt!")
         SafeDisposePtr(payloadCopy)
-        FSClose(refNum)
+        SwFSClose(refNum)
         return kBadFileFormat
     }
 
@@ -1182,7 +1177,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     BlockMove(payloadCopy, payloadPtr, payloadLength)
 
     SafeDisposePtr(payloadCopy)
-    FSClose(refNum)
+    SwFSClose(refNum)
     return kNoErr
 }
 
@@ -1195,7 +1190,7 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     // CREATE BLANK FILE
 
     _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
-    FSpDelete(&file) // delete any existing file
+    SwFSpDelete(&file) // delete any existing file
     var iErr = FSpCreate(&file, kGameIDFourCC, kPrefFourCC, -1) // smSystemScript
     if iErr != kNoErr {
         return iErr
@@ -1204,26 +1199,26 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     // OPEN FILE
 
     var refNum: Int16 = 0
-    iErr = FSpOpenDF(&file, Int8(fsRdWrPerm.rawValue), &refNum)
+    iErr = SwFSpOpenDF(&file, Int8(fsRdWrPerm.rawValue), &refNum)
     if iErr != kNoErr {
-        FSpDelete(&file)
+        SwFSpDelete(&file)
         return iErr
     }
 
     // WRITE MAGIC
 
     var count = Int(strlen(magic)) + 1
-    iErr = FSWrite(refNum, &count, UnsafeMutablePointer(mutating: magic))
+    iErr = SwFSWrite(refNum, &count, UnsafeMutablePointer(mutating: magic))
     if iErr != kNoErr {
-        FSClose(refNum)
+        SwFSClose(refNum)
         return iErr
     }
 
     // WRITE DATA
 
     count = payloadLength
-    iErr = FSWrite(refNum, &count, payloadPtr)
-    FSClose(refNum)
+    iErr = SwFSWrite(refNum, &count, payloadPtr)
+    SwFSClose(refNum)
 
     SwLog("Wrote \(String(cString: filename))")
 
@@ -1236,7 +1231,7 @@ func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
     _ = InitPrefsFolder(1)
     var iErr = makeFSSpecForUserDataFile(String(cString: filename), &file)
     if iErr == kNoErr {
-        iErr = FSpDelete(&file)
+        iErr = SwFSpDelete(&file)
     }
     return iErr
 }
@@ -1245,18 +1240,18 @@ func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
 func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
     var spec = FSSpec()
 
-    let err = FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+    let err = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
     if err != kNoErr {
         return nil
     }
 
     var refNum: Int16 = 0
-    let openErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &refNum)
+    let openErr = SwFSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &refNum)
     SwGameAssertMessage(openErr == 0, path)
 
     // Get number of bytes until EOF
     var fileLength = 0
-    GetEOF(refNum, &fileLength)
+    SwGetEOF(refNum, &fileLength)
 
     // Prep data buffer
     // Alloc 1 extra byte so LoadTextFile can return a null-terminated C string!
@@ -1264,9 +1259,9 @@ func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePoint
 
     // Read file into data buffer
     var readBytes = fileLength
-    let readErr = FSRead(refNum, &readBytes, data)
+    let readErr = SwFSRead(refNum, &readBytes, data)
     SwGameAssertMessage(readErr == kNoErr, path)
-    FSClose(refNum)
+    SwFSClose(refNum)
 
     SwGameAssertMessage(fileLength == readBytes, path)
 

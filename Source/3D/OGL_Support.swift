@@ -480,8 +480,8 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
     gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
     gRenderBackend.loadIdentity()
 
-    glClearColor(0, 0, 0, 1)
-    glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+    gRenderBackend.setClearColor(0, 0, 0)
+    gRenderBackend.clearColorAndDepth()
 
     glEnable(GLenum(GL_TEXTURE_2D))
     gRenderBackend.bindTexture(gDualScreenBackgroundTexture)
@@ -550,8 +550,8 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 
     // SET VARIOUS STATE INFO
 
-    glClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b, 1.0)
-    glEnable(GLenum(GL_DEPTH_TEST)) // use z-buffer
+    gRenderBackend.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
+    gRenderBackend.enableDepthTest() // use z-buffer
 
     var color: [GLfloat] = [1, 1, 1, 1] // set global material color to white
     glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
@@ -638,7 +638,7 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 // MARK: - Clear all buffers to black
 
 private func ClearAllBuffersToBlack() {
-    glClearColor(0, 0, 0, 1)
+    gRenderBackend.setClearColor(0, 0, 0)
     if isStereoShutter() {
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
@@ -652,10 +652,10 @@ private func ClearAllBuffersToBlack() {
         SDL_GL_SwapWindow(gSDLWindow)
         _ = OGL_CheckError()
     } else {
-        glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        SDL_GL_SwapWindow(gSDLWindow)
-        glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        SDL_GL_SwapWindow(gSDLWindow)
+        gRenderBackend.clearColorAndDepth() // clear buffer
+        gRenderBackend.present()
+        gRenderBackend.clearColorAndDepth() // clear buffer
+        gRenderBackend.present()
 
         _ = OGL_CheckError()
     }

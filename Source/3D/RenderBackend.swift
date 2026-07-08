@@ -109,6 +109,10 @@ protocol RenderBackend: AnyObject {
     /// (glColorMask for anaglyph, glDrawBuffer for shutter glasses) - those
     /// are edge cases (plan's Phase 4), left as raw gl* calls for now.
     func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32)
+    /// Sets the colour `clearColorAndDepth()` clears to (matches
+    /// `glClearColor`'s persistent-state semantics - set once, applies to
+    /// every subsequent clear until changed again).
+    func setClearColor(_ r: Float, _ g: Float, _ b: Float)
     func clearColorAndDepth()
     func clearDepthOnly()
     func setWireframe(_ enabled: Bool)
@@ -180,6 +184,7 @@ final class GLRenderBackend: RenderBackend {
     func endImmediate() { glEnd() }
 
     func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32) { glViewport(x, y, w, h) }
+    func setClearColor(_ r: Float, _ g: Float, _ b: Float) { glClearColor(r, g, b, 1.0) }
     func clearColorAndDepth() { glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) }
     func clearDepthOnly() { glClear(GLbitfield(GL_DEPTH_BUFFER_BIT)) }
     func setWireframe(_ enabled: Bool) {

@@ -666,12 +666,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_U) != 0 { // we want to clamp the U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) == 0 { // see if clamping needs to be enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), Float(GL_CLAMP_TO_EDGE)) // nope, so set clamping
+                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_S), clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) != 0 { // see clamping is still enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), Float(GL_REPEAT))
+                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_S), clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we cleared it
             }
         }
@@ -680,12 +680,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_V) != 0 { // we want to clamp the V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) == 0 { // see if clamping needs to be enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), Float(GL_CLAMP_TO_EDGE)) // nope, so set clamping
+                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_T), clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) != 0 { // see clamping is still enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), Float(GL_REPEAT))
+                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_T), clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we cleared it
             }
         }
@@ -734,7 +734,7 @@ func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
 
     withUnsafePointer(to: matObj.pointee.matrix) {
         $0.withMemoryRebound(to: Float.self, capacity: 16) {
-            glMultMatrixf($0)
+            gRenderBackend.multMatrix($0)
         }
     }
 }
@@ -766,8 +766,8 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     let yOffset = (scale - 1) * 0.333 // apply small offset to keep nano within frame
 
-    glTranslatef(-x, -y + yOffset * height, 0)
-    glScalef(scale, scale, 1)
+    gRenderBackend.translate(-x, -y + yOffset * height, 0)
+    gRenderBackend.scale(scale, scale, 1)
 
     // ACTIVATE THE MATERIAL
 
@@ -775,12 +775,12 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     // DRAW QUAD
 
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 1); glVertex3f(x, y + height, z)
-    glTexCoord2f(1, 1); glVertex3f(x + width, y + height, z)
-    glTexCoord2f(1, 0); glVertex3f(x + width, y, z)
-    glTexCoord2f(0, 0); glVertex3f(x, y, z)
-    glEnd()
+    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x, y + height, z)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + width, y + height, z)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + width, y, z)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(x, y, z)
+    gRenderBackend.endImmediate()
 
     gPolysThisFrame += 2 // 2 more triangles
 
@@ -846,14 +846,14 @@ func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
     // DRAW IT
 
-    glBegin(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
 
-    glTexCoord2f(0, 0); glVertex2f(p[0].x + x, p[0].y + y)
-    glTexCoord2f(1, 0); glVertex2f(p[1].x + x, p[1].y + y)
-    glTexCoord2f(1, 1); glVertex2f(p[2].x + x, p[2].y + y)
-    glTexCoord2f(0, 1); glVertex2f(p[3].x + x, p[3].y + y)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p[0].x + x, p[0].y + y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p[1].x + x, p[1].y + y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(p[2].x + x, p[2].y + y)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(p[3].x + x, p[3].y + y)
 
-    glEnd()
+    gRenderBackend.endImmediate()
 
     gPolysThisFrame += 2 // 2 more tris
 }

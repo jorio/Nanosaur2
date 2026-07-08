@@ -547,11 +547,11 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOZWRITES) != 0 {
                 if !noZWrites {
-                    glDepthMask(0)
+                    gRenderBackend.setDepthWrite(false)
                     noZWrites = true
                 }
             } else if noZWrites {
-                glDepthMask(1)
+                gRenderBackend.setDepthWrite(true)
                 noZWrites = false
             }
 
@@ -559,24 +559,24 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOZBUFFER) != 0 {
                 if !noZBuffer {
-                    glDisable(UInt32(GL_DEPTH_TEST))
+                    OGL_DisableDepthTest()
                     noZBuffer = true
                 }
             } else if noZBuffer {
                 noZBuffer = false
-                glEnable(UInt32(GL_DEPTH_TEST))
+                OGL_EnableDepthTest()
             }
 
             // CHECK EDGE ALPHA CLIPPING
 
             if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gGlobalTransparency == 1.0 {
                 if !clipAlpha {
-                    glAlphaFunc(UInt32(GL_GREATER), 0.6) // draw any pixel who's Alpha > .6 (effectivly trims low alpha pixels).
+                    gRenderBackend.setAlphaClipping(trimLowAlpha: true)
                     clipAlpha = true
                 }
             } else if clipAlpha {
                 clipAlpha = false
-                glAlphaFunc(UInt32(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
+                gRenderBackend.setAlphaClipping(trimLowAlpha: false)
             }
 
             // AIM AT CAMERA
@@ -591,7 +591,7 @@ func DrawObjects() {
 
             // SHOW COLLISION BOXES
 
-            if gDebugMode == 2 {
+            if gDebugMode == 2, gMetalMode == 0 { // collision-box lines are still raw gl* - crash with no GL context
                 DrawCollisionBoxes(node, 0)
                 // DrawBoundingSpheres(node)
                 // DrawBoundingBoxes(node)
@@ -603,7 +603,7 @@ func DrawObjects() {
             // Beta testers have reported that the following fixes it - it's basically a forced reset of the glColor mode.
             // We cannot call our OGL_SetColor4f() function since it thinks the color is alredy 1,1,1,1, so we just force it here.
 
-            glColor4f(1, 1, 1, 1)
+            gRenderBackend.setColor4f(1, 1, 1, 1)
             gMyState_Color.r = 1
             gMyState_Color.g = 1
             gMyState_Color.b = 1
@@ -612,17 +612,17 @@ func DrawObjects() {
             // SEE IF DO U/V TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                glMatrixMode(UInt32(GL_TEXTURE)) // set texture matrix
-                glTranslatef(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
-                glMatrixMode(UInt32(GL_MODELVIEW))
+                gRenderBackend.matrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.translate(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
+                gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
             }
 
             // SUBMIT THE GEOMETRY
 
             if noLighting || node.pointee.Scale.y == 1.0 { // if scale == 1 or no lighting, then dont need to normalize vectors
-                glDisable(UInt32(GL_NORMALIZE))
+                gRenderBackend.setNormalizeNormals(false)
             } else {
-                glEnable(UInt32(GL_NORMALIZE))
+                gRenderBackend.setNormalizeNormals(true)
             }
 
             if let customDraw = node.pointee.CustomDrawFunction { // if has custom draw function, then override and use that
@@ -680,9 +680,9 @@ func DrawObjects() {
             // SEE IF END UV TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                glMatrixMode(UInt32(GL_TEXTURE)) // set texture matrix
-                glLoadIdentity()
-                glMatrixMode(UInt32(GL_MODELVIEW))
+                gRenderBackend.matrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.loadIdentity()
+                gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
             }
         } while false
 
@@ -694,11 +694,11 @@ func DrawObjects() {
     // RESET SETTINGS TO DEFAULT
 
     if noZBuffer {
-        glEnable(UInt32(GL_DEPTH_TEST))
+        OGL_EnableDepthTest()
     }
 
     if noZWrites {
-        glDepthMask(1)
+        gRenderBackend.setDepthWrite(true)
     }
 
     OGL_EnableCullFace()
@@ -709,7 +709,7 @@ func DrawObjects() {
     }
 
     if clipAlpha {
-        glAlphaFunc(UInt32(GL_NOTEQUAL), 0)
+        gRenderBackend.setAlphaClipping(trimLowAlpha: false)
     }
 
     gGlobalTransparency = 1.0 // reset this in case it has changed
@@ -718,7 +718,7 @@ func DrawObjects() {
     gGlobalColorFilter.b = 1.0
     gGlobalMaterialFlags = 0
 
-    glEnable(UInt32(GL_NORMALIZE))
+    gRenderBackend.setNormalizeNormals(true)
 }
 
 private func DrawCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!, _ old: UInt8) {

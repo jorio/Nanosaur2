@@ -407,11 +407,56 @@ func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
     OGL_PopState()
 }
 
+// Metal-mode path for MO_DrawGeometry_VertexArray below: the GL body is
+// built on client-state vertex arrays (glVertexPointer/glDrawElements),
+// which need a live GL context. Under --metal, expand the same indexed
+// triangle data through the facade's immediate-mode verbs instead. Covers
+// the single-material textured/vertex-colored case (all that QuadMesh/
+// TextMesh - i.e. menu text - uses); the GL path's multi-texture/texgen
+// (ENVMAP reflection) extras are 3D-world features, not implemented here.
+private func drawGeometryVertexArrayViaBackend(_ data: UnsafeMutablePointer<MOVertexArrayData>) {
+    // ACTIVATE MATERIAL #0 (same rule as the GL path: numMaterials > 0
+    // activates the first material; negative means the caller already set
+    // the texture; 0 means untextured)
+    let materials = materialsBase(data)
+    if data.pointee.numMaterials > 0 {
+        MO_DrawMaterial(materials[0])
+    }
+
+    let uvs = uvsBase(data)[0]
+    let colors = data.pointee.colorsFloat
+    let points = data.pointee.points!
+    let triangles = data.pointee.triangles!
+
+    gRenderBackend.beginImmediate(GLenum(GL_TRIANGLES))
+    for t in 0..<Int(data.pointee.numTriangles) {
+        let tri = triangles[t].vertexIndices
+        for index in [tri.0, tri.1, tri.2] {
+            let i = Int(index)
+            if let colors {
+                gRenderBackend.setColor4f(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
+            }
+            if let uvs {
+                gRenderBackend.texCoord2f(uvs[i].u, uvs[i].v)
+            }
+            gRenderBackend.vertex3f(points[i].x, points[i].y, points[i].z)
+        }
+    }
+    gRenderBackend.endImmediate()
+
+    gPolysThisFrame += data.pointee.numTriangles
+}
+
 func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     let data = UnsafeMutablePointer(mutating: dataC)!
     var useTexture = false
     var multiTexture = false
     var texGen = false
+
+    if gMetalMode != 0 { // no GL context - see drawGeometryVertexArrayViaBackend above
+        drawGeometryVertexArrayViaBackend(data)
+        return
+    }
 
     // SETUP VERTEX ARRAY
 

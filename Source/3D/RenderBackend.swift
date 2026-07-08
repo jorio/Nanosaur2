@@ -54,6 +54,18 @@ protocol RenderBackend: AnyObject {
 
     func enableDepthTest()
     func disableDepthTest()
+    /// Depth-buffer *write* toggle (`glDepthMask`), independent of the test.
+    func setDepthWrite(_ enabled: Bool)
+
+    /// The two alpha-test configurations the game ever uses
+    /// (`STATUS_BIT_CLIPALPHA6` in Objects.swift): trimLowAlpha=true is
+    /// `glAlphaFunc(GL_GREATER, 0.6)`, false is the default
+    /// `glAlphaFunc(GL_NOTEQUAL, 0)`.
+    func setAlphaClipping(trimLowAlpha: Bool)
+
+    /// `glEnable/glDisable(GL_NORMALIZE)` - only meaningful for the
+    /// fixed-function lit 3D path.
+    func setNormalizeNormals(_ enabled: Bool)
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float)
 
@@ -68,6 +80,9 @@ protocol RenderBackend: AnyObject {
     /// (`glMultMatrixf`) instead of replacing it - used by `MO_DrawMatrix`
     /// for MetaObject group transforms.
     func multMatrix(_ m: UnsafePointer<Float>)
+    /// Multiplies an orthographic projection onto the current matrix
+    /// (`glOrtho` semantics - call sites always `loadIdentity()` first).
+    func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double)
 
     /// Binds a 2D texture so subsequent draws use it.
     func bindTexture(_ name: GLuint)
@@ -139,6 +154,23 @@ final class GLRenderBackend: RenderBackend {
 
     func enableDepthTest() { glEnable(GLenum(GL_DEPTH_TEST)) }
     func disableDepthTest() { glDisable(GLenum(GL_DEPTH_TEST)) }
+    func setDepthWrite(_ enabled: Bool) { glDepthMask(enabled ? 1 : 0) }
+
+    func setAlphaClipping(trimLowAlpha: Bool) {
+        if trimLowAlpha {
+            glAlphaFunc(GLenum(GL_GREATER), 0.6) // draw any pixel who's Alpha > .6 (effectively trims low alpha pixels)
+        } else {
+            glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
+        }
+    }
+
+    func setNormalizeNormals(_ enabled: Bool) {
+        if enabled {
+            glEnable(GLenum(GL_NORMALIZE))
+        } else {
+            glDisable(GLenum(GL_NORMALIZE))
+        }
+    }
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { glColor4f(r, g, b, a) }
 
@@ -148,6 +180,9 @@ final class GLRenderBackend: RenderBackend {
     func loadIdentity() { glLoadIdentity() }
     func loadMatrix(_ m: UnsafePointer<Float>) { glLoadMatrixf(m) }
     func multMatrix(_ m: UnsafePointer<Float>) { glMultMatrixf(m) }
+    func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double) {
+        glOrtho(left, right, bottom, top, near, far)
+    }
 
     func bindTexture(_ name: GLuint) { glBindTexture(GLenum(GL_TEXTURE_2D), name) }
 

@@ -1669,28 +1669,43 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // UPDATE LIGHT POSITIONS
 
-    let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
-    let fillDirection = fillDirectionBase(lights)
-    for i in 0..<Int(lights.pointee.numFillLights) {
-        var lightVec = [GLfloat](repeating: 0, count: 4)
+    if gMetalMode == 0 { // fixed-function GL lights - no RenderBackend lighting model yet (see OGL_CreateLights)
+        let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
+        let fillDirection = fillDirectionBase(lights)
+        for i in 0..<Int(lights.pointee.numFillLights) {
+            var lightVec = [GLfloat](repeating: 0, count: 4)
 
-        lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
-        lightVec[1] = -fillDirection[i].y
-        lightVec[2] = -fillDirection[i].z
-        lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
+            lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
+            lightVec[1] = -fillDirection[i].y
+            lightVec[2] = -fillDirection[i].z
+            lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
+            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
+        }
     }
 
     // GET VARIOUS CAMERA MATRICES
 
-    withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
-    }
-    withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
-    }
-    withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), $0) }
+    if gMetalMode == 0 {
+        // The glGetFloatv readbacks re-read exactly what was loaded above:
+        // gWorldToViewMatrix (modelview, computed by OGL_SetGluLookAtMatrix)
+        // and gViewToFrustumMatrix (projection - EXCEPT in stereo mode, where
+        // glFrustum computed it GL-side, making this readback load-bearing).
+        withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
+        }
+        withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
+        }
+        withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), $0) }
+        }
+    } else {
+        // No GL context to introspect - but nothing to read back either:
+        // gWorldToViewMatrix/gViewToFrustumMatrix already hold the exact
+        // Swift-computed values that were loaded into the facade above
+        // (stereo's glFrustum path can't be active - no GL). Just derive the
+        // modelview copy.
+        gLocalToViewMatrix = gWorldToViewMatrix
     }
     gLocalToFrustumMatrix = gLocalToViewMatrix.multiplied(by: gViewToFrustumMatrix)
     gWorldToFrustumMatrix = gWorldToViewMatrix.multiplied(by: gViewToFrustumMatrix)
@@ -1712,6 +1727,14 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 // MARK: - OGL: Check error
 
 func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
+    // No GL context exists under --metal (see OGL_CreateDrawContext) -
+    // glGetError() itself EXC_BAD_ACCESSes with no current context, and
+    // there's nothing to check anyway. Guarded here at the source so the
+    // dozens of scattered OGL_CheckError() call sites don't each need it.
+    if gMetalMode != 0 {
+        return 0
+    }
+
     let error = glGetError()
     if error != 0 {
         var text = ""
@@ -2044,10 +2067,12 @@ func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     gRenderBackend.loadIdentity()
     gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
     gRenderBackend.loadIdentity()
-    glOrtho(0, 640, 480, 0, -10.0, 10.0)
+    gRenderBackend.ortho(0, 640, 480, 0, -10.0, 10.0)
 
-    glDisable(GLenum(GL_LIGHTING))
-    glEnable(GLenum(GL_COLOR_MATERIAL))
+    OGL_DisableLighting()
+    if gMetalMode == 0 {
+        glEnable(GLenum(GL_COLOR_MATERIAL))
+    }
 
     OGL_SetColor4f(1, 1, 1, 1)
 

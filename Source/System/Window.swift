@@ -61,12 +61,12 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_EnableBlend()
     OGL_SetColor4f(0, 0, 0, 1.0 - gGammaFadeFrac)
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex3f(gLogicalRect.right, gLogicalRect.top, 0)
-    glVertex3f(gLogicalRect.left, gLogicalRect.top, 0)
-    glVertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
-    glVertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
-    glEnd()
+    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
+    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.top, 0)
+    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
+    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }

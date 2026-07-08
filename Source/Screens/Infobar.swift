@@ -432,7 +432,7 @@ func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect {
 func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     OGL_DisableLighting()
     OGL_DisableCullFace()
-    glDisable(GLenum(GL_DEPTH_TEST)) // no z-buffer
+    OGL_DisableDepthTest() // no z-buffer
 
     // SET MATERIAL FLAGS
     //
@@ -441,8 +441,8 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // INIT MATRICES
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.loadIdentity()
 
     gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
     let left = gLogicalRect.left
@@ -452,16 +452,16 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
 
     if isStereo() {
         if gAnaglyphPass == 0 {
-            glOrtho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gRenderBackend.ortho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         } else {
-            glOrtho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gRenderBackend.ortho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         }
     } else {
-        glOrtho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
+        gRenderBackend.ortho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
     }
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.loadIdentity()
 }
 
 // MARK: - Draw infobar

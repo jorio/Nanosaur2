@@ -299,15 +299,15 @@ private let cMoveDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 private let cDrawDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { node in
     guard let node = node else { return }
     OGL_PushState(); SetInfobarSpriteState(0, 1); OGL_DisableTexture2D(); OGL_EnableBlend(); OGL_EnableCullFace()
-    glBegin(UInt32(GL_QUADS))
+    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
     let s = node.pointee.Scale.y; let menuTop = node.pointee.Coord.y - s/2; let menuBottom = node.pointee.Coord.y + s/2
     let taper: Float = 16; let c = node.pointee.ColorFilter
-    glColor4f(c.r, c.g, c.b, 0); glVertex2f(gLogicalRect.right, menuTop - taper); glVertex2f(gLogicalRect.left, menuTop - taper)
-    glColor4f(c.r, c.g, c.b, c.a); glVertex2f(gLogicalRect.left, menuTop); glVertex2f(gLogicalRect.right, menuTop)
-    glVertex2f(gLogicalRect.right, menuTop); glVertex2f(gLogicalRect.left, menuTop); glVertex2f(gLogicalRect.left, menuBottom); glVertex2f(gLogicalRect.right, menuBottom)
-    glVertex2f(gLogicalRect.right, menuBottom); glVertex2f(gLogicalRect.left, menuBottom)
-    glColor4f(c.r, c.g, c.b, 0); glVertex2f(gLogicalRect.left, menuBottom + taper); glVertex2f(gLogicalRect.right, menuBottom + taper)
-    glEnd(); OGL_PopState()
+    gRenderBackend.setColor4f(c.r, c.g, c.b, 0); gRenderBackend.vertex2f(gLogicalRect.right, menuTop - taper); gRenderBackend.vertex2f(gLogicalRect.left, menuTop - taper)
+    gRenderBackend.setColor4f(c.r, c.g, c.b, c.a); gRenderBackend.vertex2f(gLogicalRect.left, menuTop); gRenderBackend.vertex2f(gLogicalRect.right, menuTop)
+    gRenderBackend.vertex2f(gLogicalRect.right, menuTop); gRenderBackend.vertex2f(gLogicalRect.left, menuTop); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom); gRenderBackend.vertex2f(gLogicalRect.right, menuBottom)
+    gRenderBackend.vertex2f(gLogicalRect.right, menuBottom); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom)
+    gRenderBackend.setColor4f(c.r, c.g, c.b, 0); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom + taper); gRenderBackend.vertex2f(gLogicalRect.right, menuBottom + taper)
+    gRenderBackend.endImmediate(); OGL_PopState()
 }
 private func rescaleDarkenPane(_ node: UnsafeMutablePointer<ObjNode>!, _ totalHeight: Float) {
     node.pointee.SpecialF.0 = node.pointee.SpecialF.1; node.pointee.SpecialF.1 = totalHeight; node.pointee.Timer = 0

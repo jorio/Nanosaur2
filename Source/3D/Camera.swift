@@ -103,7 +103,7 @@ func DrawLensFlare() {
 
     OGL_DisableLighting() // Turn OFF lighting
     OGL_DisableCullFace()
-    glDisable(GLenum(GL_DEPTH_TEST))
+    OGL_DisableDepthTest()
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 

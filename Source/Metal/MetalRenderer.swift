@@ -86,8 +86,10 @@ public final class MetalRenderer {
 
     private let pipelineBlendOff: MTLRenderPipelineState
     private let pipelineBlendOn: MTLRenderPipelineState
-    private let depthStateOn: MTLDepthStencilState
-    private let depthStateOff: MTLDepthStencilState
+    /// Indexed [testEnabled][writeEnabled] - GL exposes depth *test*
+    /// (GL_DEPTH_TEST) and depth *write* (glDepthMask) as independent
+    /// toggles, so all four combinations must exist as pre-built states.
+    private let depthStates: [[MTLDepthStencilState]]
     private let sampler: MTLSamplerState
 
     /// 1x1 opaque white texture bound whenever the facade has no texture
@@ -109,6 +111,7 @@ public final class MetalRenderer {
     private var currentDrawable: CAMetalDrawable?
     private var blendEnabled = false
     private var depthTestEnabled = true
+    private var depthWriteEnabled = true
     private var boundTextureHandle: Int32 = -1
 
     /// - Parameter layerPointer: a `CAMetalLayer*` obtained by the caller via
@@ -171,17 +174,19 @@ public final class MetalRenderer {
         self.pipelineBlendOff = pipelineBlendOff
         self.pipelineBlendOn = pipelineBlendOn
 
-        let depthOnDesc = MTLDepthStencilDescriptor()
-        depthOnDesc.depthCompareFunction = .less
-        depthOnDesc.isDepthWriteEnabled = true
-        guard let depthStateOn = device.makeDepthStencilState(descriptor: depthOnDesc) else { return nil }
-        self.depthStateOn = depthStateOn
-
-        let depthOffDesc = MTLDepthStencilDescriptor()
-        depthOffDesc.depthCompareFunction = .always
-        depthOffDesc.isDepthWriteEnabled = false
-        guard let depthStateOff = device.makeDepthStencilState(descriptor: depthOffDesc) else { return nil }
-        self.depthStateOff = depthStateOff
+        var depthStates: [[MTLDepthStencilState]] = []
+        for testEnabled in [false, true] {
+            var row: [MTLDepthStencilState] = []
+            for writeEnabled in [false, true] {
+                let desc = MTLDepthStencilDescriptor()
+                desc.depthCompareFunction = testEnabled ? .less : .always
+                desc.isDepthWriteEnabled = writeEnabled
+                guard let state = device.makeDepthStencilState(descriptor: desc) else { return nil }
+                row.append(state)
+            }
+            depthStates.append(row)
+        }
+        self.depthStates = depthStates
 
         let samplerDesc = MTLSamplerDescriptor()
         samplerDesc.minFilter = .linear
@@ -265,9 +270,10 @@ public final class MetalRenderer {
 
         blendEnabled = false
         depthTestEnabled = true
+        depthWriteEnabled = true
         boundTextureHandle = -1
         encoder.setRenderPipelineState(pipelineBlendOff)
-        encoder.setDepthStencilState(depthStateOn)
+        encoder.setDepthStencilState(depthStates[1][1])
         encoder.setFragmentSamplerState(sampler, index: 0)
         encoder.setFragmentTexture(whiteTexture, index: 0)
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
@@ -303,18 +309,32 @@ public final class MetalRenderer {
     }
 
     public func setDepthTest(_ enabled: Bool) {
-        guard depthTestEnabled != enabled, let encoder else { return }
+        guard depthTestEnabled != enabled else { return }
         depthTestEnabled = enabled
-        encoder.setDepthStencilState(enabled ? depthStateOn : depthStateOff)
+        applyDepthState()
+    }
+
+    public func setDepthWrite(_ enabled: Bool) {
+        guard depthWriteEnabled != enabled else { return }
+        depthWriteEnabled = enabled
+        applyDepthState()
+    }
+
+    private func applyDepthState() {
+        encoder?.setDepthStencilState(depthStates[depthTestEnabled ? 1 : 0][depthWriteEnabled ? 1 : 0])
     }
 
     // MARK: - Textures
 
-    public func createTexture(width: Int, height: Int, bgraPixels: UnsafeRawPointer) -> Int32 {
-        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: max(width, 1), height: max(height, 1), mipmapped: false)
+    /// `bgra` selects the byte order of `pixels`: true = BGRA8 (the game's
+    /// runtime-generated textures), false = RGBA8 (stb_image-decoded
+    /// PNG/JPG and BG3D textures - the common case). Metal samples both
+    /// identically; picking the matching pixel format avoids a CPU swizzle.
+    public func createTexture(width: Int, height: Int, pixels: UnsafeRawPointer, bgra: Bool) -> Int32 {
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bgra ? .bgra8Unorm : .rgba8Unorm, width: max(width, 1), height: max(height, 1), mipmapped: false)
         desc.usage = [.shaderRead]
         guard let texture = device.makeTexture(descriptor: desc) else { return -1 }
-        texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: bgraPixels, bytesPerRow: width * 4)
+        texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: pixels, bytesPerRow: width * 4)
 
         let handle = nextTextureHandle
         nextTextureHandle += 1

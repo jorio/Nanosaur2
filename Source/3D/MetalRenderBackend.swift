@@ -86,16 +86,27 @@ final class MetalRenderBackend: RenderBackend {
 
     func enableDepthTest() { renderer.setDepthTest(true) }
     func disableDepthTest() { renderer.setDepthTest(false) }
+    func setDepthWrite(_ enabled: Bool) { renderer.setDepthWrite(enabled) }
+
+    func setAlphaClipping(trimLowAlpha: Bool) { /* no alpha test in the shader yet - see header comment */ }
+    func setNormalizeNormals(_ enabled: Bool) { /* no lighting model, nothing to normalize - see header comment */ }
 
     private var currentColor: (Float, Float, Float, Float) = (1, 1, 1, 1)
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { currentColor = (r, g, b, a) }
 
     // MARK: - Matrix stack
 
-    private enum MatrixMode { case modelview, projection }
+    // The texture matrix stack (GL_TEXTURE, used by STATUS_BIT_UVTRANSFORM
+    // texture scrolling in Objects.swift) is tracked but has no effect on
+    // rendering yet - the shader has no texture-matrix uniform. Tracking it
+    // as its own mode matters anyway: before this existed, GL_TEXTURE was
+    // silently treated as modelview, so a UV-transform's translate corrupted
+    // the modelview stack.
+    private enum MatrixMode { case modelview, projection, texture }
     private var currentMatrixMode: MatrixMode = .modelview
     private var modelviewStack: [[Float]] = [MetalRenderBackend.identity]
     private var projectionStack: [[Float]] = [MetalRenderBackend.identity]
+    private var textureStack: [[Float]] = [MetalRenderBackend.identity]
 
     private static let identity: [Float] = [
         1, 0, 0, 0,
@@ -105,13 +116,18 @@ final class MetalRenderBackend: RenderBackend {
     ]
 
     func matrixMode(_ mode: GLenum) {
-        currentMatrixMode = (mode == GLenum(GL_PROJECTION)) ? .projection : .modelview
+        switch mode {
+        case GLenum(GL_PROJECTION): currentMatrixMode = .projection
+        case GLenum(GL_TEXTURE): currentMatrixMode = .texture
+        default: currentMatrixMode = .modelview
+        }
     }
 
     private func top() -> [Float] {
         switch currentMatrixMode {
         case .modelview: return modelviewStack[modelviewStack.count - 1]
         case .projection: return projectionStack[projectionStack.count - 1]
+        case .texture: return textureStack[textureStack.count - 1]
         }
     }
 
@@ -119,6 +135,7 @@ final class MetalRenderBackend: RenderBackend {
         switch currentMatrixMode {
         case .modelview: modelviewStack[modelviewStack.count - 1] = m
         case .projection: projectionStack[projectionStack.count - 1] = m
+        case .texture: textureStack[textureStack.count - 1] = m
         }
         updateMVP()
     }
@@ -132,6 +149,7 @@ final class MetalRenderBackend: RenderBackend {
         switch currentMatrixMode {
         case .modelview: modelviewStack.append(modelviewStack.last!)
         case .projection: projectionStack.append(projectionStack.last!)
+        case .texture: textureStack.append(textureStack.last!)
         }
     }
 
@@ -139,6 +157,7 @@ final class MetalRenderBackend: RenderBackend {
         switch currentMatrixMode {
         case .modelview: if modelviewStack.count > 1 { modelviewStack.removeLast() }
         case .projection: if projectionStack.count > 1 { projectionStack.removeLast() }
+        case .texture: if textureStack.count > 1 { textureStack.removeLast() }
         }
         updateMVP()
     }
@@ -152,6 +171,21 @@ final class MetalRenderBackend: RenderBackend {
     func multMatrix(_ m: UnsafePointer<Float>) {
         let rhs = Array(UnsafeBufferPointer(start: m, count: 16))
         setTop(Self.multiply(top(), rhs))
+    }
+
+    func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top_: Double, _ near: Double, _ far: Double) {
+        // Same matrix glOrtho produces (GL [-1,1] NDC z-range - see the
+        // header comment's note on the z-range gap; harmless while
+        // everything drawn through this is 2D at z≈0 with depth test off).
+        let (l, r, b, t, n, f) = (Float(left), Float(right), Float(bottom), Float(top_), Float(near), Float(far))
+        var m = Self.identity
+        m[0] = 2 / (r - l)
+        m[5] = 2 / (t - b)
+        m[10] = -2 / (f - n)
+        m[12] = -(r + l) / (r - l)
+        m[13] = -(t + b) / (t - b)
+        m[14] = -(f + n) / (f - n)
+        setTop(Self.multiply(top(), m))
     }
 
     func translate(_ x: Float, _ y: Float, _ z: Float) {
@@ -206,10 +240,13 @@ final class MetalRenderBackend: RenderBackend {
     }
 
     func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint {
-        // destFormat/srcFormat/dataType are ignored: MetalRenderer's texture
-        // API always takes BGRA8 (GL_BGRA/GL_UNSIGNED_INT_8_8_8_8_REV in
-        // practice, which is what every call site in this codebase passes).
-        let handle = renderer.createTexture(width: Int(width), height: Int(height), bgraPixels: imageMemory)
+        // Every call site in this codebase passes 4-byte-per-pixel data in
+        // one of exactly two layouts: GL_RGBA/GL_UNSIGNED_BYTE (stb_image-
+        // decoded PNG/JPG, BG3D textures - the common case) or
+        // GL_BGRA/GL_UNSIGNED_INT_8_8_8_8_REV. Map that onto the matching
+        // Metal pixel format; destFormat is ignored (GL-internal detail).
+        let bgra = srcFormat == GL_BGRA
+        let handle = renderer.createTexture(width: Int(width), height: Int(height), pixels: imageMemory, bgra: bgra)
         return GLuint(bitPattern: handle)
     }
 

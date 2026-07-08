@@ -9,10 +9,21 @@
 // so behaviour is unchanged. A future MetalRenderBackend implements the same
 // verbs against the Source/Metal module instead.
 //
-// Deliberately NOT attempting the immediate-mode (glBegin/glVertex/glEnd) or
-// matrix-stack surface yet - those need a real design (batching, MVP
-// uniforms) rather than a 1:1 verb wrapper, and are separate, larger Phase 1
-// slices. This first slice covers only the cleanly-1:1-mappable state verbs.
+// Deliberately NOT attempting the immediate-mode (glBegin/glVertex/glEnd)
+// surface yet, nor GL state *introspection* (glGetIntegerv/glIsEnabled/
+// glGetBooleanv, used by OGL_PushState/DrawBlueLine to snapshot "whatever
+// GL's current state happens to be") - those need a real design (batching,
+// an explicit state-tracking stack) rather than a 1:1 verb wrapper, and are
+// separate, larger Phase 1 slices.
+//
+// The matrix-stack verbs below ARE a clean 1:1 wrapper, despite Metal having
+// no hardware matrix stack: every call site either loads a full 4x4 computed
+// in Swift (the camera path - exactly the MVP-uniform shape Metal wants) or
+// does plain nested push/load-identity/pop, which a future MetalRenderBackend
+// can implement with its own CPU-side matrix stack. Only push/pop/load call
+// sites that also introspect current GL state (OGL_PushState's
+// glGetBooleanv(GL_DEPTH_WRITEMASK) etc., DrawBlueLine's
+// glGetIntegerv(GL_MATRIX_MODE)) are left as raw gl* calls for now.
 
 protocol RenderBackend: AnyObject {
     func enableBlend()
@@ -32,6 +43,14 @@ protocol RenderBackend: AnyObject {
     func disableFog()
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float)
+
+    func matrixMode(_ mode: GLenum)
+    func pushMatrix()
+    func popMatrix()
+    func loadIdentity()
+    /// `m` points to 16 floats, column-major (same layout `glLoadMatrixf` and
+    /// `OGLMatrix4x4` already use).
+    func loadMatrix(_ m: UnsafePointer<Float>)
 }
 
 final class GLRenderBackend: RenderBackend {
@@ -52,6 +71,12 @@ final class GLRenderBackend: RenderBackend {
     func disableFog() { glDisable(GLenum(GL_FOG)) }
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { glColor4f(r, g, b, a) }
+
+    func matrixMode(_ mode: GLenum) { glMatrixMode(mode) }
+    func pushMatrix() { glPushMatrix() }
+    func popMatrix() { glPopMatrix() }
+    func loadIdentity() { glLoadIdentity() }
+    func loadMatrix(_ m: UnsafePointer<Float>) { glLoadMatrixf(m) }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

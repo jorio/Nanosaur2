@@ -474,11 +474,11 @@ private var gDualScreenBackgroundTexture: GLuint = 0
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.loadIdentity()
     glOrtho(0, GLdouble(windowWidth), GLdouble(windowHeight), 0, -1, 1)
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.loadIdentity()
 
     glClearColor(0, 0, 0, 1)
     glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
@@ -1576,8 +1576,8 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // INIT PROJECTION MATRIX
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.loadIdentity()
 
     let placements = cameraPlacementsBase()
     let fov = fovBase()
@@ -1611,9 +1611,9 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             gGameViewInfoPtr!.pointee.hither,
             gGameViewInfoPtr!.pointee.yon)
 
-        glMatrixMode(GLenum(GL_PROJECTION))
+        gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
         withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glLoadMatrixf($0) }
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
         }
     }
 
@@ -1625,9 +1625,9 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
         &placements[Int(camNum)].pointOfInterest,
         &placements[Int(camNum)].upVector)
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glLoadMatrixf($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
     }
 
     // UPDATE LIGHT POSITIONS
@@ -1697,12 +1697,12 @@ func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum
 func OGL_PushState() {
     // PUSH MATRIES WITH OPENGL
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPushMatrix()
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPushMatrix()
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.pushMatrix()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.pushMatrix()
 
-    glMatrixMode(GLenum(GL_MODELVIEW)) // in my code, I keep modelview matrix as the currently active one all the time.
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW)) // in my code, I keep modelview matrix as the currently active one all the time.
 
     // SAVE OTHER INFO
 
@@ -1733,10 +1733,10 @@ func OGL_PushState() {
 func OGL_PopState() {
     // RETREIVE OPENGL MATRICES
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPopMatrix()
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPopMatrix()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.popMatrix()
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.popMatrix()
 
     // GET OTHER INFO
 
@@ -1969,10 +1969,10 @@ private func OGL_FreeFont() {
 func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.loadIdentity()
     glOrtho(0, 640, 480, 0, -10.0, 10.0)
 
     glDisable(GLenum(GL_LIGHTING))

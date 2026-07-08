@@ -1,3 +1,6 @@
+#if canImport(BG3DFile)
+import BG3DFile
+#endif
 // Bg3d.swift - Port of bg3d.c to Swift
 //
 // gBG3DContainerList/gBG3DGroupList/gNumObjectsInBG3DGroupList/

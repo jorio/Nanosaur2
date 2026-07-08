@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <math.h>
+#include "globals.h"
+#include "ogl_support.h"
+
 #define OGLMath_RadiansToDegrees(x)	((float)((x) * 180.0f / PI))
 
 // OGLPoint3D_DistanceToPlane/Distance/Transform/TransformArray/

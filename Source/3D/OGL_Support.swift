@@ -484,7 +484,7 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
     glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
 
     glEnable(GLenum(GL_TEXTURE_2D))
-    glBindTexture(GLenum(GL_TEXTURE_2D), gDualScreenBackgroundTexture)
+    gRenderBackend.bindTexture(gDualScreenBackgroundTexture)
     glColor4f(1, 1, 1, 1)
 
     glBegin(GLenum(GL_QUADS))
@@ -1473,7 +1473,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 // MARK: - OGL: RAM texture has changed
 
 func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName) // this is now the currently active texture
+    gRenderBackend.bindTexture(textureName) // this is now the currently active texture
 
     glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, Int32(width), Int32(height), GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
 }
@@ -1483,7 +1483,7 @@ func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: I
 // Sets the current OpenGL texture using glBindTexture et.al. so any textured triangles will use it.
 
 func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName)
+    gRenderBackend.bindTexture(textureName)
     if OGL_CheckError() != 0 {
         SwFatalAlert("OGL_Texture_SetOpenGLTexture: glBindTexture failed!")
     }

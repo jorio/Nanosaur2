@@ -51,6 +51,13 @@ protocol RenderBackend: AnyObject {
     /// `m` points to 16 floats, column-major (same layout `glLoadMatrixf` and
     /// `OGLMatrix4x4` already use).
     func loadMatrix(_ m: UnsafePointer<Float>)
+
+    /// Binds a 2D texture so subsequent draws use it. Texture *creation*
+    /// (glGenTextures/glTexImage2D/glTexSubImage2D upload) is NOT covered
+    /// here - that's a much bigger Phase 2 design (maps to MTLTexture
+    /// creation + a copy pass, not a 1:1 verb) - this is only the per-draw
+    /// "make this existing texture current" step.
+    func bindTexture(_ name: GLuint)
 }
 
 final class GLRenderBackend: RenderBackend {
@@ -77,6 +84,8 @@ final class GLRenderBackend: RenderBackend {
     func popMatrix() { glPopMatrix() }
     func loadIdentity() { glLoadIdentity() }
     func loadMatrix(_ m: UnsafePointer<Float>) { glLoadMatrixf(m) }
+
+    func bindTexture(_ name: GLuint) { glBindTexture(GLenum(GL_TEXTURE_2D), name) }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

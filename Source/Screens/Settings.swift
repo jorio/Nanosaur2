@@ -54,7 +54,7 @@ private let cOnPickResetMouseBindings: @convention(c) () -> Void = {
 private let cTestGamepadRumble: @convention(c) () -> Void = { Rumble(1, 1, 200, Int32(ANY_PLAYER)) }
 
 private let cOnChangeVSync: @convention(c) () -> Void = {
-    SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+    try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
 }
 
 // MARK: - Graphics / Gamepad menu callbacks

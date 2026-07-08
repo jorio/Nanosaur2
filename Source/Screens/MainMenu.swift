@@ -283,7 +283,7 @@ private func processMenuOutcome(_ outcome: Int32) {
         gPlayNow = 1
         gPlayingFromSavedGame = 0
         gLevelNum = Int16(LevelNum.adventure3.rawValue)
-        SDL_GL_SetSwapInterval(0) // no vsync for time demo
+        try? SDL.glSetSwapInterval(0) // no vsync for time demo
 
     case 0x6164_7665: // 'adve' SINGLE-PLAYER ADVENTURE CAMPAIGN
         setMainController1P()

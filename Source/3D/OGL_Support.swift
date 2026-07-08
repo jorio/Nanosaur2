@@ -399,7 +399,7 @@ private func OGL_CreateDrawContext() {
 
     // ENABLE VSYNC
 
-    _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+    try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
 
     // SEE IF SUPPORT 2048x2048 TEXTURES
 
@@ -412,10 +412,10 @@ private func OGL_CreateDrawContext() {
     // GET GL PROCEDURES
     // Necessary on Windows
 
-    gGlActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glActiveTexture"), to: GLActiveTextureProc?.self)
+    gGlActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlActiveTextureProc != nil)
 
-    gGlClientActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
+    gGlClientActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
     SwGameAssert(gGlClientActiveTextureProc != nil)
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
@@ -433,7 +433,7 @@ private func OGL_CreateDrawContext() {
     // keeps both buffers identical.
 
     if gDualScreenMode != 0, let window2 = gSDLWindow2 {
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
+        try? SDL.glSetAttribute(.shareWithCurrentContext, 1)
 
         gAGLContext2 = SDL_GL_CreateContext(window2)
         if gAGLContext2 == nil {
@@ -443,7 +443,7 @@ private func OGL_CreateDrawContext() {
         let didMakeCurrent2 = SDL_GL_MakeCurrent(window2, gAGLContext2)
         SwGameAssertMessage(didMakeCurrent2, String(cString: SDL_GetError()))
 
-        _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+        try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
 
         var bgWidth: Int32 = 0
         var bgHeight: Int32 = 0

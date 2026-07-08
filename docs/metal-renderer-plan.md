@@ -216,9 +216,48 @@ Recommendation: **Option A** for the Phase 0 spike (fastest path to a verified
 clear-screen), with the option to migrate the renderer's authoring to Swift
 (Option B) later if keeping everything in Swift matters more than simplicity.
 
+## DECISION (user, 2026-07-08): isolate via a separate Swift module (Option B).
+
+## Phase 0 RESULT (2026-07-08): native Swift Metal works — via a separate module + `@_implementationOnly import`.
+
+Built and verified (compiles + links cleanly, game still runs on GL):
+
+- **`Source/Metal/MetalRenderer.swift`** — a separate CMake Swift static-library
+  target (`MetalRenderer`), compiled *without* the game's bridging header, so
+  it can import Metal. Sets up `MTLDevice`/`MTLCommandQueue` from a
+  `CAMetalLayer` pointer passed in, and has a Phase-0 `clearFrame(...)` that
+  clears+presents a drawable. Public API uses only primitives/opaque handles
+  (no Metal types leak).
+- **`Source/Metal` excluded from the flat game module** in CMakeLists; built as
+  `add_library(MetalRenderer STATIC …)` linking `-framework Metal -framework
+  QuartzCore`, then linked into `Nanosaur2`.
+- **`Source/3D/MetalSpike.swift`** — glue in the *game* module (which has SDL):
+  `import MetalRenderer`, creates the `CAMetalLayer` via
+  `SDL_Metal_CreateView`/`SDL_Metal_GetLayer` on `gSDLWindow`, hands the raw
+  pointer to `MetalRenderer`. Not yet wired into the frame loop.
+
+**Critical gotcha found and solved:** a plain `import Metal` inside a *separate*
+Swift module is NOT enough. When the game module (which has `SwMacTypes.h` via
+its bridging header) does `import MetalRenderer`, Swift transitively surfaces
+MetalRenderer's Metal/QuartzCore *Clang-module* dependencies into the game
+module's ClangImporter, and the `Point`/`MacTypes` collision fires again.
+The fix is **`@_implementationOnly import Metal` / `@_implementationOnly import
+QuartzCore`** inside MetalRenderer — this keeps the Metal Clang modules an
+implementation detail that does not propagate to clients. Legal precisely
+because MetalRenderer's public API exposes zero Metal types. This is the load-
+bearing trick that makes the whole "native Swift Metal in this codebase"
+approach viable.
+
+Still TODO for a fully "live" Phase 0: wire `SwMetalSpike_Init` + a clear loop
+behind a `--metal` command-line flag in `Boot.cpp` and confirm the window
+actually clears to a colour via Metal on screen (currently only compile+link
+verified; the game still renders via GL).
+
 ## What exists now on this branch
 
-- Branch `feature/metal` created.
-- This plan (with the confirmed Phase 0 `import Metal` collision finding).
-- Probe file was created, used to confirm the collision, and removed; build is
-  back to green.
+- Branch `feature/metal`.
+- This plan.
+- Working separate-module native Swift Metal scaffold (compiles, links, game
+  still runs on GL): `MetalRenderer` module + `MetalSpike` glue + CMake wiring.
+- Next: wire the spike behind `--metal` to see a Metal-cleared frame on screen,
+  then start Phase 1 (renderer facade).

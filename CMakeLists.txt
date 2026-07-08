@@ -106,6 +106,15 @@ configure_file(${GAME_SRCDIR}/Headers/version.h.in ${GAME_SRCDIR}/Headers/versio
 # Glob all source files
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/*.c ${GAME_SRCDIR}/*.cpp ${GAME_SRCDIR}/*.h ${GAME_SRCDIR}/*.swift)
 
+# The Metal renderer (Source/Metal/*.swift) is its own Swift module target
+# (see below): it `import Metal`, which collides with SwMacTypes.h if compiled
+# with the game's bridging header (see docs/metal-renderer-plan.md). Remove it
+# from the flat game module so it isn't compiled with that bridging header.
+if(ENABLE_SWIFT AND APPLE)
+	file(GLOB_RECURSE METALRENDERER_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/Metal/*.swift)
+	list(REMOVE_ITEM GAME_SOURCES ${METALRENDERER_SOURCES})
+endif()
+
 if(ENABLE_SWIFT)
 	# BG3DFile (Sources/BG3DFile) is a tested, standalone Swift package (see
 	# Package.swift / Tests/BG3DFileTests) that parses the BG3D 3D-model file
@@ -157,6 +166,21 @@ elseif(APPLE)
 endif()
 
 add_executable(${GAME_TARGET} ${GAME_SOURCES})
+
+# MetalRenderer: the native-Metal renderer as a SEPARATE Swift module, built
+# WITHOUT the game's -import-objc-header bridging header so it can `import
+# Metal` without the SwMacTypes.h/Darwin.MacTypes collision (see the header
+# comment in Source/Metal/MetalRenderer.swift and docs/metal-renderer-plan.md).
+# Its public API uses only primitives/opaque handles, so the game target can
+# `import MetalRenderer` without Metal ever becoming visible to the game's
+# ClangImporter. The game passes it a CAMetalLayer pointer it gets from SDL,
+# so this module needs no SDL/game dependency of its own.
+if(ENABLE_SWIFT AND APPLE)
+	add_library(MetalRenderer STATIC ${METALRENDERER_SOURCES})
+	set_target_properties(MetalRenderer PROPERTIES Swift_COMPILATION_MODE wholemodule)
+	target_link_libraries(MetalRenderer PUBLIC "-framework Metal" "-framework QuartzCore")
+	target_link_libraries(${GAME_TARGET} PRIVATE MetalRenderer)
+endif()
 
 if(ENABLE_SWIFT AND CMAKE_GENERATOR STREQUAL "Xcode")
 	# InlineArray (a few narrow Swift-side usages, e.g. WinScreen.swift's

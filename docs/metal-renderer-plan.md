@@ -248,39 +248,119 @@ because MetalRenderer's public API exposes zero Metal types. This is the load-
 bearing trick that makes the whole "native Swift Metal in this codebase"
 approach viable.
 
-## Phase 0 COMPLETE (2026-07-08): `--metal` flag confirms a live Metal frame on screen.
+## Phase 0 COMPLETE (2026-07-08): Metal spike confirms a live Metal frame on screen.
 
-`Boot.cpp`'s `main()` now checks for `--metal` before anything else and, if
+`Boot.cpp`'s `main()` checks for `--metal-spike` before anything else and, if
 present, calls `RunMetalSpike()` instead of the normal `Boot()`/`GameMain()`
-path. `RunMetalSpike()` deliberately does **not** reuse the normal boot
-sequence: it does its own minimal `SDL_Init(SDL_INIT_VIDEO)`, creates
-`gSDLWindow` with `SDL_WINDOW_METAL` (no `SDL_WINDOW_OPENGL`, no
-`SDL_GL_SetAttribute` calls), calls `SwMetalSpike_Init()`, then runs its own
-tiny event/present loop that calls `SwMetalSpike_ClearFrame(r, g, b)` every
-iteration with a cycling HSV-derived colour (so a static clear can't be
-mistaken for a live one), until the window is closed or Escape is pressed.
-This keeps the throwaway spike fully isolated from the real (still GL)
-boot/game path — no shared code changed, `Boot()`/`GameMain()`/`gSDLWindow`'s
-normal GL setup are untouched for the non-`--metal` path.
+path (originally this was `--metal`; renamed when `--metal` was repurposed
+for the real integration below — see Phase 2). `RunMetalSpike()` deliberately
+does **not** reuse the normal boot sequence: it does its own minimal
+`SDL_Init(SDL_INIT_VIDEO)`, creates `gSDLWindow` with `SDL_WINDOW_METAL` (no
+`SDL_WINDOW_OPENGL`, no `SDL_GL_SetAttribute` calls), calls
+`SwMetalSpike_Init()`, then runs its own tiny event/present loop that calls
+`SwMetalSpike_ClearFrame(r, g, b)` every iteration with a cycling
+HSV-derived colour (so a static clear can't be mistaken for a live one),
+until the window is closed or Escape is pressed. Kept around as a minimal
+regression check for the SDL-layer → Metal present path in isolation.
 
 The three `SwMetalSpike_*` functions (`Source/3D/MetalSpike.swift`) are
 exposed to C++ via `@c @implementation` (the same pattern as `GameMain`),
 declared in `Source/Headers/main.h`.
 
-**Verified on screen (computer-use screenshots):** launching
-`Nanosaur2 --metal` opens a window that logged
-`MetalSpike: renderer live on device 'Apple M1 Pro' (1280x960)` and visibly
-cycles through colours (green → blue captured a second apart), proving the
-full `SDL_Metal_CreateView` → `CAMetalLayer` → `MetalRenderer` (separate
-module) → `MTLCommandQueue`/render-pass → `presentDrawable` path is live end
-to end, not just compiling.
+**Verified on screen (computer-use screenshots):** launching the spike opens
+a window that logged `MetalSpike: renderer live on device 'Apple M1 Pro'
+(1280x960)` and visibly cycles through colours, proving the full
+`SDL_Metal_CreateView` → `CAMetalLayer` → `MetalRenderer` (separate module)
+→ `MTLCommandQueue`/render-pass → `presentDrawable` path is live end to end,
+not just compiling. Re-verified after an unrelated `build/` dir loss and
+rebuild (2026-07-08).
+
+## Phase 1 COMPLETE (2026-07-08): RenderBackend facade covers the main menu screen's whole draw path
+
+`Source/3D/RenderBackend.swift` defines a `RenderBackend` protocol +
+`GLRenderBackend` (reproduces today's exact gl* calls — pure refactor, zero
+behaviour change, verified via clean builds + live gameplay after every
+slice). Selected via `var gRenderBackend: RenderBackend`. Landed in six
+incremental, individually-verified commits, covering:
+state toggles (blend/texture2D/lighting/cullface/fog/depthTest/color),
+the matrix stack (matrixMode/push/pop/loadIdentity/loadMatrix/multMatrix),
+texture bind + creation/upload, translate/scale/rotate + texture wrap,
+immediate mode (beginImmediate/vertex2f/vertex3f/texCoord2f/endImmediate —
+GLRenderBackend forwards 1:1 to real glBegin/glVertex/glTexCoord/glEnd since
+every call site here is a single self-contained primitive, no cross-frame
+batching needed), and viewport/clear/present/wireframe.
+
+Investigated what the main menu screen (`DoMainMenuScreen` in
+`MainMenu.swift`) actually draws: **no 3D geometry** — just a full-screen
+background picture (`MO_DrawPicture`), a mouse-cursor sprite
+(`MO_DrawSprite`), and menu text (`Atlas_DrawString2` → immediate-mode
+quads), all funneling through `MO_DrawMaterial` for texture/color state and
+`OGL_DrawScene` for the per-frame viewport/clear/camera/present sequence.
+The facade now covers all of it. The 3D vertex-array geometry path
+(`MO_DrawGeometry_VertexArray`) and GL state *introspection*
+(`glGetIntegerv`/`glIsEnabled`/`glGetBooleanv` in `OGL_PushState`/
+`DrawBlueLine`) are explicitly NOT covered — separate, larger design work.
+
+## Phase 2 IN PROGRESS (2026-07-08): real Metal draw plumbing + `--metal` wired to render the actual game
+
+- **`Source/Metal/MetalRenderer.swift`** expanded from the Phase 0 clear-only
+  spike into a real draw layer: an embedded MSL shader (MVP transform,
+  texture × vertex-color), two `MTLRenderPipelineState`s (blend on/off — GL's
+  per-draw `glEnable(GL_BLEND)` doesn't exist in Metal; blending is baked
+  into pipeline state), two `MTLDepthStencilState`s (depth test on/off), a
+  1×1 white default texture (so the shader never branches on "textured?" —
+  "no texture" just samples white, matching `disableTexture2D`'s effect), a
+  texture handle table (`createTexture`/`updateTexture`/`bindTexture`,
+  synthesized `Int32` IDs), and a real `beginFrame`/`draw`/`endFrame` frame
+  lifecycle. Still knows nothing about GL enums — stays a dumb, primitive-
+  typed Metal layer by design (isolation boundary intact).
+- **`Source/3D/MetalRenderBackend.swift`** (new, main module): implements
+  `RenderBackend` by translating GL-shaped verbs into `MetalRenderer` calls —
+  a CPU-side matrix stack per GL matrix mode (recomputes and pushes the MVP
+  uniform on every mutation), GL_QUADS/TRIANGLES/LINE_LOOP/LINE_STRIP/LINES
+  immediate-mode accumulation (GL_QUADS triangulated per-4-vertices, matching
+  GL's independent-quads-per-batch semantics — `Atlas_ImmediateDraw` submits
+  many quads, one per glyph, in a single begin/end block), texture handles
+  passed through 1:1, and clear/viewport/present mapped onto
+  `beginFrame`/`endFrame`. Documented, deliberate gaps for this milestone
+  (see the file's header comment): fixed blend equation (no per-call
+  `blendFunc`), no lighting/fog/cull-face/texture-wrap, GL's `[-1,1]` NDC
+  z-range vs Metal's `[0,1]` not corrected, viewport Y-origin not flipped —
+  all harmless for a 2D-only menu screen, all need real fixes before any 3D
+  content is migrated.
+- **`Source/3D/MetalActivation.swift`** (new) + `gMetalMode` global
+  (`BootGlobals.c`/`game.h`, same pattern as `gDualScreenMode`): `--metal`
+  now means *run the actual game through Metal*, not the old spike. `Boot()`
+  still creates `gSDLWindow` with its normal GL context unconditionally —
+  deliberately left alive and simply never `SDL_GL_SwapWindow`'d once Metal
+  is active. This is the key design choice that avoids having to migrate
+  *every* raw `gl*` call in the codebase before anything can render: any
+  not-yet-faceted call (lighting setup, state introspection, the 3D geometry
+  path, stereo/dual-screen) still executes fine against a valid context —
+  its output just never reaches the screen, since only the Metal layer
+  (a second, Metal-backed SDL view on the same window) gets presented.
+  `main()` calls `SwMetalBackend_Activate()` right after `Boot()`, before
+  `GameMain()`; on failure it logs and falls back to `GLRenderBackend`
+  (game still runs, just via GL).
+
+**Status: wired and builds clean, but UNVERIFIED ON SCREEN.** This is real,
+not-yet-visually-tested code — the author (an AI agent) does not launch the
+app in this project (see the project memory's launch-ownership note); the
+user runs `Nanosaur2 --metal` themselves. What to check when testing:
+does the main menu screen appear at all (vs. black/crash/nothing), does the
+background picture/cursor/text look reasonable (position, color, blending),
+and does closing/quitting behave normally. Known-likely rough edges per the
+gaps list above: menu text using the "glow" pulse effect may look like flat
+alpha blend instead of additive glow; any edge-clamped sprite may show
+faint repeat-wrap bleeding at its border.
 
 ## What exists now on this branch
 
 - Branch `feature/metal`.
 - This plan.
-- Working, **live-verified** separate-module native Swift Metal renderer:
-  `MetalRenderer` module + `MetalSpike` glue + CMake wiring + `--metal` flag
-  in `Boot.cpp` (`RunMetalSpike()`), confirmed on screen via screenshot.
-- Phase 0 is done. Next: Phase 1 (renderer facade over the current GL calls,
-  pure refactor, no Metal yet — see "Phased plan" above).
+- Phase 0: live-verified Metal spike (`--metal-spike`).
+- Phase 1: RenderBackend facade, complete for the main menu's draw path,
+  each slice individually verified against live GL gameplay.
+- Phase 2: real Metal draw plumbing + `--metal` wired to render the actual
+  game — builds clean, not yet visually verified. **Next: user tests
+  `--metal` from Xcode and reports what's on screen; iterate from there.**

@@ -128,6 +128,13 @@ if(ENABLE_SWIFT)
 	file(GLOB_RECURSE BG3DFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/BG3DFile/*.swift)
 	file(GLOB_RECURSE BINARYPARSING_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/swift-binary-parsing/BinaryParsing/*.swift")
 
+	# ResourceFile (Sources/ResourceFile) is a tested, standalone Swift package
+	# (see Package.swift / Tests/ResourceFileTests) that parses classic Mac OS
+	# resource-fork files (Data/Skeletons/*.rsrc, Data/Terrain/*.ter.rsrc),
+	# replacing Pomme's GetResource/Handle-based Resource Manager emulation.
+	# Same flat-compile treatment as BG3DFile above.
+	file(GLOB_RECURSE RESOURCEFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/ResourceFile/*.swift)
+
 	# SDL3Swift (extern/SDL3Swift/SDL3) is PureSwift/SDL's SDL3 wrapper,
 	# vendored at commit 00c3f23 (see extern/SDL3Swift-gap-analysis.md for the
 	# wrapper gaps that were filled upstream before this was vendored). Same
@@ -146,7 +153,7 @@ endif()
 source_group(TREE ${GAME_SRCDIR} PREFIX "" FILES ${GAME_SOURCES})
 
 if(ENABLE_SWIFT)
-	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${BINARYPARSING_SOURCES} ${SDL3SWIFT_SOURCES})
+	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${RESOURCEFILE_SOURCES} ${BINARYPARSING_SOURCES} ${SDL3SWIFT_SOURCES})
 endif()
 
 if(WIN32)

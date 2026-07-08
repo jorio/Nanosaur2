@@ -88,12 +88,9 @@ func InvalidateAllInputs() {
 }
 
 private func updateRawKeyboardStates() {
-    var numkeys: Int32 = 0
-    guard let keystate = SDL_GetKeyboardState(&numkeys) else {
-        return
-    }
+    let keystate = SDL.keyboardState
 
-    let minNumKeys = min(Int(numkeys), Int(SDL_SCANCODE_COUNT.rawValue))
+    let minNumKeys = min(keystate.count, Int(SDL_SCANCODE_COUNT.rawValue))
 
     for i in 0..<minNumKeys {
         updateKeyState(&gKeyboardStates[i], keystate[i])
@@ -120,7 +117,7 @@ private func processSystemKeyChords() {
 }
 
 private func updateMouseButtonStates(_ mouseWheelDeltaX: Int32, _ mouseWheelDeltaY: Int32) {
-    let mouseButtons = SDL_GetMouseState(nil, nil)
+    let mouseButtons = SDL.mouseState.buttons.rawValue
 
     for i in 1..<Int(NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL) { // SDL buttons start at 1!
         let buttonBit = (mouseButtons & (UInt32(1) << (UInt32(i) - 1))) != 0 // SDL_BUTTON_MASK(i)
@@ -770,9 +767,7 @@ func GetMouseDelta() -> OGLVector2D {
     // Mouse sensitivity settings are calibrated to feel good at 60 FPS,
     // so we mustn't poll GetRelativeMouseState any faster than 60 Hz.
     if gMouseDeltaTimeSinceLastCall >= (1.0 / 60.0) {
-        var x: Float = 0
-        var y: Float = 0
-        SDL_GetRelativeMouseState(&x, &y)
+        let (_, x, y) = SDL.relativeMouseState
         gMouseDeltaLast = OGLVector2D(x: x, y: y)
         gMouseDeltaTimeSinceLastCall = 0
     }
@@ -781,11 +776,9 @@ func GetMouseDelta() -> OGLVector2D {
 }
 
 func GetMouseCoords640x480() -> OGLPoint2D {
-    var mx: Float = 0
-    var my: Float = 0
     var ww: Int32 = 0
     var wh: Int32 = 0
-    SDL_GetMouseState(&mx, &my)
+    let (_, mx, my) = SDL.mouseState
     SDL_GetWindowSize(gSDLWindow, &ww, &wh)
 
     let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)

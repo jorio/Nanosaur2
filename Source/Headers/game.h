@@ -65,6 +65,7 @@
 #define GAME_ASSERT_MESSAGE(condition, message) do { if (!(condition)) DoFatalAlert("%s:%d: %s", __func__, __LINE__, message); } while(0)
 
 extern	Boolean					gDualScreenMode;
+extern	Boolean					gMetalMode;
 extern	Boolean					gGamePaused;
 extern	Boolean					gUsingVertexArrayRange;
 extern	FSSpec					gDataSpec;

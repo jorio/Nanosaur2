@@ -75,11 +75,15 @@ tryAgain:
 	return dataPath;
 }
 
-// Phase 0 Metal spike (docs/metal-renderer-plan.md): `--metal` bypasses the
-// normal GL boot/game path entirely and just proves SDL's Metal layer ->
-// MetalRenderer module -> on-screen present path works. Deliberately kept
-// isolated from Boot()/GameMain() and gSDLWindow's usual GL setup so this
-// throwaway spike can't affect the real (still GL) rendering path.
+// Phase 0 Metal spike (docs/metal-renderer-plan.md): `--metal-spike`
+// bypasses the normal GL boot/game path entirely and just proves SDL's
+// Metal layer -> MetalRenderer module -> on-screen present path works.
+// Deliberately kept isolated from Boot()/GameMain() and gSDLWindow's usual
+// GL setup so this throwaway spike can't affect the real (still GL)
+// rendering path. Superseded by `--metal` (see SwMetalBackend_Activate() in
+// main()) for actually rendering the game via Metal, but kept around as a
+// minimal regression check for the SDL-layer -> Metal present path in
+// isolation.
 static int RunMetalSpike()
 {
 	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
@@ -159,6 +163,10 @@ static void Boot(int argc, char** argv)
 		if (0 == strcmp(argv[i], "--dual-screen"))
 		{
 			gDualScreenMode = true;
+		}
+		else if (0 == strcmp(argv[i], "--metal"))
+		{
+			gMetalMode = true;
 		}
 	}
 
@@ -307,10 +315,12 @@ int main(int argc, char** argv)
 {
 	// Phase 0 Metal spike (docs/metal-renderer-plan.md) -- takes over the
 	// process entirely instead of going through the normal Boot()/GameMain()
-	// GL path; see RunMetalSpike()'s comment for why.
+	// GL path; see RunMetalSpike()'s comment for why. Kept behind its own
+	// flag as a minimal regression check, separate from `--metal` (real
+	// integration, handled below via gMetalMode).
 	for (int i = 1; i < argc; i++)
 	{
-		if (0 == strcmp(argv[i], "--metal"))
+		if (0 == strcmp(argv[i], "--metal-spike"))
 		{
 			return RunMetalSpike();
 		}
@@ -327,6 +337,17 @@ int main(int argc, char** argv)
 	// In debug builds, don't catch anything so a debugger can break on an
 	// uncaught exception.
 	Boot(argc, argv);
+	// Real Metal integration (docs/metal-renderer-plan.md Phase 2): Boot()
+	// already created gSDLWindow with its normal GL context above (gMetalMode
+	// doesn't change that) - SwMetalBackend_Activate() adds a second,
+	// Metal-backed view on the same window and switches gRenderBackend over.
+	// See MetalRenderBackend.swift's header comment for why leaving the GL
+	// context alive (just never presented) is safe. Falls back to normal GL
+	// rendering (gRenderBackend stays GLRenderBackend) if activation fails.
+	if (gMetalMode && !SwMetalBackend_Activate())
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "--metal: SwMetalBackend_Activate failed, falling back to GL");
+	}
 	GameMain();
 	Shutdown();
 	return 0;
@@ -337,6 +358,10 @@ int main(int argc, char** argv)
 	try
 	{
 		Boot(argc, argv);
+		if (gMetalMode && !SwMetalBackend_Activate())
+		{
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "--metal: SwMetalBackend_Activate failed, falling back to GL");
+		}
 		GameMain();
 	}
 	catch (std::exception& ex)		// Last-resort catch

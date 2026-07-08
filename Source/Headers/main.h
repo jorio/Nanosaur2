@@ -32,3 +32,7 @@ void GameMain(void);
 bool SwMetalSpike_Init(void);
 void SwMetalSpike_ClearFrame(float red, float green, float blue);
 void SwMetalSpike_Shutdown(void);
+
+// Phase 2 real Metal backend activation (Source/3D/MetalActivation.swift).
+// Called from main() after Boot() when --metal is passed.
+bool SwMetalBackend_Activate(void);

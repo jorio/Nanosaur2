@@ -48,7 +48,7 @@ public func CleanQuit() -> Never {
     SDL_ShowCursor()
     MyFlushEvents()
 
-    ExitToShell()
+    SwExitToShell()
 }
 
 // MARK: - Random number generator
@@ -232,6 +232,41 @@ func SwTickCount() -> UInt32 {
 // MARK: - Misc
 
 func VerifySystem() {
+}
+
+// Plain memmove - replaces Pomme's BlockMove (which was just a wrapper
+// around it, with 64-bit-clean pointer args).
+@c @implementation
+public func SwBlockMove(_ srcPtr: UnsafeRawPointer?, _ destPtr: UnsafeMutableRawPointer?, _ byteCount: Int) {
+    guard let srcPtr, let destPtr, byteCount > 0 else { return }
+    destPtr.copyMemory(from: srcPtr, byteCount: byteCount)
+}
+
+// Seconds since the classic Mac epoch (Jan 1 1904) - replaces Pomme's
+// GetDateTime, same offset from the UNIX epoch it used
+// (extern/Pomme/src/Time/TimeManager.cpp).
+private let kMacEpochOffsetFromUnixEpoch = -2_082_844_800
+
+@c @implementation
+public func SwGetDateTime(_ secs: UnsafeMutablePointer<UInt>?) {
+    var now: Int = 0
+    _ = time(&now)
+    secs?.pointee = UInt(bitPattern: now + kMacEpochOffsetFromUnixEpoch)
+}
+
+// Replaces Pomme's ExitToShell(), which unwound the C++/Swift call stack
+// back to Boot.cpp's main() via a thrown Pomme::QuitRequest exception, which
+// then fell through to main()'s own post-try/catch call to Shutdown()
+// (mouse-acceleration restore, window teardown, SDL_Quit). CleanQuit() above
+// already does all of this project's own game-level cleanup before calling
+// this, so there's nothing left for an unwind to accomplish - calling
+// Boot.cpp's Shutdown() directly (via the SwPlatformShutdown trampoline)
+// and then exiting the process is equivalent, without relying on a C++
+// exception propagating through Swift stack frames.
+@c @implementation
+public func SwExitToShell() -> Never {
+    SwPlatformShutdown()
+    exit(0)
 }
 
 // This version uses UpTime() which is only available on PCI Macs.

@@ -1130,7 +1130,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.points = AllocPtr(s)?.assumingMemoryBound(to: OGLPoint3D.self)
         }
 
-        BlockMove(inData.pointee.points, outData.pointee.points, s)
+        SwBlockMove(inData.pointee.points, outData.pointee.points, s)
     } else {
         outData.pointee.points = nil
     }
@@ -1146,7 +1146,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.normals = AllocPtr(s)?.assumingMemoryBound(to: OGLVector3D.self)
         }
 
-        BlockMove(inData.pointee.normals, outData.pointee.normals, s)
+        SwBlockMove(inData.pointee.normals, outData.pointee.normals, s)
     } else {
         outData.pointee.normals = nil
     }
@@ -1165,7 +1165,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outUvs[0] = AllocPtr(s)?.assumingMemoryBound(to: OGLTextureCoord.self)
         }
 
-        BlockMove(inUvs[0], outUvs[0], s)
+        SwBlockMove(inUvs[0], outUvs[0], s)
     } else {
         outUvs[0] = nil
     }
@@ -1181,7 +1181,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.colorsFloat = AllocPtr(s)?.assumingMemoryBound(to: OGLColorRGBA.self)
         }
 
-        BlockMove(inData.pointee.colorsFloat, outData.pointee.colorsFloat, s)
+        SwBlockMove(inData.pointee.colorsFloat, outData.pointee.colorsFloat, s)
     } else {
         outData.pointee.colorsFloat = nil
     }
@@ -1199,7 +1199,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.triangles = AllocPtr(s)?.assumingMemoryBound(to: MOTriangleIndecies.self)
         }
 
-        BlockMove(inData.pointee.triangles, outData.pointee.triangles, s)
+        SwBlockMove(inData.pointee.triangles, outData.pointee.triangles, s)
     } else {
         outData.pointee.triangles = nil
     }

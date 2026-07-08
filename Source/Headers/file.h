@@ -8,13 +8,14 @@
 
 		/* POSIX I/O for FileSystem.swift's native file I/O */
 		//
-		// Hand-declared instead of #include <fcntl.h>/<unistd.h>/<sys/stat.h>:
-		// those headers belong to the SDK's "Darwin" Clang module, and pulling
-		// in any part of that module from the bridging header (which Swift's
-		// ClangImporter always validates using real Clang modules, even for a
-		// textual -import-objc-header) forces validation of the WHOLE Darwin
-		// module - including its MacTypes.h, whose Point/Rect/Boolean/FSSpec
-		// definitions collide with Pomme's own (same root cause as the
+		// Hand-declared instead of #include <fcntl.h>/<unistd.h>/<sys/stat.h>/
+		// <time.h>: those headers belong to the SDK's "Darwin" Clang module,
+		// and pulling in any part of that module from the bridging header
+		// (which Swift's ClangImporter always validates using real Clang
+		// modules, even for a textual -import-objc-header) forces validation
+		// of the WHOLE Darwin module - including its own MacTypes.h, whose
+		// Point/Rect/Boolean/FSSpec definitions collide with this project's
+		// own (see Source/Headers/SwMacTypes.h - same root cause as the
 		// SwiftPM migration's CoreServices blocker). The symbols themselves
 		// are already linked in via libSystem, so a bare prototype is enough.
 extern int open(const char* path, int flags, ...); // variadic - unusable from Swift directly, see SwOpen below
@@ -25,6 +26,7 @@ extern long long lseek(int fd, long long offset, int whence);
 extern int mkdir(const char* path, unsigned short mode);
 extern int unlink(const char* path);
 extern int access(const char* path, int mode);
+extern long time(long* tloc); // time_t is a typedef for a signed integer; long matches its size on this platform
 
 // Swift can't call variadic C functions - this non-variadic wrapper always
 // passes a mode (harmless when SwO_CREAT isn't set, since it's ignored).
@@ -178,4 +180,8 @@ OSErr SwGetEOF(short refNum, long* logEOF);
 OSErr SwFSpDelete(const FSSpec* spec);
 OSErr SwFindFolder(short vRefNum, OSType folderType, char createFolder, short* foundVRefNum, long* foundDirID);
 OSErr SwDirCreate(short vRefNum, long parentDirID, const char* cstrDirectoryName, long* createdDirID);
+
+// creator/fileType/scriptTag are ignored (classic Mac creator-code metadata,
+// meaningless on a modern filesystem) - just creates an empty file.
+OSErr SwFSpCreate(const FSSpec* spec, OSType creator, OSType fileType, short scriptTag);
 

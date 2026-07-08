@@ -266,3 +266,17 @@ public func SwDirCreate(_ vRefNum: Int16, _ parentDirID: Int, _ cstrDirectoryNam
     createdDirID?.pointee = swRegisterDirectory(path)
     return kSwNoErr
 }
+
+// creator/fileType/scriptTag are ignored - see the C declaration's comment.
+@c @implementation
+public func SwFSpCreate(_ spec: UnsafePointer<FSSpec>?, _ creator: OSType, _ fileType: OSType, _ scriptTag: Int16) -> OSErr {
+    guard let spec, let path = resolvedPath(spec) else {
+        return kSwNsvErr
+    }
+    let fd = SwOpen(path, SwO_RDWR | SwO_CREAT, 0o644)
+    guard fd >= 0 else {
+        return kSwIoErr
+    }
+    close(fd)
+    return kSwNoErr
+}

@@ -4,12 +4,18 @@
 
 #include <cstring>
 
+// Not std::filesystem: this project's CMAKE_OSX_DEPLOYMENT_TARGET (10.13,
+// synced with SDL3's own minimum) predates std::filesystem's macOS 10.15
+// availability, which the SDK enforces as a hard compile error. ghc::filesystem
+// (vendored under extern/ghc-filesystem, MIT-licensed) is a pure-userspace
+// implementation with no such requirement - this is exactly what Pomme used
+// to use for the same reason (see its CompilerSupport/filesystem.h).
+#include "filesystem.hpp"
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
-#include "Pomme.h"
-#include "PommeInit.h"
-#include "PommeFiles.h"
+namespace fs = ghc::filesystem;
 
 extern "C"
 {
@@ -58,9 +64,6 @@ tryAgain:
 
 	// Set data spec -- Lets the game know where to find its asset files
 	gDataSpec = SwHostPathToFSSpec((const char*)(dataPath / "System").u8string().c_str());
-	// gPommeDataSpec: see its declaration in game.h for why this stays on
-	// Pomme's own HostPathToFSSpec - it's Sound.swift's exclusive use.
-	gPommeDataSpec = Pomme::Files::HostPathToFSSpec(dataPath / "System");
 
 	FSSpec someDataFileSpec;
 	OSErr iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":System:gamecontrollerdb.txt", &someDataFileSpec);
@@ -81,9 +84,6 @@ static void Boot(int argc, char** argv)
 	SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
 #endif
 
-	// Start our "machine"
-	Pomme::Init();
-
 	// Scan command-line flags
 	for (int i = 1; i < argc; i++)
 	{
@@ -101,10 +101,13 @@ static void Boot(int argc, char** argv)
 	LoadPrefs();
 
 retryVideo:
-	// Initialize SDL video subsystem
-	if (!SDL_Init(SDL_INIT_VIDEO))
+	// Initialize SDL video subsystem. AUDIO used to be initialized
+	// implicitly by Pomme::Init() (Sound::InitMixer) - now that Sound.swift
+	// opens its own SDL_AudioStreams directly (SoundEngine.swift), this
+	// needs to request it explicitly.
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
 	{
-		throw std::runtime_error("Couldn't initialize SDL video subsystem.");
+		throw std::runtime_error("Couldn't initialize SDL video/audio subsystems.");
 	}
 
 	// Create window
@@ -205,8 +208,6 @@ static void Shutdown()
 	// Always restore the user's mouse acceleration before exiting.
 	SetMacLinearMouse(false);
 
-	Pomme::Shutdown();
-
 	if (gSDLWindow2)
 	{
 		SDL_DestroyWindow(gSDLWindow2);
@@ -222,8 +223,34 @@ static void Shutdown()
 	SDL_Quit();
 }
 
+// Callable from Swift's SwExitToShell() (Misc.swift), which replaces
+// Pomme's exception-based ExitToShell()/QuitRequest unwind - see
+// SwExitToShell's own comment for why. CleanQuit() runs this before
+// exiting the process so the mouse-acceleration restore and window
+// teardown above still happen, matching what used to happen when the
+// unwind reached here via main()'s own post-try/catch call to Shutdown().
+extern "C" void SwPlatformShutdown()
+{
+	Shutdown();
+}
+
 int main(int argc, char** argv)
 {
+	// Normal clean-quit path: CleanQuit() (Misc.swift) runs its own cleanup,
+	// then SwExitToShell() calls Shutdown() and exits the process directly -
+	// main() never regains control in that case (see SwExitToShell's
+	// comment). What's left for main() to catch here is genuinely
+	// unexpected termination (used to also include Pomme::QuitRequest, a
+	// normal-quit signal thrown via exceptions - no longer needed now that
+	// SwExitToShell() exits directly instead of unwinding the stack).
+#if _DEBUG
+	// In debug builds, don't catch anything so a debugger can break on an
+	// uncaught exception.
+	Boot(argc, argv);
+	GameMain();
+	Shutdown();
+	return 0;
+#else
 	bool success = true;
 	std::string uncaught = "";
 
@@ -232,13 +259,6 @@ int main(int argc, char** argv)
 		Boot(argc, argv);
 		GameMain();
 	}
-	catch (Pomme::QuitRequest&)
-	{
-		// no-op, the game may throw this exception to shut us down cleanly
-	}
-#if !(_DEBUG)
-	// In release builds, catch anything that might be thrown by GameMain
-	// so we can show an error dialog to the user.
 	catch (std::exception& ex)		// Last-resort catch
 	{
 		success = false;
@@ -249,7 +269,6 @@ int main(int argc, char** argv)
 		success = false;
 		uncaught = "unknown";
 	}
-#endif
 
 	Shutdown();
 
@@ -260,4 +279,5 @@ int main(int argc, char** argv)
 	}
 
 	return success ? 0 : 1;
+#endif
 }

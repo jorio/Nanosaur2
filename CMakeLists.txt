@@ -52,17 +52,10 @@ if(MSVC)
 
 	set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${GAME_TARGET})
 elseif(APPLE)
-	# Let the game (and Pomme) find header files within extern/SDL3.framework
+	# Let the game find header files within extern/SDL3.framework
 	set(CMAKE_XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS extern)
 	add_compile_options("-F${CMAKE_SOURCE_DIR}/extern")  # for non-xcode IDEs
 endif()
-
-set(POMME_NO_GRAPHICS	true)
-set(POMME_NO_INPUT		true)
-set(POMME_NO_MP3		false)		# Nanosaur 2 needs this
-set(POMME_NO_QD3D		true)
-set(POMME_NO_VIDEO		true)
-add_compile_definitions(POMME_CASE_SENSITIVE_FSSPEC=1)
 
 #------------------------------------------------------------------------------
 # FIND SDL
@@ -100,8 +93,6 @@ endif()
 #------------------------------------------------------------------------------
 # DEPENDENCIES
 #------------------------------------------------------------------------------
-
-add_subdirectory(extern/Pomme)
 
 find_package(OpenGL REQUIRED)
 
@@ -178,7 +169,7 @@ if(ENABLE_SWIFT AND CMAKE_GENERATOR STREQUAL "Xcode")
 		XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "26.0")
 endif()
 
-target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers)
+target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers ${CMAKE_SOURCE_DIR}/extern/minimp3 ${CMAKE_SOURCE_DIR}/extern/ghc-filesystem)
 
 # Swift include paths come from bridging header configuration below
 
@@ -294,7 +285,7 @@ else()
 endif()
 
 # Link core dependencies
-target_link_libraries(${GAME_TARGET} PRIVATE Pomme OpenGL::GL)
+target_link_libraries(${GAME_TARGET} PRIVATE OpenGL::GL)
 
 # Add required frameworks for KillMacMouseAcceleration
 if(APPLE)

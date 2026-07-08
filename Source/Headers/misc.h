@@ -5,12 +5,19 @@
 #pragma once
 
 void	DoAlert(const char* format, ...);
-POMME_NORETURN void DoFatalAlert(const char* format, ...);
-POMME_NORETURN void CleanQuit(void);
+SW_NORETURN void DoFatalAlert(const char* format, ...);
+SW_NORETURN void CleanQuit(void);
 
 void* AllocPtr(long size);
 void* ReallocPtr(void* ptr, long size);
 void SafeDisposePtr(void* ptr);
+
+void SwBlockMove(const void* srcPtr, void* destPtr, long byteCount);
+void SwGetDateTime(unsigned long* secs);
+SW_NORETURN void SwExitToShell(void);
+
+// Defined in Boot.cpp - see SwExitToShell's comment in Misc.swift.
+void SwPlatformShutdown(void);
 
 
 

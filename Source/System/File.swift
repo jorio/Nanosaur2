@@ -756,7 +756,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
         // READ CHECKPOINT LIST
 
         if let handCkPt = loadResource(resourceFile, kResCkPt, 1000, as: Int8.self) {
-            BlockMove(handCkPt, GetLineMarkerPtr(0), resourceByteCount(resourceFile, kResCkPt, 1000))
+            SwBlockMove(handCkPt, GetLineMarkerPtr(0), resourceByteCount(resourceFile, kResCkPt, 1000))
             SafeDisposePtr(handCkPt)
 
             // CONVERT COORDINATES
@@ -1174,7 +1174,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     // COMMIT PAYLOAD AND FINISH
 
-    BlockMove(payloadCopy, payloadPtr, payloadLength)
+    SwBlockMove(payloadCopy, payloadPtr, payloadLength)
 
     SafeDisposePtr(payloadCopy)
     SwFSClose(refNum)
@@ -1191,7 +1191,7 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
     SwFSpDelete(&file) // delete any existing file
-    var iErr = FSpCreate(&file, kGameIDFourCC, kPrefFourCC, -1) // smSystemScript
+    var iErr = SwFSpCreate(&file, kGameIDFourCC, kPrefFourCC, -1) // smSystemScript
     if iErr != kNoErr {
         return iErr
     }

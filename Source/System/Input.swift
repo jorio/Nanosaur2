@@ -223,7 +223,7 @@ func DoSDLMaintenance() {
     while SDL_PollEvent(&event) {
         switch SDL_EventType(UInt32(event.type)) {
         case SDL_EVENT_QUIT, SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-            CleanQuit() // throws Pomme::QuitRequest (noreturn)
+            CleanQuit() // exits the process (noreturn) - see SwExitToShell in Misc.swift
 
         case SDL_EVENT_KEY_DOWN:
             gUserPrefersGamepad = 0

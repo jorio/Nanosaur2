@@ -514,7 +514,7 @@ private func playLevel() {
 
         showTimeDemoResults(Int32(gGameFrameNum), seconds, Float(gGameFrameNum) / seconds)
 
-        ExitToShell()
+        SwExitToShell()
     }
 }
 
@@ -790,7 +790,7 @@ public func GameMain() {
     InitObjectManager()
 
     var someLong: UInt = 0
-    GetDateTime(&someLong) // init random seed
+    SwGetDateTime(&someLong) // init random seed
     SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong)) // matches original C's implicit truncation on cast
 
     // PRELOAD SPRITES FOR ENTIRE GAME

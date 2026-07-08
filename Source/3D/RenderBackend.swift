@@ -92,6 +92,18 @@ protocol RenderBackend: AnyObject {
     func vertex3f(_ x: Float, _ y: Float, _ z: Float)
     func texCoord2f(_ u: Float, _ v: Float)
     func endImmediate()
+
+    /// The common single-window per-frame sequence in `OGL_DrawScene`:
+    /// viewport, clear, and swap/present. Deliberately NOT covering the
+    /// stereo/dual-screen-specific calls in the same function
+    /// (glColorMask for anaglyph, glDrawBuffer for shutter glasses) - those
+    /// are edge cases (plan's Phase 4), left as raw gl* calls for now.
+    func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32)
+    func clearColorAndDepth()
+    func clearDepthOnly()
+    func setWireframe(_ enabled: Bool)
+    /// Presents the frame. GLRenderBackend does `SDL_GL_SwapWindow`.
+    func present()
 }
 
 final class GLRenderBackend: RenderBackend {
@@ -138,6 +150,14 @@ final class GLRenderBackend: RenderBackend {
     func vertex3f(_ x: Float, _ y: Float, _ z: Float) { glVertex3f(x, y, z) }
     func texCoord2f(_ u: Float, _ v: Float) { glTexCoord2f(u, v) }
     func endImmediate() { glEnd() }
+
+    func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32) { glViewport(x, y, w, h) }
+    func clearColorAndDepth() { glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) }
+    func clearDepthOnly() { glClear(GLbitfield(GL_DEPTH_BUFFER_BIT)) }
+    func setWireframe(_ enabled: Bool) {
+        glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(enabled ? GL_LINE : GL_FILL))
+    }
+    func present() { SDL_GL_SwapWindow(gSDLWindow) }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

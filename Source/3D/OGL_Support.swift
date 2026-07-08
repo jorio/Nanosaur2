@@ -781,9 +781,9 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                     glColorMask(1, 0, 1, 1) // make sure clearing Red/Blue channels
                 }
 
-                glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearColorAndDepth()
             } else {
-                glClear(GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearDepthOnly()
             }
         }
 
@@ -824,7 +824,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             var w: Int32 = 1
             var h: Int32 = 1
             OGL_GetCurrentViewport(&x, &y, &w, &h, gCurrentSplitScreenPane)
-            glViewport(x, y, w, h)
+            gRenderBackend.setViewport(x, y, w, h)
             gCurrentPaneAspectRatio = Float(h) / Float(w)
 
             // GET UPDATED GLOBAL COPIES OF THE VARIOUS MATRICES
@@ -857,11 +857,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             gDebugMode = 0
         }
 
-        if gDebugMode == 3 { // see if show wireframe
-            glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(GL_LINE))
-        } else {
-            glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(GL_FILL))
-        }
+        gRenderBackend.setWireframe(gDebugMode == 3) // see if show wireframe
     }
 
     if gTimeDemo != 0 {
@@ -903,7 +899,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // SWAP THE BUFFS
 
-    SDL_GL_SwapWindow(gSDLWindow) // end render loop
+    gRenderBackend.present() // end render loop
 
     if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
         gGameViewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)

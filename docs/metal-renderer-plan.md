@@ -171,9 +171,54 @@ GL backend behind a flag (or remove) per user preference.
    for parity (colours, blending, fog, transparency ordering). No automated
    check; expect a long tail of "this one effect looks slightly off."
 
+## DECISION (user, 2026-07-08): raw Metal via `SDL_Metal_CreateView`, not SDL_GPU.
+
+## Phase 0 finding (2026-07-08): `import Metal` collision is CONFIRMED and forces an isolation decision.
+
+Empirically tested with a one-file probe (`import Metal` + `MTLCreateSystemDefaultDevice()`):
+the build fails exactly as predicted —
+
+```
+SwMacTypes.h:83: error: 'Point' has different definitions in different modules;
+  found field 'v' with type 'SInt16'
+  …but in 'Darwin.MacTypes' found field 'v' with type 'short'
+```
+
+Metal transitively imports the Darwin `MacTypes` Clang module, whose `Point`
+(`short v,h`) collides with this project's `SwMacTypes.h` `Point` (`SInt16 v,h`)
+that every Swift file gets via the bridging header. **No Swift file compiled
+with the bridging header can `import Metal`.** So the Metal code must be
+*isolated* from the bridging header. Two ways to do that — this is the next
+decision to make:
+
+**Option A — Objective-C++ (`.mm`), C API.** Write the Metal renderer in an
+`.mm` translation unit that `#import <Metal/Metal.h>`/`<QuartzCore/…>` and SDL,
+but does NOT include the game's `game.h`/`SwMacTypes.h` (so no collision in the
+`.mm` either). It exposes plain `extern "C"` entry points using only primitive
+types (`const float*`, `uint32_t`, opaque handles), declared in a small clean
+C header that the bridging header includes. Swift calls those C functions —
+exactly the C-interop pattern this codebase already uses everywhere.
+- Pros: zero new build machinery, no module boundary, matches existing pattern,
+  lowest friction to a working spike.
+- Cons: new code is Objective-C++, which cuts against the project's C→Swift
+  porting direction (we'd be *adding* non-Swift code).
+
+**Option B — Separate Swift module (new CMake target, no bridging header).**
+A second Swift target compiled *without* `-import-objc-header`, free to
+`import Metal`, exposing a Swift API; the main game module links/imports it.
+Game geometry crosses the boundary as primitives (raw pointers + counts).
+- Pros: new renderer code stays in Swift, consistent with the port's goal.
+- Cons: real build complexity (the game is currently one flat Swift module;
+  this adds a second module + its `.swiftmodule` interface), and the
+  data-marshalling boundary needs designing. Higher upfront cost.
+
+Recommendation: **Option A** for the Phase 0 spike (fastest path to a verified
+clear-screen), with the option to migrate the renderer's authoring to Swift
+(Option B) later if keeping everything in Swift matters more than simplicity.
+
 ## What exists now on this branch
 
 - Branch `feature/metal` created.
-- This plan.
-- (Nothing else yet — Phase 0 spike is the next step, pending the SDL_GPU
-  vs. raw-Metal decision confirmation.)
+- This plan (with the confirmed Phase 0 `import Metal` collision finding).
+- Probe file was created, used to confirm the collision, and removed; build is
+  back to green.

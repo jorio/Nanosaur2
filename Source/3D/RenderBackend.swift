@@ -71,6 +71,15 @@ enum RBPixelFormat {
 /// legacy code storing texture names keeps working unchanged).
 typealias RBTextureHandle = UInt32
 
+/// The texture-combine modes the game uses for its second texture layer
+/// (MULTI_TEXTURE_COMBINE_* in MetaObjects/Water): plain modulate, additive
+/// RGB with modulated alpha, or additive RGB and alpha.
+enum RBTextureEnv {
+    case modulate
+    case combineAdd
+    case combineAddAlpha
+}
+
 // MARK: - Facade protocol
 
 protocol RenderBackend: AnyObject {
@@ -148,6 +157,34 @@ protocol RenderBackend: AnyObject {
     func texCoord2f(_ u: Float, _ v: Float)
     func endImmediate()
 
+    /// Selects the texture unit (0 or 1) that subsequent bindTexture/
+    /// enable/disableTexture2D/setTextureEnv/setSphereMapTexGen calls apply
+    /// to. The game uses at most two units (base texture + reflection map /
+    /// second material layer).
+    func activeTextureUnit(_ unit: Int32)
+    /// Sets how the active unit's texture combines with the incoming
+    /// fragment.
+    func setTextureEnv(_ mode: RBTextureEnv)
+    /// Sphere-map texture-coordinate generation on the active unit
+    /// (reflection mapping) - replaces per-vertex UVs when enabled.
+    func setSphereMapTexGen(_ enabled: Bool)
+
+    /// The one true 3D geometry path: indexed triangle lists
+    /// (MO_DrawGeometry_VertexArray - terrain, skeletons, models, text
+    /// meshes all funnel through it). Material/texture state is set up by
+    /// the caller through the other verbs before this is called. Any nil
+    /// array means "this geometry has no such data". `uv1` is the second
+    /// texture layer's UVs (plain multi-texturing); sphere-map texgen
+    /// replaces it for reflection mapping.
+    func drawIndexedGeometry(
+        points: UnsafePointer<OGLPoint3D>,
+        normals: UnsafePointer<OGLVector3D>?,
+        colors: UnsafePointer<OGLColorRGBA>?,
+        uv0: UnsafePointer<OGLTextureCoord>?,
+        uv1: UnsafePointer<OGLTextureCoord>?,
+        triangles: UnsafePointer<MOTriangleIndecies>?,
+        numTriangles: Int32)
+
     /// The common single-window per-frame sequence in `OGL_DrawScene`:
     /// viewport, clear, and swap/present. Stereo/dual-screen-specific calls
     /// (color-mask passes, buffer selection, second context) are not
@@ -166,6 +203,21 @@ protocol RenderBackend: AnyObject {
 // MARK: - OpenGL implementation
 
 final class GLRenderBackend: RenderBackend {
+    // glActiveTexture/glClientActiveTexture must be fetched as proc
+    // addresses (necessary on Windows; harmless on macOS). Loaded by
+    // loadGLProcs() once the GL context exists - see OGL_CreateDrawContext.
+    private typealias ActiveTextureProc = @convention(c) (GLenum) -> Void
+    private var activeTextureProc: ActiveTextureProc?
+    private var clientActiveTextureProc: ActiveTextureProc?
+
+    func loadGLProcs() {
+        activeTextureProc = unsafeBitCast(SDL.glProcAddress("glActiveTexture"), to: ActiveTextureProc?.self)
+        SwGameAssert(activeTextureProc != nil)
+
+        clientActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glClientActiveTexture"), to: ActiveTextureProc?.self)
+        SwGameAssert(clientActiveTextureProc != nil)
+    }
+
     func enableBlend() { glEnable(GLenum(GL_BLEND)) }
     func disableBlend() { glDisable(GLenum(GL_BLEND)) }
     func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor) {
@@ -280,6 +332,90 @@ final class GLRenderBackend: RenderBackend {
     func vertex3f(_ x: Float, _ y: Float, _ z: Float) { glVertex3f(x, y, z) }
     func texCoord2f(_ u: Float, _ v: Float) { glTexCoord2f(u, v) }
     func endImmediate() { glEnd() }
+
+    func activeTextureUnit(_ unit: Int32) {
+        let glUnit = GLenum(GL_TEXTURE0 + unit)
+        activeTextureProc?(glUnit)
+        clientActiveTextureProc?(glUnit)
+    }
+
+    func setTextureEnv(_ mode: RBTextureEnv) {
+        switch mode {
+        case .modulate:
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
+        case .combineAdd:
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_MODULATE)
+        case .combineAddAlpha:
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
+            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_ADD)
+        }
+    }
+
+    func setSphereMapTexGen(_ enabled: Bool) {
+        if enabled {
+            glTexGeni(GLenum(GL_S), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP)
+            glTexGeni(GLenum(GL_T), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP)
+            glEnable(GLenum(GL_TEXTURE_GEN_S))
+            glEnable(GLenum(GL_TEXTURE_GEN_T))
+        } else {
+            glDisable(GLenum(GL_TEXTURE_GEN_S))
+            glDisable(GLenum(GL_TEXTURE_GEN_T))
+        }
+    }
+
+    func drawIndexedGeometry(
+        points: UnsafePointer<OGLPoint3D>,
+        normals: UnsafePointer<OGLVector3D>?,
+        colors: UnsafePointer<OGLColorRGBA>?,
+        uv0: UnsafePointer<OGLTextureCoord>?,
+        uv1: UnsafePointer<OGLTextureCoord>?,
+        triangles: UnsafePointer<MOTriangleIndecies>?,
+        numTriangles: Int32)
+    {
+        glEnableClientState(GLenum(GL_VERTEX_ARRAY))
+        glVertexPointer(3, GLenum(GL_FLOAT), 0, points)
+
+        if let colors {
+            glColorPointer(4, GLenum(GL_FLOAT), 0, colors)
+            glEnableClientState(GLenum(GL_COLOR_ARRAY))
+        } else {
+            glDisableClientState(GLenum(GL_COLOR_ARRAY))
+        }
+
+        // UV arrays are bound per *client* texture unit; do unit 1 first so
+        // client unit 0 is the active one on exit (matching the rest of the
+        // code's assumption that unit 0 is current).
+        if let clientActiveTextureProc {
+            clientActiveTextureProc(GLenum(GL_TEXTURE1))
+            if let uv1 {
+                glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uv1)
+                glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+            } else {
+                glDisableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+            }
+            clientActiveTextureProc(GLenum(GL_TEXTURE0))
+        }
+        if let uv0 {
+            glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uv0)
+            glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+        } else {
+            glDisableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+        }
+
+        if let normals {
+            glNormalPointer(GLenum(GL_FLOAT), 0, normals)
+            glEnableClientState(GLenum(GL_NORMAL_ARRAY))
+        } else {
+            glDisableClientState(GLenum(GL_NORMAL_ARRAY))
+        }
+
+        if numTriangles != 0, let triangles {
+            glDrawElements(GLenum(GL_TRIANGLES), numTriangles * 3, GLenum(GL_UNSIGNED_INT), triangles)
+        }
+    }
 
     func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32) { glViewport(x, y, w, h) }
     func setClearColor(_ r: Float, _ g: Float, _ b: Float) { glClearColor(r, g, b, 1.0) }

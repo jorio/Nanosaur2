@@ -72,9 +72,8 @@ private let kNoErr: OSErr = 0
 
 // MARK: - GL extension function pointers (Necessary on Windows; harmless here)
 
-private typealias GLActiveTextureProc = @convention(c) (GLenum) -> Void
-private var gGlActiveTextureProc: GLActiveTextureProc?
-private var gGlClientActiveTextureProc: GLActiveTextureProc?
+// glActiveTexture/glClientActiveTexture proc pointers moved into
+// GLRenderBackend (loadGLProcs) as part of the portable-facade refactor.
 
 // MARK: - Vertex array memory bookkeeping (file-private, never referenced elsewhere)
 
@@ -434,14 +433,9 @@ private func OGL_CreateDrawContext() {
         SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
     }
 
-    // GET GL PROCEDURES
-    // Necessary on Windows
+    // GET GL PROCEDURES (glActiveTexture etc. - necessary on Windows)
 
-    gGlActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glActiveTexture"), to: GLActiveTextureProc?.self)
-    SwGameAssert(gGlActiveTextureProc != nil)
-
-    gGlClientActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
-    SwGameAssert(gGlClientActiveTextureProc != nil)
+    (gRenderBackend as? GLRenderBackend)?.loadGLProcs()
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
     // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT
@@ -1951,8 +1945,9 @@ func OGL_DisableTexture2D() {
 // Sets the currently active texture unit for GL_TEXTURE0...n
 
 func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
-    gGlActiveTextureProc?(texUnit)
-    gGlClientActiveTextureProc?(texUnit)
+    // Legacy GL-typed shim: callers pass GL_TEXTURE0 + n; the facade takes
+    // a plain unit index.
+    gRenderBackend.activeTextureUnit(Int32(texUnit) - GL_TEXTURE0)
 
     gMyState_TextureUnit = texUnit
 }

@@ -65,15 +65,26 @@ final class MetalRenderBackend: RenderBackend {
 
     private var lastBoundTexture: RBTextureHandle = 0
     private var texture2DEnabled = true
+    // Only texture unit 0 is honored: MetalRenderer's shader samples a
+    // single texture. Multi-texture passes (second material layer,
+    // reflection maps) select unit 1 and bind/toggle textures there - those
+    // operations are ignored so they can't clobber the base texture.
+    private var currentTextureUnit: Int32 = 0
 
     func enableTexture2D() {
+        guard currentTextureUnit == 0 else { return }
         texture2DEnabled = true
         renderer.bindTexture(Int32(bitPattern: lastBoundTexture))
     }
     func disableTexture2D() {
+        guard currentTextureUnit == 0 else { return }
         texture2DEnabled = false
         renderer.bindTexture(-1)
     }
+
+    func activeTextureUnit(_ unit: Int32) { currentTextureUnit = unit }
+    func setTextureEnv(_ mode: RBTextureEnv) { /* single-texture shader - combine modes not implemented */ }
+    func setSphereMapTexGen(_ enabled: Bool) { /* reflection mapping not implemented */ }
 
     func enableLighting() { /* no-op, see header comment */ }
     func disableLighting() { /* no-op, see header comment */ }
@@ -227,6 +238,7 @@ final class MetalRenderBackend: RenderBackend {
     // MARK: - Textures
 
     func bindTexture(_ name: RBTextureHandle) {
+        guard currentTextureUnit == 0 else { return } // see currentTextureUnit
         lastBoundTexture = name
         if texture2DEnabled {
             renderer.bindTexture(Int32(bitPattern: name))
@@ -315,6 +327,41 @@ final class MetalRenderBackend: RenderBackend {
                 renderer.draw(base, vertexCount: vertexCount, primitive: .lines)
             }
         }
+    }
+
+    // MARK: - Indexed geometry
+
+    /// Expands the indexed triangle list through the immediate-mode
+    /// accumulator (one interleaved vertex per index). Ignores normals (no
+    /// lighting model) and uv1 (single-texture shader) - see the header
+    /// comment's gap list. Per-vertex colors override the current material
+    /// color exactly like GL's color arrays do.
+    func drawIndexedGeometry(
+        points: UnsafePointer<OGLPoint3D>,
+        normals: UnsafePointer<OGLVector3D>?,
+        colors: UnsafePointer<OGLColorRGBA>?,
+        uv0: UnsafePointer<OGLTextureCoord>?,
+        uv1: UnsafePointer<OGLTextureCoord>?,
+        triangles: UnsafePointer<MOTriangleIndecies>?,
+        numTriangles: Int32)
+    {
+        guard numTriangles > 0, let triangles else { return }
+
+        beginImmediate(.triangles)
+        for t in 0..<Int(numTriangles) {
+            let tri = triangles[t].vertexIndices
+            for index in [tri.0, tri.1, tri.2] {
+                let i = Int(index)
+                if let colors {
+                    setColor4f(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
+                }
+                if let uv0 {
+                    texCoord2f(uv0[i].u, uv0[i].v)
+                }
+                vertex3f(points[i].x, points[i].y, points[i].z)
+            }
+        }
+        endImmediate()
     }
 
     // MARK: - Frame / viewport / clear

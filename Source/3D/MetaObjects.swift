@@ -407,44 +407,14 @@ func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
     OGL_PopState()
 }
 
-// Metal-mode path for MO_DrawGeometry_VertexArray below: the GL body is
-// built on client-state vertex arrays (glVertexPointer/glDrawElements),
-// which need a live GL context. Under --metal, expand the same indexed
-// triangle data through the facade's immediate-mode verbs instead. Covers
-// the single-material textured/vertex-colored case (all that QuadMesh/
-// TextMesh - i.e. menu text - uses); the GL path's multi-texture/texgen
-// (ENVMAP reflection) extras are 3D-world features, not implemented here.
-private func drawGeometryVertexArrayViaBackend(_ data: UnsafeMutablePointer<MOVertexArrayData>) {
-    // ACTIVATE MATERIAL #0 (same rule as the GL path: numMaterials > 0
-    // activates the first material; negative means the caller already set
-    // the texture; 0 means untextured)
-    let materials = materialsBase(data)
-    if data.pointee.numMaterials > 0 {
-        MO_DrawMaterial(materials[0])
+// Neutral RBTextureEnv for a MULTI_TEXTURE_COMBINE_* constant (materials'
+// second-layer combine mode).
+private func rbTextureEnv(forCombineMode mode: Int) -> RBTextureEnv {
+    switch mode {
+    case MULTI_TEXTURE_COMBINE_ADD: return .combineAdd
+    case MULTI_TEXTURE_COMBINE_ADDALPHA: return .combineAddAlpha
+    default: return .modulate
     }
-
-    let uvs = uvsBase(data)[0]
-    let colors = data.pointee.colorsFloat
-    let points = data.pointee.points!
-    let triangles = data.pointee.triangles!
-
-    gRenderBackend.beginImmediate(.triangles)
-    for t in 0..<Int(data.pointee.numTriangles) {
-        let tri = triangles[t].vertexIndices
-        for index in [tri.0, tri.1, tri.2] {
-            let i = Int(index)
-            if let colors {
-                gRenderBackend.setColor4f(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
-            }
-            if let uvs {
-                gRenderBackend.texCoord2f(uvs[i].u, uvs[i].v)
-            }
-            gRenderBackend.vertex3f(points[i].x, points[i].y, points[i].z)
-        }
-    }
-    gRenderBackend.endImmediate()
-
-    gPolysThisFrame += data.pointee.numTriangles
 }
 
 func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
@@ -453,38 +423,19 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     var multiTexture = false
     var texGen = false
 
-    if gMetalMode != 0 { // no GL context - see drawGeometryVertexArrayViaBackend above
-        drawGeometryVertexArrayViaBackend(data)
-        return
-    }
-
-    // SETUP VERTEX ARRAY
-
-    glEnableClientState(GLenum(GL_VERTEX_ARRAY)) // enable vertex arrays
-    glVertexPointer(3, GLenum(GL_FLOAT), 0, data.pointee.points) // point to points array
-
-    // SETUP VERTEX COLORS
-
-    if data.pointee.colorsFloat != nil { // do we have float colors?
-        glColorPointer(4, GLenum(GL_FLOAT), 0, data.pointee.colorsFloat)
-        glEnableClientState(GLenum(GL_COLOR_ARRAY)) // enable color arrays
-    } else {
-        glDisableClientState(GLenum(GL_COLOR_ARRAY)) // no color data, so disable
-    }
-
-    if OGL_CheckError() != 0 {
-        SwFatal("MO_DrawGeometry_VertexArray: color!")
-    }
-
     // SEE IF ACTIVATE MATERIAL
     //
-    // For now, I'm just looking at material #0.
+    // For now, I'm just looking at material #0. This decides material/texenv
+    // state (via facade verbs) and which UV arrays accompany the geometry
+    // (uv0/uv1 passed to drawIndexedGeometry below).
 
     let materials = materialsBase(data)
     let uvs = uvsBase(data)
+    var uv0: UnsafeMutablePointer<OGLTextureCoord>?
+    var uv1: UnsafeMutablePointer<OGLTextureCoord>?
 
     goHere: if data.pointee.numMaterials < 0 { // if (-), then assume texture has been manually set
-        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen)
+        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen, &uv0)
     } else if data.pointee.numMaterials > 0 { // are there any materials?
         // SEE IF DO PLAIN MULTI-TEXTURING FROM GEOMETRY
         //
@@ -500,27 +451,16 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0) + UInt32(i)) // activate texture layer #i
                 OGL_EnableTexture2D()
 
-                glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[i]) // enable uv arrays
-                glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+                if i == 0 {
+                    uv0 = uvs[0]
+                } else {
+                    uv1 = uvs[i] // the facade supports 2 texture layers, same as the game's data (MAX_MATERIAL_LAYERS uv sets, 2 used in practice)
+                }
 
                 // SET COMBINE MODE FOR TEXTURE LAYER #2
 
                 if i > 0 {
-                    let multiTextureCombine = materials[0]!.pointee.objectData.multiTextureCombine
-                    switch Int(multiTextureCombine) { // set combining info
-                    case MULTI_TEXTURE_COMBINE_MODULATE:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                    case MULTI_TEXTURE_COMBINE_ADD:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_MODULATE)
-                    case MULTI_TEXTURE_COMBINE_ADDALPHA:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_ADD)
-                    default:
-                        break
-                    }
+                    gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(materials[0]!.pointee.objectData.multiTextureCombine)))
                 }
 
                 // SUBMIT MATERIAL FOR THIS TEXTURE UNIT
@@ -541,7 +481,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
 
         // IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY
 
-        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen)
+        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen, &uv0)
     } else {
         OGL_DisableTexture2D() // no materials, thus no texture, thus turn this off
     }
@@ -549,10 +489,8 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     // WE DONT HAVE ENOUGH INFO TO DO TEXTURES, SO DISABLE
 
     if !useTexture {
-        glDisableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
-        if OGL_CheckError() != 0 {
-            SwFatal("MO_DrawGeometry_VertexArray: glDisableClientState(GL_TEXTURE_COORD_ARRAY)!")
-        }
+        uv0 = nil
+        uv1 = nil
     }
 
     // SETUP VERTEX NORMALS
@@ -571,22 +509,20 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
         }
     }
 
-    if needNormals {
-        glNormalPointer(GLenum(GL_FLOAT), 0, data.pointee.normals)
-        glEnableClientState(GLenum(GL_NORMAL_ARRAY)) // enable normal arrays
-    } else {
-        glDisableClientState(GLenum(GL_NORMAL_ARRAY)) // disable normal arrays
-    }
-
-    _ = OGL_CheckError()
-
     // DRAW IT
 
     if data.pointee.numTriangles != 0 {
         SwGameAssert(data.pointee.triangles != nil)
-        glDrawElements(GLenum(GL_TRIANGLES), data.pointee.numTriangles * 3, GLenum(GL_UNSIGNED_INT), data.pointee.triangles)
-        _ = OGL_CheckError()
     }
+    gRenderBackend.drawIndexedGeometry(
+        points: data.pointee.points!,
+        normals: needNormals ? data.pointee.normals : nil,
+        colors: data.pointee.colorsFloat,
+        uv0: uv0,
+        uv1: uv1,
+        triangles: data.pointee.triangles,
+        numTriangles: data.pointee.numTriangles)
+    _ = OGL_CheckError()
 
     gPolysThisFrame += data.pointee.numTriangles // inc poly counter
 
@@ -595,18 +531,16 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     if multiTexture {
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1)) // turn off textureing for multi-texture layer 2 since it isnt needed anymore
         OGL_DisableTexture2D()
-        glDisable(UInt32(GL_TEXTURE_GEN_S))
-        glDisable(UInt32(GL_TEXTURE_GEN_T))
+        gRenderBackend.setSphereMapTexGen(false)
 
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0)) // make sure #0 is active when we leave
-        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-        glDisable(UInt32(GL_TEXTURE_GEN_S))
-        glDisable(UInt32(GL_TEXTURE_GEN_T))
+        gRenderBackend.setTextureEnv(.modulate)
+        gRenderBackend.setSphereMapTexGen(false)
     }
 }
 
 // IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY (shared tail of both single- and use_current-material paths)
-private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?>, _ useTexture: inout Bool, _ multiTexture: inout Bool, _ texGen: inout Bool) {
+private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?>, _ useTexture: inout Bool, _ multiTexture: inout Bool, _ texGen: inout Bool, _ uv0: inout UnsafeMutablePointer<OGLTextureCoord>?) {
     let materialFlags = gMostRecentMaterial!.pointee.objectData.flags // get material flags
     if materialFlags & UInt32(BG3D_MATERIALFLAG_TEXTURED) != 0 {
         if uvs[0] != nil {
@@ -635,31 +569,13 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
                         OGL_EnableTexture2D()
 
                         if i == 0 {
-                            glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[0]) // enable uv arrays
-                            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                            glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+                            uv0 = uvs[0]
+                            gRenderBackend.setTextureEnv(.modulate)
                         } else {
                             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_SPHEREMAPS))![Int(envMapNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate reflection map texture
 
-                            switch Int(multiTextureCombine) { // set combining info
-                            case MULTI_TEXTURE_COMBINE_MODULATE:
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                            case MULTI_TEXTURE_COMBINE_ADD:
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_MODULATE)
-                            case MULTI_TEXTURE_COMBINE_ADDALPHA: // note, when we do this gGlobalTransparency will have no effect
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_ADD)
-                            default:
-                                break
-                            }
-
-                            glTexGeni(GLenum(GL_S), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP) // activate reflection mapping
-                            glTexGeni(GLenum(GL_T), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP)
-                            glEnable(UInt32(GL_TEXTURE_GEN_S))
-                            glEnable(UInt32(GL_TEXTURE_GEN_T))
+                            gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gGlobalTransparency will have no effect
+                            gRenderBackend.setSphereMapTexGen(true) // activate reflection mapping (unit 1 gets generated coords, no uv array)
                             texGen = true
                         }
                     }
@@ -671,15 +587,10 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
             // JUST 1 TEXTURE LAYER
 
             else {
-                glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[0])
-                glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY)) // enable uv arrays
+                uv0 = uvs[0]
             }
 
             useTexture = true
-
-            if OGL_CheckError() != 0 {
-                SwFatal("MO_DrawGeometry_VertexArray: uv!")
-            }
         }
     }
 }

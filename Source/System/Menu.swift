@@ -299,7 +299,7 @@ private let cMoveDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 private let cDrawDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { node in
     guard let node = node else { return }
     OGL_PushState(); SetInfobarSpriteState(0, 1); OGL_DisableTexture2D(); OGL_EnableBlend(); OGL_EnableCullFace()
-    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
     let s = node.pointee.Scale.y; let menuTop = node.pointee.Coord.y - s/2; let menuBottom = node.pointee.Coord.y + s/2
     let taper: Float = 16; let c = node.pointee.ColorFilter
     gRenderBackend.setColor4f(c.r, c.g, c.b, 0); gRenderBackend.vertex2f(gLogicalRect.right, menuTop - taper); gRenderBackend.vertex2f(gLogicalRect.left, menuTop - taper)

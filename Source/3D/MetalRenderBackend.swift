@@ -61,9 +61,9 @@ final class MetalRenderBackend: RenderBackend {
 
     func enableBlend() { renderer.setBlend(true) }
     func disableBlend() { renderer.setBlend(false) }
-    func blendFunc(_ src: GLenum, _ dst: GLenum) { /* see header comment: fixed blend equation */ }
+    func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor) { /* see header comment: fixed blend equation */ }
 
-    private var lastBoundTexture: GLuint = 0
+    private var lastBoundTexture: RBTextureHandle = 0
     private var texture2DEnabled = true
 
     func enableTexture2D() {
@@ -96,14 +96,12 @@ final class MetalRenderBackend: RenderBackend {
 
     // MARK: - Matrix stack
 
-    // The texture matrix stack (GL_TEXTURE, used by STATUS_BIT_UVTRANSFORM
+    // The texture matrix stack (.texture, used by STATUS_BIT_UVTRANSFORM
     // texture scrolling in Objects.swift) is tracked but has no effect on
     // rendering yet - the shader has no texture-matrix uniform. Tracking it
-    // as its own mode matters anyway: before this existed, GL_TEXTURE was
-    // silently treated as modelview, so a UV-transform's translate corrupted
-    // the modelview stack.
-    private enum MatrixMode { case modelview, projection, texture }
-    private var currentMatrixMode: MatrixMode = .modelview
+    // as its own mode matters anyway: if it fell through to modelview, a
+    // UV-transform's translate would corrupt the modelview stack.
+    private var currentMatrixMode: RBMatrixMode = .modelview
     private var modelviewStack: [[Float]] = [MetalRenderBackend.identity]
     private var projectionStack: [[Float]] = [MetalRenderBackend.identity]
     private var textureStack: [[Float]] = [MetalRenderBackend.identity]
@@ -115,12 +113,8 @@ final class MetalRenderBackend: RenderBackend {
         0, 0, 0, 1,
     ]
 
-    func matrixMode(_ mode: GLenum) {
-        switch mode {
-        case GLenum(GL_PROJECTION): currentMatrixMode = .projection
-        case GLenum(GL_TEXTURE): currentMatrixMode = .texture
-        default: currentMatrixMode = .modelview
-        }
+    func matrixMode(_ mode: RBMatrixMode) {
+        currentMatrixMode = mode
     }
 
     private func top() -> [Float] {
@@ -232,38 +226,40 @@ final class MetalRenderBackend: RenderBackend {
 
     // MARK: - Textures
 
-    func bindTexture(_ name: GLuint) {
+    func bindTexture(_ name: RBTextureHandle) {
         lastBoundTexture = name
         if texture2DEnabled {
             renderer.bindTexture(Int32(bitPattern: name))
         }
     }
 
-    func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint {
-        // Every call site in this codebase passes 4-byte-per-pixel data in
-        // one of exactly two layouts: GL_RGBA/GL_UNSIGNED_BYTE (stb_image-
-        // decoded PNG/JPG, BG3D textures - the common case) or
-        // GL_BGRA/GL_UNSIGNED_INT_8_8_8_8_REV. Map that onto the matching
-        // Metal pixel format; destFormat is ignored (GL-internal detail).
-        let bgra = srcFormat == GL_BGRA
-        let handle = renderer.createTexture(width: Int(width), height: Int(height), pixels: imageMemory, bgra: bgra)
-        return GLuint(bitPattern: handle)
+    func createTexture(width: Int32, height: Int32, format: RBPixelFormat, pixels: UnsafeRawPointer) -> RBTextureHandle {
+        switch format {
+        case .rgba8:
+            let handle = renderer.createTexture(width: Int(width), height: Int(height), pixels: pixels, bgra: false)
+            return RBTextureHandle(bitPattern: handle)
+        case .rgba8888Rev, .rgba1555Rev:
+            // BG3D "imported model" formats that Nanosaur 2's own data never
+            // uses (see RBPixelFormat) - not implemented on Metal.
+            SwLog("MetalRenderBackend: unsupported texture format \(format)")
+            return 0
+        }
     }
 
-    func updateTexture(_ name: GLuint, width: Int32, height: Int32, pixels: UnsafeRawPointer) {
-        renderer.updateTexture(Int32(bitPattern: name), width: Int(width), height: Int(height), bgraPixels: pixels)
+    func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer) {
+        renderer.updateTexture(Int32(bitPattern: name), width: Int(width), height: Int(height), bgraPixels: bgraPixels)
     }
 
-    func setTextureWrap(_ target: GLenum, clamp: Bool) { /* no-op, see header comment */ }
+    func setTextureWrap(_ axis: RBTextureAxis, clamp: Bool) { /* no-op, see header comment */ }
 
     // MARK: - Immediate mode
 
-    private var immediateMode: GLenum = 0
+    private var immediateMode: RBPrimitive = .quads
     private var immediateVerts: [Float] = []
     private var currentU: Float = 0
     private var currentV: Float = 0
 
-    func beginImmediate(_ mode: GLenum) {
+    func beginImmediate(_ mode: RBPrimitive) {
         immediateMode = mode
         immediateVerts.removeAll(keepingCapacity: true)
     }
@@ -281,11 +277,11 @@ final class MetalRenderBackend: RenderBackend {
         guard vertexCount > 0 else { return }
 
         switch immediateMode {
-        case GLenum(GL_QUADS):
-            // GL_QUADS treats every group of 4 vertices as an independent
-            // quad (not a fan across the whole batch) - matters for
-            // Atlas_ImmediateDraw, which submits many quads (one per glyph)
-            // in a single begin/end block.
+        case .quads:
+            // Quads are independent per group of 4 vertices (not a fan
+            // across the whole batch) - matters for Atlas_ImmediateDraw,
+            // which submits many quads (one per glyph) in a single
+            // begin/end block.
             var tris: [Float] = []
             tris.reserveCapacity((vertexCount / 4) * 6 * 9)
             var q = 0
@@ -301,26 +297,23 @@ final class MetalRenderBackend: RenderBackend {
                 renderer.draw(base, vertexCount: tris.count / 9, primitive: .triangles)
             }
 
-        case GLenum(GL_TRIANGLES):
+        case .triangles:
             immediateVerts.withUnsafeBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
                 renderer.draw(base, vertexCount: vertexCount, primitive: .triangles)
             }
 
-        case GLenum(GL_LINE_LOOP), GLenum(GL_LINE_STRIP):
+        case .lineLoop, .lineStrip:
             immediateVerts.withUnsafeBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
                 renderer.draw(base, vertexCount: vertexCount, primitive: .lineLoop)
             }
 
-        case GLenum(GL_LINES):
+        case .lines:
             immediateVerts.withUnsafeBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
                 renderer.draw(base, vertexCount: vertexCount, primitive: .lines)
             }
-
-        default:
-            break // unsupported primitive mode - not used by any migrated call site
         }
     }
 

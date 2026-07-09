@@ -428,7 +428,7 @@ private func drawGeometryVertexArrayViaBackend(_ data: UnsafeMutablePointer<MOVe
     let points = data.pointee.points!
     let triangles = data.pointee.triangles!
 
-    gRenderBackend.beginImmediate(GLenum(GL_TRIANGLES))
+    gRenderBackend.beginImmediate(.triangles)
     for t in 0..<Int(data.pointee.numTriangles) {
         let tri = triangles[t].vertexIndices
         for index in [tri.0, tri.1, tri.2] {
@@ -711,12 +711,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_U) != 0 { // we want to clamp the U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) == 0 { // see if clamping needs to be enabled
-                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_S), clamp: true) // nope, so set clamping
+                gRenderBackend.setTextureWrap(.u, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) != 0 { // see clamping is still enabled
-                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_S), clamp: false)
+                gRenderBackend.setTextureWrap(.u, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we cleared it
             }
         }
@@ -725,12 +725,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_V) != 0 { // we want to clamp the V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) == 0 { // see if clamping needs to be enabled
-                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_T), clamp: true) // nope, so set clamping
+                gRenderBackend.setTextureWrap(.v, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) != 0 { // see clamping is still enabled
-                gRenderBackend.setTextureWrap(GLenum(GL_TEXTURE_WRAP_T), clamp: false)
+                gRenderBackend.setTextureWrap(.v, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we cleared it
             }
         }
@@ -820,7 +820,7 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     // DRAW QUAD
 
-    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
     gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x, y + height, z)
     gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + width, y + height, z)
     gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + width, y, z)
@@ -891,7 +891,7 @@ func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
     // DRAW IT
 
-    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
 
     gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p[0].x + x, p[0].y + y)
     gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p[1].x + x, p[1].y + y)

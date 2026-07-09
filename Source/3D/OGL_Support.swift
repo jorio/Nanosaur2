@@ -499,10 +499,10 @@ private var gDualScreenBackgroundTexture: GLuint = 0
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.loadIdentity()
     glOrtho(0, GLdouble(windowWidth), GLdouble(windowHeight), 0, -1, 1)
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     gRenderBackend.loadIdentity()
 
     gRenderBackend.setClearColor(0, 0, 0)
@@ -1184,11 +1184,20 @@ func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32
     }
 
     // GET A UNIQUE TEXTURE NAME & INITIALIZE IT, LOAD TEXTURE AND/OR MIPMAPS
+    //
+    // Legacy GL-typed shim (see RenderBackend.swift's header): translate the
+    // (srcFormat, dataType) pair to the facade's neutral pixel format. Every
+    // caller passes srcFormat GL_RGBA; only dataType varies (and only in
+    // theory - see RBPixelFormat).
+    let format: RBPixelFormat
+    switch dataType {
+    case GLint(GL_UNSIGNED_INT_8_8_8_8_REV): format = .rgba8888Rev
+    case GLint(GL_UNSIGNED_SHORT_1_5_5_5_REV): format = .rgba1555Rev
+    default: format = .rgba8
+    }
 
     let textureName = gRenderBackend.createTexture(
-        width: width, height: height,
-        destFormat: destFormat, srcFormat: srcFormat, dataType: dataType,
-        imageMemory: imageMemory)
+        width: width, height: height, format: format, pixels: imageMemory)
 
     // SEE IF RAN OUT OF MEMORY WHILE COPYING TO OPENGL
 
@@ -1512,7 +1521,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 // MARK: - OGL: RAM texture has changed
 
 func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
-    gRenderBackend.updateTexture(textureName, width: Int32(width), height: Int32(height), pixels: pixels)
+    gRenderBackend.updateTexture(textureName, width: Int32(width), height: Int32(height), bgraPixels: pixels)
 }
 
 // MARK: - OGL: Texture set OpenGL texture
@@ -1613,7 +1622,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // INIT PROJECTION MATRIX
 
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.loadIdentity()
 
     let placements = cameraPlacementsBase()
@@ -1648,7 +1657,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             gGameViewInfoPtr!.pointee.hither,
             gGameViewInfoPtr!.pointee.yon)
 
-        gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+        gRenderBackend.matrixMode(.projection)
         withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
             UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
         }
@@ -1662,7 +1671,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
         &placements[Int(camNum)].pointOfInterest,
         &placements[Int(camNum)].upVector)
 
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
         UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
     }
@@ -1757,12 +1766,12 @@ func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum
 func OGL_PushState() {
     // PUSH MATRIES WITH OPENGL
 
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     gRenderBackend.pushMatrix()
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.pushMatrix()
 
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW)) // in my code, I keep modelview matrix as the currently active one all the time.
+    gRenderBackend.matrixMode(.modelview) // in my code, I keep modelview matrix as the currently active one all the time.
 
     // SAVE OTHER INFO
 
@@ -1802,9 +1811,9 @@ func OGL_PushState() {
 func OGL_PopState() {
     // RETREIVE OPENGL MATRICES
 
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.popMatrix()
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     gRenderBackend.popMatrix()
 
     // GET OTHER INFO
@@ -2039,9 +2048,23 @@ func OGL_DisableDepthTest() {
 
 // MARK: - OGL blend func
 
+// Legacy GL-typed shim (see RenderBackend.swift's header): call sites all
+// over the codebase pass GL blend-factor enums; translate to the facade's
+// neutral factors here. Only the pairs the game actually uses are mapped.
+private func rbBlendFactor(_ glFactor: GLenum) -> RBBlendFactor {
+    switch Int32(glFactor) {
+    case GL_ONE: return .one
+    case GL_SRC_ALPHA: return .srcAlpha
+    case GL_ONE_MINUS_SRC_ALPHA: return .oneMinusSrcAlpha
+    default:
+        SwFatal("OGL_BlendFunc: unmapped GL blend factor \(glFactor)")
+        return .one
+    }
+}
+
 func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
     if sfactor != gMyState_BlendFuncS || dfactor != gMyState_BlendFuncD {
-        gRenderBackend.blendFunc(sfactor, dfactor)
+        gRenderBackend.blendFunc(rbBlendFactor(sfactor), rbBlendFactor(dfactor))
 
         gMyState_BlendFuncS = sfactor
         gMyState_BlendFuncD = dfactor
@@ -2063,9 +2086,9 @@ private func OGL_FreeFont() {
 func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.loadIdentity()
     gRenderBackend.ortho(0, 640, 480, 0, -10.0, 10.0)
 

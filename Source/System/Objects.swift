@@ -612,9 +612,9 @@ func DrawObjects() {
             // SEE IF DO U/V TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                gRenderBackend.matrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.matrixMode(.texture) // set texture matrix
                 gRenderBackend.translate(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
-                gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+                gRenderBackend.matrixMode(.modelview)
             }
 
             // SUBMIT THE GEOMETRY
@@ -680,9 +680,9 @@ func DrawObjects() {
             // SEE IF END UV TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                gRenderBackend.matrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.matrixMode(.texture) // set texture matrix
                 gRenderBackend.loadIdentity()
-                gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+                gRenderBackend.matrixMode(.modelview)
             }
         } while false
 

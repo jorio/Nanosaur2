@@ -441,7 +441,7 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // INIT MATRICES
-    gRenderBackend.matrixMode(GLenum(GL_PROJECTION))
+    gRenderBackend.matrixMode(.projection)
     gRenderBackend.loadIdentity()
 
     gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
@@ -460,7 +460,7 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
         gRenderBackend.ortho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
     }
 
-    gRenderBackend.matrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     gRenderBackend.loadIdentity()
 }
 

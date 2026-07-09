@@ -1,44 +1,82 @@
 // RenderBackend.swift
 //
-// Phase 1 of docs/metal-renderer-plan.md: a small facade over the handful of
-// GL state verbs that OGL_Support.swift's OGL_Enable*/OGL_Disable*/
-// OGL_SetColor4f/OGL_BlendFunc functions already wrap. This is a pure
-// refactor - the state-caching logic in those functions (gMyState_Blend etc.)
-// stays exactly where it is; only the raw gl* call each one makes is moved
-// behind this protocol. GLRenderBackend below reproduces the same gl* calls,
-// so behaviour is unchanged. A future MetalRenderBackend implements the same
-// verbs against the Source/Metal module instead.
+// The portable rendering facade (docs/metal-renderer-plan.md). The goal:
+// every rendering call the game makes goes through this protocol, and the
+// protocol's surface is backend-neutral - no GLenum/GLuint/GL semantics -
+// so OpenGL, Metal, Vulkan, or Citro3D (3DS) are all "just" implementations.
+// GLRenderBackend below is the reference implementation and reproduces the
+// exact gl* calls the game made before the facade existed.
 //
-// Deliberately NOT attempting GL state *introspection* (glGetIntegerv/
-// glIsEnabled/glGetBooleanv, used by OGL_PushState/DrawBlueLine to snapshot
-// "whatever GL's current state happens to be") - that needs a real
-// state-tracking design (an explicit stack), not a 1:1 verb wrapper, and is
-// a separate, later slice.
+// Conventions:
+// - The pervasive OGL_* wrapper functions (OGL_BlendFunc, OGL_TextureMap_Load,
+//   ...) keep their legacy GL-typed signatures - hundreds of call sites use
+//   them - and translate to neutral facade calls internally. The *facade
+//   boundary* is what must stay portable, not every legacy shim above it.
+// - State caching (gMyState_* in OGL_Support.swift) stays ABOVE the facade;
+//   backends receive already-deduplicated state changes.
+// - Immediate mode is wrapped verb-for-verb on purpose: every call site in
+//   this codebase draws one self-contained primitive batch and ends it
+//   immediately. GL forwards straight to glBegin/glVertex/glEnd; other
+//   backends accumulate internally and emit one draw at endImmediate().
+// - The matrix stack is part of the facade because the game's draw code
+//   leans on push/translate/scale/pop nesting; backends without a hardware
+//   matrix stack (all of them except GL) keep a CPU-side stack.
 //
-// Immediate mode (glBegin/glVertex/glTexCoord/glColor/glEnd) IS wrapped
-// below, verb-for-verb, on purpose: every call site in this codebase draws
-// a handful of vertices and calls end() immediately (one GL_QUADS picture,
-// one GL_QUADS sprite, one GL_QUADS run of text glyphs), never spans
-// multiple frames or interleaves with other state changes mid-primitive. So
-// a 1:1 wrapper (GLRenderBackend forwards to real glBegin/glVertex3f/
-// glTexCoord2f/glColor4f/glEnd, byte-for-byte the same calls) is sufficient -
-// no batching/accumulation design needed *for this wrapper*; a future
-// MetalRenderBackend does its own accumulation internally between
-// beginImmediate()/endImmediate() and issues one draw call at endImmediate().
-//
-// The matrix-stack verbs below ARE a clean 1:1 wrapper, despite Metal having
-// no hardware matrix stack: every call site either loads a full 4x4 computed
-// in Swift (the camera path - exactly the MVP-uniform shape Metal wants) or
-// does plain nested push/load-identity/pop, which a future MetalRenderBackend
-// can implement with its own CPU-side matrix stack. Only push/pop/load call
-// sites that also introspect current GL state (OGL_PushState's
-// glGetBooleanv(GL_DEPTH_WRITEMASK) etc., DrawBlueLine's
-// glGetIntegerv(GL_MATRIX_MODE)) are left as raw gl* calls for now.
+// Not yet behind the facade (see the plan doc's slice list): the indexed
+// vertex-array geometry path, lighting/fog setup, GL state introspection in
+// OGL_PushState/DrawBlueLine, stereo glColorMask/glDrawBuffer, dual-screen's
+// second context, context creation, vertex-array-range memory, glReadPixels.
+
+// MARK: - Neutral types
+
+/// Immediate-mode primitive shapes the game actually uses.
+enum RBPrimitive {
+    case quads // independent quads per 4 vertices (GL_QUADS semantics)
+    case triangles
+    case lines
+    case lineStrip
+    case lineLoop
+}
+
+enum RBMatrixMode {
+    case modelview
+    case projection
+    /// Texture-coordinate transform (UV scrolling via STATUS_BIT_UVTRANSFORM).
+    case texture
+}
+
+/// Only the blend factors the game uses (standard alpha and additive glow).
+enum RBBlendFactor {
+    case one
+    case srcAlpha
+    case oneMinusSrcAlpha
+}
+
+enum RBTextureAxis {
+    case u
+    case v
+}
+
+/// Pixel layouts accepted by createTexture, mirroring the exact
+/// (format, type) pairs the game feeds GL. In practice everything is
+/// .rgba8; the other two are BG3D "imported model" paths that Nanosaur 2's
+/// own data never hits.
+enum RBPixelFormat {
+    case rgba8 // (GL_RGBA, GL_UNSIGNED_BYTE) - stb_image, BG3D, terrain
+    case rgba8888Rev // (GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV)
+    case rgba1555Rev // (GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV)
+}
+
+/// Opaque texture handle. 0 means "no texture" (matches GL's convention so
+/// legacy code storing texture names keeps working unchanged).
+typealias RBTextureHandle = UInt32
+
+// MARK: - Facade protocol
 
 protocol RenderBackend: AnyObject {
     func enableBlend()
     func disableBlend()
-    func blendFunc(_ src: GLenum, _ dst: GLenum)
+    func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor)
 
     func enableTexture2D()
     func disableTexture2D()
@@ -54,91 +92,93 @@ protocol RenderBackend: AnyObject {
 
     func enableDepthTest()
     func disableDepthTest()
-    /// Depth-buffer *write* toggle (`glDepthMask`), independent of the test.
+    /// Depth-buffer *write* toggle, independent of the test.
     func setDepthWrite(_ enabled: Bool)
 
     /// The two alpha-test configurations the game ever uses
-    /// (`STATUS_BIT_CLIPALPHA6` in Objects.swift): trimLowAlpha=true is
-    /// `glAlphaFunc(GL_GREATER, 0.6)`, false is the default
-    /// `glAlphaFunc(GL_NOTEQUAL, 0)`.
+    /// (STATUS_BIT_CLIPALPHA6 in Objects.swift): trimLowAlpha=true trims
+    /// pixels with alpha <= 0.6; false is the default "alpha != 0" test.
     func setAlphaClipping(trimLowAlpha: Bool)
 
-    /// `glEnable/glDisable(GL_NORMALIZE)` - only meaningful for the
+    /// Renormalize normals after scaling - only meaningful for the
     /// fixed-function lit 3D path.
     func setNormalizeNormals(_ enabled: Bool)
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float)
 
-    func matrixMode(_ mode: GLenum)
+    func matrixMode(_ mode: RBMatrixMode)
     func pushMatrix()
     func popMatrix()
     func loadIdentity()
-    /// `m` points to 16 floats, column-major (same layout `glLoadMatrixf` and
-    /// `OGLMatrix4x4` already use).
+    /// `m` points to 16 floats, column-major (same layout `OGLMatrix4x4`
+    /// uses).
     func loadMatrix(_ m: UnsafePointer<Float>)
     /// Same layout as `loadMatrix`, but multiplies onto the current matrix
-    /// (`glMultMatrixf`) instead of replacing it - used by `MO_DrawMatrix`
-    /// for MetaObject group transforms.
+    /// instead of replacing it - used by `MO_DrawMatrix` for MetaObject
+    /// group transforms.
     func multMatrix(_ m: UnsafePointer<Float>)
     /// Multiplies an orthographic projection onto the current matrix
-    /// (`glOrtho` semantics - call sites always `loadIdentity()` first).
+    /// (glOrtho semantics - call sites always loadIdentity() first).
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double)
 
     /// Binds a 2D texture so subsequent draws use it.
-    func bindTexture(_ name: GLuint)
+    func bindTexture(_ name: RBTextureHandle)
 
-    /// Creates a linear-filtered 2D texture from `width`x`height` pixels at
-    /// `imageMemory` and returns an opaque handle. The handle is typed
-    /// `GLuint` because every call site already treats texture names as
-    /// opaque 32-bit IDs (stored in `MOMaterialObject.objectData.textureName`
-    /// etc.) - nothing depends on it being a *real* GL object name, so a
-    /// future MetalRenderBackend can hand back a synthesized ID indexing its
-    /// own MTLTexture table instead of a GL name. `destFormat`/`srcFormat`/
-    /// `dataType` are GL enums (as glTexImage2D takes) describing the pixel
-    /// data's layout - always BGRA8/GL_UNSIGNED_INT_8_8_8_8_REV in practice.
-    func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint
-    /// Re-uploads pixels into an existing texture, keeping its size (used for
-    /// runtime-drawn/animated textures, e.g. the dual-screen minimap).
-    func updateTexture(_ name: GLuint, width: Int32, height: Int32, pixels: UnsafeRawPointer)
+    /// Creates a linear-filtered 2D texture and returns an opaque handle.
+    /// Every call site already treats texture names as opaque 32-bit IDs
+    /// (stored in MOMaterialObject.objectData.textureName etc.), so
+    /// non-GL backends hand back synthesized IDs into their own texture
+    /// tables.
+    func createTexture(width: Int32, height: Int32, format: RBPixelFormat, pixels: UnsafeRawPointer) -> RBTextureHandle
+    /// Re-uploads pixels into an existing texture, keeping its size. The
+    /// data is always BGRA8 (GL_UNSIGNED_INT_8_8_8_8_REV) - used for
+    /// runtime-modified textures (anaglyph channel balancing).
+    func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer)
 
     func translate(_ x: Float, _ y: Float, _ z: Float)
     func scale(_ x: Float, _ y: Float, _ z: Float)
-    /// `angle` is in degrees, matching `glRotatef`.
+    /// `angle` is in degrees (matching the glRotatef call sites).
     func rotate(_ angle: Float, _ x: Float, _ y: Float, _ z: Float)
 
-    /// `target` is `GL_TEXTURE_WRAP_S` or `GL_TEXTURE_WRAP_T`.
-    func setTextureWrap(_ target: GLenum, clamp: Bool)
+    func setTextureWrap(_ axis: RBTextureAxis, clamp: Bool)
 
-    /// `mode` is a GL primitive enum (GL_QUADS, GL_TRIANGLES, GL_LINE_LOOP,
-    /// ...) - see the type header comment for why a straight glBegin/glEnd
-    /// wrapper is adequate here.
-    func beginImmediate(_ mode: GLenum)
+    func beginImmediate(_ mode: RBPrimitive)
     func vertex2f(_ x: Float, _ y: Float)
     func vertex3f(_ x: Float, _ y: Float, _ z: Float)
     func texCoord2f(_ u: Float, _ v: Float)
     func endImmediate()
 
     /// The common single-window per-frame sequence in `OGL_DrawScene`:
-    /// viewport, clear, and swap/present. Deliberately NOT covering the
-    /// stereo/dual-screen-specific calls in the same function
-    /// (glColorMask for anaglyph, glDrawBuffer for shutter glasses) - those
-    /// are edge cases (plan's Phase 4), left as raw gl* calls for now.
+    /// viewport, clear, and swap/present. Stereo/dual-screen-specific calls
+    /// (color-mask passes, buffer selection, second context) are not
+    /// covered yet - see the plan doc.
     func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32)
-    /// Sets the colour `clearColorAndDepth()` clears to (matches
-    /// `glClearColor`'s persistent-state semantics - set once, applies to
-    /// every subsequent clear until changed again).
+    /// Sets the colour clearColorAndDepth() clears to (persistent state -
+    /// set once, applies to every subsequent clear until changed).
     func setClearColor(_ r: Float, _ g: Float, _ b: Float)
     func clearColorAndDepth()
     func clearDepthOnly()
     func setWireframe(_ enabled: Bool)
-    /// Presents the frame. GLRenderBackend does `SDL_GL_SwapWindow`.
+    /// Presents the frame (GL: SDL_GL_SwapWindow).
     func present()
 }
+
+// MARK: - OpenGL implementation
 
 final class GLRenderBackend: RenderBackend {
     func enableBlend() { glEnable(GLenum(GL_BLEND)) }
     func disableBlend() { glDisable(GLenum(GL_BLEND)) }
-    func blendFunc(_ src: GLenum, _ dst: GLenum) { glBlendFunc(src, dst) }
+    func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor) {
+        glBlendFunc(Self.glBlendFactor(src), Self.glBlendFactor(dst))
+    }
+
+    private static func glBlendFactor(_ f: RBBlendFactor) -> GLenum {
+        switch f {
+        case .one: return GLenum(GL_ONE)
+        case .srcAlpha: return GLenum(GL_SRC_ALPHA)
+        case .oneMinusSrcAlpha: return GLenum(GL_ONE_MINUS_SRC_ALPHA)
+        }
+    }
 
     func enableTexture2D() { glEnable(GLenum(GL_TEXTURE_2D)) }
     func disableTexture2D() { glDisable(GLenum(GL_TEXTURE_2D)) }
@@ -174,7 +214,14 @@ final class GLRenderBackend: RenderBackend {
 
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { glColor4f(r, g, b, a) }
 
-    func matrixMode(_ mode: GLenum) { glMatrixMode(mode) }
+    func matrixMode(_ mode: RBMatrixMode) {
+        switch mode {
+        case .modelview: glMatrixMode(GLenum(GL_MODELVIEW))
+        case .projection: glMatrixMode(GLenum(GL_PROJECTION))
+        case .texture: glMatrixMode(GLenum(GL_TEXTURE))
+        }
+    }
+
     func pushMatrix() { glPushMatrix() }
     func popMatrix() { glPopMatrix() }
     func loadIdentity() { glLoadIdentity() }
@@ -184,9 +231,9 @@ final class GLRenderBackend: RenderBackend {
         glOrtho(left, right, bottom, top, near, far)
     }
 
-    func bindTexture(_ name: GLuint) { glBindTexture(GLenum(GL_TEXTURE_2D), name) }
+    func bindTexture(_ name: RBTextureHandle) { glBindTexture(GLenum(GL_TEXTURE_2D), name) }
 
-    func createTexture(width: Int32, height: Int32, destFormat: GLint, srcFormat: GLint, dataType: GLint, imageMemory: UnsafeRawPointer) -> GLuint {
+    func createTexture(width: Int32, height: Int32, format: RBPixelFormat, pixels: UnsafeRawPointer) -> RBTextureHandle {
         var textureName: GLuint = 0
         glGenTextures(1, &textureName)
         glBindTexture(GLenum(GL_TEXTURE_2D), textureName)
@@ -194,25 +241,41 @@ final class GLRenderBackend: RenderBackend {
         glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
         glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
 
-        glTexImage2D(GLenum(GL_TEXTURE_2D), 0, destFormat, width, height, 0, GLenum(srcFormat), GLenum(dataType), imageMemory)
+        let dataType: GLenum
+        switch format {
+        case .rgba8: dataType = GLenum(GL_UNSIGNED_BYTE)
+        case .rgba8888Rev: dataType = GLenum(GL_UNSIGNED_INT_8_8_8_8_REV)
+        case .rgba1555Rev: dataType = GLenum(GL_UNSIGNED_SHORT_1_5_5_5_REV)
+        }
+        glTexImage2D(GLenum(GL_TEXTURE_2D), 0, GL_RGBA, width, height, 0, GLenum(GL_RGBA), dataType, pixels)
 
         return textureName
     }
 
-    func updateTexture(_ name: GLuint, width: Int32, height: Int32, pixels: UnsafeRawPointer) {
+    func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer) {
         glBindTexture(GLenum(GL_TEXTURE_2D), name)
-        glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, width, height, GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
+        glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, width, height, GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), bgraPixels)
     }
 
     func translate(_ x: Float, _ y: Float, _ z: Float) { glTranslatef(x, y, z) }
     func scale(_ x: Float, _ y: Float, _ z: Float) { glScalef(x, y, z) }
     func rotate(_ angle: Float, _ x: Float, _ y: Float, _ z: Float) { glRotatef(angle, x, y, z) }
 
-    func setTextureWrap(_ target: GLenum, clamp: Bool) {
+    func setTextureWrap(_ axis: RBTextureAxis, clamp: Bool) {
+        let target = axis == .u ? GLenum(GL_TEXTURE_WRAP_S) : GLenum(GL_TEXTURE_WRAP_T)
         glTexParameterf(GLenum(GL_TEXTURE_2D), target, Float(clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT))
     }
 
-    func beginImmediate(_ mode: GLenum) { glBegin(mode) }
+    func beginImmediate(_ mode: RBPrimitive) {
+        switch mode {
+        case .quads: glBegin(GLenum(GL_QUADS))
+        case .triangles: glBegin(GLenum(GL_TRIANGLES))
+        case .lines: glBegin(GLenum(GL_LINES))
+        case .lineStrip: glBegin(GLenum(GL_LINE_STRIP))
+        case .lineLoop: glBegin(GLenum(GL_LINE_LOOP))
+        }
+    }
+
     func vertex2f(_ x: Float, _ y: Float) { glVertex2f(x, y) }
     func vertex3f(_ x: Float, _ y: Float, _ z: Float) { glVertex3f(x, y, z) }
     func texCoord2f(_ u: Float, _ v: Float) { glTexCoord2f(u, v) }

@@ -696,7 +696,7 @@ private func drawExtents(_ extents: OGLRect, _ z: Float) {
     OGL_DisableTexture2D()
 
     gRenderBackend.setColor4f(1, 1, 1, 1)
-    gRenderBackend.beginImmediate(GLenum(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     gRenderBackend.vertex3f(extents.left, extents.top, z)
     gRenderBackend.vertex3f(extents.right, extents.top, z)
     gRenderBackend.setColor4f(0, 0.5, 1, 1)
@@ -717,7 +717,7 @@ func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
     let z = textNode.pointee.Coord.z
 
     gRenderBackend.setColor4f(1, 1, 1, 1)
-    gRenderBackend.beginImmediate(GLenum(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     gRenderBackend.vertex3f(extents.left, extents.top, z)
     gRenderBackend.vertex3f(extents.right, extents.top, z)
     gRenderBackend.setColor4f(0, 0.5, 1, 1)
@@ -751,7 +751,7 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flag
     MO_DrawMaterial(font.pointee.material)
 
     // DRAW IT
-    gRenderBackend.beginImmediate(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
     let pt = gImmediateModePoints
     let uv = gImmediateModeUVs
     var p = 0

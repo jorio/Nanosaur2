@@ -197,9 +197,20 @@ retryVideo:
 	// there's no GL context to fail to create with the requested MSAA level.
 	if (!gMetalMode)
 	{
+#if (defined(__arm__) || defined(__aarch64__) || defined(_M_ARM) || defined(_M_ARM64)) && !defined(__APPLE__)
+		// ARM/ARM64 devices (embedded Linux boards, handhelds) typically
+		// only provide OpenGL ES, so request an ES 2.0 context there.
+		// Apple Silicon is excluded: macOS has no native GL ES support -
+		// its ARM Macs still create desktop GL compatibility contexts
+		// (and the Metal backend is the forward path on that platform).
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+#else
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 	}
 
 	gCurrentAntialiasingLevel = gGamePrefs.antialiasingLevel;

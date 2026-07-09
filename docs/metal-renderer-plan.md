@@ -461,9 +461,8 @@ Commits `b44749e` (slice 1) through `7b7cbe2` (slice 6; slices ran 1-5, 7,
   single texture unit). A future VulkanBackend or Citro3D shim implements
   the same protocol; nothing above the facade needs to change.
 
-**Verification status: builds clean; NOT yet visually verified.** Next:
-1. User runs the normal GL build - full regression pass (menu, gameplay,
-   HUD, effects, water, terrain) since this refactor touched every draw
-   call in the game.
-2. User runs `--metal` - expected to reach the menu; known gaps mean glow
-   text renders as plain alpha and lighting/fog are absent in 3D.
+**Verification status:**
+1. ✅ Normal GL build - user confirmed regression pass looks fine
+   (2026-07-09). GL rendering unaffected by the refactor.
+2. Next: user runs `--metal` - expected to reach the menu now; known gaps
+   mean glow text renders as plain alpha and lighting/fog are absent in 3D.

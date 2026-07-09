@@ -402,6 +402,10 @@ final class MetalRenderBackend: RenderBackend {
 
     func setWireframe(_ enabled: Bool) { /* no-op: MetalRenderer has no wireframe fill mode yet */ }
 
+    func rendererInfo() -> String {
+        return "\(renderer.deviceName), Metal"
+    }
+
     func present() {
         if frameActive {
             renderer.endFrame()

@@ -222,6 +222,10 @@ protocol RenderBackend: AnyObject {
     func setWireframe(_ enabled: Bool)
     /// Presents the frame (GL: SDL_GL_SwapWindow).
     func present()
+
+    /// Human-readable renderer description for the Settings screen's info
+    /// line (GL: GL_RENDERER + GL_VERSION strings).
+    func rendererInfo() -> String
 }
 
 // MARK: - OpenGL implementation
@@ -539,6 +543,12 @@ final class GLRenderBackend: RenderBackend {
         glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(enabled ? GL_LINE : GL_FILL))
     }
     func present() { SDL_GL_SwapWindow(gSDLWindow) }
+
+    func rendererInfo() -> String {
+        let rendererStr = String(cString: glGetString(GLenum(GL_RENDERER))!)
+        let versionStr = String(cString: glGetString(GLenum(GL_VERSION))!)
+        return "\(rendererStr), OpenGL \(versionStr)"
+    }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

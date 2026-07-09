@@ -31,10 +31,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     OGL_SetColor4f(0.5, 0.5, 0.5, 1)
     OGL_DisableTexture2D()
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex2f(THERMO_LEFT, THERMO_Y); glVertex2f(THERMO_RIGHT, THERMO_Y)
-    glVertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); glVertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y)
+    gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gRenderBackend.endImmediate()
 
     // DRAW THERMO METER
 
@@ -48,10 +48,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
         OGL_SetColor4f(0.8, 0, 0, 1)
     }
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex2f(THERMO_LEFT, THERMO_Y); glVertex2f(x, THERMO_Y)
-    glVertex2f(x, THERMO_Y + THERMO_HEIGHT); glVertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(x, THERMO_Y)
+    gRenderBackend.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gRenderBackend.endImmediate()
 
     OGL_SetColor4f(1, 1, 1, 1)
 
@@ -68,10 +68,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
 
     do {
         OGL_SetColor4f(0, 0, 0, fadeOpacity > 1 ? 1 : fadeOpacity)
-        glBegin(UInt32(GL_QUADS))
-        glVertex2f(0, 0); glVertex2f(640, 0)
-        glVertex2f(640, 480); glVertex2f(0, 480)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.vertex2f(0, 0); gRenderBackend.vertex2f(640, 0)
+        gRenderBackend.vertex2f(640, 480); gRenderBackend.vertex2f(0, 480)
+        gRenderBackend.endImmediate()
     }
 }
 
@@ -222,7 +222,7 @@ func DrawLoading(_ percent: Float) {
     try? SDL.glSetSwapInterval(0)
 
     // Draw thermometer
-    glClear(UInt32(GL_COLOR_BUFFER_BIT))
+    gRenderBackend.clearColorAndDepth()
     OGL_DrawScene(cDrawLoadingCallback)
     gLoadingThermoPercent = percent
 

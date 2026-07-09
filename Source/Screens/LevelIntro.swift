@@ -636,14 +636,14 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     let y: Float = 200
 
-    glBegin(GLenum(GL_QUADS))
-    glColor4f(0, 0, 0, 0)
-    glVertex2f(gLogicalRect.left, y)
-    glVertex2f(gLogicalRect.right, y)
-    glColor4f(0, 0, 0, 1)
-    glVertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    glVertex2f(gLogicalRect.left, gLogicalRect.bottom)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.setColor4f(0, 0, 0, 0)
+    gRenderBackend.vertex2f(gLogicalRect.left, y)
+    gRenderBackend.vertex2f(gLogicalRect.right, y)
+    gRenderBackend.setColor4f(0, 0, 0, 1)
+    gRenderBackend.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
+    gRenderBackend.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }

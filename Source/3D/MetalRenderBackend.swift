@@ -13,11 +13,15 @@
 // second context) that this backend cannot reach in the first place.
 //
 // Known correctness gaps (documented rather than silently wrong):
-// - enableLighting/disableLighting, enableCullFace/disableCullFace,
-//   enableFog/disableFog are no-ops - the shader has no lighting/fog model
-//   and MetalRenderer doesn't set a cull mode. Real 3D content (terrain,
-//   skeletons) will render unlit and unfogged until the shader grows a
-//   lighting/fog model.
+// - Lighting is a real (if simplified) implementation: ambient + up to
+//   MAX_FILL_LIGHTS directional diffuse lights, matching this game's actual
+//   fixed-function GL setup exactly (GL_COLOR_MATERIAL tracks both ambient
+//   and diffuse to the vertex color, no specular is ever set, lights are
+//   always directional/w=0 so there's no attenuation - see the shader's
+//   fragment_main). enableCullFace/disableCullFace and enableFog/
+//   disableFog are still no-ops (MetalRenderer doesn't set a cull mode or
+//   fog model) - real 3D content renders lit but unfogged and
+//   double-sided.
 // - Two texture units are honored (base + a second, MODULATE-combined
 //   texture - covers Infobar's health/shield/fuel circular mask, plain
 //   2-layer multi-texture materials, and sphere-map reflection texgen -
@@ -95,14 +99,63 @@ final class MetalRenderBackend: RenderBackend {
     func setSphereMapTexGen(_ enabled: Bool) { renderer.setSphereMapTexGen(enabled) }
 
     func prepareSceneDefaults() { /* no fixed-function defaults to apply */ }
+
+    // Ambient + per-light diffuse color change rarely (scene setup only);
+    // cached here so updateLightPositions (called every pane, every frame)
+    // can resend the full lighting uniform without the caller re-passing
+    // data it doesn't have.
+    private var lightAmbient: (Float, Float, Float) = (0, 0, 0)
+    private var lightCount: Int32 = 0
+    private var lightColors: [Float] = [Float](repeating: 0, count: 4 * 3)
+
     func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>) {
-        // No lighting model in the shader yet - see header comment.
+        lightAmbient = (ambientR, ambientG, ambientB)
+        lightCount = numFillLights
+        for i in 0..<Int(numFillLights) {
+            lightColors[i * 3 + 0] = fillColors[i].r
+            lightColors[i * 3 + 1] = fillColors[i].g
+            lightColors[i * 3 + 2] = fillColors[i].b
+        }
+        // Push once immediately with un-transformed (world-space) directions
+        // as a harmless placeholder - updateLightPositions always runs
+        // (from the camera setup that precedes every frame's draws) before
+        // any lit geometry is actually drawn, overwriting this with the
+        // correct eye-space directions.
+        updateLightPositions(numFillLights: numFillLights, fillDirections: fillDirections)
     }
-    func updateLightPositions(numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>) { /* no lighting model */ }
+
+    /// GL's glLightfv(..., GL_POSITION, ...) bakes in whatever modelview is
+    /// current AT THE CALL SITE - which, for this codebase's calling
+    /// convention (called from OGL_Camera_SetPlacementAndUpdateMatrices
+    /// right after loading the camera's view matrix, before any per-object
+    /// transform is pushed), is the camera's view matrix alone. Replicate
+    /// that explicitly: transform each direction by the current modelview
+    /// top here, rather than relying on per-fragment/vertex re-transforms
+    /// with whatever matrix happens to be active at draw time.
+    func updateLightPositions(numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>) {
+        let mv = modelviewStack[modelviewStack.count - 1]
+        var eyeDirections = [Float](repeating: 0, count: 4 * 3)
+        for i in 0..<Int(numFillLights) {
+            // Negate (GL's lightVec = -direction convention) and rotate by
+            // the view matrix's upper 3x3 (a direction has w=0, so
+            // translation doesn't apply).
+            let d = fillDirections[i]
+            let (dx, dy, dz) = (-d.x, -d.y, -d.z)
+            eyeDirections[i * 3 + 0] = mv[0] * dx + mv[4] * dy + mv[8] * dz
+            eyeDirections[i * 3 + 1] = mv[1] * dx + mv[5] * dy + mv[9] * dz
+            eyeDirections[i * 3 + 2] = mv[2] * dx + mv[6] * dy + mv[10] * dz
+        }
+        eyeDirections.withUnsafeBufferPointer { dirs in
+            lightColors.withUnsafeBufferPointer { colors in
+                renderer.setLightingData(ambient: lightAmbient, count: numFillLights, directions: dirs.baseAddress!, colors: colors.baseAddress!)
+            }
+        }
+    }
+
     func setFog(mode: RBFogMode, density: Float, start: Float, end: Float, r: Float, g: Float, b: Float, a: Float) { /* no fog model */ }
 
-    func enableLighting() { /* no-op, see header comment */ }
-    func disableLighting() { /* no-op, see header comment */ }
+    func enableLighting() { renderer.setLightingEnabled(true) }
+    func disableLighting() { renderer.setLightingEnabled(false) }
 
     func enableCullFace() { /* no-op, see header comment */ }
     func disableCullFace() { /* no-op, see header comment */ }

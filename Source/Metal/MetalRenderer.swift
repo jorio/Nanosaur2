@@ -76,7 +76,19 @@ struct VertexOut {
     float4 position [[position]];
     float2 texCoord0;
     float2 texCoord1;
+    float3 eyeNormal;
     float4 color;
+};
+
+// Ambient + up to 4 directional fill lights (MAX_FILL_LIGHTS - see
+// RenderBackend.setLights). lights[0].xyz = ambient, lights[0].w = light
+// count; lights[1..4] = eye-space directions (see MetalRenderBackend's
+// syncLighting); lights[5..8] = diffuse colors. One struct instead of
+// separate buffers - it's all pushed together every time it changes.
+struct LightingData {
+    float4 ambientAndCount;
+    float4 directions[4];
+    float4 colors[4];
 };
 
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
@@ -106,9 +118,17 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
     // using the per-vertex UV: GL_SPHERE_MAP's formula on the eye-space
     // reflection vector.
     out.texCoord0 = (textureMatrix * float4(in.texCoord0, 0.0, 1.0)).xy;
+    // Eye-space normal - feeds both sphere-map texgen below and the
+    // fragment shader's lighting (only actually read there when lighting is
+    // enabled for this draw; a zero input normal, from geometry that never
+    // populates one, normalizes to NaN but is simply never sampled in that
+    // case). GL_NORMALIZE is effectively always applied here (this game
+    // only skips it as a perf optimization when scale==1, which produces an
+    // identical result anyway).
+    float3 eyeNormal = normalize((modelview * float4(in.normal, 0.0)).xyz);
+    out.eyeNormal = eyeNormal;
     if (useSphereMap > 0.5) {
         float3 eyePos = (modelview * float4(in.position, 1.0)).xyz;
-        float3 eyeNormal = normalize((modelview * float4(in.normal, 0.0)).xyz);
         float3 r = reflect(normalize(eyePos), eyeNormal);
         float m = 2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0));
         out.texCoord1 = float2(r.x / m + 0.5, r.y / m + 0.5);
@@ -123,14 +143,33 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
                                texture2d<float> tex0 [[texture(0)]],
                                texture2d<float> tex1 [[texture(1)]],
                                sampler samp [[sampler(0)]],
-                               constant float &alphaThreshold [[buffer(1)]]) {
+                               constant float &alphaThreshold [[buffer(1)]],
+                               constant float &lightingEnabled [[buffer(2)]],
+                               constant LightingData &lighting [[buffer(3)]]) {
+    float4 vertexColor = in.color;
+    if (lightingEnabled > 0.5) {
+        // Matches this game's fixed-function GL lighting setup exactly:
+        // GL_COLOR_MATERIAL tracks both ambient and diffuse material color
+        // to glColor (the current vertex color), no specular is ever set,
+        // and lights are directional-only (w=0, so no attenuation) - which
+        // reduces the standard GL lighting equation to
+        // vertexColor * (globalAmbient + sum(max(0, N.L) * lightDiffuse)).
+        float3 n = normalize(in.eyeNormal);
+        float3 lit = lighting.ambientAndCount.xyz;
+        int numLights = int(lighting.ambientAndCount.w);
+        for (int i = 0; i < numLights; i++) {
+            float ndotl = max(0.0, dot(n, lighting.directions[i].xyz));
+            lit += ndotl * lighting.colors[i].xyz;
+        }
+        vertexColor = float4(in.color.rgb * lit, in.color.a);
+    }
     // Texture unit 1 defaults to a 1x1 white texture when the draw doesn't
     // use a second texture, so this modulate is a no-op in the common case.
     // Implements GL's plain multi-texture MODULATE combine (the Infobar
     // health/shield/fuel gauges' circular mask, sphere-map reflections,
     // etc.) - the ADD/ADD_ALPHA combine modes still render as MODULATE
     // (see MetalRenderBackend.swift's header comment).
-    float4 c = tex0.sample(samp, in.texCoord0) * tex1.sample(samp, in.texCoord1) * in.color;
+    float4 c = tex0.sample(samp, in.texCoord0) * tex1.sample(samp, in.texCoord1) * vertexColor;
     // Emulates GL_ALPHA_TEST (alphaThreshold < 0 means the test is off).
     // Matches the two configurations the game uses (RenderBackend.swift's
     // setAlphaClipping): default is "discard fully-transparent pixels only"
@@ -182,6 +221,10 @@ public final class MetalRenderer {
     private var boundTextureHandle: Int32 = -1
     private var boundTexture1Handle: Int32 = -1
     private var alphaThreshold: Float = 0
+    private var lightingEnabled: Float = 0
+    /// Matches the shader's LightingData layout: ambient.xyz + count, 4x
+    /// direction.xyz+pad, 4x color.xyz+pad = 36 floats.
+    private var lightingData = [Float](repeating: 0, count: 36)
 
     /// - Parameter layerPointer: a `CAMetalLayer*` obtained by the caller via
     ///   `SDL_Metal_GetLayer(SDL_Metal_CreateView(window))`, passed as a raw
@@ -376,6 +419,11 @@ public final class MetalRenderer {
         encoder.setVertexBytes(&identityMatrix, length: MemoryLayout<Float>.stride * 16, index: 3)
         sphereMapEnabled = 0
         encoder.setVertexBytes(&sphereMapEnabled, length: MemoryLayout<Float>.stride, index: 4)
+        lightingEnabled = 0
+        encoder.setFragmentBytes(&lightingEnabled, length: MemoryLayout<Float>.stride, index: 2)
+        lightingData.withUnsafeBufferPointer { buf in
+            encoder.setFragmentBytes(buf.baseAddress!, length: MemoryLayout<Float>.stride * 36, index: 3)
+        }
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
 
         return true
@@ -427,6 +475,39 @@ public final class MetalRenderer {
         guard sphereMapEnabled != v, let encoder else { return }
         sphereMapEnabled = v
         encoder.setVertexBytes(&sphereMapEnabled, length: MemoryLayout<Float>.stride, index: 4)
+    }
+
+    public func setLightingEnabled(_ enabled: Bool) {
+        let v: Float = enabled ? 1 : 0
+        guard lightingEnabled != v, let encoder else { return }
+        lightingEnabled = v
+        encoder.setFragmentBytes(&lightingEnabled, length: MemoryLayout<Float>.stride, index: 2)
+    }
+
+    /// `ambient` and each of up to 4 `directions`/`colors` are 3 floats
+    /// (rgb / xyz); `directions` must already be in eye space (see
+    /// MetalRenderBackend.swift's syncLighting) - matches GL's glLightfv
+    /// semantics, which bakes in whatever modelview was active at the time
+    /// of the call. Pushed every time the game recomputes this (ambient/
+    /// colors rarely, directions every frame the camera moves), not just
+    /// when enabled - so the data is always current by the time
+    /// setLightingEnabled(true) is (re-)asserted for the next lit draw.
+    public func setLightingData(ambient: (Float, Float, Float), count: Int32, directions: UnsafePointer<Float>, colors: UnsafePointer<Float>) {
+        lightingData[0] = ambient.0
+        lightingData[1] = ambient.1
+        lightingData[2] = ambient.2
+        lightingData[3] = Float(count)
+        for i in 0..<Int(count) {
+            lightingData[4 + i * 4 + 0] = directions[i * 3 + 0]
+            lightingData[4 + i * 4 + 1] = directions[i * 3 + 1]
+            lightingData[4 + i * 4 + 2] = directions[i * 3 + 2]
+            lightingData[20 + i * 4 + 0] = colors[i * 3 + 0]
+            lightingData[20 + i * 4 + 1] = colors[i * 3 + 1]
+            lightingData[20 + i * 4 + 2] = colors[i * 3 + 2]
+        }
+        lightingData.withUnsafeBufferPointer { buf in
+            encoder?.setFragmentBytes(buf.baseAddress!, length: MemoryLayout<Float>.stride * 36, index: 3)
+        }
     }
 
     public func setBlend(_ enabled: Bool) {

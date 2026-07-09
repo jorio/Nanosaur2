@@ -46,11 +46,11 @@ extern void Debug3DS_Log(const char *message);
 
 // RomFS mount (romfs_shim.c) + gDataSpec setup against it (fs_init_shim.cpp)
 // - see those files' own comments for why they're two separate translation
-// units. Call Romfs3DS_Mount() before Pomme3DS_InitFileSystem() - the
-// latter chdir()s into the RomFS root, which only exists once the former
-// has mounted it.
+// units. Call Romfs3DS_Mount() before Fs3DS_InitFileSystem() - the latter
+// chdir()s into the RomFS root, which only exists once the former has
+// mounted it.
 #include "romfs_shim.h"
-void Pomme3DS_InitFileSystem(void); // fs_init_shim.cpp - name kept for now, no longer Pomme-backed
+void Fs3DS_InitFileSystem(void); // fs_init_shim.cpp
 
 // Swift-only helper declarations (SwFatal/SwGameAssert/GetPlayerInfoEntry/
 // gNav/etc.) from the real Nanosaur2-Bridging-Header.h - not part of

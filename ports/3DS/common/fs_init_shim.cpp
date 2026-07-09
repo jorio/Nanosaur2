@@ -1,25 +1,21 @@
 // fs_init_shim.cpp - sets up gDataSpec against the mounted RomFS, using the
 // engine's own native Swift file-path resolver (Source/System/FileSystem.swift's
 // SwHostPathToFSSpec, declared in Source/Headers/file.h) - the same one the
-// desktop build's Boot.cpp uses for its own gDataSpec. Used to go through
-// Pomme::Files::HostPathToFSSpec/Pomme::Init(), back when Source/**/*.swift's
-// file/resource I/O was still Pomme-backed; now that the whole engine is
-// natively Swift/SDL3 (see FileSystem.swift/File.swift's header comments -
-// grep confirms nothing under Source/ references Pomme anymore), there's
-// nothing left for Pomme to do here, so this is a plain chdir() + one
-// function call instead of a whole vendored Mac-Toolbox emulation library.
+// desktop build's Boot.cpp uses for its own gDataSpec. This is a plain
+// chdir() + one function call; nothing under Source/ or ports/3DS depends
+// on Pomme anymore (see FileSystem.swift/File.swift's header comments).
 //
 // Kept as a separate translation unit from romfs_shim.c only because that
 // one needs libctru's romfsMountSelf() from <3ds.h>, and this one needs
-// game.h's FSSpec/SwHostPathToFSSpec declarations - no actual symbol clash
-// between them anymore (that used to be Pomme.h's Handle vs. libctru's
-// Handle - see game_3ds.h's hidScanInput/hidKeysHeld comment for the type
-// this project's own SwMacTypes.h now avoids entirely), but there's no
-// reason to merge them either.
+// game.h's FSSpec/SwHostPathToFSSpec declarations - <3ds.h>'s Handle
+// typedef collides with the Mac Toolbox's own Handle (SwMacTypes.h,
+// pulled in transitively via game.h here - see game_3ds.h's
+// hidScanInput/hidKeysHeld comment for the full explanation), so these two
+// translation units can never see both.
 
 extern "C" {
     #include "game.h"
-    void Pomme3DS_InitFileSystem(void);
+    void Fs3DS_InitFileSystem(void);
 
     // Not #include <unistd.h>: its read()/write() prototypes conflict with
     // file.h's own hand-declared ones (see file.h's header comment on why
@@ -29,7 +25,7 @@ extern "C" {
     int chdir(const char* path);
 }
 
-void Pomme3DS_InitFileSystem(void)
+void Fs3DS_InitFileSystem(void)
 {
     chdir("romfs:/");
 

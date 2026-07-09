@@ -11,7 +11,7 @@
 //  shortcut the boot sequence.
 //
 //  Only declares the handful of plain, scalar-typed entry points this
-//  needs (Romfs3DS_Mount/Pomme3DS_InitFileSystem/PGL_Init/GameMain) rather
+//  needs (Romfs3DS_Mount/Fs3DS_InitFileSystem/PGL_Init/GameMain) rather
 //  than including game_3ds.h or <3ds.h> wholesale - this file doesn't need
 //  libctru's own types, just C-linkage function declarations, so it
 //  sidesteps its Handle-typedef collision with libctru's <3ds/types.h>
@@ -27,7 +27,7 @@
 
 extern "C" {
     int Romfs3DS_Mount(void);
-    void Pomme3DS_InitFileSystem(void); // fs_init_shim.cpp - name kept for now, no longer Pomme-backed
+    void Fs3DS_InitFileSystem(void); // fs_init_shim.cpp
     void GameMain(void); // Source/System/Main.swift, @c @implementation
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
 
@@ -44,7 +44,7 @@ extern "C" {
 int main()
 {
     Romfs3DS_Mount();
-    Pomme3DS_InitFileSystem();
+    Fs3DS_InitFileSystem();
 
     // Real SDL_Window, even though picaGL (not SDL's own GL/renderer
     // backend) does the actual drawing - several engine call sites

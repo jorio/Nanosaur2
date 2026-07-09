@@ -362,5 +362,64 @@ faint repeat-wrap bleeding at its border.
 - Phase 1: RenderBackend facade, complete for the main menu's draw path,
   each slice individually verified against live GL gameplay.
 - Phase 2: real Metal draw plumbing + `--metal` wired to render the actual
-  game — builds clean, not yet visually verified. **Next: user tests
-  `--metal` from Xcode and reports what's on screen; iterate from there.**
+  game — builds clean; first live tests hit and fixed a sequence of
+  no-GL-context crashes (window-order bug, glGetError, camera glGetFloatv/
+  glLightfv, vertex-array menu text, setVertexBytes 4KB cap). Latest test:
+  app still crashed and rendered nothing; not yet diagnosed further, because:
+
+## DIRECTION CHANGE (user, 2026-07-08): full portable-facade refactor first
+
+User decision: *"Refactor all rendering / OpenGL calls so that this app can
+use OpenGL / Vulkan / Metal or the Citro3D for 3DS."*
+
+This supersedes the incremental "migrate just enough for the menu, keep an
+unpresented GL context alive for the rest" approach. New goal, two parts:
+
+**1. The facade API becomes backend-neutral.** No `GLenum`, `GLuint`,
+GL-shaped semantics, or GL headers in the `RenderBackend` protocol. Neutral
+Swift enums/structs instead (`RBPrimitive`, `RBMatrixMode`,
+`RBBlendMode`, `RBTextureEnvMode`, plain `UInt32` texture handles, plain
+float/int scalars). The pervasive `OGL_*` wrapper functions keep their
+current GL-typed public signatures where hundreds of call sites depend on
+them (e.g. `OGL_BlendFunc(GLenum, GLenum)`) and translate to neutral facade
+calls internally — the *facade boundary* is what must be portable, not every
+legacy shim above it.
+
+**2. Every raw `gl*` call in the game moves behind the facade.** End state:
+the only file in the game module that touches OpenGL is `GLRenderBackend`
+(plus GL context creation, which becomes backend `init`). That makes the
+unpresented-GL-context hack unnecessary, makes `--metal` correct by
+construction instead of whack-a-mole, and gives Vulkan/Citro3D a real seam.
+Citro3D reality check (recorded, not actionable now): a 3DS build would need
+a whole separate toolchain (devkitARM, no Swift) — the facade keeps the
+*interface* portable (plain data in/out, no GL types), which is the most a
+macOS-side refactor can contribute; an actual 3DS port is its own project.
+
+Remaining raw-GL surfaces to migrate, in planned slice order (grep counts
+as of the direction change; GL-only edge paths noted):
+
+1. **Neutralize existing facade types** (breaking protocol change, both
+   backends + all migrated call sites updated in one slice).
+2. **Indexed-geometry verb**: `MO_DrawGeometry_VertexArray`'s client-state
+   arrays + `glDrawElements` + texenv/multitexture/texgen (~40 calls) become
+   `drawVertexArray`-family verbs; Metal's existing expansion path becomes
+   that backend's implementation.
+3. **Lighting + material + fog setup**: `OGL_CreateLights`, `OGL_SetStyles`
+   (glLightfv/glMaterialfv/glLightModeli/glFog*, ~30 calls) become
+   `setLights`/`setFog` verbs carrying the game's own structs.
+4. **Infobar.swift** (152 calls) + remaining Screens files - almost all
+   immediate-mode quads + sprite state, mechanical.
+5. **Effects/Items/Terrain/Player files** (~60 calls across 14 files) -
+   immediate mode + occasional state, mechanical.
+6. **Context lifecycle**: `OGL_CreateDrawContext`/`OGL_DisposeDrawContext`
+   SDL-GL calls move into `GLRenderBackend.init/shutdown`; `--metal` stops
+   creating a GL context at all.
+7. **Oddballs**: `Pick.swift` (glReadPixels - becomes `readPixels` verb),
+   vertex-array-range memory (`OGL_AllocVertexArrayMemory` - Apple GL
+   extension, becomes backend-private), stereo glColorMask/glDrawBuffer
+   (verbs, GL-only implementations), dual-screen second context,
+   `glGetString` version logging, wireframe debug.
+
+Each slice: build clean + user verifies GL rendering unchanged before the
+next. `--metal` re-verification resumes after slice 2 (menu needs geometry +
+lighting-neutral paths to have a chance of looking right).

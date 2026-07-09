@@ -1,29 +1,18 @@
 // MetalRenderBackend.swift
 //
 // RenderBackend implementation that drives the MetalRenderer module instead
-// of real gl* calls. See docs/metal-renderer-plan.md Phase 2.
+// of real gl* calls. See docs/metal-renderer-plan.md.
 //
-// IMPORTANT - there is NO GL context at all when this backend is active.
-// Tried keeping the game's normal GL context alive alongside a Metal-backed
-// view on the same window (just never SDL_GL_SwapWindow'd), so not-yet-
-// migrated raw gl* calls elsewhere could keep executing harmlessly - that
-// does NOT work empirically: SDL_Metal_CreateView on a window that also has
-// a GL context corrupts the GL side (hit "The specified window isn't an
-// OpenGL window" when Metal was set up before the GL context; glProcAddress
-// results came back nil when set up after). So under --metal,
-// OGL_CreateDrawContext() (OGL_Support.swift) skips SDL_GL_CreateContext
-// entirely and gSDLWindow is created SDL_WINDOW_METAL-only (Boot.cpp) - no
-// GL context exists, ever. This means every raw gl* call actually reachable
-// during boot + the menu screen's frame loop had to be migrated to
-// RenderBackend or explicitly skipped (see the `gMetalMode == 0` guards in
-// OGL_CreateLights/OGL_InitDrawContext/OGL_SetStyles/OGL_PushState/
-// OGL_PopState). Anything NOT reachable from there yet - the 3D vertex-array
-// geometry path (MO_DrawGeometry_VertexArray), stereo/dual-screen, the debug
-// DrawBlueLine path - is simply not safe to hit under --metal yet and will
-// crash (calling gl* with no current context) if it is.
+// There is NO GL context at all when this backend is active - under
+// --metal, OGL_CreateDrawContext() (OGL_Support.swift) skips
+// SDL_GL_CreateContext entirely and gSDLWindow is created SDL_WINDOW_METAL-
+// only (Boot.cpp). This is safe now that the portable-facade refactor
+// (docs/metal-renderer-plan.md's "REFACTOR COMPLETE" section) has moved
+// every raw gl* call in the game behind RenderBackend, except a handful of
+// inherently-GL-only features (shutter-glasses stereo, the dual-screen
+// second context) that this backend cannot reach in the first place.
 //
-// Known correctness gaps in this first cut (documented rather than silently
-// wrong):
+// Known correctness gaps (documented rather than silently wrong):
 // - blendFunc(src:dst:) is a no-op - the Metal pipeline has ONE fixed blend
 //   equation (standard "source-over" alpha), baked into pipeline state at
 //   creation. Effects requesting a different blend (e.g. Atlas_DrawString2's
@@ -31,22 +20,27 @@
 //   standard alpha blend instead under Metal.
 // - enableLighting/disableLighting, enableCullFace/disableCullFace,
 //   enableFog/disableFog are no-ops - the shader has no lighting/fog model
-//   and MetalRenderer doesn't set a cull mode. Harmless for this milestone's
-//   scope (all draws routed here are unlit 2D quads that already disable
-//   lighting before drawing), but wrong if/when the 3D geometry path
-//   (MO_DrawGeometry_VertexArray) is migrated later without adding real
-//   lighting/fog/cull support first.
+//   and MetalRenderer doesn't set a cull mode. Real 3D content (terrain,
+//   skeletons) will render unlit and unfogged until the shader grows a
+//   lighting/fog model.
+// - setTextureEnv/setSphereMapTexGen are no-ops and only texture unit 0 is
+//   honored (see currentTextureUnit below) - multi-texture/reflection-map
+//   materials render as their base texture only.
 // - setTextureWrap is a no-op - MetalRenderer's sampler is fixed to repeat
 //   addressing; GL_CLAMP_TO_EDGE requests are ignored (possible edge-bleed
 //   on some sprites).
-// - The projection matrices this codebase computes (OGL_SetGluPerspectiveMatrix
-//   etc.) target GL's [-1,1] NDC z-range; Metal expects [0,1]. Not corrected
-//   here. Doesn't affect this milestone (menu screen draws 2D quads with no
-//   meaningful depth range), but must be fixed before any real 3D content
-//   (MO_DrawGeometry_VertexArray) renders correctly via Metal.
 // - setViewport doesn't flip the Y origin (GL measures from the bottom,
 //   Metal from the top). Harmless for a single full-window viewport
-//   (x=0,y=0 either way - true for the main menu), wrong for split-screen.
+//   (x=0,y=0 either way - true outside split-screen), wrong for
+//   split-screen/dual-screen.
+//
+// Fixed, not a gap: every projection matrix this codebase computes targets
+// GL's [-1,1] clip-space z convention; Metal clips against [0,1]. Rather
+// than rewrite every matrix-producing function (ortho/frustum here, plus
+// OGL_SetGluPerspectiveMatrix et al in 3DMath_Matrix.swift, all used
+// interchangeably via loadMatrix), the vertex shader remaps z after the
+// MVP transform (MetalRenderer.swift's vertex_main) - one fix, correct for
+// every matrix regardless of source.
 
 import MetalRenderer
 
@@ -106,8 +100,23 @@ final class MetalRenderBackend: RenderBackend {
     func disableDepthTest() { renderer.setDepthTest(false) }
     func setDepthWrite(_ enabled: Bool) { renderer.setDepthWrite(enabled) }
 
-    func setAlphaClipping(trimLowAlpha: Bool) { /* no alpha test in the shader yet - see header comment */ }
-    func setAlphaTestEnabled(_ enabled: Bool) { /* no alpha test in the shader yet */ }
+    // Mirrors OGL_SetStyles' default (alpha test on, "alpha != 0") so a
+    // fresh MetalRenderBackend matches the GL steady state without needing
+    // an explicit first call.
+    private var alphaTestEnabled = true
+    private var alphaTrimLowAlpha = false
+
+    func setAlphaClipping(trimLowAlpha: Bool) {
+        alphaTrimLowAlpha = trimLowAlpha
+        applyAlphaTest()
+    }
+    func setAlphaTestEnabled(_ enabled: Bool) {
+        alphaTestEnabled = enabled
+        applyAlphaTest()
+    }
+    private func applyAlphaTest() {
+        renderer.setAlphaTest(threshold: alphaTestEnabled ? (alphaTrimLowAlpha ? 0.6 : 0.0) : nil)
+    }
     func setNormalizeNormals(_ enabled: Bool) { /* no lighting model, nothing to normalize - see header comment */ }
     func setTwoSidedLighting(_ enabled: Bool) { /* no lighting model */ }
 

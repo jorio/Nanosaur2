@@ -402,20 +402,16 @@ private func OGL_CreateDrawContext() {
     // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal), AND SKIP GL
     // CONTEXT CREATION ENTIRELY.
     //
-    // Originally tried keeping the normal GL context alive (just never
-    // presented) alongside a second Metal-backed view on the same window,
-    // so not-yet-migrated raw gl* calls elsewhere could keep executing
-    // harmlessly. Empirically, that doesn't work: SDL_Metal_CreateView on a
-    // window that also has (or will have) a GL context breaks the GL side -
-    // hit "The specified window isn't an OpenGL window" when Metal was
-    // activated before GL context creation, and glProcAddress-resolved
-    // function pointers (gGlActiveTextureProc etc.) came back nil when
-    // activated after. So under --metal there is NO GL context at all -
-    // gSDLWindow is created with SDL_WINDOW_METAL only (see Boot.cpp) - and
-    // every raw gl* call that's actually reachable during boot/the frame
-    // loop must be migrated to RenderBackend or explicitly skipped (see the
-    // `gMetalMode == 0` guards added around OGL_CreateLights/
-    // OGL_InitDrawContext/OGL_SetStyles/OGL_PushState/OGL_PopState).
+    // Keeping the normal GL context alive (just never presented) alongside
+    // a second Metal-backed view on the same window doesn't work: SDL's
+    // Metal view corrupts the window for GL context creation regardless of
+    // ordering (see git history for the exact errors hit). So under --metal
+    // there is NO GL context at all - gSDLWindow is created with
+    // SDL_WINDOW_METAL only (Boot.cpp). Safe because the portable-facade
+    // refactor (docs/metal-renderer-plan.md) moved every raw gl* call the
+    // game makes behind RenderBackend, except a handful of inherently-GL
+    // features (shutter stereo, dual-screen's 2nd context) this backend
+    // can't reach anyway.
     if gMetalMode != 0 {
         if !SwMetalBackend_Activate() {
             SwFatalAlert("--metal: SwMetalBackend_Activate failed")

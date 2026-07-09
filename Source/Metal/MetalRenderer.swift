@@ -67,6 +67,16 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
                               constant float4x4 &mvp [[buffer(1)]]) {
     VertexOut out;
     out.position = mvp * float4(in.position, 1.0);
+    // Every projection matrix in the game (glOrtho/glFrustum-equivalent
+    // math in RenderBackend.swift/3DMath_Matrix.swift) is built to OpenGL's
+    // convention: clip-space z/w lands in [-1,1]. Metal's rasterizer clips
+    // against [0,1] instead, so left as-is this discards roughly the near
+    // half of every projection's range - for 2D content drawn at z=0 with
+    // an orthographic near/far of (0,1), that's clip.z/w == -1 for
+    // *everything*, i.e. the whole 2D UI vanishes. Standard GL->Metal port
+    // fix: remap after the transform, independent of which matrix produced
+    // it.
+    out.position.z = (out.position.z + out.position.w) * 0.5;
     out.texCoord = in.texCoord;
     out.color = in.color;
     return out;
@@ -74,8 +84,19 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
 
 fragment float4 fragment_main(VertexOut in [[stage_in]],
                                texture2d<float> tex [[texture(0)]],
-                               sampler samp [[sampler(0)]]) {
-    return tex.sample(samp, in.texCoord) * in.color;
+                               sampler samp [[sampler(0)]],
+                               constant float &alphaThreshold [[buffer(1)]]) {
+    float4 c = tex.sample(samp, in.texCoord) * in.color;
+    // Emulates GL_ALPHA_TEST (alphaThreshold < 0 means the test is off).
+    // Matches the two configurations the game uses (RenderBackend.swift's
+    // setAlphaClipping): default is "discard fully-transparent pixels only"
+    // (threshold 0), STATUS_BIT_CLIPALPHA6 trims low alpha (threshold 0.6).
+    // Without this, cutout sprites that rely on the test (not blending) to
+    // punch out their background render as solid quads.
+    if (alphaThreshold >= 0.0 && c.a <= alphaThreshold) {
+        discard_fragment();
+    }
+    return c;
 }
 """
 
@@ -113,6 +134,7 @@ public final class MetalRenderer {
     private var depthTestEnabled = true
     private var depthWriteEnabled = true
     private var boundTextureHandle: Int32 = -1
+    private var alphaThreshold: Float = 0
 
     /// - Parameter layerPointer: a `CAMetalLayer*` obtained by the caller via
     ///   `SDL_Metal_GetLayer(SDL_Metal_CreateView(window))`, passed as a raw
@@ -272,10 +294,12 @@ public final class MetalRenderer {
         depthTestEnabled = true
         depthWriteEnabled = true
         boundTextureHandle = -1
+        alphaThreshold = 0
         encoder.setRenderPipelineState(pipelineBlendOff)
         encoder.setDepthStencilState(depthStates[1][1])
         encoder.setFragmentSamplerState(sampler, index: 0)
         encoder.setFragmentTexture(whiteTexture, index: 0)
+        encoder.setFragmentBytes(&alphaThreshold, length: MemoryLayout<Float>.stride, index: 1)
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
 
         return true
@@ -318,6 +342,15 @@ public final class MetalRenderer {
         guard depthWriteEnabled != enabled else { return }
         depthWriteEnabled = enabled
         applyDepthState()
+    }
+
+    /// `threshold` of nil disables the test (always passes); otherwise
+    /// fragments with alpha <= threshold are discarded.
+    public func setAlphaTest(threshold: Float?) {
+        let t = threshold ?? -1
+        guard alphaThreshold != t, let encoder else { return }
+        alphaThreshold = t
+        encoder.setFragmentBytes(&alphaThreshold, length: MemoryLayout<Float>.stride, index: 1)
     }
 
     private func applyDepthState() {

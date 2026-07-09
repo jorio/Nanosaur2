@@ -16,7 +16,7 @@ public struct BG3DTextureHeader: Sendable, Equatable {
 }
 
 extension BG3DTextureHeader: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         width = try UInt32(parsingBigEndian: &input)
         height = try UInt32(parsingBigEndian: &input)
         srcPixelFormat = try Int32(parsingBigEndian: &input)
@@ -37,7 +37,7 @@ public struct BG3DJPEGTextureHeader: Sendable, Equatable {
 }
 
 extension BG3DJPEGTextureHeader: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         width = try UInt32(parsingBigEndian: &input)
         height = try UInt32(parsingBigEndian: &input)
         bufferSize = try UInt32(parsingBigEndian: &input)
@@ -73,7 +73,7 @@ public enum BG3DGeometryType: UInt32, Sendable {
 }
 
 extension BG3DGeometryHeader: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         type = try UInt32(parsingBigEndian: &input)
         numMaterials = try Int32(parsingBigEndian: &input)
         let m0 = try UInt32(parsingBigEndian: &input)

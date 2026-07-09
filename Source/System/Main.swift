@@ -923,7 +923,7 @@ public func GameMainCreditsPOC() {
     InitObjectManager()
 
     var someLong: UInt = 0
-    GetDateTime(&someLong)
+    SwGetDateTime(&someLong)
     SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong))
 
     // NOT calling the real LoadGlobalAssets(): it also loads cursor/

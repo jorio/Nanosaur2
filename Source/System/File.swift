@@ -1429,7 +1429,7 @@ func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
 // LoadDataFile's whole-buffer read.
 @discardableResult
 func ResolveDataFileSpec(_ path: UnsafePointer<CChar>!, _ outSpec: UnsafeMutablePointer<FSSpec>!) -> OSErr {
-    FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, outSpec)
+    SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, outSpec)
 }
 
 // String overload: FSMakeFSSpec's C import lets Swift bridge a String to its

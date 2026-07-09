@@ -19,7 +19,7 @@ public struct BG3DPoint3D: Sendable, Equatable {
 }
 
 extension BG3DPoint3D: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         let x = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         let y = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         let z = Float(bitPattern: try UInt32(parsingBigEndian: &input))
@@ -39,7 +39,7 @@ public struct BG3DTextureCoord: Sendable, Equatable {
 }
 
 extension BG3DTextureCoord: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         let u = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         let v = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         self.init(u: u, v: v)
@@ -62,7 +62,7 @@ public struct BG3DColorRGBA: Sendable, Equatable {
 }
 
 extension BG3DColorRGBA: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         let r = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         let g = Float(bitPattern: try UInt32(parsingBigEndian: &input))
         let b = Float(bitPattern: try UInt32(parsingBigEndian: &input))
@@ -80,7 +80,7 @@ public struct BG3DColorRGBAByte: Sendable, Equatable {
 }
 
 extension BG3DColorRGBAByte: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         r = try UInt8(parsing: &input)
         g = try UInt8(parsing: &input)
         b = try UInt8(parsing: &input)
@@ -98,7 +98,7 @@ public struct BG3DBoundingBox: Sendable, Equatable {
 }
 
 extension BG3DBoundingBox: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         min = try BG3DPoint3D(parsing: &input)
         max = try BG3DPoint3D(parsing: &input)
         isEmpty = try UInt8(parsing: &input) != 0
@@ -120,7 +120,7 @@ public struct BG3DTriangle: Sendable, Equatable {
 }
 
 extension BG3DTriangle: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         let a = try UInt32(parsingBigEndian: &input)
         let b = try UInt32(parsingBigEndian: &input)
         let c = try UInt32(parsingBigEndian: &input)

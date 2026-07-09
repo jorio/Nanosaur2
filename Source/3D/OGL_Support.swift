@@ -2093,7 +2093,7 @@ func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawP
 
     // TO BE SAFE, LETS ROUND UP THE SIZE TO THE NEAREST MULTIPLE OF 16
 
-    let roundedSize = (size + 15) & 0xffff_fff0
+    let roundedSize = (size + 15) & ~15
 
     let newNode = AllocPtrClear(MemoryLayout<VertexArrayMemoryNode>.size)!.assumingMemoryBound(to: VertexArrayMemoryNode.self) // allocate the node (assume we'll find room for it below)
     newNode.pointee.size = roundedSize // remember how big a chunk we're allocating

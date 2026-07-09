@@ -28,7 +28,7 @@ public struct BG3DHeader: Sendable, Equatable {
 }
 
 extension BG3DHeader: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         headerString = try [UInt8](parsing: &input, byteCount: 16)
         majorRev = try UInt8(parsing: &input)
         minorAndBugRev = try UInt8(parsing: &input)

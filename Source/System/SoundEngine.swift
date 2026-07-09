@@ -146,7 +146,7 @@ private func decodeIMA4(_ input: [UInt8], channels: Int) -> [Int16] {
 // Handles the compression types actually used by this game's assets:
 // 'NONE'/'twos' = big-endian PCM, 'sowt' = little-endian PCM, 'ima4' =
 // QuickTime IMA ADPCM (decoded above).
-private func decodeAIFF(_ bytes: [UInt8]) throws -> DecodedPCM {
+private func decodeAIFF(_ bytes: [UInt8]) throws(SoundDecodeError) -> DecodedPCM {
     guard bytes.count >= 12,
           bytes[0...3].elementsEqual("FORM".utf8),
           bytes[8...11].elementsEqual("AIFF".utf8) || bytes[8...11].elementsEqual("AIFC".utf8)

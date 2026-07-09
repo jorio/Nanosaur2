@@ -41,6 +41,16 @@ extern "C" {
     extern unsigned int __ctru_linear_heap_size;
 }
 
+// Callable from Swift's SwExitToShell() (Misc.swift) - see that function's
+// header comment. Desktop's equivalent (Boot.cpp's SwPlatformShutdown)
+// restores mouse acceleration and tears down its (possibly dual-screen)
+// window(s) before SDL_Quit(); neither applies here (no mouse-acceleration
+// concept on 3DS, no dual-screen window), so this is just SDL_Quit().
+extern "C" void SwPlatformShutdown()
+{
+    SDL_Quit();
+}
+
 int main()
 {
     Romfs3DS_Mount();

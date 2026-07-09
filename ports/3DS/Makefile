@@ -247,7 +247,7 @@ ENGINE_COFILES	:=	$(addprefix $(BUILD)/engine_,$(notdir $(ENGINE_CFILES:.c=.o)))
 
 OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/main.o $(BUILD)/shim.o $(BUILD)/picaGL_shim.o \
 			$(BUILD)/romfs_shim.o $(BUILD)/fs_init_shim.o $(BUILD)/boot_shim.o $(BUILD)/fatal_shim.o \
-			$(BUILD)/console_shim.o \
+			$(BUILD)/console_shim.o $(BUILD)/entropy_shim.o \
 			$(ENGINE_COFILES) \
 			$(PICAGL_OFILES) $(PICAGL_SHADER_OFILES)
 
@@ -321,6 +321,10 @@ $(BUILD)/fatal_shim.o: $(COMMON)fatal_shim.c $(COMMON)fatal_shim.h | $(BUILD)
 $(BUILD)/console_shim.o: $(COMMON)console_shim.c $(COMMON)console_shim.h | $(BUILD)
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -I$(SDL3_INCLUDE) -c $< -o $@
+
+$(BUILD)/entropy_shim.o: $(COMMON)entropy_shim.c | $(BUILD)
+	@echo $(notdir $<)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # gDataSpec setup against the mounted RomFS (see fs_init_shim.cpp's header
 # comment - used to be Pomme's file-manager init, now just the engine's own

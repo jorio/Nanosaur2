@@ -165,11 +165,11 @@ func DrawLensFlare() {
 
     // INIT MATRICES
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.loadIdentity()
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
 
     for i in 0..<numFlares {
         if i == 0 {
@@ -198,12 +198,12 @@ func DrawLensFlare() {
         let fx = x / (Float(pw) / 2) - 1.0
         let fy = (Float(ph) - y) / (Float(ph) / 2) - 1.0
 
-        glBegin(GLenum(GL_QUADS))
-        glTexCoord2f(0, 0); glVertex2f(fx - sx, fy - sy)
-        glTexCoord2f(1, 0); glVertex2f(fx + sx, fy - sy)
-        glTexCoord2f(1, 1); glVertex2f(fx + sx, fy + sy)
-        glTexCoord2f(0, 1); glVertex2f(fx - sx, fy + sy)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(fx - sx, fy - sy)
+        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(fx + sx, fy - sy)
+        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(fx + sx, fy + sy)
+        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(fx - sx, fy + sy)
+        gRenderBackend.endImmediate()
     }
 
     // RESTORE MODES

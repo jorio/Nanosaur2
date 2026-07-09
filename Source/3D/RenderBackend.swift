@@ -114,6 +114,13 @@ protocol RenderBackend: AnyObject {
     /// (STATUS_BIT_CLIPALPHA6 in Objects.swift): trimLowAlpha=true trims
     /// pixels with alpha <= 0.6; false is the default "alpha != 0" test.
     func setAlphaClipping(trimLowAlpha: Bool)
+    /// Turns the alpha test off/on entirely (terrain and a few items draw
+    /// with it disabled; the scene default is enabled).
+    func setAlphaTestEnabled(_ enabled: Bool)
+
+    /// Two-sided lighting for thin geometry viewed from both sides
+    /// (shards, confetti).
+    func setTwoSidedLighting(_ enabled: Bool)
 
     /// Renormalize normals after scaling - only meaningful for the
     /// fixed-function lit 3D path.
@@ -132,6 +139,11 @@ protocol RenderBackend: AnyObject {
     /// instead of replacing it - used by `MO_DrawMatrix` for MetaObject
     /// group transforms.
     func multMatrix(_ m: UnsafePointer<Float>)
+    /// Reads back the current modelview matrix (16 floats, column-major)
+    /// - used to capture the composed object transform for collision plane
+    /// math. GL introspects; matrix-stack-tracking backends copy their
+    /// CPU-side top.
+    func getModelViewMatrix(_ out: UnsafeMutablePointer<Float>)
     /// Multiplies an orthographic projection onto the current matrix
     /// (glOrtho semantics - call sites always loadIdentity() first).
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double)
@@ -149,6 +161,9 @@ protocol RenderBackend: AnyObject {
     /// data is always BGRA8 (GL_UNSIGNED_INT_8_8_8_8_REV) - used for
     /// runtime-modified textures (anaglyph channel balancing).
     func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer)
+    /// Frees `count` textures whose handles start at `names` (material
+    /// disposal - a material owns one texture per mipmap level).
+    func deleteTextures(_ names: UnsafePointer<RBTextureHandle>, count: Int32)
 
     func translate(_ x: Float, _ y: Float, _ z: Float)
     func scale(_ x: Float, _ y: Float, _ z: Float)
@@ -292,6 +307,18 @@ final class GLRenderBackend: RenderBackend {
         }
     }
 
+    func setAlphaTestEnabled(_ enabled: Bool) {
+        if enabled {
+            glEnable(GLenum(GL_ALPHA_TEST))
+        } else {
+            glDisable(GLenum(GL_ALPHA_TEST))
+        }
+    }
+
+    func setTwoSidedLighting(_ enabled: Bool) {
+        glLightModeli(GLenum(GL_LIGHT_MODEL_TWO_SIDE), enabled ? GL_TRUE : GL_FALSE)
+    }
+
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { glColor4f(r, g, b, a) }
 
     func matrixMode(_ mode: RBMatrixMode) {
@@ -307,6 +334,7 @@ final class GLRenderBackend: RenderBackend {
     func loadIdentity() { glLoadIdentity() }
     func loadMatrix(_ m: UnsafePointer<Float>) { glLoadMatrixf(m) }
     func multMatrix(_ m: UnsafePointer<Float>) { glMultMatrixf(m) }
+    func getModelViewMatrix(_ out: UnsafeMutablePointer<Float>) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), out) }
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double) {
         glOrtho(left, right, bottom, top, near, far)
     }
@@ -335,6 +363,10 @@ final class GLRenderBackend: RenderBackend {
     func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer) {
         glBindTexture(GLenum(GL_TEXTURE_2D), name)
         glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, width, height, GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), bgraPixels)
+    }
+
+    func deleteTextures(_ names: UnsafePointer<RBTextureHandle>, count: Int32) {
+        glDeleteTextures(GLsizei(count), names)
     }
 
     func translate(_ x: Float, _ y: Float, _ z: Float) { glTranslatef(x, y, z) }

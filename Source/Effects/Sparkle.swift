@@ -188,12 +188,12 @@ func DrawSparkles() {
 
         // DRAW QUAD
 
-        glBegin(UInt32(GL_QUADS))
-        glTexCoord2f(0, 0); glVertex3f(tc[0].x, tc[0].y, tc[0].z)
-        glTexCoord2f(1, 0); glVertex3f(tc[1].x, tc[1].y, tc[1].z)
-        glTexCoord2f(1, 1); glVertex3f(tc[2].x, tc[2].y, tc[2].z)
-        glTexCoord2f(0, 1); glVertex3f(tc[3].x, tc[3].y, tc[3].z)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(tc[0].x, tc[0].y, tc[0].z)
+        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(tc[1].x, tc[1].y, tc[1].z)
+        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(tc[2].x, tc[2].y, tc[2].z)
+        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(tc[3].x, tc[3].y, tc[3].z)
+        gRenderBackend.endImmediate()
     }
 
     // RESTORE STATE

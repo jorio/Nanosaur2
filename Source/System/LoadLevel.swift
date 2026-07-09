@@ -50,7 +50,7 @@ func LoadLevelArt() {
 
     gLoadingThermoPercent = 0
 
-    glClearColor(0, 0, 0, 0) // clear to black for loading screen
+    gRenderBackend.setClearColor(0, 0, 0) // clear to black for loading screen
 
     // LOAD GLOBAL BG3D GEOMETRY
 
@@ -135,7 +135,7 @@ func LoadLevelArt() {
     // RESTORE CLEAR COLOR
 
     let cc = gGameViewInfoPtr!.pointee.clearColor
-    glClearColor(cc.r, cc.g, cc.b, 1.0)
+    gRenderBackend.setClearColor(cc.r, cc.g, cc.b)
 
     // DO BIOME SPECIFIC STUFF
 

@@ -107,7 +107,9 @@ final class MetalRenderBackend: RenderBackend {
     func setDepthWrite(_ enabled: Bool) { renderer.setDepthWrite(enabled) }
 
     func setAlphaClipping(trimLowAlpha: Bool) { /* no alpha test in the shader yet - see header comment */ }
+    func setAlphaTestEnabled(_ enabled: Bool) { /* no alpha test in the shader yet */ }
     func setNormalizeNormals(_ enabled: Bool) { /* no lighting model, nothing to normalize - see header comment */ }
+    func setTwoSidedLighting(_ enabled: Bool) { /* no lighting model */ }
 
     private var currentColor: (Float, Float, Float, Float) = (1, 1, 1, 1)
     func setColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) { currentColor = (r, g, b, a) }
@@ -183,6 +185,11 @@ final class MetalRenderBackend: RenderBackend {
     func multMatrix(_ m: UnsafePointer<Float>) {
         let rhs = Array(UnsafeBufferPointer(start: m, count: 16))
         setTop(Self.multiply(top(), rhs))
+    }
+
+    func getModelViewMatrix(_ out: UnsafeMutablePointer<Float>) {
+        let m = modelviewStack[modelviewStack.count - 1]
+        for i in 0..<16 { out[i] = m[i] }
     }
 
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top_: Double, _ near: Double, _ far: Double) {
@@ -267,6 +274,12 @@ final class MetalRenderBackend: RenderBackend {
 
     func updateTexture(_ name: RBTextureHandle, width: Int32, height: Int32, bgraPixels: UnsafeRawPointer) {
         renderer.updateTexture(Int32(bitPattern: name), width: Int(width), height: Int(height), bgraPixels: bgraPixels)
+    }
+
+    func deleteTextures(_ names: UnsafePointer<RBTextureHandle>, count: Int32) {
+        for i in 0..<Int(count) {
+            renderer.deleteTexture(Int32(bitPattern: names[i]))
+        }
     }
 
     func setTextureWrap(_ axis: RBTextureAxis, clamp: Bool) { /* no-op, see header comment */ }

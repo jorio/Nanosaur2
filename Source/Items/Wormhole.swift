@@ -290,10 +290,10 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = uvsBase[0]
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glLoadIdentity()
-    glTranslatef(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.loadIdentity()
+    gRenderBackend.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 
     // DRAW IT
@@ -311,9 +311,9 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = nil
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 

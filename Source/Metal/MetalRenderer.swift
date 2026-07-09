@@ -347,6 +347,10 @@ public final class MetalRenderer {
         texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: bgraPixels, bytesPerRow: width * 4)
     }
 
+    public func deleteTexture(_ handle: Int32) {
+        textures.removeValue(forKey: handle)
+    }
+
     /// `handle` of -1 (or unknown) binds the default white texture, matching
     /// `RenderBackend.disableTexture2D`'s "draw with plain vertex colour"
     /// effect.

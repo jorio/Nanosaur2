@@ -797,9 +797,9 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     OGL_PushState()
 
-    glDisable(GLenum(GL_NORMALIZE)) // turn off vector normalization since scale == 1
+    gRenderBackend.setNormalizeNormals(false) // turn off vector normalization since scale == 1
     OGL_DisableBlend() // no blending for terrain - its always opaque
-    glDisable(GLenum(GL_ALPHA_TEST))
+    gRenderBackend.setAlphaTestEnabled(false)
 
     gNumSuperTilesDrawn = 0
 
@@ -847,7 +847,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     }
 
     OGL_PopState()
-    glEnable(GLenum(GL_ALPHA_TEST))
+    gRenderBackend.setAlphaTestEnabled(true)
 
     // PREPARE SUPERTILE GRID FOR THE NEXT FRAME
 
@@ -884,10 +884,10 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // DRAW SPLINES IN DEBUG MODE
 
     if gDebugMode == 2 {
-        glColor4f(0.5, 1.0, 0.75, 1)
+        gRenderBackend.setColor4f(0.5, 1.0, 0.75, 1)
 
         for splineNum in 0..<Int(gNumSplines) {
-            glBegin(GLenum(GL_LINE_STRIP))
+            gRenderBackend.beginImmediate(.lineStrip)
 
             let spline = gSplineList[splineNum]
             for nubNum in 0..<Int(spline.numPoints) {
@@ -895,27 +895,27 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
                 let z = spline.pointList![nubNum].z
                 let y = GetTerrainY(x, z) + 10
 
-                glVertex3f(x, y, z)
+                gRenderBackend.vertex3f(x, y, z)
             }
 
-            glEnd()
+            gRenderBackend.endImmediate()
         }
 
-        glColor4f(1.0, 0.5, 0.2, 1)
+        gRenderBackend.setColor4f(1.0, 0.5, 0.2, 1)
         for customSplineNum in 0..<Int(MAX_CUSTOM_SPLINES) {
             let customSpline = GetCustomSplineSlot(Int32(customSplineNum))
             if customSpline.pointee.isUsed == 0 {
                 continue
             }
 
-            glBegin(GLenum(GL_LINE_STRIP))
+            gRenderBackend.beginImmediate(.lineStrip)
             for nubNum in 0..<Int(customSpline.pointee.numPoints) {
                 let x = customSpline.pointee.splinePoints![nubNum].x
                 let y = customSpline.pointee.splinePoints![nubNum].y
                 let z = customSpline.pointee.splinePoints![nubNum].z
-                glVertex3f(x, y, z)
+                gRenderBackend.vertex3f(x, y, z)
             }
-            glEnd()
+            gRenderBackend.endImmediate()
         }
     }
 }

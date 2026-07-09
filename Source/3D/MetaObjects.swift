@@ -1036,7 +1036,7 @@ private func deleteObjectInfoMaterial(_ obj: UnsafeMutablePointer<MOMaterialObje
     // DISPOSE OF TEXTURE NAMES
 
     if data.pointee.numMipmaps > 0 {
-        glDeleteTextures(GLsizei(data.pointee.numMipmaps), textureNameBase(data))
+        gRenderBackend.deleteTextures(textureNameBase(data), count: Int32(data.pointee.numMipmaps))
     }
 }
 

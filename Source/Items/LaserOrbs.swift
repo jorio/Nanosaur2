@@ -466,7 +466,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         p[3].y = p[0].y + vy * dist
         p[3].z = p[2].z
 
-        glBegin(GLenum(GL_QUADS))
+        gRenderBackend.beginImmediate(.quads)
 
         glTexCoord2fv(&uv[0].u)
         glVertex3fv(&p[0].x)
@@ -477,7 +477,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         glTexCoord2fv(&uv[3].u)
         glVertex3fv(&p[3].x)
 
-        glEnd()
+        gRenderBackend.endImmediate()
 
         // DRAW HORIZONTAL QUAD
 
@@ -499,7 +499,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         p[3].y = p[2].y
         p[3].z = p[0].z + vz * dist
 
-        glBegin(GLenum(GL_QUADS))
+        gRenderBackend.beginImmediate(.quads)
 
         glTexCoord2fv(&uv[0].u)
         glVertex3fv(&p[0].x)
@@ -510,7 +510,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         glTexCoord2fv(&uv[3].u)
         glVertex3fv(&p[3].x)
 
-        glEnd()
+        gRenderBackend.endImmediate()
     }
 }
 

@@ -423,3 +423,47 @@ as of the direction change; GL-only edge paths noted):
 Each slice: build clean + user verifies GL rendering unchanged before the
 next. `--metal` re-verification resumes after slice 2 (menu needs geometry +
 lighting-neutral paths to have a chance of looking right).
+
+## REFACTOR COMPLETE (2026-07-08): all 7 slices landed
+
+Commits `b44749e` (slice 1) through `7b7cbe2` (slice 6; slices ran 1-5, 7,
+6). End state:
+
+- **The `RenderBackend` protocol is fully backend-neutral**: no GL types
+  anywhere in it. Neutral vocabulary: `RBPrimitive`, `RBMatrixMode`,
+  `RBBlendFactor`, `RBTextureAxis`, `RBPixelFormat`, `RBTextureEnv`,
+  `RBFogMode`, `RBTextureHandle`. ~60 verbs covering state toggles, matrix
+  stack (+ ortho/frustum/readbacks), textures (create/update/delete/bind/
+  wrap/units/env/texgen), immediate mode, indexed geometry, lighting rig,
+  fog, scene defaults, clear/viewport/present, color mask, vsync, context
+  lifecycle, error polling, renderer info.
+- **Zero raw `gl*` calls outside `GLRenderBackend`** except 58 calls in
+  OGL_Support.swift confined to inherently-GL features: shutter-glasses
+  stereo (glDrawBuffer/DrawBlueLine - requires a GL quad-buffer pixel
+  format by definition, 48 calls), the dual-screen bottom window's second
+  GL context (9), and the dead gDoAnisotropy introspection block (1).
+  These paths cannot run except under the GL backend.
+- **State introspection eliminated**: OGL_PushState/PopState save/restore
+  entirely from game-side shadow state (new gMyState_Normalize/
+  gMyState_DepthMask with OGL_SetNormalizeNormals/OGL_SetDepthWrite shims);
+  camera matrix readbacks go through getModelViewMatrix/getProjectionMatrix
+  (GL introspects, Metal serves from its CPU-side stacks); glGetError is
+  checkError() (Metal: 0).
+- **All gMetalMode guards in rendering code are gone** - the backend split
+  is now entirely behind the facade. gMetalMode only remains in Boot.cpp
+  (window flags), OGL_CreateDrawContext (which backend to initialize), and
+  the dead-flag aniso block.
+- **Legacy `OGL_*` shims kept** where hundreds of call sites depend on
+  their GL-typed signatures (OGL_BlendFunc, OGL_TextureMap_Load,
+  OGL_ActiveTextureUnit); they translate at the boundary.
+- MetalRenderBackend implements the full protocol (documented no-ops:
+  lighting/fog/texenv/texgen/alpha-test/color-mask/wireframe/two-sided;
+  single texture unit). A future VulkanBackend or Citro3D shim implements
+  the same protocol; nothing above the facade needs to change.
+
+**Verification status: builds clean; NOT yet visually verified.** Next:
+1. User runs the normal GL build - full regression pass (menu, gameplay,
+   HUD, effects, water, terrain) since this refactor touched every draw
+   call in the game.
+2. User runs `--metal` - expected to reach the menu; known gaps mean glow
+   text renders as plain alpha and lighting/fog are absent in 3D.

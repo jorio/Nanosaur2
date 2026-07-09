@@ -35,9 +35,16 @@
 @_implementationOnly import Metal
 @_implementationOnly import QuartzCore
 
-/// Interleaved vertex layout every draw call here uses: position (3) + UV
-/// (2) + RGBA color (4) = 9 floats. Matches the MSL vertex descriptor below.
-private let kFloatsPerVertex = 9
+/// Interleaved vertex layout every draw call here uses: position (3) + UV0
+/// (2) + UV1 (2) + RGBA color (4) = 11 floats. Matches the MSL vertex
+/// descriptor below. UV1 feeds the second texture unit (multi-texture
+/// modulate, e.g. the Infobar health/shield/fuel gauges' circular mask) -
+/// callers that only use one texture leave it at (0,0), which is harmless
+/// since texture unit 1 defaults to the 1x1 white texture (multiplying by
+/// white is a no-op). Public so MetalRenderBackend.swift (main module) can
+/// size its interleaved vertex buffer identically instead of duplicating
+/// the literal.
+public let kFloatsPerVertex = 11
 
 /// Mirrors `RenderBackend`'s immediate-mode primitive shapes, but as a plain
 /// enum so this module doesn't need to know about GLenum.
@@ -53,13 +60,15 @@ using namespace metal;
 
 struct VertexIn {
     float3 position [[attribute(0)]];
-    float2 texCoord [[attribute(1)]];
-    float4 color [[attribute(2)]];
+    float2 texCoord0 [[attribute(1)]];
+    float2 texCoord1 [[attribute(2)]];
+    float4 color [[attribute(3)]];
 };
 
 struct VertexOut {
     float4 position [[position]];
-    float2 texCoord;
+    float2 texCoord0;
+    float2 texCoord1;
     float4 color;
 };
 
@@ -77,16 +86,24 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
     // fix: remap after the transform, independent of which matrix produced
     // it.
     out.position.z = (out.position.z + out.position.w) * 0.5;
-    out.texCoord = in.texCoord;
+    out.texCoord0 = in.texCoord0;
+    out.texCoord1 = in.texCoord1;
     out.color = in.color;
     return out;
 }
 
 fragment float4 fragment_main(VertexOut in [[stage_in]],
-                               texture2d<float> tex [[texture(0)]],
+                               texture2d<float> tex0 [[texture(0)]],
+                               texture2d<float> tex1 [[texture(1)]],
                                sampler samp [[sampler(0)]],
                                constant float &alphaThreshold [[buffer(1)]]) {
-    float4 c = tex.sample(samp, in.texCoord) * in.color;
+    // Texture unit 1 defaults to a 1x1 white texture when the draw doesn't
+    // use a second texture, so this modulate is a no-op in the common case.
+    // Implements GL's plain multi-texture MODULATE combine (the Infobar
+    // health/shield/fuel gauges' circular mask, etc.) - the ADD/ADD_ALPHA
+    // combine modes and sphere-map texgen reflection are not implemented
+    // (see MetalRenderBackend.swift's header comment).
+    float4 c = tex0.sample(samp, in.texCoord0) * tex1.sample(samp, in.texCoord1) * in.color;
     // Emulates GL_ALPHA_TEST (alphaThreshold < 0 means the test is off).
     // Matches the two configurations the game uses (RenderBackend.swift's
     // setAlphaClipping): default is "discard fully-transparent pixels only"
@@ -136,6 +153,7 @@ public final class MetalRenderer {
     private var depthTestEnabled = true
     private var depthWriteEnabled = true
     private var boundTextureHandle: Int32 = -1
+    private var boundTexture1Handle: Int32 = -1
     private var alphaThreshold: Float = 0
 
     /// - Parameter layerPointer: a `CAMetalLayer*` obtained by the caller via
@@ -166,9 +184,12 @@ public final class MetalRenderer {
         vertexDescriptor.attributes[1].format = .float2
         vertexDescriptor.attributes[1].offset = MemoryLayout<Float>.stride * 3
         vertexDescriptor.attributes[1].bufferIndex = 0
-        vertexDescriptor.attributes[2].format = .float4
+        vertexDescriptor.attributes[2].format = .float2
         vertexDescriptor.attributes[2].offset = MemoryLayout<Float>.stride * 5
         vertexDescriptor.attributes[2].bufferIndex = 0
+        vertexDescriptor.attributes[3].format = .float4
+        vertexDescriptor.attributes[3].offset = MemoryLayout<Float>.stride * 7
+        vertexDescriptor.attributes[3].bufferIndex = 0
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * kFloatsPerVertex
 
         // The game only ever calls glBlendFunc with two factor pairs (see
@@ -307,11 +328,13 @@ public final class MetalRenderer {
         depthTestEnabled = true
         depthWriteEnabled = true
         boundTextureHandle = -1
+        boundTexture1Handle = -1
         alphaThreshold = 0
         encoder.setRenderPipelineState(pipelineBlendOff)
         encoder.setDepthStencilState(depthStates[1][1])
         encoder.setFragmentSamplerState(sampler, index: 0)
         encoder.setFragmentTexture(whiteTexture, index: 0)
+        encoder.setFragmentTexture(whiteTexture, index: 1)
         encoder.setFragmentBytes(&alphaThreshold, length: MemoryLayout<Float>.stride, index: 1)
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
 
@@ -433,10 +456,19 @@ public final class MetalRenderer {
         encoder.setFragmentTexture(textures[handle] ?? whiteTexture, index: 0)
     }
 
+    /// Second texture unit, for plain multi-texture MODULATE draws (see the
+    /// shader's fragment_main). `handle` of -1 binds the default white
+    /// texture, which makes the modulate a no-op for single-texture draws.
+    public func bindTexture1(_ handle: Int32) {
+        guard boundTexture1Handle != handle, let encoder else { return }
+        boundTexture1Handle = handle
+        encoder.setFragmentTexture(textures[handle] ?? whiteTexture, index: 1)
+    }
+
     // MARK: - Draw
 
-    /// `vertices` is `vertexCount` vertices, each 9 interleaved floats
-    /// (position.xyz, uv, color.rgba) - see `kFloatsPerVertex`.
+    /// `vertices` is `vertexCount` vertices, each 11 interleaved floats
+    /// (position.xyz, uv0, uv1, color.rgba) - see `kFloatsPerVertex`.
     public func draw(_ vertices: UnsafePointer<Float>, vertexCount: Int, primitive: MetalPrimitive) {
         guard let encoder, vertexCount > 0 else { return }
 

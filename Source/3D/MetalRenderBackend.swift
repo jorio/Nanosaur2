@@ -18,9 +18,12 @@
 //   and MetalRenderer doesn't set a cull mode. Real 3D content (terrain,
 //   skeletons) will render unlit and unfogged until the shader grows a
 //   lighting/fog model.
-// - setTextureEnv/setSphereMapTexGen are no-ops and only texture unit 0 is
-//   honored (see currentTextureUnit below) - multi-texture/reflection-map
-//   materials render as their base texture only.
+// - Two texture units are honored (base + a second, MODULATE-combined
+//   texture - covers Infobar's health/shield/fuel circular mask and plain
+//   2-layer multi-texture materials), but setTextureEnv's ADD/ADD_ALPHA
+//   combine modes render as MODULATE, and setSphereMapTexGen (reflection
+//   mapping) is a no-op - materials using it sample unit 1 with whatever
+//   UV happened to be set last (usually (0,0)), not a real reflection.
 // - setTextureWrap is a no-op - MetalRenderer's sampler is fixed to repeat
 //   addressing; GL_CLAMP_TO_EDGE requests are ignored (possible edge-bleed
 //   on some sprites).
@@ -61,26 +64,36 @@ final class MetalRenderBackend: RenderBackend {
 
     private var lastBoundTexture: RBTextureHandle = 0
     private var texture2DEnabled = true
-    // Only texture unit 0 is honored: MetalRenderer's shader samples a
-    // single texture. Multi-texture passes (second material layer,
-    // reflection maps) select unit 1 and bind/toggle textures there - those
-    // operations are ignored so they can't clobber the base texture.
+    private var lastBoundTexture1: RBTextureHandle = 0
+    private var texture1Enabled = false
+    // MetalRenderer's shader samples two textures and modulates them
+    // (MODULATE combine only - see setTextureEnv/setSphereMapTexGen below
+    // for what's still unimplemented). activeTextureUnit selects which unit
+    // subsequent bind/enable/disable calls apply to.
     private var currentTextureUnit: Int32 = 0
 
     func enableTexture2D() {
-        guard currentTextureUnit == 0 else { return }
-        texture2DEnabled = true
-        renderer.bindTexture(Int32(bitPattern: lastBoundTexture))
+        if currentTextureUnit == 0 {
+            texture2DEnabled = true
+            renderer.bindTexture(Int32(bitPattern: lastBoundTexture))
+        } else {
+            texture1Enabled = true
+            renderer.bindTexture1(Int32(bitPattern: lastBoundTexture1))
+        }
     }
     func disableTexture2D() {
-        guard currentTextureUnit == 0 else { return }
-        texture2DEnabled = false
-        renderer.bindTexture(-1)
+        if currentTextureUnit == 0 {
+            texture2DEnabled = false
+            renderer.bindTexture(-1)
+        } else {
+            texture1Enabled = false
+            renderer.bindTexture1(-1)
+        }
     }
 
     func activeTextureUnit(_ unit: Int32) { currentTextureUnit = unit }
-    func setTextureEnv(_ mode: RBTextureEnv) { /* single-texture shader - combine modes not implemented */ }
-    func setSphereMapTexGen(_ enabled: Bool) { /* reflection mapping not implemented */ }
+    func setTextureEnv(_ mode: RBTextureEnv) { /* only MODULATE is implemented (the shader's fixed combine) - ADD/ADD_ALPHA render as MODULATE */ }
+    func setSphereMapTexGen(_ enabled: Bool) { /* reflection mapping not implemented - see header comment */ }
 
     func prepareSceneDefaults() { /* no fixed-function defaults to apply */ }
     func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>) {
@@ -283,10 +296,16 @@ final class MetalRenderBackend: RenderBackend {
     // MARK: - Textures
 
     func bindTexture(_ name: RBTextureHandle) {
-        guard currentTextureUnit == 0 else { return } // see currentTextureUnit
-        lastBoundTexture = name
-        if texture2DEnabled {
-            renderer.bindTexture(Int32(bitPattern: name))
+        if currentTextureUnit == 0 {
+            lastBoundTexture = name
+            if texture2DEnabled {
+                renderer.bindTexture(Int32(bitPattern: name))
+            }
+        } else {
+            lastBoundTexture1 = name
+            if texture1Enabled {
+                renderer.bindTexture1(Int32(bitPattern: name))
+            }
         }
     }
 
@@ -321,22 +340,31 @@ final class MetalRenderBackend: RenderBackend {
     private var immediateVerts: [Float] = []
     private var currentU: Float = 0
     private var currentV: Float = 0
+    // Second texture unit's per-vertex UV - only ever set by
+    // drawIndexedGeometry's multi-texture path (setTexCoord1 below); every
+    // other call site leaves these at 0, which is harmless since unit 1
+    // defaults to the white texture there.
+    private var currentU1: Float = 0
+    private var currentV1: Float = 0
 
     func beginImmediate(_ mode: RBPrimitive) {
         immediateMode = mode
         immediateVerts.removeAll(keepingCapacity: true)
+        currentU1 = 0
+        currentV1 = 0
     }
 
     func vertex2f(_ x: Float, _ y: Float) { appendVertex(x, y, 0) }
     func vertex3f(_ x: Float, _ y: Float, _ z: Float) { appendVertex(x, y, z) }
     func texCoord2f(_ u: Float, _ v: Float) { currentU = u; currentV = v }
+    private func setTexCoord1(_ u: Float, _ v: Float) { currentU1 = u; currentV1 = v }
 
     private func appendVertex(_ x: Float, _ y: Float, _ z: Float) {
-        immediateVerts.append(contentsOf: [x, y, z, currentU, currentV, currentColor.0, currentColor.1, currentColor.2, currentColor.3])
+        immediateVerts.append(contentsOf: [x, y, z, currentU, currentV, currentU1, currentV1, currentColor.0, currentColor.1, currentColor.2, currentColor.3])
     }
 
     func endImmediate() {
-        let vertexCount = immediateVerts.count / 9
+        let vertexCount = immediateVerts.count / kFloatsPerVertex
         guard vertexCount > 0 else { return }
 
         switch immediateMode {
@@ -346,18 +374,18 @@ final class MetalRenderBackend: RenderBackend {
             // which submits many quads (one per glyph) in a single
             // begin/end block.
             var tris: [Float] = []
-            tris.reserveCapacity((vertexCount / 4) * 6 * 9)
+            tris.reserveCapacity((vertexCount / 4) * 6 * kFloatsPerVertex)
             var q = 0
             while q + 4 <= vertexCount {
-                let base = q * 9
-                func vert(_ i: Int) -> ArraySlice<Float> { immediateVerts[(base + i * 9)..<(base + i * 9 + 9)] }
+                let base = q * kFloatsPerVertex
+                func vert(_ i: Int) -> ArraySlice<Float> { immediateVerts[(base + i * kFloatsPerVertex)..<(base + i * kFloatsPerVertex + kFloatsPerVertex)] }
                 tris.append(contentsOf: vert(0)); tris.append(contentsOf: vert(1)); tris.append(contentsOf: vert(2))
                 tris.append(contentsOf: vert(0)); tris.append(contentsOf: vert(2)); tris.append(contentsOf: vert(3))
                 q += 4
             }
             tris.withUnsafeBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
-                renderer.draw(base, vertexCount: tris.count / 9, primitive: .triangles)
+                renderer.draw(base, vertexCount: tris.count / kFloatsPerVertex, primitive: .triangles)
             }
 
         case .triangles:
@@ -384,9 +412,10 @@ final class MetalRenderBackend: RenderBackend {
 
     /// Expands the indexed triangle list through the immediate-mode
     /// accumulator (one interleaved vertex per index). Ignores normals (no
-    /// lighting model) and uv1 (single-texture shader) - see the header
-    /// comment's gap list. Per-vertex colors override the current material
-    /// color exactly like GL's color arrays do.
+    /// lighting model) - see the header comment's gap list. Per-vertex
+    /// colors override the current material color exactly like GL's color
+    /// arrays do. uv1 feeds the second texture unit (plain multi-texture
+    /// MODULATE, e.g. Infobar's health/shield/fuel circular mask).
     func drawIndexedGeometry(
         points: UnsafePointer<OGLPoint3D>,
         normals: UnsafePointer<OGLVector3D>?,
@@ -408,6 +437,9 @@ final class MetalRenderBackend: RenderBackend {
                 }
                 if let uv0 {
                     texCoord2f(uv0[i].u, uv0[i].v)
+                }
+                if let uv1 {
+                    setTexCoord1(uv1[i].u, uv1[i].v)
                 }
                 vertex3f(points[i].x, points[i].y, points[i].z)
             }

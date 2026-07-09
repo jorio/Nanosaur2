@@ -83,23 +83,18 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
 
     // BUILD LIST OF ELIGIBLE TARGET ELECTRODES
 
-    var thisNode = gFirstNodePtr
-    repeat {
-        if thisNode != hole { // dont target itself
-            if thisNode!.pointee.What == Int32(WhatType.hole.rawValue) { // only look for holes
-                if thisNode!.pointee.Kind == hole.pointee.Kind { // in same group?
-                    if thisNode!.pointee.Mode == holeModeInactive { // only allow inactive holes
-                        targets[numTargets] = thisNode
-                        numTargets += 1
-                        if numTargets >= maxHoleTargets {
-                            break
-                        }
-                    }
-                }
+    for node in allObjectNodes {
+        if node != hole, // dont target itself
+           node.pointee.What == Int32(WhatType.hole.rawValue), // only look for holes
+           node.pointee.Kind == hole.pointee.Kind, // in same group?
+           node.pointee.Mode == holeModeInactive { // only allow inactive holes
+            targets[numTargets] = node
+            numTargets += 1
+            if numTargets >= maxHoleTargets {
+                break
             }
         }
-        thisNode = thisNode!.pointee.NextNode
-    } while thisNode != nil
+    }
 
     // CHOOSE A RANDOM TARGET
 

@@ -1016,15 +1016,7 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things that auto-target
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(playerNum) // also target the other player
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
-        if thisNode.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-            break
-        }
-
+    for thisNode in usableObjectNodes {
         if thisNode.pointee.CType & ctype != 0 {
             // IS THIS BEST DIST
 
@@ -1044,7 +1036,6 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
                 }
             }
         }
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     if let best {
@@ -1777,6 +1768,12 @@ func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: U
     let z = wave.pointee.Coord.z
 
     // SCAN THRU NODES FOR TARGETS
+    //
+    // Deliberately NOT a `for node in usableObjectNodes` walk
+    // (ObjNodeList.swift): the HitByWeaponHandler callbacks below can
+    // delete the hit node, and this loop reads NextNode AFTER the handler
+    // runs - preserving the legacy stop-on-delete semantics (DetachObject
+    // nulls the deleted node's NextNode, ending the walk).
 
     var thisNodePtr = gFirstNodePtr
     while true {

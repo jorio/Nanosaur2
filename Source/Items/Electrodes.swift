@@ -190,21 +190,17 @@ private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 
         // BUILD LIST OF ELIGIBLE TARGET ELECTRODES
 
-        var thisNode = gFirstNodePtr
-        repeat {
-            if thisNode != pole {
-                if thisNode!.pointee.What == Int32(WhatType.electrode.rawValue) { // only look for electrodes
-                    if CalcQuickDistance(x, z, thisNode!.pointee.Coord.x, thisNode!.pointee.Coord.z) < 4000.0 { // in range?
-                        targets[numTargets] = thisNode
-                        numTargets += 1
-                        if numTargets >= maxElectrodeTargets {
-                            break
-                        }
-                    }
+        for node in allObjectNodes {
+            if node != pole,
+               node.pointee.What == Int32(WhatType.electrode.rawValue), // only look for electrodes
+               CalcQuickDistance(x, z, node.pointee.Coord.x, node.pointee.Coord.z) < 4000.0 { // in range?
+                targets[numTargets] = node
+                numTargets += 1
+                if numTargets >= maxElectrodeTargets {
+                    break
                 }
             }
-            thisNode = thisNode!.pointee.NextNode
-        } while thisNode != nil
+        }
 
         // CHOOSE A RANDOM TARGET
 

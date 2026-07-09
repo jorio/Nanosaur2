@@ -1501,11 +1501,7 @@ func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // SCAN THRU ALL OBJECTS LOOKING FOR SOMETHING TO PICKUP
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
+    for thisNode in allObjectNodes {
         if thisNode.pointee.CType & UInt32(CTYPE_POWERUP | CTYPE_EGG) != 0 {
             // IS IT IN RANGE?
 
@@ -1527,8 +1523,6 @@ func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
                 }
             }
         }
-
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     // SEE WHICH GENERAL FLIGHT ANIM TO USE

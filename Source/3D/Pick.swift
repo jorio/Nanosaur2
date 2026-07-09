@@ -50,23 +50,13 @@ func OGL_DoRayCollision_ObjNodes(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ stat
     var hitPt = OGLPoint3D()
     var normal = OGLVector3D()
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
+    for thisNode in usableObjectNodes {
         // VERIFY NODE
 
-        if thisNode.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // stop here
-            break
-        }
-
         if thisNode.pointee.CType == UInt32(INVALID_NODE_FLAG) { // make sure the node is even valid
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
         if thisNode.pointee.StatusBits & statusFilter != 0 { // used to optionally filter out hidden stuff, etc.
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
 
@@ -113,8 +103,6 @@ func OGL_DoRayCollision_ObjNodes(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ stat
                 }
             }
         }
-
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     ray.pointee.distance = bestDist // return the best distance in the ray
@@ -662,24 +650,14 @@ func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLLineSegm
 
     // TEST LINE SEGMENT AGAINST ALL OBJNODES
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
+    for thisNode in usableObjectNodes {
         // VERIFY NODE
 
-        if thisNode.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // stop here
-            break
-        }
-
         if thisNode.pointee.CType == UInt32(INVALID_NODE_FLAG) { // make sure the node is even valid
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
 
         if thisNode.pointee.StatusBits & statusFilter != 0 { // skip it if hidden
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
 
@@ -689,19 +667,16 @@ func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLLineSegm
             if allowBBoxTests != 0 {
                 if (abs(thisNode.pointee.GridX - gridX1) > gridSkipRange) && // either endpoint must be within n grid units
                     (abs(thisNode.pointee.GridX - gridX2) > gridSkipRange) {
-                    thisNodePtr = thisNode.pointee.NextNode
                     continue
                 }
 
                 if (abs(thisNode.pointee.GridY - gridY1) > gridSkipRange) &&
                     (abs(thisNode.pointee.GridY - gridY2) > gridSkipRange) {
-                    thisNodePtr = thisNode.pointee.NextNode
                     continue
                 }
 
                 if (abs(thisNode.pointee.GridZ - gridZ1) > gridSkipRange) &&
                     (abs(thisNode.pointee.GridZ - gridZ2) > gridSkipRange) {
-                    thisNodePtr = thisNode.pointee.NextNode
                     continue
                 }
             }
@@ -747,8 +722,6 @@ func OGL_DoLineSegmentCollision_ObjNodes(_ lineSegOpt: UnsafePointer<OGLLineSegm
                 SwFatal("OGL_DoLineSegmentCollision: unsupported genre")
             }
         }
-
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     distToHit?.pointee = bestDist
@@ -1452,24 +1425,14 @@ func OGL_DoSphereCollision_ObjNodes(_ sphereOpt: UnsafePointer<OGLBoundingSphere
 
     // TEST SPHERE SEGMENT AGAINST ALL OBJNODES
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
+    for thisNode in usableObjectNodes {
         // VERIFY NODE
 
-        if thisNode.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // stop here
-            break
-        }
-
         if thisNode.pointee.CType == UInt32(INVALID_NODE_FLAG) { // make sure the node is even valid
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
 
         if thisNode.pointee.StatusBits & statusFilter != 0 { // skip it if hidden
-            thisNodePtr = thisNode.pointee.NextNode
             continue
         }
 
@@ -1477,17 +1440,14 @@ func OGL_DoSphereCollision_ObjNodes(_ sphereOpt: UnsafePointer<OGLBoundingSphere
             // CHECK THE GRID TO SEE IF CLOSE ENOUGH
 
             if abs(thisNode.pointee.GridX - gridX) > gridSkipRange { // sphere origin must be within grid range of object's center
-                thisNodePtr = thisNode.pointee.NextNode
                 continue
             }
 
             if abs(thisNode.pointee.GridY - gridY) > gridSkipRange {
-                thisNodePtr = thisNode.pointee.NextNode
                 continue
             }
 
             if abs(thisNode.pointee.GridZ - gridZ) > gridSkipRange {
-                thisNodePtr = thisNode.pointee.NextNode
                 continue
             }
 
@@ -1518,8 +1478,6 @@ func OGL_DoSphereCollision_ObjNodes(_ sphereOpt: UnsafePointer<OGLBoundingSphere
                 }
             }
         }
-
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     return nil

@@ -86,14 +86,7 @@ func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMut
     var best: UnsafeMutablePointer<ObjNode>?
     var minDist: Float = 10_000_000
 
-    var thisNodePtr = gFirstNodePtr
-    while true {
-        guard let node = thisNodePtr else { break }
-
-        if node.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-            break
-        }
-
+    for node in usableObjectNodes {
         if node.pointee.CType & UInt32(CTYPE_ENEMY) != 0 {
             let d = CalcQuickDistance(pt.pointee.x, pt.pointee.z, node.pointee.Coord.x, node.pointee.Coord.z)
             if d < minDist {
@@ -101,7 +94,6 @@ func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMut
                 best = node
             }
         }
-        thisNodePtr = node.pointee.NextNode // next node
     }
 
     dist.pointee = minDist

@@ -172,50 +172,46 @@ func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointe
 
     // FIND CLOSEST WORMHOLE
 
-    var thisNodePtr = gFirstNodePtr
-    repeat {
-        nextNode: repeat {
-            if thisNodePtr!.pointee.What == Int32(WhatType.eggWormhole.rawValue) {
-                if gVSMode == .captureTheFlag { // only find wormhole valid for this player
-                    if Int16(thisNodePtr!.pointee.PlayerNum) == playerNum {
-                        break nextNode
-                    }
-                }
+    for node in allObjectNodes {
+        guard node.pointee.What == Int32(WhatType.eggWormhole.rawValue) else {
+            continue
+        }
 
-                // POINT MUST BE IN FRONT OF WORMHOLE
+        if gVSMode == .captureTheFlag, // only find wormhole valid for this player
+           Int16(node.pointee.PlayerNum) == playerNum {
+            continue
+        }
 
-                var mouthPt = OGLPoint3D()
-                var mouthPt2 = OGLPoint3D()
-                FindCoordOfJoint(thisNodePtr!, 1, &mouthPt) // calc coord of mouth of wormhole
-                FindCoordOfJoint(thisNodePtr!, 0, &mouthPt2)
+        // POINT MUST BE IN FRONT OF WORMHOLE
 
-                var vraw = OGLVector3D() // calc aim vector of mouth
-                vraw.x = mouthPt2.x - mouthPt.x
-                vraw.y = mouthPt2.y - mouthPt.y
-                vraw.z = mouthPt2.z - mouthPt.z
-                let v = vraw.normalized()
+        var mouthPt = OGLPoint3D()
+        var mouthPt2 = OGLPoint3D()
+        FindCoordOfJoint(node, 1, &mouthPt) // calc coord of mouth of wormhole
+        FindCoordOfJoint(node, 0, &mouthPt2)
 
-                var v2raw = OGLVector3D() // calc vector from pt to mouth
-                v2raw.x = mouthPt2.x - pt.pointee.x
-                v2raw.y = mouthPt2.y - pt.pointee.y
-                v2raw.z = mouthPt2.z - pt.pointee.z
-                let v2 = v2raw.normalized()
+        var vraw = OGLVector3D() // calc aim vector of mouth
+        vraw.x = mouthPt2.x - mouthPt.x
+        vraw.y = mouthPt2.y - mouthPt.y
+        vraw.z = mouthPt2.z - mouthPt.z
+        let v = vraw.normalized()
 
-                let dot = v.dot(v2) // calc angle between vectors to determine if in front
-                if dot < 0.0 {
-                    // POINT MUST BE CLOSE ENOUGH
+        var v2raw = OGLVector3D() // calc vector from pt to mouth
+        v2raw.x = mouthPt2.x - pt.pointee.x
+        v2raw.y = mouthPt2.y - pt.pointee.y
+        v2raw.z = mouthPt2.z - pt.pointee.z
+        let v2 = v2raw.normalized()
 
-                    let d = pt.pointee.distance(to: mouthPt2) // calc dist to mouth
-                    if d < minDist {
-                        minDist = d
-                        best = thisNodePtr
-                    }
-                }
+        let dot = v.dot(v2) // calc angle between vectors to determine if in front
+        if dot < 0.0 {
+            // POINT MUST BE CLOSE ENOUGH
+
+            let d = pt.pointee.distance(to: mouthPt2) // calc dist to mouth
+            if d < minDist {
+                minDist = d
+                best = node
             }
-        } while false
-
-        thisNodePtr = thisNodePtr!.pointee.NextNode // next node
-    } while thisNodePtr != nil
+        }
+    }
 
     // IS IT IN RANGE?
 

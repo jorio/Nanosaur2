@@ -345,6 +345,11 @@ func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Object processing
 
 func MoveObjects() {
+    // Deliberately NOT a `for node in allObjectNodes` walk (ObjNodeList.swift):
+    // move callbacks can delete ARBITRARY nodes, which requires the
+    // gNextNode-global fixup that DetachObject performs when the pending
+    // next node is the one being deleted. A snapshot iterator can't know
+    // about that.
     if gFirstNodePtr == nil { // see if there are any objects
         return
     }
@@ -419,6 +424,11 @@ func DrawObjects() {
 
     CullTestAllObjects()
 
+    // Deliberately NOT a `for node in allObjectNodes` walk (ObjNodeList.swift):
+    // this loop reads NextNode AFTER running each node's custom draw
+    // function, preserving the legacy stop-on-delete semantics if a draw
+    // callback ever deletes its own node (DetachObject nulls the deleted
+    // node's NextNode).
     var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
 
     // GET CAMERA COORDS

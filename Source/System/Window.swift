@@ -112,14 +112,7 @@ func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePoint
     let fadeIn = fadeFlags & UInt8(kFadeFlags_In) != 0
 
     // SCAN FOR OLD FADE EVENTS STILL IN LIST
-    var node = gFirstNodePtr
-    while let n = node {
-        if isFadePaneMoveCall(n.pointee.MoveCall) {
-            newObj = n
-            break
-        }
-        node = n.pointee.NextNode
-    }
+    newObj = allObjectNodes.first { isFadePaneMoveCall($0.pointee.MoveCall) }
 
     if let existing = newObj {
         // RECYCLE OLD FADE EVENT

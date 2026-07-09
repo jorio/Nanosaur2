@@ -331,16 +331,7 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         }
 
         // SEE IF ON OBJNODE
-        var thisNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
-        repeat {
-            guard let node = thisNodePtr else {
-                break
-            }
-
-            if node.pointee.Slot >= UInt16(SLOT_OF_DUMB) {
-                break
-            }
-
+        for node in usableObjectNodes {
             if node.pointee.CType & UInt32(CTYPE_BLOCKSHADOW) != 0 { // look for things which can block the shadow
                 let boxes = collisionBoxesBase(node)
                 for i in 0..<Int(node.pointee.NumCollisionBoxes) { // check all collision boxes
@@ -362,8 +353,7 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
                     onBlocker = true
                 }
             }
-            thisNodePtr = node.pointee.NextNode // next node
-        } while thisNodePtr != nil
+        }
 
         // SET SHADOW'S Y
         if onBlocker {
@@ -437,13 +427,8 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Object culling
 
 func CullTestAllObjects() {
-    guard var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr else { // get & verify 1st node
-        return
-    }
-
     // PROCESS EACH OBJECT
-    repeat {
-        let node = theNode!
+    for node in allObjectNodes {
         var skipToNext = false
         var drawOn = false
 
@@ -541,10 +526,7 @@ func CullTestAllObjects() {
                 node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << gCurrentSplitScreenPane) // set cull bit for this pane/player
             }
         }
-
-        // NEXT NODE
-        theNode = node.pointee.NextNode
-    } while theNode != nil
+    }
 }
 
 // Returns true if object is culled in all panes

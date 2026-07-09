@@ -464,5 +464,42 @@ Commits `b44749e` (slice 1) through `7b7cbe2` (slice 6; slices ran 1-5, 7,
 **Verification status:**
 1. ✅ Normal GL build - user confirmed regression pass looks fine
    (2026-07-09). GL rendering unaffected by the refactor.
-2. Next: user runs `--metal` - expected to reach the menu now; known gaps
-   mean glow text renders as plain alpha and lighting/fog are absent in 3D.
+2. ✅ `--metal` - user ran it through the wormhole intro, title screen,
+   credits, and real gameplay (forest level, HUD, weapon wheel). Found and
+   fixed, in order: window-creation ordering crash, glGetError with no
+   context, camera matrix readbacks, vertex-array menu text, setVertexBytes
+   4KB cap, GL/Metal NDC z-range mismatch (2D was 100% invisible), missing
+   alpha-test cutout, missing additive blending (glow sprites), missing
+   dual-texture MODULATE (Infobar gauge masks), inert texture matrix
+   (static wormhole tunnel), and no sphere-map reflection texgen (rider's
+   jetpack). **2026-07-09: user confirmed no rendering glitches, everything
+   functional.** Remaining known difference: no lighting model in the
+   shader (enableLighting/disableLighting are no-ops) - lit 3D surfaces
+   render flat/unshaded instead of with GL's ambient + 2 fill-light setup.
+   Fog is similarly absent (disableFog no-op).
+
+## MILESTONE: Metal renderer is functionally complete for menu + gameplay
+
+As of `0c2b88c`, `--metal` runs the real game - not a spike - through boot,
+menu, HUD, cutscenes, and gameplay with no visual glitches reported, only a
+lighting/fog difference (documented, not yet implemented). This is the
+original goal ("menu screen ready to render") several times over.
+
+Remaining known gaps, in rough priority order for a follow-up session:
+1. **Lighting model** - ambient + up to `MAX_FILL_LIGHTS` directional fill
+   lights (see `OGL_CreateLights`/`RenderBackend.setLights`) need a real
+   vertex or fragment lighting calculation in the shader. Currently the
+   biggest visual gap.
+2. **Fog** - linear/exp/exp2 (`RenderBackend.setFog`), currently a no-op.
+3. **blendFunc** is still only two hardcoded pipelines (standard alpha,
+   additive) - correct for everything the game actually calls, but not a
+   general implementation.
+4. **setTextureEnv's ADD/ADD_ALPHA** combine modes render as MODULATE
+   (only affects the rare non-modulate multi-texture case).
+5. **setTextureWrap** (GL_CLAMP_TO_EDGE) is a no-op - possible edge-bleed
+   on some sprites, not yet reported as visible.
+6. **setViewport** doesn't flip Y - wrong for split-screen/dual-screen,
+   untested.
+7. Stereo (shutter/anaglyph) and dual-screen mode are GL-only by
+   construction (raw gl* calls the portable-facade refactor didn't touch,
+   see slice 7) - `--metal` can't run them at all yet.

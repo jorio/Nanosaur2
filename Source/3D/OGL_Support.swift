@@ -1,13 +1,18 @@
 // OGL_Support.swift - Port of OGL_Support.c to Swift
 //
-// gAnaglyphFocallength, gAnaglyphEyeSeparation, gAnaglyphPass, gAGLContext,
-// gViewToFrustumMatrix, gWorldToViewMatrix, gWorldToFrustumMatrix,
-// gLocalToViewMatrix, gLocalToFrustumMatrix, gWorldToWindowMatrix,
-// gCurrentSplitScreenPane, gActiveSplitScreenMode, gCurrentPaneAspectRatio,
-// gMyState_Lighting, gMyState_Color, gPolysThisFrame, and
-// gVertexArrayRangeObjects/gUsingVertexArrayRange stay defined here (not as
-// private Swift storage) and `extern`'d via game.h: they're read/written
-// directly by other files (already-ported and still-C alike).
+// gAnaglyphFocallength/gAnaglyphEyeSeparation/gAnaglyphPass/gAGLContext/
+// gAGLContext2/gViewToFrustumMatrix/gWorldToViewMatrix/gWorldToFrustumMatrix/
+// gLocalToViewMatrix/gLocalToFrustumMatrix/gWorldToWindowMatrix/
+// gCurrentSplitScreenPane/gActiveSplitScreenMode/gCurrentPaneAspectRatio/
+// gMyState_Lighting/gMyState_Color/gPolysThisFrame are native Swift storage
+// (converted 2026-07-07): nothing in any .c file touches them anymore -
+// the old comment claiming other C files still needed them via extern was
+// stale (OGL_Support.c had no real remaining C readers, same pattern as
+// bg3d.c/Sound.c/etc. this session). gWorldToWindowMatrix is a 3-tuple
+// (MAX_VIEWPORTS), matching the tuple-not-Array pattern already used below
+// for gFrustumToWindowMatrix, so withUnsafeMutablePointer(to:) addresses
+// real contiguous storage instead of an Array's storage-reference header.
+//
 // gFrustumToWindowMatrix, gStateStack_*, gMyState_Blend/Fog/Texture2D/
 // CullFace/TextureUnit/BlendFuncS/BlendFuncD, gAnaglyphGreyTable,
 // gDoAnisotropy, gMaxAnisotropy, and the vertex-array-memory bookkeeping
@@ -16,6 +21,32 @@
 // non-static but referenced nowhere else) - they move into private Swift
 // storage instead, as plain Swift arrays where the C original used a fixed
 // array (nothing external needs pointer access to them).
+
+var gAnaglyphFocallength: Float = 450.0
+var gAnaglyphEyeSeparation: Float = 40.0
+var gAnaglyphPass: UInt8 = 0
+
+var gAGLContext: OpaquePointer?
+var gAGLContext2: OpaquePointer?
+
+var gViewToFrustumMatrix = OGLMatrix4x4()
+var gWorldToViewMatrix = OGLMatrix4x4()
+var gWorldToFrustumMatrix = OGLMatrix4x4()
+var gLocalToViewMatrix = OGLMatrix4x4()
+var gLocalToFrustumMatrix = OGLMatrix4x4()
+
+// MAX_VIEWPORTS is 3 (MAX_SPLITSCREENS+1); see gFrustumToWindowMatrix below
+// for why this is a tuple, not an Array.
+var gWorldToWindowMatrix: (OGLMatrix4x4, OGLMatrix4x4, OGLMatrix4x4) = (OGLMatrix4x4(), OGLMatrix4x4(), OGLMatrix4x4())
+
+var gCurrentSplitScreenPane: UInt8 = 0
+var gActiveSplitScreenMode: UInt8 = UInt8(SplitscreenMode.none.rawValue)
+var gCurrentPaneAspectRatio: Float = 1
+
+var gMyState_Lighting: UInt8 = 0
+var gMyState_Color = OGLColorRGBA()
+
+var gPolysThisFrame: Int32 = 0
 //
 // VERTEXARRAYRANGES is hardcoded to 0 in game.h (like Water.swift/others
 // already noted), so every `#if VERTEXARRAYRANGES` block is dead code and
@@ -41,9 +72,8 @@ private let kNoErr: OSErr = 0
 
 // MARK: - GL extension function pointers (Necessary on Windows; harmless here)
 
-private typealias GLActiveTextureProc = @convention(c) (GLenum) -> Void
-private var gGlActiveTextureProc: GLActiveTextureProc?
-private var gGlClientActiveTextureProc: GLActiveTextureProc?
+// glActiveTexture/glClientActiveTexture proc pointers moved into
+// GLRenderBackend (loadGLProcs) as part of the portable-facade refactor.
 
 // MARK: - Vertex array memory bookkeeping (file-private, never referenced elsewhere)
 
@@ -93,9 +123,27 @@ private var gMyState_Blend = false
 private var gMyState_Fog = false
 private var gMyState_Texture2D = false
 private var gMyState_CullFace = false
+private var gMyState_DepthTest = false
 private var gMyState_TextureUnit: UInt32 = 0
 private var gMyState_BlendFuncS: GLenum = 0
 private var gMyState_BlendFuncD: GLenum = 0
+// Shadow copies of normal-renormalization and depth-write state, so
+// OGL_PushState/PopState can save/restore them without GL introspection
+// (which isn't portable). Kept accurate by routing every mutation through
+// OGL_SetNormalizeNormals/OGL_SetDepthWrite below; both start true because
+// prepareSceneDefaults() enables GL_NORMALIZE and depth writes default on.
+private var gMyState_Normalize = true
+private var gMyState_DepthMask = true
+
+func OGL_SetNormalizeNormals(_ enabled: Bool) {
+    gMyState_Normalize = enabled
+    gRenderBackend.setNormalizeNormals(enabled)
+}
+
+func OGL_SetDepthWrite(_ enabled: Bool) {
+    gMyState_DepthMask = enabled
+    gRenderBackend.setDepthWrite(enabled)
+}
 
 // MARK: - Macro shims (parameterless/parameterized macros aren't importable)
 
@@ -132,6 +180,13 @@ private var gMyState_BlendFuncD: GLenum = 0
     withUnsafeMutablePointer(to: &gWorldToWindowMatrix) {
         UnsafeMutableRawPointer($0).assumingMemoryBound(to: OGLMatrix4x4.self)
     }
+}
+
+// Replaces the old InfobarInternal.h C shim of the same name/signature -
+// Infobar.swift/Camera.swift call this to index into gWorldToWindowMatrix,
+// which (as a tuple) isn't subscriptable by a variable index directly.
+func GetWorldToWindowMatrixEntry(_ i: Int32) -> UnsafeMutablePointer<OGLMatrix4x4> {
+    gWorldToWindowMatrixBase() + Int(i)
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
@@ -337,14 +392,6 @@ func OGL_DisposeGameView() {
 
 // MARK: - OGL: Create draw context
 
-// See PlatformBackend.swift - context creation/make-current/swap/destroy
-// (this function, OGL_DisposeDrawContext, and the SDL_GL_SwapWindow call
-// sites below) go through GraphicsBackend so a 3DS conformance can replace
-// them; the desktop-GL-specific capability queries just below (extension
-// function pointers, GL_MAX_TEXTURE_SIZE) have no citro3d equivalent and
-// deliberately stay here rather than in the protocol.
-private var gGraphicsBackend = PlatformGraphics()
-
 // Call this ONCE when booting the game.
 // The source port reuses a single draw context throughout the lifespan of the program.
 
@@ -352,59 +399,38 @@ private func OGL_CreateDrawContext() {
     SwGameAssertMessage(gAGLContext == nil, "GL context already exists")
     SwGameAssertMessage(gSDLWindow != nil, "Window must be created before the DC!")
 
-    // CREATE AGL CONTEXT & ATTACH TO WINDOW
-
-    gAGLContext = gGraphicsBackend.createContext(window: gSDLWindow)
-
-    SwGameAssert(glGetError() == GL_NO_ERROR)
-
-    // ACTIVATE CONTEXT
-
-    gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
-
-    // ENABLE VSYNC
-
-    _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
-
-    // SEE IF SUPPORT 2048x2048 TEXTURES
+    // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal), AND SKIP GL
+    // CONTEXT CREATION ENTIRELY.
     //
-    // Skipped on 3DS: picaGL's glGetIntegerv(GL_MAX_TEXTURE_SIZE) is a
-    // stub that hardcodes 128 (ports/3DS/vendor/picaGL/source/get.c), not
-    // the real PICA200 capability - this tripped SwFatalAlert() on every
-    // single boot, whose message-box path (DoFatalAlert ->
-    // SDL_ShowSimpleMessageBox) requires a real 3DS system-applet handoff
-    // that never completes without system files installed, manifesting as
-    // an endless GSPGPU_ReleaseRight/APT-sleep-query retry loop right
-    // after OGL_Boot() - this was the actual root cause of the "hang"
-    // bisected at length this session, not any of the GSP/SDL-video
-    // theories tried earlier.
+    // Keeping the normal GL context alive (just never presented) alongside
+    // a second Metal-backed view on the same window doesn't work: SDL's
+    // Metal view corrupts the window for GL context creation regardless of
+    // ordering (see git history for the exact errors hit). So under --metal
+    // there is NO GL context at all - gSDLWindow is created with
+    // SDL_WINDOW_METAL only (Boot.cpp). Safe because the portable-facade
+    // refactor (docs/metal-renderer-plan.md) moved every raw gl* call the
+    // game makes behind RenderBackend, except a handful of inherently-GL
+    // features (shutter stereo, dual-screen's 2nd context) this backend
+    // can't reach anyway.
+    //
+    // Desktop-only: SwMetalBackend_Activate (MetalActivation.swift) isn't
+    // built for 3DS at all (see the 3DS Makefile's ENGINE_SWIFT exclusion
+    // list) - gMetalMode is also never set to true there (no --metal CLI
+    // flag on 3DS), so this is dead at runtime regardless, but the call
+    // still needs to not exist in the compiled/linked 3DS binary.
     #if !NANOSAUR_3DS
-    var maxTexSize: GLint = 0
-    glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
-    if maxTexSize < 2048 {
-        SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
+    if gMetalMode != 0 {
+        if !SwMetalBackend_Activate() {
+            SwFatalAlert("--metal: SwMetalBackend_Activate failed")
+        }
+        return
     }
     #endif
 
-    // GET GL PROCEDURES
-    // Necessary on Windows
-    //
-    // 3DS: picaGL statically links glActiveTexture/glClientActiveTexture as
-    // ordinary C functions (not an extension a driver may or may not
-    // expose), so there's nothing to dynamically look up - real SDL3's 3DS
-    // backend is software-rendering-only and doesn't implement
-    // SDL_GL_GetProcAddress at all, which would otherwise return nil here
-    // and fail the assert below at runtime.
-    #if NANOSAUR_3DS
-    gGlActiveTextureProc = glActiveTexture
-    gGlClientActiveTextureProc = glClientActiveTexture
-    #else
-    gGlActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glActiveTexture"), to: GLActiveTextureProc?.self)
-    SwGameAssert(gGlActiveTextureProc != nil)
+    // CREATE THE BACKEND'S CONTEXT (GL: SDL context + make-current + vsync
+    // + proc loading + capability check - see GLRenderBackend.createContext)
 
-    gGlClientActiveTextureProc = unsafeBitCast(SDL_GL_GetProcAddress("glClientActiveTexture"), to: GLActiveTextureProc?.self)
-    SwGameAssert(gGlClientActiveTextureProc != nil)
-    #endif
+    gRenderBackend.createContext()
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
     // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT
@@ -420,12 +446,23 @@ private func OGL_CreateDrawContext() {
     // producing a visible flicker; redrawing the full frame every time
     // keeps both buffers identical.
 
+    // Dual-screen (second GL context on a second window) is an inherently
+    // desktop-GL concept with no citro3d equivalent - it's not part of the
+    // RenderBackend facade (see the doc comment above) and 3DS never sets
+    // gDualScreenMode, so this whole path compiles out there.
+    #if !NANOSAUR_3DS
     if gDualScreenMode != 0, let window2 = gSDLWindow2 {
-        gAGLContext2 = gGraphicsBackend.createSecondaryContext(window: window2, sharedWith: gAGLContext)
+        try? SDL.glSetAttribute(.shareWithCurrentContext, 1)
 
-        gGraphicsBackend.makeCurrent(gAGLContext2, window: window2)
+        gAGLContext2 = SDL_GL_CreateContext(window2)
+        if gAGLContext2 == nil {
+            SwFatalAlert(String(cString: SDL_GetError()))
+        }
 
-        _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+        let didMakeCurrent2 = SDL_GL_MakeCurrent(window2, gAGLContext2)
+        SwGameAssertMessage(didMakeCurrent2, String(cString: SDL_GetError()))
+
+        try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
 
         var bgWidth: Int32 = 0
         var bgHeight: Int32 = 0
@@ -437,14 +474,15 @@ private func OGL_CreateDrawContext() {
         glViewport(0, 0, window2Width, window2Height)
 
         OGL_DrawDualScreenBackground(window2Width, window2Height) // fill both backbuffer slots so neither shows garbage
-        gGraphicsBackend.swap(gAGLContext2, window: window2)
+        SDL_GL_SwapWindow(window2)
         OGL_DrawDualScreenBackground(window2Width, window2Height)
-        gGraphicsBackend.swap(gAGLContext2, window: window2)
+        SDL_GL_SwapWindow(window2)
 
         // SWITCH BACK TO THE TOP WINDOW/CONTEXT SO BOOT CAN PROCEED AS NORMAL
 
-        gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
+        _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
     }
+    #endif
 }
 
 // MARK: - OGL draw scene (dual-screen background)
@@ -456,17 +494,17 @@ private var gDualScreenBackgroundTexture: GLuint = 0
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
     glOrtho(0, GLdouble(windowWidth), GLdouble(windowHeight), 0, -1, 1)
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.loadIdentity()
 
-    glClearColor(0, 0, 0, 1)
-    glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+    gRenderBackend.setClearColor(0, 0, 0)
+    gRenderBackend.clearColorAndDepth()
 
     glEnable(GLenum(GL_TEXTURE_2D))
-    glBindTexture(GLenum(GL_TEXTURE_2D), gDualScreenBackgroundTexture)
+    gRenderBackend.bindTexture(gDualScreenBackgroundTexture)
     glColor4f(1, 1, 1, 1)
 
     glBegin(GLenum(GL_QUADS))
@@ -485,17 +523,18 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
 // The game reuses the same draw context for all scenes!
 
 private func OGL_DisposeDrawContext() {
-    guard gAGLContext != nil else {
-        return
-    }
-
+    // The dual-screen bottom window's second context is a GL-only extra,
+    // torn down here before the backend's own context. Compiles out on
+    // 3DS - see the matching #if in OGL_CreateDrawContext.
+    #if !NANOSAUR_3DS
     if gAGLContext2 != nil, let window2 = gSDLWindow2 {
-        gGraphicsBackend.destroyContext(gAGLContext2, window: window2)
+        _ = SDL_GL_MakeCurrent(window2, nil)
+        SDL_GL_DestroyContext(gAGLContext2)
         gAGLContext2 = nil
     }
+    #endif
 
-    gGraphicsBackend.destroyContext(gAGLContext, window: gSDLWindow) // nuke context
-    gAGLContext = nil
+    gRenderBackend.destroyContext()
 }
 
 // MARK: - OGL: Init draw context
@@ -530,16 +569,13 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 
     // SET VARIOUS STATE INFO
 
-    glClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b, 1.0)
-    glEnable(GLenum(GL_DEPTH_TEST)) // use z-buffer
+    gRenderBackend.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
+    OGL_EnableDepthTest() // use z-buffer
 
-    var color: [GLfloat] = [1, 1, 1, 1] // set global material color to white
-    glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
-
-    glColorMaterial(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE))
-    glEnable(GLenum(GL_COLOR_MATERIAL))
-
-    glEnable(GLenum(GL_NORMALIZE))
+    // Fixed-function scene defaults (cull orientation, alpha test, white
+    // color-tracking material, normalization, fog hint) - one facade call,
+    // no-op on backends without those concepts.
+    gRenderBackend.prepareSceneDefaults()
 
     // INIT DEBUG FONT
 
@@ -549,11 +585,13 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 // MARK: - OGL: Set styles
 
 private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
+    // Cull orientation / alpha test / color material / fog hint defaults
+    // were applied by prepareSceneDefaults() in OGL_InitDrawContext just
+    // before this runs; here we (re)set the cached toggles and per-scene
+    // parameters.
+
     gMyState_CullFace = false
     OGL_EnableCullFace()
-    glCullFace(GLenum(GL_BACK))
-    glFrontFace(GLenum(GL_CCW)) // CCW is front face
-    _ = OGL_CheckError()
 
     // SET BLENDING DEFAULTS
 
@@ -563,16 +601,11 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 
     gMyState_Blend = true
     OGL_DisableBlend()
-    _ = OGL_CheckError()
-
-    glDisable(GLenum(GL_RESCALE_NORMAL))
-    _ = OGL_CheckError()
 
     gMyState_TextureUnit = UInt32(GL_TEXTURE0_ARB)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0_ARB))
     gMyState_Texture2D = true
     OGL_DisableTexture2D()
-    _ = OGL_CheckError()
 
     gMyState_Color.r = 0.1
     gMyState_Color.g = 0.1
@@ -580,62 +613,65 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
     gMyState_Color.a = 0.1
     OGL_SetColor4f(1, 1, 1, 1)
 
-    // ENABLE ALPHA CHANNELS
-
-    glEnable(GLenum(GL_ALPHA_TEST))
-    glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
     _ = OGL_CheckError()
 
     // SET FOG
 
-    glHint(GLenum(GL_FOG_HINT), GLenum(GL_FASTEST))
-
     let styleDefPtr = setupDefPtr!.pointer(to: \.styles)!
     if styleDefPtr.pointee.useFog != 0 {
-        glFogi(GLenum(GL_FOG_MODE), GLint(styleDefPtr.pointee.fogMode))
-        glFogf(GLenum(GL_FOG_DENSITY), styleDefPtr.pointee.fogDensity)
-        glFogf(GLenum(GL_FOG_START), styleDefPtr.pointee.fogStart)
-        glFogf(GLenum(GL_FOG_END), styleDefPtr.pointee.fogEnd)
-        withUnsafeMutablePointer(to: &setupDefPtr!.pointee.view.clearColor.r) {
-            glFogfv(GLenum(GL_FOG_COLOR), $0)
+        let mode: RBFogMode
+        switch Int32(styleDefPtr.pointee.fogMode) {
+        case GL_EXP: mode = .exp
+        case GL_EXP2: mode = .exp2
+        default: mode = .linear
         }
+        gRenderBackend.setFog(
+            mode: mode,
+            density: styleDefPtr.pointee.fogDensity,
+            start: styleDefPtr.pointee.fogStart,
+            end: styleDefPtr.pointee.fogEnd,
+            r: setupDefPtr!.pointee.view.clearColor.r,
+            g: setupDefPtr!.pointee.view.clearColor.g,
+            b: setupDefPtr!.pointee.view.clearColor.b,
+            a: setupDefPtr!.pointee.view.clearColor.a)
         gMyState_Fog = false
         OGL_EnableFog()
     } else {
         gMyState_Fog = true
         OGL_DisableFog()
     }
+
     _ = OGL_CheckError()
 
     // ANISOTRIPIC FILTERING
 
-    if gDoAnisotropy {
+    if gDoAnisotropy, gMetalMode == 0 { // dead flag ("MAJOR PERFORMANCE KILLER") - raw GL introspection, kept guarded
         glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gMaxAnisotropy)
+        _ = OGL_CheckError()
     }
-    _ = OGL_CheckError()
 }
 
 // MARK: - Clear all buffers to black
 
 private func ClearAllBuffersToBlack() {
-    glClearColor(0, 0, 0, 1)
+    gRenderBackend.setClearColor(0, 0, 0)
     if isStereoShutter() {
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
+        gRenderBackend.present()
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
+        gRenderBackend.present()
         _ = OGL_CheckError()
     } else {
-        glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
-        glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT)) // clear buffer
-        gGraphicsBackend.swap(gAGLContext, window: gSDLWindow)
+        gRenderBackend.clearColorAndDepth() // clear buffer
+        gRenderBackend.present()
+        gRenderBackend.clearColorAndDepth() // clear buffer
+        gRenderBackend.present()
 
         _ = OGL_CheckError()
     }
@@ -649,54 +685,23 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
     gMyState_Lighting = 0
     OGL_EnableLighting()
 
-    // CREATE AMBIENT LIGHT
-
-    var ambient: [GLfloat] = [
-        lightDefPtr.pointee.ambientColor.r,
-        lightDefPtr.pointee.ambientColor.g,
-        lightDefPtr.pointee.ambientColor.b,
-        1,
-    ]
-    glLightModelfv(GLenum(GL_LIGHT_MODEL_AMBIENT), &ambient) // set scene ambient light
-
-    // CREATE FILL LIGHTS
-
     let fillDirection = fillDirectionBase(lightDefPtr)
     let fillColor = fillColorBase(lightDefPtr)
 
+    // Normalize the fill directions in place (the game reads them back
+    // elsewhere, e.g. the per-frame light-position update) before handing
+    // the rig to the backend.
     for i in 0..<Int(lightDefPtr.pointee.numFillLights) {
-        var lightamb: [GLfloat] = [0.0, 0.0, 0.0, 1.0]
-        var lightVec = [GLfloat](repeating: 0, count: 4)
-        var diffuse = [GLfloat](repeating: 0, count: 4)
-
-        // SET FILL DIRECTION
-
         fillDirection[i] = fillDirection[i].normalized()
-        lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
-        lightVec[1] = -fillDirection[i].y
-        lightVec[2] = -fillDirection[i].z
-        lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
-
-        // SET COLOR
-
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_AMBIENT), &lightamb)
-
-        diffuse[0] = fillColor[i].r
-        diffuse[1] = fillColor[i].g
-        diffuse[2] = fillColor[i].b
-        diffuse[3] = 1
-
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_DIFFUSE), &diffuse)
-
-        glEnable(GLenum(GL_LIGHT0) + GLenum(i)) // enable the light
     }
 
-    // NUKE ANY FILL LIGHTS REMAINING FROM PREVIOUS SCENE
-
-    for i in Int(lightDefPtr.pointee.numFillLights)..<Int(MAX_FILL_LIGHTS) {
-        glDisable(GLenum(GL_LIGHT0) + GLenum(i))
-    }
+    gRenderBackend.setLights(
+        ambientR: lightDefPtr.pointee.ambientColor.r,
+        ambientG: lightDefPtr.pointee.ambientColor.g,
+        ambientB: lightDefPtr.pointee.ambientColor.b,
+        numFillLights: Int32(lightDefPtr.pointee.numFillLights),
+        fillDirections: fillDirection,
+        fillColors: fillColor)
 }
 
 // MARK: - OGL draw scene
@@ -765,14 +770,14 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                 // Bringing up dialogs can write into green channel, so always be sure it's clear
 
                 if isStereoAnaglyphColor() {
-                    glColorMask(1, 1, 1, 1) // make sure clearing Red/Green/Blue channels
+                    gRenderBackend.setColorMask(true, true, true, true) // make sure clearing Red/Green/Blue channels
                 } else if isStereoAnaglyphMono() {
-                    glColorMask(1, 0, 1, 1) // make sure clearing Red/Blue channels
+                    gRenderBackend.setColorMask(true, false, true, true) // make sure clearing Red/Blue channels
                 }
 
-                glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearColorAndDepth()
             } else {
-                glClear(GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearDepthOnly()
             }
         }
 
@@ -782,14 +787,14 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             // SET COLOR MASK
 
             if gAnaglyphPass == 0 {
-                glColorMask(1, 0, 0, 1)
+                gRenderBackend.setColorMask(true, false, false, true)
             } else {
                 if isStereoAnaglyphColor() {
-                    glColorMask(0, 1, 1, 1)
+                    gRenderBackend.setColorMask(false, true, true, true)
                 } else {
-                    glColorMask(0, 0, 1, 1)
+                    gRenderBackend.setColorMask(false, false, true, true)
                 }
-                glClear(GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearDepthOnly()
             }
         }
 
@@ -813,7 +818,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             var w: Int32 = 1
             var h: Int32 = 1
             OGL_GetCurrentViewport(&x, &y, &w, &h, gCurrentSplitScreenPane)
-            glViewport(x, y, w, h)
+            gRenderBackend.setViewport(x, y, w, h)
             gCurrentPaneAspectRatio = Float(h) / Float(w)
 
             // GET UPDATED GLOBAL COPIES OF THE VARIOUS MATRICES
@@ -846,11 +851,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             gDebugMode = 0
         }
 
-        if gDebugMode == 3 { // see if show wireframe
-            glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(GL_LINE))
-        } else {
-            glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(GL_FILL))
-        }
+        gRenderBackend.setWireframe(gDebugMode == 3) // see if show wireframe
     }
 
     if gTimeDemo != 0 {
@@ -892,7 +893,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // SWAP THE BUFFS
 
-    gGraphicsBackend.swap(gAGLContext, window: gSDLWindow) // end render loop
+    gRenderBackend.present() // end render loop
 
     if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
         gGameViewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
@@ -902,9 +903,11 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         RestoreCamerasFromAnaglyph()
     }
 
+    #if !NANOSAUR_3DS
     if gDualScreenMode != 0 {
         OGL_DrawDualScreenMinimap()
     }
+    #endif
 }
 
 // MARK: - OGL draw scene (dual-screen minimap)
@@ -917,6 +920,10 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 // real GL state from what this file's cache believes it to be. Skips
 // entirely (no context switch, no swap) when there's no map to draw, so
 // the bottom window doesn't do needless work outside gameplay.
+//
+// Second-context/GL-only, same as OGL_CreateDrawContext's dual-screen
+// setup - 3DS never sets gDualScreenMode, so this compiles out there.
+#if !NANOSAUR_3DS
 private func OGL_DrawDualScreenMinimap() {
     guard let window2 = gSDLWindow2, gAGLContext2 != nil, IsMinimapActive() else {
         return
@@ -928,7 +935,7 @@ private func OGL_DrawDualScreenMinimap() {
     // Push while context1 is still current, so this saves ITS real state.
     OGL_PushState()
 
-    gGraphicsBackend.makeCurrent(gAGLContext2, window: window2)
+    _ = SDL_GL_MakeCurrent(window2, gAGLContext2)
 
     // gMyState_* (and gMostRecentMaterial) reflect whatever context1 last
     // set - but that's Swift-side bookkeeping, not real GL state, and
@@ -957,16 +964,17 @@ private func OGL_DrawDualScreenMinimap() {
     OGL_DrawDualScreenBackground(gGameWindowWidth, gGameWindowHeight)
     DrawMinimapOnSecondaryScreen()
 
-    gGraphicsBackend.swap(gAGLContext2, window: window2)
+    SDL_GL_SwapWindow(window2)
 
     gGameWindowWidth = savedWindowWidth
     gGameWindowHeight = savedWindowHeight
 
     // Switch back to context1 BEFORE popping, so the restore calls PopState
     // issues actually land on context1 (the context they're meant for).
-    gGraphicsBackend.makeCurrent(gAGLContext, window: gSDLWindow)
+    _ = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
     OGL_PopState()
 }
+#endif
 
 // MARK: - Draw blue line
 
@@ -1116,29 +1124,21 @@ func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32
         ConvertTextureToGrey(imageMemory, Int16(width), Int16(height), srcFormat, dataType)
     }
 
-    // GET A UNIQUE TEXTURE NAME & INITIALIZE IT
+    // GET A UNIQUE TEXTURE NAME & INITIALIZE IT, LOAD TEXTURE AND/OR MIPMAPS
+    //
+    // Legacy GL-typed shim (see RenderBackend.swift's header): translate the
+    // (srcFormat, dataType) pair to the facade's neutral pixel format. Every
+    // caller passes srcFormat GL_RGBA; only dataType varies (and only in
+    // theory - see RBPixelFormat).
+    let format: RBPixelFormat
+    switch dataType {
+    case GLint(GL_UNSIGNED_INT_8_8_8_8_REV): format = .rgba8888Rev
+    case GLint(GL_UNSIGNED_SHORT_1_5_5_5_REV): format = .rgba1555Rev
+    default: format = .rgba8
+    }
 
-    var textureName: GLuint = 0
-    glGenTextures(1, &textureName)
-    _ = OGL_CheckError()
-
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName) // this is now the currently active texture
-    _ = OGL_CheckError()
-
-    // LOAD TEXTURE AND/OR MIPMAPS
-
-    glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
-    glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
-
-    glTexImage2D(GLenum(GL_TEXTURE_2D),
-                 0, // mipmap level
-                 destFormat, // format in OpenGL
-                 width, // width in pixels
-                 height, // height in pixels
-                 0, // border
-                 GLenum(srcFormat), // what my format is
-                 GLenum(dataType), // size of each r,g,b
-                 imageMemory) // pointer to the actual texture pixels
+    let textureName = gRenderBackend.createTexture(
+        width: width, height: height, format: format, pixels: imageMemory)
 
     // SEE IF RAN OUT OF MEMORY WHILE COPYING TO OPENGL
 
@@ -1165,7 +1165,7 @@ func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWid
 
     // Try to load a JPEG file first.
     let jpgPath = partialPathStr + ".jpg"
-    jpgExists = kNoErr == ResolveDataFileSpec(jpgPath, &dummySpec)
+    jpgExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec)
     if jpgExists {
         var jpgLength: Int = 0
         let jpgData = LoadDataFile(jpgPath, &jpgLength)
@@ -1181,7 +1181,7 @@ func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWid
     // If we've already loaded a JPEG, the PNG is used as an alpha mask.
     // Otherwise, load the PNG as an RGBA image.
     let pngPath = partialPathStr + ".png"
-    pngExists = kNoErr == FSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pngPath, &dummySpec)
+    pngExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pngPath, &dummySpec)
     if pngExists {
         var pngLength: Int = 0
         let pngData = LoadDataFile(pngPath, &pngLength)
@@ -1462,9 +1462,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 // MARK: - OGL: RAM texture has changed
 
 func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName) // this is now the currently active texture
-
-    glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, Int32(width), Int32(height), GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), pixels)
+    gRenderBackend.updateTexture(textureName, width: Int32(width), height: Int32(height), bgraPixels: pixels)
 }
 
 // MARK: - OGL: Texture set OpenGL texture
@@ -1472,7 +1470,7 @@ func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: I
 // Sets the current OpenGL texture using glBindTexture et.al. so any textured triangles will use it.
 
 func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
-    glBindTexture(GLenum(GL_TEXTURE_2D), textureName)
+    gRenderBackend.bindTexture(textureName)
     if OGL_CheckError() != 0 {
         SwFatalAlert("OGL_Texture_SetOpenGLTexture: glBindTexture failed!")
     }
@@ -1565,8 +1563,8 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // INIT PROJECTION MATRIX
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
 
     let placements = cameraPlacementsBase()
     let fov = fovBase()
@@ -1589,7 +1587,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             right = aspect * wd2 - 0.5 * gAnaglyphEyeSeparation * ndfl
         }
 
-        glFrustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
+        gRenderBackend.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
     } else {
         // SETUP STANDARD PERSPECTIVE CAMERA
 
@@ -1600,9 +1598,9 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             gGameViewInfoPtr!.pointee.hither,
             gGameViewInfoPtr!.pointee.yon)
 
-        glMatrixMode(GLenum(GL_PROJECTION))
+        gRenderBackend.matrixMode(.projection)
         withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glLoadMatrixf($0) }
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
         }
     }
 
@@ -1614,35 +1612,35 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
         &placements[Int(camNum)].pointOfInterest,
         &placements[Int(camNum)].upVector)
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glLoadMatrixf($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
     }
 
     // UPDATE LIGHT POSITIONS
 
-    let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
-    let fillDirection = fillDirectionBase(lights)
-    for i in 0..<Int(lights.pointee.numFillLights) {
-        var lightVec = [GLfloat](repeating: 0, count: 4)
-
-        lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
-        lightVec[1] = -fillDirection[i].y
-        lightVec[2] = -fillDirection[i].z
-        lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
+    do {
+        let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
+        gRenderBackend.updateLightPositions(
+            numFillLights: Int32(lights.pointee.numFillLights),
+            fillDirections: fillDirectionBase(lights))
     }
 
     // GET VARIOUS CAMERA MATRICES
-
+    //
+    // The readbacks re-fetch exactly what was loaded above (modelview from
+    // OGL_SetGluLookAtMatrix, projection from OGL_SetGluPerspectiveMatrix) -
+    // load-bearing only in stereo mode, where frustum() computed the
+    // projection backend-side. Portable now: matrix-stack-tracking backends
+    // serve these from their CPU-side stacks.
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
     }
     withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
     }
     withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), $0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getProjectionMatrix($0) }
     }
     gLocalToFrustumMatrix = gLocalToViewMatrix.multiplied(by: gViewToFrustumMatrix)
     gWorldToFrustumMatrix = gWorldToViewMatrix.multiplied(by: gViewToFrustumMatrix)
@@ -1664,7 +1662,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 // MARK: - OGL: Check error
 
 func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
-    let error = glGetError()
+    let error = gRenderBackend.checkError()
     if error != 0 {
         var text = ""
         switch Int32(error) {
@@ -1686,12 +1684,12 @@ func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum
 func OGL_PushState() {
     // PUSH MATRIES WITH OPENGL
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPushMatrix()
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPushMatrix()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.pushMatrix()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.pushMatrix()
 
-    glMatrixMode(GLenum(GL_MODELVIEW)) // in my code, I keep modelview matrix as the currently active one all the time.
+    gRenderBackend.matrixMode(.modelview) // in my code, I keep modelview matrix as the currently active one all the time.
 
     // SAVE OTHER INFO
 
@@ -1704,17 +1702,17 @@ func OGL_PushState() {
 
     gStateStack_Lighting[i] = (gMyState_Lighting != 0)
     gStateStack_CullFace[i] = gMyState_CullFace
-    gStateStack_DepthTest[i] = glIsEnabled(GLenum(GL_DEPTH_TEST)) != 0
-    gStateStack_Normalize[i] = glIsEnabled(GLenum(GL_NORMALIZE)) != 0
+    gStateStack_DepthTest[i] = gMyState_DepthTest
     gStateStack_Texture2D[i] = gMyState_Texture2D
-    gStateStack_Fog[i] = glIsEnabled(GLenum(GL_FOG)) != 0
+    gStateStack_Fog[i] = gMyState_Fog
     gStateStack_Blend[i] = gMyState_Blend
     gStateStack_Color[i] = gMyState_Color
 
     gStateStack_BlendSrc[i] = GLint(gMyState_BlendFuncS)
     gStateStack_BlendDst[i] = GLint(gMyState_BlendFuncD)
 
-    glGetBooleanv(GLenum(GL_DEPTH_WRITEMASK), &gStateStack_DepthMask[i])
+    gStateStack_Normalize[i] = gMyState_Normalize
+    gStateStack_DepthMask[i] = gMyState_DepthMask ? 1 : 0
 }
 
 // MARK: - Pop state
@@ -1722,10 +1720,10 @@ func OGL_PushState() {
 func OGL_PopState() {
     // RETREIVE OPENGL MATRICES
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPopMatrix()
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPopMatrix()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.popMatrix()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.popMatrix()
 
     // GET OTHER INFO
 
@@ -1749,15 +1747,9 @@ func OGL_PopState() {
     }
 
     if gStateStack_DepthTest[i] {
-        glEnable(GLenum(GL_DEPTH_TEST))
+        OGL_EnableDepthTest()
     } else {
-        glDisable(GLenum(GL_DEPTH_TEST))
-    }
-
-    if gStateStack_Normalize[i] {
-        glEnable(GLenum(GL_NORMALIZE))
-    } else {
-        glDisable(GLenum(GL_NORMALIZE))
+        OGL_DisableDepthTest()
     }
 
     if gStateStack_Texture2D[i] {
@@ -1778,7 +1770,8 @@ func OGL_PopState() {
         OGL_DisableFog()
     }
 
-    glDepthMask(gStateStack_DepthMask[i])
+    OGL_SetNormalizeNormals(gStateStack_Normalize[i])
+    OGL_SetDepthWrite(gStateStack_DepthMask[i] != 0)
 
     OGL_BlendFunc(GLenum(gStateStack_BlendSrc[i]), GLenum(gStateStack_BlendDst[i]))
     OGL_SetColor4fv(&gStateStack_Color[i])
@@ -1789,7 +1782,7 @@ func OGL_PopState() {
 func OGL_EnableLighting() {
     if gMyState_Lighting == 0 {
         gMyState_Lighting = 1
-        glEnable(GLenum(GL_LIGHTING))
+        gRenderBackend.enableLighting()
     }
 }
 
@@ -1798,7 +1791,7 @@ func OGL_EnableLighting() {
 func OGL_DisableLighting() {
     if gMyState_Lighting != 0 {
         gMyState_Lighting = 0
-        glDisable(GLenum(GL_LIGHTING))
+        gRenderBackend.disableLighting()
     }
 }
 
@@ -1807,7 +1800,7 @@ func OGL_DisableLighting() {
 func OGL_EnableBlend() {
     if !gMyState_Blend {
         gMyState_Blend = true
-        glEnable(GLenum(GL_BLEND))
+        gRenderBackend.enableBlend()
     }
 }
 
@@ -1816,7 +1809,7 @@ func OGL_EnableBlend() {
 func OGL_DisableBlend() {
     if gMyState_Blend {
         gMyState_Blend = false
-        glDisable(GLenum(GL_BLEND))
+        gRenderBackend.disableBlend()
     }
 }
 
@@ -1828,12 +1821,12 @@ func OGL_EnableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if !gMyState_Texture2D {
             gMyState_Texture2D = true
-            glEnable(GLenum(GL_TEXTURE_2D))
+            gRenderBackend.enableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        glEnable(GLenum(GL_TEXTURE_2D))
+        gRenderBackend.enableTexture2D()
     }
 }
 
@@ -1845,12 +1838,12 @@ func OGL_DisableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if gMyState_Texture2D {
             gMyState_Texture2D = false
-            glDisable(GLenum(GL_TEXTURE_2D))
+            gRenderBackend.disableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        glDisable(GLenum(GL_TEXTURE_2D))
+        gRenderBackend.disableTexture2D()
     }
 }
 
@@ -1859,8 +1852,9 @@ func OGL_DisableTexture2D() {
 // Sets the currently active texture unit for GL_TEXTURE0...n
 
 func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
-    gGlActiveTextureProc?(texUnit)
-    gGlClientActiveTextureProc?(texUnit)
+    // Legacy GL-typed shim: callers pass GL_TEXTURE0 + n; the facade takes
+    // a plain unit index.
+    gRenderBackend.activeTextureUnit(Int32(texUnit) - GL_TEXTURE0)
 
     gMyState_TextureUnit = texUnit
 }
@@ -1873,7 +1867,7 @@ func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
         color.pointee.b != gMyState_Color.b ||
         color.pointee.a != gMyState_Color.a
     {
-        UnsafeRawPointer(color).withMemoryRebound(to: Float.self, capacity: 4) { glColor4fv($0) }
+        gRenderBackend.setColor4f(color.pointee.r, color.pointee.g, color.pointee.b, color.pointee.a)
 
         gMyState_Color = color.pointee
     }
@@ -1887,7 +1881,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
         b != gMyState_Color.b ||
         a != gMyState_Color.a
     {
-        glColor4f(r, g, b, a)
+        gRenderBackend.setColor4f(r, g, b, a)
 
         gMyState_Color.r = r
         gMyState_Color.g = g
@@ -1901,7 +1895,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
 func OGL_EnableCullFace() {
     if !gMyState_CullFace {
         gMyState_CullFace = true
-        glEnable(GLenum(GL_CULL_FACE))
+        gRenderBackend.enableCullFace()
     }
 }
 
@@ -1910,7 +1904,7 @@ func OGL_EnableCullFace() {
 func OGL_DisableCullFace() {
     if gMyState_CullFace {
         gMyState_CullFace = false
-        glDisable(GLenum(GL_CULL_FACE))
+        gRenderBackend.disableCullFace()
     }
 }
 
@@ -1919,7 +1913,7 @@ func OGL_DisableCullFace() {
 func OGL_EnableFog() {
     if !gMyState_Fog {
         gMyState_Fog = true
-        glEnable(GLenum(GL_FOG))
+        gRenderBackend.enableFog()
     }
 }
 
@@ -1928,15 +1922,51 @@ func OGL_EnableFog() {
 func OGL_DisableFog() {
     if gMyState_Fog {
         gMyState_Fog = false
-        glDisable(GLenum(GL_FOG))
+        gRenderBackend.disableFog()
+    }
+}
+
+// MARK: - OGL enable/disable depth test
+
+// Cached, unlike a plain gRenderBackend.enableDepthTest() call, so
+// OGL_PushState/OGL_PopState (below) can read back "is depth test on?"
+// without GL introspection (glIsEnabled) - needed so those functions (called
+// by every 2D draw: MO_DrawPicture, Atlas_DrawString2, ...) don't require a
+// live GL context, which --metal mode no longer creates.
+
+func OGL_EnableDepthTest() {
+    if !gMyState_DepthTest {
+        gMyState_DepthTest = true
+        gRenderBackend.enableDepthTest()
+    }
+}
+
+func OGL_DisableDepthTest() {
+    if gMyState_DepthTest {
+        gMyState_DepthTest = false
+        gRenderBackend.disableDepthTest()
     }
 }
 
 // MARK: - OGL blend func
 
+// Legacy GL-typed shim (see RenderBackend.swift's header): call sites all
+// over the codebase pass GL blend-factor enums; translate to the facade's
+// neutral factors here. Only the pairs the game actually uses are mapped.
+private func rbBlendFactor(_ glFactor: GLenum) -> RBBlendFactor {
+    switch Int32(glFactor) {
+    case GL_ONE: return .one
+    case GL_SRC_ALPHA: return .srcAlpha
+    case GL_ONE_MINUS_SRC_ALPHA: return .oneMinusSrcAlpha
+    default:
+        SwFatal("OGL_BlendFunc: unmapped GL blend factor \(glFactor)")
+        return .one
+    }
+}
+
 func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
     if sfactor != gMyState_BlendFuncS || dfactor != gMyState_BlendFuncD {
-        glBlendFunc(sfactor, dfactor)
+        gRenderBackend.blendFunc(rbBlendFactor(sfactor), rbBlendFactor(dfactor))
 
         gMyState_BlendFuncS = sfactor
         gMyState_BlendFuncD = dfactor
@@ -1958,14 +1988,14 @@ private func OGL_FreeFont() {
 func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
-    glOrtho(0, 640, 480, 0, -10.0, 10.0)
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
+    gRenderBackend.ortho(0, 640, 480, 0, -10.0, 10.0)
 
-    glDisable(GLenum(GL_LIGHTING))
-    glEnable(GLenum(GL_COLOR_MATERIAL))
+    OGL_DisableLighting()
+    gRenderBackend.setColorMaterialEnabled(true)
 
     OGL_SetColor4f(1, 1, 1, 1)
 
@@ -2063,7 +2093,7 @@ func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawP
 
     // TO BE SAFE, LETS ROUND UP THE SIZE TO THE NEAREST MULTIPLE OF 16
 
-    let roundedSize = (size + 15) & ~0xF
+    let roundedSize = (size + 15) & 0xffff_fff0
 
     let newNode = AllocPtrClear(MemoryLayout<VertexArrayMemoryNode>.size)!.assumingMemoryBound(to: VertexArrayMemoryNode.self) // allocate the node (assume we'll find room for it below)
     newNode.pointee.size = roundedSize // remember how big a chunk we're allocating

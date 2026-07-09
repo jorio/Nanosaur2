@@ -1,15 +1,56 @@
 // LoadLevel.swift - Port of LoadLevel.c to Swift
-// The level/biome lookup tables stay in LoadLevel.c; see LoadLevelInternal.h.
+
+private let kLevelBiomes: [LevelNum: Biome] = [
+    .adventure1: .forest,
+    .adventure2: .desert,
+    .adventure3: .swamp,
+    .race1: .swamp,
+    .race2: .desert,
+    .battle1: .forest,
+    .battle2: .desert,
+    .flag1: .swamp,
+    .flag2: .forest,
+]
+
+private let kLevelNames: [LevelNum: String] = [
+    .adventure1: "level1",
+    .adventure2: "level2",
+    .adventure3: "level3",
+    .race1: "race1",
+    .race2: "race2",
+    .battle1: "battle1",
+    .battle2: "battle2",
+    .flag1: "flag1",
+    .flag2: "flag2",
+]
+
+private let kBiomeNames: [Biome: String] = [
+    .forest: "forest",
+    .desert: "desert",
+    .swamp: "swamp",
+]
+
+func GetLevelBiome(_ levelNum: Int16) -> Biome {
+    kLevelBiomes[LevelNum(rawValue: levelNum)!]!
+}
+
+func GetLevelName(_ levelNum: Int16) -> String {
+    kLevelNames[LevelNum(rawValue: levelNum)!]!
+}
+
+func GetBiomeName(_ biome: Biome) -> String {
+    kBiomeNames[biome]!
+}
 
 func LoadLevelArt() {
-    let currentBiome = GetLevelBiome(Int32(gLevelNum))
+    let currentBiome = GetLevelBiome(gLevelNum)
 
     var timeStartLoad = UnsignedWide()
-    Microseconds(&timeStartLoad)
+    SwMicroseconds(&timeStartLoad)
 
     gLoadingThermoPercent = 0
 
-    glClearColor(0, 0, 0, 0) // clear to black for loading screen
+    gRenderBackend.setClearColor(0, 0, 0) // clear to black for loading screen
 
     // LOAD GLOBAL BG3D GEOMETRY
 
@@ -30,7 +71,7 @@ func LoadLevelArt() {
     // LOAD LEVEL SPECIFIC BG3D GEOMETRY
 
     do {
-        let path = ":Models:\(String(cString: GetBiomeName(currentBiome))).bg3d"
+        let path = ":Models:\(GetBiomeName(currentBiome)).bg3d"
         _ = ResolveDataFileSpec(path, &spec)
         ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELSPECIFIC), Int16(VertexArrayRangeType.bg3dModels.rawValue))
     }
@@ -66,7 +107,7 @@ func LoadLevelArt() {
 
     // LOAD OVERHEAD MAP
     do {
-        let path = ":Sprites:maps:\(String(cString: GetLevelName(Int32(gLevelNum))))"
+        let path = ":Sprites:maps:\(GetLevelName(gLevelNum))"
         _ = ResolveDataFileSpec(path, &spec)
         LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_OVERHEADMAP), path, 0)
     }
@@ -86,7 +127,7 @@ func LoadLevelArt() {
     // LOAD TERRAIN
 
     do {
-        let path = ":Terrain:\(String(cString: GetLevelName(Int32(gLevelNum)))).ter"
+        let path = ":Terrain:\(GetLevelName(gLevelNum)).ter"
         _ = ResolveDataFileSpec(path, &spec)
         LoadPlayfield(&spec)
     }
@@ -94,7 +135,7 @@ func LoadLevelArt() {
     // RESTORE CLEAR COLOR
 
     let cc = gGameViewInfoPtr!.pointee.clearColor
-    glClearColor(cc.r, cc.g, cc.b, 1.0)
+    gRenderBackend.setClearColor(cc.r, cc.g, cc.b)
 
     // DO BIOME SPECIFIC STUFF
 
@@ -119,7 +160,7 @@ func LoadLevelArt() {
     }
 
     var timeEndLoad = UnsignedWide()
-    Microseconds(&timeEndLoad)
+    SwMicroseconds(&timeEndLoad)
 
     SwLog("\(#function): \((timeEndLoad.lo - timeStartLoad.lo) / 1000) ms")
 }

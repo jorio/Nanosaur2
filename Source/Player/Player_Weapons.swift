@@ -1,4 +1,13 @@
 // Player_Weapons.swift - Port of Player_Weapons.c to Swift
+//
+// gAutoFireDelay is native Swift storage now (converted 2026-07-07):
+// nothing in any .c file touches it anymore. GetAutoFireDelay/
+// SetAutoFireDelay (formerly a shim in PlayerInternal.h) are now plain
+// Swift functions with the same names/signatures.
+
+private var gAutoFireDelayArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+func GetAutoFireDelay(_ i: Int32) -> Float { gAutoFireDelayArr[Int(i)] }
+func SetAutoFireDelay(_ i: Int32, _ v: Float) { gAutoFireDelayArr[Int(i)] = v }
 
 private let blasterBulletSpeed: Float = 4000.0
 private let blasterAutoFireDelay: Float = 0.16
@@ -52,7 +61,7 @@ func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     ray.origin = gCoord
     let hitNode = OGL_DoRayCollision_ObjNodes(&ray, UInt32(STATUS_BIT_HIDDEN) | (UInt32(STATUS_BIT_ISCULLED1) << UInt32(p)), ctype, nil, nil)
 
-    let pi = GetPlayerInfoEntry(Int32(p))!
+    let pi = GetPlayerInfoEntry(Int32(p))
     if let hitNode {
         pi.pointee.crosshairTargetObj = hitNode
         pi.pointee.crosshairTargetCookie = hitNode.pointee.Cookie
@@ -86,7 +95,7 @@ func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
 // Called when player presses the Fire button
 func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFireButton: UInt8) {
     let playerNum = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
     let weaponType = pi.pointee.currentWeapon
@@ -166,7 +175,7 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
 // This is used by weapons which require a charge before firing.
 func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
     let playerNum = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
     let weaponType = pi.pointee.currentWeapon
@@ -209,7 +218,7 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 // Scans thru our weapon inventory starting at the current weapon, looking for another weapon
 // which we have inventory for.
 func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: Int32) {
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     let numWeaponTypes = Int32(WeaponType.allCases.count)
 
     pi.pointee.weaponCharge = 0 // make sure not charging
@@ -802,7 +811,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // SET AUTO-TARGETING
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     let targetObj = pi.pointee.crosshairTargetObj // get object which crosshairs are targeting now
     if let targetObj {
         if pi.pointee.crosshairTargetCookie != targetObj.pointee.Cookie { // make sure cookie still matches
@@ -1237,7 +1246,7 @@ private func ShootSonicScream(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     newObj.pointee.BoundingSphereRadius = 100 // set the bounding sphere for fence collisions
 
-    let pi = GetPlayerInfoEntry(Int32(p))!
+    let pi = GetPlayerInfoEntry(Int32(p))
 
     newObj.pointee.Delta.x = aim.x * sonicScreamSpeed
     newObj.pointee.Delta.y = aim.y * sonicScreamSpeed
@@ -1800,7 +1809,7 @@ private func CalcPlayerGunMuzzleInfo(_ player: UnsafeMutablePointer<ObjNode>!, _
     let muzzleTipOff_Right = OGLPoint3D(x: 15, y: 14, z: -17)
 
     let p = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(p)!
+    let pi = GetPlayerInfoEntry(p)
     pi.pointee.turretSide ^= 1 // toggle turret side
 
     // LEFT

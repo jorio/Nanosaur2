@@ -6,9 +6,9 @@
 // include chain by hand - Source/Headers/sprites.h (among others) lacks an
 // include guard, so including it twice (once here, once transitively via
 // the real game.h from *Internal.h below) caused enum-redefinition errors.
-// Instead this just includes the REAL game.h directly, backed by minimal
-// SDL3/Pomme stub headers (ports/3DS/common/SDL3/*, on the include path
-// ahead of the real SDL3) so it parses without desktop SDL3/full C++ Pomme.
+// Instead this just includes the REAL game.h directly, backed by a minimal
+// SDL3 stub header (ports/3DS/common/SDL3/*, on the include path ahead of
+// the real SDL3) so it parses without desktop SDL3.
 //
 // Swift files that call actual SDL_* functions still fail to resolve those
 // symbols (expected - those files need PlatformBackend-style routing before
@@ -19,7 +19,7 @@
 // Declared directly rather than `#include <3ds.h>`: libctru's
 // <3ds/types.h> defines `Handle` as `u32`, which collides with the Mac
 // Toolbox's `Handle` (`Ptr*`, i.e. `char**`) already declared via
-// game.h/Pomme.h above - "typedef redefinition with different types".
+// game.h/SwMacTypes.h above - "typedef redefinition with different types".
 // Only the two functions actually called need to resolve here, so a full
 // module/header reconciliation isn't worth doing until Phase 3 needs more
 // of libctru than this.
@@ -38,39 +38,34 @@ extern _Bool aptMainLoop(void);
 extern void Debug3DS_Log(const char *message);
 #define NANOSAUR_3DS_KEY_START 8 // BIT(3), from libctru's hid.h KEY_START - not included via <3ds.h> here (see above)
 
-// picaGL's real GPU init/screen-select/swap, for PlatformBackend.swift's
-// CTRUGraphicsBackend - see picaGL_shim.h for why this is a plain wrapper
-// header rather than picaGL's own <GL/picaGL.h> (which pulls in <3ds.h>).
+// picaGL's real GPU init/screen-select/swap, for GLRenderBackend's
+// #if NANOSAUR_3DS branches (Source/3D/RenderBackend.swift) - see
+// picaGL_shim.h for why this is a plain wrapper header rather than
+// picaGL's own <GL/picaGL.h> (which pulls in <3ds.h>).
 #include "picaGL_shim.h"
 
-// RomFS mount (romfs_shim.c) + Pomme's real file-manager init/gDataSpec
-// setup (pomme_shim.cpp) - see those files' own comments for why they're
-// two separate translation units. Call Romfs3DS_Mount() before
-// Pomme3DS_InitFileSystem() - the latter chdir()s into the RomFS root,
-// which only exists once the former has mounted it.
+// RomFS mount (romfs_shim.c) + gDataSpec setup against it (fs_init_shim.cpp)
+// - see those files' own comments for why they're two separate translation
+// units. Call Romfs3DS_Mount() before Pomme3DS_InitFileSystem() - the
+// latter chdir()s into the RomFS root, which only exists once the former
+// has mounted it.
 #include "romfs_shim.h"
-void Pomme3DS_InitFileSystem(void);
+void Pomme3DS_InitFileSystem(void); // fs_init_shim.cpp - name kept for now, no longer Pomme-backed
 
 // Swift-only helper declarations (SwFatal/SwGameAssert/GetPlayerInfoEntry/
 // gNav/etc.) from the real Nanosaur2-Bridging-Header.h - not part of
-// game.h itself.
+// game.h itself. Mirrors that file's own include list exactly (several
+// *Internal.h headers that used to be here - SplineManager/LoadLevel/
+// Sparkle/PlayerRace/Sprites/Objects/Bones/Eggs/Player/Infobar/Pick - were
+// deleted once their last C caller was ported to Swift; keep this list in
+// sync with Nanosaur2-Bridging-Header.h rather than re-adding stale names).
 #include "SwiftInternal.h"
 #include "MenuInternal.h"
 #include "PausedInternal.h"
-#include "SplineManagerInternal.h"
-#include "LoadLevelInternal.h"
-#include "SparkleInternal.h"
 #include "AnaglyphCalibrationInternal.h"
-#include "PlayerRaceInternal.h"
-#include "SpritesInternal.h"
-#include "ObjectsInternal.h"
 #include "EnemyInternal.h"
-#include "BonesInternal.h"
-#include "EggsInternal.h"
 #include "UIEffectsInternal.h"
 #include "WaterInternal.h"
-#include "PlayerInternal.h"
-#include "InfobarInternal.h"
-#include "PickInternal.h"
 #include "LevelIntroInternal.h"
 #include "MainMenuInternal.h"
+#include "SettingsInternal.h"

@@ -244,7 +244,7 @@ private let cDoTrig_AirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
     let player = playerOpt!
     let playerNum = player.pointee.PlayerNum
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // DOES PLAYER HAVE SHIELD?
 

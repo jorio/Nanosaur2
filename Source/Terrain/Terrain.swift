@@ -1,26 +1,90 @@
 // Terrain.swift - Port of Terrain.c to Swift
 //
-// Most of the extern scalar/2D-array globals declared in terrain.h/game.h
-// stay defined in the stubbed Terrain.c because other already-ported and
-// still-unported files read/write them directly (gTerrainPolygonSize,
-// gTerrainSuperTileUnitSize, gMapToUnitValue, gSuperTileActiveRange,
-// gDisableHiccupTimer, gSuperTileStatusGrid, gTerrainTileWidth/Depth,
-// gTerrainUnitWidth/Depth, gNumUniqueSuperTiles, gSuperTileTextureGrid,
-// gSuperTilePixelBuffers, gVertexShading, gNumSuperTilesDeep/Wide,
-// gSuperTileMemoryList - the last one also because PickInternal.h's
-// GetSuperTileMemoryEntry shim references it directly; gSuperTileTextureObjects
-// too, because SwiftInternal.h's GetSuperTileTextureObjectSlot shim references
-// it, and File.swift already uses that shim directly).
+// All of Terrain.c's/Terrain2.c's extern scalar/pointer/2D-array globals
+// are native Swift storage now (converted 2026-07-07): nothing in any .c
+// file touches them anymore - the old comment claiming other C files
+// still needed them via extern was stale (same pattern as bg3d.c/
+// OGL_Support.c/etc. this session). gSuperTileTextureObjects/
+// gSuperTileMemoryList/gLineMarkerList were fixed-size C arrays exposed to
+// other files via Get*Entry/Get*Ptr/Get*Slot shims (too large for a Swift
+// tuple - MAX_SUPERTILES/MAX_SUPERTILE_TEXTURES are in the thousands);
+// they're now permanent, never-freed UnsafeMutablePointer buffers (same
+// "allocate once, address is stable forever" idiom as MenuBuilder.swift's
+// makeMenuTreeBuffer), with the accessor functions reimplemented in plain
+// Swift under the exact same names/signatures as the old C shims so their
+// ~15 call sites elsewhere (File.swift, Pick.swift, Player_Race.swift,
+// Player_Terrain.swift, Terrain2.swift) didn't need to change.
 //
 // The master supertile mesh/triangle/coord/uv/normal/color arrays,
 // gWorkGrid, the tile-triangle-splitting tables, gHiccupTimer,
 // gNumSuperTilesDrawn, gNumFreeSupertiles, and the (dead,
 // VERTEXARRAYRANGES==0) OpenGL fence variables are only ever touched from
-// this file, so they move into private Swift storage.
+// this file, so they stay private Swift storage.
 //
 // VERTEXARRAYRANGES is hardcoded 0 in game.h, so all `#if VERTEXARRAYRANGES`
 // blocks (OpenGL fence sync) are dead code and dropped. HQ_TERRAIN is
 // hardcoded 1, so that branch is kept (unconditionally, no #if needed).
+
+// MAX_SUPERTILE_TEXTURES is a multi-macro expression ClangImporter can't
+// fold into a single constant: MAX_SUPERTILES_WIDE*MAX_SUPERTILES_DEEP,
+// where each is MAX_TERRAIN_{WIDTH,DEPTH}(400)/SUPERTILE_SIZE(8) = 50.
+private let maxSuperTileTextures = 50 * 50
+
+var gTerrainPolygonSize: Float = 0
+var gTerrainPolygonSizeInt: UInt32 = 0
+var gTerrainSuperTileUnitSize: Float = 0
+var gTerrainSuperTileUnitSizeFrac: Float = 0
+var gMapToUnitValue: Float = 0
+var gMapToUnitValueFrac: Float = 0
+var gSuperTileActiveRange: Int32 = 4
+var gDisableHiccupTimer: UInt8 = 0
+var gSuperTileStatusGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileStatus>?>!
+var gTerrainTileWidth: Int = 0
+var gTerrainTileDepth: Int = 0
+var gTerrainUnitWidth: Int = 0
+var gTerrainUnitDepth: Int = 0
+var gNumUniqueSuperTiles: Int = 0
+var gSuperTileTextureGrid: UnsafeMutablePointer<UnsafeMutablePointer<Int16>?>!
+var gSuperTilePixelBuffers: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>!
+var gVertexShading: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+var gNumSuperTilesDeep: Int = 0
+var gNumSuperTilesWide: Int = 0
+var gRecentTerrainNormal = OGLVector3D()
+
+var gNumTerrainItems: Int32 = 0
+var gMasterItemList: UnsafeMutablePointer<TerrainItemEntryType>!
+var gMapYCoords: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+var gMapYCoordsOriginal: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+var gMapSplitMode: UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>!
+var gSuperTileItemIndexGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileItemIndexType>?>!
+var gNumLineMarkers: Int32 = 0
+
+private let gSuperTileTextureObjectsBuf: UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?> = {
+    let buf = UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>.allocate(capacity: maxSuperTileTextures)
+    buf.initialize(repeating: nil, count: maxSuperTileTextures)
+    return buf
+}()
+func GetSuperTileTextureObjectSlot(_ i: Int32) -> UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>! {
+    gSuperTileTextureObjectsBuf + Int(i)
+}
+
+private let gSuperTileMemoryListBuf: UnsafeMutablePointer<SuperTileMemoryType> = {
+    let buf = UnsafeMutablePointer<SuperTileMemoryType>.allocate(capacity: maxSupertiles)
+    buf.initialize(repeating: SuperTileMemoryType(), count: maxSupertiles)
+    return buf
+}()
+func GetSuperTileMemoryEntry(_ i: Int32) -> UnsafeMutablePointer<SuperTileMemoryType>! {
+    gSuperTileMemoryListBuf + Int(i)
+}
+
+private let gLineMarkerListBuf: UnsafeMutablePointer<LineMarkerDefType> = {
+    let buf = UnsafeMutablePointer<LineMarkerDefType>.allocate(capacity: Int(MAX_LINEMARKERS))
+    buf.initialize(repeating: LineMarkerDefType(), count: Int(MAX_LINEMARKERS))
+    return buf
+}()
+func GetLineMarkerPtr(_ i: Int32) -> UnsafeMutablePointer<LineMarkerDefType> {
+    gLineMarkerListBuf + Int(i)
+}
 
 private var gNumSuperTilesDrawn: Int16 = 0
 private var gHiccupTimer: UInt8 = 0
@@ -113,7 +177,7 @@ func SetTerrainScale(_ polygonSize: Int32) {
 
 func InitCurrentScrollSettings() {
     for i in 0..<Int(gNumPlayers) { // init settings for each player in game
-        let pi = GetPlayerInfoEntry(Int32(i))!
+        let pi = GetPlayerInfoEntry(Int32(i))
         let x = Int(pi.pointee.coord.x - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
         let y = Int(pi.pointee.coord.z - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
 
@@ -741,9 +805,9 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     OGL_PushState()
 
-    glDisable(GLenum(GL_NORMALIZE)) // turn off vector normalization since scale == 1
+    OGL_SetNormalizeNormals(false) // turn off vector normalization since scale == 1
     OGL_DisableBlend() // no blending for terrain - its always opaque
-    glDisable(GLenum(GL_ALPHA_TEST))
+    gRenderBackend.setAlphaTestEnabled(false)
 
     gNumSuperTilesDrawn = 0
 
@@ -791,7 +855,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     }
 
     OGL_PopState()
-    glEnable(GLenum(GL_ALPHA_TEST))
+    gRenderBackend.setAlphaTestEnabled(true)
 
     // PREPARE SUPERTILE GRID FOR THE NEXT FRAME
 
@@ -828,10 +892,10 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // DRAW SPLINES IN DEBUG MODE
 
     if gDebugMode == 2 {
-        glColor4f(0.5, 1.0, 0.75, 1)
+        gRenderBackend.setColor4f(0.5, 1.0, 0.75, 1)
 
         for splineNum in 0..<Int(gNumSplines) {
-            glBegin(GLenum(GL_LINE_STRIP))
+            gRenderBackend.beginImmediate(.lineStrip)
 
             let spline = gSplineList[splineNum]
             for nubNum in 0..<Int(spline.numPoints) {
@@ -839,27 +903,27 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
                 let z = spline.pointList![nubNum].z
                 let y = GetTerrainY(x, z) + 10
 
-                glVertex3f(x, y, z)
+                gRenderBackend.vertex3f(x, y, z)
             }
 
-            glEnd()
+            gRenderBackend.endImmediate()
         }
 
-        glColor4f(1.0, 0.5, 0.2, 1)
+        gRenderBackend.setColor4f(1.0, 0.5, 0.2, 1)
         for customSplineNum in 0..<Int(MAX_CUSTOM_SPLINES) {
             let customSpline = GetCustomSplineSlot(Int32(customSplineNum))
             if customSpline.pointee.isUsed == 0 {
                 continue
             }
 
-            glBegin(GLenum(GL_LINE_STRIP))
+            gRenderBackend.beginImmediate(.lineStrip)
             for nubNum in 0..<Int(customSpline.pointee.numPoints) {
                 let x = customSpline.pointee.splinePoints![nubNum].x
                 let y = customSpline.pointee.splinePoints![nubNum].y
                 let z = customSpline.pointee.splinePoints![nubNum].z
-                glVertex3f(x, y, z)
+                gRenderBackend.vertex3f(x, y, z)
             }
-            glEnd()
+            gRenderBackend.endImmediate()
         }
     }
 }
@@ -1133,7 +1197,7 @@ func DoPlayerTerrainUpdate() {
     gHiccupTimer = 0
 
     for playerNum in 0..<Int(gNumPlayers) {
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
 
         // CALC PIXEL COORDS OF FAR LEFT SUPER TILE
 
@@ -1260,7 +1324,7 @@ func DoPlayerTerrainUpdate() {
 // MARK: - Calc new item delete window
 
 private func calcNewItemDeleteWindow(_ playerNum: UInt8) {
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // CALC LEFT SIDE OF WINDOW
 

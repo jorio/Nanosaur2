@@ -172,3 +172,59 @@ enum PlayerJoint: Int32, CaseIterable {
     case eggHold = 27
 }
 
+enum LevelNum: Int16, CaseIterable {
+    case adventure1
+    case adventure2
+    case adventure3
+    case race1
+    case race2
+    case battle1
+    case battle2
+    case flag1
+    case flag2
+}
+
+enum Biome: Int32, CaseIterable, Hashable {
+    case forest
+    case desert
+    case swamp
+}
+
+// Note: VSMode.none can be ambiguous with Optional.none if a VSMode? ever
+// appears - always spell it VSMode.none explicitly there.
+enum VSMode: Int32, CaseIterable {
+    case none
+    case race
+    case battle
+    case captureTheFlag
+}
+
+enum EnemyKind: Int32, CaseIterable {
+    case raptor
+    case brach
+    case ramphor
+}
+
+enum EggColor: Int32, CaseIterable {
+    case red
+    case green
+    case blue
+    case yellow
+    case purple
+}
+
+enum WeaponType: Int32, CaseIterable {
+    case none = -1
+    case blaster = 0
+    case clusterShot
+    case heatSeeker
+    case sonicScream
+    case bomb
+}
+
+enum CameraMode: Int32, CaseIterable {
+    case normal
+    case firstPerson
+    case anaglyphClose
+}
+

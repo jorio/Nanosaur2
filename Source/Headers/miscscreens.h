@@ -4,38 +4,11 @@
 
 #pragma once
 
-void DoPaused(void);
-void DoReallyQuit(void);
-
-
-
-
-		/* MAIN MENU */
-
-ObjNode* MakeMouseCursorObject(void);
-
-
-void RegisterSettingsMenu(void);
-
-
 		/* INTRO STORY */
 
-typedef struct
-{
-	short	spriteNum;
-	float	x,y;
-	float	scale;
-	float	rotz;
-	float	alpha;
-	float	delayToNext;
-	float	delayToVanish;
-	float	zoomSpeed;
-	float	dx,dy;
-	float	drot;
-	float	delayUntilEffect;
-	int		narrationSound;
-	int		subtitleKey;
-}SlideType;
+// SlideType is now a native Swift struct (IntroStory.swift) - nothing in
+// any .c file touches it (verified 2026-07-07: no extern globals, no
+// static-inline functions, no C-side construction).
 
 #define	ZoomSpeed			SpecialF[0]
 #define	EffectTimer			SpecialF[1]
@@ -65,5 +38,3 @@ enum
 
 
 	/* ANAGLYPH CALIBRATION */
-
-void SetUpAnaglyphCalibrationScreen(void);

@@ -1,7 +1,7 @@
 build*/
 cmake-build-*/
 cache/
-extern/
+extern/*
 extern/SDL2-*
 extern/SDL2.framework
 dist/
@@ -13,6 +13,8 @@ dist/
 *.user
 
 # Build
+.build/*
+.swiftpm/*
 *.o
 *.obj
 *.so
@@ -25,4 +27,3 @@ dist/
 *.pica
 *.bin
 *.shbin
-

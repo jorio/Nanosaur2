@@ -52,17 +52,10 @@ if(MSVC)
 
 	set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${GAME_TARGET})
 elseif(APPLE)
-	# Let the game (and Pomme) find header files within extern/SDL3.framework
+	# Let the game find header files within extern/SDL3.framework
 	set(CMAKE_XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS extern)
 	add_compile_options("-F${CMAKE_SOURCE_DIR}/extern")  # for non-xcode IDEs
 endif()
-
-set(POMME_NO_GRAPHICS	true)
-set(POMME_NO_INPUT		true)
-set(POMME_NO_MP3		false)		# Nanosaur 2 needs this
-set(POMME_NO_QD3D		true)
-set(POMME_NO_VIDEO		true)
-add_compile_definitions(POMME_CASE_SENSITIVE_FSSPEC=1)
 
 #------------------------------------------------------------------------------
 # FIND SDL
@@ -101,8 +94,6 @@ endif()
 # DEPENDENCIES
 #------------------------------------------------------------------------------
 
-add_subdirectory(extern/Pomme)
-
 find_package(OpenGL REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -115,8 +106,55 @@ configure_file(${GAME_SRCDIR}/Headers/version.h.in ${GAME_SRCDIR}/Headers/versio
 # Glob all source files
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/*.c ${GAME_SRCDIR}/*.cpp ${GAME_SRCDIR}/*.h ${GAME_SRCDIR}/*.swift)
 
-# Make source groups match file tree
+# The Metal renderer (Source/Metal/*.swift) is its own Swift module target
+# (see below): it `import Metal`, which collides with SwMacTypes.h if compiled
+# with the game's bridging header (see docs/metal-renderer-plan.md). Remove it
+# from the flat game module so it isn't compiled with that bridging header.
+if(ENABLE_SWIFT AND APPLE)
+	file(GLOB_RECURSE METALRENDERER_SOURCES CONFIGURE_DEPENDS ${GAME_SRCDIR}/Metal/*.swift)
+	list(REMOVE_ITEM GAME_SOURCES ${METALRENDERER_SOURCES})
+endif()
+
+if(ENABLE_SWIFT)
+	# BG3DFile (Sources/BG3DFile) is a tested, standalone Swift package (see
+	# Package.swift / Tests/BG3DFileTests) that parses the BG3D 3D-model file
+	# format. Its sources - along with its vendored swift-binary-parsing
+	# dependency (extern/swift-binary-parsing) - are compiled directly into
+	# the game's single Swift module here, rather than linked as a separate
+	# library product, to match this project's existing single-module Swift
+	# build. `import BinaryParsing` in Sources/BG3DFile is guarded by
+	# `#if canImport(BinaryParsing)` so the same source files work in both
+	# this flat build and the standalone SPM package used for testing.
+	file(GLOB_RECURSE BG3DFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/BG3DFile/*.swift)
+	file(GLOB_RECURSE BINARYPARSING_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/swift-binary-parsing/BinaryParsing/*.swift")
+
+	# ResourceFile (Sources/ResourceFile) is a tested, standalone Swift package
+	# (see Package.swift / Tests/ResourceFileTests) that parses classic Mac OS
+	# resource-fork files (Data/Skeletons/*.rsrc, Data/Terrain/*.ter.rsrc),
+	# replacing Pomme's GetResource/Handle-based Resource Manager emulation.
+	# Same flat-compile treatment as BG3DFile above.
+	file(GLOB_RECURSE RESOURCEFILE_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Sources/ResourceFile/*.swift)
+
+	# SDL3Swift (extern/SDL3Swift/SDL3) is PureSwift/SDL's SDL3 wrapper,
+	# vendored at commit 00c3f23 (see extern/SDL3Swift-gap-analysis.md for the
+	# wrapper gaps that were filled upstream before this was vendored). Same
+	# flat-compile-into-the-single-module treatment as BG3DFile/BinaryParsing
+	# above: its files all say `#if canImport(CSDL3) / import CSDL3 / #endif`
+	# (patched from the upstream `import CSDL3`), and since there's no
+	# separate CSDL3 module in this build, canImport(CSDL3) is false and the
+	# import is skipped - the C symbols it needs (SDL_Window, SDL_CreateWindow,
+	# etc.) are already ambiently visible via the bridging header, same as any
+	# other C symbol in this codebase.
+	file(GLOB_RECURSE SDL3SWIFT_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/extern/SDL3Swift/SDL3/*.swift")
+endif()
+
+# Make source groups match file tree (GAME_SOURCES only - BG3DFile/BinaryParsing/
+# SDL3Swift sources live outside GAME_SRCDIR, so they're appended after grouping)
 source_group(TREE ${GAME_SRCDIR} PREFIX "" FILES ${GAME_SOURCES})
+
+if(ENABLE_SWIFT)
+	list(APPEND GAME_SOURCES ${BG3DFILE_SOURCES} ${RESOURCEFILE_SOURCES} ${BINARYPARSING_SOURCES} ${SDL3SWIFT_SOURCES})
+endif()
 
 if(WIN32)
 	# Windows resource file
@@ -129,6 +167,21 @@ endif()
 
 add_executable(${GAME_TARGET} ${GAME_SOURCES})
 
+# MetalRenderer: the native-Metal renderer as a SEPARATE Swift module, built
+# WITHOUT the game's -import-objc-header bridging header so it can `import
+# Metal` without the SwMacTypes.h/Darwin.MacTypes collision (see the header
+# comment in Source/Metal/MetalRenderer.swift and docs/metal-renderer-plan.md).
+# Its public API uses only primitives/opaque handles, so the game target can
+# `import MetalRenderer` without Metal ever becoming visible to the game's
+# ClangImporter. The game passes it a CAMetalLayer pointer it gets from SDL,
+# so this module needs no SDL/game dependency of its own.
+if(ENABLE_SWIFT AND APPLE)
+	add_library(MetalRenderer STATIC ${METALRENDERER_SOURCES})
+	set_target_properties(MetalRenderer PROPERTIES Swift_COMPILATION_MODE wholemodule)
+	target_link_libraries(MetalRenderer PUBLIC "-framework Metal" "-framework QuartzCore")
+	target_link_libraries(${GAME_TARGET} PRIVATE MetalRenderer)
+endif()
+
 if(ENABLE_SWIFT AND CMAKE_GENERATOR STREQUAL "Xcode")
 	# InlineArray (a few narrow Swift-side usages, e.g. WinScreen.swift's
 	# gSlideActive) requires macOS 26+ for availability checking, which the
@@ -140,7 +193,7 @@ if(ENABLE_SWIFT AND CMAKE_GENERATOR STREQUAL "Xcode")
 		XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "26.0")
 endif()
 
-target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers)
+target_include_directories(${GAME_TARGET} PRIVATE ${GAME_SRCDIR}/Headers ${CMAKE_SOURCE_DIR}/extern/minimp3 ${CMAKE_SOURCE_DIR}/extern/ghc-filesystem)
 
 # Swift include paths come from bridging header configuration below
 
@@ -186,6 +239,11 @@ if(NOT MSVC)
 			$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>
 			$<$<COMPILE_LANGUAGE:Swift>:${GAME_SRCDIR}/Headers/Nanosaur2-Bridging-Header.h>
 			$<$<COMPILE_LANGUAGE:Swift>:-parse-as-library>
+			# Required by vendored swift-binary-parsing (extern/swift-binary-parsing),
+			# used by BG3DFile (Sources/BG3DFile) - see its own Package.swift for the
+			# same flag.
+			$<$<COMPILE_LANGUAGE:Swift>:-enable-experimental-feature>
+			$<$<COMPILE_LANGUAGE:Swift>:Lifetimes>
 		)
 	endif()
 
@@ -251,7 +309,7 @@ else()
 endif()
 
 # Link core dependencies
-target_link_libraries(${GAME_TARGET} PRIVATE Pomme OpenGL::GL)
+target_link_libraries(${GAME_TARGET} PRIVATE OpenGL::GL)
 
 # Add required frameworks for KillMacMouseAcceleration
 if(APPLE)

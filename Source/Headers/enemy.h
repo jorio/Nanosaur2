@@ -21,14 +21,9 @@
 
 		/* ENEMY KIND */
 
-typedef enum SWIFT_ENUM_CLOSED EnemyKind
-{
-	ENEMY_KIND_RAPTOR SWIFT_NAME(raptor) = 0,
-	ENEMY_KIND_BRACH SWIFT_NAME(brach),
-	ENEMY_KIND_RAMPHOR SWIFT_NAME(ramphor),
-
-	NUM_ENEMY_KINDS SWIFT_NAME(_count)
-} EnemyKind;
+// EnemyKind is now a native Swift enum in GameEnums.swift - Enemy.c
+// (its only real C user, via NUM_ENEMY_KINDS sizing gNumEnemyOfKind) was
+// ported to Swift and deleted (verified 2026-07-07).
 
 
 

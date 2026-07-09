@@ -17,8 +17,7 @@ private var gCurrentStringsLanguage: GameLanguageID = LANGUAGE_ILLEGAL
 private var gStringsBuffer: UnsafeMutablePointer<CChar>?
 private var gStringsTable: [UnsafeMutablePointer<CChar>?] = []
 
-@c @implementation
-public func LoadLocalizedStrings(_ languageID: GameLanguageID) {
+func LoadLocalizedStrings(_ languageID: GameLanguageID) {
     // Don't bother reloading strings if we've already loaded this language
     if languageID == gCurrentStringsLanguage {
         return

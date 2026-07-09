@@ -1,4 +1,24 @@
 // Sprites.swift - Port of Sprites.c to Swift
+//
+// gSpriteGroupList/gNumSpritesInGroupList are native Swift storage now
+// (converted 2026-07-07): nothing in any .c file touches them anymore.
+// GetSpriteGroupPtr (SparkleInternal.h)/GetSpriteGroupList/
+// SetSpriteGroupList/GetNumSpritesInGroup/SetNumSpritesInGroup
+// (SpritesInternal.h) are now plain Swift functions with the same
+// names/signatures - simple value-array wrappers, since each element is
+// itself just a pointer value (the allocated per-group sprite buffer),
+// not something requiring a stable address into gSpriteGroupList itself.
+
+private let maxSpriteGroups = 9 // MAX_SPRITE_GROUPS (sobjtypes.h)
+
+var gSpriteGroupList: [UnsafeMutablePointer<SpriteType>?] = Array(repeating: nil, count: maxSpriteGroups)
+var gNumSpritesInGroupList: [Int32] = Array(repeating: 0, count: maxSpriteGroups)
+
+func GetSpriteGroupPtr(_ groupNum: Int32) -> UnsafeMutablePointer<SpriteType>? { gSpriteGroupList[Int(groupNum)] }
+func GetSpriteGroupList(_ groupNum: Int32) -> UnsafeMutablePointer<SpriteType>? { gSpriteGroupList[Int(groupNum)] }
+func SetSpriteGroupList(_ groupNum: Int32, _ v: UnsafeMutablePointer<SpriteType>?) { gSpriteGroupList[Int(groupNum)] = v }
+func GetNumSpritesInGroup(_ groupNum: Int32) -> Int32 { gNumSpritesInGroupList[Int(groupNum)] }
+func SetNumSpritesInGroup(_ groupNum: Int32, _ v: Int32) { gNumSpritesInGroupList[Int(groupNum)] = v }
 
 private func LoadSpriteFromDualImage(_ path: String) -> SpriteType {
     // LOAD TEXTURE FROM IMAGE FILE

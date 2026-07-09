@@ -50,18 +50,8 @@ enum
 //========================================================
 
 
-extern	void DeleteObject(ObjNode * _Nullable theNode);
-
-
-
-//===================
 
 
 
 
 
-
-
-
-
-void SendNodeToOverlayPane(ObjNode* _Nonnull theNode);

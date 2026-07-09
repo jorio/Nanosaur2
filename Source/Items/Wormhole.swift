@@ -1,4 +1,10 @@
 // Wormhole.swift - Port of Wormhole.c to Swift
+//
+// gOpenPlayerWormhole/gExitWormhole are native Swift storage now
+// (converted 2026-07-07): nothing in any .c file touches them anymore.
+
+var gOpenPlayerWormhole: UInt8 = 0
+var gExitWormhole: UnsafeMutablePointer<ObjNode>!
 
 private let playerWormholeSize: Float = 4.0
 private let eggWormholeSize: Float = 4.0
@@ -154,7 +160,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     if theNode.pointee.EffectChannel == -1 {
         theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_WORMHOLE), &theNode.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE) * 3 / 2, 1.0)
     } else {
-        GetChannelInfoEntry(Int32(theNode.pointee.EffectChannel))!.pointee.volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
+        gChannelInfo[Int(theNode.pointee.EffectChannel)].volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
 
         _ = Update3DSoundChannel(Int16(EFFECT_WORMHOLE), &theNode.pointee.EffectChannel, &theNode.pointee.Coord)
     }
@@ -224,7 +230,7 @@ func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointe
 
 // Create an entry wormhole at Player 1's position.
 func MakeEntryWormhole(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>! {
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
     let x = playerInfo.pointee.coord.x
     let z = playerInfo.pointee.coord.z
 
@@ -284,10 +290,10 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = uvsBase[0]
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glLoadIdentity()
-    glTranslatef(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.loadIdentity()
+    gRenderBackend.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 
     // DRAW IT
@@ -305,9 +311,9 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = nil
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 
@@ -327,7 +333,7 @@ private let cMoveEntryWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         theNode.pointee.Scale.y = theNode.pointee.Scale.z
         theNode.pointee.Scale.x = theNode.pointee.Scale.z
         if theNode.pointee.Scale.x <= 0.0 {
-            GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum))!.pointee.wormhole = nil
+            GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum)).pointee.wormhole = nil
             DeleteObject(theNode)
             return
         }
@@ -418,7 +424,7 @@ private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 }
 
 private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNode>) {
-    let player = GetPlayerInfoEntry(0)!.pointee.objNode!
+    let player = GetPlayerInfoEntry(0).pointee.objNode!
     let down = OGLVector3D(x: 0, y: -1, z: 0)
 
     // SEE IF PLAYER IS IN RANGE

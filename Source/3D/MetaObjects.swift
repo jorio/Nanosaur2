@@ -1,4 +1,13 @@
 // MetaObjects.swift - Port of MetaObjects.c to Swift
+//
+// gGlobalTransparency/gGlobalColorFilter/gGlobalMaterialFlags/
+// gMostRecentMaterial are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore.
+
+var gGlobalTransparency: Float = 1
+var gGlobalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
+var gGlobalMaterialFlags: UInt32 = 0
+var gMostRecentMaterial: UnsafeMutablePointer<MOMaterialObject>?
 
 @inline(__always) private func GAME_CLAMP(_ x: Float, _ lo: Float, _ hi: Float) -> Float {
     x < lo ? lo : (x > hi ? hi : x)
@@ -398,39 +407,35 @@ func MO_DrawGroup(_ objectC: UnsafePointer<MOGroupObject>!) {
     OGL_PopState()
 }
 
+// Neutral RBTextureEnv for a MULTI_TEXTURE_COMBINE_* constant (materials'
+// second-layer combine mode).
+private func rbTextureEnv(forCombineMode mode: Int) -> RBTextureEnv {
+    switch mode {
+    case MULTI_TEXTURE_COMBINE_ADD: return .combineAdd
+    case MULTI_TEXTURE_COMBINE_ADDALPHA: return .combineAddAlpha
+    default: return .modulate
+    }
+}
+
 func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     let data = UnsafeMutablePointer(mutating: dataC)!
     var useTexture = false
     var multiTexture = false
     var texGen = false
 
-    // SETUP VERTEX ARRAY
-
-    glEnableClientState(GLenum(GL_VERTEX_ARRAY)) // enable vertex arrays
-    glVertexPointer(3, GLenum(GL_FLOAT), 0, data.pointee.points) // point to points array
-
-    // SETUP VERTEX COLORS
-
-    if data.pointee.colorsFloat != nil { // do we have float colors?
-        glColorPointer(4, GLenum(GL_FLOAT), 0, data.pointee.colorsFloat)
-        glEnableClientState(GLenum(GL_COLOR_ARRAY)) // enable color arrays
-    } else {
-        glDisableClientState(GLenum(GL_COLOR_ARRAY)) // no color data, so disable
-    }
-
-    if OGL_CheckError() != 0 {
-        SwFatal("MO_DrawGeometry_VertexArray: color!")
-    }
-
     // SEE IF ACTIVATE MATERIAL
     //
-    // For now, I'm just looking at material #0.
+    // For now, I'm just looking at material #0. This decides material/texenv
+    // state (via facade verbs) and which UV arrays accompany the geometry
+    // (uv0/uv1 passed to drawIndexedGeometry below).
 
     let materials = materialsBase(data)
     let uvs = uvsBase(data)
+    var uv0: UnsafeMutablePointer<OGLTextureCoord>?
+    var uv1: UnsafeMutablePointer<OGLTextureCoord>?
 
     goHere: if data.pointee.numMaterials < 0 { // if (-), then assume texture has been manually set
-        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen)
+        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen, &uv0)
     } else if data.pointee.numMaterials > 0 { // are there any materials?
         // SEE IF DO PLAIN MULTI-TEXTURING FROM GEOMETRY
         //
@@ -446,27 +451,16 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0) + UInt32(i)) // activate texture layer #i
                 OGL_EnableTexture2D()
 
-                glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[i]) // enable uv arrays
-                glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+                if i == 0 {
+                    uv0 = uvs[0]
+                } else {
+                    uv1 = uvs[i] // the facade supports 2 texture layers, same as the game's data (MAX_MATERIAL_LAYERS uv sets, 2 used in practice)
+                }
 
                 // SET COMBINE MODE FOR TEXTURE LAYER #2
 
                 if i > 0 {
-                    let multiTextureCombine = materials[0]!.pointee.objectData.multiTextureCombine
-                    switch Int(multiTextureCombine) { // set combining info
-                    case MULTI_TEXTURE_COMBINE_MODULATE:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                    case MULTI_TEXTURE_COMBINE_ADD:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_MODULATE)
-                    case MULTI_TEXTURE_COMBINE_ADDALPHA:
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_ADD)
-                    default:
-                        break
-                    }
+                    gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(materials[0]!.pointee.objectData.multiTextureCombine)))
                 }
 
                 // SUBMIT MATERIAL FOR THIS TEXTURE UNIT
@@ -487,7 +481,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
 
         // IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY
 
-        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen)
+        useCurrent(data, uvs, &useTexture, &multiTexture, &texGen, &uv0)
     } else {
         OGL_DisableTexture2D() // no materials, thus no texture, thus turn this off
     }
@@ -495,10 +489,8 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     // WE DONT HAVE ENOUGH INFO TO DO TEXTURES, SO DISABLE
 
     if !useTexture {
-        glDisableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
-        if OGL_CheckError() != 0 {
-            SwFatal("MO_DrawGeometry_VertexArray: glDisableClientState(GL_TEXTURE_COORD_ARRAY)!")
-        }
+        uv0 = nil
+        uv1 = nil
     }
 
     // SETUP VERTEX NORMALS
@@ -517,22 +509,20 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
         }
     }
 
-    if needNormals {
-        glNormalPointer(GLenum(GL_FLOAT), 0, data.pointee.normals)
-        glEnableClientState(GLenum(GL_NORMAL_ARRAY)) // enable normal arrays
-    } else {
-        glDisableClientState(GLenum(GL_NORMAL_ARRAY)) // disable normal arrays
-    }
-
-    _ = OGL_CheckError()
-
     // DRAW IT
 
     if data.pointee.numTriangles != 0 {
         SwGameAssert(data.pointee.triangles != nil)
-        glDrawElements(GLenum(GL_TRIANGLES), data.pointee.numTriangles * 3, GLenum(GL_UNSIGNED_INT), data.pointee.triangles)
-        _ = OGL_CheckError()
     }
+    gRenderBackend.drawIndexedGeometry(
+        points: data.pointee.points!,
+        normals: needNormals ? data.pointee.normals : nil,
+        colors: data.pointee.colorsFloat,
+        uv0: uv0,
+        uv1: uv1,
+        triangles: data.pointee.triangles,
+        numTriangles: data.pointee.numTriangles)
+    _ = OGL_CheckError()
 
     gPolysThisFrame += data.pointee.numTriangles // inc poly counter
 
@@ -541,18 +531,16 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     if multiTexture {
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1)) // turn off textureing for multi-texture layer 2 since it isnt needed anymore
         OGL_DisableTexture2D()
-        glDisable(UInt32(GL_TEXTURE_GEN_S))
-        glDisable(UInt32(GL_TEXTURE_GEN_T))
+        gRenderBackend.setSphereMapTexGen(false)
 
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0)) // make sure #0 is active when we leave
-        glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-        glDisable(UInt32(GL_TEXTURE_GEN_S))
-        glDisable(UInt32(GL_TEXTURE_GEN_T))
+        gRenderBackend.setTextureEnv(.modulate)
+        gRenderBackend.setSphereMapTexGen(false)
     }
 }
 
 // IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY (shared tail of both single- and use_current-material paths)
-private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?>, _ useTexture: inout Bool, _ multiTexture: inout Bool, _ texGen: inout Bool) {
+private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?>, _ useTexture: inout Bool, _ multiTexture: inout Bool, _ texGen: inout Bool, _ uv0: inout UnsafeMutablePointer<OGLTextureCoord>?) {
     let materialFlags = gMostRecentMaterial!.pointee.objectData.flags // get material flags
     if materialFlags & UInt32(BG3D_MATERIALFLAG_TEXTURED) != 0 {
         if uvs[0] != nil {
@@ -581,31 +569,13 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
                         OGL_EnableTexture2D()
 
                         if i == 0 {
-                            glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[0]) // enable uv arrays
-                            glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                            glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY))
+                            uv0 = uvs[0]
+                            gRenderBackend.setTextureEnv(.modulate)
                         } else {
                             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_SPHEREMAPS))![Int(envMapNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate reflection map texture
 
-                            switch Int(multiTextureCombine) { // set combining info
-                            case MULTI_TEXTURE_COMBINE_MODULATE:
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_MODULATE)
-                            case MULTI_TEXTURE_COMBINE_ADD:
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_MODULATE)
-                            case MULTI_TEXTURE_COMBINE_ADDALPHA: // note, when we do this gGlobalTransparency will have no effect
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_TEXTURE_ENV_MODE), GL_COMBINE)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_RGB), GL_ADD)
-                                glTexEnvi(GLenum(GL_TEXTURE_ENV), GLenum(GL_COMBINE_ALPHA), GL_ADD)
-                            default:
-                                break
-                            }
-
-                            glTexGeni(GLenum(GL_S), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP) // activate reflection mapping
-                            glTexGeni(GLenum(GL_T), GLenum(GL_TEXTURE_GEN_MODE), GL_SPHERE_MAP)
-                            glEnable(UInt32(GL_TEXTURE_GEN_S))
-                            glEnable(UInt32(GL_TEXTURE_GEN_T))
+                            gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gGlobalTransparency will have no effect
+                            gRenderBackend.setSphereMapTexGen(true) // activate reflection mapping (unit 1 gets generated coords, no uv array)
                             texGen = true
                         }
                     }
@@ -617,15 +587,10 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
             // JUST 1 TEXTURE LAYER
 
             else {
-                glTexCoordPointer(2, GLenum(GL_FLOAT), 0, uvs[0])
-                glEnableClientState(GLenum(GL_TEXTURE_COORD_ARRAY)) // enable uv arrays
+                uv0 = uvs[0]
             }
 
             useTexture = true
-
-            if OGL_CheckError() != 0 {
-                SwFatal("MO_DrawGeometry_VertexArray: uv!")
-            }
         }
     }
 }
@@ -657,12 +622,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_U) != 0 { // we want to clamp the U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) == 0 { // see if clamping needs to be enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), Float(GL_CLAMP_TO_EDGE)) // nope, so set clamping
+                gRenderBackend.setTextureWrap(.u, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) != 0 { // see clamping is still enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), Float(GL_REPEAT))
+                gRenderBackend.setTextureWrap(.u, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we cleared it
             }
         }
@@ -671,12 +636,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_V) != 0 { // we want to clamp the V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) == 0 { // see if clamping needs to be enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), Float(GL_CLAMP_TO_EDGE)) // nope, so set clamping
+                gRenderBackend.setTextureWrap(.v, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) != 0 { // see clamping is still enabled
-                glTexParameterf(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), Float(GL_REPEAT))
+                gRenderBackend.setTextureWrap(.v, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we cleared it
             }
         }
@@ -725,7 +690,7 @@ func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
 
     withUnsafePointer(to: matObj.pointee.matrix) {
         $0.withMemoryRebound(to: Float.self, capacity: 16) {
-            glMultMatrixf($0)
+            gRenderBackend.multMatrix($0)
         }
     }
 }
@@ -757,8 +722,8 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     let yOffset = (scale - 1) * 0.333 // apply small offset to keep nano within frame
 
-    glTranslatef(-x, -y + yOffset * height, 0)
-    glScalef(scale, scale, 1)
+    gRenderBackend.translate(-x, -y + yOffset * height, 0)
+    gRenderBackend.scale(scale, scale, 1)
 
     // ACTIVATE THE MATERIAL
 
@@ -766,12 +731,12 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     // DRAW QUAD
 
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 1); glVertex3f(x, y + height, z)
-    glTexCoord2f(1, 1); glVertex3f(x + width, y + height, z)
-    glTexCoord2f(1, 0); glVertex3f(x + width, y, z)
-    glTexCoord2f(0, 0); glVertex3f(x, y, z)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x, y + height, z)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + width, y + height, z)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + width, y, z)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(x, y, z)
+    gRenderBackend.endImmediate()
 
     gPolysThisFrame += 2 // 2 more triangles
 
@@ -837,14 +802,14 @@ func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
     // DRAW IT
 
-    glBegin(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
 
-    glTexCoord2f(0, 0); glVertex2f(p[0].x + x, p[0].y + y)
-    glTexCoord2f(1, 0); glVertex2f(p[1].x + x, p[1].y + y)
-    glTexCoord2f(1, 1); glVertex2f(p[2].x + x, p[2].y + y)
-    glTexCoord2f(0, 1); glVertex2f(p[3].x + x, p[3].y + y)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p[0].x + x, p[0].y + y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p[1].x + x, p[1].y + y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(p[2].x + x, p[2].y + y)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(p[3].x + x, p[3].y + y)
 
-    glEnd()
+    gRenderBackend.endImmediate()
 
     gPolysThisFrame += 2 // 2 more tris
 }
@@ -1071,7 +1036,7 @@ private func deleteObjectInfoMaterial(_ obj: UnsafeMutablePointer<MOMaterialObje
     // DISPOSE OF TEXTURE NAMES
 
     if data.pointee.numMipmaps > 0 {
-        glDeleteTextures(GLsizei(data.pointee.numMipmaps), textureNameBase(data))
+        gRenderBackend.deleteTextures(textureNameBase(data), count: Int32(data.pointee.numMipmaps))
     }
 }
 
@@ -1121,7 +1086,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.points = AllocPtr(s)?.assumingMemoryBound(to: OGLPoint3D.self)
         }
 
-        BlockMove(inData.pointee.points, outData.pointee.points, s)
+        SwBlockMove(inData.pointee.points, outData.pointee.points, s)
     } else {
         outData.pointee.points = nil
     }
@@ -1137,7 +1102,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.normals = AllocPtr(s)?.assumingMemoryBound(to: OGLVector3D.self)
         }
 
-        BlockMove(inData.pointee.normals, outData.pointee.normals, s)
+        SwBlockMove(inData.pointee.normals, outData.pointee.normals, s)
     } else {
         outData.pointee.normals = nil
     }
@@ -1156,7 +1121,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outUvs[0] = AllocPtr(s)?.assumingMemoryBound(to: OGLTextureCoord.self)
         }
 
-        BlockMove(inUvs[0], outUvs[0], s)
+        SwBlockMove(inUvs[0], outUvs[0], s)
     } else {
         outUvs[0] = nil
     }
@@ -1172,7 +1137,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.colorsFloat = AllocPtr(s)?.assumingMemoryBound(to: OGLColorRGBA.self)
         }
 
-        BlockMove(inData.pointee.colorsFloat, outData.pointee.colorsFloat, s)
+        SwBlockMove(inData.pointee.colorsFloat, outData.pointee.colorsFloat, s)
     } else {
         outData.pointee.colorsFloat = nil
     }
@@ -1190,7 +1155,7 @@ func MO_DuplicateVertexArrayData(_ inData: UnsafeMutablePointer<MOVertexArrayDat
             outData.pointee.triangles = AllocPtr(s)?.assumingMemoryBound(to: MOTriangleIndecies.self)
         }
 
-        BlockMove(inData.pointee.triangles, outData.pointee.triangles, s)
+        SwBlockMove(inData.pointee.triangles, outData.pointee.triangles, s)
     } else {
         outData.pointee.triangles = nil
     }

@@ -1,14 +1,17 @@
 // Input.swift - Port of Input.c to Swift
 //
-// gUserPrefersGamepad stays defined in Input.c because LevelIntro.c and
-// MainMenu.c (still unported) read/write it directly via `extern`. Every
-// other global in the original file (gGamepads, gKeyboardStates,
+// gUserPrefersGamepad/gCursorCoord are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore. Every other
+// global in the original file (gGamepads, gKeyboardStates,
 // gMouseButtonStates, gNeedStates, gLastGamepadForNeedAnyP,
 // gGamepadPlayerMappingLocked, gMouseMotionNow, gTextInput) has no
 // `extern` declaration anywhere and is only ever touched from this file,
-// so they all move into private Swift storage. The `Gamepad` struct
+// so they all stay private Swift storage. The `Gamepad` struct
 // itself was only ever defined in Input.c, so it becomes a plain Swift
 // struct here rather than a C type.
+
+var gUserPrefersGamepad: UInt8 = 0
+var gCursorCoord = OGLPoint2D()
 //
 // MOUSE_SMOOTHING and REQUIRE_LOCK_MAPPING are both hardcoded off in the
 // original file, so their guarded code (MouseSmoothing_*,
@@ -112,7 +115,7 @@ private func processSystemKeyChords() {
 }
 
 private func updateMouseButtonStates(_ mouseWheelDeltaX: Int32, _ mouseWheelDeltaY: Int32) {
-    let mouseButtons = SDL_GetMouseState(nil, nil)
+    let mouseButtons = SDL.mouseState.buttons.rawValue
 
     for i in 1..<Int(NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL) { // SDL buttons start at 1!
         let buttonBit = (mouseButtons & (UInt32(1) << (UInt32(i) - 1))) != 0 // SDL_BUTTON_MASK(i)
@@ -219,7 +222,7 @@ func DoSDLMaintenance() {
     // requirement, so this only runs on 3DS.
     #if NANOSAUR_3DS
     if !aptMainLoop() {
-        CleanQuit() // throws Pomme::QuitRequest (noreturn)
+        CleanQuit() // -> SwExitToShell() (Misc.swift) -> exit(0), noreturn
     }
     #endif
 
@@ -230,7 +233,7 @@ func DoSDLMaintenance() {
     while SDL_PollEvent(&event) {
         switch SDL_EventType(UInt32(event.type)) {
         case SDL_EVENT_QUIT, SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-            CleanQuit() // throws Pomme::QuitRequest (noreturn)
+            CleanQuit() // exits the process (noreturn) - see SwExitToShell in Misc.swift
 
         case SDL_EVENT_KEY_DOWN:
             gUserPrefersGamepad = 0
@@ -444,8 +447,7 @@ func GetNumGamepad() -> Int32 {
     return count
 }
 
-@c @implementation
-public func GetGamepad(_ n: Int32) -> OpaquePointer? {
+func GetGamepad(_ n: Int32) -> OpaquePointer? {
     if gGamepads[Int(n)].open {
         return gGamepads[Int(n)].sdlGamepad
     } else {
@@ -571,8 +573,7 @@ private func tryOpenAnyUnusedGamepad(_ showMessage: Bool) -> OpaquePointer? {
     return newGamepad
 }
 
-@c @implementation
-public func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms: UInt32, _ playerID: Int32) {
+func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms: UInt32, _ playerID: Int32) {
     // Don't bother if rumble turned off in prefs
     if gGamePrefs.rumbleIntensity == 0 {
         return
@@ -607,7 +608,7 @@ public func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float
         UInt32(Float(ms) * rumbleIntensityFrac))
 
     // Prevent jetpack effect from kicking in while we're playing this
-    GetPlayerInfoEntry(playerID)!.pointee.jetpackRumbleCooldown = Float(ms) * (1.0 / 1000.0)
+    GetPlayerInfoEntry(playerID).pointee.jetpackRumbleCooldown = Float(ms) * (1.0 / 1000.0)
 
     _ = lowFrequencyStrength
     _ = highFrequencyStrength
@@ -713,8 +714,7 @@ private func onJoystickRemoved(_ joystickID: SDL_JoystickID) {
 
 // MARK: - Reset bindings
 
-@c @implementation
-public func ResetDefaultKeyboardBindings() {
+func ResetDefaultKeyboardBindings() {
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in
         let defaults = UnsafeRawPointer(defaultsPtr).assumingMemoryBound(to: InputBinding.self)
         for i in 0..<Int(NUM_CONTROL_NEEDS) {
@@ -729,8 +729,7 @@ public func ResetDefaultKeyboardBindings() {
     }
 }
 
-@c @implementation
-public func ResetDefaultGamepadBindings() {
+func ResetDefaultGamepadBindings() {
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in
         let defaults = UnsafeRawPointer(defaultsPtr).assumingMemoryBound(to: InputBinding.self)
         for i in 0..<Int(NUM_CONTROL_NEEDS) {
@@ -747,8 +746,7 @@ public func ResetDefaultGamepadBindings() {
     gGamePrefs.rumbleIntensity = 100
 }
 
-@c @implementation
-public func ResetDefaultMouseBindings() {
+func ResetDefaultMouseBindings() {
     gGamePrefs.mouseSensitivityLevel = UInt8(DEFAULT_MOUSE_SENSITIVITY_LEVEL)
 
     withUnsafePointer(to: kDefaultInputBindings) { defaultsPtr in
@@ -779,9 +777,7 @@ func GetMouseDelta() -> OGLVector2D {
     // Mouse sensitivity settings are calibrated to feel good at 60 FPS,
     // so we mustn't poll GetRelativeMouseState any faster than 60 Hz.
     if gMouseDeltaTimeSinceLastCall >= (1.0 / 60.0) {
-        var x: Float = 0
-        var y: Float = 0
-        SDL_GetRelativeMouseState(&x, &y)
+        let (_, x, y) = SDL.relativeMouseState
         gMouseDeltaLast = OGLVector2D(x: x, y: y)
         gMouseDeltaTimeSinceLastCall = 0
     }
@@ -790,11 +786,9 @@ func GetMouseDelta() -> OGLVector2D {
 }
 
 func GetMouseCoords640x480() -> OGLPoint2D {
-    var mx: Float = 0
-    var my: Float = 0
     var ww: Int32 = 0
     var wh: Int32 = 0
-    SDL_GetMouseState(&mx, &my)
+    let (_, mx, my) = SDL.mouseState
     SDL_GetWindowSize(gSDLWindow, &ww, &wh)
 
     let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)

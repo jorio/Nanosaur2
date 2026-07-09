@@ -1,18 +1,24 @@
 // Sound.swift - Port of Sound.c to Swift
 //
-// gChannelInfo, gSongPlayingFlag, and gCurrentSong stay defined in the
-// stubbed Sound.c: gChannelInfo because SwiftInternal.h's
-// GetChannelInfoEntry shim references it directly, gSongPlayingFlag/
-// gCurrentSong because they're `extern`'d in game.h and gCurrentSong is
-// read by MainMenu.c (still unported). Every other global here (the
-// sound channel arrays, ear/eye vectors, volume state) has no `extern`
-// declaration anywhere and is only ever touched from this file, so it
-// all moves into private Swift storage. ToggleMusic is declared in
-// sound2.h but its entire implementation was already #if 0'd out in the
-// original (referencing globals that no longer exist), and nothing
-// calls it, so it's skipped.
+// gChannelInfo, gSongPlayingFlag, and gCurrentSong are native Swift storage
+// now: nothing in any .c file touches them anymore (verified 2026-07-07,
+// after MainMenu.c was deleted). ToggleMusic is declared in sound2.h but
+// its entire implementation was already #if 0'd out in the original
+// (referencing globals that no longer exist), and nothing calls it, so
+// it's skipped.
+
+struct ChannelInfoType {
+    var effectNum: Int16 = -1
+    var volumeAdjust: Float = 0
+    var leftVolume: Float = 0
+    var rightVolume: Float = 0
+}
 
 private let maxChannels = 40
+
+var gChannelInfo: [ChannelInfoType] = Array(repeating: ChannelInfoType(), count: maxChannels)
+var gSongPlayingFlag: UInt8 = 0
+var gCurrentSong: Int16 = -1
 private let maxEffects = 70
 private let maxAudioStreams = 9
 
@@ -163,11 +169,10 @@ private var gMusicVolumeTweak: Float = 1.0
 private var gEarCoords = [OGLPoint3D](repeating: OGLPoint3D(), count: Int(MAX_PLAYERS)) // coord of camera plus a tad to get pt in front of camera
 private var gEyeVector = [OGLVector3D](repeating: OGLVector3D(), count: Int(MAX_PLAYERS))
 
-private var gSndHandles: [SndListHandle?] = Array(repeating: nil, count: maxEffects) // handles to ALL sounds
-private var gSndOffsets: [Int] = Array(repeating: 0, count: maxEffects)
+private var gEffectPCM: [DecodedPCMBuffer?] = Array(repeating: nil, count: maxEffects) // decoded PCM for ALL sounds
 
-private var gSndChannel: [SndChannelPtr?] = Array(repeating: nil, count: maxChannels)
-private var gMusicChannel: SndChannelPtr?
+private var gChannels: [SwSoundChannel] = []
+private var gMusicSwChannel: SwSoundChannel?
 
 private var gMaxChannels: Int16 = 0
 private var gMostRecentChannel: Int16 = -1
@@ -180,23 +185,20 @@ func InitSoundTools() {
 
     // ALLOC CHANNELS
 
-    gMaxChannels = 0
+    gChannels = []
     while gMaxChannels < Int16(maxChannels) {
-        // NEW SOUND CHANNEL
-
-        var chan: SndChannelPtr?
-        let iErr = SndNewChannel(&chan, Int16(sampledSynth.rawValue), Int(initStereo.rawValue), nil)
-        gSndChannel[Int(gMaxChannels)] = chan
-        if iErr != 0 { // if err, stop allocating channels
+        let chan = SwSoundChannel()
+        if !chan.isValid { // if err, stop allocating channels
             break
         }
+        gChannels.append(chan)
         gMaxChannels += 1
     }
 
     // SONG CHANNEL
 
-    let iErr = SndNewChannel(&gMusicChannel, Int16(sampledSynth.rawValue), Int(initStereo.rawValue), nil)
-    SwGameAssert(iErr == 0)
+    gMusicSwChannel = SwSoundChannel()
+    SwGameAssert(gMusicSwChannel?.isValid == true)
 
     // SET INITIAL VOLUME IN ALL CHANNELS FROM PREFS
 
@@ -218,9 +220,8 @@ func ShutdownSound() {
 
     // DISPOSE OF CHANNELS
 
-    for i in 0..<Int(gMaxChannels) {
-        SndDisposeChannel(gSndChannel[i], 1)
-    }
+    gChannels = []
+    gMusicSwChannel = nil
     gMaxChannels = 0
 
     // DISPOSE OF ALL SOUND BANKS
@@ -228,6 +229,15 @@ func ShutdownSound() {
     for i in 0..<Int(NUM_SOUND_BANKS) {
         DisposeSoundBank(UInt8(i))
     }
+}
+
+// MARK: - Maintain sound channels (called once a frame from UpdateListenerLocation)
+
+func MaintainSoundChannels() {
+    for channel in gChannels {
+        channel.topUp()
+    }
+    gMusicSwChannel?.topUp()
 }
 
 // MARK: -
@@ -261,13 +271,14 @@ func LoadSoundBank(_ bank: UInt8) {
         #endif
 
         var spec = FSSpec()
-        var refNum: Int16 = -1
         var iErr: OSErr = kNoErr
+        var matchedExt = ""
 
         for ext in kSoundExts {
             let path = ":Audio:\(gSoundBankNames[Int(effectDef.bank)] ?? ""):\(effectDef.name ?? "").\(ext)"
             iErr = ResolveDataFileSpec(path, &spec)
             if iErr == kNoErr { // if the file exists, stop; otherwise try next extension
+                matchedExt = ext
                 break
             }
         }
@@ -275,45 +286,13 @@ func LoadSoundBank(_ bank: UInt8) {
         // after trying all extensions, stop here if still don't have a valid FSSpec
         SwGameAssert(iErr == kNoErr)
 
-        // OPEN DATA FORK
+        // LOAD & DECODE
 
-        iErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &refNum)
-        SwGameAssert(iErr == kNoErr)
+        gEffectPCM[i] = loadDecodedPCM(&spec, isMP3: matchedExt == "mp3")
+        SwGameAssertMessage(gEffectPCM[i] != nil, "failed to decode sound effect")
         #if NANOSAUR_3DS
-        Debug3DS_Log("  ...opened")
+        Debug3DS_Log("  ...decoded")
         #endif
-
-        // LOAD SND REZ
-
-        gSndHandles[i] = Pomme_SndLoadFileAsResource(refNum)
-        SwGameAssert(gSndHandles[i] != nil)
-        #if NANOSAUR_3DS
-        Debug3DS_Log("  ...loaded as resource")
-        #endif
-
-        // GET OFFSET INTO IT
-
-        var offset = 0
-        GetSoundHeaderOffset(gSndHandles[i], &offset)
-        gSndOffsets[i] = offset
-        #if NANOSAUR_3DS
-        Debug3DS_Log("  ...got header offset")
-        #endif
-
-        // PRE-DECOMPRESS IT
-
-        var handle = gSndHandles[i]
-        var offsetForDecompress = offset
-        _ = Pomme_DecompressSoundResource(&handle, &offsetForDecompress)
-        gSndHandles[i] = handle
-        gSndOffsets[i] = offsetForDecompress
-        #if NANOSAUR_3DS
-        Debug3DS_Log("  ...decompressed")
-        #endif
-
-        // CLOSE DATA FORK
-
-        FSClose(refNum)
     }
     #if NANOSAUR_3DS
     Debug3DS_Log("LoadSoundBank: all effects loaded.")
@@ -329,12 +308,7 @@ func DisposeSoundBank(_ bank: UInt8) {
 
     for i in 0..<Int(NUM_EFFECTS) {
         if gEffectsTable[i].bank == bank {
-            if let handle = gSndHandles[i] {
-                DisposeHandle(UnsafeMutableRawPointer(handle).assumingMemoryBound(to: Optional<UnsafeMutablePointer<Int8>>.self))
-            }
-
-            gSndHandles[i] = nil
-            gSndOffsets[i] = 0
+            gEffectPCM[i] = nil
         }
     }
 }
@@ -351,20 +325,11 @@ func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
         return
     }
 
-    var mySndCmd = SndCommand()
-    mySndCmd.cmd = UInt16(flushCmd.rawValue)
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = 0
-    SndDoImmediate(gSndChannel[Int(c)], &mySndCmd)
-
-    mySndCmd.cmd = UInt16(quietCmd.rawValue)
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = 0
-    SndDoImmediate(gSndChannel[Int(c)], &mySndCmd)
+    gChannels[Int(c)].stop()
 
     channelNum.pointee = -1
 
-    GetChannelInfoEntry(Int32(c))!.pointee.effectNum = -1
+    gChannelInfo[Int(c)].effectNum = -1
 }
 
 // MARK: - Stop a channel if effect num
@@ -377,7 +342,7 @@ func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effec
         return 0
     }
 
-    if GetChannelInfoEntry(Int32(c))!.pointee.effectNum != effectNum { // make sure its the right effect
+    if gChannelInfo[Int(c)].effectNum != effectNum { // make sure its the right effect
         return 0
     }
 
@@ -412,65 +377,28 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
     gCurrentSong = songNum
     KillSong()
 
-    // OPEN APPROPRIATE SONG FILE
+    // OPEN APPROPRIATE SONG FILE, DECODE, AND PLAY
 
     var spec = FSSpec()
-    var musicFileRefNum: Int16 = 0
 
     let song = gSongs[Int(songNum)]
 
-    var iErr = ResolveDataFileSpec(song.path, &spec)
+    let iErr = ResolveDataFileSpec(song.path, &spec)
     SwGameAssert(iErr == kNoErr)
 
-    iErr = FSpOpenDF(&spec, Int8(fsRdPerm.rawValue), &musicFileRefNum)
-    SwGameAssert(iErr == kNoErr)
+    guard let pcm = loadDecodedPCM(&spec, isMP3: true) else {
+        SwFatal("PlaySong: failed to decode song file!")
+        return
+    }
 
     gCurrentSong = songNum
     gMusicVolumeTweak = song.volumeTweak
 
-    // START PLAYING
-
-    // START PLAYING FROM FILE
-
-    iErr = SndStartFilePlay(
-        gMusicChannel,
-        musicFileRefNum,
-        0,
-        0,
-        nil,
-        nil,
-        nil,
-        1)
-
-    FSClose(musicFileRefNum) // close the file (Pomme decompresses entire song into memory)
-
-    if iErr != kNoErr {
-        SwFatal("PlaySong: SndStartFilePlay failed! (System error \(iErr))")
-    }
+    let volume = gMusicVolumeTweak * gMusicVolume
+    gMusicSwChannel?.play(pcm, leftVolume: volume, rightVolume: volume, rateRatio: 1.0)
+    gMusicSwChannel?.loop = loopFlag != 0
 
     gSongPlayingFlag = 1
-
-    // SET LOOP FLAG ON STREAM (SOURCE PORT ADDITION)
-    // So we don't need to re-read the file over and over.
-
-    var mySndCmd = SndCommand()
-    mySndCmd.cmd = UInt16(pommeSetLoopCmd.rawValue)
-    mySndCmd.param1 = loopFlag != 0 ? 1 : 0
-    mySndCmd.param2 = 0
-    iErr = SndDoImmediate(gMusicChannel, &mySndCmd)
-    if iErr != kNoErr {
-        SwFatal("PlaySong: SndDoImmediate (pomme loop extension) failed!")
-    }
-
-    let lv2 = UInt32(Float(kFullVolume.rawValue) * gMusicVolumeTweak * gMusicVolume)
-    let rv2 = UInt32(Float(kFullVolume.rawValue) * gMusicVolumeTweak * gMusicVolume)
-    mySndCmd.cmd = UInt16(volumeCmd.rawValue)
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = Int((rv2 << 16) | lv2)
-    iErr = SndDoImmediate(gMusicChannel, &mySndCmd)
-    if iErr != kNoErr {
-        SwFatal("PlaySong: SndDoImmediate (volumeCmd) failed!")
-    }
 
     // (the #if 0'd "mute music" block referenced gMuteMusicFlag/gSongMovie,
     // neither of which exist anymore, so it's dropped.)
@@ -487,7 +415,7 @@ func KillSong() {
 
     gSongPlayingFlag = 0 // tell callback to do nothing
 
-    SndStopFilePlay(gMusicChannel, 1) // stop it
+    gMusicSwChannel?.stop()
 }
 
 // MARK: -
@@ -514,7 +442,7 @@ func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(NORMAL_CHANNEL_RATE))
 
     if theChan != -1 {
-        GetChannelInfoEntry(Int32(theChan))!.pointee.volumeAdjust = 1.0 // full volume adjust
+        gChannelInfo[Int(theChan)].volumeAdjust = 1.0 // full volume adjust
     }
 
     return theChan // return channel #
@@ -544,7 +472,7 @@ func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(rateMultiplier))
 
     if theChan != -1 {
-        GetChannelInfoEntry(Int32(theChan))!.pointee.volumeAdjust = volumeAdjust // remember volume adjuster
+        gChannelInfo[Int(theChan)].volumeAdjust = volumeAdjust // remember volume adjuster
     }
 
     return theChan // return channel #
@@ -562,7 +490,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
 
     // MAKE SURE THE SAME SOUND IS STILL ON THIS CHANNEL
 
-    if effectNum != GetChannelInfoEntry(Int32(c))!.pointee.effectNum {
+    if effectNum != gChannelInfo[Int(c)].effectNum {
         channel.pointee = -1
         return 1
     }
@@ -578,7 +506,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
     if where_ != nil {
         var leftVol: UInt32 = 0
         var rightVol: UInt32 = 0
-        calc3DEffectVolume(GetChannelInfoEntry(Int32(c))!.pointee.effectNum, where_, GetChannelInfoEntry(Int32(c))!.pointee.volumeAdjust, &leftVol, &rightVol)
+        calc3DEffectVolume(gChannelInfo[Int(c)].effectNum, where_, gChannelInfo[Int(c)].volumeAdjust, &leftVol, &rightVol)
         if (leftVol + rightVol) == 0 { // if volume goes to 0, then kill channel
             StopAChannel(channel)
             return 0
@@ -696,6 +624,8 @@ func UpdateListenerLocation() {
 
         gEyeVector[i] = v
     }
+
+    MaintainSoundChannels()
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
@@ -714,11 +644,10 @@ func PlayEffect(_ effectNum: Int16) -> Int16 {
 // Plays an effect with parameters
 //
 // OUTPUT: channel # used to play sound
-@c @implementation
-public func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: UInt32, _ rateMultiplier: UInt) -> Int16 {
+func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: UInt32, _ rateMultiplier: UInt) -> Int16 {
     SwGameAssert(effectNum >= 0)
     SwGameAssert(effectNum < Int16(maxEffects))
-    SwGameAssertMessage(gSndHandles[Int(effectNum)] != nil, "sound effect wasn't loaded!")
+    SwGameAssertMessage(gEffectPCM[Int(effectNum)] != nil, "sound effect wasn't loaded!")
 
     // LOOK FOR FREE CHANNEL
 
@@ -727,59 +656,25 @@ public func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVo
         return -1
     }
 
-    let lv2 = UInt32(Float(leftVolume) * gEffectsVolume) // amplify by global volume
-    let rv2 = UInt32(Float(rightVolume) * gEffectsVolume)
+    let lv2 = Float(leftVolume) * gEffectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
+    let rv2 = Float(rightVolume) * gEffectsVolume / Float(FULL_CHANNEL_VOLUME)
 
     // GET IT GOING
 
-    let chanPtr = gSndChannel[Int(theChan)]
-
-    var mySndCmd = SndCommand()
-    mySndCmd.cmd = UInt16(flushCmd.rawValue)
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = 0
-    var myErr = SndDoImmediate(chanPtr, &mySndCmd)
-    if myErr != kNoErr {
+    guard let pcm = gEffectPCM[Int(effectNum)] else {
         return -1
     }
-
-    mySndCmd.cmd = UInt16(quietCmd.rawValue)
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = 0
-    myErr = SndDoImmediate(chanPtr, &mySndCmd)
-    if myErr != kNoErr {
-        return -1
-    }
-
-    mySndCmd.cmd = UInt16(volumeCmd.rawValue) // set sound playback volume
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = Int((rv2 << 16) | lv2)
-    myErr = SndDoImmediate(chanPtr, &mySndCmd)
-
-    mySndCmd.cmd = UInt16(bufferCmd.rawValue) // make it play
-    mySndCmd.param1 = 0
-    let soundHeaderBase = UnsafeMutableRawPointer(gSndHandles[Int(effectNum)]!.pointee!).assumingMemoryBound(to: Int8.self)
-    let soundHeaderPtr: Ptr = soundHeaderBase + gSndOffsets[Int(effectNum)] // pointer to SoundHeader
-    mySndCmd.ptr = soundHeaderPtr
-    _ = SndDoImmediate(chanPtr, &mySndCmd)
-    if myErr != kNoErr {
-        return -1
-    }
-
-    mySndCmd.cmd = UInt16(rateMultiplierCmd.rawValue) // modify the rate to change the frequency
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = Int(rateMultiplier)
-    SndDoImmediate(chanPtr, &mySndCmd)
+    let rateRatio = Float(rateMultiplier) / 65536.0 // 16.16 fixed-point, 0x10000 = 1.0x
+    gChannels[Int(theChan)].play(pcm, leftVolume: lv2, rightVolume: rv2, rateRatio: rateRatio)
 
     // (the #if 0'd "looping effect" block is a source-port no-op per the
     // original comment, so it's dropped.)
 
     // SET MY INFO
 
-    let info = GetChannelInfoEntry(Int32(theChan))!
-    info.pointee.effectNum = effectNum // remember what effect is playing on this channel
-    info.pointee.leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
-    info.pointee.rightVolume = Float(rightVolume)
+    gChannelInfo[Int(theChan)].effectNum = effectNum // remember what effect is playing on this channel
+    gChannelInfo[Int(theChan)].leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
+    gChannelInfo[Int(theChan)].rightVolume = Float(rightVolume)
     return theChan // return channel #
 }
 
@@ -789,33 +684,24 @@ public func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVo
 
 // Call this whenever gGlobalVolume is changed.  This will update
 // all of the sounds with the correct volume.
-@c @implementation
-public func UpdateGlobalVolume() {
+func UpdateGlobalVolume() {
     gEffectsVolume = fullEffectsVolume * (0.01 * Float(gGamePrefs.sfxVolumePercent)) * gGlobalVolumeFade
 
     // ADJUST VOLUMES OF ALL CHANNELS REGARDLESS IF THEY ARE PLAYING OR NOT
 
     for c in 0..<Int(gMaxChannels) {
-        let info = GetChannelInfoEntry(Int32(c))!
-        ChangeChannelVolume(Int16(c), info.pointee.leftVolume, info.pointee.rightVolume)
+        ChangeChannelVolume(Int16(c), gChannelInfo[c].leftVolume, gChannelInfo[c].rightVolume)
     }
 
     // UPDATE SONG VOLUME
 
     // First, resume song playback if it was paused -- e.g. when we're adjusting the volume via pause menu
-    var cmd1 = SndCommand()
-    cmd1.cmd = UInt16(pommeResumePlaybackCmd.rawValue)
-    SndDoImmediate(gMusicChannel, &cmd1)
+    gMusicSwChannel?.resumeDevice()
 
     // Now update song channel volume
     gMusicVolume = fullSongVolume * (0.01 * Float(gGamePrefs.musicVolumePercent)) * gGlobalVolumeFade
-    let lv2 = UInt32(Float(kFullVolume.rawValue) * gMusicVolumeTweak * gMusicVolume)
-    let rv2 = UInt32(Float(kFullVolume.rawValue) * gMusicVolumeTweak * gMusicVolume)
-    var cmd2 = SndCommand()
-    cmd2.cmd = UInt16(volumeCmd.rawValue)
-    cmd2.param1 = 0
-    cmd2.param2 = Int((rv2 << 16) | lv2)
-    SndDoImmediate(gMusicChannel, &cmd2)
+    let musicVol = gMusicVolumeTweak * gMusicVolume
+    gMusicSwChannel?.setVolume(left: musicVol, right: musicVol)
 }
 
 // MARK: - Change channel volume
@@ -826,40 +712,27 @@ func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: Float) 
         return
     }
 
-    let lv2 = UInt32(leftVol * gEffectsVolume) // amplify by global volume
-    let rv2 = UInt32(rightVol * gEffectsVolume)
+    let lv2 = leftVol * gEffectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
+    let rv2 = rightVol * gEffectsVolume / Float(FULL_CHANNEL_VOLUME)
 
-    let chanPtr = gSndChannel[Int(channel)] // get the actual channel ptr
+    gChannels[Int(channel)].setVolume(left: lv2, right: rv2)
 
-    var mySndCmd = SndCommand()
-    mySndCmd.cmd = UInt16(volumeCmd.rawValue) // set sound playback volume
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = Int((rv2 << 16) | lv2) // set volume left & right
-    SndDoImmediate(chanPtr, &mySndCmd)
-
-    let info = GetChannelInfoEntry(Int32(channel))!
-    info.pointee.leftVolume = leftVol // remember requested volume (not the adjusted volume!)
-    info.pointee.rightVolume = rightVol
+    gChannelInfo[Int(channel)].leftVolume = leftVol // remember requested volume (not the adjusted volume!)
+    gChannelInfo[Int(channel)].rightVolume = rightVol
 }
 
 // MARK: - Change channel rate
 
 // Modifies the frequency of a currently playing channel
 //
-// The Input Freq is a fixed-point multiplier, not the static rate via rateCmd.
-// This function uses rateMultiplierCmd, so a value of 0x00020000 is x2.0
+// rateMult is a 16.16 fixed-point multiplier (0x10000 = 1.0x), matching the
+// original Sound Manager's rateMultiplierCmd convention.
 func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
     if channel < 0 { // make sure it's valid
         return
     }
 
-    let chanPtr = gSndChannel[Int(channel)] // get the actual channel ptr
-
-    var mySndCmd = SndCommand()
-    mySndCmd.cmd = UInt16(rateMultiplierCmd.rawValue) // modify the rate to change the frequency
-    mySndCmd.param1 = 0
-    mySndCmd.param2 = rateMult
-    SndDoImmediate(chanPtr, &mySndCmd)
+    gChannels[Int(channel)].setRateRatio(Float(rateMult) / 65536.0)
 }
 
 // MARK: -
@@ -874,10 +747,7 @@ private func findSilentChannel() -> Int16 {
     let startChan = theChan
 
     repeat {
-        var theStatus = SCStatus()
-        let myErr = SndChannelStatus(gSndChannel[Int(theChan)], Int16(MemoryLayout<SCStatus>.size), &theStatus) // get channel info
-
-        if myErr == kNoErr, theStatus.scChannelBusy == 0 { // error-free and not playing anything, pick this one
+        if !gChannels[Int(theChan)].isBusy { // not playing anything, pick this one
             gMostRecentChannel = theChan
             return theChan
         } else {
@@ -896,22 +766,21 @@ private func findSilentChannel() -> Int16 {
 // MARK: - Is effect channel playing
 
 func IsEffectChannelPlaying(_ chanNum: Int16) -> UInt8 {
-    var theStatus = SCStatus()
-    SndChannelStatus(gSndChannel[Int(chanNum)], Int16(MemoryLayout<SCStatus>.size), &theStatus) // get channel info
-    return theStatus.scChannelBusy
+    gChannels[Int(chanNum)].isBusy ? 1 : 0
 }
 
 // MARK: - Pause all sound channels
 
 func PauseAllChannels(_ pause: UInt8) {
-    var cmd = SndCommand()
-    cmd.cmd = UInt16(pause != 0 ? pommePausePlaybackCmd.rawValue : pommeResumePlaybackCmd.rawValue)
-
-    for c in 0..<Int(gMaxChannels) {
-        SndDoImmediate(gSndChannel[c], &cmd)
+    for channel in gChannels {
+        pause != 0 ? channel.pauseDevice() : channel.resumeDevice()
     }
 
-    SndDoImmediate(gMusicChannel, &cmd)
+    if pause != 0 {
+        gMusicSwChannel?.pauseDevice()
+    } else {
+        gMusicSwChannel?.resumeDevice()
+    }
 }
 
 // MARK: -

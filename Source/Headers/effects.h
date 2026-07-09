@@ -162,11 +162,6 @@ typedef struct
 #define	FULL_ALPHA	1.0f
 
 
-			/* EXTERNS */
-
-extern	NewParticleGroupDefType	gNewParticleGroupDef;
-extern	NewConfettiGroupDefType	gNewConfettiGroupDef;
-
 
 
 //============================================================================================

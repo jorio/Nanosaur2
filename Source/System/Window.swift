@@ -1,4 +1,12 @@
 // Window.swift - Port of Window.c to Swift
+//
+// gGammaFadeFrac/gGameWindowWidth/gGameWindowHeight are native Swift
+// storage now (converted 2026-07-07): nothing in any .c file touches them
+// anymore.
+
+var gGammaFadeFrac: Float = 1.0
+var gGameWindowWidth: Int32 = 640
+var gGameWindowHeight: Int32 = 480
 
 private let kFaderMode_FadeOut: Int32 = 0
 private let kFaderMode_FadeIn: Int32 = 1
@@ -53,12 +61,12 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_EnableBlend()
     OGL_SetColor4f(0, 0, 0, 1.0 - gGammaFadeFrac)
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex3f(gLogicalRect.right, gLogicalRect.top, 0)
-    glVertex3f(gLogicalRect.left, gLogicalRect.top, 0)
-    glVertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
-    glVertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
+    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.top, 0)
+    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
+    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }
@@ -180,8 +188,7 @@ func GetDefaultWindowSize(_ display: SDL_DisplayID, _ width: UnsafeMutablePointe
     }
 }
 
-@c @implementation
-public func GetNumDisplays() -> Int32 {
+func GetNumDisplays() -> Int32 {
     var numDisplays: Int32 = 0
     let displays = SDL_GetDisplays(&numDisplays)
     SDL_free(displays)
@@ -221,8 +228,7 @@ private func moveToPreferredDisplay() {
     _ = SDL_SyncWindow(gSDLWindow)
 }
 
-@c @implementation
-public func SetFullscreenMode(_ enforceDisplayPref: Bool) {
+func SetFullscreenMode(_ enforceDisplayPref: Bool) {
     if gGamePrefs.fullscreen == 0 {
         _ = SDL_SetWindowFullscreen(gSDLWindow, false)
         _ = SDL_SyncWindow(gSDLWindow)
@@ -248,5 +254,5 @@ public func SetFullscreenMode(_ enforceDisplayPref: Bool) {
         _ = SDL_SyncWindow(gSDLWindow)
     }
 
-    _ = SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+    gRenderBackend.setVSync(Int32(gGamePrefs.vsync))
 }

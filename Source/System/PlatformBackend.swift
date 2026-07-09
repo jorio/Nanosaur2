@@ -1,94 +1,24 @@
 // PlatformBackend.swift - platform abstraction seams for the 3DS port.
 //
-// See docs/3DS_PORT_PLAN.md for why only Graphics/Input get protocols here.
-// File/Sound/Memory are deliberately NOT protocols: they're already
-// "one Swift file per subsystem, swappable wholesale per build target"
-// (File.swift, Sound.swift, Misc.swift's AllocPtr/SafeDisposePtr), which is
-// the right shape for a compile-time platform choice - a 3DS build never
-// picks SDL vs. libctru at runtime within the same binary, so a runtime
-// polymorphism mechanism (a protocol) would add indirection for no benefit
-// there. Graphics/Input get real protocols because:
-//   - Input.swift already has a thin, genuinely swappable raw-polling seam
-//     (updateRawKeyboardStates) underneath a state machine that's pure
-//     Swift logic and identical on every backend.
-//   - Graphics's context lifecycle (create/make-current/swap/destroy)
-//     translates onto citro3d's context-free-but-still-has-a-presentable-
-//     surface model, as long as the protocol stays narrow: it does NOT
-//     cover OGL_CreateDrawContext's desktop-GL-specific capability queries
-//     (SDL_GL_GetProcAddress for extension functions, GL_MAX_TEXTURE_SIZE),
-//     which have no citro3d equivalent and stay in SDLGraphicsBackend's own
-//     createContext(), not in shared call sites.
-
-// MARK: - Graphics: GL/GPU context lifecycle and presentation only
-
-protocol GraphicsBackend {
-    associatedtype ContextHandle
-
-    /// Called once at boot (OGL_CreateDrawContext's job today). Fatal-alerts
-    /// on failure, matching the existing SDL_GL_CreateContext call site.
-    mutating func createContext(window: OpaquePointer) -> ContextHandle
-
-    /// Bottom-window/dual-screen support: a second, independent presentable
-    /// surface sharing the first's texture/resource namespace. Callers must
-    /// make `sharedWith` current before calling this (SDL's sharing model
-    /// is "whatever's current when the new context is created", not an
-    /// explicit handle reference). Returns nil (ContextHandle is expected to
-    /// be an optional-pointer-shaped type on every conformance) on backends
-    /// with only one screen/context, e.g. a single-context 3DS conformance.
-    mutating func createSecondaryContext(window: OpaquePointer, sharedWith: ContextHandle) -> ContextHandle
-
-    func makeCurrent(_ context: ContextHandle, window: OpaquePointer)
-
-    /// Present this frame (SDL_GL_SwapWindow today; "submit this frame's
-    /// command list and present" on a citro3d backend).
-    func swap(_ context: ContextHandle, window: OpaquePointer)
-
-    mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer)
-}
-
-// Gated out entirely (not just unselected via the typealias below) on 3DS:
-// the struct bodies below reference real SDL_* symbols, which the 3DS
-// build's bridging header (ports/3DS/common/game_3ds.h) deliberately never
-// declares (only opaque SDL_Window/SDL_GLContext/SDL_Gamepad stand-ins) -
-// Swift type-checks every declaration in a file regardless of which
-// typealias ends up selected, so these would fail to compile on 3DS even
-// though nothing calls them there.
-#if !NANOSAUR_3DS
-struct SDLGraphicsBackend: GraphicsBackend {
-    typealias ContextHandle = OpaquePointer?
-
-    mutating func createContext(window: OpaquePointer) -> ContextHandle {
-        let context = SDL_GL_CreateContext(window)
-        if context == nil {
-            SwFatalAlert(String(cString: SDL_GetError()))
-        }
-        return context
-    }
-
-    mutating func createSecondaryContext(window: OpaquePointer, sharedWith: ContextHandle) -> ContextHandle {
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-        let context = SDL_GL_CreateContext(window)
-        if context == nil {
-            SwFatalAlert(String(cString: SDL_GetError()))
-        }
-        return context
-    }
-
-    func makeCurrent(_ context: ContextHandle, window: OpaquePointer) {
-        let ok = SDL_GL_MakeCurrent(window, context)
-        SwGameAssertMessage(ok, String(cString: SDL_GetError()))
-    }
-
-    func swap(_ context: ContextHandle, window: OpaquePointer) {
-        SDL_GL_SwapWindow(window)
-    }
-
-    mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer) {
-        _ = SDL_GL_MakeCurrent(window, nil)
-        SDL_GL_DestroyContext(context)
-    }
-}
-#endif // !NANOSAUR_3DS
+// See docs/3DS_PORT_PLAN.md for why Input gets a protocol here. File/Sound/
+// Memory are deliberately NOT protocols: they're already "one Swift file
+// per subsystem, swappable wholesale per build target" (File.swift,
+// Sound.swift, Misc.swift's AllocPtr/SafeDisposePtr), which is the right
+// shape for a compile-time platform choice - a 3DS build never picks SDL
+// vs. libctru at runtime within the same binary, so a runtime polymorphism
+// mechanism (a protocol) would add indirection for no benefit there.
+// Input.swift gets a real protocol because it already has a thin,
+// genuinely swappable raw-polling seam (updateRawKeyboardStates)
+// underneath a state machine that's pure Swift logic and identical on
+// every backend.
+//
+// Graphics used to have a matching GraphicsBackend protocol/
+// SDLGraphicsBackend/CTRUGraphicsBackend trio here, but the RenderBackend
+// facade (Source/3D/RenderBackend.swift, see docs/metal-renderer-plan.md)
+// now owns context create/make-current/swap/destroy for every backend
+// (GL, Metal, and 3DS via #if NANOSAUR_3DS branches inside
+// GLRenderBackend) - this file's Graphics half was fully superseded and
+// removed rather than kept as a second, unused abstraction.
 
 // MARK: - Input: raw digital-input polling only
 //
@@ -150,71 +80,6 @@ struct SDLInputBackend: InputBackend {
 #if NANOSAUR_3DS
 
 // MARK: - 3DS conformances
-//
-// Backed by picaGL (ports/3DS/vendor/picaGL, see VENDORED.md) - a real
-// OpenGL 1.x-style implementation for the PICA200 that talks to the GPU
-// command queue directly, not citro3d. Like citro3d, it has no per-window
-// GL-style context object: `pglInit()` sets up one global render pipeline
-// for the whole app, and screens are selected by `pglSelectScreen(GFX_TOP/
-// GFX_BOTTOM, ...)`, not a context handle you make current. ContextHandle
-// is therefore a nominal placeholder distinguishing "the context that owns
-// the top screen" from "...the bottom screen" - `makeCurrent` is where
-// that distinction actually does something (calls `pglSelectScreen`),
-// unlike the real no-op it would be if there were truly nothing to select.
-//
-// ContextHandle MUST be `SDL_GLContext` (an `UnsafeMutableRawPointer?`),
-// matching `SDLGraphicsBackend`'s - NOT a 3DS-only type like `Bool`. The
-// real `game.h` (shared by both platforms) declares the global
-// `gAGLContext`/`gAGLContext2` storage that callers pass into these
-// methods as `SDL_GLContext`, so both conformances' `ContextHandle` need
-// to be assignable to/from that same global storage. `Bool` compiled fine
-// in isolation (see the earlier `PlatformBackend.swift` update) but broke
-// the moment `OGL_Support.swift` - which only knows about `SDL_GLContext`,
-// not either backend's ContextHandle - tried to pass `gAGLContext` into
-// `makeCurrent`/`swap`/etc. The pointer values themselves are otherwise
-// meaningless (never dereferenced) - only their identity (1 vs. 2) matters,
-// to tell `makeCurrent` which screen to select.
-// `SDL_GLContext` imports as `OpaquePointer` (real SDL3 declares it
-// `typedef struct SDL_GLContextState *SDL_GLContext;`, a pointer to a
-// named-but-opaque struct - not `void*`, which is what this project's own
-// earlier SDL.h stub declared it as, importing as `UnsafeMutableRawPointer`
-// instead. Switching to real SDL3 (see docs/3DS_PORT_PLAN.md) changed
-// this type, so the sentinel constructors below had to change with it.
-private let kTopScreenHandle = OpaquePointer(bitPattern: 1)!
-private let kBottomScreenHandle = OpaquePointer(bitPattern: 2)!
-
-struct CTRUGraphicsBackend: GraphicsBackend {
-    typealias ContextHandle = SDL_GLContext
-
-    mutating func createContext(window: OpaquePointer) -> ContextHandle {
-        PGL_Init()
-        PGL_SelectTopScreen()
-        return kTopScreenHandle
-    }
-
-    mutating func createSecondaryContext(window: OpaquePointer, sharedWith: ContextHandle) -> ContextHandle {
-        kBottomScreenHandle
-    }
-
-    func makeCurrent(_ context: ContextHandle, window: OpaquePointer) {
-        if context == kBottomScreenHandle {
-            PGL_SelectBottomScreen()
-        } else {
-            PGL_SelectTopScreen()
-        }
-    }
-
-    func swap(_ context: ContextHandle, window: OpaquePointer) {
-        PGL_SwapBuffers()
-    }
-
-    mutating func destroyContext(_ context: ContextHandle, window: OpaquePointer) {
-        // No-op: nothing owned per-context to tear down (picaGL itself has
-        // no matching pglExit-per-screen call - pglExit() tears down the
-        // whole GPU pipeline, called once at real app shutdown, not per
-        // context/screen).
-    }
-}
 
 // Maps the fixed SDL_SCANCODE_* indices Input.swift's KEYSTATE machine
 // already polls by index into libctru's KEY_* bitmask via hidKeysHeld().
@@ -241,9 +106,7 @@ struct CTRUInputBackend: InputBackend {
     }
 }
 
-typealias PlatformGraphics = CTRUGraphicsBackend
 typealias PlatformInput = CTRUInputBackend
 #else
-typealias PlatformGraphics = SDLGraphicsBackend
 typealias PlatformInput = SDLInputBackend
 #endif

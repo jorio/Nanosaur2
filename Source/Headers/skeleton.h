@@ -44,8 +44,6 @@ typedef enum SWIFT_ENUM_CLOSED SkeletonType
 
 #define	NO_PREVIOUS_JOINT	(-1)
 
-extern  float	gAccelerationCurve[CURVE_SIZE];
-static inline float* GetAccelerationCurvePtr(void) { return gAccelerationCurve; }
 
 
 //===============================

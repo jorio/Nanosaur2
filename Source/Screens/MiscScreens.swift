@@ -1,4 +1,9 @@
 // MiscScreens.swift - Port of MiscScreens.c to Swift
+//
+// gLoadingThermoPercent is native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches it anymore.
+
+var gLoadingThermoPercent: Float = 0
 
 private let THERMO_WIDTH: Float = 80.0
 private let THERMO_HEIGHT: Float = 4.0
@@ -26,10 +31,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     OGL_SetColor4f(0.5, 0.5, 0.5, 1)
     OGL_DisableTexture2D()
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex2f(THERMO_LEFT, THERMO_Y); glVertex2f(THERMO_RIGHT, THERMO_Y)
-    glVertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); glVertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y)
+    gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gRenderBackend.endImmediate()
 
     // DRAW THERMO METER
 
@@ -43,10 +48,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
         OGL_SetColor4f(0.8, 0, 0, 1)
     }
 
-    glBegin(UInt32(GL_QUADS))
-    glVertex2f(THERMO_LEFT, THERMO_Y); glVertex2f(x, THERMO_Y)
-    glVertex2f(x, THERMO_Y + THERMO_HEIGHT); glVertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(x, THERMO_Y)
+    gRenderBackend.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gRenderBackend.endImmediate()
 
     OGL_SetColor4f(1, 1, 1, 1)
 
@@ -63,10 +68,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
 
     do {
         OGL_SetColor4f(0, 0, 0, fadeOpacity > 1 ? 1 : fadeOpacity)
-        glBegin(UInt32(GL_QUADS))
-        glVertex2f(0, 0); glVertex2f(640, 0)
-        glVertex2f(640, 480); glVertex2f(0, 480)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.vertex2f(0, 0); gRenderBackend.vertex2f(640, 0)
+        gRenderBackend.vertex2f(640, 480); gRenderBackend.vertex2f(0, 480)
+        gRenderBackend.endImmediate()
     }
 }
 
@@ -213,15 +218,14 @@ func DrawLoading(_ percent: Float) {
     // }
 
     // Kill vsync so we don't waste 16ms before loading the next asset
-    var vsyncBackup: Int32 = 0
-    _ = SDL_GL_GetSwapInterval(&vsyncBackup)
-    _ = SDL_GL_SetSwapInterval(0)
+    let vsyncBackup = gRenderBackend.getVSync()
+    gRenderBackend.setVSync(0)
 
     // Draw thermometer
-    glClear(UInt32(GL_COLOR_BUFFER_BIT))
+    gRenderBackend.clearColorAndDepth()
     OGL_DrawScene(cDrawLoadingCallback)
     gLoadingThermoPercent = percent
 
     // Restore vsync setting
-    _ = SDL_GL_SetSwapInterval(vsyncBackup)
+    gRenderBackend.setVSync(vsyncBackup)
 }

@@ -2,22 +2,8 @@
 // camera.h
 //
 
-typedef enum SWIFT_ENUM_CLOSED CameraMode
-{
-	CAMERA_MODE_NORMAL SWIFT_NAME(normal) = 0,
-	CAMERA_MODE_FIRSTPERSON SWIFT_NAME(firstPerson),
-	CAMERA_MODE_ANAGLYPHCLOSE SWIFT_NAME(anaglyphClose)
-} CameraMode;
-
-
-		/* EXTERNS */
-
-extern	Boolean		gCameraInDeathDiveMode[], gCameraInExitMode;
-extern  Byte		gCameraMode[];
-
-//================================
-
-float GetSplitscreenPaneFOV(void);
-
-
+// CameraMode is now a native Swift enum in GameEnums.swift; gCameraMode/
+// gCameraInDeathDiveMode/gCameraInExitMode moved to Swift storage
+// (Camera.swift) - Camera.c (their only real C user) was ported to Swift
+// and deleted (verified 2026-07-07).
 

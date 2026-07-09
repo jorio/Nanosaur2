@@ -1,5 +1,10 @@
 // 3DMath_Angles.swift - Port of the angle/turn-related functions in 3DMath.c to Swift.
 // (First of several files splitting up 3DMath.c's large function set.)
+//
+// gUp is native Swift storage now (converted 2026-07-07): nothing in any
+// .c file touches it anymore.
+
+let gUp = OGLVector3D(x: 0, y: 1, z: 0)
 
 // MARK: - Calc X angle from point to point
 //
@@ -241,7 +246,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         aimVec.x = -sin(r)
         aimVec.y = -cos(r)
 
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
         targetVec.x = pi.pointee.coord.x - fromX // get normalized vector to target object
         targetVec.y = pi.pointee.coord.z - fromZ
         var targetVecNorm = OGLVector2D()

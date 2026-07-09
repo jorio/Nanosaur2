@@ -1,10 +1,12 @@
 // Confetti.swift - Port of Confetti.c to Swift
 //
-// gNewConfettiGroupDef stays defined in Confetti.c and `extern`'d via
-// effects.h: Trees.c and Player.c (still unported) write to it directly by
-// name, so it must stay C-linked. gConfettiGroups/gNumActiveConfettiGroups
-// were plain (non-extern) globals only ever touched from this file, so they
-// move into a private Swift array instead.
+// gNewConfettiGroupDef is native Swift storage now (converted 2026-07-07):
+// nothing in any .c file touches it anymore (Trees.c/Player.c, its only
+// real C users, are both deleted). gConfettiGroups/gNumActiveConfettiGroups
+// were plain (non-extern) globals only ever touched from this file, so
+// they stay a private Swift array.
+
+var gNewConfettiGroupDef = NewConfettiGroupDefType()
 
 private var gConfettiGroups = InlineArray<50, UnsafeMutablePointer<ConfettiGroupType>?>(repeating: nil)
 private var gNumActiveConfettiGroups: Int16 = 0
@@ -339,7 +341,7 @@ private func drawConfettiGroups() {
 
     // SETUP ENVIRONTMENT
     OGL_PushState()
-    glLightModeli(GLenum(GL_LIGHT_MODEL_TWO_SIDE), GL_TRUE)
+    gRenderBackend.setTwoSidedLighting(true)
 
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
@@ -454,7 +456,7 @@ private func drawConfettiGroups() {
     // RESTORE MODES
     OGL_PopState()
     OGL_SetColor4f(1, 1, 1, 1) // reset this
-    glLightModeli(GLenum(GL_LIGHT_MODEL_TWO_SIDE), GL_FALSE)
+    gRenderBackend.setTwoSidedLighting(false)
 }
 
 // MARK: - Verify

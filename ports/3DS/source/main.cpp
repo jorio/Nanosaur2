@@ -3,41 +3,40 @@
 //  Nanosaur 2 for Nintendo 3DS -- real entry point.
 //
 //  Mirrors Source/Boot.cpp's desktop entry point (Boot(argc, argv) then
-//  GameMain(), wrapped in a try/catch for Pomme::QuitRequest - the
-//  exception the game throws to unwind out of its own main loop on clean
-//  exit) - but skips everything Boot.cpp does that's desktop-specific
-//  (argv parsing, SDL_CreateWindow, --dual-screen handling). On 3DS:
-//  mount RomFS, bootstrap Pomme's file layer (see pomme_shim.cpp/
-//  romfs_shim.c), bring up the GPU (picaGL), then hand off to GameMain()
-//  completely unmodified - no skip-intro/init-trimming logic, per an
-//  explicit decision not to shortcut the boot sequence.
+//  GameMain()) but skips everything Boot.cpp does that's desktop-specific
+//  (argv parsing, SDL_CreateWindow, --dual-screen handling). On 3DS: mount
+//  RomFS, set up gDataSpec against it (see fs_init_shim.cpp), bring up the
+//  GPU (picaGL), then hand off to GameMain() completely unmodified - no
+//  skip-intro/init-trimming logic, per an explicit decision not to
+//  shortcut the boot sequence.
 //
 //  Only declares the handful of plain, scalar-typed entry points this
 //  needs (Romfs3DS_Mount/Pomme3DS_InitFileSystem/PGL_Init/GameMain) rather
 //  than including game_3ds.h or <3ds.h> wholesale - this file doesn't need
-//  Pomme's or libctru's own types, just C-linkage function declarations,
-//  so it sidesteps their Handle-typedef collision (documented in
-//  ports/3DS/common/game_3ds.h) entirely rather than needing to avoid it.
+//  libctru's own types, just C-linkage function declarations, so it
+//  sidesteps its Handle-typedef collision with libctru's <3ds/types.h>
+//  (documented in ports/3DS/common/game_3ds.h) entirely rather than
+//  needing to avoid it.
 //
 //---------------------------------------------------------------------------------
 
 #include <exception>
-#include "PommeInit.h" // for Pomme::QuitRequest only
 #include "fatal_shim.h" // ports/3DS/common - so an uncaught C++ exception is visible instead of silently exiting
 #include "console_shim.h" // ports/3DS/common - mirrors SDL_Log output to the bottom screen live
 #include <SDL3/SDL.h>
 
 extern "C" {
     int Romfs3DS_Mount(void);
-    void Pomme3DS_InitFileSystem(void);
+    void Pomme3DS_InitFileSystem(void); // fs_init_shim.cpp - name kept for now, no longer Pomme-backed
     void GameMain(void); // Source/System/Main.swift, @c @implementation
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
 
     // libctru's crt0 startup code (weak symbols - see common/boot_shim.c's
     // comment on __ctru_heap_size/__ctru_linear_heap_size for the full
     // explanation). Declared directly here (not via <3ds/env.h>) to avoid
-    // pulling in libctru's Handle typedef, which collides with Pomme's own
-    // Handle (see game_3ds.h's comment on this exact issue).
+    // pulling in libctru's Handle typedef, which collides with the Mac
+    // Toolbox's own Handle (SwMacTypes.h - see game_3ds.h's comment on
+    // this exact issue).
     extern unsigned int __ctru_heap_size;
     extern unsigned int __ctru_linear_heap_size;
 }
@@ -78,20 +77,21 @@ int main()
     }
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()
-    // -> OGL_CreateDrawContext() -> CTRUGraphicsBackend.createContext()
-    // (PlatformBackend.swift) already calls PGL_Init() itself. Calling it
-    // again here double-initializes picaGL/GSP state - the same bug
-    // pattern as the gfxInitDefault() double-init above, just one layer
-    // deeper.
+    // -> OGL_CreateDrawContext() -> gRenderBackend.createContext()
+    // (GLRenderBackend's #if NANOSAUR_3DS branch, Source/3D/RenderBackend.swift)
+    // already calls PGL_Init() itself. Calling it again here
+    // double-initializes picaGL/GSP state - the same bug pattern as the
+    // gfxInitDefault() double-init above, just one layer deeper.
 
+    // GameMain() never returns normally on clean quit - CleanQuit() (Input.swift)
+    // calls SwExitToShell() (Misc.swift), which tears down the platform layer
+    // and calls exit(0) directly (see that function's header comment for why
+    // this replaced the old Pomme::QuitRequest exception-unwind mechanism).
+    // What's left for this try/catch to handle is genuinely unexpected
+    // termination, matching Boot.cpp's own last-resort catch.
     try
     {
         GameMain();
-    }
-    catch (Pomme::QuitRequest&)
-    {
-        // No-op, the game may throw this exception to shut us down cleanly
-        // (matches Boot.cpp's own handling of this exact exception).
     }
     catch (std::exception& e)
     {

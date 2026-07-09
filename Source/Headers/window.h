@@ -23,6 +23,3 @@ enum
 
 void Enter2D(void);
 void Exit2D(void);
-
-int GetNumDisplays(void);
-void SetFullscreenMode(bool enforceDisplayPref);

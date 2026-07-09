@@ -1,9 +1,25 @@
 // Camera.swift - Port of Camera.c to Swift
 //
 // gCameraInExitMode, gDrawLensFlare, gCameraInDeathDiveMode, and
-// gCameraMode stay defined in the stubbed Camera.c because other
-// already-ported files read/write them directly via `extern` (including
-// PlayerInternal.h's/InfobarInternal.h's Get/Set shims).
+// gCameraMode are native Swift storage now (converted 2026-07-07): nothing
+// in any .c file touches them anymore. GetCameraMode/SetCameraMode
+// (formerly a shim in InfobarInternal.h) and GetCameraInDeathDiveMode/
+// SetCameraInDeathDiveMode (formerly a shim in PlayerInternal.h) are now
+// plain Swift functions with the same names/signatures, so their call
+// sites elsewhere (Infobar.swift, Main.swift, Player.swift,
+// Player_Terrain.swift) didn't need to change. This also frees CameraMode
+// itself to become a native Swift enum (GameEnums.swift) - its only real
+// C pin was Camera.c's compound-literal array init.
+
+var gCameraInExitMode: UInt8 = 0
+var gDrawLensFlare: UInt8 = 1
+var gCameraInDeathDiveMode: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+var gCameraMode: [UInt8] = Array(repeating: UInt8(CameraMode.normal.rawValue), count: Int(MAX_PLAYERS))
+
+func GetCameraMode(_ i: Int32) -> UInt8 { gCameraMode[Int(i)] }
+func SetCameraMode(_ i: Int32, _ v: UInt8) { gCameraMode[Int(i)] = v }
+func GetCameraInDeathDiveMode(_ i: Int32) -> UInt8 { gCameraInDeathDiveMode[Int(i)] }
+func SetCameraInDeathDiveMode(_ i: Int32, _ v: UInt8) { gCameraInDeathDiveMode[Int(i)] = v }
 
 private let numFlares = 6
 
@@ -60,8 +76,7 @@ private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGl
 
 // MARK: - Get FOV depending on splitscreen mode
 
-@c @implementation
-public func GetSplitscreenPaneFOV() -> Float {
+func GetSplitscreenPaneFOV() -> Float {
     if gVSMode == .none { // set FOV differently for multiplayer
         return 1.15
     } else {
@@ -88,7 +103,7 @@ func DrawLensFlare() {
 
     OGL_DisableLighting() // Turn OFF lighting
     OGL_DisableCullFace()
-    glDisable(GLenum(GL_DEPTH_TEST))
+    OGL_DisableDepthTest()
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
@@ -150,11 +165,11 @@ func DrawLensFlare() {
 
     // INIT MATRICES
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.loadIdentity()
 
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
 
     for i in 0..<numFlares {
         if i == 0 {
@@ -183,12 +198,12 @@ func DrawLensFlare() {
         let fx = x / (Float(pw) / 2) - 1.0
         let fy = (Float(ph) - y) / (Float(ph) / 2) - 1.0
 
-        glBegin(GLenum(GL_QUADS))
-        glTexCoord2f(0, 0); glVertex2f(fx - sx, fy - sy)
-        glTexCoord2f(1, 0); glVertex2f(fx + sx, fy - sy)
-        glTexCoord2f(1, 1); glVertex2f(fx + sx, fy + sy)
-        glTexCoord2f(0, 1); glVertex2f(fx - sx, fy + sy)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(fx - sx, fy - sy)
+        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(fx + sx, fy - sy)
+        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(fx + sx, fy + sy)
+        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(fx - sx, fy + sy)
+        gRenderBackend.endImmediate()
     }
 
     // RESTORE MODES
@@ -205,7 +220,7 @@ func DrawLensFlare() {
 // where to put the camera.
 
 func InitCamera_Terrain(_ playerNum: Int16) {
-    let playerObj = GetPlayerInfoEntry(Int32(playerNum))!.pointee.objNode
+    let playerObj = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode
 
     resetCameraSettings()
 
@@ -221,7 +236,7 @@ func InitCamera_Terrain(_ playerNum: Int16) {
         // SPECIAL INIT FOR WORMHOLE START
 
         if Int(playerObj.pointee.Skeleton!.pointee.AnimNum) == Int(PlayerAnim.appearWormhole.rawValue) { // if coming out of a wormhole, move camera farther out to init
-            let wormhole = GetPlayerInfoEntry(Int32(playerNum))!.pointee.wormhole!
+            let wormhole = GetPlayerInfoEntry(Int32(playerNum)).pointee.wormhole!
 
             r += Float.pi * 0.8
 
@@ -291,7 +306,7 @@ func UpdateCameras() {
     // the camera from moving.  Once we're out of the wormhole, we
     // accelerate gCameraFromAccel to it's regular value.
 
-    if Int(GetPlayerInfoEntry(0)!.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.appearWormhole.rawValue) {
+    if Int(GetPlayerInfoEntry(0).pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.appearWormhole.rawValue) {
         gCameraFromAccel += fps * 0.6
         if gCameraFromAccel > maxCameraAccel {
             gCameraFromAccel = maxCameraAccel
@@ -299,7 +314,7 @@ func UpdateCameras() {
     }
 
     for playerNum in 0..<Int(gNumPlayers) {
-        let pi = GetPlayerInfoEntry(Int32(playerNum))!
+        let pi = GetPlayerInfoEntry(Int32(playerNum))
         guard let playerObj = pi.pointee.objNode else {
             continue
         }
@@ -470,7 +485,7 @@ private func moveCamera_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     let p = player.pointee.PlayerNum
     let fps = gFramesPerSecondFrac
 
-    let devil = GetPlayerInfoEntry(Int32(p))!.pointee.dustDevilObj!
+    let devil = GetPlayerInfoEntry(Int32(p)).pointee.dustDevilObj!
 
     let placement = (cameraPlacementsBase() + Int(Int32(p)))
     var camCoord = placement.pointee.cameraLocation // get old cam coords
@@ -504,7 +519,7 @@ private func updateCamera_FirstPerson(_ i: Int16) {
     var up = OGLVector3D()
     let forward = OGLVector3D(x: 0, y: 0, z: -1)
 
-    let pi = GetPlayerInfoEntry(Int32(i))!
+    let pi = GetPlayerInfoEntry(Int32(i))
     guard let player = pi.pointee.objNode else {
         return
     }

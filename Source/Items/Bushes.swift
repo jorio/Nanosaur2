@@ -330,7 +330,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 private let cDoTrigGrass: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { _, playerOpt in
     let player = playerOpt!
 
-    if GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))!.pointee.carriedObj == nil { // only disorient if not carrying egg
+    if GetPlayerInfoEntry(Int32(player.pointee.PlayerNum)).pointee.carriedObj == nil { // only disorient if not carrying egg
         DisorientPlayer(player)
     }
 
@@ -343,7 +343,7 @@ private let cDoTrigDesertBush: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
     let player = playerOpt!
     let p = player.pointee.PlayerNum
 
-    if GetPlayerInfoEntry(Int32(p))!.pointee.invincibilityTimer > 0.0 {
+    if GetPlayerInfoEntry(Int32(p)).pointee.invincibilityTimer > 0.0 {
         return 0
     }
 
@@ -355,7 +355,7 @@ private let cDoTrigDesertBush: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
         }
     }
 
-    GetPlayerInfoEntry(Int32(p))!.pointee.invincibilityTimer = 0.5
+    GetPlayerInfoEntry(Int32(p)).pointee.invincibilityTimer = 0.5
 
     PlayEffect3D(Int16(EFFECT_BODYHIT), &player.pointee.Coord)
     PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(p))

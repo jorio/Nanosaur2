@@ -1,21 +1,24 @@
 // Enemy.swift - Port of Enemy.c to Swift
 
+var gNumEnemyOfKind: [Int8] = Array(repeating: 0, count: EnemyKind.allCases.count)
+var gNumEnemies: Int32 = 0
+var gMaxEnemies: Int32 = 0
+
 func InitEnemyManager() {
     gNumEnemies = 0
     gMaxEnemies = 16
 
-    for (i, _) in EnemyKind.allCases.enumerated() {
-        GetNumEnemyOfKindSlot(Int32(i))!.pointee = 0
+    for i in 0..<gNumEnemyOfKind.count {
+        gNumEnemyOfKind[i] = 0
     }
 }
 
 func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
     if theEnemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 { // spline enemies dont factor into the enemy counts!
-        let kindSlot = GetNumEnemyOfKindSlot(theEnemy.pointee.Kind)!
-        kindSlot.pointee -= 1 // dec kind count
-        if kindSlot.pointee < 0 {
+        gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
+        if gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
             SwAlert("DeleteEnemy: < 0")
-            kindSlot.pointee = 0
+            gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] = 0
         }
 
         gNumEnemies -= 1 // dec global count
@@ -75,7 +78,7 @@ func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall
     DetachObjectFromSpline(theNode, moveCall)
 
     gNumEnemies += 1 // count as a normal enemy now
-    GetNumEnemyOfKindSlot(theNode.pointee.Kind)!.pointee += 1
+    gNumEnemyOfKind[Int(theNode.pointee.Kind)] += 1
 }
 
 // OUTPUT: nil if no enemies

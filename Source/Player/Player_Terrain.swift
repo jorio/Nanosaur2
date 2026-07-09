@@ -1,4 +1,18 @@
 // Player_Terrain.swift - Port of Player_Terrain.c to Swift
+//
+// gTargetMaxSpeed/gCurrentMaxSpeed are native Swift storage now (converted
+// 2026-07-07): nothing in any .c file touches them anymore.
+// GetTargetMaxSpeed/SetTargetMaxSpeed/GetCurrentMaxSpeed/SetCurrentMaxSpeed
+// (formerly shims in PlayerInternal.h) are now plain Swift functions with
+// the same names/signatures.
+
+private var gTargetMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+private var gCurrentMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+
+func GetTargetMaxSpeed(_ i: Int32) -> Float { gTargetMaxSpeedArr[Int(i)] }
+func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gTargetMaxSpeedArr[Int(i)] = v }
+func GetCurrentMaxSpeed(_ i: Int32) -> Float { gCurrentMaxSpeedArr[Int(i)] }
+func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gCurrentMaxSpeedArr[Int(i)] = v }
 
 private let flightSlideFactor: Float = 15.0 // smaller == more slide, larger = less slide
 private let flightTurnSensitivity: Float = 1.9 // smaller == slower turns, larger == faster turns
@@ -137,7 +151,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     SetTargetMaxSpeed(Int32(playerNum), PLAYER_NORMAL_MAX_SPEED)
     SetCurrentMaxSpeed(Int32(playerNum), PLAYER_NORMAL_MAX_SPEED)
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     pi.pointee.objNode = newObj
     pi.pointee.coord = newObj.pointee.Coord
 
@@ -208,7 +222,7 @@ private func MovePlayer_Flying(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SET APPROPRIATE ANIM
 
-    let pi = GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum))!
+    let pi = GetPlayerInfoEntry(Int32(theNode.pointee.PlayerNum))
     if pi.pointee.carriedObj != nil {
         SetPlayerFlyingAnim_WithEgg(theNode)
     } else {
@@ -397,7 +411,7 @@ private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
 private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
     let p = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(p)!
+    let pi = GetPlayerInfoEntry(p)
     let radius = pi.pointee.radiusFromDustDevil
     let devil = pi.pointee.dustDevilObj! // get dust devil objNode
 
@@ -483,11 +497,11 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // UPDATE CURRENT MAX SPEED
 
     if gVSMode == .race {
-        let pi0 = GetPlayerInfoEntry(0)!
-        let pi1 = GetPlayerInfoEntry(1)!
+        let pi0 = GetPlayerInfoEntry(0)
+        let pi1 = GetPlayerInfoEntry(1)
         let dist = pi0.pointee.coord.distance(to: pi1.pointee.coord)
 
-        let pi = GetPlayerInfoEntry(playerNum)!
+        let pi = GetPlayerInfoEntry(playerNum)
         if pi.pointee.jetpackActive == 0 {
             SetTargetMaxSpeed(playerNum, PLAYER_NORMAL_MAX_SPEED)
 
@@ -529,7 +543,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     theNode.update()
 
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
     pi.pointee.coord = gCoord // update player coord
 
     // CHECK INV TIMER
@@ -665,7 +679,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
     if gVSMode != .none {
         if gCurrentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
-            let otherPi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
+            let otherPi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
             var size = theNode.pointee.Coord.distance(to: otherPi.pointee.coord) * 0.12
             if size > 600.0 {
                 size = 600.0
@@ -682,7 +696,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_PushState()
                 withUnsafePointer(to: m.value) {
                     $0.withMemoryRebound(to: Float.self, capacity: 16) {
-                        glMultMatrixf($0)
+                        gRenderBackend.multMatrix($0)
                     }
                 }
 
@@ -694,12 +708,12 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_DisableFog()
                 gGlobalTransparency = 1.0
 
-                glBegin(GLenum(GL_QUADS))
-                glTexCoord2f(0, 0); glVertex2f(-size, -size)
-                glTexCoord2f(0, 1); glVertex2f(-size, size)
-                glTexCoord2f(1, 1); glVertex2f(size, size)
-                glTexCoord2f(1, 0); glVertex2f(size, -size)
-                glEnd()
+                gRenderBackend.beginImmediate(.quads)
+                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+                gRenderBackend.endImmediate()
 
                 OGL_PopState()
             }
@@ -713,7 +727,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 private func DoPlayerFlightControls(_ player: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
     let playerNum = Int32(player.pointee.PlayerNum)
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
 
     // SEE IF CONTROL IS ALLOWED RIGHT NOW
 
@@ -869,7 +883,7 @@ private func CheckPlayerActionControls(_ player: UnsafeMutablePointer<ObjNode>) 
 
 private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16) {
     let fps = gFramesPerSecondFrac
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // DO WE HAVE FUEL?
 
@@ -919,7 +933,7 @@ private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>,
 
 // Called once per frame when jetpack is off.
 func JetpackOff(_ playerNum: Int16) {
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     let player = pi.pointee.objNode!
 
     pi.pointee.jetpackActive = 0
@@ -985,7 +999,7 @@ func MovePlayerJetpack(_ jetpackOpt: UnsafeMutablePointer<ObjNode>?) {
 
     // MAKE JET EXHAUST
 
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
     if pi.pointee.jetpackActive != 0 {
         MakeJetpackExhaust(jetpack)
     } else if sparklesBase(jetpack)[2] != -1 {
@@ -1191,7 +1205,7 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
     // CHECK FLOOR
 
     let terrainY = GetTerrainY(gCoord.x, gCoord.z)
-    let pi = GetPlayerInfoEntry(playerNum)!
+    let pi = GetPlayerInfoEntry(playerNum)
     pi.pointee.distToFloor = gCoord.y + theNode.pointee.LocalBBox.min.y - terrainY // calc dist to floor
 
     return killed
@@ -1223,7 +1237,7 @@ private func DoPlayerLineSegmentCollision(_ player: UnsafeMutablePointer<ObjNode
             if let trigger = hitObj.pointee.TriggerCallback { // call hit obj's trigger func if any
                 _ = trigger(hitObj, player)
             } else {
-                let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))!
+                let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
                 if pi.pointee.invincibilityTimer <= 0.0 { // otherwise, just kill player
                     KillPlayer(Int16(player.pointee.PlayerNum), UInt8(PlayerDeathType.explode.rawValue), &gCoord)
                 }
@@ -1331,7 +1345,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
             // GROUND SCRAPE FORCE FEEDBACK
 
             if !killed {
-                let pi = GetPlayerInfoEntry(playerNum)!
+                let pi = GetPlayerInfoEntry(playerNum)
                 pi.pointee.groundScrapeRumbleCooldown -= fps
                 if pi.pointee.groundScrapeRumbleCooldown <= 0 {
                     pi.pointee.groundScrapeRumbleCooldown = 0.1
@@ -1394,7 +1408,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
             // MAKE SPLASH IF THIS IS A FIRST TOUCH OF THE WATER
 
             if !isLava { // no splashing for lava
-                let pi = GetPlayerInfoEntry(playerNum)!
+                let pi = GetPlayerInfoEntry(playerNum)
                 if !wasInWater {
                     splashPt.x = gCoord.x
                     splashPt.y = waterY
@@ -1465,7 +1479,7 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 
     // KILL PLAYER
 
-    let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))!
+    let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
     if pi.pointee.invincibilityTimer <= 0.0 {
         KillPlayer(Int16(player.pointee.PlayerNum), UInt8(deathType), &gCoord)
     }

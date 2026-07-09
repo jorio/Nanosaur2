@@ -250,7 +250,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
     let enemy = enemyOpt!
     let player = playerOpt!
     let playerNum = player.pointee.PlayerNum
-    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+    let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
 
     if playerInfo.pointee.invincibilityTimer <= 0.0 {
         // DOES PLAYER HAVE SHIELD?
@@ -360,7 +360,7 @@ private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> 
     }
 
     for p in 0..<Int(gNumPlayers) {
-        let playerInfo = GetPlayerInfoEntry(Int32(p))!
+        let playerInfo = GetPlayerInfoEntry(Int32(p))
         if playerInfo.pointee.shieldPower > 0.0 { // if player has shield then skip since other collision code handles this
             continue
         }

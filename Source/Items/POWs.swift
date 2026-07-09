@@ -177,7 +177,7 @@ private let cDoTrig_WeaponPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
     let quan = Int16(clamping: trigger.pointee.Special.1) // WeaponPOWQuantity
     let playerNum = theNode.pointee.PlayerNum
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     weaponQuantityBase(pi)[weaponType] += quan // add in quantity
     if weaponQuantityBase(pi)[weaponType] > 999 { // max @ 999
@@ -259,7 +259,7 @@ private let cDoTrig_HealthPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
     let theNode = theNodeOpt!
 
     let playerNum = theNode.pointee.PlayerNum
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.health += 0.5
     if pi.pointee.health > 1.0 {
@@ -337,7 +337,7 @@ private let cDoTrig_FuelPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
     let theNode = theNodeOpt!
 
     let playerNum = theNode.pointee.PlayerNum
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     if gVSMode == .none {
         pi.pointee.jetpackFuel += 0.5
@@ -422,7 +422,7 @@ private let cDoTrig_ShieldPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
     // GIVE PLAYER SHIELD POWER
 
     let playerNum = theNode.pointee.PlayerNum
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.shieldPower += MAX_SHIELD_POWER * 0.5
     if pi.pointee.shieldPower > MAX_SHIELD_POWER {
@@ -503,7 +503,7 @@ private let cDoTrig_FreeLifePOW: @convention(c) (UnsafeMutablePointer<ObjNode>?,
     let theNode = theNodeOpt!
 
     let playerNum = theNode.pointee.PlayerNum
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.numFreeLives += 1
 

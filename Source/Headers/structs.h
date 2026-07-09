@@ -39,10 +39,12 @@
 			/* SPLINE STRUCTURES */
 			/*********************/
 
-typedef	struct
-{
-	float	x,z;
-}SplinePointType;
+// SplinePointType, SplineDefType, and File_SplineDefType are now native
+// Swift structs (SplineItems.swift) - nothing in any .c file touches them
+// (verified 2026-07-07: gSplineList/gNumSplines moved to Swift storage,
+// SplineItems.c deleted). SplineItemType stays a C struct: ObjNode.
+// SplineItemPtr (below) is typed `SplineItemType*`, and ObjNode is a
+// pinned C struct compiled into every stub .c file via game.h.
 
 typedef struct
 {
@@ -51,33 +53,6 @@ typedef struct
 	uint8_t			parm[4];
 	uint16_t		flags;
 }SplineItemType;
-
-
-typedef struct
-{
-	int16_t			numNubs;			// # nubs in spline
-	int32_t			junk1;				// ptr to nub list
-	int32_t			numPoints;			// # points in spline
-	int32_t			junk2;				// ptr to calculated spline points
-	int16_t			numItems;			// # items on the spline
-	int32_t			junk3;				// ptr to spline items
-
-	Rect			bBox;				// bounding box of spline area
-}File_SplineDefType;
-
-typedef struct
-{
-	int16_t			numNubs;			// # nubs in spline
-	SplinePointType	*nubList;			// ptr to nub list
-	int32_t			numPoints;			// # points in spline
-	SplinePointType	*pointList;			// ptr to calculated spline points
-	int16_t			numItems;			// # items on the spline
-	SplineItemType	*itemList;			// ptr to spline items
-
-	Rect			bBox;				// bounding box of spline area
-}SplineDefType;
-
-
 
 
 		/* COLLISION BOX */

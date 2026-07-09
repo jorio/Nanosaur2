@@ -1,20 +1,27 @@
 #pragma once
 
 #include "menu.h"
-
-// Menu tree data tables for the pause screen. These stay defined in
-// Paused.c: their anonymous-union designated initializers (.cycler.choices,
-// four-char-code ids, etc.) aren't practical to construct from Swift.
-// DoPaused/DoReallyQuit (in Paused.swift) reference them by name.
-
-extern const MenuItem gPauseMenuTree[];
-extern const MenuItem gReallyQuitMenuTree[];
+#include "game.h"
 
 #pragma clang assume_nonnull begin
 
-// Swift can't import an extern array of incomplete size directly; hand it
-// out as a pointer instead (which is what MakeMenu wants anyway).
-static inline const MenuItem* GetPauseMenuTree(void) { return gPauseMenuTree; }
-static inline const MenuItem* GetReallyQuitMenuTree(void) { return gReallyQuitMenuTree; }
+// Returns a stable pointer to gGamePrefs.splitScreenMode for use as a
+// MenuCyclerData valuePtr. Swift can't form a stable address to a C-global
+// struct field without going through a C helper.
+static inline Byte* PausedInternal_GetSplitScreenModePtr(void) {
+    return (Byte*)&gGamePrefs.splitScreenMode;
+}
+
+// Sets fov[0..numPlayers-1] on the given view info struct to the given FOV
+// value. The fov field is float[MAX_VIEWPORTS], imported as a tuple in
+// Swift and not indexable by a variable, so this must live in C. The FOV
+// value, player count, and view info pointer are all computed/held in
+// Swift (GetSplitscreenPaneFOV, gNumPlayers, gGameViewInfoPtr) and passed
+// in - none of these globals are C-visible anymore, so this shim can't
+// reach them by name.
+static inline void PausedInternal_UpdateSplitscreenFOV(OGLSetupOutputType* viewInfo, float fov, int numPlayers) {
+    for (int i = 0; i < numPlayers; i++)
+        viewInfo->fov[i] = fov;
+}
 
 #pragma clang assume_nonnull end

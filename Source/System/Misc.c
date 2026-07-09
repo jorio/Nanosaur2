@@ -7,23 +7,13 @@
 
 // Everything else is now in Misc.swift. DoAlert/DoFatalAlert stay here
 // because they take C variadic arguments, which Swift can't implement (same
-// reasoning as LocalizeWithPlaceholder staying in Localization.c). The
-// globals below also stay here so other still-unported C files can keep
-// reading/writing them via `extern`.
+// reasoning as LocalizeWithPlaceholder staying in Localization.c).
 
 #include "game.h"
 
 #ifdef __3DS__
 #include "fatal_shim.h" // ports/3DS/common - real SDL_ShowSimpleMessageBox equivalent doesn't exist on 3DS's software-only SDL backend
 #endif
-
-long	gRAMAlloced = 0;
-
-float	gFramesPerSecond = 13;
-float	gFramesPerSecondFrac = 1.0f / 13;
-
-int		gNumPointers = 0;
-
 
 /*********************** DO ALERT *******************/
 

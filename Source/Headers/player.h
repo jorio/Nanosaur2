@@ -36,18 +36,12 @@
 
 		/* WEAPON TYPES */
 
-typedef enum SWIFT_ENUM_CLOSED WeaponType
-{
-	WEAPON_TYPE_NONE SWIFT_NAME(none) = -1,
-
-	WEAPON_TYPE_BLASTER SWIFT_NAME(blaster) = 0,
-	WEAPON_TYPE_CLUSTERSHOT SWIFT_NAME(clusterShot),
-	WEAPON_TYPE_HEATSEEKER SWIFT_NAME(heatSeeker),
-	WEAPON_TYPE_SONICSCREAM SWIFT_NAME(sonicScream),
-	WEAPON_TYPE_BOMB SWIFT_NAME(bomb),
-
-	NUM_WEAPON_TYPES SWIFT_NAME(_count)
-} WeaponType;
+// WeaponType is now a native Swift enum in GameEnums.swift - the enum type
+// itself was never referenced by any .c file or any other header. Its
+// NUM_WEAPON_TYPES sentinel is still needed as a plain constant, though:
+// it sizes PlayerInfoType.weaponQuantity[] below, and PlayerInfoType has
+// real storage (`PlayerInfoType gPlayerInfo[MAX_PLAYERS]`) in Player.c.
+#define NUM_WEAPON_TYPES 6
 
 #define	NUM_CROSSHAIR_LEVELS	2
 

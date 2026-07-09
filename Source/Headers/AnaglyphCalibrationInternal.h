@@ -1,20 +1,17 @@
 #pragma once
 
 #include "menu.h"
-
-// Menu tree data tables for the anaglyph calibration screen, and the
-// callbacks they embed by designated initializer, stay in
-// AnaglyphCalibration.c: MenuItem's anonymous-union fields (.cycler.choices,
-// .slider, four-char-code ids) aren't practical to construct from Swift.
-// SetUpAnaglyphCalibrationScreen (in AnaglyphCalibration.swift) references
-// them by name.
-
-extern const MenuItem gInGameAnaglyphMenu[];
-extern const MenuItem gAnaglyphMenu[];
+#include "game.h"
 
 #pragma clang assume_nonnull begin
 
-static inline const MenuItem* GetInGameAnaglyphMenu(void) { return gInGameAnaglyphMenu; }
-static inline const MenuItem* GetAnaglyphMenu(void) { return gAnaglyphMenu; }
+// Stable pointers to gGamePrefs anaglyph fields for use as MenuCyclerData/
+// MenuSliderData valuePtr. Swift can't form a stable address to a C-global
+// struct field without going through a C helper.
+static inline Byte* AnaglyphInternal_GetStereoGlassesModePtr(void)      { return (Byte*)&gGamePrefs.stereoGlassesMode; }
+static inline Byte* AnaglyphInternal_GetCalibRedPtr(void)               { return &gGamePrefs.anaglyphCalibrationRed; }
+static inline Byte* AnaglyphInternal_GetCalibGreenPtr(void)             { return &gGamePrefs.anaglyphCalibrationGreen; }
+static inline Byte* AnaglyphInternal_GetCalibBluePtr(void)              { return &gGamePrefs.anaglyphCalibrationBlue; }
+static inline Byte* AnaglyphInternal_GetChannelBalancingPtr(void)       { return (Byte*)&gGamePrefs.doAnaglyphChannelBalancing; }
 
 #pragma clang assume_nonnull end

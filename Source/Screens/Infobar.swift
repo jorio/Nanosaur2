@@ -1,11 +1,14 @@
 // Infobar.swift - Port of Infobar.c to Swift
 //
-// gLogicalRect stays defined in Infobar.c and `extern`'d via game.h:
-// LevelIntro.c and IntroStory.c (still unported) read it directly.
-// g640x480Scaling and gHideInfobar aren't referenced by any other file, so
-// they move into private Swift state along with everything else here (the
-// blinking-egg state, the overhead-map/health/shield/fuel mesh data), which
-// was all `static` (file-private) in C.
+// gLogicalRect is native Swift storage now (converted 2026-07-07): nothing
+// in any .c file touches it anymore (the old comment claiming LevelIntro.c/
+// IntroStory.c still needed it was stale - LevelIntro.c is deleted and
+// IntroStory.c is an empty stub). g640x480Scaling and gHideInfobar aren't
+// referenced by any other file, so they stay private Swift state along
+// with everything else here (the blinking-egg state, the overhead-map/
+// health/shield/fuel mesh data), which was all `static` (file-private) in C.
+
+var gLogicalRect = OGLRect()
 
 private let SPLITSCREEN_DIVIDER_THICKNESS: Float = 1
 
@@ -178,27 +181,27 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     withUnsafePointer(to: &theNode.pointee.ColorFilter.r) {
         glColor4fv($0)
     }
-    glTranslatef(640 / 2, 480 / 2, 0)
-    glBegin(GLenum(GL_QUADS))
+    gRenderBackend.translate(640 / 2, 480 / 2, 0)
+    gRenderBackend.beginImmediate(.quads)
 
     switch gActiveSplitScreenMode {
     case UInt8(SplitscreenMode.horizontal.rawValue):
-        glVertex2f(-halfLW, -halfThickness)
-        glVertex2f(-halfLW, +halfThickness)
-        glVertex2f(+halfLW, +halfThickness)
-        glVertex2f(+halfLW, -halfThickness)
+        gRenderBackend.vertex2f(-halfLW, -halfThickness)
+        gRenderBackend.vertex2f(-halfLW, +halfThickness)
+        gRenderBackend.vertex2f(+halfLW, +halfThickness)
+        gRenderBackend.vertex2f(+halfLW, -halfThickness)
 
     case UInt8(SplitscreenMode.vertical.rawValue):
-        glVertex2f(-halfThickness, -halfLH)
-        glVertex2f(-halfThickness, +halfLH)
-        glVertex2f(+halfThickness, +halfLH)
-        glVertex2f(+halfThickness, -halfLH)
+        gRenderBackend.vertex2f(-halfThickness, -halfLH)
+        gRenderBackend.vertex2f(-halfThickness, +halfLH)
+        gRenderBackend.vertex2f(+halfThickness, +halfLH)
+        gRenderBackend.vertex2f(+halfThickness, -halfLH)
 
     default:
         break
     }
 
-    glEnd()
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }
@@ -429,7 +432,7 @@ func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect {
 func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     OGL_DisableLighting()
     OGL_DisableCullFace()
-    glDisable(GLenum(GL_DEPTH_TEST)) // no z-buffer
+    OGL_DisableDepthTest() // no z-buffer
 
     // SET MATERIAL FLAGS
     //
@@ -438,8 +441,8 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // INIT MATRICES
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.projection)
+    gRenderBackend.loadIdentity()
 
     gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
     let left = gLogicalRect.left
@@ -449,16 +452,16 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
 
     if isStereo() {
         if gAnaglyphPass == 0 {
-            glOrtho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gRenderBackend.ortho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         } else {
-            glOrtho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gRenderBackend.ortho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         }
     } else {
-        glOrtho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
+        gRenderBackend.ortho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
     }
 
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glLoadIdentity()
+    gRenderBackend.matrixMode(.modelview)
+    gRenderBackend.loadIdentity()
 }
 
 // MARK: - Draw infobar
@@ -543,12 +546,12 @@ func DrawInfobarSprite(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
     let aspect = Float(mo!.height) / Float(mo!.width)
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + size, y)
-    glTexCoord2f(1, 1); glVertex2f(x + size, y + (size * aspect))
-    glTexCoord2f(0, 1); glVertex2f(x, y + (size * aspect))
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite: centered
@@ -566,12 +569,12 @@ func DrawInfobarSprite_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNu
     let y = y0 - (size * aspect) * 0.5
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + size, y)
-    glTexCoord2f(1, 1); glVertex2f(x + size, y + (size * aspect))
-    glTexCoord2f(0, 1); glVertex2f(x, y + (size * aspect))
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 2
@@ -586,12 +589,12 @@ func DrawInfobarSprite2(_ x: Float, _ y: Float, _ size: Float, _ group: Int16, _
     let aspect = Float(mo!.height) / Float(mo!.width)
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + size, y)
-    glTexCoord2f(1, 1); glVertex2f(x + size, y + (size * aspect))
-    glTexCoord2f(0, 1); glVertex2f(x, y + (size * aspect))
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 3
@@ -606,12 +609,12 @@ func DrawInfobarSprite3(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) 
     let aspect = Float(mo!.width) / Float(mo!.height)
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + (size * aspect), y)
-    glTexCoord2f(1, 1); glVertex2f(x + (size * aspect), y + size)
-    glTexCoord2f(0, 1); glVertex2f(x, y + size)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + (size * aspect), y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + (size * aspect), y + size)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + size)
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 3: centered
@@ -627,12 +630,12 @@ func DrawInfobarSprite3_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texN
     let x = x0 - (size * aspect) * 0.5
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + (size * aspect), y)
-    glTexCoord2f(1, 1); glVertex2f(x + (size * aspect), y + size)
-    glTexCoord2f(0, 1); glVertex2f(x, y + size)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + (size * aspect), y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + (size * aspect), y + size)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + size)
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 2: centered
@@ -654,12 +657,12 @@ func DrawInfobarSprite2_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ grou
     let y = y0 - (size * aspect) * 0.5
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(x, y)
-    glTexCoord2f(1, 0); glVertex2f(x + size, y)
-    glTexCoord2f(1, 1); glVertex2f(x + size, y + (size * aspect))
-    glTexCoord2f(0, 1); glVertex2f(x, y + (size * aspect))
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Draw infobar sprite: rotated
@@ -690,12 +693,12 @@ private func drawInfobarSpriteRotated(_ x: Float, _ y: Float, _ size: Float, _ t
     }
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex2f(p.0.x + x, p.0.y + y)
-    glTexCoord2f(1, 0); glVertex2f(p.1.x + x, p.1.y + y)
-    glTexCoord2f(1, 1); glVertex2f(p.2.x + x, p.2.y + y)
-    glTexCoord2f(0, 1); glVertex2f(p.3.x + x, p.3.y + y)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p.0.x + x, p.0.y + y)
+    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p.1.x + x, p.1.y + y)
+    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(p.2.x + x, p.2.y + y)
+    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(p.3.x + x, p.3.y + y)
+    gRenderBackend.endImmediate()
 }
 
 // MARK: - Infobar: draw number
@@ -738,7 +741,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
         return
     }
 
-    let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.objNode!.pointee.Rot.y
+    let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
 
     // SET COORDS OF THE QUAD
     let xoff = MAP_SCALE2 * scale
@@ -770,7 +773,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     //
     // Then we need to scale the scroll value to uv coords.
 
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
+    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
     var leftEdge = Double(pi.pointee.coord.x * gMapToUnitValueFrac) // convert world-coord to texture-pixel-coord
     var topEdge = Double(pi.pointee.coord.z * gMapToUnitValueFrac)
 
@@ -920,15 +923,15 @@ func DrawMinimapOnSecondaryScreen() {
 
 private func infobarDrawHealth() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.health * 0.5
+    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.health * 0.5
 
     // SET V'S FOR SCROLLING OF HEALTH BAR
     gHealthuv1[0].v = v; gHealthuv1[1].v = v
     gHealthuv1[2].v = v + 0.5; gHealthuv1[3].v = v + 0.5
 
     // DRAW IT
-    glPushMatrix()
-    glTranslatef(healthX(), healthY(), 0)
+    gRenderBackend.pushMatrix()
+    gRenderBackend.translate(healthX(), healthY(), 0)
 
     // DRAW SHADOW
     if gGamePrefs.lowRenderQuality == 0 {
@@ -944,13 +947,13 @@ private func infobarDrawHealth() {
     DrawInfobarSprite_Centered(0, 0, HEALTH_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    glPopMatrix()
+    gRenderBackend.popMatrix()
 }
 
 // MARK: - Draw shield
 
 private func infobarDrawShield() {
-    let q = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
+    let q = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
 
     // CALC UV COORDS
     let v = q * 0.5
@@ -960,8 +963,8 @@ private func infobarDrawShield() {
     gShielduv1[2].v = v + 0.5; gShielduv1[3].v = v + 0.5
 
     // DRAW IT
-    glPushMatrix()
-    glTranslatef(shieldX(), shieldY(), 0)
+    gRenderBackend.pushMatrix()
+    gRenderBackend.translate(shieldX(), shieldY(), 0)
 
     // DRAW SHADOW
     if gGamePrefs.lowRenderQuality == 0 {
@@ -977,22 +980,22 @@ private func infobarDrawShield() {
     DrawInfobarSprite_Centered(0, 0, SHIELD_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    glPopMatrix()
+    gRenderBackend.popMatrix()
 }
 
 // MARK: - Draw fuel
 
 private func infobarDrawFuel() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.jetpackFuel * 0.5
+    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.jetpackFuel * 0.5
 
     // SET V'S FOR SCROLLING OF FUEL BAR
     gFueluv1[0].v = v; gFueluv1[1].v = v
     gFueluv1[2].v = v + 0.5; gFueluv1[3].v = v + 0.5
 
     // DRAW IT
-    glPushMatrix()
-    glTranslatef(fuelX(), fuelY(), 0)
+    gRenderBackend.pushMatrix()
+    gRenderBackend.translate(fuelX(), fuelY(), 0)
 
     // DRAW SHADOW
     if gGamePrefs.lowRenderQuality == 0 {
@@ -1008,7 +1011,7 @@ private func infobarDrawFuel() {
     DrawInfobarSprite_Centered(0, 0, FUEL_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    glPopMatrix()
+    gRenderBackend.popMatrix()
 }
 
 // MARK: - Start blinking egg
@@ -1025,14 +1028,14 @@ private func infobarDrawEggs() {
 
     var x = eggsX()
     for (eggType, _) in EggColor.allCases.enumerated() {
-        if GetNumEggsToSaveSlot(Int32(eggType)).pointee <= 0 { // are there any eggs of this color?
+        if gNumEggsToSave[eggType] <= 0 { // are there any eggs of this color?
             continue
         }
 
         var y = eggsY()
 
-        for i in 0..<Int(GetNumEggsToSaveSlot(Int32(eggType)).pointee) {
-            if Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) > i {
+        for i in 0..<Int(gNumEggsToSave[eggType]) {
+            if Int(gNumEggsSaved[eggType]) > i {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
             } else {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallBlankEgg))
@@ -1041,7 +1044,7 @@ private func infobarDrawEggs() {
             // BLINKING HALO IF JUST SAVED THIS EGG
             if gBlinkingEggTimer < 4.66
                 && eggType == Int(gBlinkingEggType)
-                && i == Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) - 1 {
+                && i == Int(gNumEggsSaved[eggType]) - 1 {
                 let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
                 gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
@@ -1064,8 +1067,8 @@ private func infobarCaptureFlagEggs() {
 
     let y = capEggsY()
     var x = capEggsX()
-    for i in 0..<Int(GetNumEggsToSaveSlot(Int32(eggType)).pointee) {
-        if Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) > i {
+    for i in 0..<Int(gNumEggsToSave[eggType]) {
+        if Int(gNumEggsSaved[eggType]) > i {
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
         } else {
             if eggType == 0 {
@@ -1078,7 +1081,7 @@ private func infobarCaptureFlagEggs() {
         // BLINKING HALO IF JUST CAPTURED THIS EGG
         if gBlinkingEggTimer < 4.66
             && eggType == Int(gBlinkingEggType)
-            && i == Int(GetNumEggsSavedSlot(Int32(eggType)).pointee) - 1 {
+            && i == Int(gNumEggsSaved[eggType]) - 1 {
             let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
             gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
@@ -1106,7 +1109,7 @@ private func infobarDrawMissionStatus() {
     }
 
     // PLAYER DEAD
-    if GetPlayerIsDead(0) != 0 && GetPlayerInfoEntry(0)!.pointee.numFreeLives <= 0 {
+    if GetPlayerIsDead(0) != 0 && GetPlayerInfoEntry(0).pointee.numFreeLives <= 0 {
         let x = anchorCenterX(0)
         let y = anchorCenterY(0)
         let text = Localize(STR_MISSION_FAILED)
@@ -1146,7 +1149,7 @@ private func infobarDrawMissionStatus() {
 private func infobarDrawLives() {
     var x = livesX()
 
-    for _ in 0..<GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!.pointee.numFreeLives {
+    for _ in 0..<GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.numFreeLives {
         DrawInfobarSprite(x, livesY(), LIVES_SCALE, Int16(INFOBAR_SObjType_Life))
         x += LIVES_SCALE * 1.0
     }
@@ -1161,7 +1164,7 @@ private func infobarDrawWeaponInventory() {
     DrawInfobarSprite(weaponX(), weaponY(), WEAPON_SCALE, Int16(INFOBAR_SObjType_WeaponFrame))
 
     // DRAW ICON
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))!
+    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
     let weaponType = pi.pointee.currentWeapon
     if Int(weaponType) == Int(WeaponType.none.rawValue) {
         return
@@ -1215,7 +1218,7 @@ private func infobarDrawRaceInfo() {
     // DRAW PLACE
     let scale: Float = 60.0
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
     let place = pi.pointee.place
     DrawInfobarSprite(playerX(), playerY(), scale, Int16(Int(INFOBAR_SObjType_Place1) + Int(place)))
 
@@ -1246,7 +1249,7 @@ private let cMoveLapMessage: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 }
 
 func ShowLapNum(_ playerNum: Int16) -> UnsafeMutablePointer<ObjNode>? {
-    let lapNum = GetPlayerInfoEntry(Int32(playerNum))!.pointee.lapNum
+    let lapNum = GetPlayerInfoEntry(Int32(playerNum)).pointee.lapNum
 
     // SEE IF TELL LAP
     if lapNum <= 0 {
@@ -1330,8 +1333,8 @@ private func infobarDrawPlayerArrows() {
 
     // GET ANGLE TO P2
     if gCurrentSplitScreenPane == 0 {
-        let pi0 = GetPlayerInfoEntry(0)!
-        let pi1 = GetPlayerInfoEntry(1)!
+        let pi0 = GetPlayerInfoEntry(0)
+        let pi1 = GetPlayerInfoEntry(1)
 
         v.x = pi1.pointee.coord.x - pi0.pointee.coord.x // calc vector from P1 to P2
         v.y = pi1.pointee.coord.z - pi0.pointee.coord.z
@@ -1342,8 +1345,8 @@ private func infobarDrawPlayerArrows() {
     }
     // GET ANGLE TO P1
     else {
-        let pi0 = GetPlayerInfoEntry(0)!
-        let pi1 = GetPlayerInfoEntry(1)!
+        let pi0 = GetPlayerInfoEntry(0)
+        let pi1 = GetPlayerInfoEntry(1)
 
         v.x = pi0.pointee.coord.x - pi1.pointee.coord.x // calc vector from P2 to P1
         v.y = pi0.pointee.coord.z - pi1.pointee.coord.z
@@ -1389,7 +1392,7 @@ private func drawAnaglyphCrosshairs() {
         return
     }
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
     if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {
@@ -1411,9 +1414,9 @@ private func drawAnaglyphCrosshairs() {
             SetLookAtMatrixAndTranslate(&m, upPtr, crosshairCoordBase(pi) + i, &pi.pointee.coord)
         }
 
-        glPushMatrix()
+        gRenderBackend.pushMatrix()
         withUnsafePointer(to: &m) {
-            $0.withMemoryRebound(to: Float.self, capacity: 16) { glMultMatrixf($0) }
+            $0.withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.multMatrix($0) }
         }
 
         // DRAW LARGE
@@ -1423,40 +1426,40 @@ private func drawAnaglyphCrosshairs() {
 
             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_OuterRing)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-            glBegin(GLenum(GL_QUADS))
-            glTexCoord2f(0, 0); glVertex2f(-size, -size)
-            glTexCoord2f(0, 1); glVertex2f(-size, size)
-            glTexCoord2f(1, 1); glVertex2f(size, size)
-            glTexCoord2f(1, 0); glVertex2f(size, -size)
-            glEnd()
+            gRenderBackend.beginImmediate(.quads)
+            gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+            gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+            gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+            gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+            gRenderBackend.endImmediate()
 
             if lockedOn {
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Locked)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                glBegin(GLenum(GL_QUADS))
-                glTexCoord2f(0, 0); glVertex2f(-size, -size)
-                glTexCoord2f(0, 1); glVertex2f(-size, size)
-                glTexCoord2f(1, 1); glVertex2f(size, size)
-                glTexCoord2f(1, 0); glVertex2f(size, -size)
-                glEnd()
+                gRenderBackend.beginImmediate(.quads)
+                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+                gRenderBackend.endImmediate()
             } else {
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Normal)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                glBegin(GLenum(GL_QUADS))
-                glTexCoord2f(0, 0); glVertex2f(-size2, -size2)
-                glTexCoord2f(0, 1); glVertex2f(-size2, size2)
-                glTexCoord2f(1, 1); glVertex2f(size2, size2)
-                glTexCoord2f(1, 0); glVertex2f(size2, -size2)
-                glEnd()
+                gRenderBackend.beginImmediate(.quads)
+                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size2, -size2)
+                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size2, size2)
+                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size2, size2)
+                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size2, -size2)
+                gRenderBackend.endImmediate()
 
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Pointer)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                glBegin(GLenum(GL_QUADS))
-                glTexCoord2f(0, 0); glVertex2f(-size, -size)
-                glTexCoord2f(0, 1); glVertex2f(-size, size)
-                glTexCoord2f(1, 1); glVertex2f(size, size)
-                glTexCoord2f(1, 0); glVertex2f(size, -size)
-                glEnd()
+                gRenderBackend.beginImmediate(.quads)
+                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+                gRenderBackend.endImmediate()
             }
         }
         // DRAW SMALL
@@ -1465,15 +1468,15 @@ private func drawAnaglyphCrosshairs() {
 
             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Normal)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-            glBegin(GLenum(GL_QUADS))
-            glTexCoord2f(0, 0); glVertex2f(-size, -size)
-            glTexCoord2f(0, 1); glVertex2f(-size, size)
-            glTexCoord2f(1, 1); glVertex2f(size, size)
-            glTexCoord2f(1, 0); glVertex2f(size, -size)
-            glEnd()
+            gRenderBackend.beginImmediate(.quads)
+            gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+            gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+            gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+            gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+            gRenderBackend.endImmediate()
         }
 
-        glPopMatrix()
+        gRenderBackend.popMatrix()
     }
 }
 
@@ -1508,7 +1511,7 @@ private func infobarDrawCrosshairs() {
         return
     }
 
-    let pi = GetPlayerInfoEntry(Int32(playerNum))!
+    let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
     if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {

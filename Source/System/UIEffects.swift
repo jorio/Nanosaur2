@@ -482,8 +482,7 @@ private func destroyTwitchDriver(_ driverNode: UnsafeMutablePointer<ObjNode>) {
     disposeEffectChain(driverData)
 }
 
-@c @implementation
-public func MakeTwitch(_ puppet: UnsafeMutablePointer<ObjNode>?, _ presetAndFlags: Int32) -> UnsafeMutablePointer<Twitch>? {
+func MakeTwitch(_ puppet: UnsafeMutablePointer<ObjNode>?, _ presetAndFlags: Int32) -> UnsafeMutablePointer<Twitch>? {
     guard let puppet else {
         return nil
     }

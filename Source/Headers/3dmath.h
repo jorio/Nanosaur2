@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <math.h>
+#include "globals.h"
+#include "ogl_support.h"
+
 #define OGLMath_RadiansToDegrees(x)	((float)((x) * 180.0f / PI))
 
 // OGLPoint3D_DistanceToPlane/Distance/Transform/TransformArray/
@@ -37,8 +41,6 @@
 // OGLMatrix3x3_SetRotateAboutPoint/OGLMatrix3x3_SetTranslate are now plain
 // Swift-only functions in 3DMath_Matrix.swift - nothing in C calls them
 // anymore, so they're no longer declared here.
-
-extern	const 	OGLVector3D	gUp;
 
 
 

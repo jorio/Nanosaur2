@@ -99,12 +99,6 @@ typedef struct
 	uint64_t			validSaveSlotMask;
 } MenuNavigation;
 
-// Global variables - defined in Menu.c, accessed from Swift
-extern MenuNavigation* _Nullable gNav;
-extern int gMenuOutcome;
-extern int gNumMenusRegistered;
-extern const MenuItem* _Nullable gMenuRegistry[MAX_REGISTERED_MENUS];
-
 // ---- Swift-compatible inline wrappers for C macros ----
 
 static inline void SwFatal(const char* msg) { DoFatalAlert("%s", msg); }
@@ -125,8 +119,6 @@ static inline void SwGameAssert(bool cond) { if (!cond) DoFatalAlert("GAME_ASSER
 static inline float SwGameClampF(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
 static inline int SwGameClampI(int x, int lo, int hi) { return x < lo ? lo : (x > hi ? hi : x); }
 
-static inline void CopyDefaultMenuStyle(MenuStyle* dst) { *dst = kDefaultMenuStyle; }
-
 // arrowObjects tuple accessor
 static inline ObjNode* _Nullable Nav_GetArrow(MenuNavigation* nav, int i) { return nav->arrowObjects[i]; }
 static inline void Nav_SetArrow(MenuNavigation* nav, int i, ObjNode* _Nullable v) { nav->arrowObjects[i] = v; }
@@ -141,8 +133,6 @@ static inline int Nav_GetHistoryMenuID(MenuNavigation* nav, int i) { return nav-
 static inline void Nav_SetHistoryMenuID(MenuNavigation* nav, int i, int v) { nav->history[i].menuID = v; }
 static inline int Nav_GetHistoryRow(MenuNavigation* nav, int i) { return nav->history[i].row; }
 static inline void Nav_SetHistoryRow(MenuNavigation* nav, int i, int v) { nav->history[i].row = v; }
-static inline const MenuItem* _Nullable GetRegistryEntry(int i) { return gMenuRegistry[i]; }
-static inline void SetRegistryEntry(int i, const MenuItem* _Nullable v) { gMenuRegistry[i] = v; }
 
 // ---- Anonymous union accessors for MenuItem ----
 
@@ -152,6 +142,13 @@ static inline LocStrID MenuItem_GetCyclerChoiceText(const MenuItem* mi, int i) {
 static inline uint8_t MenuItem_GetCyclerChoiceValue(const MenuItem* mi, int i) { return mi->cycler.choices[i].value; }
 static inline int (* _Nullable MenuItem_GetGenNumChoices(const MenuItem* mi))(void) { return mi->cycler.generator.generateNumChoices; }
 static inline const char* (* _Nullable MenuItem_GetGenChoiceString(const MenuItem* mi))(Byte) { return mi->cycler.generator.generateChoiceString; }
+
+// ---- Setters for MenuCyclerData's anonymous union (Swift can't address these by name) ----
+
+static inline void MenuCyclerData_SetChoiceText(MenuCyclerData* c, int i, LocStrID text) { c->choices[i].text = text; }
+static inline void MenuCyclerData_SetChoiceValue(MenuCyclerData* c, int i, uint8_t value) { c->choices[i].value = value; }
+static inline void MenuCyclerData_SetGeneratorNumChoices(MenuCyclerData* c, int (* _Nullable fn)(void)) { c->generator.generateNumChoices = fn; }
+static inline void MenuCyclerData_SetGeneratorChoiceString(MenuCyclerData* c, const char* _Nonnull (* _Nullable fn)(Byte)) { c->generator.generateChoiceString = fn; }
 
 static inline Byte* _Nullable MenuItem_GetSliderValuePtr(const MenuItem* mi) { return mi->slider.valuePtr; }
 static inline Byte MenuItem_GetSliderEquilibrium(const MenuItem* mi) { return mi->slider.equilibrium; }

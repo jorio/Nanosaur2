@@ -56,9 +56,9 @@ CTRULIB		?=	$(DEVKITPRO)/libctru
 PREFIX		:=	$(DEVKITARM)/bin/arm-none-eabi-
 CC		:=	$(PREFIX)gcc
 CXX		:=	$(PREFIX)g++
-# Linking with g++ (not gcc) once Pomme's C++ file-manager objects are in
-# OFILES - g++ pulls in libstdc++/libsupc++ needed by std::filesystem/
-# iostream/exceptions, which plain gcc linking wouldn't add automatically.
+# Linking with g++ (not gcc): main.cpp/fs_init_shim.cpp are C++ (exceptions,
+# extern "C" wrapping) - g++ pulls in libstdc++/libsupc++ those need, which
+# plain gcc linking wouldn't add automatically.
 LD		:=	$(PREFIX)g++
 
 # devkitPro's 3ds-tools (3dsxtool, smdhtool) install to $(DEVKITPRO)/tools/bin,
@@ -162,35 +162,17 @@ PICAGL_SHADER_OFILES := $(BUILD)/picagl_vshader_shbin.o $(BUILD)/picagl_clear_sh
 #---------------------------------------------------------------------------------
 ENGINE_ROOT	:=	../..
 ENGINE_SOURCE	:=	$(ENGINE_ROOT)/Source
-POMME_SOURCE	:=	$(ENGINE_ROOT)/extern/Pomme/src
-
-#---------------------------------------------------------------------------------
-# Pomme's real file/resource-manager C++ implementation (milestone step 4,
-# File I/O) - compile-tested directly against this toolchain, confirmed to
-# compile+link with just a C++ standard bump (c++17 -> c++20, for
-# PommeSound.h's std::span). Built with -DPOMME_NO_GRAPHICS -DPOMME_NO_INPUT
-# so Pomme::Init() (in ports/3DS/common/pomme_shim.cpp) skips its own
-# QuickDraw-emulation graphics and legacy Mac Toolbox input glue (Button()/
-# GetKeys()/etc, unrelated to and unused alongside this engine's own
-# Input.swift/CTRUInputBackend) - nothing in Source/**/*.swift calls either
-# (grep confirms). Sound IS enabled (no -DPOMME_NO_SOUND_MIXER/
-# -DPOMME_NO_SOUND_FORMATS): Pomme's SoundMixer (cmixer.cpp) calls real
-# SDL3 audio APIs (SDL_OpenAudioDeviceStream/SDL_AudioStream/etc.) directly
-# - now that real SDL3 (vendor/SDL3) provides an actual n3ds audio backend,
-# this is real, working audio, not something needing its own 3DS-specific
-# implementation.
-# Explicit per-file rules below (not a pattern rule) - a pattern rule over
-# multiple source directories with only-sometimes-unique basenames is
-# exactly what broke picaGL's Makefile wiring earlier (see PICAGL_OFILES's
-# comment); not worth risking again for a modest file count.
-#---------------------------------------------------------------------------------
-POMME_DEFS	:=	-DPOMME_NO_GRAPHICS -DPOMME_NO_INPUT -DPOMME_NO_SOUND_MIXER
+# Vendored under extern/minimp3 (public domain / CC0) - sound2.h's
+# #include "minimp3.h" (SoundEngine.swift's MP3 decode path) needs this on
+# the include path, same as CMakeLists.txt does for the desktop build.
+MINIMP3_SOURCE	:=	$(ENGINE_ROOT)/extern/minimp3
 
 #---------------------------------------------------------------------------------
 # Embedded Swift flags, targeting armv6-none-none-eabi.
 #---------------------------------------------------------------------------------
 SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-enable-experimental-feature Embedded \
+			-enable-experimental-feature Lifetimes \
 			-wmo -Osize \
 			-module-name Nanosaur2 \
 			-DNANOSAUR_3DS \
@@ -203,8 +185,8 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-Xcc -isystem -Xcc $(DEVKITARM)/arm-none-eabi/include \
 			-Xcc -I$(COMMON) \
 			-Xcc -I$(CTRULIB)/include \
-			-Xcc -I$(POMME_SOURCE) \
 			-Xcc -I$(ENGINE_SOURCE)/Headers \
+			-Xcc -I$(MINIMP3_SOURCE) \
 			-Xcc -I$(PICAGL_INCLUDE) \
 			-Xcc -I$(SDL3_INCLUDE) \
 			-Xcc -fmodule-map-file=$(COMMON)module.modulemap
@@ -221,7 +203,35 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 # Source/**/*.c file) - this Makefile now does the same via `find`.
 #---------------------------------------------------------------------------------
 PORT_CPP	:=	$(wildcard source/*.cpp)
-ENGINE_SWIFT	:=	$(shell find $(ENGINE_SOURCE) -name '*.swift')
+# BG3DFile/ResourceFile (Sources/BG3DFile, Sources/ResourceFile) are
+# standalone Swift packages CMakeLists.txt flat-compiles into the single
+# module (see its own comment); their `import BinaryParsing` is guarded by
+# `#if canImport(BinaryParsing)`, which is false here (no real SPM
+# resolution in this Makefile), so it's skipped - same treatment as
+# desktop's CMake build, just via a plain source-file union instead of a
+# real SPM dependency.
+#
+# SDL3Swift (extern/SDL3Swift/SDL3) is PureSwift/SDL's SDL3 wrapper,
+# vendored (gitignored - not a git submodule; see extern/README.md) at
+# commit 00c3f23. Same flat-compile treatment: its `import CSDL3` lines are
+# all `#if canImport(CSDL3)`-guarded and skipped, since the C symbols it
+# needs (SDL_Window, SDL_CreateWindow, etc.) are already ambiently visible
+# via this Makefile's own -import-objc-header, same as any other C symbol.
+#
+# Excludes Source/Metal/MetalRenderer.swift and Source/3D/Metal*.swift
+# (MetalActivation/MetalSpike/MetalRenderBackend): desktop-only, `import
+# MetalRenderer` (a separate CMake Swift module/framework this port's
+# single-module build has no equivalent for) and the PICA200 has nothing
+# resembling Metal anyway - see docs/metal-renderer-plan.md.
+ENGINE_SWIFT	:=	$(filter-out $(ENGINE_SOURCE)/Metal/MetalRenderer.swift \
+				$(ENGINE_SOURCE)/3D/MetalActivation.swift \
+				$(ENGINE_SOURCE)/3D/MetalSpike.swift \
+				$(ENGINE_SOURCE)/3D/MetalRenderBackend.swift, \
+				$(shell find $(ENGINE_SOURCE) -name '*.swift')) \
+			$(shell find $(ENGINE_ROOT)/Sources/BG3DFile -name '*.swift') \
+			$(shell find $(ENGINE_ROOT)/Sources/ResourceFile -name '*.swift') \
+			$(shell find $(ENGINE_ROOT)/extern/SDL3Swift/SDL3 -name '*.swift' 2>/dev/null) \
+			$(shell find $(ENGINE_ROOT)/extern/swift-binary-parsing/BinaryParsing -name '*.swift' 2>/dev/null)
 ENGINE_CFILES	:=	$(shell find $(ENGINE_SOURCE) -name '*.c')
 
 # All 72 basenames are unique (checked via `find ... | xargs -n1 basename |
@@ -236,16 +246,8 @@ vpath %.c $(sort $(dir $(ENGINE_CFILES)))
 ENGINE_COFILES	:=	$(addprefix $(BUILD)/engine_,$(notdir $(ENGINE_CFILES:.c=.o)))
 
 OFILES		:=	$(BUILD)/nanosaur2.swift.o $(BUILD)/main.o $(BUILD)/shim.o $(BUILD)/picaGL_shim.o \
-			$(BUILD)/romfs_shim.o $(BUILD)/pomme_shim.o $(BUILD)/boot_shim.o $(BUILD)/fatal_shim.o \
+			$(BUILD)/romfs_shim.o $(BUILD)/fs_init_shim.o $(BUILD)/boot_shim.o $(BUILD)/fatal_shim.o \
 			$(BUILD)/console_shim.o \
-			$(BUILD)/pomme_Files.o $(BUILD)/pomme_HostVolume.o $(BUILD)/pomme_Resources.o \
-			$(BUILD)/pomme_Memory.o $(BUILD)/pomme_Pomme.o $(BUILD)/pomme_PommeDebug.o \
-			$(BUILD)/pomme_StringUtils.o $(BUILD)/pomme_bigendianstreams.o \
-			$(BUILD)/pomme_memstream.o $(BUILD)/pomme_structpack.o $(BUILD)/pomme_IEEEExtended.o \
-			$(BUILD)/pomme_cmixer.o $(BUILD)/pomme_ChannelImpl.o $(BUILD)/pomme_SoundManager.o \
-			$(BUILD)/pomme_AIFF.o $(BUILD)/pomme_IMA4.o $(BUILD)/pomme_MACE.o $(BUILD)/pomme_Midi.o \
-			$(BUILD)/pomme_SoundFormats.o $(BUILD)/pomme_mp3.o $(BUILD)/pomme_xlaw.o \
-			$(BUILD)/pomme_TimeManager.o \
 			$(ENGINE_COFILES) \
 			$(PICAGL_OFILES) $(PICAGL_SHADER_OFILES)
 
@@ -258,19 +260,27 @@ $(BUILD):
 	@mkdir -p $@
 
 # All Swift (the entire real engine) -> one object, whole-module.
-$(BUILD)/nanosaur2.swift.o: $(ENGINE_SWIFT) $(COMMON)module.modulemap $(COMMON)ctru_umbrella.h $(COMMON)game_3ds.h | $(BUILD)
+# $(ENGINE_SWIFT) is NOT a prerequisite here (only used in the recipe body):
+# extern/swift-binary-parsing/BinaryParsing/Parser Types/*.swift has a space
+# in its directory name, which Make's prerequisite list (space-separated
+# words) can't represent - "Parser" and "Types" would parse as two separate,
+# nonexistent targets. .SWIFT_FILES_TOUCHED below is a cheap always-rebuild
+# proxy instead (Swift's own incremental logic isn't in play anyway - this
+# is always a single whole-module -wmo invocation).
+.PHONY: .SWIFT_FILES_TOUCHED
+$(BUILD)/nanosaur2.swift.o: .SWIFT_FILES_TOUCHED $(COMMON)module.modulemap $(COMMON)ctru_umbrella.h $(COMMON)game_3ds.h | $(BUILD)
 	@echo compiling Swift
 	$(SWIFTC) $(SWIFTFLAGS) -c $(ENGINE_SWIFT) -o $@
 
-# The real entry point (source/main.cpp) - needs Pomme.h (for
-# Pomme::QuitRequest) but not picaGL, since it only declares plain
-# C-linkage functions for that, not its real headers. Does need real
-# SDL3/SDL.h now, to create the real (if GL-unused) SDL_Window several
-# engine call sites dereference every frame (see boot_shim.c's comment).
+# The real entry point (source/main.cpp) - doesn't need picaGL or libctru's
+# own headers, since it only declares plain C-linkage functions for those,
+# not their real headers. Does need real SDL3/SDL.h, to create the real
+# (if GL-unused) SDL_Window several engine call sites dereference every
+# frame (see boot_shim.c's comment).
 $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 	@echo $(notdir $<)
 	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(COMMON) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
+		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(COMMON) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
 
 # Real engine C files (bg3d.c, Main.c, etc. - global-storage-only leftovers
 # after the Swift port, plus a couple of still-C functions like
@@ -286,7 +296,7 @@ $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 # opt-out) makes them plain statics instead, functionally identical here.
 $(BUILD)/engine_%.o: %.c | $(BUILD)
 	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -DSTBI_NO_THREAD_LOCALS -I$(POMME_SOURCE) -I$(ENGINE_SOURCE)/Headers -I$(PICAGL_INCLUDE) -I$(SDL3_INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) -DSTBI_NO_THREAD_LOCALS -I$(ENGINE_SOURCE)/Headers -I$(MINIMP3_SOURCE) -I$(PICAGL_INCLUDE) -I$(SDL3_INCLUDE) -c $< -o $@
 
 $(BUILD)/shim.o: $(COMMON)shim.c $(COMMON)shim.h | $(BUILD)
 	@echo $(notdir $<)
@@ -302,7 +312,7 @@ $(BUILD)/romfs_shim.o: $(COMMON)romfs_shim.c $(COMMON)romfs_shim.h | $(BUILD)
 
 $(BUILD)/boot_shim.o: $(COMMON)boot_shim.c | $(BUILD)
 	@echo $(notdir $<)
-	$(CC) $(CFLAGS) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(ENGINE_SOURCE)/Headers -I$(MINIMP3_SOURCE) -I$(SDL3_INCLUDE) -c $< -o $@
 
 $(BUILD)/fatal_shim.o: $(COMMON)fatal_shim.c $(COMMON)fatal_shim.h | $(BUILD)
 	@echo $(notdir $<)
@@ -312,111 +322,15 @@ $(BUILD)/console_shim.o: $(COMMON)console_shim.c $(COMMON)console_shim.h | $(BUI
 	@echo $(notdir $<)
 	$(CC) $(CFLAGS) -I$(SDL3_INCLUDE) -c $< -o $@
 
-#---------------------------------------------------------------------------------
-# Pomme's real file/resource-manager C++ implementation - see this file's
-# earlier POMME_FILES_CFILES comment. -std=c++20 (not c++17) because
-# PommeSound.h uses std::span, even with sound compiled out via
-# POMME_DEFS - Pomme.h's own top-level include still parses that header.
-#---------------------------------------------------------------------------------
-POMME_CXXFLAGS := -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-			$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 $(POMME_DEFS) -I$(POMME_SOURCE) -I$(SDL3_INCLUDE)
-
-$(BUILD)/pomme_shim.o: $(COMMON)pomme_shim.cpp | $(BUILD)
+# gDataSpec setup against the mounted RomFS (see fs_init_shim.cpp's header
+# comment - used to be Pomme's file-manager init, now just the engine's own
+# native SwHostPathToFSSpec, same as desktop's Boot.cpp). -std=c++20 to
+# match the rest of this port's C++ files; game.h itself is plain C but
+# this translation unit is .cpp for the extern "C" wrapping FSSpec needs.
+$(BUILD)/fs_init_shim.o: $(COMMON)fs_init_shim.cpp | $(BUILD)
 	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_Files.o: $(POMME_SOURCE)/Files/Files.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_HostVolume.o: $(POMME_SOURCE)/Files/HostVolume.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_Resources.o: $(POMME_SOURCE)/Files/Resources.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_Memory.o: $(POMME_SOURCE)/Memory/Memory.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_Pomme.o: $(POMME_SOURCE)/Pomme.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_PommeDebug.o: $(POMME_SOURCE)/PommeDebug.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_StringUtils.o: $(POMME_SOURCE)/Utilities/StringUtils.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_bigendianstreams.o: $(POMME_SOURCE)/Utilities/bigendianstreams.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_memstream.o: $(POMME_SOURCE)/Utilities/memstream.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_structpack.o: $(POMME_SOURCE)/Utilities/structpack.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_IEEEExtended.o: $(POMME_SOURCE)/Utilities/IEEEExtended.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-# Sound (SoundMixer/cmixer.cpp calls real SDL3 audio APIs directly - see
-# POMME_DEFS's comment above for why this is enabled, not stubbed).
-$(BUILD)/pomme_cmixer.o: $(POMME_SOURCE)/SoundMixer/cmixer.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_ChannelImpl.o: $(POMME_SOURCE)/SoundMixer/ChannelImpl.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_SoundManager.o: $(POMME_SOURCE)/SoundMixer/SoundManager.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_AIFF.o: $(POMME_SOURCE)/SoundFormats/AIFF.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_IMA4.o: $(POMME_SOURCE)/SoundFormats/IMA4.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_MACE.o: $(POMME_SOURCE)/SoundFormats/MACE.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_Midi.o: $(POMME_SOURCE)/SoundFormats/Midi.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_SoundFormats.o: $(POMME_SOURCE)/SoundFormats/SoundFormats.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_mp3.o: $(POMME_SOURCE)/SoundFormats/mp3.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-$(BUILD)/pomme_xlaw.o: $(POMME_SOURCE)/SoundFormats/xlaw.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
-
-# Time (Microseconds/TickCount/GetDateTime - Mac Toolbox time emulation,
-# called directly by Misc.swift's CalcFramesPerSecond and Main.swift's
-# random-seed init).
-$(BUILD)/pomme_TimeManager.o: $(POMME_SOURCE)/Time/TimeManager.cpp | $(BUILD)
-	@echo $(notdir $<)
-	$(CXX) $(POMME_CXXFLAGS) -c $< -o $@
+	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
+		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(COMMON) -I$(ENGINE_SOURCE)/Headers -I$(MINIMP3_SOURCE) -I$(PICAGL_INCLUDE) -I$(SDL3_INCLUDE) -c $< -o $@
 
 #---------------------------------------------------------------------------------
 # picaGL: its own vertex/clear shaders (picasso -> bin2s -> .o, same
@@ -467,11 +381,12 @@ $(BUILD)/icon.smdh: | $(BUILD)
 
 # RomFS: embeds the real game data folder (../../Data - the same
 # Sprites/Models/Skeletons/Terrain/Audio/System tree the desktop build
-# reads via Pomme's Mac resource-fork emulation, per Boot.cpp's own
-# `gDataSpec = HostPathToFSSpec(dataPath / "System")` - .parID there is
+# reads via the engine's own native resource-fork reader (File.swift's
+# loadResourceFork/loadResource), per Boot.cpp's own
+# `gDataSpec = SwHostPathToFSSpec(dataPath / "System")` - .parID there is
 # Data/ itself, not System/, so file paths like ":Sprites:menu:menuback"
 # resolve relative to Data/, which is why the whole folder (not just
-# System/) needs to be the RomFS root). No reformatting: Pomme's resource
+# System/) needs to be the RomFS root). No reformatting: the resource
 # parser operates on file *contents*, not host filesystem features, so
 # these exact same bytes should parse identically once accessible via
 # RomFS - 3dsxtool builds the RomFS image directly from this directory,

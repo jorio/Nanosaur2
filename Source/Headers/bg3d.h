@@ -6,9 +6,6 @@
 #define BG3D_H
 
 
-#define	MAX_MULTITEXTURE_LAYERS		4			// max # of multi texture layers supported
-												// WARNING: changing this may alter file format!!
-
 #define	MAX_BG3D_MATERIALS			400			// max # of materials in a bg3d file
 
 #define	MAX_BG3D_GROUPS			((int)MODEL_GROUP_SKELETONBASE+(int)MAX_SKELETON_TYPES)	// skeletons are @ end of list, so can use these counts for max #
@@ -29,11 +26,13 @@ typedef struct
 
 		/* BG3D HEADER */
 
-typedef struct
-{
-	char			headerString[16];			// header string
-	NumVersion		version;					// version of file
-}BG3DHeaderType;
+// BG3DHeaderType, BG3DTextureHeader, BG3DJPEGTextureHeader, and
+// BG3DGeometryHeader are now defined as native Swift structs in the
+// BG3DFile module (Sources/BG3DFile, compiled flat into this game's single
+// Swift module - see CMakeLists.txt) instead of here. That module is a
+// tested, standalone parser for the BG3D tag-stream format (see
+// Tests/BG3DFileTests), verified byte-for-byte against every real .bg3d
+// asset in Data/Models and Data/Skeletons.
 
 
 	/* BG3D MATERIAL FLAGS */
@@ -50,71 +49,10 @@ enum
 };
 
 
-		/* TAG TYPES */
-
-enum
-{
-	BG3D_TAGTYPE_MATERIALFLAGS				=	0,
-	BG3D_TAGTYPE_MATERIALDIFFUSECOLOR		=	1,
-	BG3D_TAGTYPE_TEXTUREMAP					=	2,
-	BG3D_TAGTYPE_GROUPSTART					=	3,
-	BG3D_TAGTYPE_GROUPEND					=	4,
-	BG3D_TAGTYPE_GEOMETRY					=	5,
-	BG3D_TAGTYPE_VERTEXARRAY				=	6,
-	BG3D_TAGTYPE_NORMALARRAY				=	7,
-	BG3D_TAGTYPE_UVARRAY					=	8,
-	BG3D_TAGTYPE_COLORARRAY					=	9,
-	BG3D_TAGTYPE_TRIANGLEARRAY				= 	10,
-	BG3D_TAGTYPE_ENDFILE					=	11,
-	BG3D_TAGTYPE_BOUNDINGBOX				=	12,
-	BG3D_TAGTYPE_JPEGTEXTURE				=	13
-};
-
-
-typedef struct
-{
-	uint32_t	width,height;					// dimensions of texture
-	GLint	srcPixelFormat;					// OGL format (GL_RGBA, etc.) for internal
-	GLint	dstPixelFormat;					// format for VRAM
-	uint32_t	bufferSize;						// size of texture data to follow
-	uint32_t	reserved[4];					// for future use
-}BG3DTextureHeader;
-
-
-typedef struct
-{
-	uint32_t	width,height;					// dimensions of texture
-	uint32_t	bufferSize;						// size of JPEG data to follow
-	uint32_t	hasAlphaChannel;				// true if alpha buffer follows JPEG data
-}BG3DJPEGTextureHeader;
-
-
-	/* GEOMETRY TYPES */
-
-enum
-{
-	BG3D_GEOMETRYTYPE_VERTEXELEMENTS
-
-};
-
-
-		/* BG3D GEOMETRY HEADER */
-
-typedef struct
-{
-	uint32_t	type;								// geometry type
-	int32_t		numMaterials;						// # material layers
-	uint32_t	layerMaterialNum[MAX_MULTITEXTURE_LAYERS];	// index into material list
-	uint32_t	flags;								// flags
-	uint32_t	numPoints;							// (if applicable)
-	uint32_t	numTriangles;						// (if applicable)
-	uint32_t	reserved[4];						// for future use
-}BG3DGeometryHeader;
-
-
-
-
-//-----------------------------------
+// BG3D_TAGTYPE_* (tag stream chunk types) and BG3D_GEOMETRYTYPE_* are now
+// BG3DTag/BG3DGeometryType in the BG3DFile module (Sources/BG3DFile) -
+// nothing in C reads the file format directly anymore, and Bg3d.swift
+// switches on the Swift enums instead.
 
 
 

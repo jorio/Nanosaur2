@@ -237,7 +237,6 @@ typedef enum LocStrID
 } LocStrID;
 
 
-void LoadLocalizedStrings(GameLanguageID languageID);
 const char* _Nonnull Localize(LocStrID stringID);
 int LocalizeWithPlaceholder(LocStrID stringID, char* buf, size_t bufSize, const char* format, ...);
 

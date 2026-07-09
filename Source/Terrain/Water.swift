@@ -1,18 +1,48 @@
 // Water.swift - Port of Water.c to Swift
 //
 // gNumWaterPatches, gNumWaterDrawn, gWaterListHandle, gWaterList,
-// gWaterTriMeshData[], and gWaterBBox[] stay defined in Water.c and
-// `extern`'d via game.h/WaterInternal.h: Pick.c, OGL_Support.c, Terrain.c,
-// Player_Terrain.c, and EnemyInternal.h (still unported) read/write them
-// directly by name. Everything else (gWaterInitY, gWaterVertexArrays,
-// gWaterUVs, the ripple list, and the lookup tables) was `static`
-// (file-private) in C, so it moves into private Swift state instead.
+// gWaterTriMeshData[], and gWaterBBox[] are native Swift storage now
+// (converted 2026-07-07): nothing in any .c file touches them anymore -
+// the old comment claiming Pick.c/OGL_Support.c/Terrain.c/Player_Terrain.c
+// still needed them was stale. gWaterTriMeshData/gWaterBBox were fixed-size
+// C arrays exposed via GetWaterTriMeshDataEntry (WaterInternal.h) and
+// GetWaterBBoxEntry (EnemyInternal.h); both are now permanent, never-freed
+// UnsafeMutablePointer buffers (same idiom as Terrain.swift's
+// GetSuperTileMemoryEntry etc.), with the accessor functions reimplemented
+// in plain Swift under the same names/signatures so their call sites in
+// Pick.swift/Player_Terrain.swift/Enemy.swift didn't need to change.
+// Everything else (gWaterInitY, gWaterVertexArrays, gWaterUVs, the ripple
+// list, and the lookup tables) was `static` (file-private) in C, so it
+// stays private Swift state.
 //
 // VERTEXARRAYRANGES is hardcoded to 0 in game.h, so the
 // `#if VERTEXARRAYRANGES` / AssignVertexArrayRangeMemory block in the
 // original PrimeTerrainWater was dead code - it's omitted here, and the
 // water vertex data (points/triangles/uvs) is just kept in flat allocated
 // buffers instead of replicating the exact WaterVertexArraysType layout.
+
+var gNumWaterPatches: Int = 0
+var gNumWaterDrawn: Int16 = 0
+var gWaterListHandle: UnsafeMutablePointer<UnsafeMutablePointer<WaterDefType>?>!
+var gWaterList: UnsafeMutablePointer<WaterDefType>!
+
+private let gWaterTriMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
+    let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 60)
+    buf.initialize(repeating: MOVertexArrayData(), count: 60)
+    return buf
+}()
+func GetWaterTriMeshDataEntry(_ i: Int32) -> UnsafeMutablePointer<MOVertexArrayData> {
+    gWaterTriMeshDataBuf + Int(i)
+}
+
+private let gWaterBBoxBuf: UnsafeMutablePointer<OGLBoundingBox> = {
+    let buf = UnsafeMutablePointer<OGLBoundingBox>.allocate(capacity: 60)
+    buf.initialize(repeating: OGLBoundingBox(), count: 60)
+    return buf
+}()
+func GetWaterBBoxEntry(_ i: Int32) -> UnsafeMutablePointer<OGLBoundingBox>! {
+    gWaterBBoxBuf + Int(i)
+}
 
 private let MAX_WATER = 60
 private let MAX_NUBS_IN_WATER = 80
@@ -382,14 +412,14 @@ private func drawWater() {
 
             // SET TEXTURE SCROLL FOR BOTH TEXTURE LAYERS
             if waterType != prevType { // only update UV's if this is a different water type than the last loop
-                glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.matrixMode(.texture) // set texture matrix
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
-                glLoadIdentity()
-                glTranslatef(gWaterUVs[waterType][0].u, gWaterUVs[waterType][0].v, 0)
+                gRenderBackend.loadIdentity()
+                gRenderBackend.translate(gWaterUVs[waterType][0].u, gWaterUVs[waterType][0].v, 0)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-                glLoadIdentity()
-                glTranslatef(gWaterUVs[waterType][1].u, gWaterUVs[waterType][1].v, 0)
-                glMatrixMode(GLenum(GL_MODELVIEW))
+                gRenderBackend.loadIdentity()
+                gRenderBackend.translate(gWaterUVs[waterType][1].u, gWaterUVs[waterType][1].v, 0)
+                gRenderBackend.matrixMode(.modelview)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
             }
 
@@ -406,12 +436,12 @@ private func drawWater() {
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
     // RESTORE ALL TEXTURE MATRICES
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+    gRenderBackend.matrixMode(.texture) // set texture matrix
     for i in 0..<2 {
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0) + UInt32(i))
-        glLoadIdentity()
+        gRenderBackend.loadIdentity()
     }
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 
@@ -620,12 +650,12 @@ private func drawRipples() {
         let s = gRippleList[i].scale // get scale
         OGL_SetColor4f(1, 1, 1, gRippleList[i].alpha) // get/set alpha
 
-        glBegin(GLenum(GL_QUADS))
-        glTexCoord2f(0, 0); glVertex3f(x - s, y, z - s)
-        glTexCoord2f(1, 0); glVertex3f(x + s, y, z - s)
-        glTexCoord2f(1, 1); glVertex3f(x + s, y, z + s)
-        glTexCoord2f(0, 1); glVertex3f(x - s, y, z + s)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(x - s, y, z - s)
+        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + s, y, z - s)
+        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + s, y, z + s)
+        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x - s, y, z + s)
+        gRenderBackend.endImmediate()
     }
 
     OGL_SetColor4f(1, 1, 1, 1)

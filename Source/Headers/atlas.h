@@ -68,11 +68,6 @@ typedef struct Atlas
 
 
 
-
-ObjNode* _Nonnull TextMesh_New(const char* _Nonnull text, int flags, NewObjectDefinitionType* _Nonnull newObjDef);
-
-
-
 #define Atlas_DrawString(group, text, x, y, scale, flags) \
 	Atlas_DrawString2(group, text, x, y, scale, scale, 0, flags)
 

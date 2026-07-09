@@ -1,5 +1,17 @@
 // Shards.swift - Port of Shards.c to Swift
 
+// Native Swift OptionSet - was `typedef enum SWIFT_FLAG_ENUM ShardMode {...}
+// ShardMode;` in shards.h with zero C callers/globals (verified 2026-07-07),
+// so it moved entirely off the C ABI; shards.h is now deleted.
+struct ShardMode: OptionSet, Sendable {
+    let rawValue: Int32
+
+    static let upthrust = ShardMode(rawValue: 1)
+    static let heavyGravity = ShardMode(rawValue: 1 << 1)
+    static let bounce = ShardMode(rawValue: 1 << 2)
+    static let fromOrigin = ShardMode(rawValue: 1 << 3)
+}
+
 private let maxShards = 2500
 
 private struct ShardType {
@@ -398,7 +410,7 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
     // SET STATE
 
-    glLightModeli(GLenum(GL_LIGHT_MODEL_TWO_SIDE), GL_TRUE)
+    gRenderBackend.setTwoSidedLighting(true)
 
     for i in 0..<maxShards {
         if gShards[i].isUsed != 0 {
@@ -421,18 +433,18 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             // SET MATRIX
 
-            glPushMatrix()
-            glMultMatrixf(matrixFloatBase(&gShards[i].matrix))
+            gRenderBackend.pushMatrix()
+            gRenderBackend.multMatrix(matrixFloatBase(&gShards[i].matrix))
 
             // DRAW THE TRIANGLE
 
-            glBegin(GLenum(GL_TRIANGLES))
-            glTexCoord2f(gShards[i].uvs[0].u, gShards[i].uvs[0].v); glVertex3f(gShards[i].points[0].x, gShards[i].points[0].y, gShards[i].points[0].z)
-            glTexCoord2f(gShards[i].uvs[1].u, gShards[i].uvs[1].v); glVertex3f(gShards[i].points[1].x, gShards[i].points[1].y, gShards[i].points[1].z)
-            glTexCoord2f(gShards[i].uvs[2].u, gShards[i].uvs[2].v); glVertex3f(gShards[i].points[2].x, gShards[i].points[2].y, gShards[i].points[2].z)
-            glEnd()
+            gRenderBackend.beginImmediate(.triangles)
+            gRenderBackend.texCoord2f(gShards[i].uvs[0].u, gShards[i].uvs[0].v); gRenderBackend.vertex3f(gShards[i].points[0].x, gShards[i].points[0].y, gShards[i].points[0].z)
+            gRenderBackend.texCoord2f(gShards[i].uvs[1].u, gShards[i].uvs[1].v); gRenderBackend.vertex3f(gShards[i].points[1].x, gShards[i].points[1].y, gShards[i].points[1].z)
+            gRenderBackend.texCoord2f(gShards[i].uvs[2].u, gShards[i].uvs[2].v); gRenderBackend.vertex3f(gShards[i].points[2].x, gShards[i].points[2].y, gShards[i].points[2].z)
+            gRenderBackend.endImmediate()
 
-            glPopMatrix()
+            gRenderBackend.popMatrix()
         }
     }
 
@@ -443,5 +455,5 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     gGlobalColorFilter.b = 1
     gGlobalTransparency = 1
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
-    glLightModeli(GLenum(GL_LIGHT_MODEL_TWO_SIDE), GL_FALSE)
+    gRenderBackend.setTwoSidedLighting(false)
 }

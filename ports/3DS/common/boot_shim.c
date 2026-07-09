@@ -15,7 +15,7 @@
 // cursor tracking, Input.swift's mouse warp/grab) dereference gSDLWindow as
 // a real SDL_Window every frame, so a fake non-NULL placeholder crashes the
 // moment any of them run. This is just extern storage; main.cpp assigns it.
-#include "PommeTypes.h"
+#include "SwMacTypes.h" // Boolean
 #include <SDL3/SDL.h>
 #include <stdint.h>
 

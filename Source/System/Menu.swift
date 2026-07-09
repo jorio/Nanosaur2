@@ -1,4 +1,55 @@
 // Menu.swift - Port of Menu.c to Swift using @c @implementation (Swift 6.3)
+//
+// gNav/gMenuOutcome/gNumMenusRegistered/gMenuRegistry/kDefaultMenuStyle are
+// native Swift storage now (converted 2026-07-07): nothing in any .c file
+// touches them anymore, so Menu.c is deleted entirely. gMenuRegistry was a
+// fixed-size C array exposed via MenuInternal.h's GetRegistryEntry/
+// SetRegistryEntry shims; those are now plain Swift functions with the
+// same names/signatures. kDefaultMenuStyle is a plain Swift struct literal
+// (MenuStyle has no union - its anonymous-struct bitfields get real
+// ClangImporter-synthesized property accessors that work by value, unlike
+// union members, so direct property assignment is safe here - already
+// proven by existing code like Paused.swift's `style.canBackOutOfRootMenu
+// = true`). MenuInternal.h's CopyDefaultMenuStyle shim (which could no
+// longer reach the now-Swift-only kDefaultMenuStyle from C) was replaced
+// with a plain Swift struct assignment at its one call site.
+
+var gNav: UnsafeMutablePointer<MenuNavigation>!
+var gMenuOutcome: Int32 = 0
+var gNumMenusRegistered: Int32 = 0
+
+private let maxRegisteredMenus = 32
+
+private let gMenuRegistryBuf: UnsafeMutablePointer<UnsafePointer<MenuItem>?> = {
+    let buf = UnsafeMutablePointer<UnsafePointer<MenuItem>?>.allocate(capacity: maxRegisteredMenus)
+    buf.initialize(repeating: nil, count: maxRegisteredMenus)
+    return buf
+}()
+func GetRegistryEntry(_ i: Int32) -> UnsafePointer<MenuItem>? { gMenuRegistryBuf[Int(i)] }
+func SetRegistryEntry(_ i: Int32, _ v: UnsafePointer<MenuItem>?) { gMenuRegistryBuf[Int(i)] = v }
+
+let kDefaultMenuStyle: MenuStyle = {
+    var s = MenuStyle()
+    s.darkenPaneOpacity = 0
+    s.fadeInSpeed = 1.0 / 0.3
+    s.fadeOutSpeed = 1.0 / 0.2
+    s.asyncFadeOut = true
+    s.fadeOutSceneOnExit = false
+    s.standardScale = 0.45
+    s.rowHeight = 38.0
+    s.startButtonExits = false
+    s.isInteractive = true
+    s.canBackOutOfRootMenu = false
+    s.textSlot = Int16(MENU_SLOT)
+    s.yOffset = 480 / 2
+    s.fontAtlas = Int32(ATLAS_GROUP_FONT1)
+    s.fontAtlas2 = Int32(ATLAS_GROUP_FONT2)
+    s.highlightColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    s.arrowColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    s.idleColor = OGLColorRGBA(r: 0.7, g: 0.6, b: 0.6, a: 1)
+    s.labelColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
+    return s
+}()
 
 // MARK: - Constants
 
@@ -64,7 +115,7 @@ private func initMenuNavigation() {
     SwGameAssert(gNav == nil)
     gNav = AllocPtrClear(MemoryLayout<MenuNavigation>.size)!.assumingMemoryBound(to: MenuNavigation.self)
     let nav = gNav!
-    CopyDefaultMenuStyle(&nav.pointee.style)
+    nav.pointee.style = kDefaultMenuStyle
     nav.pointee.menuPick = -1; nav.pointee.menuState = .off
     nav.pointee.mouseState = .off; nav.pointee.mouseFocusComponent = -1
     var arrowDef = NewObjectDefinitionType()
@@ -87,15 +138,13 @@ private func disposeMenuNavigation() {
 
 // MARK: - Public API
 
-@c @implementation
-public func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
+func GetCurrentMenu() -> Int32 { gNav != nil ? gNav!.pointee.menuID : 0 }
 
 func GetMenuIdleTime() -> Float { gNav != nil ? gNav!.pointee.idleTime : 0.0 }
 
 func IsMenuMouseControlled() -> Bool { gNav != nil ? gNav!.pointee.mouseState != .off : false }
 
-@c @implementation
-public func GetCurrentMenuItemID() -> Int32 {
+func GetCurrentMenuItemID() -> Int32 {
     guard let nav = gNav, nav.pointee.focusRow >= 0 else { return -1 }
     return nav.pointee.menu![Int(nav.pointee.focusRow)].id
 }
@@ -105,13 +154,11 @@ func GetCurrentMenuItemObject() -> UnsafeMutablePointer<ObjNode>? {
     return mObj(Int(nav.pointee.focusRow))
 }
 
-@c @implementation
-public func IsMenuTreeEndSentinel(_ menuItem: UnsafePointer<MenuItem>) -> Bool {
+func IsMenuTreeEndSentinel(_ menuItem: UnsafePointer<MenuItem>) -> Bool {
     menuItem.pointee.id == 0 && menuItem.pointee.type == MenuItemType.sentinel
 }
 
-@c @implementation
-public func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>) -> Int32 {
+func DisableEmptyFileSlots(_ menuItem: UnsafePointer<MenuItem>) -> Int32 {
     let mask = gNav?.pointee.validSaveSlotMask ?? 0
     let need = Int64(MenuItem_GetInputNeed(menuItem))
     let isValid = (mask >> UInt64(need)) & 1
@@ -124,16 +171,14 @@ func KillMenu(_ returnCode: Int32) {
     }
 }
 
-@c @implementation
-public func LayoutCurrentMenuAgain(_ animate: Bool) {
+func LayoutCurrentMenuAgain(_ animate: Bool) {
     SwGameAssert(gNav != nil); SwGameAssert(gNav!.pointee.menu != nil)
     gNav!.pointee.sweepDelay = animate ? 0 : -100000
     saveSelectedRowInHistory()
     layOutMenu(gNav!.pointee.menuID)
 }
 
-@c @implementation
-public func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
+func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
     var mi = menuTree
     while mi.pointee.type != MenuItemType.sentinel || mi.pointee.id != 0 {
         if mi.pointee.type == MenuItemType.sentinel {
@@ -147,8 +192,7 @@ public func RegisterMenu(_ menuTree: UnsafePointer<MenuItem>) {
     }
 }
 
-@c @implementation
-public func MakeMenu(_ menu: UnsafePointer<MenuItem>, _ style: UnsafePointer<MenuStyle>?) -> UnsafeMutablePointer<ObjNode> {
+func MakeMenu(_ menu: UnsafePointer<MenuItem>, _ style: UnsafePointer<MenuStyle>?) -> UnsafeMutablePointer<ObjNode> {
     var driverDef = NewObjectDefinitionType()
     driverDef.scale = 1; driverDef.slot = Int16(MENU_SLOT); driverDef.genre = UInt8(EVENT_GENRE)
     driverDef.flags = UInt32(STATUS_BIT_MOVEINPAUSE | STATUS_BIT_DONTCULL)
@@ -255,15 +299,15 @@ private let cMoveDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 private let cDrawDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { node in
     guard let node = node else { return }
     OGL_PushState(); SetInfobarSpriteState(0, 1); OGL_DisableTexture2D(); OGL_EnableBlend(); OGL_EnableCullFace()
-    glBegin(UInt32(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
     let s = node.pointee.Scale.y; let menuTop = node.pointee.Coord.y - s/2; let menuBottom = node.pointee.Coord.y + s/2
     let taper: Float = 16; let c = node.pointee.ColorFilter
-    glColor4f(c.r, c.g, c.b, 0); glVertex2f(gLogicalRect.right, menuTop - taper); glVertex2f(gLogicalRect.left, menuTop - taper)
-    glColor4f(c.r, c.g, c.b, c.a); glVertex2f(gLogicalRect.left, menuTop); glVertex2f(gLogicalRect.right, menuTop)
-    glVertex2f(gLogicalRect.right, menuTop); glVertex2f(gLogicalRect.left, menuTop); glVertex2f(gLogicalRect.left, menuBottom); glVertex2f(gLogicalRect.right, menuBottom)
-    glVertex2f(gLogicalRect.right, menuBottom); glVertex2f(gLogicalRect.left, menuBottom)
-    glColor4f(c.r, c.g, c.b, 0); glVertex2f(gLogicalRect.left, menuBottom + taper); glVertex2f(gLogicalRect.right, menuBottom + taper)
-    glEnd(); OGL_PopState()
+    gRenderBackend.setColor4f(c.r, c.g, c.b, 0); gRenderBackend.vertex2f(gLogicalRect.right, menuTop - taper); gRenderBackend.vertex2f(gLogicalRect.left, menuTop - taper)
+    gRenderBackend.setColor4f(c.r, c.g, c.b, c.a); gRenderBackend.vertex2f(gLogicalRect.left, menuTop); gRenderBackend.vertex2f(gLogicalRect.right, menuTop)
+    gRenderBackend.vertex2f(gLogicalRect.right, menuTop); gRenderBackend.vertex2f(gLogicalRect.left, menuTop); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom); gRenderBackend.vertex2f(gLogicalRect.right, menuBottom)
+    gRenderBackend.vertex2f(gLogicalRect.right, menuBottom); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom)
+    gRenderBackend.setColor4f(c.r, c.g, c.b, 0); gRenderBackend.vertex2f(gLogicalRect.left, menuBottom + taper); gRenderBackend.vertex2f(gLogicalRect.right, menuBottom + taper)
+    gRenderBackend.endImmediate(); OGL_PopState()
 }
 private func rescaleDarkenPane(_ node: UnsafeMutablePointer<ObjNode>!, _ totalHeight: Float) {
     node.pointee.SpecialF.0 = node.pointee.SpecialF.1; node.pointee.SpecialF.1 = totalHeight; node.pointee.Timer = 0

@@ -1,6 +1,96 @@
 // MainMenu.swift - Port of MainMenu.c to Swift
-// The main menu tree (and the callbacks it embeds by designated
-// initializer) stays in MainMenu.c; see MainMenuInternal.h.
+//
+// gPlayNow is native Swift storage now (converted 2026-07-07): nothing in
+// any .c file touches it anymore (MainMenuGlobals.c, its last real C
+// owner, is deleted).
+
+var gPlayNow: UInt8 = 0
+
+// MARK: - Main menu tree
+
+private let cDisableEmptyFileSlots: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { mi in
+    mi.map { DisableEmptyFileSlots($0) } ?? 0
+}
+
+private let cCheckForLevelCheat: @convention(c) () -> Void = {
+    var i = 0
+    while !IsMenuTreeEndSentinel(gMainMenuTreePtr.advanced(by: i)) {
+        if gMainMenuTreePtr[i].id == fourCC("adve") {
+            gMainMenuTreePtr[i].next = SwIsKeyHeld(Int(SDL_SCANCODE_F10.rawValue)) ? fourCC("chea") : fourCC("EXIT")
+            break
+        }
+        i += 1
+    }
+}
+
+private let cDeleteFileSlot: @convention(c) () -> Void = {
+    let id = GetCurrentMenuItemID()
+    let base = fourCC("df#0")
+    if id >= base && id < base + 10 {
+        _ = DeleteSavedGame(id - base)
+    } else {
+        SwAlert("DeleteFileSlot: illegal menu item ID")
+    }
+}
+
+var gMainMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
+    miRoot(fourCC("root")),
+    miPick(STR_PLAY_GAME, next: fourCC("play")),
+    miPick(STR_SETTINGS,  next: fourCC("sett")),
+    miPick(STR_INFO,      next: fourCC("info")),
+    miPick(STR_QUIT,      next: fourCC("EXIT"), id: fourCC("quit")),
+
+    miRoot(fourCC("play")),
+    miPick(STR_ADVENTURE,    next: fourCC("EXIT"), id: fourCC("adve"), callback: cCheckForLevelCheat),
+    miPick(STR_NANO_VS_NANO, next: fourCC("bttl")),
+    miPick(STR_SAVED_GAMES,  next: fourCC("load")),
+    miPick(STR_BACK_SYMBOL,  next: fourCC("BACK")),
+
+    miRoot(fourCC("info")),
+    miPick(STR_STORY,           next: fourCC("EXIT"), id: fourCC("intr")),
+    miPick(STR_STORY_SUBTITLED, next: fourCC("EXIT"), id: fourCC("ints")),
+    miPick(STR_CREDITS,         next: fourCC("EXIT"), id: fourCC("cred")),
+    miPick(STR_BACK_SYMBOL,     next: fourCC("BACK")),
+
+    miRoot(fourCC("bttl")),
+    miPick(STR_RACE1,    next: fourCC("EXIT"), id: fourCC("rac1")),
+    miPick(STR_RACE2,    next: fourCC("EXIT"), id: fourCC("rac2")),
+    miSpacer(customHeight: 0.3),
+    miPick(STR_BATTLE1,  next: fourCC("EXIT"), id: fourCC("bat1")),
+    miPick(STR_BATTLE2,  next: fourCC("EXIT"), id: fourCC("bat2")),
+    miSpacer(customHeight: 0.3),
+    miPick(STR_CAPTURE1, next: fourCC("EXIT"), id: fourCC("cap1")),
+    miPick(STR_CAPTURE2, next: fourCC("EXIT"), id: fourCC("cap2")),
+    miSpacer(customHeight: 0.3),
+    miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
+
+    miRoot(fourCC("chea")),
+    miLabel(rawText: staticCStr("CHEAT MENU!")),
+    miPick(STR_NULL, next: fourCC("EXIT"), id: fourCC("cht1"), rawText: staticCStr("LEVEL 1: FOREST")),
+    miPick(STR_NULL, next: fourCC("EXIT"), id: fourCC("cht2"), rawText: staticCStr("LEVEL 2: DESERT")),
+    miPick(STR_NULL, next: fourCC("EXIT"), id: fourCC("cht3"), rawText: staticCStr("LEVEL 3: SWAMP")),
+    miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
+
+    miRoot(fourCC("load")),
+    miFileSlot(STR_FILE, id: fourCC("lf#0"), fileSlot: 0, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#1"), fileSlot: 1, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#2"), fileSlot: 2, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#3"), fileSlot: 3, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miFileSlot(STR_FILE, id: fourCC("lf#4"), fileSlot: 4, next: fourCC("EXIT"), getLayoutFlags: cDisableEmptyFileSlots),
+    miPick(STR_DELETE_A_FILE, next: fourCC("dele")),
+    miPick(STR_BACK_SYMBOL,   next: fourCC("BACK")),
+
+    miRoot(fourCC("dele")),
+    miLabel(STR_DELETE_WHICH, customHeight: 1.5),
+    miFileSlot(STR_DELETE, id: fourCC("df#0"), fileSlot: 0, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#1"), fileSlot: 1, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#2"), fileSlot: 2, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#3"), fileSlot: 3, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miFileSlot(STR_DELETE, id: fourCC("df#4"), fileSlot: 4, next: fourCC("BACK"), getLayoutFlags: cDisableEmptyFileSlots, callback: cDeleteFileSlot),
+    miPick(STR_BACK_SYMBOL, next: fourCC("BACK")),
+
+    miRoot(),
+])
 
 private let screensaverDelay: Float = 15.0
 private let menuTextAnaglyphZ: Float = 4.0
@@ -39,7 +129,7 @@ func DoMainMenuScreen() {
 
         var style = kDefaultMenuStyle
         style.yOffset = 302.5
-        _ = MakeMenu(GetMainMenuTree(), &style)
+        _ = MakeMenu(gMainMenuTreePtr, &style)
         RegisterSettingsMenu()
 
         while gMenuOutcome == 0 {
@@ -193,7 +283,7 @@ private func processMenuOutcome(_ outcome: Int32) {
         gPlayNow = 1
         gPlayingFromSavedGame = 0
         gLevelNum = Int16(LevelNum.adventure3.rawValue)
-        SDL_GL_SetSwapInterval(0) // no vsync for time demo
+        gRenderBackend.setVSync(0) // no vsync for time demo
 
     case 0x6164_7665: // 'adve' SINGLE-PLAYER ADVENTURE CAMPAIGN
         setMainController1P()
@@ -291,8 +381,7 @@ private let cMoveMouseCursorObject: @convention(c) (UnsafeMutablePointer<ObjNode
 
 // MARK: - Make mouse cursor object
 
-@c @implementation
-public func MakeMouseCursorObject() -> UnsafeMutablePointer<ObjNode>! {
+func MakeMouseCursorObject() -> UnsafeMutablePointer<ObjNode>! {
     SwGameAssert(GetNumSpritesInGroup(Int32(SPRITE_GROUP_CURSOR)) != 0)
 
     var def = NewObjectDefinitionType()

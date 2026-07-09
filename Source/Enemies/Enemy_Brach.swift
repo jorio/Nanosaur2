@@ -30,7 +30,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         }
 
         if pointee.parm.3 & 1 == 0 { // see if always add
-            if GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee >= maxBrachs {
+            if gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] >= maxBrachs {
                 return 0
             }
         }
@@ -47,7 +47,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         UpdateObjectTransforms(newObj)
 
         gNumEnemies += 1
-        GetNumEnemyOfKindSlot(Int32(EnemyKind.brach.rawValue))!.pointee += 1
+        gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] += 1
 
         return 1
     }
@@ -172,7 +172,7 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     _ = CalcDistanceToClosestPlayer(&gCoord, &playerNum) // find out who's the closest player
 
     if GetPlayerIsDead(Int32(playerNum)) == 0 { // don't aim at dead players
-        let playerInfo = GetPlayerInfoEntry(Int32(playerNum))!
+        let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
         _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
                                     turnSpeed: brachTurnSpeed, useOffsets: 0, crossOut: nil)
     }

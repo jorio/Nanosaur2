@@ -17,6 +17,27 @@ private let NUM_SLIDES = 9
 
 private let slideFadeRate: Float = 0.8
 
+// Native Swift struct - was `typedef struct {...} SlideType;` in
+// miscscreens.h. Zero C callers/globals reference it (see project memory),
+// so it moved entirely off the C ABI. Also used by WinScreen.swift.
+struct SlideType {
+    var spriteNum: Int16 = 0
+    var x: Float = 0
+    var y: Float = 0
+    var scale: Float = 0
+    var rotz: Float = 0
+    var alpha: Float = 0
+    var delayToNext: Float = 0
+    var delayToVanish: Float = 0
+    var zoomSpeed: Float = 0
+    var dx: Float = 0
+    var dy: Float = 0
+    var drot: Float = 0
+    var delayUntilEffect: Float = 0
+    var narrationSound: Int32 = 0
+    var subtitleKey: Int32 = 0
+}
+
 private var gEndSlideShow = false
 
 private var gSlideActive = [Bool](repeating: false, count: NUM_SLIDES)
@@ -309,14 +330,14 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     let y: Float = 320
 
-    glBegin(GLenum(GL_QUADS))
-    glColor4f(0, 0, 0, 0)
-    glVertex2f(gLogicalRect.left, y)
-    glVertex2f(gLogicalRect.right, y)
-    glColor4f(0, 0, 0, 1)
-    glVertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    glVertex2f(gLogicalRect.left, gLogicalRect.bottom)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.setColor4f(0, 0, 0, 0)
+    gRenderBackend.vertex2f(gLogicalRect.left, y)
+    gRenderBackend.vertex2f(gLogicalRect.right, y)
+    gRenderBackend.setColor4f(0, 0, 0, 1)
+    gRenderBackend.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
+    gRenderBackend.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }

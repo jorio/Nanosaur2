@@ -2,7 +2,7 @@
 //
 // Plain scalar-typed declaration (no <3ds.h>/SDL types), same reasoning as
 // picaGL_shim.h/romfs_shim.h: this needs libctru's console API, which
-// can't coexist with Pomme's Handle typedef in the same translation unit
+// can't coexist with the Mac Toolbox's Handle typedef (SwMacTypes.h) in the same translation unit
 // (see game_3ds.h's comment on hidScanInput for the full explanation).
 #pragma once
 

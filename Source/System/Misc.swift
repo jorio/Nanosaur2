@@ -2,12 +2,16 @@
 //
 // DoAlert/DoFatalAlert stay in Misc.c because they take C variadic
 // arguments, which Swift can't implement (same reasoning as
-// LocalizeWithPlaceholder staying in Localization.c). gRAMAlloced,
-// gFramesPerSecond, gFramesPerSecondFrac, and gNumPointers also stay defined
-// in Misc.c so other still-unported C files can keep reading/writing them
-// via `extern`; Swift reads/writes them here the same way it already does
-// for gGameViewInfoPtr etc. gSeed0/1/2 aren't `extern`'d anywhere else, so
-// unlike those they don't need to stay C-linked.
+// LocalizeWithPlaceholder staying in Localization.c). gRAMAlloced/
+// gFramesPerSecond/gFramesPerSecondFrac/gNumPointers are native Swift
+// storage now (converted 2026-07-07): nothing in any .c file touches them
+// anymore. gSeed0/1/2 aren't `extern`'d anywhere else, so unlike those
+// they didn't need this treatment - already private Swift storage.
+
+var gRAMAlloced: Int = 0
+var gFramesPerSecond: Float = 13
+var gFramesPerSecondFrac: Float = 1.0 / 13
+var gNumPointers: Int32 = 0
 
 private let MAX_FPS: Float = 300 // mac original was 190
 private let DEFAULT_FPS: Float = 13
@@ -46,7 +50,7 @@ public func CleanQuit() -> Never {
     #endif
     MyFlushEvents()
 
-    ExitToShell()
+    SwExitToShell()
 }
 
 // MARK: - Random number generator
@@ -213,9 +217,74 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
     gNumPointers -= 1
 }
 
+// MARK: - Time (replaces Pomme's Microseconds/TickCount - see extern/Pomme/src/Time/TimeManager.cpp)
+//
+// Both are only ever used for relative timing (frame-rate smoothing, level-
+// load duration logging, demo-recording elapsed time), always via
+// subtraction/wraparound arithmetic, so the exact epoch doesn't matter as
+// long as it's monotonic within a single run - SDL's own monotonic clock
+// (nanoseconds since SDL_Init, already running well before these are ever
+// called) is a fine substitute for Pomme's "static-init time" epoch.
+
+private let gSwBootTimeNS = SDL_GetTicksNS()
+
+// Matches Microseconds(UnsignedWide*)'s signature so call sites don't change.
+func SwMicroseconds(_ out: inout UnsignedWide) {
+    // Wrapping subtraction: gSwBootTimeNS's lazy initializer runs on this
+    // global's first reference, which happens a few nanoseconds *after* the
+    // SDL_GetTicksNS() call to its left in this same expression - so the
+    // very first call here would otherwise underflow (SDL_GetTicksNS() at
+    // init time > the value just captured) and trap.
+    let usecs = (SDL_GetTicksNS() &- gSwBootTimeNS) / 1000
+    out.lo = UInt32(truncatingIfNeeded: usecs)
+    out.hi = UInt32(truncatingIfNeeded: usecs >> 32)
+}
+
+// Matches TickCount()'s signature (ticks are ~1/60 sec) so call sites don't change.
+func SwTickCount() -> UInt32 {
+    // Wrapping subtraction - see SwMicroseconds above for why.
+    let usecs = (SDL_GetTicksNS() &- gSwBootTimeNS) / 1000
+    return UInt32(truncatingIfNeeded: 60 * usecs / 1_000_000)
+}
+
 // MARK: - Misc
 
 func VerifySystem() {
+}
+
+// Plain memmove - replaces Pomme's BlockMove (which was just a wrapper
+// around it, with 64-bit-clean pointer args).
+@c @implementation
+public func SwBlockMove(_ srcPtr: UnsafeRawPointer?, _ destPtr: UnsafeMutableRawPointer?, _ byteCount: Int) {
+    guard let srcPtr, let destPtr, byteCount > 0 else { return }
+    destPtr.copyMemory(from: srcPtr, byteCount: byteCount)
+}
+
+// Seconds since the classic Mac epoch (Jan 1 1904) - replaces Pomme's
+// GetDateTime, same offset from the UNIX epoch it used
+// (extern/Pomme/src/Time/TimeManager.cpp).
+private let kMacEpochOffsetFromUnixEpoch = -2_082_844_800
+
+@c @implementation
+public func SwGetDateTime(_ secs: UnsafeMutablePointer<UInt>?) {
+    var now: Int = 0
+    _ = time(&now)
+    secs?.pointee = UInt(bitPattern: now + kMacEpochOffsetFromUnixEpoch)
+}
+
+// Replaces Pomme's ExitToShell(), which unwound the C++/Swift call stack
+// back to Boot.cpp's main() via a thrown Pomme::QuitRequest exception, which
+// then fell through to main()'s own post-try/catch call to Shutdown()
+// (mouse-acceleration restore, window teardown, SDL_Quit). CleanQuit() above
+// already does all of this project's own game-level cleanup before calling
+// this, so there's nothing left for an unwind to accomplish - calling
+// Boot.cpp's Shutdown() directly (via the SwPlatformShutdown trampoline)
+// and then exiting the process is equivalent, without relying on a C++
+// exception propagating through Swift stack frames.
+@c @implementation
+public func SwExitToShell() -> Never {
+    SwPlatformShutdown()
+    exit(0)
 }
 
 // This version uses UpTime() which is only available on PCI Macs.
@@ -230,7 +299,7 @@ func CalcFramesPerSecond() {
     var currTime = UnsignedWide()
 
     while true {
-        Microseconds(&currTime)
+        SwMicroseconds(&currTime)
 
         if gTimeDemo != 0 {
             fps = 40

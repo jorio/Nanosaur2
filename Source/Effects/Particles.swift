@@ -1661,12 +1661,12 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // DRAW QUAD
 
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0); glVertex3f(frame[0].x, frame[0].y, frame[0].z)
-    glTexCoord2f(0.99, 0); glVertex3f(frame[1].x, frame[1].y, frame[1].z)
-    glTexCoord2f(0.99, 0.99); glVertex3f(frame[2].x, frame[2].y, frame[2].z)
-    glTexCoord2f(0, 0.99); glVertex3f(frame[3].x, frame[3].y, frame[3].z)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(frame[0].x, frame[0].y, frame[0].z)
+    gRenderBackend.texCoord2f(0.99, 0); gRenderBackend.vertex3f(frame[1].x, frame[1].y, frame[1].z)
+    gRenderBackend.texCoord2f(0.99, 0.99); gRenderBackend.vertex3f(frame[2].x, frame[2].y, frame[2].z)
+    gRenderBackend.texCoord2f(0, 0.99); gRenderBackend.vertex3f(frame[3].x, frame[3].y, frame[3].z)
+    gRenderBackend.endImmediate()
 
     gGlobalColorFilter.r = 1
     gGlobalColorFilter.g = 1
@@ -1750,12 +1750,12 @@ private let cDrawFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // DRAW QUAD
 
-    glBegin(GLenum(GL_QUADS))
-    glTexCoord2f(0, 0.99); glVertex3f(verts[0].x, verts[0].y, verts[0].z)
-    glTexCoord2f(0.99, 0.99); glVertex3f(verts[1].x, verts[1].y, verts[1].z)
-    glTexCoord2f(0.99, 0); glVertex3f(verts[2].x, verts[2].y, verts[2].z)
-    glTexCoord2f(0, 0); glVertex3f(verts[3].x, verts[3].y, verts[3].z)
-    glEnd()
+    gRenderBackend.beginImmediate(.quads)
+    gRenderBackend.texCoord2f(0, 0.99); gRenderBackend.vertex3f(verts[0].x, verts[0].y, verts[0].z)
+    gRenderBackend.texCoord2f(0.99, 0.99); gRenderBackend.vertex3f(verts[1].x, verts[1].y, verts[1].z)
+    gRenderBackend.texCoord2f(0.99, 0); gRenderBackend.vertex3f(verts[2].x, verts[2].y, verts[2].z)
+    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(verts[3].x, verts[3].y, verts[3].z)
+    gRenderBackend.endImmediate()
 
     gGlobalTransparency = 1.0
 }

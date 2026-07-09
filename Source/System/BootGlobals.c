@@ -12,5 +12,6 @@
 SDL_Window* gSDLWindow = NULL;
 SDL_Window* gSDLWindow2 = NULL;
 Boolean gDualScreenMode = 0;
+Boolean gMetalMode = 0;
 FSSpec gDataSpec;
 int gCurrentAntialiasingLevel;

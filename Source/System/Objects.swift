@@ -547,11 +547,11 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOZWRITES) != 0 {
                 if !noZWrites {
-                    glDepthMask(0)
+                    OGL_SetDepthWrite(false)
                     noZWrites = true
                 }
             } else if noZWrites {
-                glDepthMask(1)
+                OGL_SetDepthWrite(true)
                 noZWrites = false
             }
 
@@ -559,24 +559,24 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOZBUFFER) != 0 {
                 if !noZBuffer {
-                    glDisable(UInt32(GL_DEPTH_TEST))
+                    OGL_DisableDepthTest()
                     noZBuffer = true
                 }
             } else if noZBuffer {
                 noZBuffer = false
-                glEnable(UInt32(GL_DEPTH_TEST))
+                OGL_EnableDepthTest()
             }
 
             // CHECK EDGE ALPHA CLIPPING
 
             if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gGlobalTransparency == 1.0 {
                 if !clipAlpha {
-                    glAlphaFunc(UInt32(GL_GREATER), 0.6) // draw any pixel who's Alpha > .6 (effectivly trims low alpha pixels).
+                    gRenderBackend.setAlphaClipping(trimLowAlpha: true)
                     clipAlpha = true
                 }
             } else if clipAlpha {
                 clipAlpha = false
-                glAlphaFunc(UInt32(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
+                gRenderBackend.setAlphaClipping(trimLowAlpha: false)
             }
 
             // AIM AT CAMERA
@@ -603,7 +603,7 @@ func DrawObjects() {
             // Beta testers have reported that the following fixes it - it's basically a forced reset of the glColor mode.
             // We cannot call our OGL_SetColor4f() function since it thinks the color is alredy 1,1,1,1, so we just force it here.
 
-            glColor4f(1, 1, 1, 1)
+            gRenderBackend.setColor4f(1, 1, 1, 1)
             gMyState_Color.r = 1
             gMyState_Color.g = 1
             gMyState_Color.b = 1
@@ -612,17 +612,17 @@ func DrawObjects() {
             // SEE IF DO U/V TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                glMatrixMode(UInt32(GL_TEXTURE)) // set texture matrix
-                glTranslatef(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
-                glMatrixMode(UInt32(GL_MODELVIEW))
+                gRenderBackend.matrixMode(.texture) // set texture matrix
+                gRenderBackend.translate(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
+                gRenderBackend.matrixMode(.modelview)
             }
 
             // SUBMIT THE GEOMETRY
 
             if noLighting || node.pointee.Scale.y == 1.0 { // if scale == 1 or no lighting, then dont need to normalize vectors
-                glDisable(UInt32(GL_NORMALIZE))
+                OGL_SetNormalizeNormals(false)
             } else {
-                glEnable(UInt32(GL_NORMALIZE))
+                OGL_SetNormalizeNormals(true)
             }
 
             if let customDraw = node.pointee.CustomDrawFunction { // if has custom draw function, then override and use that
@@ -680,9 +680,9 @@ func DrawObjects() {
             // SEE IF END UV TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                glMatrixMode(UInt32(GL_TEXTURE)) // set texture matrix
-                glLoadIdentity()
-                glMatrixMode(UInt32(GL_MODELVIEW))
+                gRenderBackend.matrixMode(.texture) // set texture matrix
+                gRenderBackend.loadIdentity()
+                gRenderBackend.matrixMode(.modelview)
             }
         } while false
 
@@ -694,11 +694,11 @@ func DrawObjects() {
     // RESET SETTINGS TO DEFAULT
 
     if noZBuffer {
-        glEnable(UInt32(GL_DEPTH_TEST))
+        OGL_EnableDepthTest()
     }
 
     if noZWrites {
-        glDepthMask(1)
+        OGL_SetDepthWrite(true)
     }
 
     OGL_EnableCullFace()
@@ -709,7 +709,7 @@ func DrawObjects() {
     }
 
     if clipAlpha {
-        glAlphaFunc(UInt32(GL_NOTEQUAL), 0)
+        gRenderBackend.setAlphaClipping(trimLowAlpha: false)
     }
 
     gGlobalTransparency = 1.0 // reset this in case it has changed
@@ -718,7 +718,7 @@ func DrawObjects() {
     gGlobalColorFilter.b = 1.0
     gGlobalMaterialFlags = 0
 
-    glEnable(UInt32(GL_NORMALIZE))
+    OGL_SetNormalizeNormals(true)
 }
 
 private func DrawCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!, _ old: UInt8) {
@@ -753,50 +753,50 @@ private func DrawCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!, _ old
 
         // DRAW TOP
 
-        glBegin(UInt32(GL_LINE_LOOP))
+        gRenderBackend.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(left, top, back)
+        gRenderBackend.vertex3f(left, top, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        glVertex3f(left, top, front)
-        glVertex3f(right, top, front)
+        gRenderBackend.vertex3f(left, top, front)
+        gRenderBackend.vertex3f(right, top, front)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(right, top, back)
-        glEnd()
+        gRenderBackend.vertex3f(right, top, back)
+        gRenderBackend.endImmediate()
 
         // DRAW BOTTOM
 
-        glBegin(UInt32(GL_LINE_LOOP))
+        gRenderBackend.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(left, bottom, back)
+        gRenderBackend.vertex3f(left, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        glVertex3f(left, bottom, front)
-        glVertex3f(right, bottom, front)
+        gRenderBackend.vertex3f(left, bottom, front)
+        gRenderBackend.vertex3f(right, bottom, front)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(right, bottom, back)
-        glEnd()
+        gRenderBackend.vertex3f(right, bottom, back)
+        gRenderBackend.endImmediate()
 
         // DRAW LEFT
 
-        glBegin(UInt32(GL_LINE_LOOP))
+        gRenderBackend.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(left, top, back)
+        gRenderBackend.vertex3f(left, top, back)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(left, bottom, back)
+        gRenderBackend.vertex3f(left, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        glVertex3f(left, bottom, front)
-        glVertex3f(left, top, front)
-        glEnd()
+        gRenderBackend.vertex3f(left, bottom, front)
+        gRenderBackend.vertex3f(left, top, front)
+        gRenderBackend.endImmediate()
 
         // DRAW RIGHT
 
-        glBegin(UInt32(GL_LINE_LOOP))
+        gRenderBackend.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        glVertex3f(right, top, back)
-        glVertex3f(right, bottom, back)
+        gRenderBackend.vertex3f(right, top, back)
+        gRenderBackend.vertex3f(right, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        glVertex3f(right, bottom, front)
-        glVertex3f(right, top, front)
-        glEnd()
+        gRenderBackend.vertex3f(right, bottom, front)
+        gRenderBackend.vertex3f(right, top, front)
+        gRenderBackend.endImmediate()
     }
 
     OGL_SetColor4f(1, 1, 1, 1)
@@ -880,50 +880,50 @@ private func DrawBoundingBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // DRAW TOP
 
-    glBegin(UInt32(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(left, top, back)
+    gRenderBackend.vertex3f(left, top, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    glVertex3f(left, top, front)
-    glVertex3f(right, top, front)
+    gRenderBackend.vertex3f(left, top, front)
+    gRenderBackend.vertex3f(right, top, front)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(right, top, back)
-    glEnd()
+    gRenderBackend.vertex3f(right, top, back)
+    gRenderBackend.endImmediate()
 
     // DRAW BOTTOM
 
-    glBegin(UInt32(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(left, bottom, back)
+    gRenderBackend.vertex3f(left, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    glVertex3f(left, bottom, front)
-    glVertex3f(right, bottom, front)
+    gRenderBackend.vertex3f(left, bottom, front)
+    gRenderBackend.vertex3f(right, bottom, front)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(right, bottom, back)
-    glEnd()
+    gRenderBackend.vertex3f(right, bottom, back)
+    gRenderBackend.endImmediate()
 
     // DRAW LEFT
 
-    glBegin(UInt32(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(left, top, back)
+    gRenderBackend.vertex3f(left, top, back)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(left, bottom, back)
+    gRenderBackend.vertex3f(left, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    glVertex3f(left, bottom, front)
-    glVertex3f(left, top, front)
-    glEnd()
+    gRenderBackend.vertex3f(left, bottom, front)
+    gRenderBackend.vertex3f(left, top, front)
+    gRenderBackend.endImmediate()
 
     // DRAW RIGHT
 
-    glBegin(UInt32(GL_LINE_LOOP))
+    gRenderBackend.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    glVertex3f(right, top, back)
-    glVertex3f(right, bottom, back)
+    gRenderBackend.vertex3f(right, top, back)
+    gRenderBackend.vertex3f(right, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    glVertex3f(right, bottom, front)
-    glVertex3f(right, top, front)
-    glEnd()
+    gRenderBackend.vertex3f(right, bottom, front)
+    gRenderBackend.vertex3f(right, top, front)
+    gRenderBackend.endImmediate()
 }
 
 private func DrawBoundingSpheres(_ theNode: UnsafeMutablePointer<ObjNode>!) {
@@ -931,20 +931,20 @@ private func DrawBoundingSpheres(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     OGL_DisableTexture2D()
 
-    glBegin(UInt32(GL_LINES))
-    glVertex3f(theNode.pointee.Coord.x - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-    glVertex3f(theNode.pointee.Coord.x + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-    glEnd()
+    gRenderBackend.beginImmediate(.lines)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    gRenderBackend.endImmediate()
 
-    glBegin(UInt32(GL_LINES))
-    glVertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z - theNode.pointee.BoundingSphereRadius)
-    glVertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z + theNode.pointee.BoundingSphereRadius)
-    glEnd()
+    gRenderBackend.beginImmediate(.lines)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z - theNode.pointee.BoundingSphereRadius)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z + theNode.pointee.BoundingSphereRadius)
+    gRenderBackend.endImmediate()
 
-    glBegin(UInt32(GL_LINES))
-    glVertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
-    glVertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
-    glEnd()
+    gRenderBackend.beginImmediate(.lines)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
+    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
+    gRenderBackend.endImmediate()
 }
 
 func MoveStaticObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {

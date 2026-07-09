@@ -45,7 +45,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
     let theNode = theNodeOpt!
     let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
 
-    glDisable(GLenum(GL_ALPHA_TEST)) // --------
+    gRenderBackend.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -58,7 +58,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
 
     MO_DrawObject(theNode.pointee.BaseGroup)
 
-    glEnable(GLenum(GL_ALPHA_TEST)) // --------
+    gRenderBackend.setAlphaTestEnabled(true) // --------
 }
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
@@ -103,7 +103,7 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     let theNode = theNodeOpt!
     let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
 
-    glDisable(GLenum(GL_ALPHA_TEST)) // --------
+    gRenderBackend.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -117,9 +117,9 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gCloudScroll.x
     theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gCloudScroll.y
 
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glTranslatef(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
+    gRenderBackend.matrixMode(.modelview)
 
     // DRAW THE OBJECT
 
@@ -127,11 +127,11 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // RESET UV MATRIX
 
-    glMatrixMode(GLenum(GL_TEXTURE))
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture)
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(.modelview)
 
-    glEnable(GLenum(GL_ALPHA_TEST)) // --------
+    gRenderBackend.setAlphaTestEnabled(true) // --------
 }
 
 // MARK: -

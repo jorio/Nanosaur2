@@ -75,6 +75,79 @@ tryAgain:
 	return dataPath;
 }
 
+// Phase 0 Metal spike (docs/metal-renderer-plan.md): `--metal-spike`
+// bypasses the normal GL boot/game path entirely and just proves SDL's
+// Metal layer -> MetalRenderer module -> on-screen present path works.
+// Deliberately kept isolated from Boot()/GameMain() and gSDLWindow's usual
+// GL setup so this throwaway spike can't affect the real (still GL)
+// rendering path. Superseded by `--metal` (see SwMetalBackend_Activate() in
+// main()) for actually rendering the game via Metal, but kept around as a
+// minimal regression check for the SDL-layer -> Metal present path in
+// isolation.
+static int RunMetalSpike()
+{
+	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
+	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
+
+	if (!SDL_Init(SDL_INIT_VIDEO))
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError());
+		return 1;
+	}
+
+	// No SDL_WINDOW_OPENGL here -- SDL_Metal_CreateView wants a window that
+	// wasn't set up for GL. gSDLWindow is reused (rather than a local
+	// variable) purely because SwMetalSpike_Init() (MetalSpike.swift) reads
+	// that existing global; nothing else in this spike path touches it.
+	gSDLWindow = SDL_CreateWindow(
+		GAME_FULL_NAME " (" GAME_VERSION ") - Metal Spike", 640, 480,
+		SDL_WINDOW_METAL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+
+	if (!gSDLWindow)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create Metal window: %s", SDL_GetError());
+		return 1;
+	}
+
+	if (!SwMetalSpike_Init())
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SwMetalSpike_Init failed");
+		return 1;
+	}
+
+	SDL_Log("Metal spike running -- close the window or press Escape to quit.");
+
+	bool running = true;
+	float hue = 0.0f;
+	while (running)
+	{
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_EVENT_QUIT)
+				running = false;
+			else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+				running = false;
+		}
+
+		// Cycle the clear colour every frame so it's visually obvious this is
+		// a live Metal-rendered (not a static) frame.
+		hue += 0.01f;
+		if (hue > 1.0f)
+			hue -= 1.0f;
+		SwMetalSpike_ClearFrame(
+			0.5f + 0.5f * SDL_sinf(hue * 6.28318f),
+			0.5f + 0.5f * SDL_sinf(hue * 6.28318f + 2.09439f),
+			0.5f + 0.5f * SDL_sinf(hue * 6.28318f + 4.18879f));
+	}
+
+	SwMetalSpike_Shutdown();
+	SDL_DestroyWindow(gSDLWindow);
+	gSDLWindow = NULL;
+	SDL_Quit();
+	return 0;
+}
+
 static void Boot(int argc, char** argv)
 {
 	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
@@ -90,6 +163,10 @@ static void Boot(int argc, char** argv)
 		if (0 == strcmp(argv[i], "--dual-screen"))
 		{
 			gDualScreenMode = true;
+		}
+		else if (0 == strcmp(argv[i], "--metal"))
+		{
+			gMetalMode = true;
 		}
 	}
 
@@ -111,12 +188,22 @@ retryVideo:
 	}
 
 	// Create window
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	//
+	// --metal (docs/metal-renderer-plan.md Phase 2): the window is created
+	// SDL_WINDOW_METAL-only, with NO GL attributes/context at all - mixing a
+	// Metal view and a GL context on the same SDL window doesn't work (see
+	// OGL_CreateDrawContext's comment for what was tried and why it broke).
+	// gGetIntegerv-based MSAA retry below doesn't apply in this mode since
+	// there's no GL context to fail to create with the requested MSAA level.
+	if (!gMetalMode)
+	{
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	}
 
 	gCurrentAntialiasingLevel = gGamePrefs.antialiasingLevel;
-	if (gCurrentAntialiasingLevel != 0)
+	if (!gMetalMode && gCurrentAntialiasingLevel != 0)
 	{
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 1 << gCurrentAntialiasingLevel);
@@ -124,11 +211,11 @@ retryVideo:
 
 	gSDLWindow = SDL_CreateWindow(
 		GAME_FULL_NAME " (" GAME_VERSION ")", 640, 480,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+		(gMetalMode ? SDL_WINDOW_METAL : SDL_WINDOW_OPENGL) | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
 	if (!gSDLWindow)
 	{
-		if (gCurrentAntialiasingLevel != 0)
+		if (!gMetalMode && gCurrentAntialiasingLevel != 0)
 		{
 			SDL_Log("Couldn't create SDL window with the requested MSAA level. Retrying without MSAA...");
 
@@ -236,6 +323,19 @@ extern "C" void SwPlatformShutdown()
 
 int main(int argc, char** argv)
 {
+	// Phase 0 Metal spike (docs/metal-renderer-plan.md) -- takes over the
+	// process entirely instead of going through the normal Boot()/GameMain()
+	// GL path; see RunMetalSpike()'s comment for why. Kept behind its own
+	// flag as a minimal regression check, separate from `--metal` (real
+	// integration, handled below via gMetalMode).
+	for (int i = 1; i < argc; i++)
+	{
+		if (0 == strcmp(argv[i], "--metal-spike"))
+		{
+			return RunMetalSpike();
+		}
+	}
+
 	// Normal clean-quit path: CleanQuit() (Misc.swift) runs its own cleanup,
 	// then SwExitToShell() calls Shutdown() and exits the process directly -
 	// main() never regains control in that case (see SwExitToShell's
@@ -246,6 +346,11 @@ int main(int argc, char** argv)
 #if _DEBUG
 	// In debug builds, don't catch anything so a debugger can break on an
 	// uncaught exception.
+	// Real Metal integration (docs/metal-renderer-plan.md Phase 2): activating
+	// Metal (SwMetalBackend_Activate, called from OGL_CreateDrawContext once
+	// the GL context exists - see that function's comment for why it must
+	// come AFTER, not before) happens inside GameMain()'s normal screen
+	// setup, not here. gMetalMode just carries the flag through to there.
 	Boot(argc, argv);
 	GameMain();
 	Shutdown();

@@ -696,7 +696,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_PushState()
                 withUnsafePointer(to: m.value) {
                     $0.withMemoryRebound(to: Float.self, capacity: 16) {
-                        glMultMatrixf($0)
+                        gRenderBackend.multMatrix($0)
                     }
                 }
 
@@ -708,12 +708,12 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_DisableFog()
                 gGlobalTransparency = 1.0
 
-                glBegin(GLenum(GL_QUADS))
-                glTexCoord2f(0, 0); glVertex2f(-size, -size)
-                glTexCoord2f(0, 1); glVertex2f(-size, size)
-                glTexCoord2f(1, 1); glVertex2f(size, size)
-                glTexCoord2f(1, 0); glVertex2f(size, -size)
-                glEnd()
+                gRenderBackend.beginImmediate(.quads)
+                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
+                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
+                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
+                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
+                gRenderBackend.endImmediate()
 
                 OGL_PopState()
             }

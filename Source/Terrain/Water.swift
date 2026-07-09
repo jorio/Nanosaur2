@@ -412,14 +412,14 @@ private func drawWater() {
 
             // SET TEXTURE SCROLL FOR BOTH TEXTURE LAYERS
             if waterType != prevType { // only update UV's if this is a different water type than the last loop
-                glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+                gRenderBackend.matrixMode(.texture) // set texture matrix
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
-                glLoadIdentity()
-                glTranslatef(gWaterUVs[waterType][0].u, gWaterUVs[waterType][0].v, 0)
+                gRenderBackend.loadIdentity()
+                gRenderBackend.translate(gWaterUVs[waterType][0].u, gWaterUVs[waterType][0].v, 0)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-                glLoadIdentity()
-                glTranslatef(gWaterUVs[waterType][1].u, gWaterUVs[waterType][1].v, 0)
-                glMatrixMode(GLenum(GL_MODELVIEW))
+                gRenderBackend.loadIdentity()
+                gRenderBackend.translate(gWaterUVs[waterType][1].u, gWaterUVs[waterType][1].v, 0)
+                gRenderBackend.matrixMode(.modelview)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
             }
 
@@ -436,12 +436,12 @@ private func drawWater() {
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
     // RESTORE ALL TEXTURE MATRICES
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
+    gRenderBackend.matrixMode(.texture) // set texture matrix
     for i in 0..<2 {
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0) + UInt32(i))
-        glLoadIdentity()
+        gRenderBackend.loadIdentity()
     }
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 
@@ -650,12 +650,12 @@ private func drawRipples() {
         let s = gRippleList[i].scale // get scale
         OGL_SetColor4f(1, 1, 1, gRippleList[i].alpha) // get/set alpha
 
-        glBegin(GLenum(GL_QUADS))
-        glTexCoord2f(0, 0); glVertex3f(x - s, y, z - s)
-        glTexCoord2f(1, 0); glVertex3f(x + s, y, z - s)
-        glTexCoord2f(1, 1); glVertex3f(x + s, y, z + s)
-        glTexCoord2f(0, 1); glVertex3f(x - s, y, z + s)
-        glEnd()
+        gRenderBackend.beginImmediate(.quads)
+        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(x - s, y, z - s)
+        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + s, y, z - s)
+        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + s, y, z + s)
+        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x - s, y, z + s)
+        gRenderBackend.endImmediate()
     }
 
     OGL_SetColor4f(1, 1, 1, 1)

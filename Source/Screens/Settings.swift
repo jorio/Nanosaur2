@@ -54,7 +54,7 @@ private let cOnPickResetMouseBindings: @convention(c) () -> Void = {
 private let cTestGamepadRumble: @convention(c) () -> Void = { Rumble(1, 1, 200, Int32(ANY_PLAYER)) }
 
 private let cOnChangeVSync: @convention(c) () -> Void = {
-    SDL_GL_SetSwapInterval(Int32(gGamePrefs.vsync))
+    gRenderBackend.setVSync(Int32(gGamePrefs.vsync))
 }
 
 // MARK: - Graphics / Gamepad menu callbacks
@@ -103,10 +103,8 @@ private let cOnEnterGraphicsMenu: @convention(c) () -> Void = {
     def.slot = Int16(SPRITE_SLOT)
     def.moveCall = cMoveTemporaryGraphicsMenuText
     def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
-    let rendererStr = String(cString: glGetString(GLenum(GL_RENDERER))!)
-    let versionStr  = String(cString: glGetString(GLenum(GL_VERSION))!)
     let driverStr   = String(cString: SDL_GetCurrentVideoDriver()!)
-    let info = "\(rendererStr), OpenGL \(versionStr), \(driverStr)"
+    let info = "\(gRenderBackend.rendererInfo()), \(driverStr)"
     info.withCString { cStr in
         let text = TextMesh_New(cStr, Int32(kTextMeshSmallCaps | kTextMeshAlignBottom), &def)
         text.pointee.ColorFilter.a = 0.75

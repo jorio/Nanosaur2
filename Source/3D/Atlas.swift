@@ -695,14 +695,14 @@ private func drawExtents(_ extents: OGLRect, _ z: Float) {
     OGL_PushState() // keep state
     OGL_DisableTexture2D()
 
-    glColor4f(1, 1, 1, 1)
-    glBegin(GLenum(GL_LINE_LOOP))
-    glVertex3f(extents.left, extents.top, z)
-    glVertex3f(extents.right, extents.top, z)
-    glColor4f(0, 0.5, 1, 1)
-    glVertex3f(extents.right, extents.bottom, z)
-    glVertex3f(extents.left, extents.bottom, z)
-    glEnd()
+    gRenderBackend.setColor4f(1, 1, 1, 1)
+    gRenderBackend.beginImmediate(.lineLoop)
+    gRenderBackend.vertex3f(extents.left, extents.top, z)
+    gRenderBackend.vertex3f(extents.right, extents.top, z)
+    gRenderBackend.setColor4f(0, 0.5, 1, 1)
+    gRenderBackend.vertex3f(extents.right, extents.bottom, z)
+    gRenderBackend.vertex3f(extents.left, extents.bottom, z)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }
@@ -711,19 +711,19 @@ func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
     SwGameAssert(Int32(textNode.pointee.Genre) == Int32(TEXTMESH_GENRE))
 
     OGL_PushState() // keep state
-    glDisable(GLenum(GL_TEXTURE_2D))
+    gRenderBackend.disableTexture2D()
 
     let extents = TextMesh_GetExtents(textNode)
     let z = textNode.pointee.Coord.z
 
-    glColor4f(1, 1, 1, 1)
-    glBegin(GLenum(GL_LINE_LOOP))
-    glVertex3f(extents.left, extents.top, z)
-    glVertex3f(extents.right, extents.top, z)
-    glColor4f(0, 0.5, 1, 1)
-    glVertex3f(extents.right, extents.bottom, z)
-    glVertex3f(extents.left, extents.bottom, z)
-    glEnd()
+    gRenderBackend.setColor4f(1, 1, 1, 1)
+    gRenderBackend.beginImmediate(.lineLoop)
+    gRenderBackend.vertex3f(extents.left, extents.top, z)
+    gRenderBackend.vertex3f(extents.right, extents.top, z)
+    gRenderBackend.setColor4f(0, 0.5, 1, 1)
+    gRenderBackend.vertex3f(extents.right, extents.bottom, z)
+    gRenderBackend.vertex3f(extents.left, extents.bottom, z)
+    gRenderBackend.endImmediate()
 
     OGL_PopState()
 }
@@ -751,18 +751,18 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flag
     MO_DrawMaterial(font.pointee.material)
 
     // DRAW IT
-    glBegin(GLenum(GL_QUADS))
+    gRenderBackend.beginImmediate(.quads)
     let pt = gImmediateModePoints
     let uv = gImmediateModeUVs
     var p = 0
     while p < 4 * Int(metrics.numQuads) {
-        glTexCoord2f(uv[p + 0].u, uv[p + 0].v); glVertex3f(pt[p + 0].x, pt[p + 0].y, 0)
-        glTexCoord2f(uv[p + 1].u, uv[p + 1].v); glVertex3f(pt[p + 1].x, pt[p + 1].y, 0)
-        glTexCoord2f(uv[p + 2].u, uv[p + 2].v); glVertex3f(pt[p + 2].x, pt[p + 2].y, 0)
-        glTexCoord2f(uv[p + 3].u, uv[p + 3].v); glVertex3f(pt[p + 3].x, pt[p + 3].y, 0)
+        gRenderBackend.texCoord2f(uv[p + 0].u, uv[p + 0].v); gRenderBackend.vertex3f(pt[p + 0].x, pt[p + 0].y, 0)
+        gRenderBackend.texCoord2f(uv[p + 1].u, uv[p + 1].v); gRenderBackend.vertex3f(pt[p + 1].x, pt[p + 1].y, 0)
+        gRenderBackend.texCoord2f(uv[p + 2].u, uv[p + 2].v); gRenderBackend.vertex3f(pt[p + 2].x, pt[p + 2].y, 0)
+        gRenderBackend.texCoord2f(uv[p + 3].u, uv[p + 3].v); gRenderBackend.vertex3f(pt[p + 3].x, pt[p + 3].y, 0)
         p += 4
     }
-    glEnd()
+    gRenderBackend.endImmediate()
     gPolysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
 }
 
@@ -781,17 +781,17 @@ func Atlas_DrawString2(
 
     OGL_DisableLighting()
     OGL_DisableCullFace()
-    glDisable(GLenum(GL_DEPTH_TEST))
+    OGL_DisableDepthTest()
 
     if flags & UInt32(kTextMeshGlow) != 0 {
         OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
     }
 
-    glTranslatef(x, y, 0)
-    glScalef(scaleX, scaleY, 1) // Assume ortho projection
+    gRenderBackend.translate(x, y, 0)
+    gRenderBackend.scale(scaleX, scaleY, 1) // Assume ortho projection
 
     if rot != 0 {
-        glRotatef(rot * 180.0 / Float(PI), 0, 0, 1) // remember: rotation is in degrees, not radians!
+        gRenderBackend.rotate(rot * 180.0 / Float(PI), 0, 0, 1) // remember: rotation is in degrees, not radians!
     }
 
     Atlas_ImmediateDraw(groupNum, text, flags)

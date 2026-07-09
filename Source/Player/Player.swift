@@ -928,9 +928,9 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
     va.pointee.uvs.1 = va.pointee.uvs.0
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glTranslatef(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 
     // DRAW IT
@@ -942,9 +942,9 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
     va.pointee.uvs.1 = nil
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    glMatrixMode(GLenum(GL_TEXTURE)) // set texture matrix
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_MODELVIEW))
+    gRenderBackend.matrixMode(.texture) // set texture matrix
+    gRenderBackend.loadIdentity()
+    gRenderBackend.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 

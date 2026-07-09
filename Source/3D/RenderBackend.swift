@@ -144,6 +144,12 @@ protocol RenderBackend: AnyObject {
     /// math. GL introspects; matrix-stack-tracking backends copy their
     /// CPU-side top.
     func getModelViewMatrix(_ out: UnsafeMutablePointer<Float>)
+    /// Reads back the current projection matrix - load-bearing only in
+    /// stereo mode, where frustum() computed it backend-side.
+    func getProjectionMatrix(_ out: UnsafeMutablePointer<Float>)
+    /// Multiplies a perspective frustum onto the current matrix (glFrustum
+    /// semantics) - stereo eye-offset projections.
+    func frustum(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double)
     /// Multiplies an orthographic projection onto the current matrix
     /// (glOrtho semantics - call sites always loadIdentity() first).
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double)
@@ -241,6 +247,19 @@ protocol RenderBackend: AnyObject {
     /// Human-readable renderer description for the Settings screen's info
     /// line (GL: GL_RENDERER + GL_VERSION strings).
     func rendererInfo() -> String
+
+    /// Per-channel color write mask (anaglyph stereo passes and the
+    /// calibration screen). Backends without stereo support may no-op.
+    func setColorMask(_ r: Bool, _ g: Bool, _ b: Bool, _ a: Bool)
+
+    /// Color-material tracking (lit geometry takes its material color from
+    /// the current vertex color). Part of prepareSceneDefaults; also
+    /// re-asserted defensively by the debug-text path.
+    func setColorMaterialEnabled(_ enabled: Bool)
+
+    /// Polls and clears the backend's pending error state, returning 0 if
+    /// none (GL: glGetError). Fatal-error plumbing in OGL_CheckError.
+    func checkError() -> UInt32
 }
 
 // MARK: - OpenGL implementation
@@ -335,6 +354,10 @@ final class GLRenderBackend: RenderBackend {
     func loadMatrix(_ m: UnsafePointer<Float>) { glLoadMatrixf(m) }
     func multMatrix(_ m: UnsafePointer<Float>) { glMultMatrixf(m) }
     func getModelViewMatrix(_ out: UnsafeMutablePointer<Float>) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), out) }
+    func getProjectionMatrix(_ out: UnsafeMutablePointer<Float>) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), out) }
+    func frustum(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double) {
+        glFrustum(left, right, bottom, top, near, far)
+    }
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top: Double, _ near: Double, _ far: Double) {
         glOrtho(left, right, bottom, top, near, far)
     }
@@ -581,6 +604,20 @@ final class GLRenderBackend: RenderBackend {
         let versionStr = String(cString: glGetString(GLenum(GL_VERSION))!)
         return "\(rendererStr), OpenGL \(versionStr)"
     }
+
+    func setColorMask(_ r: Bool, _ g: Bool, _ b: Bool, _ a: Bool) {
+        glColorMask(r ? 1 : 0, g ? 1 : 0, b ? 1 : 0, a ? 1 : 0)
+    }
+
+    func setColorMaterialEnabled(_ enabled: Bool) {
+        if enabled {
+            glEnable(GLenum(GL_COLOR_MATERIAL))
+        } else {
+            glDisable(GLenum(GL_COLOR_MATERIAL))
+        }
+    }
+
+    func checkError() -> UInt32 { UInt32(glGetError()) }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

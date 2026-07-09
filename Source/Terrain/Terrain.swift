@@ -797,7 +797,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     OGL_PushState()
 
-    gRenderBackend.setNormalizeNormals(false) // turn off vector normalization since scale == 1
+    OGL_SetNormalizeNormals(false) // turn off vector normalization since scale == 1
     OGL_DisableBlend() // no blending for terrain - its always opaque
     gRenderBackend.setAlphaTestEnabled(false)
 

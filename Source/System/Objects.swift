@@ -547,11 +547,11 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOZWRITES) != 0 {
                 if !noZWrites {
-                    gRenderBackend.setDepthWrite(false)
+                    OGL_SetDepthWrite(false)
                     noZWrites = true
                 }
             } else if noZWrites {
-                gRenderBackend.setDepthWrite(true)
+                OGL_SetDepthWrite(true)
                 noZWrites = false
             }
 
@@ -620,9 +620,9 @@ func DrawObjects() {
             // SUBMIT THE GEOMETRY
 
             if noLighting || node.pointee.Scale.y == 1.0 { // if scale == 1 or no lighting, then dont need to normalize vectors
-                gRenderBackend.setNormalizeNormals(false)
+                OGL_SetNormalizeNormals(false)
             } else {
-                gRenderBackend.setNormalizeNormals(true)
+                OGL_SetNormalizeNormals(true)
             }
 
             if let customDraw = node.pointee.CustomDrawFunction { // if has custom draw function, then override and use that
@@ -698,7 +698,7 @@ func DrawObjects() {
     }
 
     if noZWrites {
-        gRenderBackend.setDepthWrite(true)
+        OGL_SetDepthWrite(true)
     }
 
     OGL_EnableCullFace()
@@ -718,7 +718,7 @@ func DrawObjects() {
     gGlobalColorFilter.b = 1.0
     gGlobalMaterialFlags = 0
 
-    gRenderBackend.setNormalizeNormals(true)
+    OGL_SetNormalizeNormals(true)
 }
 
 private func DrawCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!, _ old: UInt8) {

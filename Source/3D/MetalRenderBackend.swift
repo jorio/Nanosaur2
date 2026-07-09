@@ -192,6 +192,26 @@ final class MetalRenderBackend: RenderBackend {
         for i in 0..<16 { out[i] = m[i] }
     }
 
+    func getProjectionMatrix(_ out: UnsafeMutablePointer<Float>) {
+        let m = projectionStack[projectionStack.count - 1]
+        for i in 0..<16 { out[i] = m[i] }
+    }
+
+    func frustum(_ left: Double, _ right: Double, _ bottom: Double, _ top_: Double, _ near: Double, _ far: Double) {
+        // Same matrix glFrustum produces (GL [-1,1] NDC z-range - see the
+        // header comment's z-range note).
+        let (l, r, b, t, n, f) = (Float(left), Float(right), Float(bottom), Float(top_), Float(near), Float(far))
+        var m = [Float](repeating: 0, count: 16)
+        m[0] = 2 * n / (r - l)
+        m[5] = 2 * n / (t - b)
+        m[8] = (r + l) / (r - l)
+        m[9] = (t + b) / (t - b)
+        m[10] = -(f + n) / (f - n)
+        m[11] = -1
+        m[14] = -2 * f * n / (f - n)
+        setTop(Self.multiply(top(), m))
+    }
+
     func ortho(_ left: Double, _ right: Double, _ bottom: Double, _ top_: Double, _ near: Double, _ far: Double) {
         // Same matrix glOrtho produces (GL [-1,1] NDC z-range - see the
         // header comment's note on the z-range gap; harmless while
@@ -418,6 +438,10 @@ final class MetalRenderBackend: RenderBackend {
     func rendererInfo() -> String {
         return "\(renderer.deviceName), Metal"
     }
+
+    func setColorMask(_ r: Bool, _ g: Bool, _ b: Bool, _ a: Bool) { /* stereo not supported */ }
+    func setColorMaterialEnabled(_ enabled: Bool) { /* no fixed-function material */ }
+    func checkError() -> UInt32 { 0 }
 
     func present() {
         if frameActive {

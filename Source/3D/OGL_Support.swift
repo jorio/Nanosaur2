@@ -127,6 +127,23 @@ private var gMyState_DepthTest = false
 private var gMyState_TextureUnit: UInt32 = 0
 private var gMyState_BlendFuncS: GLenum = 0
 private var gMyState_BlendFuncD: GLenum = 0
+// Shadow copies of normal-renormalization and depth-write state, so
+// OGL_PushState/PopState can save/restore them without GL introspection
+// (which isn't portable). Kept accurate by routing every mutation through
+// OGL_SetNormalizeNormals/OGL_SetDepthWrite below; both start true because
+// prepareSceneDefaults() enables GL_NORMALIZE and depth writes default on.
+private var gMyState_Normalize = true
+private var gMyState_DepthMask = true
+
+func OGL_SetNormalizeNormals(_ enabled: Bool) {
+    gMyState_Normalize = enabled
+    gRenderBackend.setNormalizeNormals(enabled)
+}
+
+func OGL_SetDepthWrite(_ enabled: Bool) {
+    gMyState_DepthMask = enabled
+    gRenderBackend.setDepthWrite(enabled)
+}
 
 // MARK: - Macro shims (parameterless/parameterized macros aren't importable)
 
@@ -761,9 +778,9 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                 // Bringing up dialogs can write into green channel, so always be sure it's clear
 
                 if isStereoAnaglyphColor() {
-                    glColorMask(1, 1, 1, 1) // make sure clearing Red/Green/Blue channels
+                    gRenderBackend.setColorMask(true, true, true, true) // make sure clearing Red/Green/Blue channels
                 } else if isStereoAnaglyphMono() {
-                    glColorMask(1, 0, 1, 1) // make sure clearing Red/Blue channels
+                    gRenderBackend.setColorMask(true, false, true, true) // make sure clearing Red/Blue channels
                 }
 
                 gRenderBackend.clearColorAndDepth()
@@ -778,14 +795,14 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             // SET COLOR MASK
 
             if gAnaglyphPass == 0 {
-                glColorMask(1, 0, 0, 1)
+                gRenderBackend.setColorMask(true, false, false, true)
             } else {
                 if isStereoAnaglyphColor() {
-                    glColorMask(0, 1, 1, 1)
+                    gRenderBackend.setColorMask(false, true, true, true)
                 } else {
-                    glColorMask(0, 0, 1, 1)
+                    gRenderBackend.setColorMask(false, false, true, true)
                 }
-                glClear(GLbitfield(GL_DEPTH_BUFFER_BIT))
+                gRenderBackend.clearDepthOnly()
             }
         }
 
@@ -1571,7 +1588,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             right = aspect * wd2 - 0.5 * gAnaglyphEyeSeparation * ndfl
         }
 
-        glFrustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
+        gRenderBackend.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
     } else {
         // SETUP STANDARD PERSPECTIVE CAMERA
 
@@ -1611,28 +1628,20 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
     }
 
     // GET VARIOUS CAMERA MATRICES
-
-    if gMetalMode == 0 {
-        // The glGetFloatv readbacks re-read exactly what was loaded above:
-        // gWorldToViewMatrix (modelview, computed by OGL_SetGluLookAtMatrix)
-        // and gViewToFrustumMatrix (projection - EXCEPT in stereo mode, where
-        // glFrustum computed it GL-side, making this readback load-bearing).
-        withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
-        }
-        withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_MODELVIEW_MATRIX), $0) }
-        }
-        withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { glGetFloatv(GLenum(GL_PROJECTION_MATRIX), $0) }
-        }
-    } else {
-        // No GL context to introspect - but nothing to read back either:
-        // gWorldToViewMatrix/gViewToFrustumMatrix already hold the exact
-        // Swift-computed values that were loaded into the facade above
-        // (stereo's glFrustum path can't be active - no GL). Just derive the
-        // modelview copy.
-        gLocalToViewMatrix = gWorldToViewMatrix
+    //
+    // The readbacks re-fetch exactly what was loaded above (modelview from
+    // OGL_SetGluLookAtMatrix, projection from OGL_SetGluPerspectiveMatrix) -
+    // load-bearing only in stereo mode, where frustum() computed the
+    // projection backend-side. Portable now: matrix-stack-tracking backends
+    // serve these from their CPU-side stacks.
+    withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
+    }
+    withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
+    }
+    withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getProjectionMatrix($0) }
     }
     gLocalToFrustumMatrix = gLocalToViewMatrix.multiplied(by: gViewToFrustumMatrix)
     gWorldToFrustumMatrix = gWorldToViewMatrix.multiplied(by: gViewToFrustumMatrix)
@@ -1654,15 +1663,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 // MARK: - OGL: Check error
 
 func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
-    // No GL context exists under --metal (see OGL_CreateDrawContext) -
-    // glGetError() itself EXC_BAD_ACCESSes with no current context, and
-    // there's nothing to check anyway. Guarded here at the source so the
-    // dozens of scattered OGL_CheckError() call sites don't each need it.
-    if gMetalMode != 0 {
-        return 0
-    }
-
-    let error = glGetError()
+    let error = gRenderBackend.checkError()
     if error != 0 {
         var text = ""
         switch Int32(error) {
@@ -1711,17 +1712,8 @@ func OGL_PushState() {
     gStateStack_BlendSrc[i] = GLint(gMyState_BlendFuncS)
     gStateStack_BlendDst[i] = GLint(gMyState_BlendFuncD)
 
-    // GL_NORMALIZE and the depth write mask are never toggled by any
-    // RenderBackend-migrated 2D draw (only by the still-raw-GL 3D geometry
-    // path in Objects.swift/Terrain.swift) - reading them via GL
-    // introspection needs a live GL context, which --metal mode doesn't
-    // create, so skip capturing (and, symmetrically, restoring in
-    // OGL_PopState below) under Metal. Harmless: the save/restore pair is a
-    // no-op either way for every call site actually reached in that mode.
-    if gMetalMode == 0 {
-        gStateStack_Normalize[i] = glIsEnabled(GLenum(GL_NORMALIZE)) != 0
-        glGetBooleanv(GLenum(GL_DEPTH_WRITEMASK), &gStateStack_DepthMask[i])
-    }
+    gStateStack_Normalize[i] = gMyState_Normalize
+    gStateStack_DepthMask[i] = gMyState_DepthMask ? 1 : 0
 }
 
 // MARK: - Pop state
@@ -1779,16 +1771,8 @@ func OGL_PopState() {
         OGL_DisableFog()
     }
 
-    // See the matching comment in OGL_PushState above.
-    if gMetalMode == 0 {
-        if gStateStack_Normalize[i] {
-            glEnable(GLenum(GL_NORMALIZE))
-        } else {
-            glDisable(GLenum(GL_NORMALIZE))
-        }
-
-        glDepthMask(gStateStack_DepthMask[i])
-    }
+    OGL_SetNormalizeNormals(gStateStack_Normalize[i])
+    OGL_SetDepthWrite(gStateStack_DepthMask[i] != 0)
 
     OGL_BlendFunc(GLenum(gStateStack_BlendSrc[i]), GLenum(gStateStack_BlendDst[i]))
     OGL_SetColor4fv(&gStateStack_Color[i])
@@ -2012,9 +1996,7 @@ func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
     gRenderBackend.ortho(0, 640, 480, 0, -10.0, 10.0)
 
     OGL_DisableLighting()
-    if gMetalMode == 0 {
-        glEnable(GLenum(GL_COLOR_MATERIAL))
-    }
+    gRenderBackend.setColorMaterialEnabled(true)
 
     OGL_SetColor4f(1, 1, 1, 1)
 

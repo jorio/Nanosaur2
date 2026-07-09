@@ -175,12 +175,19 @@ final class MetalRenderBackend: RenderBackend {
         case .projection: projectionStack[projectionStack.count - 1] = m
         case .texture: textureStack[textureStack.count - 1] = m
         }
-        updateMVP()
+        syncGPUMatrices()
     }
 
-    private func updateMVP() {
+    private func syncGPUMatrices() {
         let mvp = Self.multiply(projectionStack[projectionStack.count - 1], modelviewStack[modelviewStack.count - 1])
         mvp.withUnsafeBufferPointer { renderer.setMVP($0.baseAddress!) }
+        // Texture matrix - animates scrolling UVs (Wormhole.swift's tunnel
+        // effect, Water.swift's surface scroll, STATUS_BIT_UVTRANSFORM
+        // items). Pushed unconditionally alongside MVP rather than only
+        // when currentMatrixMode == .texture - cheap (one more
+        // setVertexBytes call) and keeps this in lockstep with the stack by
+        // construction instead of needing every call site to remember.
+        textureStack[textureStack.count - 1].withUnsafeBufferPointer { renderer.setTextureMatrix($0.baseAddress!) }
     }
 
     func pushMatrix() {
@@ -197,7 +204,7 @@ final class MetalRenderBackend: RenderBackend {
         case .projection: if projectionStack.count > 1 { projectionStack.removeLast() }
         case .texture: if textureStack.count > 1 { textureStack.removeLast() }
         }
-        updateMVP()
+        syncGPUMatrices()
     }
 
     func loadIdentity() { setTop(Self.identity) }

@@ -73,7 +73,8 @@ struct VertexOut {
 };
 
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
-                              constant float4x4 &mvp [[buffer(1)]]) {
+                              constant float4x4 &mvp [[buffer(1)]],
+                              constant float4x4 &textureMatrix [[buffer(2)]]) {
     VertexOut out;
     out.position = mvp * float4(in.position, 1.0);
     // Every projection matrix in the game (glOrtho/glFrustum-equivalent
@@ -86,7 +87,13 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
     // fix: remap after the transform, independent of which matrix produced
     // it.
     out.position.z = (out.position.z + out.position.w) * 0.5;
-    out.texCoord0 = in.texCoord0;
+    // GL's texture matrix only ever affects the active server-side texture
+    // unit (unit 0 in every call site in this codebase - see
+    // MetalRenderBackend.swift's syncGPUMatrices) - animates scrolling UVs
+    // (Wormhole.swift's tunnel, Water.swift's surface, UV-transform items).
+    // Unit 1 (the mask/modulate texture, when used) intentionally stays
+    // unscrolled.
+    out.texCoord0 = (textureMatrix * float4(in.texCoord0, 0.0, 1.0)).xy;
     out.texCoord1 = in.texCoord1;
     out.color = in.color;
     return out;
@@ -336,6 +343,13 @@ public final class MetalRenderer {
         encoder.setFragmentTexture(whiteTexture, index: 0)
         encoder.setFragmentTexture(whiteTexture, index: 1)
         encoder.setFragmentBytes(&alphaThreshold, length: MemoryLayout<Float>.stride, index: 1)
+        // Default to identity. A new encoder has nothing bound at buffer
+        // index 2 until the first setTextureMatrix call each frame - most
+        // draws don't animate UVs and never call it, but everything sharing
+        // this encoder still needs a valid (identity = no-op) matrix bound
+        // before its first draw.
+        var identityTextureMatrix: [Float] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+        encoder.setVertexBytes(&identityTextureMatrix, length: MemoryLayout<Float>.stride * 16, index: 2)
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
 
         return true
@@ -360,6 +374,13 @@ public final class MetalRenderer {
     /// `glLoadMatrixf`'s layout).
     public func setMVP(_ m: UnsafePointer<Float>) {
         encoder?.setVertexBytes(m, length: MemoryLayout<Float>.stride * 16, index: 1)
+    }
+
+    /// Same layout as `setMVP`. Transforms texCoord0 in the vertex shader -
+    /// animates scrolling UV effects (see MetalRenderBackend.swift's
+    /// syncGPUMatrices).
+    public func setTextureMatrix(_ m: UnsafePointer<Float>) {
+        encoder?.setVertexBytes(m, length: MemoryLayout<Float>.stride * 16, index: 2)
     }
 
     public func setBlend(_ enabled: Bool) {

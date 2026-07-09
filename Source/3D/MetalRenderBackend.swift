@@ -19,11 +19,10 @@
 //   skeletons) will render unlit and unfogged until the shader grows a
 //   lighting/fog model.
 // - Two texture units are honored (base + a second, MODULATE-combined
-//   texture - covers Infobar's health/shield/fuel circular mask and plain
-//   2-layer multi-texture materials), but setTextureEnv's ADD/ADD_ALPHA
-//   combine modes render as MODULATE, and setSphereMapTexGen (reflection
-//   mapping) is a no-op - materials using it sample unit 1 with whatever
-//   UV happened to be set last (usually (0,0)), not a real reflection.
+//   texture - covers Infobar's health/shield/fuel circular mask, plain
+//   2-layer multi-texture materials, and sphere-map reflection texgen -
+//   jetpack/goggles/crystals), but setTextureEnv's ADD/ADD_ALPHA combine
+//   modes still render as MODULATE.
 // - setTextureWrap is a no-op - MetalRenderer's sampler is fixed to repeat
 //   addressing; GL_CLAMP_TO_EDGE requests are ignored (possible edge-bleed
 //   on some sprites).
@@ -93,7 +92,7 @@ final class MetalRenderBackend: RenderBackend {
 
     func activeTextureUnit(_ unit: Int32) { currentTextureUnit = unit }
     func setTextureEnv(_ mode: RBTextureEnv) { /* only MODULATE is implemented (the shader's fixed combine) - ADD/ADD_ALPHA render as MODULATE */ }
-    func setSphereMapTexGen(_ enabled: Bool) { /* reflection mapping not implemented - see header comment */ }
+    func setSphereMapTexGen(_ enabled: Bool) { renderer.setSphereMapTexGen(enabled) }
 
     func prepareSceneDefaults() { /* no fixed-function defaults to apply */ }
     func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>) {
@@ -179,7 +178,8 @@ final class MetalRenderBackend: RenderBackend {
     }
 
     private func syncGPUMatrices() {
-        let mvp = Self.multiply(projectionStack[projectionStack.count - 1], modelviewStack[modelviewStack.count - 1])
+        let modelview = modelviewStack[modelviewStack.count - 1]
+        let mvp = Self.multiply(projectionStack[projectionStack.count - 1], modelview)
         mvp.withUnsafeBufferPointer { renderer.setMVP($0.baseAddress!) }
         // Texture matrix - animates scrolling UVs (Wormhole.swift's tunnel
         // effect, Water.swift's surface scroll, STATUS_BIT_UVTRANSFORM
@@ -188,6 +188,9 @@ final class MetalRenderBackend: RenderBackend {
         // setVertexBytes call) and keeps this in lockstep with the stack by
         // construction instead of needing every call site to remember.
         textureStack[textureStack.count - 1].withUnsafeBufferPointer { renderer.setTextureMatrix($0.baseAddress!) }
+        // Modelview alone (not combined with projection) - sphere-map
+        // reflection texgen needs the eye-space transform specifically.
+        modelview.withUnsafeBufferPointer { renderer.setModelView($0.baseAddress!) }
     }
 
     func pushMatrix() {
@@ -353,21 +356,28 @@ final class MetalRenderBackend: RenderBackend {
     // defaults to the white texture there.
     private var currentU1: Float = 0
     private var currentV1: Float = 0
+    // Per-vertex normal - only ever set by drawIndexedGeometry's
+    // sphere-map-texgen path (setNormal below); every other call site
+    // leaves this at 0, unused since the shader's useSphereMap flag defaults
+    // off.
+    private var currentNormal: (Float, Float, Float) = (0, 0, 0)
 
     func beginImmediate(_ mode: RBPrimitive) {
         immediateMode = mode
         immediateVerts.removeAll(keepingCapacity: true)
         currentU1 = 0
         currentV1 = 0
+        currentNormal = (0, 0, 0)
     }
 
     func vertex2f(_ x: Float, _ y: Float) { appendVertex(x, y, 0) }
     func vertex3f(_ x: Float, _ y: Float, _ z: Float) { appendVertex(x, y, z) }
     func texCoord2f(_ u: Float, _ v: Float) { currentU = u; currentV = v }
     private func setTexCoord1(_ u: Float, _ v: Float) { currentU1 = u; currentV1 = v }
+    private func setNormal(_ x: Float, _ y: Float, _ z: Float) { currentNormal = (x, y, z) }
 
     private func appendVertex(_ x: Float, _ y: Float, _ z: Float) {
-        immediateVerts.append(contentsOf: [x, y, z, currentU, currentV, currentU1, currentV1, currentColor.0, currentColor.1, currentColor.2, currentColor.3])
+        immediateVerts.append(contentsOf: [x, y, z, currentU, currentV, currentU1, currentV1, currentNormal.0, currentNormal.1, currentNormal.2, currentColor.0, currentColor.1, currentColor.2, currentColor.3])
     }
 
     func endImmediate() {
@@ -418,11 +428,12 @@ final class MetalRenderBackend: RenderBackend {
     // MARK: - Indexed geometry
 
     /// Expands the indexed triangle list through the immediate-mode
-    /// accumulator (one interleaved vertex per index). Ignores normals (no
-    /// lighting model) - see the header comment's gap list. Per-vertex
-    /// colors override the current material color exactly like GL's color
-    /// arrays do. uv1 feeds the second texture unit (plain multi-texture
-    /// MODULATE, e.g. Infobar's health/shield/fuel circular mask).
+    /// accumulator (one interleaved vertex per index). Normals feed sphere-
+    /// map reflection texgen only - there's still no lighting model, so
+    /// they're otherwise unused. Per-vertex colors override the current
+    /// material color exactly like GL's color arrays do. uv1 feeds the
+    /// second texture unit (plain multi-texture MODULATE, e.g. Infobar's
+    /// health/shield/fuel circular mask, when texgen isn't active).
     func drawIndexedGeometry(
         points: UnsafePointer<OGLPoint3D>,
         normals: UnsafePointer<OGLVector3D>?,
@@ -447,6 +458,9 @@ final class MetalRenderBackend: RenderBackend {
                 }
                 if let uv1 {
                     setTexCoord1(uv1[i].u, uv1[i].v)
+                }
+                if let normals {
+                    setNormal(normals[i].x, normals[i].y, normals[i].z)
                 }
                 vertex3f(points[i].x, points[i].y, points[i].z)
             }

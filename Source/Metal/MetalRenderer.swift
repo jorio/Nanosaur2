@@ -36,15 +36,21 @@
 @_implementationOnly import QuartzCore
 
 /// Interleaved vertex layout every draw call here uses: position (3) + UV0
-/// (2) + UV1 (2) + RGBA color (4) = 11 floats. Matches the MSL vertex
-/// descriptor below. UV1 feeds the second texture unit (multi-texture
-/// modulate, e.g. the Infobar health/shield/fuel gauges' circular mask) -
-/// callers that only use one texture leave it at (0,0), which is harmless
-/// since texture unit 1 defaults to the 1x1 white texture (multiplying by
-/// white is a no-op). Public so MetalRenderBackend.swift (main module) can
-/// size its interleaved vertex buffer identically instead of duplicating
-/// the literal.
-public let kFloatsPerVertex = 11
+/// (2) + UV1 (2) + normal (3) + RGBA color (4) = 14 floats. Matches the MSL
+/// vertex descriptor below.
+///  - UV1 feeds the second texture unit (multi-texture modulate, e.g. the
+///    Infobar health/shield/fuel gauges' circular mask) - callers that only
+///    use one texture leave it at (0,0), harmless since texture unit 1
+///    defaults to the 1x1 white texture (multiplying by white is a no-op).
+///  - normal feeds sphere-map reflection texgen (MULTI_TEXTURE_MODE_
+///    REFLECTIONSPHERE - shiny materials like the jetpack/goggles/crystals),
+///    which overrides UV1 with a computed reflection coordinate when
+///    enabled (see setSphereMapTexGen). Callers that don't use it leave it
+///    at (0,0,0), unused since the flag defaults off.
+/// Public so MetalRenderBackend.swift (main module) can size its
+/// interleaved vertex buffer identically instead of duplicating the
+/// literal.
+public let kFloatsPerVertex = 14
 
 /// Mirrors `RenderBackend`'s immediate-mode primitive shapes, but as a plain
 /// enum so this module doesn't need to know about GLenum.
@@ -62,7 +68,8 @@ struct VertexIn {
     float3 position [[attribute(0)]];
     float2 texCoord0 [[attribute(1)]];
     float2 texCoord1 [[attribute(2)]];
-    float4 color [[attribute(3)]];
+    float3 normal [[attribute(3)]];
+    float4 color [[attribute(4)]];
 };
 
 struct VertexOut {
@@ -74,7 +81,9 @@ struct VertexOut {
 
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
                               constant float4x4 &mvp [[buffer(1)]],
-                              constant float4x4 &textureMatrix [[buffer(2)]]) {
+                              constant float4x4 &textureMatrix [[buffer(2)]],
+                              constant float4x4 &modelview [[buffer(3)]],
+                              constant float &useSphereMap [[buffer(4)]]) {
     VertexOut out;
     out.position = mvp * float4(in.position, 1.0);
     // Every projection matrix in the game (glOrtho/glFrustum-equivalent
@@ -92,9 +101,20 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
     // MetalRenderBackend.swift's syncGPUMatrices) - animates scrolling UVs
     // (Wormhole.swift's tunnel, Water.swift's surface, UV-transform items).
     // Unit 1 (the mask/modulate texture, when used) intentionally stays
-    // unscrolled.
+    // unscrolled, UNLESS sphere-map reflection texgen is active (shiny
+    // materials - jetpack, goggles, crystals), which computes it instead of
+    // using the per-vertex UV: GL_SPHERE_MAP's formula on the eye-space
+    // reflection vector.
     out.texCoord0 = (textureMatrix * float4(in.texCoord0, 0.0, 1.0)).xy;
-    out.texCoord1 = in.texCoord1;
+    if (useSphereMap > 0.5) {
+        float3 eyePos = (modelview * float4(in.position, 1.0)).xyz;
+        float3 eyeNormal = normalize((modelview * float4(in.normal, 0.0)).xyz);
+        float3 r = reflect(normalize(eyePos), eyeNormal);
+        float m = 2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0));
+        out.texCoord1 = float2(r.x / m + 0.5, r.y / m + 0.5);
+    } else {
+        out.texCoord1 = in.texCoord1;
+    }
     out.color = in.color;
     return out;
 }
@@ -107,8 +127,8 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     // Texture unit 1 defaults to a 1x1 white texture when the draw doesn't
     // use a second texture, so this modulate is a no-op in the common case.
     // Implements GL's plain multi-texture MODULATE combine (the Infobar
-    // health/shield/fuel gauges' circular mask, etc.) - the ADD/ADD_ALPHA
-    // combine modes and sphere-map texgen reflection are not implemented
+    // health/shield/fuel gauges' circular mask, sphere-map reflections,
+    // etc.) - the ADD/ADD_ALPHA combine modes still render as MODULATE
     // (see MetalRenderBackend.swift's header comment).
     float4 c = tex0.sample(samp, in.texCoord0) * tex1.sample(samp, in.texCoord1) * in.color;
     // Emulates GL_ALPHA_TEST (alphaThreshold < 0 means the test is off).
@@ -194,9 +214,12 @@ public final class MetalRenderer {
         vertexDescriptor.attributes[2].format = .float2
         vertexDescriptor.attributes[2].offset = MemoryLayout<Float>.stride * 5
         vertexDescriptor.attributes[2].bufferIndex = 0
-        vertexDescriptor.attributes[3].format = .float4
+        vertexDescriptor.attributes[3].format = .float3
         vertexDescriptor.attributes[3].offset = MemoryLayout<Float>.stride * 7
         vertexDescriptor.attributes[3].bufferIndex = 0
+        vertexDescriptor.attributes[4].format = .float4
+        vertexDescriptor.attributes[4].offset = MemoryLayout<Float>.stride * 10
+        vertexDescriptor.attributes[4].bufferIndex = 0
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * kFloatsPerVertex
 
         // The game only ever calls glBlendFunc with two factor pairs (see
@@ -348,8 +371,11 @@ public final class MetalRenderer {
         // draws don't animate UVs and never call it, but everything sharing
         // this encoder still needs a valid (identity = no-op) matrix bound
         // before its first draw.
-        var identityTextureMatrix: [Float] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
-        encoder.setVertexBytes(&identityTextureMatrix, length: MemoryLayout<Float>.stride * 16, index: 2)
+        var identityMatrix: [Float] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+        encoder.setVertexBytes(&identityMatrix, length: MemoryLayout<Float>.stride * 16, index: 2)
+        encoder.setVertexBytes(&identityMatrix, length: MemoryLayout<Float>.stride * 16, index: 3)
+        sphereMapEnabled = 0
+        encoder.setVertexBytes(&sphereMapEnabled, length: MemoryLayout<Float>.stride, index: 4)
         encoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawableWidth), height: Double(drawableHeight), znear: 0, zfar: 1))
 
         return true
@@ -381,6 +407,26 @@ public final class MetalRenderer {
     /// syncGPUMatrices).
     public func setTextureMatrix(_ m: UnsafePointer<Float>) {
         encoder?.setVertexBytes(m, length: MemoryLayout<Float>.stride * 16, index: 2)
+    }
+
+    /// Same layout as `setMVP`. Used (only) for sphere-map reflection
+    /// texgen's eye-space position/normal transform - GL's GL_SPHERE_MAP
+    /// reflects in eye space, so the vertex shader needs modelview
+    /// separately from the combined MVP.
+    public func setModelView(_ m: UnsafePointer<Float>) {
+        encoder?.setVertexBytes(m, length: MemoryLayout<Float>.stride * 16, index: 3)
+    }
+
+    private var sphereMapEnabled: Float = 0
+    /// Enables sphere-map reflection texgen (GL_SPHERE_MAP) for subsequent
+    /// draws - computes texCoord1 from the eye-space reflection vector
+    /// instead of using the per-vertex UV. Used for shiny materials
+    /// (jetpack, goggles, crystals - MULTI_TEXTURE_MODE_REFLECTIONSPHERE).
+    public func setSphereMapTexGen(_ enabled: Bool) {
+        let v: Float = enabled ? 1 : 0
+        guard sphereMapEnabled != v, let encoder else { return }
+        sphereMapEnabled = v
+        encoder.setVertexBytes(&sphereMapEnabled, length: MemoryLayout<Float>.stride, index: 4)
     }
 
     public func setBlend(_ enabled: Bool) {

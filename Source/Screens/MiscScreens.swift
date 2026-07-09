@@ -218,8 +218,8 @@ func DrawLoading(_ percent: Float) {
     // }
 
     // Kill vsync so we don't waste 16ms before loading the next asset
-    let vsyncBackup = (try? SDL.glSwapInterval) ?? 0
-    try? SDL.glSetSwapInterval(0)
+    let vsyncBackup = gRenderBackend.getVSync()
+    gRenderBackend.setVSync(0)
 
     // Draw thermometer
     gRenderBackend.clearColorAndDepth()
@@ -227,5 +227,5 @@ func DrawLoading(_ percent: Float) {
     gLoadingThermoPercent = percent
 
     // Restore vsync setting
-    try? SDL.glSetSwapInterval(vsyncBackup)
+    gRenderBackend.setVSync(vsyncBackup)
 }

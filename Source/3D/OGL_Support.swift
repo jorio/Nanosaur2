@@ -423,36 +423,10 @@ private func OGL_CreateDrawContext() {
         return
     }
 
-    // CREATE AGL CONTEXT & ATTACH TO WINDOW
+    // CREATE THE BACKEND'S CONTEXT (GL: SDL context + make-current + vsync
+    // + proc loading + capability check - see GLRenderBackend.createContext)
 
-    gAGLContext = SDL_GL_CreateContext(gSDLWindow)
-
-    if gAGLContext == nil {
-        SwFatalAlert(String(cString: SDL_GetError()))
-    }
-
-    SwGameAssert(glGetError() == GL_NO_ERROR)
-
-    // ACTIVATE CONTEXT
-
-    let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
-    SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
-
-    // ENABLE VSYNC
-
-    try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
-
-    // SEE IF SUPPORT 2048x2048 TEXTURES
-
-    var maxTexSize: GLint = 0
-    glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
-    if maxTexSize < 2048 {
-        SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
-    }
-
-    // GET GL PROCEDURES (glActiveTexture etc. - necessary on Windows)
-
-    (gRenderBackend as? GLRenderBackend)?.loadGLProcs()
+    gRenderBackend.createContext()
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
     // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT
@@ -539,19 +513,15 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
 // The game reuses the same draw context for all scenes!
 
 private func OGL_DisposeDrawContext() {
-    guard gAGLContext != nil else {
-        return
-    }
-
+    // The dual-screen bottom window's second context is a GL-only extra,
+    // torn down here before the backend's own context.
     if gAGLContext2 != nil, let window2 = gSDLWindow2 {
         _ = SDL_GL_MakeCurrent(window2, nil)
         SDL_GL_DestroyContext(gAGLContext2)
         gAGLContext2 = nil
     }
 
-    _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
-    SDL_GL_DestroyContext(gAGLContext) // nuke context
-    gAGLContext = nil
+    gRenderBackend.destroyContext()
 }
 
 // MARK: - OGL: Init draw context

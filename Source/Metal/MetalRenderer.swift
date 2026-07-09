@@ -351,6 +351,11 @@ public final class MetalRenderer {
         textures.removeValue(forKey: handle)
     }
 
+    /// Vertical sync (drawable presentation paced to display refresh).
+    public func setVSync(_ enabled: Bool) {
+        layer.displaySyncEnabled = enabled
+    }
+
     /// `handle` of -1 (or unknown) binds the default white texture, matching
     /// `RenderBackend.disableTexture2D`'s "draw with plain vertex colour"
     /// effect.

@@ -254,5 +254,5 @@ func SetFullscreenMode(_ enforceDisplayPref: Bool) {
         _ = SDL_SyncWindow(gSDLWindow)
     }
 
-    try? SDL.glSetSwapInterval(Int32(gGamePrefs.vsync))
+    gRenderBackend.setVSync(Int32(gGamePrefs.vsync))
 }

@@ -443,6 +443,16 @@ final class MetalRenderBackend: RenderBackend {
     func setColorMaterialEnabled(_ enabled: Bool) { /* no fixed-function material */ }
     func checkError() -> UInt32 { 0 }
 
+    func createContext() { /* constructed already-active - see SwMetalBackend_Activate */ }
+    func destroyContext() { /* nothing to tear down beyond ARC */ }
+
+    private var vsyncInterval: Int32 = 1 // CAMetalLayer.displaySyncEnabled defaults on
+    func setVSync(_ interval: Int32) {
+        vsyncInterval = interval
+        renderer.setVSync(interval != 0)
+    }
+    func getVSync() -> Int32 { vsyncInterval }
+
     func present() {
         if frameActive {
             renderer.endFrame()

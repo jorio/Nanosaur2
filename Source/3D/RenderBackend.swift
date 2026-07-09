@@ -260,6 +260,19 @@ protocol RenderBackend: AnyObject {
     /// Polls and clears the backend's pending error state, returning 0 if
     /// none (GL: glGetError). Fatal-error plumbing in OGL_CheckError.
     func checkError() -> UInt32
+
+    /// Creates the backend's rendering context/surface on gSDLWindow.
+    /// Called once at boot from OGL_CreateDrawContext; fatal-alerts (does
+    /// not return) if the platform can't provide a usable context.
+    /// MetalRenderBackend is constructed already-active (see
+    /// SwMetalBackend_Activate), so its implementation is a no-op.
+    func createContext()
+    /// Tears the context down at quit.
+    func destroyContext()
+
+    /// Vertical-sync swap interval (0 = off; the game only ever uses 0/1).
+    func setVSync(_ interval: Int32)
+    func getVSync() -> Int32
 }
 
 // MARK: - OpenGL implementation
@@ -618,6 +631,54 @@ final class GLRenderBackend: RenderBackend {
     }
 
     func checkError() -> UInt32 { UInt32(glGetError()) }
+
+    func createContext() {
+        SwGameAssertMessage(gAGLContext == nil, "GL context already exists")
+
+        // CREATE AGL CONTEXT & ATTACH TO WINDOW
+
+        gAGLContext = SDL_GL_CreateContext(gSDLWindow)
+
+        if gAGLContext == nil {
+            SwFatalAlert(String(cString: SDL_GetError()))
+        }
+
+        SwGameAssert(glGetError() == GL_NO_ERROR)
+
+        // ACTIVATE CONTEXT
+
+        let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+        SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
+
+        // ENABLE VSYNC
+
+        setVSync(Int32(gGamePrefs.vsync))
+
+        // SEE IF SUPPORT 2048x2048 TEXTURES
+
+        var maxTexSize: GLint = 0
+        glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
+        if maxTexSize < 2048 {
+            SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
+        }
+
+        // GET GL PROCEDURES (glActiveTexture etc. - necessary on Windows)
+
+        loadGLProcs()
+    }
+
+    func destroyContext() {
+        guard gAGLContext != nil else {
+            return
+        }
+
+        _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
+        SDL_GL_DestroyContext(gAGLContext) // nuke context
+        gAGLContext = nil
+    }
+
+    func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
+    func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
 }
 
 var gRenderBackend: RenderBackend = GLRenderBackend()

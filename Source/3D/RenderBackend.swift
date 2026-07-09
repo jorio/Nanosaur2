@@ -80,6 +80,12 @@ enum RBTextureEnv {
     case combineAddAlpha
 }
 
+enum RBFogMode {
+    case linear
+    case exp
+    case exp2
+}
+
 // MARK: - Facade protocol
 
 protocol RenderBackend: AnyObject {
@@ -184,6 +190,24 @@ protocol RenderBackend: AnyObject {
         uv1: UnsafePointer<OGLTextureCoord>?,
         triangles: UnsafePointer<MOTriangleIndecies>?,
         numTriangles: Int32)
+
+    /// One-time fixed-function scene defaults applied when a game view is
+    /// set up (OGL_SetupGameView): back-face culling with CCW front faces,
+    /// baseline alpha test ("alpha != 0"), white color-tracking material,
+    /// normal renormalization, fog hint. Backends without those fixed-
+    /// function concepts treat this as a no-op.
+    func prepareSceneDefaults()
+
+    /// Full light rig for a scene: ambient color + `numFillLights`
+    /// directional fill lights. Directions are already normalized, pointing
+    /// from the light toward the scene.
+    func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>)
+    /// Re-sends the fill-light directions after the camera/modelview
+    /// changed (fixed-function GL transforms light positions by the
+    /// modelview current at set time, so this runs once per pane per frame).
+    func updateLightPositions(numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>)
+
+    func setFog(mode: RBFogMode, density: Float, start: Float, end: Float, r: Float, g: Float, b: Float, a: Float)
 
     /// The common single-window per-frame sequence in `OGL_DrawScene`:
     /// viewport, clear, and swap/present. Stereo/dual-screen-specific calls
@@ -415,6 +439,96 @@ final class GLRenderBackend: RenderBackend {
         if numTriangles != 0, let triangles {
             glDrawElements(GLenum(GL_TRIANGLES), numTriangles * 3, GLenum(GL_UNSIGNED_INT), triangles)
         }
+    }
+
+    func prepareSceneDefaults() {
+        glCullFace(GLenum(GL_BACK))
+        glFrontFace(GLenum(GL_CCW)) // CCW is front face
+
+        glDisable(GLenum(GL_RESCALE_NORMAL))
+
+        // ENABLE ALPHA CHANNELS
+        glEnable(GLenum(GL_ALPHA_TEST))
+        glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
+
+        glHint(GLenum(GL_FOG_HINT), GLenum(GL_FASTEST))
+
+        // Global material: white, tracking glColor (so per-vertex/current
+        // color drives lit geometry), with normal renormalization on.
+        var color: [GLfloat] = [1, 1, 1, 1]
+        glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
+        glColorMaterial(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE))
+        glEnable(GLenum(GL_COLOR_MATERIAL))
+        glEnable(GLenum(GL_NORMALIZE))
+    }
+
+    func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>) {
+        // CREATE AMBIENT LIGHT
+
+        var ambient: [GLfloat] = [ambientR, ambientG, ambientB, 1]
+        glLightModelfv(GLenum(GL_LIGHT_MODEL_AMBIENT), &ambient) // set scene ambient light
+
+        // CREATE FILL LIGHTS
+
+        for i in 0..<Int(numFillLights) {
+            var lightamb: [GLfloat] = [0.0, 0.0, 0.0, 1.0]
+            var lightVec = [GLfloat](repeating: 0, count: 4)
+            var diffuse = [GLfloat](repeating: 0, count: 4)
+
+            // SET FILL DIRECTION
+
+            lightVec[0] = -fillDirections[i].x // negate vector because OGL is stupid
+            lightVec[1] = -fillDirections[i].y
+            lightVec[2] = -fillDirections[i].z
+            lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
+            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
+
+            // SET COLOR
+
+            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_AMBIENT), &lightamb)
+
+            diffuse[0] = fillColors[i].r
+            diffuse[1] = fillColors[i].g
+            diffuse[2] = fillColors[i].b
+            diffuse[3] = 1
+
+            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_DIFFUSE), &diffuse)
+
+            glEnable(GLenum(GL_LIGHT0) + GLenum(i)) // enable the light
+        }
+
+        // NUKE ANY FILL LIGHTS REMAINING FROM PREVIOUS SCENE
+
+        for i in Int(numFillLights)..<Int(MAX_FILL_LIGHTS) {
+            glDisable(GLenum(GL_LIGHT0) + GLenum(i))
+        }
+    }
+
+    func updateLightPositions(numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>) {
+        for i in 0..<Int(numFillLights) {
+            var lightVec = [GLfloat](repeating: 0, count: 4)
+
+            lightVec[0] = -fillDirections[i].x // negate vector because OGL is stupid
+            lightVec[1] = -fillDirections[i].y
+            lightVec[2] = -fillDirections[i].z
+            lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
+            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
+        }
+    }
+
+    func setFog(mode: RBFogMode, density: Float, start: Float, end: Float, r: Float, g: Float, b: Float, a: Float) {
+        let glMode: GLint
+        switch mode {
+        case .linear: glMode = GL_LINEAR
+        case .exp: glMode = GL_EXP
+        case .exp2: glMode = GL_EXP2
+        }
+        glFogi(GLenum(GL_FOG_MODE), glMode)
+        glFogf(GLenum(GL_FOG_DENSITY), density)
+        glFogf(GLenum(GL_FOG_START), start)
+        glFogf(GLenum(GL_FOG_END), end)
+        var color: [GLfloat] = [r, g, b, a]
+        glFogfv(GLenum(GL_FOG_COLOR), &color)
     }
 
     func setViewport(_ x: Int32, _ y: Int32, _ w: Int32, _ h: Int32) { glViewport(x, y, w, h) }

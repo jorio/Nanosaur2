@@ -572,19 +572,10 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
     gRenderBackend.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
     OGL_EnableDepthTest() // use z-buffer
 
-    // Fixed-function material/lighting/normalization state - no RenderBackend
-    // equivalent yet (lighting is a documented no-op under Metal, see
-    // MetalRenderBackend.swift), and unsafe to call with no GL context
-    // (--metal mode doesn't create one - see OGL_CreateDrawContext).
-    if gMetalMode == 0 {
-        var color: [GLfloat] = [1, 1, 1, 1] // set global material color to white
-        glMaterialfv(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE), &color)
-
-        glColorMaterial(GLenum(GL_FRONT_AND_BACK), GLenum(GL_AMBIENT_AND_DIFFUSE))
-        glEnable(GLenum(GL_COLOR_MATERIAL))
-
-        glEnable(GLenum(GL_NORMALIZE))
-    }
+    // Fixed-function scene defaults (cull orientation, alpha test, white
+    // color-tracking material, normalization, fog hint) - one facade call,
+    // no-op on backends without those concepts.
+    gRenderBackend.prepareSceneDefaults()
 
     // INIT DEBUG FONT
 
@@ -594,13 +585,13 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 // MARK: - OGL: Set styles
 
 private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
+    // Cull orientation / alpha test / color material / fog hint defaults
+    // were applied by prepareSceneDefaults() in OGL_InitDrawContext just
+    // before this runs; here we (re)set the cached toggles and per-scene
+    // parameters.
+
     gMyState_CullFace = false
     OGL_EnableCullFace()
-    if gMetalMode == 0 {
-        glCullFace(GLenum(GL_BACK))
-        glFrontFace(GLenum(GL_CCW)) // CCW is front face
-        _ = OGL_CheckError()
-    }
 
     // SET BLENDING DEFAULTS
 
@@ -611,20 +602,10 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
     gMyState_Blend = true
     OGL_DisableBlend()
 
-    if gMetalMode == 0 {
-        _ = OGL_CheckError()
-
-        glDisable(GLenum(GL_RESCALE_NORMAL))
-        _ = OGL_CheckError()
-    }
-
     gMyState_TextureUnit = UInt32(GL_TEXTURE0_ARB)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0_ARB))
     gMyState_Texture2D = true
     OGL_DisableTexture2D()
-    if gMetalMode == 0 {
-        _ = OGL_CheckError()
-    }
 
     gMyState_Color.r = 0.1
     gMyState_Color.g = 0.1
@@ -632,36 +613,27 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
     gMyState_Color.a = 0.1
     OGL_SetColor4f(1, 1, 1, 1)
 
-    // ENABLE ALPHA CHANNELS - no RenderBackend equivalent yet, unsafe with
-    // no GL context (--metal), and not needed by any migrated 2D draw.
-
-    if gMetalMode == 0 {
-        glEnable(GLenum(GL_ALPHA_TEST))
-        glAlphaFunc(GLenum(GL_NOTEQUAL), 0) // draw any pixel who's Alpha != 0
-        _ = OGL_CheckError()
-    }
+    _ = OGL_CheckError()
 
     // SET FOG
 
-    if gMetalMode == 0 {
-        glHint(GLenum(GL_FOG_HINT), GLenum(GL_FASTEST))
-    }
-
     let styleDefPtr = setupDefPtr!.pointer(to: \.styles)!
     if styleDefPtr.pointee.useFog != 0 {
-        if gMetalMode == 0 {
-            glFogi(GLenum(GL_FOG_MODE), GLint(styleDefPtr.pointee.fogMode))
-            glFogf(GLenum(GL_FOG_DENSITY), styleDefPtr.pointee.fogDensity)
-            glFogf(GLenum(GL_FOG_START), styleDefPtr.pointee.fogStart)
-            glFogf(GLenum(GL_FOG_END), styleDefPtr.pointee.fogEnd)
-            withUnsafeMutablePointer(to: &setupDefPtr!.pointee.view.clearColor.r) {
-                glFogfv(GLenum(GL_FOG_COLOR), $0)
-            }
+        let mode: RBFogMode
+        switch Int32(styleDefPtr.pointee.fogMode) {
+        case GL_EXP: mode = .exp
+        case GL_EXP2: mode = .exp2
+        default: mode = .linear
         }
-        // RenderBackend has no fog model yet (documented no-op under Metal,
-        // see MetalRenderBackend.swift) - still flip the cached
-        // gMyState_Fog/call OGL_EnableFog() so state stays consistent for
-        // OGL_PushState/PopState.
+        gRenderBackend.setFog(
+            mode: mode,
+            density: styleDefPtr.pointee.fogDensity,
+            start: styleDefPtr.pointee.fogStart,
+            end: styleDefPtr.pointee.fogEnd,
+            r: setupDefPtr!.pointee.view.clearColor.r,
+            g: setupDefPtr!.pointee.view.clearColor.g,
+            b: setupDefPtr!.pointee.view.clearColor.b,
+            a: setupDefPtr!.pointee.view.clearColor.a)
         gMyState_Fog = false
         OGL_EnableFog()
     } else {
@@ -669,14 +641,12 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
         OGL_DisableFog()
     }
 
-    if gMetalMode == 0 {
-        _ = OGL_CheckError()
+    _ = OGL_CheckError()
 
-        // ANISOTRIPIC FILTERING
+    // ANISOTRIPIC FILTERING
 
-        if gDoAnisotropy {
-            glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gMaxAnisotropy)
-        }
+    if gDoAnisotropy, gMetalMode == 0 { // dead flag ("MAJOR PERFORMANCE KILLER") - raw GL introspection, kept guarded
+        glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gMaxAnisotropy)
         _ = OGL_CheckError()
     }
 }
@@ -715,62 +685,23 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
     gMyState_Lighting = 0
     OGL_EnableLighting()
 
-    // RenderBackend has no lighting model yet (see MetalRenderBackend.swift's
-    // header comment: enableLighting/disableLighting are no-ops under
-    // Metal) - so actually programming GL_LIGHT0.. state is both pointless
-    // and, without a live GL context, unsafe under --metal. Skip entirely;
-    // OGL_EnableLighting() above still runs so gMyState_Lighting/the facade
-    // stay in sync.
-    guard gMetalMode == 0 else { return }
-
-    // CREATE AMBIENT LIGHT
-
-    var ambient: [GLfloat] = [
-        lightDefPtr.pointee.ambientColor.r,
-        lightDefPtr.pointee.ambientColor.g,
-        lightDefPtr.pointee.ambientColor.b,
-        1,
-    ]
-    glLightModelfv(GLenum(GL_LIGHT_MODEL_AMBIENT), &ambient) // set scene ambient light
-
-    // CREATE FILL LIGHTS
-
     let fillDirection = fillDirectionBase(lightDefPtr)
     let fillColor = fillColorBase(lightDefPtr)
 
+    // Normalize the fill directions in place (the game reads them back
+    // elsewhere, e.g. the per-frame light-position update) before handing
+    // the rig to the backend.
     for i in 0..<Int(lightDefPtr.pointee.numFillLights) {
-        var lightamb: [GLfloat] = [0.0, 0.0, 0.0, 1.0]
-        var lightVec = [GLfloat](repeating: 0, count: 4)
-        var diffuse = [GLfloat](repeating: 0, count: 4)
-
-        // SET FILL DIRECTION
-
         fillDirection[i] = fillDirection[i].normalized()
-        lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
-        lightVec[1] = -fillDirection[i].y
-        lightVec[2] = -fillDirection[i].z
-        lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
-
-        // SET COLOR
-
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_AMBIENT), &lightamb)
-
-        diffuse[0] = fillColor[i].r
-        diffuse[1] = fillColor[i].g
-        diffuse[2] = fillColor[i].b
-        diffuse[3] = 1
-
-        glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_DIFFUSE), &diffuse)
-
-        glEnable(GLenum(GL_LIGHT0) + GLenum(i)) // enable the light
     }
 
-    // NUKE ANY FILL LIGHTS REMAINING FROM PREVIOUS SCENE
-
-    for i in Int(lightDefPtr.pointee.numFillLights)..<Int(MAX_FILL_LIGHTS) {
-        glDisable(GLenum(GL_LIGHT0) + GLenum(i))
-    }
+    gRenderBackend.setLights(
+        ambientR: lightDefPtr.pointee.ambientColor.r,
+        ambientG: lightDefPtr.pointee.ambientColor.g,
+        ambientB: lightDefPtr.pointee.ambientColor.b,
+        numFillLights: Int32(lightDefPtr.pointee.numFillLights),
+        fillDirections: fillDirection,
+        fillColors: fillColor)
 }
 
 // MARK: - OGL draw scene
@@ -1672,18 +1603,11 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // UPDATE LIGHT POSITIONS
 
-    if gMetalMode == 0 { // fixed-function GL lights - no RenderBackend lighting model yet (see OGL_CreateLights)
+    do {
         let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
-        let fillDirection = fillDirectionBase(lights)
-        for i in 0..<Int(lights.pointee.numFillLights) {
-            var lightVec = [GLfloat](repeating: 0, count: 4)
-
-            lightVec[0] = -fillDirection[i].x // negate vector because OGL is stupid
-            lightVec[1] = -fillDirection[i].y
-            lightVec[2] = -fillDirection[i].z
-            lightVec[3] = 0 // when w==0, this is a directional light, if 1 then point light
-            glLightfv(GLenum(GL_LIGHT0) + GLenum(i), GLenum(GL_POSITION), &lightVec)
-        }
+        gRenderBackend.updateLightPositions(
+            numFillLights: Int32(lights.pointee.numFillLights),
+            fillDirections: fillDirectionBase(lights))
     }
 
     // GET VARIOUS CAMERA MATRICES

@@ -86,6 +86,13 @@ final class MetalRenderBackend: RenderBackend {
     func setTextureEnv(_ mode: RBTextureEnv) { /* single-texture shader - combine modes not implemented */ }
     func setSphereMapTexGen(_ enabled: Bool) { /* reflection mapping not implemented */ }
 
+    func prepareSceneDefaults() { /* no fixed-function defaults to apply */ }
+    func setLights(ambientR: Float, ambientG: Float, ambientB: Float, numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>, fillColors: UnsafePointer<OGLColorRGBA>) {
+        // No lighting model in the shader yet - see header comment.
+    }
+    func updateLightPositions(numFillLights: Int32, fillDirections: UnsafePointer<OGLVector3D>) { /* no lighting model */ }
+    func setFog(mode: RBFogMode, density: Float, start: Float, end: Float, r: Float, g: Float, b: Float, a: Float) { /* no fog model */ }
+
     func enableLighting() { /* no-op, see header comment */ }
     func disableLighting() { /* no-op, see header comment */ }
 

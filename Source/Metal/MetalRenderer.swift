@@ -107,6 +107,7 @@ public final class MetalRenderer {
 
     private let pipelineBlendOff: MTLRenderPipelineState
     private let pipelineBlendOn: MTLRenderPipelineState
+    private let pipelineBlendAdditive: MTLRenderPipelineState
     /// Indexed [testEnabled][writeEnabled] - GL exposes depth *test*
     /// (GL_DEPTH_TEST) and depth *write* (glDepthMask) as independent
     /// toggles, so all four combinations must exist as pre-built states.
@@ -131,6 +132,7 @@ public final class MetalRenderer {
     private var encoder: MTLRenderCommandEncoder?
     private var currentDrawable: CAMetalDrawable?
     private var blendEnabled = false
+    private var blendAdditive = false
     private var depthTestEnabled = true
     private var depthWriteEnabled = true
     private var boundTextureHandle: Int32 = -1
@@ -169,7 +171,15 @@ public final class MetalRenderer {
         vertexDescriptor.attributes[2].bufferIndex = 0
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * kFloatsPerVertex
 
-        func makePipeline(blend: Bool) -> MTLRenderPipelineState? {
+        // The game only ever calls glBlendFunc with two factor pairs (see
+        // RenderBackend.swift's RBBlendFactor/rbBlendFactor): standard
+        // "source-over" alpha (srcAlpha, oneMinusSrcAlpha) for normal
+        // transparency, and additive (srcAlpha, one) for glow/light sprites
+        // that paint a black "background" meant to vanish under addition
+        // (black * anything = 0, so it just adds nothing) - GL bakes the
+        // factors into per-draw state; Metal bakes them into pipeline state,
+        // so each combination needs its own precompiled pipeline.
+        func makePipeline(dst: MTLBlendFactor?) -> MTLRenderPipelineState? {
             let desc = MTLRenderPipelineDescriptor()
             desc.vertexFunction = vertexFunction
             desc.fragmentFunction = fragmentFunction
@@ -177,24 +187,26 @@ public final class MetalRenderer {
             desc.depthAttachmentPixelFormat = .depth32Float
             let colorAttachment = desc.colorAttachments[0]!
             colorAttachment.pixelFormat = .bgra8Unorm
-            colorAttachment.isBlendingEnabled = blend
-            if blend {
+            colorAttachment.isBlendingEnabled = dst != nil
+            if let dst {
                 colorAttachment.rgbBlendOperation = .add
                 colorAttachment.alphaBlendOperation = .add
                 colorAttachment.sourceRGBBlendFactor = .sourceAlpha
                 colorAttachment.sourceAlphaBlendFactor = .sourceAlpha
-                colorAttachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
-                colorAttachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+                colorAttachment.destinationRGBBlendFactor = dst
+                colorAttachment.destinationAlphaBlendFactor = dst
             }
             return try? device.makeRenderPipelineState(descriptor: desc)
         }
 
-        guard let pipelineBlendOff = makePipeline(blend: false),
-              let pipelineBlendOn = makePipeline(blend: true) else {
+        guard let pipelineBlendOff = makePipeline(dst: nil),
+              let pipelineBlendOn = makePipeline(dst: .oneMinusSourceAlpha),
+              let pipelineBlendAdditive = makePipeline(dst: .one) else {
             return nil
         }
         self.pipelineBlendOff = pipelineBlendOff
         self.pipelineBlendOn = pipelineBlendOn
+        self.pipelineBlendAdditive = pipelineBlendAdditive
 
         var depthStates: [[MTLDepthStencilState]] = []
         for testEnabled in [false, true] {
@@ -291,6 +303,7 @@ public final class MetalRenderer {
         self.encoder = encoder
 
         blendEnabled = false
+        blendAdditive = false
         depthTestEnabled = true
         depthWriteEnabled = true
         boundTextureHandle = -1
@@ -327,9 +340,31 @@ public final class MetalRenderer {
     }
 
     public func setBlend(_ enabled: Bool) {
-        guard blendEnabled != enabled, let encoder else { return }
+        guard blendEnabled != enabled else { return }
         blendEnabled = enabled
-        encoder.setRenderPipelineState(enabled ? pipelineBlendOn : pipelineBlendOff)
+        applyBlendPipeline()
+    }
+
+    /// Selects which blend factors to use while blending is enabled -
+    /// standard "source-over" alpha, or additive (glow/light sprites). A
+    /// no-op while blending is disabled; takes effect next time it's
+    /// enabled, matching GL's glBlendFunc (a persistent setting independent
+    /// of glEnable(GL_BLEND)).
+    public func setBlendAdditive(_ additive: Bool) {
+        guard blendAdditive != additive else { return }
+        blendAdditive = additive
+        if blendEnabled {
+            applyBlendPipeline()
+        }
+    }
+
+    private func applyBlendPipeline() {
+        guard let encoder else { return }
+        if !blendEnabled {
+            encoder.setRenderPipelineState(pipelineBlendOff)
+        } else {
+            encoder.setRenderPipelineState(blendAdditive ? pipelineBlendAdditive : pipelineBlendOn)
+        }
     }
 
     public func setDepthTest(_ enabled: Bool) {

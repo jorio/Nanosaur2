@@ -13,11 +13,6 @@
 // second context) that this backend cannot reach in the first place.
 //
 // Known correctness gaps (documented rather than silently wrong):
-// - blendFunc(src:dst:) is a no-op - the Metal pipeline has ONE fixed blend
-//   equation (standard "source-over" alpha), baked into pipeline state at
-//   creation. Effects requesting a different blend (e.g. Atlas_DrawString2's
-//   kTextMeshGlow using GL_SRC_ALPHA/GL_ONE additive blend) will render with
-//   standard alpha blend instead under Metal.
 // - enableLighting/disableLighting, enableCullFace/disableCullFace,
 //   enableFog/disableFog are no-ops - the shader has no lighting/fog model
 //   and MetalRenderer doesn't set a cull mode. Real 3D content (terrain,
@@ -55,7 +50,14 @@ final class MetalRenderBackend: RenderBackend {
 
     func enableBlend() { renderer.setBlend(true) }
     func disableBlend() { renderer.setBlend(false) }
-    func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor) { /* see header comment: fixed blend equation */ }
+    func blendFunc(_ src: RBBlendFactor, _ dst: RBBlendFactor) {
+        // The only two configurations the game ever requests (see
+        // RenderBackend.swift's rbBlendFactor): standard "source-over"
+        // alpha (srcAlpha, oneMinusSrcAlpha) and additive glow/light
+        // sprites (srcAlpha, one). src is always .srcAlpha in practice;
+        // only dst distinguishes them.
+        renderer.setBlendAdditive(dst == .one)
+    }
 
     private var lastBoundTexture: RBTextureHandle = 0
     private var texture2DEnabled = true

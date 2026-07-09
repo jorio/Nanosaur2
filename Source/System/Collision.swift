@@ -64,7 +64,7 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
                 break nextNode
             }
 
-            if thisNode.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 
@@ -255,9 +255,9 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
         deltaBounce = -deltaBounce
     }
 
-    let previouslyOnGround = theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 // remember if was on ground or not
+    let previouslyOnGround = theNode.hasStatus(STATUS_BIT_ONGROUND) // remember if was on ground or not
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_ONGROUND) // assume not on anything now
+    theNode.clearStatus(STATUS_BIT_ONGROUND) // assume not on anything now
 
     gNumCollisions = 0
     let oldNumCollisions: Int16 = 0
@@ -442,7 +442,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                 if !previouslyOnGround { // if not already on ground, then add some friction upon landing
                     // (hitMPlatform is always false in the original C source; special-case dropped)
                 }
-                theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+                theNode.setStatus(STATUS_BIT_ONGROUND)
             }
 
             // SEE IF DO ANOTHER PASS
@@ -490,7 +490,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                 }
             }
 
-            theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+            theNode.setStatus(STATUS_BIT_ONGROUND)
 
             totalSides |= UInt8(SIDE_BITS_BOTTOM)
         }
@@ -753,7 +753,7 @@ func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!, _ cTy
                 break nextNode
             }
 
-            if thisNode.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 
@@ -822,7 +822,7 @@ func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _ right:
                 break nextNode
             }
 
-            if thisNode.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 

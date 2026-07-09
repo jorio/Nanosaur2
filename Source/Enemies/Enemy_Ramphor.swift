@@ -39,7 +39,7 @@ func PrimeEnemy_Ramphor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Spline
 
     newObj.pointee.SpecialF.2 = 180 + Float(speed) * 30 // SplineSpeed
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -233,7 +233,7 @@ private let cRamphorHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 private func killRamphor(_ enemy: UnsafeMutablePointer<ObjNode>) {
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveRamphorDeath)
     }
 

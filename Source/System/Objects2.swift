@@ -298,10 +298,10 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 { // hide shadow if parent hidden
-        shadowNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+    if theNode.hasStatus(STATUS_BIT_HIDDEN) { // hide shadow if parent hidden
+        shadowNode.setStatus(STATUS_BIT_HIDDEN)
     } else {
-        shadowNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        shadowNode.clearStatus(STATUS_BIT_HIDDEN)
     }
 
     shadowNode.pointee.ColorFilter.a = theNode.pointee.ColorFilter.a * 0.9 // match fade and decay a little to adjust it how we want it
@@ -432,9 +432,9 @@ func CullTestAllObjects() {
         var skipToNext = false
         var drawOn = false
 
-        if node.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 { // if hidden then skip
+        if node.hasStatus(STATUS_BIT_HIDDEN) { // if hidden then skip
             skipToNext = true
-        } else if node.pointee.StatusBits & UInt32(STATUS_BIT_DONTCULL) != 0 { // see if dont want to use our culling
+        } else if node.hasStatus(STATUS_BIT_DONTCULL) { // see if dont want to use our culling
             drawOn = true
         } else if node.pointee.LocalBBox.isEmpty != 0 { // skip culling if no bbox
             drawOn = true
@@ -676,7 +676,7 @@ func HideObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
-        n.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        n.setStatus(STATUS_BIT_HIDDEN)
         node = n.pointee.ChainNode
     }
 }
@@ -685,7 +685,7 @@ func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
-        n.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        n.clearStatus(STATUS_BIT_HIDDEN)
         node = n.pointee.ChainNode
     }
 }

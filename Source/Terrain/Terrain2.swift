@@ -373,7 +373,7 @@ private extension UInt32 {
 // Returns true if theNode is out of range
 
 func TrackTerrainItem(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DONTPURGE) != 0 { // see if non-purgable
+    if theNode.hasStatus(STATUS_BIT_DONTPURGE) { // see if non-purgable
         return 0
     }
 

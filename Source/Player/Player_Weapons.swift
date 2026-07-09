@@ -1201,7 +1201,7 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
     sw.pointee.ColorFilter.r = 0.3
     sw.pointee.ColorFilter.g = 0.3
     sw.pointee.ColorFilter.a = 0.6
-    sw.pointee.StatusBits |= UInt32(STATUS_BIT_GLOW)
+    sw.setStatus(STATUS_BIT_GLOW)
 
     PlayEffect_Parms3D(Int16(EFFECT_TURRETEXPLOSION), where_, UInt32(NORMAL_CHANNEL_RATE) * 3 / 2, 0.7)
 }

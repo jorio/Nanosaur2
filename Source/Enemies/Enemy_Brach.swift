@@ -218,7 +218,7 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 { // if on ground, add friction
+    if theNode.hasStatus(STATUS_BIT_ONGROUND) { // if on ground, add friction
         gDelta.applyFriction(2000.0)
     }
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
@@ -263,7 +263,7 @@ func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineIt
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -331,7 +331,7 @@ private func killBrach(_ enemy: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveBrach)
     }
 

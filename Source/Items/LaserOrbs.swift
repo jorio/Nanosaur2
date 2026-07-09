@@ -116,7 +116,7 @@ private func moveLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF GONE
 
-    if (theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE)) == 0 {
+    if !theNode.hasStatus(STATUS_BIT_ONSPLINE) {
         if TrackTerrainItem(theNode) != 0 {
             DeleteObject(theNode)
             return
@@ -649,7 +649,7 @@ func PrimeLaserOrb(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemT
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement

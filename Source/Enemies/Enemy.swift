@@ -14,7 +14,7 @@ func InitEnemyManager() {
 }
 
 func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
-    if theEnemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 { // spline enemies dont factor into the enemy counts!
+    if !theEnemy.hasStatus(STATUS_BIT_ONSPLINE) { // spline enemies dont factor into the enemy counts!
         gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
         if gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
             SwAlert("DeleteEnemy: < 0")
@@ -71,7 +71,7 @@ func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z:
 
 // OUTPUT: true if was on spline, false if wasnt
 func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
-    guard theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 else { // must be on spline
+    guard theNode.hasStatus(STATUS_BIT_ONSPLINE) else { // must be on spline
         return
     }
 
@@ -159,7 +159,7 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
     if distToFloor <= 0.0 { // see if on or under floor
         gCoord.y = terrainY - bottomOff
         gDelta.y = 0
-        theEnemy.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+        theEnemy.setStatus(STATUS_BIT_ONGROUND)
 
         // DEAL WITH SLOPES
         //

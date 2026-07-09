@@ -330,7 +330,7 @@ private func buildSlideShowObjects() {
 
         slideObj.pointee.Kind = Int32(i)
 
-        slideObj.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN) // hide all slides @ start
+        slideObj.setStatus(STATUS_BIT_HIDDEN) // hide all slides @ start
 
         slideObj.pointee.ColorFilter.a = gSlides[i].alpha
 
@@ -371,7 +371,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
         return
     }
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+    theNode.clearStatus(STATUS_BIT_HIDDEN)
 
     // MOVE IT
 
@@ -438,11 +438,11 @@ private let cMoveSubtitle: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     let fps = gFramesPerSecondFrac
 
     if floorf(theNode.pointee.SpecialF.0 * 100) >= 0 {
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        theNode.setStatus(STATUS_BIT_HIDDEN)
         theNode.pointee.SpecialF.0 -= fps
         theNode.pointee.ColorFilter.a = 0
     } else {
-        theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        theNode.clearStatus(STATUS_BIT_HIDDEN)
         theNode.pointee.Health -= fps
 
         if theNode.pointee.Health < 0.25 {

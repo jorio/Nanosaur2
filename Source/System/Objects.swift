@@ -178,7 +178,7 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
 
     // INSERT NODE INTO LINKED LIST
 
-    newNodePtr.pointee.StatusBits |= UInt32(STATUS_BIT_DETACHED) // its not attached to linked list yet
+    newNodePtr.setStatus(STATUS_BIT_DETACHED) // its not attached to linked list yet
     AttachObject(newNodePtr, 0)
 
     gNumObjectNodes += 1
@@ -371,7 +371,7 @@ func MoveObjects() {
         repeat { // goto-next simulator
             // SEE IF SHOULD SKIP WHEN PAUSED
 
-            if gGamePaused != 0 && (node.pointee.StatusBits & UInt32(STATUS_BIT_MOVEINPAUSE)) == 0 {
+            if gGamePaused != 0 && !node.hasStatus(STATUS_BIT_MOVEINPAUSE) {
                 break
             }
 
@@ -383,8 +383,8 @@ func MoveObjects() {
 
             // NEXT TRY TO MOVE IT
 
-            if (node.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE)) == 0 { // make sure don't call a move call if on spline
-                if (node.pointee.StatusBits & UInt32(STATUS_BIT_NOMOVE)) == 0, let moveCall = node.pointee.MoveCall {
+            if !node.hasStatus(STATUS_BIT_ONSPLINE) { // make sure don't call a move call if on spline
+                if !node.hasStatus(STATUS_BIT_NOMOVE), let moveCall = node.pointee.MoveCall {
                     KeepOldCollisionBoxes(node) // keep old boxes & other stuff
                     moveCall(node) // call object's move routine
                 }
@@ -1099,7 +1099,7 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     // OR, IF ITS A SPLINE ITEM, THEN UPDATE SPLINE OBJECT LIST
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if theNode.hasStatus(STATUS_BIT_ONSPLINE) {
         _ = RemoveFromSplineObjectList(theNode)
     }
 
@@ -1122,7 +1122,7 @@ func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) != 0 { // make sure not already detached
+    if theNode.hasStatus(STATUS_BIT_DETACHED) { // make sure not already detached
         return
     }
 
@@ -1145,7 +1145,7 @@ func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8
     theNode.pointee.PrevNode = nil // seal links on original node
     theNode.pointee.NextNode = nil
 
-    theNode.pointee.StatusBits |= UInt32(STATUS_BIT_DETACHED)
+    theNode.setStatus(STATUS_BIT_DETACHED)
 
     // SUBRECURSE CHAINS & SHADOW
 
@@ -1165,7 +1165,7 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) == 0 { // see if already attached
+    if !theNode.hasStatus(STATUS_BIT_DETACHED) { // see if already attached
         return
     }
 
@@ -1205,7 +1205,7 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
         }
     }
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_DETACHED)
+    theNode.clearStatus(STATUS_BIT_DETACHED)
 
     // SUBRECURSE CHAINS & SHADOW
 
@@ -1363,9 +1363,9 @@ func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 func SetObjectVisible(_ theNode: UnsafeMutablePointer<ObjNode>, _ visible: UInt8) -> UInt8 {
     if visible != 0 {
-        theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        theNode.clearStatus(STATUS_BIT_HIDDEN)
     } else {
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        theNode.setStatus(STATUS_BIT_HIDDEN)
     }
 
     return visible
@@ -1471,6 +1471,6 @@ func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 // MARK: - Overlay pane
 
 func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
+    theNode.setStatus(STATUS_BIT_ONLYSHOWTHISPLAYER)
     theNode.pointee.PlayerNum = gNumPlayers
 }

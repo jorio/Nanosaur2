@@ -216,11 +216,11 @@ func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!) -> U
     // HANDLE OBJNODE UPDATES
 
     if visible {
-        if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) != 0 { // see if need to insert into linked list
+        if theNode.hasStatus(STATUS_BIT_DETACHED) { // see if need to insert into linked list
             AttachObject(theNode, 1)
         }
     } else {
-        if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) == 0 { // see if need to remove from linked list
+        if !theNode.hasStatus(STATUS_BIT_DETACHED) { // see if need to remove from linked list
             DetachObject(theNode, 1)
         }
     }
@@ -260,7 +260,7 @@ func SetSplineAim(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 // OUTPUT:  true = the obj was on a spline and it was removed from it
 //			false = the obj was not on a spline.
 func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_ONSPLINE) // make sure this flag is off
+    theNode.clearStatus(STATUS_BIT_ONSPLINE) // make sure this flag is off
 
     if theNode.pointee.SplineObjectIndex != -1 {
         gSplineObjectList[Int(theNode.pointee.SplineObjectIndex)] = nil // nil out the entry into the list
@@ -373,7 +373,7 @@ func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ spee
 
     // GOING BACKWARD
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_REVERSESPLINE) != 0 { // see if going backward
+    if theNode.hasStatus(STATUS_BIT_REVERSESPLINE) { // see if going backward
         theNode.pointee.SplinePlacement -= speed / numPointsInSpline
         if theNode.pointee.SplinePlacement <= 0.0 {
             theNode.pointee.SplinePlacement = 0
@@ -393,7 +393,7 @@ func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ spee
 }
 
 func DetachObjectFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 {
+    if !theNode.hasStatus(STATUS_BIT_ONSPLINE) {
         return
     }
 

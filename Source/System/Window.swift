@@ -43,7 +43,7 @@ private let cMoveFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
         if gGammaFadeFrac <= 0.0 { // see if @ 0%
             gGammaFadeFrac = 0
             theNode.pointee.Mode = kFaderMode_Done
-            theNode.pointee.StatusBits |= UInt32(STATUS_BIT_NOMOVE) // DON'T nuke the fader pane if fading out -- but don't run this again
+            theNode.setStatus(STATUS_BIT_NOMOVE) // DON'T nuke the fader pane if fading out -- but don't run this again
         }
     }
 
@@ -139,10 +139,10 @@ func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePoint
     obj.pointee.Speed = fadeSpeed
 
     if fadeFlags & UInt8(kFadeFlags_P1) != 0 {
-        obj.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
+        obj.setStatus(STATUS_BIT_ONLYSHOWTHISPLAYER)
         obj.pointee.PlayerNum = 0
     } else if fadeFlags & UInt8(kFadeFlags_P2) != 0 {
-        obj.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
+        obj.setStatus(STATUS_BIT_ONLYSHOWTHISPLAYER)
         obj.pointee.PlayerNum = 1
     } else {
         obj.sendToOverlayPane()

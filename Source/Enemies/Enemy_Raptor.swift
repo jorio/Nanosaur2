@@ -359,7 +359,7 @@ private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF LANDED
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 {
+    if theNode.hasStatus(STATUS_BIT_ONGROUND) {
         theNode.pointee.SpecialF.0 = theNode.pointee.Speed // WalkSpeed
         theNode.pointee.Mode = raptorModeWalkInFront
         MorphToSkeletonAnim(theNode.pointee.Skeleton, raptorAnimWalk, 7.0)
@@ -416,7 +416,7 @@ private func moveRaptorDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 { // if on ground, add friction
+    if theNode.hasStatus(STATUS_BIT_ONGROUND) { // if on ground, add friction
         gDelta.applyFriction(2000.0)
     }
     gDelta.y -= ENEMY_GRAVITY * fps // add gravity
@@ -459,7 +459,7 @@ func PrimeEnemy_Raptor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineI
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -532,7 +532,7 @@ private let cRaptorHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Obj
     // JUST HURT
 
     else {
-        if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+        if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
             DetachEnemyFromSpline(enemy, cMoveRaptor)
         }
 
@@ -549,7 +549,7 @@ private func killRaptor(_ enemy: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveRaptor)
     }
 
@@ -631,7 +631,7 @@ private func knockDownRaptor(_ enemy: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveRaptor)
     }
 }

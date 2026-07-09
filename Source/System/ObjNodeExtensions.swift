@@ -15,6 +15,21 @@
 // Purely additive: existing call sites are untouched.
 
 extension UnsafeMutablePointer where Pointee == ObjNode {
+    // StatusBits sugar - replaces the raw `StatusBits |= UInt32(STATUS_BIT_X)`
+    // / `&= ~UInt32(...)` / `& UInt32(...) != 0` trio. Takes the STATUS_BIT_*
+    // constants at their imported type (untyped Int from the anonymous C
+    // enum in globals.h) so call sites need no casts; combined bits
+    // (STATUS_BIT_A | STATUS_BIT_B) work too.
+    func hasStatus(_ bits: Int) -> Bool { pointee.StatusBits & UInt32(bits) != 0 }
+    func setStatus(_ bits: Int) { pointee.StatusBits |= UInt32(bits) }
+    func clearStatus(_ bits: Int) { pointee.StatusBits &= ~UInt32(bits) }
+
+    /// Hidden = not drawn (STATUS_BIT_HIDDEN). `hide()`/`show()` affect this
+    /// node only; see `hideChain()`/`showChain()` for whole chains.
+    var isHidden: Bool { hasStatus(STATUS_BIT_HIDDEN) }
+    func hide() { setStatus(STATUS_BIT_HIDDEN) }
+    func show() { clearStatus(STATUS_BIT_HIDDEN) }
+
     func calcRadiusFromBBox() { CalcObjectRadiusFromBBox(self) }
     func resetDisplayGroup() { ResetDisplayGroupObject(self) }
     func attachGeometryToDisplayGroup(_ geometry: MetaObjectPtr?) { AttachGeometryToDisplayGroupObject(self, geometry) }

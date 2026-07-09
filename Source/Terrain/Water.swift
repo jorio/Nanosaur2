@@ -457,13 +457,13 @@ func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x: Float
         }
 
         // WE FOUND A HIT
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_UNDERWATER)
+        theNode.setStatus(STATUS_BIT_UNDERWATER)
         patchNum?.pointee = Int32(i)
         return 1
     }
 
     // NOT IN WATER
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_UNDERWATER)
+    theNode.clearStatus(STATUS_BIT_UNDERWATER)
     patchNum?.pointee = 0
     return 0
 }

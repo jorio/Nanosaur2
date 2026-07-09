@@ -316,7 +316,7 @@ func HidePlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     var node: UnsafeMutablePointer<ObjNode>? = player
 
     while let n = node {
-        n.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN) | UInt32(STATUS_BIT_NOMOVE)
+        n.setStatus(STATUS_BIT_HIDDEN | STATUS_BIT_NOMOVE)
         node = n.pointee.ChainNode
     }
 
@@ -837,10 +837,10 @@ func UpdatePlayerShield(_ playerNum: Int16) {
     }
 
     // HIDE WITH PLAYER
-    if player.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 {
-        shield.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+    if player.hasStatus(STATUS_BIT_HIDDEN) {
+        shield.setStatus(STATUS_BIT_HIDDEN)
     } else {
-        shield.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        shield.clearStatus(STATUS_BIT_HIDDEN)
     }
 
     // DO TEXTURE ANIMATION

@@ -661,7 +661,7 @@ func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Splin
 
     // SET SPLINE INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement

@@ -1315,7 +1315,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
     if distToFloor <= 0.0 { // see if on or under floor
         gCoord.y = terrainY - bottomOff
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+        theNode.setStatus(STATUS_BIT_ONGROUND)
 
         // SEE IF HIT GROUND HEAD-ON OR SQUEEZED TO MAX ALTITUDE
 
@@ -1362,7 +1362,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
     if !killed && (gDelta.y <= 0.0) { // only check water if moving down and not killed yet
         var patchNum: Int32 = 0
 
-        let wasInWater = theNode.pointee.StatusBits & UInt32(STATUS_BIT_UNDERWATER) != 0 // remember if was in water to begin with
+        let wasInWater = theNode.hasStatus(STATUS_BIT_UNDERWATER) // remember if was in water to begin with
 
         // CHECK IF IN WATER NOW
 

@@ -166,7 +166,7 @@ func SetTerrainScale(_ polygonSize: Int32) {
     gMapToUnitValue = gTerrainPolygonSize / Float(OREOMAP_TILE_SIZE) // value to xlate Oreo map pixel coords to 3-space unit coords
     gMapToUnitValueFrac = 1.0 / gMapToUnitValue
 
-    if gGamePrefs.lowRenderQuality != 0 {
+    if gGamePrefs.isLowRenderQuality {
         gSuperTileActiveRange = 7
     } else {
         gSuperTileActiveRange = Int32(MAX_SUPERTILE_ACTIVE_RANGE)

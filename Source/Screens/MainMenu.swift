@@ -142,14 +142,14 @@ func DoMainMenuScreen() {
         // Decide whether to fade out the music
         switch gMenuOutcome {
         case 0x6372_6564, 0x7373_6176: // 'cred', 'ssav'
-            gGameViewInfoPtr!.pointee.fadeSound = 0
+            gGameViewInfoPtr!.fadeSound = false
 
         case 0x7261_6331, 0x7261_6332, 0x6261_7431, 0x6261_7432, 0x6361_7031, 0x6361_7032: // 'rac1','rac2','bat1','bat2','cap1','cap2'
             // entering multiplayer; fade sound if we're gonna skip LocalGather
-            gGameViewInfoPtr!.pointee.fadeSound = GetNumGamepad() >= 2 ? 1 : 0
+            gGameViewInfoPtr!.fadeSound = GetNumGamepad() >= 2
 
         default:
-            gGameViewInfoPtr!.pointee.fadeSound = 1
+            gGameViewInfoPtr!.fadeSound = true
         }
 
         OGL_FadeOutScene(DrawObjects, nil)

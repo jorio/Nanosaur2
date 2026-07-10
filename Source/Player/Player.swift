@@ -204,7 +204,7 @@ func InitPlayerAtStartOfLevel() {
 func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     let playerNum = player.pointee.PlayerNum
 
-    if gGamePrefs.kiddieMode == 0 { // don't drop eggs in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't drop eggs in kiddie mode
         DropEgg_NoWormhole(Int16(playerNum))
     }
 

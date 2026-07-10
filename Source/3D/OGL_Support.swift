@@ -359,7 +359,7 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
 
     gGameViewInfoPtr!.pointee.frameCount = 0 // init frame counter
 
-    gGameViewInfoPtr!.pointee.fadeSound = 0 // by default, don't fade out sound when exiting scene
+    gGameViewInfoPtr!.fadeSound = false // by default, don't fade out sound when exiting scene
 }
 
 // MARK: - OGL_DisposeGameView

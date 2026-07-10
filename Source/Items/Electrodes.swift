@@ -281,7 +281,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
     var z = fromObj.pointee.Coord.z
 
     var numEndpoints: Int
-    if gGamePrefs.lowRenderQuality != 0 {
+    if gGamePrefs.isLowRenderQuality {
         numEndpoints = Int(dist * 0.01) // calc # zap endpoints based on distance
     } else {
         numEndpoints = Int(dist * 0.015) // calc # zap endpoints based on distance

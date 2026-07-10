@@ -12,4 +12,10 @@ extension UnsafeMutablePointer where Pointee == SkeletonObjDataType {
     func getModelCurrentPosition() { GetModelCurrentPosition(self) }
     func morphToAnim(_ animNum: Int, speed: Float) { MorphToSkeletonAnim(self, animNum, speed) }
     func setAnimTime(_ timeRatio: Float) { SetSkeletonAnimTime(self, timeRatio) }
+
+    /// Set when a non-looping anim reaches the end of its sequence.
+    var animHasStopped: Bool {
+        get { pointee.AnimHasStopped != 0 }
+        nonmutating set { pointee.AnimHasStopped = newValue ? 1 : 0 }
+    }
 }

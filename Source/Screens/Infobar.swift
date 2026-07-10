@@ -864,7 +864,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     // DRAW IT
 
     // DRAW SHADOW
-    if gGamePrefs.lowRenderQuality == 0 {
+    if !gGamePrefs.isLowRenderQuality {
         DrawInfobarSprite_Centered(mapXValue + 3, y + 3, MAP_SCALE * scale * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
@@ -934,7 +934,7 @@ private func infobarDrawHealth() {
     gRenderBackend.translate(healthX(), healthY(), 0)
 
     // DRAW SHADOW
-    if gGamePrefs.lowRenderQuality == 0 {
+    if !gGamePrefs.isLowRenderQuality {
         DrawInfobarSprite_Centered(2, 2, HEALTH_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
@@ -967,7 +967,7 @@ private func infobarDrawShield() {
     gRenderBackend.translate(shieldX(), shieldY(), 0)
 
     // DRAW SHADOW
-    if gGamePrefs.lowRenderQuality == 0 {
+    if !gGamePrefs.isLowRenderQuality {
         DrawInfobarSprite_Centered(2, 2, SHIELD_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
@@ -998,7 +998,7 @@ private func infobarDrawFuel() {
     gRenderBackend.translate(fuelX(), fuelY(), 0)
 
     // DRAW SHADOW
-    if gGamePrefs.lowRenderQuality == 0 {
+    if !gGamePrefs.isLowRenderQuality {
         DrawInfobarSprite_Centered(2, 2, FUEL_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 

@@ -161,7 +161,7 @@ private let cDoTrigTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeM
 private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { _, playerOpt in
     guard let player = playerOpt else { return 0 }
 
-    if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         let p = Int32(player.pointee.PlayerNum)
         let pi = GetPlayerInfoEntry(p)
 
@@ -746,7 +746,7 @@ private let cDoTrigFallenSwampTree: @convention(c) (UnsafeMutablePointer<ObjNode
         return 0
     }
 
-    if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         if MyRandomLong() & 1 != 0 {
             PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
         } else {

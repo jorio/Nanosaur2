@@ -68,7 +68,7 @@ private func makeRamphor(_ x: Float, _ z: Float, _ animNum: Int16, _ height: Int
     newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = ramphorHealth
-    if gGamePrefs.kiddieMode != 0 { // no damage in kiddie mode
+    if gGamePrefs.isKiddieMode { // no damage in kiddie mode
         newObj.pointee.Damage = 0
     } else {
         newObj.pointee.Damage = ramphorDamage
@@ -123,7 +123,7 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
         // SEE IF CHANGE ANIMS
 
         if theNode.pointee.Skeleton!.pointee.AnimNum == UInt8(ramphorAnimDisoriented) { // see if done with disorientation
-            if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
+            if theNode.pointee.Skeleton!.animHasStopped {
                 MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimCoast, 3)
             }
         }
@@ -261,7 +261,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
 
         // NO SHIELD, SO HURT PLAYER
 
-        else if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+        else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
             _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1)
         }
 
@@ -355,7 +355,7 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 // Returns true if enemy killed
 private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> Bool {
-    if gGamePrefs.kiddieMode != 0 { // don't hurt in kiddie mode
+    if gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         return false
     }
 

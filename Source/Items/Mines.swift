@@ -254,7 +254,7 @@ private let cDoTrig_AirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
 
     // NO SHIELD, SO KABOOM
 
-    else if gGamePrefs.kiddieMode == 0 { // dont hurt in kiddie mode
+    else if !gGamePrefs.isKiddieMode { // dont hurt in kiddie mode
         _ = PlayerSmackedIntoObject(player, mine, Int16(PlayerDeathType.deathDive.rawValue))
     }
 

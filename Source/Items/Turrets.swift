@@ -149,7 +149,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // UPDATE TURRET
 
-    if gGamePrefs.kiddieMode == 0 {
+    if !gGamePrefs.isKiddieMode {
         gun.pointee.SpecialF.0 -= fps // ShootTimer
 
         var playerNum: Int16 = 0

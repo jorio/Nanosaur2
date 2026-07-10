@@ -19,7 +19,7 @@ private let orbRingDiameter: Float = laserOrbScale * 21.0
 extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     @discardableResult
     func addLaserOrb(x: Float, z: Float) -> UInt8 {
-        if gGamePrefs.kiddieMode != 0 { // dont add these in kiddie mode
+        if gGamePrefs.isKiddieMode { // dont add these in kiddie mode
             return 0
         }
 

@@ -97,7 +97,7 @@ private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
     skeleton.pointee.CurrentAnimTime = 0
     skeleton.pointee.PauseTimer = 0
     skeleton.pointee.MaxAnimTime = calcMaxKeyFrameTime(skeleton)
-    skeleton.pointee.AnimHasStopped = 0
+    skeleton.animHasStopped = false
     skeleton.pointee.IsMorphing = 0
     skeleton.pointee.AnimSpeed = 1.0
 }
@@ -184,7 +184,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
                     }
 
                 default:
-                    skeleton.pointee.AnimHasStopped = 1
+                    skeleton.animHasStopped = true
                 }
             }
         }
@@ -204,7 +204,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
         switch Int(eventType) {
         case Int(AnimEventKind.stop.rawValue):
-            skeleton.pointee.AnimHasStopped = 1
+            skeleton.animHasStopped = true
             animEventIndex += 1
 
         case Int(AnimEventKind.setMarker.rawValue):
@@ -223,7 +223,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
                     currentTime -= eventTime
                     animEventIndex = 0
                 } else {
-                    skeleton.pointee.AnimHasStopped = 1
+                    skeleton.animHasStopped = true
                     animEventIndex += 1
                 }
             }

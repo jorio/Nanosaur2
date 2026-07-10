@@ -61,10 +61,10 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     case RESU_FOURCC: // RESUME
         break
     case BAIL_FOURCC: // EXIT
-        gGameViewInfoPtr!.pointee.fadeSound = 1
+        gGameViewInfoPtr!.fadeSound = true
         gGameOver = 1
     case QUIT_FOURCC: // QUIT
-        gGameViewInfoPtr!.pointee.fadeSound = 1
+        gGameViewInfoPtr!.fadeSound = true
         CleanQuit()
     default:
         break

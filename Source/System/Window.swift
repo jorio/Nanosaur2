@@ -47,7 +47,7 @@ private let cMoveFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
         }
     }
 
-    if gGameViewInfoPtr!.pointee.fadeSound != 0 {
+    if gGameViewInfoPtr!.fadeSound {
         FadeSound(gGammaFadeFrac)
     }
 }
@@ -99,7 +99,7 @@ func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCall: (@co
     DoSDLMaintenance()
     OGL_DrawScene(drawCall)
 
-    if gGameViewInfoPtr!.pointee.fadeSound != 0 {
+    if gGameViewInfoPtr!.fadeSound {
         FadeSound(0)
         KillSong()
         StopAllEffectChannels()

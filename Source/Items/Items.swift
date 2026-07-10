@@ -69,7 +69,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
 // MARK: - Create cloud layer
 
 private func createCloudLayer() {
-    if gGamePrefs.lowRenderQuality != 0 { // don't do clouds in low-quality mode
+    if gGamePrefs.isLowRenderQuality { // don't do clouds in low-quality mode
         return
     }
 

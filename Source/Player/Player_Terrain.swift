@@ -258,7 +258,7 @@ private func MovePlayer_ReadyToGrab(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func MovePlayer_FlyingDisoriented(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // SEE IF STOP DISORIENTATION
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
+    if theNode.pointee.Skeleton!.animHasStopped {
         SetPlayerFlyingAnim(theNode)
     }
 
@@ -573,7 +573,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // MAKE SMOKE TRAIL IF HURT
 
-    if gGamePrefs.lowRenderQuality == 0 && pi.pointee.health < 0.33 {
+    if !gGamePrefs.isLowRenderQuality && pi.pointee.health < 0.33 {
         MakePlayerSmoke(theNode)
     }
 
@@ -1325,7 +1325,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
         } else {
             let dot = theNode.pointee.MotionVector.dot(gRecentTerrainNormal) // see if smacked into terrain
 
-            if (dot < -0.6) && (gGamePrefs.kiddieMode == 0) { // if hit head-on & not in kiddie mode
+            if (dot < -0.6) && (!gGamePrefs.isKiddieMode) { // if hit head-on & not in kiddie mode
                 kaboom = true
             }
         }

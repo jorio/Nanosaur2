@@ -134,7 +134,7 @@ private func moveBrachStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.7 // slow this down
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
+    if theNode.pointee.Skeleton!.animHasStopped {
         SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
     }
 
@@ -150,7 +150,7 @@ private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveBrachEat(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.4 // slow this down
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
+    if theNode.pointee.Skeleton!.animHasStopped {
         SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
     }
 

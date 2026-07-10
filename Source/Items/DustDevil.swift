@@ -318,7 +318,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
         // SCALE DOWN AND DRAW INNER SHELL
 
-        if gGamePrefs.lowRenderQuality == 0 {
+        if !gGamePrefs.isLowRenderQuality {
             gRenderBackend.pushMatrix()
             OGL_SetColor4f(1, 1, 1, 0.5)
 

@@ -45,7 +45,7 @@ private let raptorJointnumTailtip = 22
 extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     @discardableResult
     func addEnemyRaptor(x: Float, z: Float) -> UInt8 {
-        if gGamePrefs.kiddieMode != 0 { // don't add any non-spline enemies in kiddie mode
+        if gGamePrefs.isKiddieMode { // don't add any non-spline enemies in kiddie mode
             return 0
         }
 
@@ -84,7 +84,7 @@ private func makeRaptor(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutab
     newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = raptorHealth
-    if gGamePrefs.kiddieMode != 0 { // no damage in kiddie mode
+    if gGamePrefs.isKiddieMode { // no damage in kiddie mode
         newObj.pointee.Damage = 0
     } else {
         newObj.pointee.Damage = raptorDamage
@@ -317,7 +317,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF JUMP
 
-    if gGamePrefs.kiddieMode == 0 {
+    if !gGamePrefs.isKiddieMode {
         if theNode.pointee.Mode == raptorModeWalkToPlayer { // only when walking directly to player
             if (dist < raptorAttackDist) && (aim < (Float.pi / 8)) {
                 gDelta.y = raptorJumpDeltaY
@@ -579,7 +579,7 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
 
         // NO SHIELD, SO HURT PLAYER
 
-        else if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+        else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
             _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1)
         }
 
@@ -640,7 +640,7 @@ private func knockDownRaptor(_ enemy: UnsafeMutablePointer<ObjNode>) {
 
 // Returns true if enemy killed
 private func checkIfRaptorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> Bool {
-    if gGamePrefs.kiddieMode != 0 { // don't hurt in kiddie mode
+    if gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         return false // TODO: I assume we should return false here -IJ
     }
 

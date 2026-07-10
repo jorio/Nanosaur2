@@ -214,7 +214,7 @@ func DoIntroStoryScreen() {
         CalcFramesPerSecond()
         DoSDLMaintenance()
         if UserWantsOut() != 0 {
-            gGameViewInfoPtr!.pointee.fadeSound = 1
+            gGameViewInfoPtr!.fadeSound = true
             break
         }
 

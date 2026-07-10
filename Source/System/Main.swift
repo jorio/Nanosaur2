@@ -103,7 +103,7 @@ func InitDefaultPrefs() {
     gGamePrefs.language = UInt8(GetBestLanguageIDFromSystemLocale().rawValue)
     gGamePrefs.cutsceneSubtitles = IsNativeEnglishSystem() ? 0 : 1 // enable subtitles if user's native language isn't English
 
-    gGamePrefs.lowRenderQuality = 0
+    gGamePrefs.isLowRenderQuality = false
     gGamePrefs.splitScreenMode = UInt8(SplitscreenMode.vertical.rawValue)
     gGamePrefs.stereoGlassesMode = UInt8(StereoGlassesMode.off.rawValue)
     gGamePrefs.anaglyphCalibrationRed = UInt8(DEFAULT_ANAGLYPH_R)
@@ -112,7 +112,7 @@ func InitDefaultPrefs() {
     gGamePrefs.doAnaglyphChannelBalancing = 1
 
     gGamePrefs.showTargetingCrosshairs = 1
-    gGamePrefs.kiddieMode = 0
+    gGamePrefs.isKiddieMode = false
 
     gGamePrefs.force4x3HUD = 0
     gGamePrefs.hudScale = 100
@@ -503,7 +503,7 @@ private func playLevel() {
     GrabMouse(0)
 
     if gGammaFadeFrac > 0 { // only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
-        gGameViewInfoPtr!.pointee.fadeSound = 1
+        gGameViewInfoPtr!.fadeSound = true
         OGL_FadeOutScene(cDrawLevelCallback, cUpdateTerrainForFadeOut)
     }
 

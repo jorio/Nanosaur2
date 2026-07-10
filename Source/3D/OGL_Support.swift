@@ -1152,6 +1152,13 @@ private func OGL_DrawDualScreenMinimap() {
         }
         gMinimapSurface3DS = LoadSDLSurface3DS(":Sprites:maps:\(GetLevelName(gEngine.game.levelNum))")
         gMinimapLevel3DS = gEngine.game.levelNum
+        if let map = gMinimapSurface3DS {
+            // Copy into the scratch surface, don't blend: the map image has
+            // a real alpha channel (jpg+png merge), and blending it against
+            // whatever the scratch held from the PREVIOUS update smears the
+            // anti-aliased terrain outlines as the map scrolls.
+            _ = SDL_SetSurfaceBlendMode(map, SDL_BLENDMODE_NONE)
+        }
     }
     guard let map = gMinimapSurface3DS else { return }
 
@@ -1206,7 +1213,9 @@ private func OGL_DrawDualScreenMinimap() {
     if let scratch = minimapScratch3DS(kMapSize) {
         _ = SDL_BlitSurfaceScaled(map, &src, scratch, nil, SDL_SCALEMODE_LINEAR)
 
-        // Stamp the disc into the alpha channel (RGBA32: alpha at byte 3).
+        // Multiply the disc into the alpha channel (RGBA32: alpha at byte
+        // 3) - multiply, not overwrite, so the map's own transparency
+        // (terrain cutouts over the MapLines grid, like desktop) survives.
         if let rawPixels = scratch.pointee.pixels {
             let pixels = rawPixels.assumingMemoryBound(to: UInt8.self)
             let pitch = Int(scratch.pointee.pitch)
@@ -1214,7 +1223,8 @@ private func OGL_DrawDualScreenMinimap() {
             for y in 0..<n {
                 let row = pixels + y * pitch
                 for x in 0..<n {
-                    row[x * 4 + 3] = gMinimapCircleMask3DS[y * n + x]
+                    let a = UInt16(row[x * 4 + 3]) * UInt16(gMinimapCircleMask3DS[y * n + x])
+                    row[x * 4 + 3] = UInt8(a / 255)
                 }
             }
         }

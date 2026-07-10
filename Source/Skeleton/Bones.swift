@@ -219,7 +219,7 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // TOGGLE VERTEX ARRAY DOUBLE-BUFFER
 
-    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.skeletons.rawValue) + Int32(gGameViewInfoPtr!.pointee.frameCount & 1))
+    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.skeletons.rawValue) + Int32(gEngine.game.viewInfoPtr!.pointee.frameCount & 1))
 
     // INIT BBOX
     //
@@ -276,7 +276,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
     let currentSkeleton = gEngine.bones.currentSkeleton!
     let bbox = gEngine.bones.bbox!
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let localTriMeshes = deformedMeshesBase(currentSkelObjData) + (buffNum * kDeformedMeshesStride) // get ptr to skeleton's triMeshes
 

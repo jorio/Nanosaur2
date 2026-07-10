@@ -73,8 +73,8 @@ func InitPlayerInfo_Game() {
         let pi = GetPlayerInfoEntry(Int32(i))
 
         // INIT SOME THINGS IF NOT LOADING SAVED GAME
-        if gPlayingFromSavedGame == 0 {
-            if gVSMode == .battle { // more lives in battle mode
+        if gEngine.game.playingFromSavedGame == 0 {
+            if gEngine.game.vsMode == .battle { // more lives in battle mode
                 pi.pointee.numFreeLives = 5
             } else {
                 pi.pointee.numFreeLives = 3
@@ -82,7 +82,7 @@ func InitPlayerInfo_Game() {
 
             pi.pointee.health = 1.0
 
-            if gVSMode == .race { // start with very little fuel in races
+            if gEngine.game.vsMode == .race { // start with very little fuel in races
                 pi.pointee.jetpackFuel = 0.25
             } else {
                 pi.pointee.jetpackFuel = 1.0
@@ -182,7 +182,7 @@ func InitPlayerAtStartOfLevel() {
     }
 
     // LAY DOWN ENTRY WORMHOLE IN ADVENTURE MODE
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         var wormStartOff = OGLPoint3D(x: 0, y: 1200, z: 0)
         var wormVector = OGLVector3D(x: 0, y: 1, z: 0)
 
@@ -309,7 +309,7 @@ func KillPlayer(_ playerNum: Int16, _ deathType: PlayerDeathType, _ where_: Unsa
     }
 
     // SPECIAL STUFF FOR BATTLE MODE
-    if gVSMode == .battle {
+    if gEngine.game.vsMode == .battle {
         if pi.pointee.numFreeLives <= 0 { // is this player out of lives?
             ShowWinLose(playerNum, 1) // lost
             ShowWinLose(playerNum ^ 1, 0) // win
@@ -375,7 +375,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     SetSkeletonAnim(player.pointee.Skeleton, .coasting)
 
     // FIRST TAKE AWAY A LIFE AND SEE IF IT'S ALL OVER
-    switch gVSMode { // not all game modes have lives
+    switch gEngine.game.vsMode { // not all game modes have lives
     case .race, .captureTheFlag: // infinite lives in racing & flag modes
         break
 
@@ -388,7 +388,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
 
     default:
         if pi.pointee.numFreeLives <= 0 { // if no free lives then cannot reset, so game over
-            gGameOver = 1
+            gEngine.game.gameOver = 1
             return
         }
         pi.pointee.numFreeLives -= 1 // dec # lives
@@ -432,7 +432,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     // RESET COLLISION & STATUS INFO
     player.pointee.CType = UInt32(CTYPE_PLAYER1) << playerNum // make sure collision is set
 
-    if gVSMode != .none { // be sure to reset this for 2P modes
+    if gEngine.game.vsMode != .none { // be sure to reset this for 2P modes
         player.pointee.CType |= UInt32(CTYPE_TRIGGER)
         player.pointee.CBits |= UInt32(CBITS_ALWAYSTRIGGER)
         player.pointee.TriggerCallback = cDoTrig_Player
@@ -758,7 +758,7 @@ func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMu
     // SPECIAL STUFF FOR BATTLE MODE
     //
     // We need to check if both players lost simultaneously
-    if gVSMode == .battle {
+    if gEngine.game.vsMode == .battle {
         let p0Info = GetPlayerInfoEntry(0)
         let p1Info = GetPlayerInfoEntry(1)
 
@@ -829,7 +829,7 @@ func UpdatePlayerShield(_ playerNum: Int16) {
     }
 
     let player = pi.pointee.objNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE OUT
     shield.pointee.ColorFilter.a -= fps * 3.0
@@ -961,7 +961,7 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
 func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
     var maxAlt: Float
 
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue):
         maxAlt = GetTerrainY(x, z) + MAX_ALTITUDE_DIFF
         if maxAlt > MAX_ALTITUDE {

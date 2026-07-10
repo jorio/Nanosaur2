@@ -214,7 +214,7 @@ func DoIntroStoryScreen() {
         CalcFramesPerSecond()
         DoSDLMaintenance()
         if UserWantsOut() != 0 {
-            gGameViewInfoPtr!.fadeSound = true
+            gEngine.game.viewInfoPtr!.fadeSound = true
             break
         }
 
@@ -363,7 +363,7 @@ private func buildSlideShowObjects() {
 
 private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let slideNum = Int(theNode.pointee.Kind)
     let isLastSlide = slideNum >= NUM_SLIDES - 1
 
@@ -435,7 +435,7 @@ private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
 private let cMoveSubtitle: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if floorf(theNode.pointee.SpecialF.0 * 100) >= 0 {
         theNode.setStatus(STATUS_BIT_HIDDEN)

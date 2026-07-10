@@ -500,7 +500,7 @@ func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         infobarDrawMap(mapX(), mapY())
     }
 
-    switch gVSMode {
+    switch gEngine.game.vsMode {
     // ADVENTURE MODE
     case .none:
         infobarDrawLives()
@@ -781,7 +781,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     var u: Float
     var v: Float
 
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue):
         visibleRange = 0.18
         leftEdge -= 1175.0 // offset by the cropped black-space amount
@@ -885,7 +885,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
 // MARK: - Draw minimap on secondary screen (dual-screen mode)
 
 // Called once per frame from OGL_Support.swift's dual-screen draw path,
-// with gAGLContext2/gSDLWindow2 already current and gGameWindowWidth/Height
+// with gAGLContext2/gSDLWindow2 already current and gEngine.window.width/Height
 // temporarily overridden to the bottom window's own pixel size (so
 // SetInfobarSpriteState/Get2DLogicalRect - both keyed off those globals -
 // compute the right aspect/letterboxing for that window). Draws the map
@@ -1024,7 +1024,7 @@ func HighlightInfobarEgg(_ eggType: Int32) {
 // MARK: - Draw eggs
 
 private func infobarDrawEggs() {
-    gBlinkingEggTimer += gFramesPerSecondFrac
+    gBlinkingEggTimer += gEngine.framesPerSecondFrac
 
     var x = eggsX()
     for (eggType, _) in EggColor.allCases.enumerated() {
@@ -1063,7 +1063,7 @@ private func infobarDrawEggs() {
 private func infobarCaptureFlagEggs() {
     let eggType = Int(gCurrentSplitScreenPane) ^ 1 // egg type is OTHER player's, so ^ 1
 
-    gBlinkingEggTimer += gFramesPerSecondFrac / Float(gEngine.player.numPlayers)
+    gBlinkingEggTimer += gEngine.framesPerSecondFrac / Float(gEngine.player.numPlayers)
 
     let y = capEggsY()
     var x = capEggsX()
@@ -1119,7 +1119,7 @@ private func infobarDrawMissionStatus() {
     }
     // ENTER WORMHOLE
     else if gOpenPlayerWormhole != 0 && gEngine.camera.inExitMode == 0 {
-        gMissionStatusFlux += gFramesPerSecondFrac
+        gMissionStatusFlux += gEngine.framesPerSecondFrac
 
         var scale: Float = 0.5 * (1.0 + sinf(min(Float(PI), gMissionStatusFlux * 6.0) - (Float(PI) * 0.5)))
         var flags: Int32 = 0
@@ -1205,7 +1205,7 @@ private func infobarDrawRaceInfo() {
 
     // DRAW READY-SET-GO
     let readySetGoIcon: Int32
-    switch Int32(gRaceReadySetGoTimer + 1) {
+    switch Int32(gEngine.game.raceReadySetGoTimer + 1) {
     case 2: readySetGoIcon = Int32(INFOBAR_SObjType_Ready)
     case 1: readySetGoIcon = Int32(INFOBAR_SObjType_Set)
     case 0: readySetGoIcon = Int32(INFOBAR_SObjType_Go)
@@ -1223,7 +1223,7 @@ private func infobarDrawRaceInfo() {
     DrawInfobarSprite(playerX(), playerY(), scale, Int16(Int(INFOBAR_SObjType_Place1) + Int(place)))
 
     // DRAW LAP
-    if gLevelCompleted == 0 {
+    if gEngine.game.levelCompleted == 0 {
         var lapNum = pi.pointee.lapNum
         if lapNum < 0 {
             lapNum = 0
@@ -1281,7 +1281,7 @@ private func moveLapMessage(_ theNode: UnsafeMutablePointer<ObjNode>) {
     UpdateObjectTransforms(theNode)
 
     if gGamePaused == 0 {
-        theNode.pointee.ColorFilter.a -= gFramesPerSecondFrac
+        theNode.pointee.ColorFilter.a -= gEngine.framesPerSecondFrac
         if theNode.pointee.ColorFilter.a <= 0.0 {
             DeleteObject(theNode)
         }
@@ -1564,7 +1564,7 @@ private func infobarDrawCrosshairs() {
     screenCoord.y += gLogicalRect.top
 
     if lockedOn {
-        gCrosshairSpinAngle += gFramesPerSecondFrac * SwPI2
+        gCrosshairSpinAngle += gEngine.framesPerSecondFrac * SwPI2
         drawInfobarSpriteRotated(screenCoord.x, screenCoord.y, scale * 1.3, Int16(INFOBAR_SObjType_GunSight_Locked), gCrosshairSpinAngle)
         DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale * 1.6, Int16(INFOBAR_SObjType_GunSight_OuterRing))
     } else {

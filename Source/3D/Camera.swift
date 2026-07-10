@@ -75,13 +75,13 @@ private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGl
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 // MARK: - Get FOV depending on splitscreen mode
 
 func GetSplitscreenPaneFOV() -> Float {
-    if gVSMode == .none { // set FOV differently for multiplayer
+    if gEngine.game.vsMode == .none { // set FOV differently for multiplayer
         return 1.15
     } else {
         if gGamePrefs.splitScreenMode == UInt8(SplitscreenMode.horizontal.rawValue) { // smaller FOV for wide panes
@@ -114,9 +114,9 @@ func DrawLensFlare() {
     // CALC SUN COORD
 
     let from = (cameraPlacementsBase() + Int(Int32(gCurrentSplitScreenPane))).pointee.cameraLocation
-    gEngine.camera.sunCoord.x = from.x - (gWorldSunDirection.x * gGameViewInfoPtr!.pointee.yon)
-    gEngine.camera.sunCoord.y = from.y - (gWorldSunDirection.y * gGameViewInfoPtr!.pointee.yon)
-    gEngine.camera.sunCoord.z = from.z - (gWorldSunDirection.z * gGameViewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.x = from.x - (gEngine.game.worldSunDirection.x * gEngine.game.viewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.y = from.y - (gEngine.game.worldSunDirection.y * gEngine.game.viewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.z = from.z - (gEngine.game.worldSunDirection.z * gEngine.game.viewInfoPtr!.pointee.yon)
 
     // CALC DOT PRODUCT BETWEEN VIEW AND LIGHT VECTORS TO SEE IF OUT OF RANGE
 
@@ -290,7 +290,7 @@ private func resetCameraSettings() {
 // MARK: - Update cameras
 
 func UpdateCameras() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var from = OGLPoint3D()
     var to = OGLPoint3D()
     var target = OGLPoint3D()
@@ -300,7 +300,7 @@ func UpdateCameras() {
     let tailOff = OGLPoint3D(x: 0, y: 60, z: cameraDefaultDistFromMe)
     let noseOff = OGLPoint3D(x: 0, y: 0, z: -600)
 
-    if gTimeDemo != 0 { // don't do anything in time demo mode
+    if gEngine.game.timeDemo != 0 { // don't do anything in time demo mode
         return
     }
 
@@ -487,7 +487,7 @@ func UpdateCameras() {
 
 private func moveCamera_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     let p = player.pointee.PlayerNum
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     let devil = GetPlayerInfoEntry(Int32(p)).pointee.dustDevilObj!
 

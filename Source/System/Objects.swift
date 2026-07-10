@@ -41,6 +41,9 @@ final class ObjectSystem {
     // Objects2.swift scratch (fileprivate wouldn't reach across files)
     var meshNum: Int32 = 0
     var numWorldCalcsThisFrame: Int32 = 0
+
+    // Pick.swift config flag
+    var pickAllTrianglesAsDoubleSided: UInt8 = 0
 }
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
@@ -444,7 +447,7 @@ func DrawObjects() {
 
     // GET CAMERA COORDS
 
-    let cameraPlacementsBase = UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    let cameraPlacementsBase = UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
     let cam = cameraPlacementsBase + Int(gCurrentSplitScreenPane)
     let cameraX = cam.pointee.cameraLocation.x
     let cameraZ = cam.pointee.cameraLocation.z
@@ -534,7 +537,7 @@ func DrawObjects() {
 
             // CHECK NO FOG
 
-            if gGameViewInfoPtr!.pointee.useFog != 0 {
+            if gEngine.game.viewInfoPtr!.pointee.useFog != 0 {
                 if statusBits & UInt32(STATUS_BIT_NOFOG) != 0 {
                     OGL_DisableFog()
                 } else {
@@ -612,7 +615,7 @@ func DrawObjects() {
 
             // SHOW COLLISION BOXES
 
-            if gDebugMode == 2 {
+            if gEngine.game.debugMode == 2 {
                 DrawCollisionBoxes(node, 0)
                 // DrawBoundingSpheres(node)
                 // DrawBoundingBoxes(node)
@@ -683,7 +686,7 @@ func DrawObjects() {
 
                         UnsafeMutableRawPointer(baseGroup).draw()
 
-                        if gDebugMode >= 2 {
+                        if gEngine.game.debugMode >= 2 {
                             TextMesh_DrawExtents(node)
                         }
 

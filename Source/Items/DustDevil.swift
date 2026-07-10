@@ -207,10 +207,10 @@ func InitDustDevilMemory() {
 // old to modify the new.
 
 func UpdateDustDevilUVAnimation() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if gEngine.dustDevils.numDustDevils > 0 { // only bother if there are dirt devils around
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
         var n: Float = 4.0 // uv scroll speed for bottom segment
 
@@ -298,7 +298,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
         return
     }
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     // DRAW EACH ACTIVE DUST DEVIL
 
@@ -380,7 +380,7 @@ private let cMoveDustDevil: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 // MARK: - Make dust devil dust
 
 private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.getInfo()
 

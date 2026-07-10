@@ -609,13 +609,13 @@ func DoItemShadowCasting() {
 
     // GET MAIN LIGHT VECTOR INFO
 
-    var lightVector = OGLVector2D(x: gGameViewInfoPtr!.pointee.lightList.fillDirection.0.x, y: gGameViewInfoPtr!.pointee.lightList.fillDirection.0.z)
+    var lightVector = OGLVector2D(x: gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0.x, y: gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0.z)
     var lightVectorNorm = OGLVector2D()
     OGLVector2D_Normalize(&lightVector, &lightVectorNorm)
     lightVector = lightVectorNorm
 
     let upVar = up
-    let fillDir = gGameViewInfoPtr!.pointee.lightList.fillDirection.0
+    let fillDir = gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0
     var dot = upVar.dot(fillDir)
     dot = 1.0 - dot
 

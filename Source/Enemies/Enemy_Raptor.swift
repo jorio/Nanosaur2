@@ -177,7 +177,7 @@ private func moveRaptorStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
 private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let skeleton = theNode.pointee.Skeleton!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     let oldRotY = theNode.pointee.Rot.y
 
@@ -278,7 +278,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SET APPROPRIATE WALK ANIM
 
-    theNode.pointee.DeltaRot.y = (r - oldRotY) * gFramesPerSecond
+    theNode.pointee.DeltaRot.y = (r - oldRotY) * gEngine.framesPerSecond
 
     if fabsf(theNode.pointee.DeltaRot.y) > 1.5 {
         if cross < 0.0 {
@@ -337,7 +337,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move raptor: jump
 
 private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     gEngine.objects.delta.applyFriction(400.0)
 
@@ -373,7 +373,7 @@ private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move raptor: knocked down
 
 private func moveRaptorKnockedDown(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     gEngine.objects.delta.applyFriction(700.0)
 
@@ -402,7 +402,7 @@ private func moveRaptorKnockedDown(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move raptor: death
 
 private func moveRaptorDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
     //
@@ -661,10 +661,10 @@ private func checkIfRaptorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> B
 
         // SEE IF LINE SEG HITS PLAYER GEOMETRY
 
-        gPickAllTrianglesAsDoubleSided = 1
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 1
         var hitPt = OGLPoint3D()
         let hitObj = OGL_DoLineSegmentCollision_ObjNodes(&lineSeg, 0, UInt32(CTYPE_PLAYER1) << UInt32(p), &hitPt, nil, nil, 1)
-        gPickAllTrianglesAsDoubleSided = 0
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 0
 
         if let hitObj {
             // HURT PLAYER

@@ -3,53 +3,59 @@
 // gGamePrefs is the only global left in Main.c: Boot.cpp reads/writes
 // gGamePrefs.antialiasingLevel directly, so PrefsType must stay a
 // C-visible extern global. Every other global that used to live in
-// Main.c (gGameViewInfoPtr, gLevelNum, gDebugMode, gAutoFadeStatusBits,
-// gTimeDemo, gGameOver, gLevelCompleted, gPlayingFromSavedGame,
-// gSkipLevelIntro, gRaceReadySetGoTimer, gPrefsFolderVRefNum/DirID,
-// gWorldSunDirection, gBestCheckpointNum/Coord/Aim, gVSMode) is native
+// Main.c (gEngine.game.viewInfoPtr, gEngine.game.levelNum, gEngine.game.debugMode, gEngine.game.autoFadeStatusBits,
+// gEngine.game.timeDemo, gEngine.game.gameOver, gEngine.game.levelCompleted, gEngine.game.playingFromSavedGame,
+// gEngine.game.skipLevelIntro, gEngine.game.raceReadySetGoTimer, gEngine.game.prefsFolderVRefNum/DirID,
+// gEngine.game.worldSunDirection, gBestCheckpointNum/Coord/Aim, gEngine.game.vsMode) is native
 // Swift storage now (converted 2026-07-07): nothing in any .c file
 // touches them anymore. gBestCheckpointNum/Coord/Aim were exposed via
 // Get*/Set* shims in PlayerInternal.h; those are now plain Swift
 // functions with the same names/signatures.
 //
-// gTimeDemoStartTime/EndTime, gGameLevelTimer, gLevelCompletedCoolDownTimer,
-// gFillColor1, and gLevelSongs have no `extern` declaration anywhere and
+// gEngine.game.timeDemoStartTime/EndTime, gEngine.game.levelTimer, gEngine.game.levelCompletedCoolDownTimer,
+// gEngine.game.fillColor1, and gLevelSongs have no `extern` declaration anywhere and
 // are only ever touched from this file, so they stay private Swift
 // storage.
 
-var gVSMode: VSMode = .none // nano vs. nano mode
+/// Top-level game/session state. Owned by GameEngine as `gEngine.game`.
+final class GameState {
+    var vsMode: VSMode = .none // nano vs. nano mode
 
-var gGameViewInfoPtr: UnsafeMutablePointer<OGLSetupOutputType>!
-var gGameFrameNum: UInt32 = 0
-var gLevelNum: Int16 = 0
-var gDebugMode: UInt8 = 0
-var gAutoFadeStatusBits: UInt32 = 0
-var gTimeDemo: UInt8 = 0
-var gGameOver: UInt8 = 0
-var gLevelCompleted: UInt8 = 0
-var gPlayingFromSavedGame: UInt8 = 0
-var gSkipLevelIntro: UInt8 = 0
-var gRaceReadySetGoTimer: Float = 0
-var gPrefsFolderVRefNum: Int16 = 0
-var gPrefsFolderDirID: Int = 0
-var gWorldSunDirection = OGLVector3D()
+    var viewInfoPtr: UnsafeMutablePointer<OGLSetupOutputType>!
+    var frameNum: UInt32 = 0
+    var levelNum: Int16 = 0
+    var debugMode: UInt8 = 0
+    var autoFadeStatusBits: UInt32 = 0
+    var timeDemo: UInt8 = 0
+    var gameOver: UInt8 = 0
+    var levelCompleted: UInt8 = 0
+    var playingFromSavedGame: UInt8 = 0
+    var skipLevelIntro: UInt8 = 0
+    var raceReadySetGoTimer: Float = 0
+    var prefsFolderVRefNum: Int16 = 0
+    var prefsFolderDirID: Int = 0
+    var worldSunDirection = OGLVector3D()
 
-private var gBestCheckpointNumArr: [Int16] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gBestCheckpointCoordArr: [OGLPoint3D] = Array(repeating: OGLPoint3D(), count: Int(MAX_PLAYERS))
-private var gBestCheckpointAimArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var bestCheckpointNum: [Int16] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var bestCheckpointCoord: [OGLPoint3D] = Array(repeating: OGLPoint3D(), count: Int(MAX_PLAYERS))
+    fileprivate var bestCheckpointAim: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
 
-func GetBestCheckpointNum(_ i: Int32) -> Int16 { gBestCheckpointNumArr[Int(i)] }
-func SetBestCheckpointNum(_ i: Int32, _ v: Int16) { gBestCheckpointNumArr[Int(i)] = v }
-func GetBestCheckpointCoord(_ i: Int32) -> OGLPoint3D { gBestCheckpointCoordArr[Int(i)] }
-func SetBestCheckpointCoord(_ i: Int32, _ v: OGLPoint3D) { gBestCheckpointCoordArr[Int(i)] = v }
-func GetBestCheckpointAim(_ i: Int32) -> Float { gBestCheckpointAimArr[Int(i)] }
-func SetBestCheckpointAim(_ i: Int32, _ v: Float) { gBestCheckpointAimArr[Int(i)] = v }
+    fileprivate var timeDemoStartTime: UInt32 = 0
+    fileprivate var timeDemoEndTime: UInt32 = 0
+    fileprivate var levelTimer: Float = 0
+    fileprivate var levelCompletedCoolDownTimer: Float = 0
+    fileprivate var fillColor1 = OGLColorRGBA(r: 0.8, g: 0.8, b: 0.7, a: 1)
+}
 
-private var gTimeDemoStartTime: UInt32 = 0
-private var gTimeDemoEndTime: UInt32 = 0
-private var gGameLevelTimer: Float = 0
-private var gLevelCompletedCoolDownTimer: Float = 0
-private var gFillColor1 = OGLColorRGBA(r: 0.8, g: 0.8, b: 0.7, a: 1)
+
+
+func GetBestCheckpointNum(_ i: Int32) -> Int16 { gEngine.game.bestCheckpointNum[Int(i)] }
+func SetBestCheckpointNum(_ i: Int32, _ v: Int16) { gEngine.game.bestCheckpointNum[Int(i)] = v }
+func GetBestCheckpointCoord(_ i: Int32) -> OGLPoint3D { gEngine.game.bestCheckpointCoord[Int(i)] }
+func SetBestCheckpointCoord(_ i: Int32, _ v: OGLPoint3D) { gEngine.game.bestCheckpointCoord[Int(i)] = v }
+func GetBestCheckpointAim(_ i: Int32) -> Float { gEngine.game.bestCheckpointAim[Int(i)] }
+func SetBestCheckpointAim(_ i: Int32, _ v: Float) { gEngine.game.bestCheckpointAim[Int(i)] = v }
+
 
 // LEVEL SONGS
 private let gLevelSongs: [Int16] = [
@@ -143,19 +149,19 @@ private func playGameAdventure() {
 
     // PLAY THRU LEVELS SEQUENTIALLY
 
-    while gLevelNum <= Int16(LevelNum.adventure3.rawValue) {
+    while gEngine.game.levelNum <= Int16(LevelNum.adventure3.rawValue) {
         // DO LEVEL INTRO
 
-        PlaySong(gLevelSongs[Int(gLevelNum)], 1)
+        PlaySong(gLevelSongs[Int(gEngine.game.levelNum)], 1)
 
-        if gSkipLevelIntro == 0 {
-            if (gLevelNum == 0) || gPlayingFromSavedGame != 0 {
+        if gEngine.game.skipLevelIntro == 0 {
+            if (gEngine.game.levelNum == 0) || gEngine.game.playingFromSavedGame != 0 {
                 DoLevelIntroScreen(UInt8(INTRO_MODE_NOSAVE))
             } else {
                 DoLevelIntroScreen(UInt8(INTRO_MODE_SAVEGAME))
             }
         }
-        gSkipLevelIntro = 0 // reset skip flag
+        gEngine.game.skipLevelIntro = 0 // reset skip flag
 
         MyFlushEvents()
 
@@ -167,7 +173,7 @@ private func playGameAdventure() {
 
         playLevel()
 
-        gPlayingFromSavedGame = 0 // once we've completed a level after restoring, we're not really playing from a saved game anymore
+        gEngine.game.playingFromSavedGame = 0 // once we've completed a level after restoring, we're not really playing from a saved game anymore
 
         // CLEANUP LEVEL
 
@@ -176,20 +182,20 @@ private func playGameAdventure() {
 
         // SEE IF LOST
 
-        if gGameOver != 0 { // bail out if game has ended
+        if gEngine.game.gameOver != 0 { // bail out if game has ended
             break
         }
 
         // DO END-LEVEL BONUS SCREEN
 
-        if gLevelNum == Int16(LevelNum.adventure3.rawValue) { // if just won game then do win screen first!
+        if gEngine.game.levelNum == Int16(LevelNum.adventure3.rawValue) { // if just won game then do win screen first!
             DoWinScreen()
         }
 
-        gLevelNum += 1
+        gEngine.game.levelNum += 1
     }
 
-    gPlayingFromSavedGame = 0
+    gEngine.game.playingFromSavedGame = 0
 }
 
 // MARK: - Play game: versus
@@ -202,7 +208,7 @@ private func playGameVersus() {
 
     // DO LEVEL INTRO
 
-    PlaySong(gLevelSongs[Int(gLevelNum)], 1)
+    PlaySong(gLevelSongs[Int(gEngine.game.levelNum)], 1)
 
     MyFlushEvents()
 
@@ -227,16 +233,16 @@ private func playGameVersus() {
 // Sets up the OpenGL draw context and loads all the data files
 // for the level we're about to play.
 private func initLevel() {
-    if gTimeDemo != 0 { // if time demo always reset random seed
+    if gEngine.game.timeDemo != 0 { // if time demo always reset random seed
         SetMyRandomSeed(0)
     }
 
     // INIT COMMON STUFF
 
-    gGameFrameNum = 0
-    gGameLevelTimer = 0
-    gGameOver = 0
-    gLevelCompleted = 0
+    gEngine.game.frameNum = 0
+    gEngine.game.levelTimer = 0
+    gEngine.game.gameOver = 0
+    gEngine.game.levelCompleted = 0
 
     for i in 0..<Int(gEngine.player.numPlayers) {
         SetBestCheckpointNum(Int32(i), -1)
@@ -257,7 +263,7 @@ private func initLevel() {
     viewDef.view.clearBackBuffer = 0
     viewDef.camera.yon = (Float(gEngine.terrain.superTileActiveRange) * Float(SUPERTILE_SIZE) * gEngine.terrain.polygonSize) * 0.95
 
-    switch Int16(gLevelNum) {
+    switch Int16(gEngine.game.levelNum) {
     case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
         viewDef.view.clearColor.r = 0.968
         viewDef.view.clearColor.g = 0.537
@@ -268,12 +274,12 @@ private func initLevel() {
         viewDef.lights.ambientColor.r = 0.45
         viewDef.lights.ambientColor.g = 0.45
         viewDef.lights.ambientColor.b = 0.45
-        gWorldSunDirection.x = 0.4
-        gWorldSunDirection.y = -0.3
-        gWorldSunDirection.z = 0.2
-        gFillColor1.r = 0.6
-        gFillColor1.g = 0.6
-        gFillColor1.b = 0.6
+        gEngine.game.worldSunDirection.x = 0.4
+        gEngine.game.worldSunDirection.y = -0.3
+        gEngine.game.worldSunDirection.z = 0.2
+        gEngine.game.fillColor1.r = 0.6
+        gEngine.game.fillColor1.g = 0.6
+        gEngine.game.fillColor1.b = 0.6
         gEngine.camera.drawLensFlare = 1
 
     case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
@@ -286,12 +292,12 @@ private func initLevel() {
         viewDef.lights.ambientColor.r = 0.45
         viewDef.lights.ambientColor.g = 0.45
         viewDef.lights.ambientColor.b = 0.45
-        gWorldSunDirection.x = 0.4
-        gWorldSunDirection.y = -0.3
-        gWorldSunDirection.z = 0.2
-        gFillColor1.r = 0.6
-        gFillColor1.g = 0.6
-        gFillColor1.b = 0.6
+        gEngine.game.worldSunDirection.x = 0.4
+        gEngine.game.worldSunDirection.y = -0.3
+        gEngine.game.worldSunDirection.z = 0.2
+        gEngine.game.fillColor1.r = 0.6
+        gEngine.game.fillColor1.g = 0.6
+        gEngine.game.fillColor1.b = 0.6
         gEngine.camera.drawLensFlare = 1
 
     default:
@@ -304,21 +310,21 @@ private func initLevel() {
         viewDef.lights.ambientColor.r = 0.4
         viewDef.lights.ambientColor.g = 0.4
         viewDef.lights.ambientColor.b = 0.4
-        gWorldSunDirection.x = 0.4
-        gWorldSunDirection.y = -0.5
-        gWorldSunDirection.z = 0.5
-        gFillColor1.r = 0.7
-        gFillColor1.g = 0.7
-        gFillColor1.b = 0.7
+        gEngine.game.worldSunDirection.x = 0.4
+        gEngine.game.worldSunDirection.y = -0.5
+        gEngine.game.worldSunDirection.z = 0.5
+        gEngine.game.fillColor1.r = 0.7
+        gEngine.game.fillColor1.g = 0.7
+        gEngine.game.fillColor1.b = 0.7
         gEngine.camera.drawLensFlare = 1
     }
 
     // SET LIGHTS
 
     viewDef.lights.numFillLights = 1
-    gWorldSunDirection = gWorldSunDirection.normalized()
-    viewDef.lights.fillDirection.0 = gWorldSunDirection
-    viewDef.lights.fillColor.0 = gFillColor1
+    gEngine.game.worldSunDirection = gEngine.game.worldSunDirection.normalized()
+    viewDef.lights.fillDirection.0 = gEngine.game.worldSunDirection
+    viewDef.lights.fillColor.0 = gEngine.game.fillColor1
 
     // SET ANAGLYPH INFO
 
@@ -339,15 +345,15 @@ private func initLevel() {
 
     // SET AUTO-FADE INFO
 
-    gEngine.objects.autoFadeStartDist = gGameViewInfoPtr!.pointee.yon * 0.80
-    gEngine.objects.autoFadeEndDist = gGameViewInfoPtr!.pointee.yon * 0.9
+    gEngine.objects.autoFadeStartDist = gEngine.game.viewInfoPtr!.pointee.yon * 0.80
+    gEngine.objects.autoFadeEndDist = gEngine.game.viewInfoPtr!.pointee.yon * 0.9
 
     gEngine.objects.autoFadeRangeFrac = 1.0 / (gEngine.objects.autoFadeEndDist - gEngine.objects.autoFadeStartDist)
 
     if gEngine.objects.autoFadeStartDist != 0.0 {
-        gAutoFadeStatusBits = UInt32(STATUS_BIT_AUTOFADE)
+        gEngine.game.autoFadeStatusBits = UInt32(STATUS_BIT_AUTOFADE)
     } else {
-        gAutoFadeStatusBits = 0
+        gEngine.game.autoFadeStatusBits = 0
     }
 
     // LOAD ART & TERRAIN
@@ -373,8 +379,8 @@ private func initLevel() {
     // (no cases active; the only original case was for a level that no
     // longer exists in this build, kept as dead code in the original too)
 
-    if gVSMode == .race {
-        gRaceReadySetGoTimer = 3.0
+    if gEngine.game.vsMode == .race {
+        gEngine.game.raceReadySetGoTimer = 3.0
     }
 
     // INIT THE PLAYER & RELATED STUFF
@@ -403,8 +409,8 @@ private func playLevel() {
 
     _ = MakeFadeEvent(UInt8(kFadeFlags_In), 1.0)
 
-    if gTimeDemo != 0 {
-        gTimeDemoStartTime = SwTickCount()
+    if gEngine.game.timeDemo != 0 {
+        gEngine.game.timeDemoStartTime = SwTickCount()
     }
 
     GrabMouse(1)
@@ -437,10 +443,10 @@ private func playLevel() {
         // UPDATE FPS AND TIMERS
 
         CalcFramesPerSecond()
-        let fps = gFramesPerSecondFrac
+        let fps = gEngine.framesPerSecondFrac
 
-        gGameFrameNum += 1
-        gGameLevelTimer += fps
+        gEngine.game.frameNum += 1
+        gEngine.game.levelTimer += fps
         gEngine.terrain.disableHiccupTimer = 0 // reenable this after the 1st frame
 
         // SEE IF RESET PLAYER NOW
@@ -483,18 +489,18 @@ private func playLevel() {
 
         if (SwIsKeyHeld(Int(SDL_SCANCODE_LGUI.rawValue)) || SwIsKeyHeld(Int(SDL_SCANCODE_RGUI.rawValue)))
             && SwIsKeyDown(Int(SDL_SCANCODE_F10.rawValue)) { // see if skip level
-            gLevelCompleted = 1
+            gEngine.game.levelCompleted = 1
         }
 
         // SEE IF LEVEL IS COMPLETED
 
-        if gGameOver != 0 { // if we need immediate abort, then bail now
+        if gEngine.game.gameOver != 0 { // if we need immediate abort, then bail now
             break
         }
 
-        if gLevelCompleted != 0 {
-            gLevelCompletedCoolDownTimer -= fps // game is done, but wait for cool-down timer before bailing
-            if gLevelCompletedCoolDownTimer <= 0.0 {
+        if gEngine.game.levelCompleted != 0 {
+            gEngine.game.levelCompletedCoolDownTimer -= fps // game is done, but wait for cool-down timer before bailing
+            if gEngine.game.levelCompletedCoolDownTimer <= 0.0 {
                 break
             }
         }
@@ -502,17 +508,17 @@ private func playLevel() {
 
     GrabMouse(0)
 
-    if gGammaFadeFrac > 0 { // only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
-        gGameViewInfoPtr!.fadeSound = true
+    if gEngine.window.gammaFadeFrac > 0 { // only fade out if we haven't called MakeFadeEvent(kFadeFlags_Out) already
+        gEngine.game.viewInfoPtr!.fadeSound = true
         OGL_FadeOutScene(cDrawLevelCallback, cUpdateTerrainForFadeOut)
     }
 
-    if gTimeDemo != 0 {
-        gTimeDemoEndTime = SwTickCount()
-        let ticks = gTimeDemoEndTime - gTimeDemoStartTime
+    if gEngine.game.timeDemo != 0 {
+        gEngine.game.timeDemoEndTime = SwTickCount()
+        let ticks = gEngine.game.timeDemoEndTime - gEngine.game.timeDemoStartTime
         let seconds = Float(ticks) / 60.0
 
-        showTimeDemoResults(Int32(gGameFrameNum), seconds, Float(gGameFrameNum) / seconds)
+        showTimeDemoResults(Int32(gEngine.game.frameNum), seconds, Float(gEngine.game.frameNum) / seconds)
 
         SwExitToShell()
     }
@@ -591,7 +597,7 @@ private func cleanupLevel() {
 
     // SET SOME IMPORTANT GLOBALS BACK TO DEFAULTS
 
-    gVSMode = .none
+    gEngine.game.vsMode = .none
     gEngine.player.numPlayers = 1
 }
 
@@ -608,14 +614,14 @@ func MoveEverything() {
 
     // MODE-SPECIFIC STUFF
 
-    switch gVSMode {
+    switch gEngine.game.vsMode {
     // ADVENTURE MODE
     case .none:
         break
 
     // RACE MODE
     case .race:
-        gRaceReadySetGoTimer -= gFramesPerSecondFrac
+        gEngine.game.raceReadySetGoTimer -= gEngine.framesPerSecondFrac
         CalcPlayerPlaces() // determinw who is in what place
 
     default:
@@ -626,9 +632,9 @@ func MoveEverything() {
 // MARK: - Start level completion
 
 func StartLevelCompletion(_ coolDownTimer: Float) {
-    if gLevelCompleted == 0 {
-        gLevelCompleted = 1
-        gLevelCompletedCoolDownTimer = coolDownTimer
+    if gEngine.game.levelCompleted == 0 {
+        gEngine.game.levelCompleted = 1
+        gEngine.game.levelCompletedCoolDownTimer = coolDownTimer
     }
 }
 
@@ -637,7 +643,7 @@ func StartLevelCompletion(_ coolDownTimer: Float) {
 // MARK: - Prime time demo spline
 
 func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
-    if gTimeDemo == 0 { // are we in time demo mode?
+    if gEngine.game.timeDemo == 0 { // are we in time demo mode?
         return 0
     }
 
@@ -684,7 +690,7 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
     // MOVE ALONG THE SPLINE
 
     if IncreaseSplineIndex(theNode, 450) != 0 {
-        gGameOver = 1
+        gEngine.game.gameOver = 1
     }
 
     GetObjectCoordOnSpline(theNode)
@@ -807,7 +813,7 @@ public func GameMain() {
     // MAIN LOOP
 
     while true {
-        gTimeDemo = 0
+        gEngine.game.timeDemo = 0
 
         // DO MAIN MENU
 
@@ -816,11 +822,11 @@ public func GameMain() {
 
         // PLAY ADVENTURE OR VS. MODE
 
-        if gVSMode == .none {
+        if gEngine.game.vsMode == .none {
             playGameAdventure()
         } else {
             if DoLocalGatherScreen() != 0 {
-                gVSMode = .none
+                gEngine.game.vsMode = .none
                 gEngine.player.numPlayers = 1
                 continue
             }

@@ -336,8 +336,8 @@ func GetObjectCoordOnSpline(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     GetCoordOnSpline(splinePtr, placement, &theNode.pointee.Coord.x, &theNode.pointee.Coord.z) // get coord
 
-    theNode.pointee.Delta.x = (theNode.pointee.Coord.x - theNode.pointee.OldCoord.x) * gFramesPerSecond // calc delta
-    theNode.pointee.Delta.z = (theNode.pointee.Coord.z - theNode.pointee.OldCoord.z) * gFramesPerSecond
+    theNode.pointee.Delta.x = (theNode.pointee.Coord.x - theNode.pointee.OldCoord.x) * gEngine.framesPerSecond // calc delta
+    theNode.pointee.Delta.z = (theNode.pointee.Coord.z - theNode.pointee.OldCoord.z) * gEngine.framesPerSecond
     theNode.pointee.Delta.y = 0
 }
 
@@ -359,7 +359,7 @@ func GetObjectCoordOnSpline2(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Uns
 // Returns true if increase caused item to wrap to beginning of spline
 func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) -> UInt8 {
     var speed = speed
-    speed *= gFramesPerSecondFrac
+    speed *= gEngine.framesPerSecondFrac
 
     let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline
@@ -378,7 +378,7 @@ func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Flo
 // Moves objects on spline at given speed, but zigzags
 func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Float) {
     var speed = speed
-    speed *= gFramesPerSecondFrac
+    speed *= gEngine.framesPerSecondFrac
 
     let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline

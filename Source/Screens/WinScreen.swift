@@ -29,7 +29,7 @@ private let gSlides: [SlideType] = [
 
 private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let slideNum = Int(theNode.pointee.Kind)
     let isLastSlide = slideNum >= NUM_SLIDES - 1
 

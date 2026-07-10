@@ -165,7 +165,7 @@ func DoLegalScreen() {
             break
         }
 
-        timeout -= gFramesPerSecondFrac
+        timeout -= gEngine.framesPerSecondFrac
         if timeout < 0.0 {
             break
         }
@@ -214,7 +214,7 @@ func DrawLoading(_ percent: Float) {
 
     // if percent > 0.75 {
     //     MakeFadeEvent(kFadeFlags_Out, 0.0001);
-    //     gGammaFadeFrac = 1.0 - (percent - 0.75) / 0.25;
+    //     gEngine.window.gammaFadeFrac = 1.0 - (percent - 0.75) / 0.25;
     // }
 
     // Kill vsync so we don't waste 16ms before loading the next asset

@@ -614,14 +614,14 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
     if let vertexColorList {
         // GET LIGHT DATA
 
-        let ambientR = gGameViewInfoPtr!.pointee.lightList.ambientColor.r // get ambient color
-        let ambientG = gGameViewInfoPtr!.pointee.lightList.ambientColor.g
-        let ambientB = gGameViewInfoPtr!.pointee.lightList.ambientColor.b
+        let ambientR = gEngine.game.viewInfoPtr!.pointee.lightList.ambientColor.r // get ambient color
+        let ambientG = gEngine.game.viewInfoPtr!.pointee.lightList.ambientColor.g
+        let ambientB = gEngine.game.viewInfoPtr!.pointee.lightList.ambientColor.b
 
-        let fillR0 = gGameViewInfoPtr!.pointee.lightList.fillColor.0.r // get fill color
-        let fillG0 = gGameViewInfoPtr!.pointee.lightList.fillColor.0.g
-        let fillB0 = gGameViewInfoPtr!.pointee.lightList.fillColor.0.b
-        var fillDir0 = gGameViewInfoPtr!.pointee.lightList.fillDirection.0 // get fill direction
+        let fillR0 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.0.r // get fill color
+        let fillG0 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.0.g
+        let fillB0 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.0.b
+        var fillDir0 = gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0 // get fill direction
         fillDir0.x = -fillDir0.x
         fillDir0.y = -fillDir0.y
         fillDir0.z = -fillDir0.z
@@ -629,12 +629,12 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
         var fillR1: Float = 0, fillG1: Float = 0, fillB1: Float = 0
         var fillDir1 = OGLVector3D()
 
-        let numFillLights = gGameViewInfoPtr!.pointee.lightList.numFillLights
+        let numFillLights = gEngine.game.viewInfoPtr!.pointee.lightList.numFillLights
         if numFillLights > 1 {
-            fillR1 = gGameViewInfoPtr!.pointee.lightList.fillColor.1.r
-            fillG1 = gGameViewInfoPtr!.pointee.lightList.fillColor.1.g
-            fillB1 = gGameViewInfoPtr!.pointee.lightList.fillColor.1.b
-            fillDir1 = gGameViewInfoPtr!.pointee.lightList.fillDirection.1
+            fillR1 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.1.r
+            fillG1 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.1.g
+            fillB1 = gEngine.game.viewInfoPtr!.pointee.lightList.fillColor.1.b
+            fillDir1 = gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.1
             fillDir1.x = -fillDir1.x
             fillDir1.y = -fillDir1.y
             fillDir1.z = -fillDir1.z
@@ -889,7 +889,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     // DRAW SPLINES IN DEBUG MODE
 
-    if gDebugMode == 2 {
+    if gEngine.game.debugMode == 2 {
         gEngine.renderer.setColor4f(0.5, 1.0, 0.75, 1)
 
         for splineNum in 0..<Int(gEngine.splines.numSplines) {

@@ -240,7 +240,7 @@ func AttachShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType
     def.coord = OGLPoint3D(x: x, y: y, z: z)
     def.scale = scaleX
     def.rot = theNode.pointee.Rot.y
-    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING) | gAutoFadeStatusBits
+    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING) | gEngine.game.autoFadeStatusBits
     def.slot = theNode.pointee.Slot >= UInt16(SLOT_OF_DUMB + 1) ? Int16(theNode.pointee.Slot + 1) : Int16(SLOT_OF_DUMB + 1) // shadow *must* be after parent!
     def.moveCall = nil
     def.drawCall = cDrawShadow
@@ -268,7 +268,7 @@ func AttachStaticShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shad
     var def = NewObjectDefinitionType()
     def.genre = UInt8(CUSTOM_GENRE)
     def.coord = OGLPoint3D(x: x, y: y, z: z)
-    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG) | gAutoFadeStatusBits
+    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG) | gEngine.game.autoFadeStatusBits
     def.slot = theNode.pointee.Slot >= UInt16(SLOT_OF_DUMB + 1) ? Int16(theNode.pointee.Slot + 1) : Int16(SLOT_OF_DUMB + 1) // shadow *must* be after parent!
     def.moveCall = nil
     def.drawCall = cDrawShadow

@@ -171,8 +171,8 @@ func DisconnectContrail(_ contrailNum: Int16) {
 private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
 
-    let fps = gFramesPerSecondFrac
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let fps = gEngine.framesPerSecondFrac
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(buffNum)) // update the VAR range info
 
@@ -327,7 +327,7 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 }
 
 private let cDrawContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     OGL_EnableBlend()
     OGL_DisableTexture2D()

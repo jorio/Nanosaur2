@@ -17,7 +17,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 2.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 876
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -25,7 +25,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.y = GetMinTerrainY(x, z, Int16(def.group), Int16(def.type), 1.0)
 
         let type: Int32
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             type = Int32(LEVEL1_ObjType_Grass) + Int32(pointee.parm.0)
         case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
@@ -61,7 +61,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 264
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -84,7 +84,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -116,7 +116,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 821
         def.moveCall = MoveStaticObject
 
@@ -144,7 +144,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -179,7 +179,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -217,7 +217,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -251,7 +251,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 60
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -285,7 +285,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 40
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -311,7 +311,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 30
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2

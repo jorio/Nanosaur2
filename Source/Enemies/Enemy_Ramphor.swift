@@ -111,7 +111,7 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
     // UPDATE STUFF IF IN RANGE
 
     if isInRange != 0 {
-        let fps = gFramesPerSecondFrac
+        let fps = gEngine.framesPerSecondFrac
 
         // DO Y CALC
 
@@ -181,7 +181,7 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
 private let cMoveRamphorDeath: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     GetObjectInfo(theNode)
 
@@ -376,10 +376,10 @@ private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> 
 
         // SEE IF LINE SEG HITS PLAYER GEOMETRY
 
-        gPickAllTrianglesAsDoubleSided = 1
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 1
         var hitPt = OGLPoint3D()
         let hitObj = OGL_DoLineSegmentCollision_ObjNodes(&lineSeg, 0, UInt32(CTYPE_PLAYER1) << UInt32(p), &hitPt, nil, nil, 1)
-        gPickAllTrianglesAsDoubleSided = 0
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 0
 
         if let hitObj {
             // HURT PLAYER

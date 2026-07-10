@@ -138,7 +138,7 @@ func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Flo
     // SKELETON
 
     if theNode.pointee.Genre == UInt32(SKELETON_GENRE) {
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
         let skeleton = theNode.pointee.Skeleton!
         let numMeshes = Int(skeleton.pointee.skeletonDefinition!.pointee.numDecomposedTriMeshes)
         let meshes = deformedMeshesBase(skeleton) + (buffNum * Int(MAX_DECOMPOSED_TRIMESHES))
@@ -345,7 +345,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
         return
     }
 
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for i in 0..<maxShards {
         if !gEngine.shards.pool[i].isUsed {

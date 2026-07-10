@@ -226,7 +226,7 @@ func FreeSkeletonBaseData(_ skeletonData: UnsafeMutablePointer<SkeletonObjDataTy
 }
 
 func DrawSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!) {
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let skelType = Int(theNode.pointee.Type)
     let numTriMeshes = Int(gNumDecomposedTriMeshesInSkeleton[skelType]) // get # trimeshes to draw

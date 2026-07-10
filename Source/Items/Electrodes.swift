@@ -56,7 +56,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = electrodeScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 161
         def.moveCall = cMoveElectrode
         def.rot = 0
@@ -130,7 +130,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { poleOpt in
     guard let pole = poleOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let isAlive = pole.pointee.What == Int32(WhatType.electrode.rawValue)
 
     // SEE IF GONE
@@ -493,7 +493,7 @@ private func allocateZapGeometry(_ zapSlot: Int) {
 // MARK: - Move / Draw Zaps
 
 private let cMoveZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     gEngine.zaps.buffer ^= 1 // toggle buffer to move & then draw
 

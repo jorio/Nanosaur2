@@ -1,20 +1,23 @@
 // Window.swift - Port of Window.c to Swift
 //
-// gGammaFadeFrac/gGameWindowWidth/gGameWindowHeight are native Swift
+// gEngine.window.gammaFadeFrac/gEngine.window.width/gEngine.window.height are native Swift
 // storage now (converted 2026-07-07): nothing in any .c file touches them
 // anymore.
 
-var gGammaFadeFrac: Float = 1.0
-var gGameWindowWidth: Int32 = 640
-var gGameWindowHeight: Int32 = 480
+/// Window/fade state. Owned by GameEngine as `gEngine.window`.
+final class WindowSystem {
+    var gammaFadeFrac: Float = 1.0
+    var width: Int32 = 640
+    var height: Int32 = 480
+}
 
 private let kFaderMode_FadeOut: Int32 = 0
 private let kFaderMode_FadeIn: Int32 = 1
 private let kFaderMode_Done: Int32 = 2
 
 func InitWindowStuff() {
-    gGameWindowWidth = 640
-    gGameWindowHeight = 480
+    gEngine.window.width = 640
+    gEngine.window.height = 480
 }
 
 private func isFadePaneMoveCall(_ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)?) -> Bool {
@@ -24,14 +27,14 @@ private func isFadePaneMoveCall(_ moveCall: (@convention(c) (UnsafeMutablePointe
 
 private let cMoveFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let speed = theNode.pointee.Speed * fps
 
     // SEE IF FADE IN
     if theNode.pointee.Mode == kFaderMode_FadeIn {
-        gGammaFadeFrac += speed
-        if gGammaFadeFrac >= 1.0 { // see if @ 100%
-            gGammaFadeFrac = 1
+        gEngine.window.gammaFadeFrac += speed
+        if gEngine.window.gammaFadeFrac >= 1.0 { // see if @ 100%
+            gEngine.window.gammaFadeFrac = 1
             theNode.pointee.Mode = kFaderMode_Done
             DeleteObject(theNode) // nuke it if fading in
         }
@@ -39,16 +42,16 @@ private let cMoveFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // FADE OUT
     else if theNode.pointee.Mode == kFaderMode_FadeOut {
-        gGammaFadeFrac -= speed
-        if gGammaFadeFrac <= 0.0 { // see if @ 0%
-            gGammaFadeFrac = 0
+        gEngine.window.gammaFadeFrac -= speed
+        if gEngine.window.gammaFadeFrac <= 0.0 { // see if @ 0%
+            gEngine.window.gammaFadeFrac = 0
             theNode.pointee.Mode = kFaderMode_Done
             theNode.setStatus(STATUS_BIT_NOMOVE) // DON'T nuke the fader pane if fading out -- but don't run this again
         }
     }
 
-    if gGameViewInfoPtr!.fadeSound {
-        FadeSound(gGammaFadeFrac)
+    if gEngine.game.viewInfoPtr!.fadeSound {
+        FadeSound(gEngine.window.gammaFadeFrac)
     }
 }
 
@@ -59,7 +62,7 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_DisableTexture2D()
 
     OGL_EnableBlend()
-    OGL_SetColor4f(0, 0, 0, 1.0 - gGammaFadeFrac)
+    OGL_SetColor4f(0, 0, 0, 1.0 - gEngine.window.gammaFadeFrac)
 
     gEngine.renderer.beginImmediate(.quads)
     gEngine.renderer.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
@@ -94,12 +97,12 @@ func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCall: (@co
     }
 
     // Draw one more blank frame
-    gGammaFadeFrac = 0
+    gEngine.window.gammaFadeFrac = 0
     CalcFramesPerSecond()
     DoSDLMaintenance()
     OGL_DrawScene(drawCall)
 
-    if gGameViewInfoPtr!.fadeSound {
+    if gEngine.game.viewInfoPtr!.fadeSound {
         FadeSound(0)
         KillSong()
         StopAllEffectChannels()
@@ -132,7 +135,7 @@ func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePoint
 
     let obj = newObj!
 
-    gGammaFadeFrac = fadeIn ? 0 : 1
+    gEngine.window.gammaFadeFrac = fadeIn ? 0 : 1
 
     obj.pointee.Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut
     obj.pointee.Special.0 = 0 // FaderFrameCounter == Special[0]

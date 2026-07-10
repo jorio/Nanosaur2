@@ -367,7 +367,7 @@ func UpdateFences() {
 
     // UPDATE VAR TYPE FOR THE CURRENT FRAME'S DOUBLE-BUFFER
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
     gEngine.fences.fenceObj!.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue) + UInt8(buffNum)
 
     // UPDATE THE AUTO-FADE FOR EACH FENCE
@@ -376,9 +376,9 @@ func UpdateFences() {
     // 		the fades are different for each pane which means we'd have to wait
     //		for P1's drawing to complete before modifying P2's fence.
 
-    if (gAutoFadeStatusBits != 0) && (gEngine.player.numPlayers == 1) {
-        let camX = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.x // get camera coords
-        let camZ = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.z
+    if (gEngine.game.autoFadeStatusBits != 0) && (gEngine.player.numPlayers == 1) {
+        let camX = gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.x // get camera coords
+        let camZ = gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.z
 
         for f in 0..<Int(gEngine.fences.numFences) {
             let fence = gEngine.fences.fenceList + f // point to this fence
@@ -386,7 +386,7 @@ func UpdateFences() {
             let numNubs = Int(fence.pointee.numNubs) // get # nubs in fence
 
             if fence.pointee.type == UInt16(FENCE_TYPE_INVISIBLEBLOCKENEMY) // don't bother with invisible fences
-                && gDebugMode != 2 { // unless we're in debug mode
+                && gEngine.game.debugMode != 2 { // unless we're in debug mode
                 continue
             }
 
@@ -426,7 +426,7 @@ func UpdateFences() {
 // MARK: - Draw fences
 
 private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     // SET GLOBAL MATERIAL FLAGS
 
@@ -440,7 +440,7 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
         let type = Int(gEngine.fences.fenceList[f].type) // get type
 
         if type == Int(FENCE_TYPE_INVISIBLEBLOCKENEMY) // don't bother with invisible fences
-            && gDebugMode != 2 { // unless we're in debug mode
+            && gEngine.game.debugMode != 2 { // unless we're in debug mode
             continue
         }
 
@@ -462,7 +462,7 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             numFencesDrawn += 1
 
-            // (the gDebugMode==2 DrawFenceNormals call was already commented
+            // (the gEngine.game.debugMode==2 DrawFenceNormals call was already commented
             // out in the original, and DrawFenceNormals itself was #if 0'd.)
         }
     }

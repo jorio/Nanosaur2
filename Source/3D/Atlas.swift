@@ -1,7 +1,7 @@
 // Atlas.swift - Port of Atlas.c to Swift
 //
-// gAtlases isn't `extern`'d anywhere (not `static` in the original C, but
-// nothing else declares `extern Atlas* gAtlases[]` either), so it moves
+// gEngine.atlases.pool isn't `extern`'d anywhere (not `static` in the original C, but
+// nothing else declares `extern Atlas* gEngine.atlases.pool[]` either), so it moves
 // into private Swift state. Atlas/AtlasGlyph themselves stay as plain C
 // structs (declared in atlas.h) since nothing else in this file needed to
 // change about them - they're never touched by any other C or Swift file.
@@ -37,10 +37,14 @@ private struct TextMetrics {
     var lineOffsetY: InlineArray<16, Float> = InlineArray(repeating: 0)
 }
 
-private let gImmediateModePoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
-private let gImmediateModeUVs = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
+/// Texture-atlas registry + immediate-mode text scratch. Owned by
+/// GameEngine as `gEngine.atlases`.
+final class AtlasSystem {
+    fileprivate let immediateModePoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
+    fileprivate let immediateModeUVs = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 
-private var gAtlases = [UnsafeMutablePointer<Atlas>?](repeating: nil, count: Int(MAX_ATLASES))
+    fileprivate var pool = [UnsafeMutablePointer<Atlas>?](repeating: nil, count: Int(MAX_ATLASES))
+}
 
 // MARK: - UTF-8
 
@@ -223,7 +227,7 @@ private func parseKerningFile(_ atlas: UnsafeMutablePointer<Atlas>, _ dataPtr: U
 // MARK: - Init/shutdown
 
 func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: String, _ flags: Int32) {
-    if let existing = gAtlases[Int(groupNum)] {
+    if let existing = gEngine.atlases.pool[Int(groupNum)] {
         // Sprite group busy
         let existingName = withUnsafePointer(to: existing.pointee.name) {
             String(cString: UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self))
@@ -237,14 +241,14 @@ func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: String, _ flags: Int32) {
         }
     }
 
-    SwGameAssertMessage(gAtlases[Int(groupNum)] == nil, "Sprite group already loaded!")
-    gAtlases[Int(groupNum)] = Atlas_Load(atlasName, flags)
+    SwGameAssertMessage(gEngine.atlases.pool[Int(groupNum)] == nil, "Sprite group already loaded!")
+    gEngine.atlases.pool[Int(groupNum)] = Atlas_Load(atlasName, flags)
 }
 
 func DisposeSpriteAtlas(_ groupNum: Int32) {
-    if let atlas = gAtlases[Int(groupNum)] {
+    if let atlas = gEngine.atlases.pool[Int(groupNum)] {
         Atlas_Dispose(atlas)
-        gAtlases[Int(groupNum)] = nil
+        gEngine.atlases.pool[Int(groupNum)] = nil
     }
 }
 
@@ -618,7 +622,7 @@ private func getExtentsFromMetrics(_ metrics: TextMetrics) -> OGLRect {
 }
 
 func TextMesh_Update(_ text: String, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
-    let font = gAtlases[Int(textNode.pointee.Group)]!
+    let font = gEngine.atlases.pool[Int(textNode.pointee.Group)]!
     let codepoints = text.unicodeScalars.map(\.value)
 
     // Get mesh from ObjNode
@@ -670,8 +674,8 @@ func TextMesh_NewEmpty(_ capacity: Int32, _ newObjDef: UnsafeMutablePointer<NewO
     newObjDef.pointee.flags |= UInt32(SwStatusBitsFor2D)
 
     let fontAtlasNum = Int(newObjDef.pointee.group)
-    SwGameAssert(gAtlases[fontAtlasNum] != nil)
-    let material = gAtlases[fontAtlasNum]!.pointee.material
+    SwGameAssert(gEngine.atlases.pool[fontAtlasNum] != nil)
+    let material = gEngine.atlases.pool[fontAtlasNum]!.pointee.material
 
     // Create mesh object
     return MakeQuadMeshObject(newObjDef, capacity, material)
@@ -734,7 +738,7 @@ func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
 func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
     SwGameAssert(Int(groupNum) < Int(MAX_ATLASES))
 
-    let font = gAtlases[Int(groupNum)]!
+    let font = gEngine.atlases.pool[Int(groupNum)]!
     let codepoints = text.unicodeScalars.map(\.value)
 
     // GET TEXT METRICS
@@ -743,10 +747,10 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
 
     SwGameAssertMessage(Int(metrics.numQuads) < MAX_IMMEDIATEMODE_QUADS, "Can't draw this many quads in immediate mode!")
 
-    prepVertices(font, codepoints, Int32(bitPattern: flags), metrics, gImmediateModePoints, gImmediateModeUVs)
+    prepVertices(font, codepoints, Int32(bitPattern: flags), metrics, gEngine.atlases.immediateModePoints, gEngine.atlases.immediateModeUVs)
 
     // DRAW BOUNDING RECT
-    if gDebugMode >= 2 {
+    if gEngine.game.debugMode >= 2 {
         let extents = getExtentsFromMetrics(metrics)
         drawExtents(extents, 0)
     }
@@ -756,8 +760,8 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
 
     // DRAW IT
     gEngine.renderer.beginImmediate(.quads)
-    let pt = gImmediateModePoints
-    let uv = gImmediateModeUVs
+    let pt = gEngine.atlases.immediateModePoints
+    let uv = gEngine.atlases.immediateModeUVs
     var p = 0
     while p < 4 * Int(metrics.numQuads) {
         gEngine.renderer.texCoord2f(uv[p + 0].u, uv[p + 0].v); gEngine.renderer.vertex3f(pt[p + 0].x, pt[p + 0].y, 0)

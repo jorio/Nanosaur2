@@ -17,7 +17,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let typeW: Int32
         let typeG: Int32
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             typeB = Int32(LEVEL1_ObjType_TowerTurret_Base)
             typeT = Int32(LEVEL1_ObjType_TowerTurret_Turret)
@@ -49,7 +49,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = towerTurretScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 331
         def.moveCall = cMoveTowerTurret
         def.rot = RandomFloat() * SwPI2
@@ -101,7 +101,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         // MAKE GUN
 
         def.type = UInt8(typeG)
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot += 1
         let gun = MakeNewDisplayGroupObject(&def)!
 
@@ -137,7 +137,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     let wheel = turret.pointee.ChainNode!
     let gun = wheel.pointee.ChainNode!
     let lens = gun.pointee.ChainNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var shootNow = false
 
     // SEE IF GONE
@@ -155,7 +155,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         var playerNum: Int16 = 0
         let dist = CalcDistanceToClosestPlayer(&turret.pointee.Coord, &playerNum) // calc dist to player
 
-        let shootDist: Float = (gLevelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
+        let shootDist: Float = (gEngine.game.levelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
 
         if dist < (shootDist * 1.2) { // see if player is close enough for turret to aim
             let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
@@ -463,7 +463,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
 private let cMoveTurretBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 

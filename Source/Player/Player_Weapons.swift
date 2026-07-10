@@ -104,7 +104,7 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
 
     // SHOOT THE APPROPRIATE PROJECTILE
 
-    SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) - gFramesPerSecondFrac)
+    SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) - gEngine.framesPerSecondFrac)
 
     switch weaponType {
     // BLASTER
@@ -127,7 +127,7 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
         if newFireButton != 0 {
             pi.pointee.weaponCharge = 0 // start it charging
         } else {
-            pi.pointee.weaponCharge += gFramesPerSecondFrac * 0.5 // continue charging
+            pi.pointee.weaponCharge += gEngine.framesPerSecondFrac * 0.5 // continue charging
             if pi.pointee.weaponCharge > 1.0 {
                 pi.pointee.weaponCharge = 1.0
             }
@@ -293,7 +293,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     newObj.pointee.Health = 2.0
 
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         newObj.pointee.Damage = 0.2
     } else {
         newObj.pointee.Damage = 0.35 // more damage in 2P modes
@@ -343,7 +343,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveBlasterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -658,7 +658,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -795,7 +795,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
     newObj.pointee.MotionVector = aim
 
     newObj.pointee.Health = 4.0
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         newObj.pointee.Damage = 0.8
     } else {
         newObj.pointee.Damage = 0.4 // less damage in 2P mode
@@ -862,7 +862,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -1260,7 +1260,7 @@ private func ShootSonicScream(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -1453,7 +1453,7 @@ private func ShootBomb(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.getInfo()
 
@@ -1488,7 +1488,7 @@ private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 // MARK: - Leave bomb trail
 
 private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps // see if add smoke
     if theNode.pointee.ParticleTimer <= 0.0 {
@@ -1734,7 +1734,7 @@ private func MakeBombShockwave(_ where_: UnsafePointer<OGLPoint3D>!) -> UnsafeMu
 
 private let cMoveBombShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE
 
@@ -1759,7 +1759,7 @@ func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: U
     let radius = wave.pointee.Scale.x * 10.0 // calc radius of sphere
 
     let oldDamage = wave.pointee.Damage // remember original damager factor
-    wave.pointee.Damage *= gFramesPerSecondFrac // set temporary damage
+    wave.pointee.Damage *= gEngine.framesPerSecondFrac // set temporary damage
 
     let x = wave.pointee.Coord.x
     let y = wave.pointee.Coord.y

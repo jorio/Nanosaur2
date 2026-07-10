@@ -323,7 +323,7 @@ private let cMoveWater: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 }
 
 private func moveWater() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for (i, waterType) in WaterType.allCases.enumerated() {
         switch waterType {
@@ -608,7 +608,7 @@ private let cMoveRippleEvent: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 }
 
 private func moveRippleEvent(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for i in 0..<MAX_RIPPLES {
         if !gEngine.water.rippleList[i].isUsed { // see if this ripple slot active

@@ -190,11 +190,11 @@ func GetWorldToWindowMatrixEntry(_ i: Int32) -> UnsafeMutablePointer<OGLMatrix4x
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 @inline(__always) private func fovBase() -> UnsafeMutablePointer<Float> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.fov)!).assumingMemoryBound(to: Float.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.fov)!).assumingMemoryBound(to: Float.self)
 }
 
 @inline(__always) private func cameraFromBase(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>) -> UnsafeMutablePointer<OGLPoint3D> {
@@ -301,12 +301,12 @@ func OGL_NewViewDef(_ viewDef: UnsafeMutablePointer<OGLSetupInputType>!) {
 // MARK: - Setup OGL window
 
 func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) {
-    SwGameAssert(gGameViewInfoPtr == nil)
+    SwGameAssert(gEngine.game.viewInfoPtr == nil)
 
     // ALLOC MEMORY FOR OUTPUT DATA
 
-    gGameViewInfoPtr = AllocPtrClear(MemoryLayout<OGLSetupOutputType>.size)?.assumingMemoryBound(to: OGLSetupOutputType.self)
-    SwGameAssert(gGameViewInfoPtr != nil)
+    gEngine.game.viewInfoPtr = AllocPtrClear(MemoryLayout<OGLSetupOutputType>.size)?.assumingMemoryBound(to: OGLSetupOutputType.self)
+    SwGameAssert(gEngine.game.viewInfoPtr != nil)
 
     // SET SOME PANE INFO
 
@@ -336,16 +336,16 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
 
     // PASS BACK INFO
 
-    gGameViewInfoPtr!.pointee.clip = setupDefPtr.pointee.view.clip
-    gGameViewInfoPtr!.pointee.hither = setupDefPtr.pointee.camera.hither // remember hither/yon
-    gGameViewInfoPtr!.pointee.yon = setupDefPtr.pointee.camera.yon
-    gGameViewInfoPtr!.pointee.useFog = setupDefPtr.pointee.styles.useFog
-    gGameViewInfoPtr!.pointee.clearBackBuffer = setupDefPtr.pointee.view.clearBackBuffer
-    gGameViewInfoPtr!.pointee.clearColor = setupDefPtr.pointee.view.clearColor
+    gEngine.game.viewInfoPtr!.pointee.clip = setupDefPtr.pointee.view.clip
+    gEngine.game.viewInfoPtr!.pointee.hither = setupDefPtr.pointee.camera.hither // remember hither/yon
+    gEngine.game.viewInfoPtr!.pointee.yon = setupDefPtr.pointee.camera.yon
+    gEngine.game.viewInfoPtr!.pointee.useFog = setupDefPtr.pointee.styles.useFog
+    gEngine.game.viewInfoPtr!.pointee.clearBackBuffer = setupDefPtr.pointee.view.clearBackBuffer
+    gEngine.game.viewInfoPtr!.pointee.clearColor = setupDefPtr.pointee.view.clearColor
 
-    gGameViewInfoPtr!.isActive = true // it's now an active structure
+    gEngine.game.viewInfoPtr!.isActive = true // it's now an active structure
 
-    gGameViewInfoPtr!.pointee.lightList = setupDefPtr.pointee.lights // copy lights
+    gEngine.game.viewInfoPtr!.pointee.lightList = setupDefPtr.pointee.lights // copy lights
 
     let camFrom = cameraFromBase(setupDefPtr)
     let camTo = cameraToBase(setupDefPtr)
@@ -357,9 +357,9 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
         OGL_UpdateCameraFromTo(&from, &to, Int32(i))
     }
 
-    gGameViewInfoPtr!.pointee.frameCount = 0 // init frame counter
+    gEngine.game.viewInfoPtr!.pointee.frameCount = 0 // init frame counter
 
-    gGameViewInfoPtr!.fadeSound = false // by default, don't fade out sound when exiting scene
+    gEngine.game.viewInfoPtr!.fadeSound = false // by default, don't fade out sound when exiting scene
 }
 
 // MARK: - OGL_DisposeGameView
@@ -367,7 +367,7 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
 // Disposes of all data created by OGL_SetupWindow
 
 func OGL_DisposeGameView() {
-    SwGameAssert(gGameViewInfoPtr != nil)
+    SwGameAssert(gEngine.game.viewInfoPtr != nil)
 
     // MAKE SURE TO CLEAR STEREO BUFFERS IF NEEDED
 
@@ -385,9 +385,9 @@ func OGL_DisposeGameView() {
 
     // FREE MEMORY & NIL POINTER
 
-    gGameViewInfoPtr!.isActive = false // now inactive
-    SafeDisposePtr(UnsafeMutableRawPointer(gGameViewInfoPtr))
-    gGameViewInfoPtr = nil
+    gEngine.game.viewInfoPtr!.isActive = false // now inactive
+    SafeDisposePtr(UnsafeMutableRawPointer(gEngine.game.viewInfoPtr))
+    gEngine.game.viewInfoPtr = nil
 }
 
 // MARK: - OGL: Create draw context
@@ -690,9 +690,9 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 // MARK: - OGL draw scene
 
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
-    SDL_GetWindowSizeInPixels(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight)
+    SDL_GetWindowSizeInPixels(gSDLWindow, &gEngine.window.width, &gEngine.window.height)
 
-    if !gGameViewInfoPtr!.isActive {
+    if !gEngine.game.viewInfoPtr!.isActive {
         SwFatalAlert("OGL_DrawScene isActive == false")
     }
 
@@ -738,7 +738,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
             // CLEAR BUFFERS
 
-            if gGameViewInfoPtr!.pointee.clearBackBuffer != 0 || gDebugMode == 3 || isStereoAnaglyph() {
+            if gEngine.game.viewInfoPtr!.pointee.clearBackBuffer != 0 || gEngine.game.debugMode == 3 || isStereoAnaglyph() {
                 // MAKE SURE GREEN CHANNEL IS CLEAR
                 //
                 // Bringing up dialogs can write into green channel, so always be sure it's clear
@@ -820,26 +820,26 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     // SEE IF SHOW DEBUG INFO
 
     if SwIsKeyDown(Int(SDL_SCANCODE_F8.rawValue)) {
-        gDebugMode += 1
-        if gDebugMode > 3 {
-            gDebugMode = 0
+        gEngine.game.debugMode += 1
+        if gEngine.game.debugMode > 3 {
+            gEngine.game.debugMode = 0
         }
 
-        gEngine.renderer.setWireframe(gDebugMode == 3) // see if show wireframe
+        gEngine.renderer.setWireframe(gEngine.game.debugMode == 3) // see if show wireframe
     }
 
-    if gTimeDemo != 0 {
-        OGL_DrawInt(Int32(gGameFrameNum), 20, 20)
+    if gEngine.game.timeDemo != 0 {
+        OGL_DrawInt(Int32(gEngine.game.frameNum), 20, 20)
     }
 
     // SHOW BASIC DEBUG INFO
 
-    if gDebugMode > 0 {
+    if gEngine.game.debugMode > 0 {
         var y: GLint = 100
         let x2: GLint = 60
 
         OGL_DrawString("fps:", 10, y)
-        OGL_DrawInt(Int32(gFramesPerSecond + 0.5), x2, y)
+        OGL_DrawInt(Int32(gEngine.framesPerSecond + 0.5), x2, y)
         y += 15
 
         OGL_DrawString("tri:", 10, y)
@@ -847,11 +847,11 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         y += 15
 
         OGL_DrawString("KB:", 10, y)
-        OGL_DrawInt(Int32(gRAMAlloced / 1024), x2, y)
+        OGL_DrawInt(Int32(gEngine.misc.ramAlloced / 1024), x2, y)
         y += 15
 
         OGL_DrawString("PTR:", 10, y)
-        OGL_DrawInt(Int32(gNumPointers), x2, y)
+        OGL_DrawInt(Int32(gEngine.misc.numPointers), x2, y)
         y += 15
 
         OGL_DrawString("OBJ:", 10, y)
@@ -862,7 +862,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     // END RENDER
 
     if isStereoShutter() {
-        DrawBlueLine(gGameWindowWidth, gGameWindowHeight)
+        DrawBlueLine(gEngine.window.width, gEngine.window.height)
     }
 
     // SWAP THE BUFFS
@@ -870,7 +870,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     gEngine.renderer.present() // end render loop
 
     if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
-        gGameViewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
+        gEngine.game.viewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
     }
 
     if isStereo() {
@@ -897,8 +897,8 @@ private func OGL_DrawDualScreenMinimap() {
         return
     }
 
-    let savedWindowWidth = gGameWindowWidth
-    let savedWindowHeight = gGameWindowHeight
+    let savedWindowWidth = gEngine.window.width
+    let savedWindowHeight = gEngine.window.height
 
     // Push while context1 is still current, so this saves ITS real state.
     OGL_PushState()
@@ -922,20 +922,20 @@ private func OGL_DrawDualScreenMinimap() {
     gMyState_Color = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
     gEngine.metaObjects.mostRecentMaterial = nil
 
-    SDL_GetWindowSizeInPixels(window2, &gGameWindowWidth, &gGameWindowHeight)
-    glViewport(0, 0, gGameWindowWidth, gGameWindowHeight)
+    SDL_GetWindowSizeInPixels(window2, &gEngine.window.width, &gEngine.window.height)
+    glViewport(0, 0, gEngine.window.width, gEngine.window.height)
 
     // Redraw the full background every frame (not just the map region) so
     // both backbuffers stay identical - see the comment on
     // gDualScreenBackgroundTexture's creation for why a partial update
     // flickers.
-    OGL_DrawDualScreenBackground(gGameWindowWidth, gGameWindowHeight)
+    OGL_DrawDualScreenBackground(gEngine.window.width, gEngine.window.height)
     DrawMinimapOnSecondaryScreen()
 
     SDL_GL_SwapWindow(window2)
 
-    gGameWindowWidth = savedWindowWidth
-    gGameWindowHeight = savedWindowHeight
+    gEngine.window.width = savedWindowWidth
+    gEngine.window.height = savedWindowHeight
 
     // Switch back to context1 BEFORE popping, so the restore calls PopState
     // issues actually land on context1 (the context they're meant for).
@@ -1024,31 +1024,31 @@ private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
 // may look upside down.
 
 func OGL_GetCurrentViewport(_ x: UnsafeMutablePointer<Int32>!, _ y: UnsafeMutablePointer<Int32>!, _ w: UnsafeMutablePointer<Int32>!, _ h: UnsafeMutablePointer<Int32>!, _ whichPane: UInt8) {
-    let t = Int32(gGameViewInfoPtr!.pointee.clip.top)
-    let b = Int32(gGameViewInfoPtr!.pointee.clip.bottom)
-    let l = Int32(gGameViewInfoPtr!.pointee.clip.left)
-    let r = Int32(gGameViewInfoPtr!.pointee.clip.right)
+    let t = Int32(gEngine.game.viewInfoPtr!.pointee.clip.top)
+    let b = Int32(gEngine.game.viewInfoPtr!.pointee.clip.bottom)
+    let l = Int32(gEngine.game.viewInfoPtr!.pointee.clip.left)
+    let r = Int32(gEngine.game.viewInfoPtr!.pointee.clip.right)
 
     if Int(whichPane) >= getOverlayPaneNumber() {
         x.pointee = l
         y.pointee = t
-        w.pointee = gGameWindowWidth - l - r
-        h.pointee = gGameWindowHeight - t - b
+        w.pointee = gEngine.window.width - l - r
+        h.pointee = gEngine.window.height - t - b
     } else {
         switch gActiveSplitScreenMode {
         case UInt8(SplitscreenMode.none.rawValue):
             x.pointee = l
             y.pointee = t
-            w.pointee = gGameWindowWidth - l - r
-            h.pointee = gGameWindowHeight - t - b
+            w.pointee = gEngine.window.width - l - r
+            h.pointee = gEngine.window.height - t - b
 
         case UInt8(SplitscreenMode.horizontal.rawValue):
             x.pointee = l
-            w.pointee = gGameWindowWidth - l - r
-            h.pointee = (gGameWindowHeight - l - r) / 2
+            w.pointee = gEngine.window.width - l - r
+            h.pointee = (gEngine.window.height - l - r) / 2
             switch whichPane {
             case 0:
-                y.pointee = t + (gGameWindowHeight - l - r) / 2
+                y.pointee = t + (gEngine.window.height - l - r) / 2
 
             case 1:
                 y.pointee = t
@@ -1058,15 +1058,15 @@ func OGL_GetCurrentViewport(_ x: UnsafeMutablePointer<Int32>!, _ y: UnsafeMutabl
             }
 
         case UInt8(SplitscreenMode.vertical.rawValue):
-            w.pointee = (gGameWindowWidth - l - r) / 2
-            h.pointee = gGameWindowHeight - t - b
+            w.pointee = (gEngine.window.width - l - r) / 2
+            h.pointee = gEngine.window.height - t - b
             y.pointee = t
             switch whichPane {
             case 0:
                 x.pointee = l
 
             case 1:
-                x.pointee = l + (gGameWindowWidth - l - r) / 2
+                x.pointee = l + (gEngine.window.width - l - r) / 2
 
             default:
                 break
@@ -1542,7 +1542,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
         var left: Float
         var right: Float
         let halfFOV = fov[Int(camNum)] * 0.5
-        let znear = gGameViewInfoPtr!.pointee.hither
+        let znear = gEngine.game.viewInfoPtr!.pointee.hither
         let wd2 = znear * tan(halfFOV)
         let ndfl = znear / gAnaglyphFocallength
 
@@ -1554,7 +1554,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             right = aspect * wd2 - 0.5 * gAnaglyphEyeSeparation * ndfl
         }
 
-        gEngine.renderer.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
+        gEngine.renderer.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gEngine.game.viewInfoPtr!.pointee.hither), Double(gEngine.game.viewInfoPtr!.pointee.yon))
     } else {
         // SETUP STANDARD PERSPECTIVE CAMERA
 
@@ -1562,8 +1562,8 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             &gViewToFrustumMatrix, // projection
             fov[Int(camNum)], // our version uses radians for the fov (unlike GLU)
             aspect,
-            gGameViewInfoPtr!.pointee.hither,
-            gGameViewInfoPtr!.pointee.yon)
+            gEngine.game.viewInfoPtr!.pointee.hither,
+            gEngine.game.viewInfoPtr!.pointee.yon)
 
         gEngine.renderer.matrixMode(.projection)
         withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
@@ -1587,7 +1587,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
     // UPDATE LIGHT POSITIONS
 
     do {
-        let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
+        let lights = gEngine.game.viewInfoPtr!.pointer(to: \.lightList)!
         gEngine.renderer.updateLightPositions(
             numFillLights: Int32(lights.pointee.numFillLights),
             fillDirections: fillDirectionBase(lights))

@@ -132,7 +132,7 @@ func DoMainMenuScreen() {
         _ = MakeMenu(gMainMenuTreePtr, &style)
         RegisterSettingsMenu()
 
-        while gMenuOutcome == 0 {
+        while gEngine.menu.outcome == 0 {
             DoSDLMaintenance()
             CalcFramesPerSecond()
             moveMainMenu()
@@ -140,22 +140,22 @@ func DoMainMenuScreen() {
         }
 
         // Decide whether to fade out the music
-        switch gMenuOutcome {
+        switch gEngine.menu.outcome {
         case 0x6372_6564, 0x7373_6176: // 'cred', 'ssav'
-            gGameViewInfoPtr!.fadeSound = false
+            gEngine.game.viewInfoPtr!.fadeSound = false
 
         case 0x7261_6331, 0x7261_6332, 0x6261_7431, 0x6261_7432, 0x6361_7031, 0x6361_7032: // 'rac1','rac2','bat1','bat2','cap1','cap2'
             // entering multiplayer; fade sound if we're gonna skip LocalGather
-            gGameViewInfoPtr!.fadeSound = GetNumGamepad() >= 2
+            gEngine.game.viewInfoPtr!.fadeSound = GetNumGamepad() >= 2
 
         default:
-            gGameViewInfoPtr!.fadeSound = true
+            gEngine.game.viewInfoPtr!.fadeSound = true
         }
 
         OGL_FadeOutScene(DrawObjects, nil)
         freeMainMenuScreen()
 
-        processMenuOutcome(gMenuOutcome)
+        processMenuOutcome(gEngine.menu.outcome)
     }
 }
 
@@ -277,12 +277,12 @@ private func processMenuOutcome(_ outcome: Int32) {
         DoLevelIntroScreen(UInt8(INTRO_MODE_CREDITS))
 
     case 0x6465_6D6F: // 'demo' TIME DEMO (BENCHMARK)
-        gTimeDemo = 1
-        gSkipLevelIntro = 1
+        gEngine.game.timeDemo = 1
+        gEngine.game.skipLevelIntro = 1
         gEngine.player.numPlayers = 1
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
-        gLevelNum = Int16(LevelNum.adventure3.rawValue)
+        gEngine.game.playingFromSavedGame = 0
+        gEngine.game.levelNum = Int16(LevelNum.adventure3.rawValue)
         gEngine.renderer.setVSync(0) // no vsync for time demo
 
     case 0x6164_7665: // 'adve' SINGLE-PLAYER ADVENTURE CAMPAIGN
@@ -290,17 +290,17 @@ private func processMenuOutcome(_ outcome: Int32) {
 
         gEngine.player.numPlayers = 1
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
-        gLevelNum = Int16(LevelNum.adventure1.rawValue)
+        gEngine.game.playingFromSavedGame = 0
+        gEngine.game.levelNum = Int16(LevelNum.adventure1.rawValue)
 
     case 0x6368_7431, 0x6368_7432, 0x6368_7433: // 'cht1','cht2','cht3'
         setMainController1P()
 
         gEngine.player.numPlayers = 1
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
-        gSkipLevelIntro = 1
-        gLevelNum = Int16(LevelNum.adventure1.rawValue) + Int16(outcome - 0x6368_7431)
+        gEngine.game.playingFromSavedGame = 0
+        gEngine.game.skipLevelIntro = 1
+        gEngine.game.levelNum = Int16(LevelNum.adventure1.rawValue) + Int16(outcome - 0x6368_7431)
 
     case 0x6C66_2330, 0x6C66_2331, 0x6C66_2332, 0x6C66_2333, 0x6C66_2334, // 'lf#0'..'lf#4'
          0x6C66_2335, 0x6C66_2336, 0x6C66_2337, 0x6C66_2338, 0x6C66_2339: // 'lf#5'..'lf#9'
@@ -309,31 +309,31 @@ private func processMenuOutcome(_ outcome: Int32) {
         var loaded = SaveGameType()
         if LoadSavedGame(outcome - 0x6C66_2330, &loaded) != 0 {
             UseSaveGame(&loaded)
-            gPlayingFromSavedGame = 1
+            gEngine.game.playingFromSavedGame = 1
             gEngine.player.numPlayers = 1
             gPlayNow = 1
         }
 
     case 0x7261_6331, 0x7261_6332: // 'rac1','rac2' RACE
         gEngine.player.numPlayers = 2
-        gVSMode = .race
-        gLevelNum = Int16(LevelNum.race1.rawValue) + Int16(outcome - 0x7261_6331)
+        gEngine.game.vsMode = .race
+        gEngine.game.levelNum = Int16(LevelNum.race1.rawValue) + Int16(outcome - 0x7261_6331)
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
+        gEngine.game.playingFromSavedGame = 0
 
     case 0x6261_7431, 0x6261_7432: // 'bat1','bat2' BATTLE
         gEngine.player.numPlayers = 2
-        gVSMode = .battle
-        gLevelNum = Int16(LevelNum.battle1.rawValue) + Int16(outcome - 0x6261_7431)
+        gEngine.game.vsMode = .battle
+        gEngine.game.levelNum = Int16(LevelNum.battle1.rawValue) + Int16(outcome - 0x6261_7431)
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
+        gEngine.game.playingFromSavedGame = 0
 
     case 0x6361_7031, 0x6361_7032: // 'cap1','cap2' CAPTURE THE FLAG
         gEngine.player.numPlayers = 2
-        gVSMode = .captureTheFlag
-        gLevelNum = Int16(LevelNum.flag1.rawValue) + Int16(outcome - 0x6361_7031)
+        gEngine.game.vsMode = .captureTheFlag
+        gEngine.game.levelNum = Int16(LevelNum.flag1.rawValue) + Int16(outcome - 0x6361_7031)
         gPlayNow = 1
-        gPlayingFromSavedGame = 0
+        gEngine.game.playingFromSavedGame = 0
 
     default:
         let c0 = Character(UnicodeScalar(UInt8((outcome >> 24) & 0xFF)))
@@ -367,12 +367,12 @@ private let cMoveMouseCursorObject: @convention(c) (UnsafeMutablePointer<ObjNode
 
     if visible {
         // Fade in to prevent jarring cursor warp when exiting mouse grab mode
-        theNode.pointee.ColorFilter.a += 8.0 * gFramesPerSecondFrac
+        theNode.pointee.ColorFilter.a += 8.0 * gEngine.framesPerSecondFrac
         if theNode.pointee.ColorFilter.a > 1 {
             theNode.pointee.ColorFilter.a = 1
         }
     } else {
-        theNode.pointee.ColorFilter.a -= 4.0 * gFramesPerSecondFrac
+        theNode.pointee.ColorFilter.a -= 4.0 * gEngine.framesPerSecondFrac
         if theNode.pointee.ColorFilter.a < 0 {
             theNode.pointee.ColorFilter.a = 0
         }

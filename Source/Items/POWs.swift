@@ -37,7 +37,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY + powYOff
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(PLAYER_SLOT) + 55
         def.moveCall = cMovePOW
         def.rot = RandomFloat() * SwPI2
@@ -51,7 +51,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
         switch WeaponType(rawValue: Int32(weaponType)) {
         case .heatSeeker:
-            if gVSMode == .none { // fewer missiles in 2P modes
+            if gEngine.game.vsMode == .none { // fewer missiles in 2P modes
                 newObj.pointee.Special.1 = 10 // WeaponPOWQuantity
             } else {
                 newObj.pointee.Special.1 = 4
@@ -95,7 +95,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 private let cMovePOW: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { powOpt in
     let pow = powOpt!
     let mem = pow.pointee.ChainNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if TrackTerrainItem(pow) != 0 { // just check to see if it's gone
         DeleteObject(pow)
@@ -127,7 +127,7 @@ private let cMovePOW: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = 
             if gEngine.player.numPlayers > 1 { // if in multi-player level, then set delay until POW fades back in
                 pow.pointee.Mode = PowMode.delay.rawValue
 
-                if gVSMode == .race {
+                if gEngine.game.vsMode == .race {
                     pow.pointee.Timer = powReappearDelay * 0.5
                 } else {
                     pow.pointee.Timer = powReappearDelay
@@ -217,7 +217,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY + powYOff
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(PLAYER_SLOT) + 55
         def.moveCall = cMovePOW
         def.rot = RandomFloat() * SwPI2
@@ -295,7 +295,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY + powYOff
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(PLAYER_SLOT) + 55
         def.moveCall = cMovePOW
         def.rot = RandomFloat() * SwPI2
@@ -339,7 +339,7 @@ private let cDoTrig_FuelPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
     let playerNum = theNode.pointee.PlayerNum
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         pi.pointee.jetpackFuel += 0.5
     } else {
         pi.pointee.jetpackFuel += 0.25 // in 2P modes fuel gives less
@@ -378,7 +378,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY + powYOff
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(PLAYER_SLOT) + 55
         def.moveCall = cMovePOW
         def.rot = RandomFloat() * SwPI2
@@ -462,7 +462,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY + powYOff
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(PLAYER_SLOT) + 55
         def.moveCall = cMovePOW
         def.rot = RandomFloat() * SwPI2

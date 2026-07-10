@@ -14,7 +14,7 @@ private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<M
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
     gActiveSplitScreenMode = gGamePrefs.splitScreenMode
-    PausedInternal_UpdateSplitscreenFOV(gGameViewInfoPtr, GetSplitscreenPaneFOV(), Int32(gEngine.player.numPlayers))
+    PausedInternal_UpdateSplitscreenFOV(gEngine.game.viewInfoPtr, GetSplitscreenPaneFOV(), Int32(gEngine.player.numPlayers))
 }
 
 private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
@@ -61,10 +61,10 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     case RESU_FOURCC: // RESUME
         break
     case BAIL_FOURCC: // EXIT
-        gGameViewInfoPtr!.fadeSound = true
-        gGameOver = 1
+        gEngine.game.viewInfoPtr!.fadeSound = true
+        gEngine.game.gameOver = 1
     case QUIT_FOURCC: // QUIT
-        gGameViewInfoPtr!.fadeSound = true
+        gEngine.game.viewInfoPtr!.fadeSound = true
         CleanQuit()
     default:
         break
@@ -73,14 +73,14 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
 
 func DoPaused() {
     // In single-player, reassign main controller to whoever pressed the start button
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         let whoPressedStart = GetLastControllerForNeedAnyP(Int32(kNeed_UIPause))
         if whoPressedStart >= 0 {
             SetMainController(whoPressedStart)
         }
     }
 
-    gGammaFadeFrac = 1
+    gEngine.window.gammaFadeFrac = 1
     gGamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)
@@ -97,7 +97,7 @@ func DoPaused() {
 }
 
 func DoReallyQuit() {
-    gGammaFadeFrac = 1
+    gEngine.window.gammaFadeFrac = 1
     gGamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)

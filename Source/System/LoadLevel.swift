@@ -43,7 +43,7 @@ func GetBiomeName(_ biome: Biome) -> String {
 }
 
 func LoadLevelArt() {
-    let currentBiome = GetLevelBiome(gLevelNum)
+    let currentBiome = GetLevelBiome(gEngine.game.levelNum)
 
     var timeStartLoad = UnsignedWide()
     SwMicroseconds(&timeStartLoad)
@@ -101,7 +101,7 @@ func LoadLevelArt() {
 
     // LOAD OVERHEAD MAP
     do {
-        let path = ":Sprites:maps:\(GetLevelName(gLevelNum))"
+        let path = ":Sprites:maps:\(GetLevelName(gEngine.game.levelNum))"
         _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
         LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_OVERHEADMAP), path, 0)
     }
@@ -121,14 +121,14 @@ func LoadLevelArt() {
     // LOAD TERRAIN
 
     do {
-        let path = ":Terrain:\(GetLevelName(gLevelNum)).ter"
+        let path = ":Terrain:\(GetLevelName(gEngine.game.levelNum)).ter"
         _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
         LoadPlayfield(&spec)
     }
 
     // RESTORE CLEAR COLOR
 
-    let cc = gGameViewInfoPtr!.pointee.clearColor
+    let cc = gEngine.game.viewInfoPtr!.pointee.clearColor
     gEngine.renderer.setClearColor(cc.r, cc.g, cc.b)
 
     // DO BIOME SPECIFIC STUFF

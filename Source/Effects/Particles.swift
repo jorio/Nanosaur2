@@ -354,7 +354,7 @@ func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ v
 
 private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FIRST UPDATE THE PURGE QUEUE
 
@@ -362,7 +362,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     // GET VAR BUFFER & UPDATE PARTICLES
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     let varMode = UInt8(VertexArrayRangeType.particles1.rawValue) + UInt8(buffNum) // update the VAR range info
     theNode.pointee.VertexArrayMode = varMode
@@ -554,7 +554,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 private func updateParticleGroupsGeometry() {
     var v = [OGLPoint3D](repeating: OGLPoint3D(), count: 4)
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     v[0].z = 0 // init z's to 0
     v[1].z = 0
@@ -705,7 +705,7 @@ private func updateParticleGroupsGeometry() {
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 // MARK: - Draw particle groups
@@ -723,7 +723,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     OGL_EnableBlend()
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     for g in 0..<Int(MAX_PARTICLE_GROUPS) {
         guard let pg = gEngine.particles.groups[g] else { // skip if not allocated
@@ -934,7 +934,7 @@ func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ s
 // MARK: - Make steam
 
 func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let scale: Float = 1.8
 
     // MAKE SMOKE
@@ -1123,7 +1123,7 @@ func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
 // MARK: - Spray water
 
 func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps // see if time to spew water
     if theNode.pointee.ParticleTimer <= 0.0 {
@@ -1196,11 +1196,11 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
 // MARK: - Burn fire
 
 func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float, _ doSmoke: UInt8, _ particleType: Int16, _ scale: Float, _ moreFlags: UInt32) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // MAKE SMOKE
 
-    if doSmoke != 0 && (gFramesPerSecond > 20.0) { // only do smoke if running at good frame rate
+    if doSmoke != 0 && (gEngine.framesPerSecond > 20.0) { // only do smoke if running at good frame rate
         theNode.pointee.SpecialF.4 -= fps // SmokeTimer: see if add smoke
         if theNode.pointee.SpecialF.4 <= 0.0 {
             theNode.pointee.SpecialF.4 += smokeTimer // reset timer
@@ -1425,7 +1425,7 @@ private let smokerGlow: [Bool] = [false, false, true, true]
 
 private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF OUT OF RANGE
 
@@ -1512,7 +1512,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 // MARK: - Do player ground scrape
 
 func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum: Int16) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.dirtParticleTimer -= fps // see if add bubbles
@@ -1623,7 +1623,7 @@ private let cMoveFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // NEXT FRAME
 
-    theNode.pointee.Timer -= theNode.pointee.SpecialF.0 * gFramesPerSecondFrac // FlameSpeed
+    theNode.pointee.Timer -= theNode.pointee.SpecialF.0 * gEngine.framesPerSecondFrac // FlameSpeed
     if theNode.pointee.Timer <= 0.0 {
         theNode.pointee.Timer += 1.0
         theNode.pointee.Special.0 += 1 // FlameFrame
@@ -1721,7 +1721,7 @@ func MakeFireRing(_ x: Float, _ y: Float, _ z: Float) -> UnsafeMutablePointer<Ob
 
 private let cMoveFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ColorFilter.a -= fps * 2.0
     if theNode.pointee.ColorFilter.a <= 0.0 {

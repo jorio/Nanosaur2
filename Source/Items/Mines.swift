@@ -20,7 +20,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
             }
         }
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             typeB = Int32(LEVEL1_ObjType_AirMine_Base)
             typeM = Int32(LEVEL1_ObjType_AirMine_Mine)
@@ -64,7 +64,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = airMineScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(SLOT_OF_DUMB) - 200
         def.moveCall = cMoveAirMine
         def.rot = 0
@@ -88,7 +88,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.slot += 1
         def.moveCall = nil
         def.rot = RandomFloat() * SwPI2
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
         let chain = MakeNewDisplayGroupObject(&def)!
 
         chain.pointee.SpecialF.0 = RandomFloat() * SwPI2 // WobbleX
@@ -100,7 +100,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
         def.type = UInt8(typeM)
         def.slot += 1
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         let mine = MakeNewDisplayGroupObject(&def)!
 
         // SET COLLISION STUFF
@@ -149,7 +149,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
 
     // MAKE CHAIN WOBBLE
 
-    chain.pointee.SpecialF.0 += gFramesPerSecondFrac * 1.1 // WobbleX
+    chain.pointee.SpecialF.0 += gEngine.framesPerSecondFrac * 1.1 // WobbleX
     chain.pointee.Rot.x = sin(chain.pointee.SpecialF.0) * 0.15
 
     // CALC MATRIX TO ROTATE CHAIN AROUND THE HING POINT
@@ -174,7 +174,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     mine.pointee.Rot.x = chain.pointee.Rot.x // match x rot
 
     let mineOffVar: OGLPoint3D
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         mineOffVar = mineOff // calc coord of mine @ end of chain
 
@@ -191,7 +191,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     // CALC COORD OF LIGHT
 
     let lightOffVar: OGLPoint3D
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         lightOffVar = lightOff
 
@@ -400,7 +400,7 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
 private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { flareOpt in
     let flare = flareOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     flare.pointee.Health -= fps
     if flare.pointee.Health <= 0.0 {

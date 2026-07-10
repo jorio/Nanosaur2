@@ -89,7 +89,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 
 private let cMoveCrystalShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE
 
@@ -124,7 +124,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(SLOT_OF_DUMB - 50)
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2

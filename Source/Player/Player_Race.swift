@@ -8,7 +8,7 @@ private func raceCheckpointTaggedBase(_ pi: UnsafeMutablePointer<PlayerInfoType>
 private func PlayerCompletedRace(_ playerNum: Int16) {
     GetPlayerInfoPtr(Int32(playerNum)).pointee.raceComplete = 1
 
-    if gLevelCompleted == 0 { // only if this is the 1st guy to win
+    if gEngine.game.levelCompleted == 0 { // only if this is the 1st guy to win
         for i in 0..<Int16(gEngine.player.numPlayers) { // see which player Won (was not eliminated)
             if i != playerNum {
                 _ = ShowWinLose(i, 1) // lost

@@ -22,7 +22,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let rot = Float(pointee.parm.1) * (Float.pi / 2)
         let type: Int32
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue):
             type = Int32(LEVEL1_ObjType_ForestDoor_Wall)
         case Int16(LevelNum.adventure2.rawValue):
@@ -104,7 +104,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { wallOpt in
     guard let wall = wallOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let door = wall.pointee.ChainNode!
     let ring = door.pointee.ChainNode!
 
@@ -120,7 +120,7 @@ private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     if gForestDoorOpen[Int(wall.pointee.Kind)] {
         door.pointee.Rot.z -= fps
 
-        if gLevelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
+        if gEngine.game.levelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
             if door.pointee.Rot.z < -Float.pi {
                 door.pointee.Rot.z = -Float.pi
             }
@@ -155,7 +155,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 209
         def.moveCall = cMoveForestDoorKey
         def.rot = rot
@@ -244,7 +244,7 @@ private let cMoveForestDoorKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
     // SPIN THE KEY
 
     if let key {
-        key.pointee.Rot.y += gFramesPerSecondFrac * 2.0
+        key.pointee.Rot.y += gEngine.framesPerSecondFrac * 2.0
         UpdateObjectTransforms(key)
     }
 }

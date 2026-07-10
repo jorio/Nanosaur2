@@ -1,9 +1,8 @@
 // Pick.swift - Port of Pick.c to Swift
 //
-// gPickAllTrianglesAsDoubleSided is native Swift storage now (converted
+// gEngine.objects.pickAllTrianglesAsDoubleSided is native Swift storage now (converted
 // 2026-07-07): nothing in any .c file touches it anymore.
 
-var gPickAllTrianglesAsDoubleSided: UInt8 = 0
 
 private let gridSkipRange: Int32 = 2 // how many grid units away to just skip collisions between objects
 
@@ -281,7 +280,7 @@ private func OGL_RayGetHitInfo_Skeleton(_ ray: UnsafeMutablePointer<OGLRay>, _ t
     let skeleton = theNode.pointee.Skeleton!
     let numTriMeshes = Int(skeleton.pointee.skeletonDefinition!.pointee.numDecomposedTriMeshes)
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let deformedMeshesBase = UnsafeMutableRawPointer(skeleton.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
     let deformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
@@ -407,10 +406,10 @@ func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<OGLPoin
 
     // GET 3D COORDINATES @ BACK PLANE
 
-    let realy = Float(gGameWindowHeight) - screenCoord.pointee.y - 1.0 // flip Y ([3] is the height value)
+    let realy = Float(gEngine.window.height) - screenCoord.pointee.y - 1.0 // flip Y ([3] is the height value)
 
     let winPt = OGLPoint3D(x: screenCoord.pointee.x, y: realy, z: 1.0)
-    let vpSize = OGLVector2D(x: Float(gGameWindowWidth), y: Float(gGameWindowHeight))
+    let vpSize = OGLVector2D(x: Float(gEngine.window.width), y: Float(gEngine.window.height))
     let vpOffset = OGLPoint2D(x: 0, y: 0)
     var result = OGLPoint3D(x: 0, y: 0, z: 0)
 
@@ -431,7 +430,7 @@ func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<OGLPoin
 
     // CONVERT TO RAY
 
-    ray.pointee.origin = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation // ray origin @ camera location
+    ray.pointee.origin = gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation // ray origin @ camera location
     ray.pointee.direction.x = result.x - ray.pointee.origin.x // calc vector of ray
     ray.pointee.direction.y = result.y - ray.pointee.origin.y
     ray.pointee.direction.z = result.z - ray.pointee.origin.z
@@ -801,7 +800,7 @@ func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
     var bestDist: Float = 10_000_000
     var bestNormal = OGLVector3D()
 
-    gPickAllTrianglesAsDoubleSided = 1 // we want to allow backfaces to get hit
+    gEngine.objects.pickAllTrianglesAsDoubleSided = 1 // we want to allow backfaces to get hit
 
     // CALCULATE THE LINE SEGMENT VECTOR
 
@@ -854,7 +853,7 @@ func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
     //	This might cause problems for certain hit functions, so we need to flip the normal to make sure it is always
     // 	facing the line segment vector (p1 -> p2).
 
-    gPickAllTrianglesAsDoubleSided = 0 // always set this to FALSE when exiting!
+    gEngine.objects.pickAllTrianglesAsDoubleSided = 0 // always set this to FALSE when exiting!
 
     if let hitNormal { // only bother if we're returning the normal
         if OGLVector3D_Dot_NoPin(&segVec, &bestNormal) > 0.0 { // if normal is facing away then flip it
@@ -884,7 +883,7 @@ func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
     var bestDist: Float = 10_000_000
     var bestNormal = OGLVector3D()
 
-    gPickAllTrianglesAsDoubleSided = 1 // we want to allow backfaces to get hit
+    gEngine.objects.pickAllTrianglesAsDoubleSided = 1 // we want to allow backfaces to get hit
 
     // CALCULATE THE LINE SEGMENT VECTOR
 
@@ -927,7 +926,7 @@ func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
     //	This might cause problems for certain hit functions, so we need to flip the normal to make sure it is always
     // 	facing the line segment vector (p1 -> p2).
 
-    gPickAllTrianglesAsDoubleSided = 0 // always set this to FALSE when exiting!
+    gEngine.objects.pickAllTrianglesAsDoubleSided = 0 // always set this to FALSE when exiting!
 
     if let hitNormal { // only bother if we're returning the normal
         if OGLVector3D_Dot_NoPin(&segVec, &bestNormal) > 0.0 { // if normal is facing away then flip it
@@ -1273,7 +1272,7 @@ private func OGL_DoesLineSegIntersectTrianglePlane(_ lineSeg: UnsafePointer<OGLL
 
     let nDotD = emVector3DMemberDot(nx, ny, nz, lineVec.pointee) // calc dot between normal and the line ray
 
-    if !(gPickAllTrianglesAsDoubleSided != 0) { // do we want to allow backface hits?
+    if !(gEngine.objects.pickAllTrianglesAsDoubleSided != 0) { // do we want to allow backface hits?
         if nDotD >= Float(EPS) { // if ray is pointing away from plane then bail since we're not interested in rays hitting the triangle from behind
             return false
         }
@@ -1321,7 +1320,7 @@ private func OGL_DoesLineSegIntersectTrianglePlane2(_ lineSeg: UnsafePointer<OGL
     // IS PARALLEL TO OR BEHIND PLANE?
 
     let nDotD = emVector3DMemberDot(nx, ny, nz, lineVec.pointee) // calc dot between normal and the line ray
-    if !(gPickAllTrianglesAsDoubleSided != 0) { // do we want to allow backface hits?
+    if !(gEngine.objects.pickAllTrianglesAsDoubleSided != 0) { // do we want to allow backface hits?
         if nDotD >= Float(EPS) { // if ray is pointing away from plane then bail since we're not interested in rays hitting the triangle from behind
             return false
         }
@@ -1380,7 +1379,7 @@ private func OGL_LineSegGetHitInfo_Skeleton(_ lineSeg: UnsafePointer<OGLLineSegm
     let skeleton = theNode.pointee.Skeleton!
     let numTriMeshes = Int(skeleton.pointee.skeletonDefinition!.pointee.numDecomposedTriMeshes)
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let deformedMeshesBase = UnsafeMutableRawPointer(skeleton.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
     let deformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
@@ -1490,7 +1489,7 @@ private func OGL_DoesSkeletonIntersectSphere(_ sphere: UnsafePointer<OGLBounding
 
     let skeleton = theNode.pointee.Skeleton!
     let numTriMeshes = Int(skeleton.pointee.skeletonDefinition!.pointee.numDecomposedTriMeshes)
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let deformedMeshesBase = UnsafeMutableRawPointer(skeleton.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
     let deformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)

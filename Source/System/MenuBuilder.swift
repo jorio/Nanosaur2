@@ -33,7 +33,7 @@ private func setCyclerChoices(_ cycler: inout MenuCyclerData, _ pairs: [(LocStrI
 
 /// A fixed-size, never-deallocated buffer of `MenuItem` - same storage-
 /// duration contract as the C `static`/file-scope arrays this replaces.
-/// `gNav.pointee.menu`/`gMenuRegistry` cache raw pointers into these for the
+/// `gEngine.menu.nav.pointee.menu`/`gMenuRegistry` cache raw pointers into these for the
 /// menu's (or app's) lifetime, so this can't be a Swift `Array`.
 func makeMenuTreeBuffer(_ items: [MenuItem]) -> UnsafeMutablePointer<MenuItem> {
     let buffer = UnsafeMutablePointer<MenuItem>.allocate(capacity: items.count)

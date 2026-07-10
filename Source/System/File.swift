@@ -147,11 +147,14 @@ private func resourceByteCount(_ resourceFile: ResourceFile, _ type: ResType, _ 
     resourceFile.resource(type: type, id: id)?.count ?? 0
 }
 
-private var gDiskShadowPrefs = PrefsType()
+/// Level-file parse scratch. Owned by GameEngine as `gEngine.levelFile`.
+final class LevelFileScratch {
+    fileprivate var diskShadowPrefs = PrefsType()
+    fileprivate var tileSize: Float = 0
+    fileprivate var minY: Float = 0
+    fileprivate var maxY: Float = 0
+}
 
-private var g3DTileSize: Float = 0
-private var g3DMinY: Float = 0
-private var g3DMaxY: Float = 0
 
 // MARK: - Fixed-array-field helpers (all struct fields, never unions)
 
@@ -430,14 +433,14 @@ public func LoadPrefs() -> OSErr {
         }
     }
 
-    gDiskShadowPrefs = gGamePrefs
+    gEngine.levelFile.diskShadowPrefs = gGamePrefs
 
     return iErr
 }
 
 func SavePrefs() -> OSErr {
     var matches = false
-    withUnsafeBytes(of: gDiskShadowPrefs) { a in
+    withUnsafeBytes(of: gEngine.levelFile.diskShadowPrefs) { a in
         withUnsafeBytes(of: gGamePrefs) { b in
             matches = memcmp(a.baseAddress, b.baseAddress, MemoryLayout<PrefsType>.size) == 0
         }
@@ -446,7 +449,7 @@ func SavePrefs() -> OSErr {
         return kNoErr
     }
 
-    gDiskShadowPrefs = gGamePrefs
+    gEngine.levelFile.diskShadowPrefs = gGamePrefs
 
     return withUnsafeMutablePointer(to: &gGamePrefs) {
         $0.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<PrefsType>.size) {
@@ -495,9 +498,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     gEngine.terrain.numTerrainItems = SwizzleLong(&header.pointee.numItems)
     gEngine.terrain.tileWidth = Int(SwizzleLong(&header.pointee.mapWidth))
     gEngine.terrain.tileDepth = Int(SwizzleLong(&header.pointee.mapHeight))
-    g3DTileSize = SwizzleFloat(&header.pointee.tileSize)
-    g3DMinY = SwizzleFloat(&header.pointee.minY)
-    g3DMaxY = SwizzleFloat(&header.pointee.maxY)
+    gEngine.levelFile.tileSize = SwizzleFloat(&header.pointee.tileSize)
+    gEngine.levelFile.minY = SwizzleFloat(&header.pointee.minY)
+    gEngine.levelFile.maxY = SwizzleFloat(&header.pointee.maxY)
     gEngine.splines.numSplines = Int(SwizzleLong(&header.pointee.numSplines))
     gEngine.fences.numFences = Int(SwizzleLong(&header.pointee.numFences))
     gEngine.water.numPatches = Int(SwizzleLong(&header.pointee.numWaterPatches))
@@ -549,7 +552,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // READ HEIGHT DATA MATRIX
 
-    let yScale = gEngine.terrain.polygonSize / g3DTileSize // need to scale original geometry units to game units
+    let yScale = gEngine.terrain.polygonSize / gEngine.levelFile.tileSize // need to scale original geometry units to game units
 
     gEngine.terrain.mapYCoords = alloc2DArray(Float.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1) // alloc 2D array for map
     gEngine.terrain.mapYCoordsOriginal = alloc2DArray(Float.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1) // and the copy of it
@@ -1021,7 +1024,7 @@ func SaveGame(_ fileSlot: Int32) -> UInt8 {
 
     var saveData = SaveGameType()
     saveData.timestamp = UInt64(Double(timestampNanoseconds) / 1e9)
-    saveData.level = UInt8(gLevelNum) // save @ beginning of next level
+    saveData.level = UInt8(gEngine.game.levelNum) // save @ beginning of next level
     saveData.numLives = UInt8(GetPlayerInfoEntry(0).pointee.numFreeLives)
     saveData.health = GetPlayerInfoEntry(0).pointee.health
     saveData.jetpackFuel = GetPlayerInfoEntry(0).pointee.jetpackFuel
@@ -1076,7 +1079,7 @@ func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
 }
 
 func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
-    gLevelNum = Int16(saveData.pointee.level)
+    gEngine.game.levelNum = Int16(saveData.pointee.level)
     GetPlayerInfoEntry(0).pointee.numFreeLives = Int16(saveData.pointee.numLives)
     GetPlayerInfoEntry(0).pointee.health = saveData.pointee.health
     GetPlayerInfoEntry(0).pointee.jetpackFuel = saveData.pointee.jetpackFuel
@@ -1094,13 +1097,13 @@ func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
     var createdDirID: Int = 0
 
-    let iErr = SwFindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gPrefsFolderVRefNum, &gPrefsFolderDirID) // locate the folder
+    let iErr = SwFindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gEngine.game.prefsFolderVRefNum, &gEngine.game.prefsFolderDirID) // locate the folder
     if iErr != kNoErr {
         SwAlert("Warning: Cannot locate the Preferences folder.")
     }
 
     if createIt != 0 {
-        return SwDirCreate(gPrefsFolderVRefNum, gPrefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
+        return SwDirCreate(gEngine.game.prefsFolderVRefNum, gEngine.game.prefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
     }
 
     return iErr
@@ -1108,7 +1111,7 @@ func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
 
 private func makeFSSpecForUserDataFile(_ filename: String, _ spec: UnsafeMutablePointer<FSSpec>) -> OSErr {
     let path = ":\(PREFS_FOLDER_NAME_SWIFT):\(filename)"
-    return SwFSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, path, spec)
+    return SwFSMakeFSSpec(gEngine.game.prefsFolderVRefNum, gEngine.game.prefsFolderDirID, path, spec)
 }
 
 private let PREFS_FOLDER_NAME_SWIFT = "Nanosaur2"

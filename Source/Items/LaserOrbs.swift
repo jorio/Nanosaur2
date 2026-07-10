@@ -44,7 +44,7 @@ private func makeLaserOrb(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNod
     def.coord.x = x
     def.coord.z = z
     def.coord.y = GetTerrainY(x, z)
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot = Int16(SLOT_OF_DUMB) - 2
     def.moveCall = nil
     def.rot = RandomFloat() * SwPI2
@@ -69,7 +69,7 @@ private func makeLaserOrb(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNod
     // MAKE GREEN THING
 
     def.type = UInt8(GLOBAL_ObjType_LaserOrbGreen)
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM)
+    def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM)
     def.slot += 1
     let green = MakeNewDisplayGroupObject(&def)!
 
@@ -111,7 +111,7 @@ private let cMoveLaserOrb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
 // This is also called by the spline move function, so be careful!
 private func moveLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var doUpdate = true
 
     // SEE IF GONE
@@ -426,7 +426,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
         let dist = orb.pointee.SpecialF.0 // LaserDistance
 
-        orb.pointee.TextureTransformU -= gFramesPerSecondFrac * 8.0
+        orb.pointee.TextureTransformU -= gEngine.framesPerSecondFrac * 8.0
         let u = orb.pointee.TextureTransformU
 
         uv[0].u = u

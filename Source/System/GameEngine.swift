@@ -46,6 +46,23 @@ final class GameEngine {
     /// Sound and input.
     let sound = SoundSystem()
     let input = InputSystem()
+
+    /// App/session-level systems.
+    let game = GameState()
+    let misc = MiscSystem()
+    let window = WindowSystem()
+    let levelFile = LevelFileScratch()
+    let localization = LocalizationSystem()
+    let menu = MenuSystem()
+    let twitches = TwitchSystem()
+    let fs = FSSystem()
+    let atlases = AtlasSystem()
+    let sprites = SpriteSystem()
+
+    /// Frame timing - directly on the engine: it's the hottest read in
+    /// the game (nearly every move callback starts with it).
+    var framesPerSecond: Float = 13
+    var framesPerSecondFrac: Float = 1.0 / 13
 }
 
 /// The single engine instance. A plain global (not dependency injection)

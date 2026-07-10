@@ -46,7 +46,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.slot = Int16(SLOT_OF_DUMB)
         def.moveCall = cMoveNest
         def.scale = eggScale
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.rot = RandomFloat() * SwPI2
 
         let nest = MakeNewDisplayGroupObject(&def)!
@@ -155,7 +155,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
         // DECAY BEAM IF EGG IS OUT OF NEST
 
         if nest.pointee.Flag.1 == 0 {
-            beam.pointee.ColorFilter.a -= gFramesPerSecondFrac * 0.3
+            beam.pointee.ColorFilter.a -= gEngine.framesPerSecondFrac * 0.3
             if beam.pointee.ColorFilter.a <= 0.0 {
                 beam.pointee.ColorFilter.a = 0.0
             }
@@ -164,7 +164,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
         // UNDULATE THE BEAM
 
         else {
-            beam.pointee.SpecialF.0 += gFramesPerSecondFrac * Float.pi
+            beam.pointee.SpecialF.0 += gEngine.framesPerSecondFrac * Float.pi
             beam.pointee.ColorFilter.a = 0.4 + sin(beam.pointee.SpecialF.0) * 0.1
         }
     }
@@ -174,7 +174,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
 
 private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { eggOpt in
     guard let egg = eggOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let onGround = egg.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND)
 
     let nest = egg.pointee.ChainHead!
@@ -355,7 +355,7 @@ func DropEgg_NoWormhole(_ playerNum: Int16) {
 
 private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { eggOpt in
     guard let egg = eggOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let wormhole = egg.pointee.SpecialPtr.0!.assumingMemoryBound(to: ObjNode.self)
 
     GetObjectInfo(egg)
@@ -439,7 +439,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF WE GOT ALL THE EGGS WE NEED
 
-    switch gVSMode {
+    switch gEngine.game.vsMode {
     // HANDLE REGULAR ADVENTURE MODE
 
     case .none:
@@ -459,7 +459,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
     // CAPTURE THE FLAG MODE
 
     case .captureTheFlag:
-        if gLevelCompleted == 0 { // ignore any more eggs if someone already won
+        if gEngine.game.levelCompleted == 0 { // ignore any more eggs if someone already won
             // SEE IF PLAYER 1 WON
 
             if gNumEggsSaved[1] >= gNumEggsToSave[1] { // did we get all of P2's eggs?

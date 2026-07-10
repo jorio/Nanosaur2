@@ -5,7 +5,7 @@
 private let cGetLevelSpecificMenuLayoutFlags: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { mi in
     guard let mi = mi else { return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled) }
     let id = mi.pointee.id
-    if (gLevelNum == 1 && id == fourCC("lvl1")) || (gLevelNum == 2 && id == fourCC("lvl2")) {
+    if (gEngine.game.levelNum == 1 && id == fourCC("lvl1")) || (gEngine.game.levelNum == 2 && id == fourCC("lvl2")) {
         return 0
     }
     return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
@@ -97,13 +97,13 @@ func DoLevelIntroScreen(_ mode: UInt8) {
             }
 
         case INTRO_MODE_NOSAVE:
-            timer -= gFramesPerSecondFrac
+            timer -= gEngine.framesPerSecondFrac
             if timer < 0.0 || UserWantsOut() != 0 {
                 bail = true
             }
 
         case INTRO_MODE_SAVEGAME:
-            if gMenuOutcome != 0 {
+            if gEngine.menu.outcome != 0 {
                 bail = true
             }
 
@@ -118,9 +118,9 @@ func DoLevelIntroScreen(_ mode: UInt8) {
 
     // DO SAVE
 
-    switch gMenuOutcome {
+    switch gEngine.menu.outcome {
     case 0x7366_2330...0x7366_2339: // 'sf#0'...'sf#9'
-        _ = SaveGame(gMenuOutcome - 0x7366_2330)
+        _ = SaveGame(gEngine.menu.outcome - 0x7366_2330)
 
     default: // 'dont'
         break
@@ -384,7 +384,7 @@ private func freeLevelIntroScreen() {
 
 private let cMoveIntroStarDome: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Rot.z += gFramesPerSecondFrac * 0.6
+    theNode.pointee.Rot.z += gEngine.framesPerSecondFrac * 0.6
     theNode.updateTransforms()
 }
 
@@ -411,7 +411,7 @@ private func moveLevelIntroNano(_ theNode: UnsafeMutablePointer<ObjNode>) {
     p.y = theNode.pointee.Coord.y * 0.5
     p.z = theNode.pointee.Coord.z - 500.0
 
-    OGL_UpdateCameraFromTo(&gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation, &p, 0)
+    OGL_UpdateCameraFromTo(&gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation, &p, 0)
 }
 
 // MARK: - Move level intro worm
@@ -421,8 +421,8 @@ private let cMoveLevelIntroWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     updateLevelIntroWormJoints(theNode)
 
-    theNode.pointee.TextureTransformU += gFramesPerSecondFrac * 0.6
-    theNode.pointee.TextureTransformV -= gFramesPerSecondFrac * 0.9
+    theNode.pointee.TextureTransformU += gEngine.framesPerSecondFrac * 0.6
+    theNode.pointee.TextureTransformV -= gEngine.framesPerSecondFrac * 0.9
 }
 
 // MARK: - Update level intro worm joints
@@ -433,7 +433,7 @@ private var waveY: Float = 1.0
 private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let skeleton = theNode.pointee.Skeleton!
     let skeletonDef = skeleton.pointee.skeletonDefinition!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     let numJoints = Int(skeletonDef.pointee.NumBones) // get # joints in this skeleton
 
@@ -592,7 +592,7 @@ private func setupCreditsObjects() {
 
 private let cMovePressAnyKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Timer += gFramesPerSecondFrac * 4.0
+    theNode.pointee.Timer += gEngine.framesPerSecondFrac * 4.0
     theNode.pointee.ColorFilter.a = 0.66 + sin(theNode.pointee.Timer) * 0.33
 }
 
@@ -600,7 +600,7 @@ private let cMovePressAnyKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
 private let cMoveCreditsLine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Timer += gFramesPerSecondFrac
+    theNode.pointee.Timer += gEngine.framesPerSecondFrac
     let t = theNode.pointee.Timer
 
     let liveForever = theNode.pointee.Flag.0 != 0

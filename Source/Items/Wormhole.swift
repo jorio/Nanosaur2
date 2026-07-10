@@ -110,7 +110,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -177,7 +177,7 @@ func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointe
             continue
         }
 
-        if gVSMode == .captureTheFlag, // only find wormhole valid for this player
+        if gEngine.game.vsMode == .captureTheFlag, // only find wormhole valid for this player
            Int16(node.pointee.PlayerNum) == playerNum {
             continue
         }
@@ -268,7 +268,7 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     if theNode.pointee.What == Int32(WhatType.eggWormhole.rawValue) { // gotta handle the two types differently
         let skeleton = theNode.pointee.Skeleton!
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
         va = deformedMeshesBase(skeleton) + (buffNum * Int(MAX_DECOMPOSED_TRIMESHES)) // point to triMesh
     } else {
@@ -315,7 +315,7 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
 private let cMoveEntryWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let oldH = theNode.pointee.Health
 
     theNode.pointee.Health -= fps
@@ -380,7 +380,7 @@ private func makeExitWormhole(_ x: Float, _ z: Float) {
 
 private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SCALE IT UP
 

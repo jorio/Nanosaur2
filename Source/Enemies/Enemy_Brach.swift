@@ -112,7 +112,7 @@ private func moveBrachStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF DO SCRATCH / EAT
 
-    theNode.pointee.Timer -= gFramesPerSecondFrac
+    theNode.pointee.Timer -= gEngine.framesPerSecondFrac
     if theNode.pointee.Timer <= 0.0 {
         if MyRandomLong() & 1 != 0 {
             MorphToSkeletonAnim(theNode.pointee.Skeleton, brachAnimScratch, 3)
@@ -167,7 +167,7 @@ private func moveBrachEat(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // MOVE TOWARD PLAYER
 
@@ -203,7 +203,7 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.4
 

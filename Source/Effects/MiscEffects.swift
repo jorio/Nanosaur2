@@ -2,7 +2,7 @@
 
 private let cMoveShockwaveRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode = theNode else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let speed = theNode.pointee.SpecialF.0
 
     // FADE OUT

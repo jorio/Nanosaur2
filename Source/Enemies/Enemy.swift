@@ -47,7 +47,7 @@ func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z:
     def.coord.x = x
     def.coord.y = GetTerrainY(x, z)
     def.coord.z = z
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot = Int16(ENEMY_SLOT) + Int16(skeletonType)
     def.moveCall = moveCall
     def.rot = rot
@@ -187,7 +187,7 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
 
                 // OTHERWISE JUST UPDATE RIPPLES
                 else {
-                    theEnemy.pointee.SpecialF.4 -= gFramesPerSecondFrac // EnemyWaterRippleTimer
+                    theEnemy.pointee.SpecialF.4 -= gEngine.framesPerSecondFrac // EnemyWaterRippleTimer
                     if theEnemy.pointee.SpecialF.4 <= 0.0 {
                         theEnemy.pointee.SpecialF.4 += 0.1
                         splashPt.x = gEngine.objects.coord.x
@@ -214,7 +214,7 @@ func EnemyTouchedPlayer(_ enemy: UnsafeMutablePointer<ObjNode>!, _ player: Unsaf
 }
 
 func MoveEnemySkipChunk(_ chunk: UnsafeMutablePointer<ObjNode>!) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     chunk.getInfo()
 

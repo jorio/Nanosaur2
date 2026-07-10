@@ -232,7 +232,7 @@ private let cMoveConfettiGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 }
 
 private func moveConfettiGroups() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
         guard let g = gEngine.confetti.groups[i] else {

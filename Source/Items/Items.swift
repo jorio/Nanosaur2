@@ -34,7 +34,7 @@ func CreateCyclorama() {
     def.moveCall = nil
     def.drawCall = DrawCyclorama
     def.rot = 0
-    def.scale = gGameViewInfoPtr!.pointee.yon * 0.01
+    def.scale = gEngine.game.viewInfoPtr!.pointee.yon * 0.01
 
     _ = MakeNewDisplayGroupObject(&def)
 }
@@ -63,7 +63,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 // MARK: - Create cloud layer
@@ -80,7 +80,7 @@ private func createCloudLayer() {
     def.flags = UInt32(STATUS_BIT_DONTCULL | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES)
     def.slot = Int16(TERRAIN_SLOT) + 2 // draw after sky dome
     def.rot = 0
-    def.scale = gGameViewInfoPtr!.pointee.yon * 0.85
+    def.scale = gEngine.game.viewInfoPtr!.pointee.yon * 0.85
     def.moveCall = cMoveCloudLayer
     def.drawCall = cDrawCloudLayer
 
@@ -93,8 +93,8 @@ private func createCloudLayer() {
 // MARK: - Move cloud layer
 
 private let cMoveCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    gCloudScroll.x += gFramesPerSecondFrac * 0.02
-    gCloudScroll.y += gFramesPerSecondFrac * 0.03
+    gCloudScroll.x += gEngine.framesPerSecondFrac * 0.02
+    gCloudScroll.y += gEngine.framesPerSecondFrac * 0.03
 }
 
 // MARK: - Draw cloud layer
@@ -144,7 +144,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let base: Int32
         let rot = Int(pointee.parm.1)
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             base = Int32(LEVEL1_ObjType_Rock1)
 
@@ -162,7 +162,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 2.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
@@ -194,7 +194,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 2.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -228,7 +228,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 3.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 197
         def.moveCall = cMoveGasMound
         def.rot = RandomFloat() * SwPI2
@@ -261,7 +261,7 @@ private let ventOff: [OGLPoint3D] = [
 
 private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
@@ -384,7 +384,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 4.0 + RandomFloat2() * 1.0
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 197
         def.moveCall = nil
         def.rot = RandomFloat() * SwPI2

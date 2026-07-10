@@ -154,7 +154,7 @@ func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!,
 func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     guard let skeleton = theNode.pointee.Skeleton else { return }
     let skeletonDef = skeleton.pointee.skeletonDefinition!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // IF JUST GOT A MORPH POSITION, THEN UPDATE MORPH
 
@@ -178,7 +178,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     // INCREMENT TIME INDEX
 
     if skeleton.pointee.PauseTimer > 0.0 {
-        skeleton.pointee.PauseTimer -= gFramesPerSecondFrac
+        skeleton.pointee.PauseTimer -= gEngine.framesPerSecondFrac
     } else {
         if animDirection == UInt8(AnimDirection.forward.rawValue) {
             currentTime += (30.0 * fps) * skeleton.pointee.AnimSpeed
@@ -530,7 +530,7 @@ private func accelerationPercent(_ percent: Float) -> Float {
 }
 
 func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var groupDef = NewParticleGroupDefType()
     var newParticleDef = NewParticleDefType()
     var d = OGLVector3D()

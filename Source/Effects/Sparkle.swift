@@ -85,7 +85,7 @@ func DrawSparkles() {
 
     // cameraPlacement is a fixed-size array (imports as a tuple); rebind to
     // index it dynamically by gCurrentSplitScreenPane.
-    let cameraPlacementsBase = UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    let cameraPlacementsBase = UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
     let cam = cameraPlacementsBase + Int(gCurrentSplitScreenPane) // point to camera coord
 
     var i: Int32 = 0

@@ -12,7 +12,7 @@ private func UpdateGatherPrompt(_ numControllersMissing: Int32) {
         gGatherPrompt.pointee.Scale.x = 1
         gGatherPrompt.pointee.Scale.y = 1
         UpdateObjectTransforms(gGatherPrompt)
-        // gGameViewInfoPtr->fadeOutDuration = .3f;
+        // gEngine.game.viewInfoPtr->fadeOutDuration = .3f;
     } else {
         let message = numControllersMissing == 1
             ? localized(STR_CONNECT_1_CONTROLLER)

@@ -403,7 +403,7 @@ func GetNeedAnalogSteering(_ negativeNeedID: Int32, _ positiveNeedID: Int32, _ p
 }
 
 func UserWantsOut() -> UInt8 {
-    if gGammaFadeFrac < 1 { // disallow skipping during fade-in
+    if gEngine.window.gammaFadeFrac < 1 { // disallow skipping during fade-in
         return 0
     }
 
@@ -770,7 +770,7 @@ func ResetDefaultMouseBindings() {
 
 
 func GetMouseDelta() -> OGLVector2D {
-    gEngine.input.mouseDeltaTimeSinceLastCall += gFramesPerSecondFrac
+    gEngine.input.mouseDeltaTimeSinceLastCall += gEngine.framesPerSecondFrac
 
     // Mouse sensitivity settings are calibrated to feel good at 60 FPS,
     // so we mustn't poll GetRelativeMouseState any faster than 60 Hz.

@@ -2,24 +2,27 @@
 //
 // DoAlert/DoFatalAlert stay in Misc.c because they take C variadic
 // arguments, which Swift can't implement (same reasoning as
-// LocalizeWithPlaceholder staying in Localization.c). gRAMAlloced/
-// gFramesPerSecond/gFramesPerSecondFrac/gNumPointers are native Swift
+// LocalizeWithPlaceholder staying in Localization.c). gEngine.misc.ramAlloced/
+// gEngine.framesPerSecond/gEngine.framesPerSecondFrac/gEngine.misc.numPointers are native Swift
 // storage now (converted 2026-07-07): nothing in any .c file touches them
-// anymore. gSeed0/1/2 aren't `extern`'d anywhere else, so unlike those
+// anymore. gEngine.misc.seed0/1/2 aren't `extern`'d anywhere else, so unlike those
 // they didn't need this treatment - already private Swift storage.
 
-var gRAMAlloced: Int = 0
-var gFramesPerSecond: Float = 13
-var gFramesPerSecondFrac: Float = 1.0 / 13
-var gNumPointers: Int32 = 0
+/// Frame timing, allocator metrics, RNG seeds. Owned by GameEngine as
+/// `gEngine.misc` (fps lives directly on GameEngine - it's the hottest
+/// read in the game).
+final class MiscSystem {
+    var ramAlloced: Int = 0
+    var numPointers: Int32 = 0
+
+    fileprivate var seed0: UInt32 = 0
+    fileprivate var seed1: UInt32 = 0
+    fileprivate var seed2: UInt32 = 0
+}
 
 private let MAX_FPS: Float = 300 // mac original was 190
 private let DEFAULT_FPS: Float = 13
 
-// gSeed0/1/2 are private to Misc.c/Misc.swift; nothing else `extern`s them.
-private var gSeed0: UInt32 = 0
-private var gSeed1: UInt32 = 0
-private var gSeed2: UInt32 = 0
 
 @c @implementation
 public func CleanQuit() -> Never {
@@ -36,7 +39,7 @@ public func CleanQuit() -> Never {
         DisposeAllSpriteGroups() // nuke all sprites
         DisposeAllSpriteAtlases()
 
-        if gGameViewInfoPtr != nil { // see if need to dispose this
+        if gEngine.game.viewInfoPtr != nil { // see if need to dispose this
             OGL_DisposeGameView()
         }
 
@@ -54,11 +57,11 @@ public func CleanQuit() -> Never {
 // MARK: - Random number generator
 
 func MyRandomLong() -> UInt32 {
-    gSeed1 ^= (gSeed2 >> 5) &* 1568397607
-    gSeed0 = (gSeed0 &+ 1) &* 3141592621
-    let sum = (gSeed1 >> 7) &+ gSeed0
-    gSeed2 ^= sum &* 2435386481
-    return gSeed2
+    gEngine.misc.seed1 ^= (gEngine.misc.seed2 >> 5) &* 1568397607
+    gEngine.misc.seed0 = (gEngine.misc.seed0 &+ 1) &* 3141592621
+    let sum = (gEngine.misc.seed1 >> 7) &+ gEngine.misc.seed0
+    gEngine.misc.seed2 ^= sum &* 2435386481
+    return gEngine.misc.seed2
 }
 
 // THE RANGE *IS* INCLUSIVE OF MIN AND MAX
@@ -96,15 +99,15 @@ func RandomFloat2() -> Float {
 }
 
 func SetMyRandomSeed(_ seed: UInt32) {
-    gSeed0 = seed
-    gSeed1 = 0
-    gSeed2 = 0
+    gEngine.misc.seed0 = seed
+    gEngine.misc.seed1 = 0
+    gEngine.misc.seed2 = 0
 }
 
 func InitMyRandomSeed() {
-    gSeed0 = 0x2a80ce30
-    gSeed1 = 0
-    gSeed2 = 0
+    gEngine.misc.seed0 = 0x2a80ce30
+    gEngine.misc.seed1 = 0
+    gEngine.misc.seed2 = 0
 }
 
 // MARK: - Pointer allocation
@@ -138,8 +141,8 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     cookiePtr[2] = kCookiePTR3
     cookiePtr[3] = kCookiePTR4
 
-    gNumPointers += 1
-    gRAMAlloced += size
+    gEngine.misc.numPointers += 1
+    gEngine.misc.ramAlloced += size
 
     return p! + PTRCOOKIE_SIZE
 }
@@ -158,8 +161,8 @@ func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     cookiePtr[2] = kCookiePTC3
     cookiePtr[3] = kCookiePTC4
 
-    gNumPointers += 1
-    gRAMAlloced += size
+    gEngine.misc.numPointers += 1
+    gEngine.misc.ramAlloced += size
 
     return p! + PTRCOOKIE_SIZE
 }
@@ -182,7 +185,7 @@ public func ReallocPtr(_ initialPtr: UnsafeMutableRawPointer?, _ newSize0: Int) 
     SwGameAssert(cookiePtr[0] == kCookieFACE) // realloc shouldn't have touched our cookie
 
     let initialSize = cookiePtr[1] // update heap size metric
-    gRAMAlloced += newSize - Int(initialSize)
+    gEngine.misc.ramAlloced += newSize - Int(initialSize)
 
     cookiePtr[0] = kCookieFACE // rewrite cookie
     cookiePtr[1] = UInt32(newSize)
@@ -202,13 +205,13 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
     SwGameAssert(cookiePtr[0] == kCookieFACE)
-    gRAMAlloced -= Int(cookiePtr[1]) // deduct ptr size from heap size
+    gEngine.misc.ramAlloced -= Int(cookiePtr[1]) // deduct ptr size from heap size
 
     cookiePtr[0] = kCookieDEAD // zap cookie
 
     SDL_free(p)
 
-    gNumPointers -= 1
+    gEngine.misc.numPointers -= 1
 }
 
 // MARK: - Time (replaces Pomme's Microseconds/TickCount - see extern/Pomme/src/Time/TimeManager.cpp)
@@ -295,7 +298,7 @@ func CalcFramesPerSecond() {
     while true {
         SwMicroseconds(&currTime)
 
-        if gTimeDemo != 0 {
+        if gEngine.game.timeDemo != 0 {
             fps = 40
             break
         }
@@ -332,16 +335,16 @@ func CalcFramesPerSecond() {
     Statics.sampIndex &= 0x7
 
     // CALC AVERAGE
-    gFramesPerSecond = 0
+    gEngine.framesPerSecond = 0
     for i in 0..<8 {
-        gFramesPerSecond += Statics.sampleList[i]
+        gEngine.framesPerSecond += Statics.sampleList[i]
     }
-    gFramesPerSecond *= 1.0 / 8.0
+    gEngine.framesPerSecond *= 1.0 / 8.0
 
-    if gFramesPerSecond < DEFAULT_FPS { // (avoid divide by 0's later)
-        gFramesPerSecond = DEFAULT_FPS
+    if gEngine.framesPerSecond < DEFAULT_FPS { // (avoid divide by 0's later)
+        gEngine.framesPerSecond = DEFAULT_FPS
     }
-    gFramesPerSecondFrac = 1.0 / gFramesPerSecond // calc fractional for multiplication
+    gEngine.framesPerSecondFrac = 1.0 / gEngine.framesPerSecond // calc fractional for multiplication
 
     Statics.time = currTime // reset for next time interval
 }

@@ -30,17 +30,12 @@ extern void gfxInitDefault(void);
 extern void gfxExit(void);
 extern _Bool aptMainLoop(void);
 
-// console_shim.c - prints a line to the bottom-screen console (mirrors
-// SDL_Log's own output, but callable from Swift, which can't call
-// variadic C functions like SDL_Log directly). Used to insert verbose
-// checkpoint logging into the Swift boot sequence for bisecting boot
-// hangs/crashes that don't throw a catchable C++ exception. Only exists
-// under -DDEBUGLOG (defined by the Makefile's DEBUGLOG=1 default for both
-// Swift and C) - every call site is gated behind the same flag, so
-// flipping it off removes all logging code from the binary.
-#ifdef DEBUGLOG
-extern void DebugLog(const char *message);
-#endif
+// DebugLog (implemented in Swift, BottomLog3DS.swift - bottom-screen log
+// view in the game font + SD-card file) and DebugLogFile3DS (the file
+// sink, console_shim.c). DebugLog only exists under -DDEBUGLOG; every
+// call site is gated behind the same flag, so flipping it off removes
+// all checkpoint-logging code from the binary.
+#include "console_shim.h" 
 #define NANOSAUR_3DS_KEY_START 8 // BIT(3), from libctru's hid.h KEY_START - not included via <3ds.h> here (see above)
 
 // picaGL's real GPU init/screen-select/swap, for GLRenderBackend's

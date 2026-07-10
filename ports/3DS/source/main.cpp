@@ -81,31 +81,16 @@ int main()
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
-    // Under DEBUGLOG: bottom-screen console mirroring every SDL_Log call, so
-    // the game's own extensive existing SDL_Log usage (not just fatal
-    // errors) is visible live during boot instead of guessing blind - the
-    // console log file Azahar itself writes never picks up guest output.
-    // Without DEBUGLOG: the SDL_Log mirror only writes to the SD-card log
-    // file (no console), leaving the bottom screen free for the game.
-    Console3DS_Init();
-
-#ifdef DEBUGLOG
-    {
-        char msg[128];
-        SDL_snprintf(msg, sizeof(msg), "heap_size=%u (%u MiB) linear_heap_size=%u (%u MiB)",
-            __ctru_heap_size, __ctru_heap_size / (1024 * 1024),
-            __ctru_linear_heap_size, __ctru_linear_heap_size / (1024 * 1024));
-        DebugLog(msg);
-    }
-#else
-    // The debug console isn't occupying the bottom screen, so give it to
-    // the game: an SDL software-rendered window on SDL's second display
-    // (the n3ds video driver exposes GFX_TOP and GFX_BOTTOM as two
-    // displays, and binds a window to the screen of the display it's
-    // created on). picaGL keeps the TOP screen exclusively; the bottom
-    // shows plain images only (menu background now, minimap later - see
-    // OGL_Support.swift's 3DS dual-screen branches). Mutually exclusive
-    // with DEBUGLOG by construction: both want the bottom screen.
+    // Bottom-screen window: SDL software-rendered, images/text only, on
+    // SDL's second display (the n3ds video driver exposes GFX_TOP and
+    // GFX_BOTTOM as two displays, and binds a window to the screen of the
+    // display it's created on). picaGL keeps the TOP screen exclusively.
+    // What the bottom window SHOWS depends on the build:
+    //   DEBUGLOG:  the DebugLog view - every log line rendered in the
+    //              game's own font (Source/System/BottomLog3DS.swift).
+    //   otherwise: dual-screen mode - menu background (and, eventually,
+    //              the overhead minimap) via OGL_Support.swift's 3DS
+    //              dual-screen branches.
     {
         int numDisplays = 0;
         SDL_DisplayID *displays = SDL_GetDisplays(&numDisplays);
@@ -121,9 +106,25 @@ int main()
             SDL_DestroyProperties(props);
         }
         SDL_free(displays);
-
-        gDualScreenMode = (gSDLWindow2 != NULL) ? 1 : 0;
     }
+
+    // Hook SDL_Log into the log sinks (SD-card file always; bottom-screen
+    // log view too under DEBUGLOG).
+    Console3DS_Init();
+
+#ifdef DEBUGLOG
+    {
+        char msg[128];
+        SDL_snprintf(msg, sizeof(msg), "heap_size=%u (%u MiB) linear_heap_size=%u (%u MiB)",
+            __ctru_heap_size, __ctru_heap_size / (1024 * 1024),
+            __ctru_linear_heap_size, __ctru_linear_heap_size / (1024 * 1024));
+        DebugLog(msg);
+    }
+#else
+    // The bottom screen isn't showing logs, so give it to the game
+    // (dual-screen mode). Mutually exclusive with DEBUGLOG by
+    // construction: both want the bottom screen.
+    gDualScreenMode = (gSDLWindow2 != NULL) ? 1 : 0;
 #endif
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()

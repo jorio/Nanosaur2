@@ -931,16 +931,6 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     }
     #endif
 
-    #if NANOSAUR_3DS
-    // TEMP DIAGNOSTIC (remove once the black-3D-scene bug is fixed): draw
-    // one immediate-mode magenta triangle (left) and one vertex-array cyan
-    // triangle (right) on top of every frame, with texture/depth/alpha-test
-    // off. Which one shows up splits the fault: neither -> raster/present
-    // problem; magenta only -> the glDrawElements path is broken; both ->
-    // the scene's own state (matrices/culling/texenv) is the problem.
-    drawDiagnosticTriangles()
-    #endif
-
     if isStereoShutter() {
         DrawBlueLine(gEngine.window.width, gEngine.window.height)
     }
@@ -981,16 +971,20 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 // feedback_embedded_swift_lazy_globals).
 private var gBottomScreenBackground: UnsafeMutablePointer<SDL_Surface>?
 
-// Decodes <partialPath>.jpg into an SDL surface (RGBA8 via stb_image -
-// same decode path as OGL_TextureMap_LoadImageFile, but the pixels go to
-// an SDL software surface instead of a GL texture).
-private func loadSDLSurface3DS(_ partialPath: String) -> UnsafeMutablePointer<SDL_Surface>? {
+// Decodes <partialPath>.jpg (or .png) into an SDL surface (RGBA8 via
+// stb_image - same decode path as OGL_TextureMap_LoadImageFile, but the
+// pixels go to an SDL software surface instead of a GL texture). Also
+// used by the bottom-screen DebugLog console (BottomLog3DS.swift).
+func LoadSDLSurface3DS(_ partialPath: String) -> UnsafeMutablePointer<SDL_Surface>? {
     var dummySpec = FSSpec()
-    let jpgPath = partialPath + ".jpg"
-    guard kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec) else { return nil }
+    var path = partialPath + ".jpg"
+    if kNoErr != SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) {
+        path = partialPath + ".png"
+        guard kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) else { return nil }
+    }
 
     var length = 0
-    guard let data = LoadDataFile(jpgPath, &length) else { return nil }
+    guard let data = LoadDataFile(path, &length) else { return nil }
     defer { SafeDisposePtr(UnsafeMutableRawPointer(data)) }
 
     var w: Int32 = 0
@@ -1011,7 +1005,7 @@ func DrawBottomScreenBackground3DS() {
     guard let window2 = gSDLWindow2, let winSurf = SDL_GetWindowSurface(window2) else { return }
 
     if gBottomScreenBackground == nil {
-        gBottomScreenBackground = loadSDLSurface3DS(":Sprites:menu:menuback")
+        gBottomScreenBackground = LoadSDLSurface3DS(":Sprites:menu:menuback")
     }
 
     if let bg = gBottomScreenBackground {
@@ -1020,66 +1014,6 @@ func DrawBottomScreenBackground3DS() {
         _ = SDL_FillSurfaceRect(winSurf, nil, 0) // black fallback
     }
     _ = SDL_UpdateWindowSurface(window2)
-}
-#endif
-
-#if NANOSAUR_3DS
-// TEMP DIAGNOSTIC (see call site in OGL_DrawScene). Deliberately uses raw
-// gl* calls (not the cached OGL_* wrappers) so no state cache can skip
-// anything, and static buffers so no allocation happens per frame.
-private var gDiagPoints: [OGLPoint3D] = [
-    OGLPoint3D(x: -0.9, y: -0.9, z: 0), OGLPoint3D(x: -0.5, y: -0.9, z: 0), OGLPoint3D(x: -0.7, y: -0.5, z: 0),
-    OGLPoint3D(x: 0.5, y: -0.9, z: 0), OGLPoint3D(x: 0.9, y: -0.9, z: 0), OGLPoint3D(x: 0.7, y: -0.5, z: 0),
-]
-private var gDiagTris: [MOTriangleIndecies] = [MOTriangleIndecies(vertexIndices: (3, 4, 5))]
-
-private func drawDiagnosticTriangles() {
-    glDisable(GLenum(GL_TEXTURE_2D))
-    glDisable(GLenum(GL_DEPTH_TEST))
-    glDisable(GLenum(GL_ALPHA_TEST))
-    glDisable(GLenum(GL_CULL_FACE))
-    glDisable(GLenum(GL_BLEND))
-
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPushMatrix()
-    glLoadIdentity()
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPushMatrix()
-    glLoadIdentity()
-
-    // Immediate-mode magenta triangle (bottom-left)
-    glColor4f(1, 0, 1, 1)
-    glBegin(GLenum(GL_TRIANGLES))
-    glVertex3f(gDiagPoints[0].x, gDiagPoints[0].y, 0)
-    glVertex3f(gDiagPoints[1].x, gDiagPoints[1].y, 0)
-    glVertex3f(gDiagPoints[2].x, gDiagPoints[2].y, 0)
-    glEnd()
-
-    // Vertex-array cyan triangle (bottom-right), through the same
-    // drawIndexedGeometry path the whole 3D scene uses
-    glColor4f(0, 1, 1, 1)
-    gDiagPoints.withUnsafeBufferPointer { pts in
-        gDiagTris.withUnsafeBufferPointer { tris in
-            gEngine.renderer.drawIndexedGeometry(
-                points: pts.baseAddress!,
-                normals: nil,
-                colors: nil,
-                uv0: nil,
-                uv1: nil,
-                triangles: tris.baseAddress!,
-                numTriangles: 1)
-        }
-    }
-
-    glMatrixMode(GLenum(GL_PROJECTION))
-    glPopMatrix()
-    glMatrixMode(GLenum(GL_MODELVIEW))
-    glPopMatrix()
-
-    // Force the state caches to re-issue whatever the next frame needs
-    gEngine.view.stateTexture2D = false
-    gEngine.view.stateBlend = false
-    gEngine.view.stateColor = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
 }
 #endif
 

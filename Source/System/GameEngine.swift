@@ -21,6 +21,12 @@ final class GameEngine {
 
     /// Collision-detection scratch (see Collision.swift).
     let collision = CollisionSystem()
+
+    /// Terrain, terrain splines, fences, and water (see Source/Terrain/).
+    let terrain = TerrainSystem()
+    let splines = SplineSystem()
+    let fences = FenceSystem()
+    let water = WaterSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

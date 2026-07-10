@@ -284,8 +284,8 @@ private func moveConfettiGroups() {
                             coord[p].y = y
                             delta[p].y *= -0.4
 
-                            delta[p].x += gRecentTerrainNormal.x * 300 // reflect off of surface
-                            delta[p].z += gRecentTerrainNormal.z * 300
+                            delta[p].x += gEngine.terrain.recentTerrainNormal.x * 300 // reflect off of surface
+                            delta[p].z += gEngine.terrain.recentTerrainNormal.z * 300
 
                             if flags & UInt32(PARTICLE_FLAGS_DISPERSEIFBOUNCE) != 0 { // see if disperse on impact
                                 delta[p].y *= 0.4

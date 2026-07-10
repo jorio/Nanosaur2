@@ -10,7 +10,7 @@
 
 var gNewParticleGroupDef = NewParticleGroupDefType()
 
-private let fireBlastRadius: Float = gTerrainPolygonSize * 1.5 // unused by any ported call site yet, kept for parity
+private let fireBlastRadius: Float = gEngine.terrain.polygonSize * 1.5 // unused by any ported call site yet, kept for parity
 
 private let fireTimer: Float = 0.05
 private let smokeTimer: Float = 0.07
@@ -499,8 +499,8 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
                             coord[p].y = y
                             delta[p].y *= -0.4
 
-                            delta[p].x += gRecentTerrainNormal.x * 300.0 // reflect off of surface
-                            delta[p].z += gRecentTerrainNormal.z * 300.0
+                            delta[p].x += gEngine.terrain.recentTerrainNormal.x * 300.0 // reflect off of surface
+                            delta[p].z += gEngine.terrain.recentTerrainNormal.z * 300.0
 
                             if flags & UInt32(PARTICLE_FLAGS_DISPERSEIFBOUNCE) != 0 { // see if disperse on impact
                                 delta[p].y *= 0.4

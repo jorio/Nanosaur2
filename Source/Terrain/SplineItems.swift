@@ -31,14 +31,26 @@ struct File_SplineDefType {
     var bBox = Rect()
 }
 
-var gSplineList: UnsafeMutablePointer<SplineDefType>!
-var gNumSplines: Int = 0
-
 private let maxSplineObjects = 100
 private let maxSplineItemNum = 49 // for error checking!
 
-private var gNumSplineObjects = 0
-private var gSplineObjectList = [UnsafeMutablePointer<ObjNode>?](repeating: nil, count: maxSplineObjects)
+/// Terrain-spline state plus SplineManager.swift's custom-spline slots.
+/// Owned by GameEngine as `gEngine.splines`.
+final class SplineSystem {
+    var splineList: UnsafeMutablePointer<SplineDefType>!
+    var numSplines: Int = 0
+
+    fileprivate var numSplineObjects = 0
+    fileprivate var splineObjectList = [UnsafeMutablePointer<ObjNode>?](repeating: nil, count: maxSplineObjects)
+
+    // SplineManager.swift's custom-spline slot buffer (permanent, never
+    // freed; GetCustomSplineSlot hands out stable pointers into it)
+    let customSplinesBuf: UnsafeMutablePointer<CustomSplineType> = {
+        let buf = UnsafeMutablePointer<CustomSplineType>.allocate(capacity: 40)
+        buf.initialize(repeating: CustomSplineType(), count: 40)
+        return buf
+    }()
+}
 
 private func nilPrime(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemType>!) -> UInt8 {
     return 0
@@ -102,24 +114,24 @@ private let gSplineItemPrimeRoutines: [(Int, UnsafeMutablePointer<SplineItemType
 func PrimeSplines() {
     // ADJUST SPLINE TO GAME COORDINATES
 
-    for s in 0..<gNumSplines {
-        let points = gSplineList[s].pointList!
+    for s in 0..<gEngine.splines.numSplines {
+        let points = gEngine.splines.splineList[s].pointList!
 
-        for i in 0..<Int(gSplineList[s].numPoints) {
-            points[i].x *= gMapToUnitValue
-            points[i].z *= gMapToUnitValue
+        for i in 0..<Int(gEngine.splines.splineList[s].numPoints) {
+            points[i].x *= gEngine.terrain.mapToUnitValue
+            points[i].z *= gEngine.terrain.mapToUnitValue
         }
     }
 
     // CLEAR SPLINE OBJECT LIST
 
-    gNumSplineObjects = 0 // no items in spline object node list yet
+    gEngine.splines.numSplineObjects = 0 // no items in spline object node list yet
 
-    for s in 0..<gNumSplines {
+    for s in 0..<gEngine.splines.numSplines {
         // SCAN ALL ITEMS ON THIS SPLINE
 
-        for i in 0..<Int(gSplineList[s].numItems) {
-            let itemPtr = gSplineList[s].itemList! + i // point to this item
+        for i in 0..<Int(gEngine.splines.splineList[s].numItems) {
+            let itemPtr = gEngine.splines.splineList[s].itemList! + i // point to this item
             let type = Int(itemPtr.pointee.type) // get item type
             if type > maxSplineItemNum {
                 SwFatal("PrimeSplines: type > MAX_SPLINE_ITEM_NUM")
@@ -200,13 +212,13 @@ func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!) -> U
 
     // IF IS ON AN ACTIVE SUPERTILE, THEN ASSUME VISIBLE
 
-    let row = Int(theNode.pointee.Coord.z * gTerrainSuperTileUnitSizeFrac) // calc supertile row,col
-    let col = Int(theNode.pointee.Coord.x * gTerrainSuperTileUnitSizeFrac)
+    let row = Int(theNode.pointee.Coord.z * gEngine.terrain.superTileUnitSizeFrac) // calc supertile row,col
+    let col = Int(theNode.pointee.Coord.x * gEngine.terrain.superTileUnitSizeFrac)
 
-    if (row < 0) || (row >= gNumSuperTilesDeep) || (col < 0) || (col >= gNumSuperTilesWide) { // make sure in bounds
+    if (row < 0) || (row >= gEngine.terrain.numSuperTilesDeep) || (col < 0) || (col >= gEngine.terrain.numSuperTilesWide) { // make sure in bounds
         visible = false
     } else {
-        if gSuperTileStatusGrid[row]![col].playerHereFlags != 0 {
+        if gEngine.terrain.superTileStatusGrid[row]![col].playerHereFlags != 0 {
             visible = true
         } else {
             visible = false
@@ -233,14 +245,14 @@ func IsSplineItemOnActiveTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!) -> U
 // Called by object's primer function to add the detached node to the spline item master
 // list so that it can be maintained.
 func AddToSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!, _ setAim: UInt8) {
-    if gNumSplineObjects >= maxSplineObjects {
+    if gEngine.splines.numSplineObjects >= maxSplineObjects {
         SwFatal("AddToSplineObjectList: too many spline objects")
     }
 
-    theNode.pointee.SplineObjectIndex = Int16(gNumSplineObjects) // remember where in list this is
+    theNode.pointee.SplineObjectIndex = Int16(gEngine.splines.numSplineObjects) // remember where in list this is
 
-    gSplineObjectList[gNumSplineObjects] = theNode
-    gNumSplineObjects += 1
+    gEngine.splines.splineObjectList[gEngine.splines.numSplineObjects] = theNode
+    gEngine.splines.numSplineObjects += 1
 
     // SET INITIAL AIM
 
@@ -253,7 +265,7 @@ func SetSplineAim(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     var x: Float = 0
     var z: Float = 0
 
-    GetCoordOnSpline2(&gSplineList[Int(theNode.pointee.SplineNum)], theNode.pointee.SplinePlacement, 3, &x, &z) // get coord of next point on spline
+    GetCoordOnSpline2(&gEngine.splines.splineList[Int(theNode.pointee.SplineNum)], theNode.pointee.SplinePlacement, 3, &x, &z) // get coord of next point on spline
     theNode.pointee.Rot.y = CalcYAngleFromPointToPoint(theNode.pointee.Rot.y, theNode.pointee.Coord.x, theNode.pointee.Coord.z, x, z) // calc y rot aim
 }
 
@@ -263,7 +275,7 @@ func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UI
     theNode.clearStatus(STATUS_BIT_ONSPLINE) // make sure this flag is off
 
     if theNode.pointee.SplineObjectIndex != -1 {
-        gSplineObjectList[Int(theNode.pointee.SplineObjectIndex)] = nil // nil out the entry into the list
+        gEngine.splines.splineObjectList[Int(theNode.pointee.SplineObjectIndex)] = nil // nil out the entry into the list
         theNode.pointee.SplineObjectIndex = -1
         theNode.pointee.SplineItemPtr = nil
         theNode.pointee.SplineMoveCall = nil
@@ -275,18 +287,18 @@ func RemoveFromSplineObjectList(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UI
 
 // Called by level cleanup to dispose of the detached ObjNode's in this list.
 func EmptySplineObjectList() {
-    for i in 0..<gNumSplineObjects {
-        if let o = gSplineObjectList[i] {
+    for i in 0..<gEngine.splines.numSplineObjects {
+        if let o = gEngine.splines.splineObjectList[i] {
             DeleteObject(o) // This will dispose of all memory used by the node.
             // RemoveFromSplineObjectList will be called by it.
         }
     }
-    gNumSplineObjects = 0
+    gEngine.splines.numSplineObjects = 0
 }
 
 func MoveSplineObjects() {
-    for i in 0..<gNumSplineObjects {
-        guard let theNode = gSplineObjectList[i] else { continue }
+    for i in 0..<gEngine.splines.numSplineObjects {
+        guard let theNode = gEngine.splines.splineObjectList[i] else { continue }
 
         // UPDATE SKELETON ANIMATION
 
@@ -320,7 +332,7 @@ func GetObjectCoordOnSpline(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         placement = 0.999
     }
 
-    let splinePtr = gSplineList + Int(theNode.pointee.SplineNum) // point to the spline
+    let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
 
     GetCoordOnSpline(splinePtr, placement, &theNode.pointee.Coord.x, &theNode.pointee.Coord.z) // get coord
 
@@ -337,7 +349,7 @@ func GetObjectCoordOnSpline2(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Uns
         placement = 0.999
     }
 
-    let splinePtr = gSplineList + Int(theNode.pointee.SplineNum) // point to the spline
+    let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
 
     GetCoordOnSpline(splinePtr, placement, x, z) // get coord
 }
@@ -349,7 +361,7 @@ func IncreaseSplineIndex(_ theNode: UnsafeMutablePointer<ObjNode>!, _ speed: Flo
     var speed = speed
     speed *= gFramesPerSecondFrac
 
-    let splinePtr = gSplineList + Int(theNode.pointee.SplineNum) // point to the spline
+    let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline
 
     theNode.pointee.SplinePlacement += speed / numPointsInSpline
@@ -368,7 +380,7 @@ func IncreaseSplineIndexZigZag(_ theNode: UnsafeMutablePointer<ObjNode>!, _ spee
     var speed = speed
     speed *= gFramesPerSecondFrac
 
-    let splinePtr = gSplineList + Int(theNode.pointee.SplineNum) // point to the spline
+    let splinePtr = gEngine.splines.splineList + Int(theNode.pointee.SplineNum) // point to the spline
     let numPointsInSpline = Float(splinePtr.pointee.numPoints) // get # points in the spline
 
     // GOING BACKWARD

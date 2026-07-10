@@ -255,7 +255,7 @@ private func initLevel() {
     viewDef.camera.hither = 20
     viewDef.camera.fov = GetSplitscreenPaneFOV()
     viewDef.view.clearBackBuffer = 0
-    viewDef.camera.yon = (Float(gSuperTileActiveRange) * Float(SUPERTILE_SIZE) * gTerrainPolygonSize) * 0.95
+    viewDef.camera.yon = (Float(gEngine.terrain.superTileActiveRange) * Float(SUPERTILE_SIZE) * gEngine.terrain.polygonSize) * 0.95
 
     switch Int16(gLevelNum) {
     case Int16(LevelNum.adventure2.rawValue), Int16(LevelNum.race2.rawValue), Int16(LevelNum.battle2.rawValue):
@@ -441,7 +441,7 @@ private func playLevel() {
 
         gGameFrameNum += 1
         gGameLevelTimer += fps
-        gDisableHiccupTimer = 0 // reenable this after the 1st frame
+        gEngine.terrain.disableHiccupTimer = 0 // reenable this after the 1st frame
 
         // SEE IF RESET PLAYER NOW
 
@@ -646,7 +646,7 @@ func PrimeTimeDemoSpline(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Splin
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE DUMMY SPLINE TRACKER OBJECT
 

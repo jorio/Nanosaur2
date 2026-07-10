@@ -161,7 +161,7 @@ func InitPlayerAtStartOfLevel() {
         pi.pointee.wrongWay = 0
 
         pi.pointee.lapNum = -1 // start @ -1 since we cross the finish line @ start
-        pi.pointee.raceCheckpointNum = Int16(gNumLineMarkers) - 1
+        pi.pointee.raceCheckpointNum = Int16(gEngine.terrain.numLineMarkers) - 1
         pi.pointee.place = Int16(i)
         pi.pointee.distToNextCheckpoint = 0
         pi.pointee.raceComplete = 0

@@ -1,6 +1,6 @@
 // Water.swift - Port of Water.c to Swift
 //
-// gNumWaterPatches, gNumWaterDrawn, gWaterListHandle, gWaterList,
+// gEngine.water.numPatches, gEngine.water.numDrawn, gEngine.water.listHandle, gEngine.water.list,
 // gWaterTriMeshData[], and gWaterBBox[] are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore -
 // the old comment claiming Pick.c/OGL_Support.c/Terrain.c/Player_Terrain.c
@@ -11,7 +11,7 @@
 // GetSuperTileMemoryEntry etc.), with the accessor functions reimplemented
 // in plain Swift under the same names/signatures so their call sites in
 // Pick.swift/Player_Terrain.swift/Enemy.swift didn't need to change.
-// Everything else (gWaterInitY, gWaterVertexArrays, gWaterUVs, the ripple
+// Everything else (gEngine.water.initY, gWaterVertexArrays, gEngine.water.uvs, the ripple
 // list, and the lookup tables) was `static` (file-private) in C, so it
 // stays private Swift state.
 //
@@ -21,52 +21,57 @@
 // water vertex data (points/triangles/uvs) is just kept in flat allocated
 // buffers instead of replicating the exact WaterVertexArraysType layout.
 
-var gNumWaterPatches: Int = 0
-var gNumWaterDrawn: Int16 = 0
-var gWaterListHandle: UnsafeMutablePointer<UnsafeMutablePointer<WaterDefType>?>!
-var gWaterList: UnsafeMutablePointer<WaterDefType>!
-
-private let gWaterTriMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
-    let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 60)
-    buf.initialize(repeating: MOVertexArrayData(), count: 60)
-    return buf
-}()
-func GetWaterTriMeshDataEntry(_ i: Int32) -> UnsafeMutablePointer<MOVertexArrayData> {
-    gWaterTriMeshDataBuf + Int(i)
-}
-
-private let gWaterBBoxBuf: UnsafeMutablePointer<OGLBoundingBox> = {
-    let buf = UnsafeMutablePointer<OGLBoundingBox>.allocate(capacity: 60)
-    buf.initialize(repeating: OGLBoundingBox(), count: 60)
-    return buf
-}()
-func GetWaterBBoxEntry(_ i: Int32) -> UnsafeMutablePointer<OGLBoundingBox>! {
-    gWaterBBoxBuf + Int(i)
-}
-
 private let MAX_WATER = 60
 private let MAX_NUBS_IN_WATER = 80
 private let MAX_RIPPLES = 100
-
-// MARK: - Water vertex data (flat buffers, [MAX_WATER][MAX_NUBS_IN_WATER*2])
 
 @inline(__always) private func waterIdx(_ f: Int, _ i: Int) -> Int {
     f * (MAX_NUBS_IN_WATER * 2) + i
 }
 
-private let gWaterPointsBuf = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLPoint3D.self)
-private let gWaterTrianglesBuf = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
-private let gWaterUvs1Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLTextureCoord.self)
-private let gWaterUvs2Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLTextureCoord.self)
+/// Water/ripple state. Owned by GameEngine as `gEngine.water`.
+final class WaterSystem {
+    var numPatches: Int = 0
+    var numDrawn: Int16 = 0
+    var listHandle: UnsafeMutablePointer<UnsafeMutablePointer<WaterDefType>?>!
+    var list: UnsafeMutablePointer<WaterDefType>!
 
-private var gWaterInitY = [Float](repeating: 0, count: MAX_WATER)
+    fileprivate let triMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
+        let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 60)
+        buf.initialize(repeating: MOVertexArrayData(), count: 60)
+        return buf
+    }()
 
-// UV'S FOR WATER TYPES ([2] is for the two layers we can have)
-private var gWaterUVs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: WaterType.allCases.count)
+    fileprivate let bboxBuf: UnsafeMutablePointer<OGLBoundingBox> = {
+        let buf = UnsafeMutablePointer<OGLBoundingBox>.allocate(capacity: 60)
+        buf.initialize(repeating: OGLBoundingBox(), count: 60)
+        return buf
+    }()
 
-// RIPPLES
-private var gNumRipples = 0
-private var gRippleEventObj: UnsafeMutablePointer<ObjNode>?
+    // Water vertex data (flat buffers, [MAX_WATER][MAX_NUBS_IN_WATER*2])
+    fileprivate let pointsBuf = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLPoint3D.self)
+    fileprivate let trianglesBuf = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
+    fileprivate let uvs1Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLTextureCoord.self)
+    fileprivate let uvs2Buf = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_WATER * MAX_NUBS_IN_WATER * 2)!.assumingMemoryBound(to: OGLTextureCoord.self)
+
+    fileprivate var initY = [Float](repeating: 0, count: MAX_WATER)
+
+    // UV'S FOR WATER TYPES ([2] is for the two layers we can have)
+    fileprivate var uvs: [[OGLTextureCoord]] = Array(repeating: Array(repeating: OGLTextureCoord(), count: 2), count: WaterType.allCases.count)
+
+    // RIPPLES
+    fileprivate var numRipples = 0
+    fileprivate var rippleEventObj: UnsafeMutablePointer<ObjNode>?
+    fileprivate var rippleList: InlineArray<100, RippleRecord> = InlineArray(repeating: RippleRecord())
+}
+
+func GetWaterTriMeshDataEntry(_ i: Int32) -> UnsafeMutablePointer<MOVertexArrayData> {
+    gEngine.water.triMeshDataBuf + Int(i)
+}
+
+func GetWaterBBoxEntry(_ i: Int32) -> UnsafeMutablePointer<OGLBoundingBox>! {
+    gEngine.water.bboxBuf + Int(i)
+}
 
 private struct RippleRecord {
     var isUsed = false
@@ -76,11 +81,6 @@ private struct RippleRecord {
     var scale: Float = 0
     var scaleSpeed: Float = 0
 }
-
-// NOTE: keep this literal count (100) in sync with MAX_RIPPLES above -
-// InlineArray's size is a compile-time generic parameter, so it can't
-// reference the `let` constant directly.
-private var gRippleList: InlineArray<100, RippleRecord> = InlineArray(repeating: RippleRecord())
 
 // MARK: - Tables
 
@@ -120,14 +120,14 @@ private let gWaterFixedYCoord: [Float] = [
 // MARK: - Dispose water
 
 func DisposeWater() {
-    guard let handle = gWaterListHandle else {
+    guard let handle = gEngine.water.listHandle else {
         return
     }
 
     DisposeWaterListHandle(handle)
-    gWaterListHandle = nil
-    gWaterList = nil
-    gNumWaterPatches = 0
+    gEngine.water.listHandle = nil
+    gEngine.water.list = nil
+    gEngine.water.numPatches = 0
 }
 
 // MARK: - Prime water
@@ -137,19 +137,19 @@ func DisposeWater() {
 func PrimeTerrainWater() {
     initRipples()
 
-    if gNumWaterPatches > MAX_WATER {
-        SwFatal("PrimeTerrainWater: gNumWaterPatches > MAX_WATER")
+    if gEngine.water.numPatches > MAX_WATER {
+        SwFatal("PrimeTerrainWater: gEngine.water.numPatches > MAX_WATER")
     }
 
     // INIT UVS
     for (i, _) in WaterType.allCases.enumerated() {
-        gWaterUVs[i][0].u = 0; gWaterUVs[i][0].v = 0
-        gWaterUVs[i][1].u = 0; gWaterUVs[i][1].v = 0
+        gEngine.water.uvs[i][0].u = 0; gEngine.water.uvs[i][0].v = 0
+        gEngine.water.uvs[i][1].u = 0; gEngine.water.uvs[i][1].v = 0
     }
 
     // ADJUST TO GAME COORDINATES
-    for f in 0..<Int(gNumWaterPatches) {
-        let water = gWaterList! + f
+    for f in 0..<Int(gEngine.water.numPatches) {
+        let water = gEngine.water.list! + f
         let nubs = nubListBase(water) // point to nub list
         var numNubs = Int(water.pointee.numNubs) // get # nubs in water
 
@@ -169,8 +169,8 @@ func PrimeTerrainWater() {
 
         // CONVERT TO WORLD COORDS
         for i in 0..<numNubs {
-            nubs[i].x *= gMapToUnitValue
-            nubs[i].y *= gMapToUnitValue
+            nubs[i].x *= gEngine.terrain.mapToUnitValue
+            nubs[i].y *= gEngine.terrain.mapToUnitValue
         }
 
         // CREATE VERTEX ARRAY
@@ -182,32 +182,32 @@ func PrimeTerrainWater() {
         }
         // FIND Y @ HOT SPOT
         else {
-            water.pointee.hotSpotX *= gMapToUnitValue
-            water.pointee.hotSpotZ *= gMapToUnitValue
+            water.pointee.hotSpotX *= gEngine.terrain.mapToUnitValue
+            water.pointee.hotSpotZ *= gEngine.terrain.mapToUnitValue
 
             y = GetTerrainY(water.pointee.hotSpotX, water.pointee.hotSpotZ)
         }
 
-        gWaterInitY[f] = y // save water's y coord
+        gEngine.water.initY[f] = y // save water's y coord
 
         for i in 0..<numNubs {
-            gWaterPointsBuf[waterIdx(f, i)].x = nubs[i].x
-            gWaterPointsBuf[waterIdx(f, i)].y = y
-            gWaterPointsBuf[waterIdx(f, i)].z = nubs[i].y
+            gEngine.water.pointsBuf[waterIdx(f, i)].x = nubs[i].x
+            gEngine.water.pointsBuf[waterIdx(f, i)].y = y
+            gEngine.water.pointsBuf[waterIdx(f, i)].z = nubs[i].y
         }
 
         // APPEND THE CENTER POINT TO THE POINT LIST
         var centerX: Float = 0, centerZ: Float = 0 // calc average of points
         for i in 0..<numNubs {
-            centerX += gWaterPointsBuf[waterIdx(f, i)].x
-            centerZ += gWaterPointsBuf[waterIdx(f, i)].z
+            centerX += gEngine.water.pointsBuf[waterIdx(f, i)].x
+            centerZ += gEngine.water.pointsBuf[waterIdx(f, i)].z
         }
         centerX /= Float(numNubs)
         centerZ /= Float(numNubs)
 
-        gWaterPointsBuf[waterIdx(f, numNubs)].x = centerX
-        gWaterPointsBuf[waterIdx(f, numNubs)].z = centerZ
-        gWaterPointsBuf[waterIdx(f, numNubs)].y = y
+        gEngine.water.pointsBuf[waterIdx(f, numNubs)].x = centerX
+        gEngine.water.pointsBuf[waterIdx(f, numNubs)].z = centerZ
+        gEngine.water.pointsBuf[waterIdx(f, numNubs)].y = y
     }
 
     // MAKE WATER GEOMETRY
@@ -231,9 +231,9 @@ func PrimeTerrainWater() {
 // MARK: - Make water geometry
 
 private func makeWaterGeometry() {
-    for f in 0..<Int(gNumWaterPatches) {
+    for f in 0..<Int(gEngine.water.numPatches) {
         // GET WATER INFO
-        let water = gWaterList! + f // point to this water
+        let water = gEngine.water.list! + f // point to this water
         let numNubs = Int(water.pointee.numNubs) // get # nubs in water (note: this is the # from the file, not including the extra center point we added earlier!)
         if numNubs < 3 {
             SwFatal("MakeWaterGeometry: numNubs < 3")
@@ -243,10 +243,10 @@ private func makeWaterGeometry() {
         // SET VERTEX ARRAY HEADER
         let tri = GetWaterTriMeshDataEntry(Int32(f))
         tri.pointee.VARtype = Int16(VertexArrayRangeType.userWater.rawValue)
-        tri.pointee.points = gWaterPointsBuf + waterIdx(f, 0)
-        tri.pointee.triangles = gWaterTrianglesBuf + waterIdx(f, 0)
-        tri.pointee.uvs.0 = gWaterUvs1Buf + waterIdx(f, 0)
-        tri.pointee.uvs.1 = gWaterUvs2Buf + waterIdx(f, 0)
+        tri.pointee.points = gEngine.water.pointsBuf + waterIdx(f, 0)
+        tri.pointee.triangles = gEngine.water.trianglesBuf + waterIdx(f, 0)
+        tri.pointee.uvs.0 = gEngine.water.uvs1Buf + waterIdx(f, 0)
+        tri.pointee.uvs.1 = gEngine.water.uvs2Buf + waterIdx(f, 0)
         tri.pointee.normals = nil
         tri.pointee.colorsFloat = nil
         tri.pointee.numPoints = Int32(numNubs + 1) // +1 is to include the extra center point
@@ -255,12 +255,12 @@ private func makeWaterGeometry() {
         // BUILD TRIANGLE INFO
         for i in 0..<Int(tri.pointee.numTriangles) {
             let idx = waterIdx(f, i)
-            gWaterTrianglesBuf[idx].vertexIndices.0 = UInt32(numNubs) // vertex 0 is always the radial center that we appended to the end of the list
-            gWaterTrianglesBuf[idx].vertexIndices.1 = UInt32(i)
-            gWaterTrianglesBuf[idx].vertexIndices.2 = UInt32(i + 1)
+            gEngine.water.trianglesBuf[idx].vertexIndices.0 = UInt32(numNubs) // vertex 0 is always the radial center that we appended to the end of the list
+            gEngine.water.trianglesBuf[idx].vertexIndices.1 = UInt32(i)
+            gEngine.water.trianglesBuf[idx].vertexIndices.2 = UInt32(i + 1)
 
-            if gWaterTrianglesBuf[idx].vertexIndices.2 == UInt32(numNubs) { // check for wrap back
-                gWaterTrianglesBuf[idx].vertexIndices.2 = 0
+            if gEngine.water.trianglesBuf[idx].vertexIndices.2 == UInt32(numNubs) { // check for wrap back
+                gEngine.water.trianglesBuf[idx].vertexIndices.2 = 0
             }
         }
 
@@ -280,9 +280,9 @@ private func makeWaterGeometry() {
 
         for i in 0..<numNubs {
             // GET COORDS
-            let x = gWaterPointsBuf[waterIdx(f, i)].x
-            let y = gWaterPointsBuf[waterIdx(f, i)].y
-            let z = gWaterPointsBuf[waterIdx(f, i)].z
+            let x = gEngine.water.pointsBuf[waterIdx(f, i)].x
+            let y = gEngine.water.pointsBuf[waterIdx(f, i)].y
+            let z = gEngine.water.pointsBuf[waterIdx(f, i)].z
 
             // CHECK BBOX
             if x < minX { minX = x } // find min/max bounds for bbox
@@ -305,13 +305,13 @@ private func makeWaterGeometry() {
 
         // BUILD UV's
         for i in 0...numNubs {
-            let x = gWaterPointsBuf[waterIdx(f, i)].x
-            let z = gWaterPointsBuf[waterIdx(f, i)].z
+            let x = gEngine.water.pointsBuf[waterIdx(f, i)].x
+            let z = gEngine.water.pointsBuf[waterIdx(f, i)].z
 
-            gWaterUvs1Buf[waterIdx(f, i)].u = x * 0.0005
-            gWaterUvs1Buf[waterIdx(f, i)].v = z * 0.0005
-            gWaterUvs2Buf[waterIdx(f, i)].u = x * 0.0004
-            gWaterUvs2Buf[waterIdx(f, i)].v = z * 0.0004
+            gEngine.water.uvs1Buf[waterIdx(f, i)].u = x * 0.0005
+            gEngine.water.uvs1Buf[waterIdx(f, i)].v = z * 0.0005
+            gEngine.water.uvs2Buf[waterIdx(f, i)].u = x * 0.0004
+            gEngine.water.uvs2Buf[waterIdx(f, i)].v = z * 0.0004
         }
     }
 }
@@ -328,58 +328,58 @@ private func moveWater() {
     for (i, waterType) in WaterType.allCases.enumerated() {
         switch waterType {
         case .green, .blue:
-            gWaterUVs[i][0].u += 0.02 * fps
-            gWaterUVs[i][0].v += 0.02 * fps
+            gEngine.water.uvs[i][0].u += 0.02 * fps
+            gEngine.water.uvs[i][0].v += 0.02 * fps
 
-            gWaterUVs[i][1].u -= 0.015 * fps
-            gWaterUVs[i][1].v += 0.025 * fps
+            gEngine.water.uvs[i][1].u -= 0.015 * fps
+            gEngine.water.uvs[i][1].v += 0.025 * fps
 
         case .lava:
-            gWaterUVs[i][0].u += 0.08 * fps
-            gWaterUVs[i][0].v += 0.03 * fps
+            gEngine.water.uvs[i][0].u += 0.08 * fps
+            gEngine.water.uvs[i][0].v += 0.03 * fps
 
-            gWaterUVs[i][1].u -= 0.06 * fps
-            gWaterUVs[i][1].v += 0.05 * fps
+            gEngine.water.uvs[i][1].u -= 0.06 * fps
+            gEngine.water.uvs[i][1].v += 0.05 * fps
 
         case .lavaDir0:
-            gWaterUVs[i][0].v += 0.02 * fps
-            gWaterUVs[i][1].v += 0.03 * fps
+            gEngine.water.uvs[i][0].v += 0.02 * fps
+            gEngine.water.uvs[i][1].v += 0.03 * fps
 
         case .lavaDir4:
-            gWaterUVs[i][0].v -= 0.02 * fps
-            gWaterUVs[i][1].v -= 0.03 * fps
+            gEngine.water.uvs[i][0].v -= 0.02 * fps
+            gEngine.water.uvs[i][1].v -= 0.03 * fps
 
         case .lavaDir2:
-            gWaterUVs[i][0].u -= 0.02 * fps
-            gWaterUVs[i][1].u -= 0.03 * fps
+            gEngine.water.uvs[i][0].u -= 0.02 * fps
+            gEngine.water.uvs[i][1].u -= 0.03 * fps
 
         case .lavaDir6:
-            gWaterUVs[i][0].u += 0.02 * fps
-            gWaterUVs[i][1].u += 0.03 * fps
+            gEngine.water.uvs[i][0].u += 0.02 * fps
+            gEngine.water.uvs[i][1].u += 0.03 * fps
 
         case .lavaDir1:
-            gWaterUVs[i][0].u -= 0.02 * fps
-            gWaterUVs[i][0].v += 0.02 * fps
-            gWaterUVs[i][1].u -= 0.03 * fps
-            gWaterUVs[i][1].v += 0.03 * fps
+            gEngine.water.uvs[i][0].u -= 0.02 * fps
+            gEngine.water.uvs[i][0].v += 0.02 * fps
+            gEngine.water.uvs[i][1].u -= 0.03 * fps
+            gEngine.water.uvs[i][1].v += 0.03 * fps
 
         case .lavaDir3:
-            gWaterUVs[i][0].u -= 0.02 * fps
-            gWaterUVs[i][0].v -= 0.02 * fps
-            gWaterUVs[i][1].u -= 0.03 * fps
-            gWaterUVs[i][1].v -= 0.03 * fps
+            gEngine.water.uvs[i][0].u -= 0.02 * fps
+            gEngine.water.uvs[i][0].v -= 0.02 * fps
+            gEngine.water.uvs[i][1].u -= 0.03 * fps
+            gEngine.water.uvs[i][1].v -= 0.03 * fps
 
         case .lavaDir5:
-            gWaterUVs[i][0].u += 0.02 * fps
-            gWaterUVs[i][0].v -= 0.02 * fps
-            gWaterUVs[i][1].u += 0.03 * fps
-            gWaterUVs[i][1].v -= 0.03 * fps
+            gEngine.water.uvs[i][0].u += 0.02 * fps
+            gEngine.water.uvs[i][0].v -= 0.02 * fps
+            gEngine.water.uvs[i][1].u += 0.03 * fps
+            gEngine.water.uvs[i][1].v -= 0.03 * fps
 
         case .lavaDir7:
-            gWaterUVs[i][0].u += 0.02 * fps
-            gWaterUVs[i][0].v += 0.02 * fps
-            gWaterUVs[i][1].u += 0.03 * fps
-            gWaterUVs[i][1].v += 0.03 * fps
+            gEngine.water.uvs[i][0].u += 0.02 * fps
+            gEngine.water.uvs[i][0].v += 0.02 * fps
+            gEngine.water.uvs[i][1].u += 0.03 * fps
+            gEngine.water.uvs[i][1].v += 0.03 * fps
 
         }
     }
@@ -395,10 +395,10 @@ private func drawWater() {
     var prevType = -1
 
     // DRAW EACH WATER
-    gNumWaterDrawn = 0
+    gEngine.water.numDrawn = 0
 
-    for f in 0..<Int(gNumWaterPatches) {
-        let waterType = Int(gWaterList![f].type)
+    for f in 0..<Int(gEngine.water.numPatches) {
+        let waterType = Int(gEngine.water.list![f].type)
 
         // DO BBOX CULLING
         if OGL_IsBBoxVisible(GetWaterBBoxEntry(Int32(f)), nil) != 0 {
@@ -415,17 +415,17 @@ private func drawWater() {
                 gEngine.renderer.matrixMode(.texture) // set texture matrix
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
                 gEngine.renderer.loadIdentity()
-                gEngine.renderer.translate(gWaterUVs[waterType][0].u, gWaterUVs[waterType][0].v, 0)
+                gEngine.renderer.translate(gEngine.water.uvs[waterType][0].u, gEngine.water.uvs[waterType][0].v, 0)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
                 gEngine.renderer.loadIdentity()
-                gEngine.renderer.translate(gWaterUVs[waterType][1].u, gWaterUVs[waterType][1].v, 0)
+                gEngine.renderer.translate(gEngine.water.uvs[waterType][1].u, gEngine.water.uvs[waterType][1].v, 0)
                 gEngine.renderer.matrixMode(.modelview)
                 OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
             }
 
             // DRAW IT
             MO_DrawGeometry_VertexArray(GetWaterTriMeshDataEntry(Int32(f)))
-            gNumWaterDrawn += 1
+            gEngine.water.numDrawn += 1
 
             prevType = waterType
         }
@@ -448,7 +448,7 @@ private func drawWater() {
 // MARK: - Do water collision detect
 
 func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x: Float, _ y: Float, _ z: Float, _ patchNum: UnsafeMutablePointer<Int32>?) -> UInt8 {
-    for i in 0..<Int(gNumWaterPatches) {
+    for i in 0..<Int(gEngine.water.numPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
 
@@ -473,7 +473,7 @@ func DoWaterCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ x: Float
 // Returns true if x/z coords are over a water bbox
 
 func IsXZOverWater(_ x: Float, _ z: Float) -> UInt8 {
-    for i in 0..<Int(gNumWaterPatches) {
+    for i in 0..<Int(gEngine.water.numPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
 
@@ -490,7 +490,7 @@ func IsXZOverWater(_ x: Float, _ z: Float) -> UInt8 {
 // returns TRUE if over water.
 
 func GetWaterY(_ x: Float, _ z: Float, _ y: UnsafeMutablePointer<Float>) -> UInt8 {
-    for i in 0..<Int(gNumWaterPatches) {
+    for i in 0..<Int(gEngine.water.numPatches) {
         // QUICK CHECK TO SEE IF IS IN BBOX
         let bbox = GetWaterBBoxEntry(Int32(i))!.pointee
 
@@ -511,11 +511,11 @@ func GetWaterY(_ x: Float, _ z: Float, _ y: UnsafeMutablePointer<Float>) -> UInt
 // MARK: - Ripple
 
 private func initRipples() {
-    gNumRipples = 0
-    gRippleEventObj = nil
+    gEngine.water.numRipples = 0
+    gEngine.water.rippleEventObj = nil
 
     for i in 0..<MAX_RIPPLES {
-        gRippleList[i].isUsed = false
+        gEngine.water.rippleList[i].isUsed = false
     }
 }
 
@@ -530,7 +530,7 @@ func CreateNewRipple(_ where_: UnsafePointer<OGLPoint3D>, _ baseScale: Float, _ 
     y += 0.5 // raise ripple off water
 
     // CREATE RIPPLE EVENT OBJECT
-    if gRippleEventObj == nil {
+    if gEngine.water.rippleEventObj == nil {
         var def = NewObjectDefinitionType()
         def.genre = UInt8(EVENT_GENRE)
         def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG)
@@ -538,27 +538,27 @@ func CreateNewRipple(_ where_: UnsafePointer<OGLPoint3D>, _ baseScale: Float, _ 
         def.scale = 1
         def.moveCall = cMoveRippleEvent
         def.drawCall = cDrawRipples
-        gRippleEventObj = MakeNewObject(&def)
+        gEngine.water.rippleEventObj = MakeNewObject(&def)
     }
 
     // ADD TO RIPPLE LIST
 
     // SCAN FOR FREE RIPPLE SLOT
-    guard let slot = (0..<MAX_RIPPLES).first(where: { !gRippleList[$0].isUsed }) else {
+    guard let slot = (0..<MAX_RIPPLES).first(where: { !gEngine.water.rippleList[$0].isUsed }) else {
         return // no free slots
     }
 
-    gRippleList[slot].isUsed = true
-    gRippleList[slot].coord.x = x
-    gRippleList[slot].coord.y = y
-    gRippleList[slot].coord.z = z
+    gEngine.water.rippleList[slot].isUsed = true
+    gEngine.water.rippleList[slot].coord.x = x
+    gEngine.water.rippleList[slot].coord.y = y
+    gEngine.water.rippleList[slot].coord.z = z
 
-    gRippleList[slot].scale = baseScale + RandomFloat() * 30.0
-    gRippleList[slot].scaleSpeed = scaleSpeed
-    gRippleList[slot].alpha = 0.999 - (RandomFloat() * 0.2)
-    gRippleList[slot].fadeRate = fadeRate
+    gEngine.water.rippleList[slot].scale = baseScale + RandomFloat() * 30.0
+    gEngine.water.rippleList[slot].scaleSpeed = scaleSpeed
+    gEngine.water.rippleList[slot].alpha = 0.999 - (RandomFloat() * 0.2)
+    gEngine.water.rippleList[slot].fadeRate = fadeRate
 
-    gNumRipples += 1
+    gEngine.water.numRipples += 1
 }
 
 func CreateMultipleNewRipples(_ x: Float, _ z: Float, _ baseScale: Float, _ scaleSpeed: Float, _ fadeRate: Float, _ numRipples: Int16) {
@@ -571,7 +571,7 @@ func CreateMultipleNewRipples(_ x: Float, _ z: Float, _ baseScale: Float, _ scal
     let y = y2 + 0.5 // raise ripple off water
 
     // CREATE RIPPLE EVENT OBJECT
-    if gRippleEventObj == nil {
+    if gEngine.water.rippleEventObj == nil {
         var def = NewObjectDefinitionType()
         def.genre = UInt8(EVENT_GENRE)
         def.flags = UInt32(STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_GLOW | STATUS_BIT_NOFOG)
@@ -579,27 +579,27 @@ func CreateMultipleNewRipples(_ x: Float, _ z: Float, _ baseScale: Float, _ scal
         def.scale = 1
         def.moveCall = cMoveRippleEvent
         def.drawCall = cDrawRipples
-        gRippleEventObj = MakeNewObject(&def)
+        gEngine.water.rippleEventObj = MakeNewObject(&def)
     }
 
     // ADD TO RIPPLES LIST
     for _ in 0..<numRipples {
         // SCAN FOR FREE RIPPLE SLOT
-        guard let slot = (0..<MAX_RIPPLES).first(where: { !gRippleList[$0].isUsed }) else {
+        guard let slot = (0..<MAX_RIPPLES).first(where: { !gEngine.water.rippleList[$0].isUsed }) else {
             return // no free slots
         }
 
-        gRippleList[slot].isUsed = true
-        gRippleList[slot].coord.x = x
-        gRippleList[slot].coord.y = y
-        gRippleList[slot].coord.z = z
+        gEngine.water.rippleList[slot].isUsed = true
+        gEngine.water.rippleList[slot].coord.x = x
+        gEngine.water.rippleList[slot].coord.y = y
+        gEngine.water.rippleList[slot].coord.z = z
 
-        gRippleList[slot].scale = baseScale + RandomFloat() * baseScale * 2.0
-        gRippleList[slot].scaleSpeed = scaleSpeed + RandomFloat() * scaleSpeed * 3.0
-        gRippleList[slot].alpha = 0.999 - (RandomFloat() * 0.3)
-        gRippleList[slot].fadeRate = fadeRate
+        gEngine.water.rippleList[slot].scale = baseScale + RandomFloat() * baseScale * 2.0
+        gEngine.water.rippleList[slot].scaleSpeed = scaleSpeed + RandomFloat() * scaleSpeed * 3.0
+        gEngine.water.rippleList[slot].alpha = 0.999 - (RandomFloat() * 0.3)
+        gEngine.water.rippleList[slot].fadeRate = fadeRate
 
-        gNumRipples += 1
+        gEngine.water.numRipples += 1
     }
 }
 
@@ -611,21 +611,21 @@ private func moveRippleEvent(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
     for i in 0..<MAX_RIPPLES {
-        if !gRippleList[i].isUsed { // see if this ripple slot active
+        if !gEngine.water.rippleList[i].isUsed { // see if this ripple slot active
             continue
         }
 
-        gRippleList[i].scale += fps * gRippleList[i].scaleSpeed
-        gRippleList[i].alpha -= fps * gRippleList[i].fadeRate
-        if gRippleList[i].alpha <= 0 { // see if done
-            gRippleList[i].isUsed = false // kill this slot
-            gNumRipples -= 1
+        gEngine.water.rippleList[i].scale += fps * gEngine.water.rippleList[i].scaleSpeed
+        gEngine.water.rippleList[i].alpha -= fps * gEngine.water.rippleList[i].fadeRate
+        if gEngine.water.rippleList[i].alpha <= 0 { // see if done
+            gEngine.water.rippleList[i].isUsed = false // kill this slot
+            gEngine.water.numRipples -= 1
         }
     }
 
-    if gNumRipples <= 0 { // see if all done
+    if gEngine.water.numRipples <= 0 { // see if all done
         DeleteObject(theNode)
-        gRippleEventObj = nil
+        gEngine.water.rippleEventObj = nil
     }
 }
 
@@ -639,16 +639,16 @@ private func drawRipples() {
 
     // DRAW EACH RIPPLE
     for i in 0..<MAX_RIPPLES {
-        if !gRippleList[i].isUsed { // see if this ripple slot active
+        if !gEngine.water.rippleList[i].isUsed { // see if this ripple slot active
             continue
         }
 
-        let x = gRippleList[i].coord.x // get coord
-        let y = gRippleList[i].coord.y
-        let z = gRippleList[i].coord.z
+        let x = gEngine.water.rippleList[i].coord.x // get coord
+        let y = gEngine.water.rippleList[i].coord.y
+        let z = gEngine.water.rippleList[i].coord.z
 
-        let s = gRippleList[i].scale // get scale
-        OGL_SetColor4f(1, 1, 1, gRippleList[i].alpha) // get/set alpha
+        let s = gEngine.water.rippleList[i].scale // get scale
+        OGL_SetColor4f(1, 1, 1, gEngine.water.rippleList[i].alpha) // get/set alpha
 
         gEngine.renderer.beginImmediate(.quads)
         gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(x - s, y, z - s)

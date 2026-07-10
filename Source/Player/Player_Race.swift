@@ -46,10 +46,10 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
         if c == 0 {
             // SEE IF WENT FORWARD THRU FINISH LINE
 
-            if oldCheckpoint == Int16(gNumLineMarkers - 1) {
+            if oldCheckpoint == Int16(gEngine.terrain.numLineMarkers - 1) {
                 var count: Int16 = 0
 
-                for i in 0..<gNumLineMarkers { // count # of checkpoints tagged
+                for i in 0..<gEngine.terrain.numLineMarkers { // count # of checkpoints tagged
                     if raceCheckpointTaggedBase(pi)[Int(i)] != 0 {
                         count += 1
                     }
@@ -57,7 +57,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
                 // SEE IF WE DID A NEW LAP
 
-                if count > Int16(gNumLineMarkers / 2) { // if crossed at least 50% of the checkpoints then assume we did a full lap
+                if count > Int16(gEngine.terrain.numLineMarkers / 2) { // if crossed at least 50% of the checkpoints then assume we did a full lap
                     pi.pointee.lapNum += 1
 
                     if pi.pointee.lapNum >= gEngine.player.numLapsThisRace { // see if completed race
@@ -69,7 +69,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             }
             // RESET ALL CHECKPOINT TAGS WHENEVER WE CROSS THE FINISH LINE
 
-            for i in 0..<gNumLineMarkers {
+            for i in 0..<gEngine.terrain.numLineMarkers {
                 raceCheckpointTaggedBase(pi)[Int(i)] = 0
             }
 
@@ -88,8 +88,8 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
                 if pi.pointee.lapNum >= 0 {
                     pi.pointee.lapNum -= 1 // just lost a lap
                 }
-                newCheckpoint = gNumLineMarkers - 1
-                for i in 0..<gNumLineMarkers { // set all tags so can go back thru finish line for credit
+                newCheckpoint = gEngine.terrain.numLineMarkers - 1
+                for i in 0..<gEngine.terrain.numLineMarkers { // set all tags so can go back thru finish line for credit
                     raceCheckpointTaggedBase(pi)[Int(i)] = 1
                 }
             } else {
@@ -109,7 +109,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             newCheckpoint = Int32(c)
 
             var allTagged = true
-            for i in 0..<gNumLineMarkers { // verify that all checkpoints were tagged
+            for i in 0..<gEngine.terrain.numLineMarkers { // verify that all checkpoints were tagged
                 if raceCheckpointTaggedBase(pi)[Int(i)] == 0 { // if this checkpoint was not tagged then they didnt lap
                     allTagged = false
                     break
@@ -129,7 +129,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             }
 
             // no_lap:
-            for i in 0..<gNumLineMarkers { // reset all tags
+            for i in 0..<gEngine.terrain.numLineMarkers { // reset all tags
                 raceCheckpointTaggedBase(pi)[Int(i)] = 0
             }
             raceCheckpointTaggedBase(pi)[c] = 1 // except the one we passed thru
@@ -145,7 +145,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // GET NEXT CKP #
 
-    let nextCheckpoint: Int32 = newCheckpoint == (gNumLineMarkers - 1) ? 0 : newCheckpoint + 1 // see if wrap around
+    let nextCheckpoint: Int32 = newCheckpoint == (gEngine.terrain.numLineMarkers - 1) ? 0 : newCheckpoint + 1 // see if wrap around
 
     // GET CENTERPOINT OF THE NEXT CHECKPOINT
 

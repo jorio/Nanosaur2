@@ -1320,7 +1320,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
         if gEngine.objects.coord.y > MAX_ALTITUDE { // kaboom is squeezed
             kaboom = true
         } else {
-            let dot = theNode.pointee.MotionVector.dot(gRecentTerrainNormal) // see if smacked into terrain
+            let dot = theNode.pointee.MotionVector.dot(gEngine.terrain.recentTerrainNormal) // see if smacked into terrain
 
             if (dot < -0.6) && (!gGamePrefs.isKiddieMode) { // if hit head-on & not in kiddie mode
                 kaboom = true
@@ -1369,7 +1369,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
             gEngine.objects.coord.y = waterY - theNode.pointee.BottomOff // keep player on surface
 
-            let waterType = Int(gWaterList![Int(patchNum)].type)
+            let waterType = Int(gEngine.water.list![Int(patchNum)].type)
             let isLava = (waterType >= Int(WaterType.lava.rawValue)) && (waterType <= Int(WaterType.lavaDir7.rawValue)) // see if this is lava
 
             // SEE IF HIT WATER HARD

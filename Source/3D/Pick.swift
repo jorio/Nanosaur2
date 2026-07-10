@@ -123,7 +123,7 @@ func OGL_DoRayCollision_Terrain(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ world
     var hitNormalV = OGLVector3D()
     var bestDist: Float = 1_000_000
 
-    let radius = Double(gTerrainSuperTileUnitSize * 0.5) // set the bounding sphere radius for all supertiles
+    let radius = Double(gEngine.terrain.superTileUnitSize * 0.5) // set the bounding sphere radius for all supertiles
 
     for i in 0..<maxSupertiles {
         let supertile = GetSuperTileMemoryEntry(Int32(i))!
@@ -813,14 +813,14 @@ func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
 
     // TEST AGAINST ALL FENCES
 
-    for i in 0..<Int(gNumFences) {
+    for i in 0..<Int(gEngine.fences.numFences) {
         // SKIP FENCE_TYPE_INVISIBLEBLOCKENEMY
         //
         // Nano2 source port HACK: Only projectiles (Turrets, Blaster, HeatSeeker, Bomb)
         // ever call this function, and we DON'T want them to explode when colliding with
         // an invisible fence.
 
-        if gFenceList[i].type == UInt16(FENCE_TYPE_INVISIBLEBLOCKENEMY) {
+        if gEngine.fences.fenceList[i].type == UInt16(FENCE_TYPE_INVISIBLEBLOCKENEMY) {
             continue
         }
 
@@ -828,7 +828,7 @@ func OGL_LineSegmentCollision_Fence(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
         //
         // Remember tha the bbox test is approximate and can give false positives!
 
-        if !OGL_DoesLineSegmentIntersectBBox_Approx(lineSeg, &gFenceList[i].bBox) {
+        if !OGL_DoesLineSegmentIntersectBBox_Approx(lineSeg, &gEngine.fences.fenceList[i].bBox) {
             continue
         }
 
@@ -896,7 +896,7 @@ func OGL_LineSegmentCollision_Water(_ lineSegOpt: UnsafePointer<OGLLineSegment>?
 
     // TEST AGAINST ALL FENCES
 
-    for i in 0..<Int(gNumWaterPatches) {
+    for i in 0..<Int(gEngine.water.numPatches) {
         // SEE IF LINE SEGMENT INTERSECTS THE BBOX
         //
         // Remember tha the bbox test is approximate and can give false positives!

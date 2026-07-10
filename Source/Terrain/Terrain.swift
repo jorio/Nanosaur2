@@ -16,8 +16,8 @@
 // Player_Terrain.swift, Terrain2.swift) didn't need to change.
 //
 // The master supertile mesh/triangle/coord/uv/normal/color arrays,
-// gWorkGrid, the tile-triangle-splitting tables, gHiccupTimer,
-// gNumSuperTilesDrawn, gNumFreeSupertiles, and the (dead,
+// gEngine.terrain.workGrid, the tile-triangle-splitting tables, gEngine.terrain.hiccupTimer,
+// gEngine.terrain.numSuperTilesDrawn, gEngine.terrain.numFreeSupertiles, and the (dead,
 // VERTEXARRAYRANGES==0) OpenGL fence variables are only ever touched from
 // this file, so they stay private Swift storage.
 //
@@ -30,95 +30,107 @@
 // where each is MAX_TERRAIN_{WIDTH,DEPTH}(400)/SUPERTILE_SIZE(8) = 50.
 private let maxSuperTileTextures = 50 * 50
 
-var gTerrainPolygonSize: Float = 0
-var gTerrainPolygonSizeInt: UInt32 = 0
-var gTerrainSuperTileUnitSize: Float = 0
-var gTerrainSuperTileUnitSizeFrac: Float = 0
-var gMapToUnitValue: Float = 0
-var gMapToUnitValueFrac: Float = 0
-var gSuperTileActiveRange: Int32 = 4
-var gDisableHiccupTimer: UInt8 = 0
-var gSuperTileStatusGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileStatus>?>!
-var gTerrainTileWidth: Int = 0
-var gTerrainTileDepth: Int = 0
-var gTerrainUnitWidth: Int = 0
-var gTerrainUnitDepth: Int = 0
-var gNumUniqueSuperTiles: Int = 0
-var gSuperTileTextureGrid: UnsafeMutablePointer<UnsafeMutablePointer<Int16>?>!
-var gSuperTilePixelBuffers: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>!
-var gVertexShading: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
-var gNumSuperTilesDeep: Int = 0
-var gNumSuperTilesWide: Int = 0
-var gRecentTerrainNormal = OGLVector3D()
-
-var gNumTerrainItems: Int32 = 0
-var gMasterItemList: UnsafeMutablePointer<TerrainItemEntryType>!
-var gMapYCoords: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
-var gMapYCoordsOriginal: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
-var gMapSplitMode: UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>!
-var gSuperTileItemIndexGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileItemIndexType>?>!
-var gNumLineMarkers: Int32 = 0
-
-private let gSuperTileTextureObjectsBuf: UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?> = {
-    let buf = UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>.allocate(capacity: maxSuperTileTextures)
-    buf.initialize(repeating: nil, count: maxSuperTileTextures)
-    return buf
-}()
-func GetSuperTileTextureObjectSlot(_ i: Int32) -> UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>! {
-    gSuperTileTextureObjectsBuf + Int(i)
-}
-
-private let gSuperTileMemoryListBuf: UnsafeMutablePointer<SuperTileMemoryType> = {
-    let buf = UnsafeMutablePointer<SuperTileMemoryType>.allocate(capacity: maxSupertiles)
-    buf.initialize(repeating: SuperTileMemoryType(), count: maxSupertiles)
-    return buf
-}()
-func GetSuperTileMemoryEntry(_ i: Int32) -> UnsafeMutablePointer<SuperTileMemoryType>! {
-    gSuperTileMemoryListBuf + Int(i)
-}
-
-private let gLineMarkerListBuf: UnsafeMutablePointer<LineMarkerDefType> = {
-    let buf = UnsafeMutablePointer<LineMarkerDefType>.allocate(capacity: Int(MAX_LINEMARKERS))
-    buf.initialize(repeating: LineMarkerDefType(), count: Int(MAX_LINEMARKERS))
-    return buf
-}()
-func GetLineMarkerPtr(_ i: Int32) -> UnsafeMutablePointer<LineMarkerDefType> {
-    gLineMarkerListBuf + Int(i)
-}
-
-private var gNumSuperTilesDrawn: Int16 = 0
-private var gHiccupTimer: UInt8 = 0
-
-// gTerrainPolygonSizeFrac has no `extern` declaration anywhere in the headers
-// (only gTerrainPolygonSize, gTerrainPolygonSizeInt, gTerrainSuperTileUnitSizeFrac,
-// and gMapToUnitValueFrac are), so it was always file-private to Terrain.c.
-private var gTerrainPolygonSizeFrac: Float = 0
-
 // MAX_SUPERTILES/NUM_TRIS_IN_SUPERTILE/NUM_VERTICES_IN_SUPERTILE are multi-macro
 // expressions ClangImporter can't fold into single constants.
 private let maxSupertiles = (9 * 2 * 9 * 2) * 2 * 2 // MAX_SUPERTILES: (MAX_SUPERTILE_ACTIVE_RANGE*2 * MAX_SUPERTILE_ACTIVE_RANGE*2)*MAX_SPLITSCREENS * 2
 private let numTrisInSupertile = Int(SUPERTILE_SIZE) * Int(SUPERTILE_SIZE) * 2
 private let numVerticesInSupertile = (Int(SUPERTILE_SIZE) + 1) * (Int(SUPERTILE_SIZE) + 1)
 
-private var gNumFreeSupertiles: Int16 = 0
+/// Terrain state: scale factors, supertile grids/buffers, terrain-item
+/// list, line markers, scroll tracking. Owned by GameEngine as
+/// `gEngine.terrain`.
+final class TerrainSystem {
+    var polygonSize: Float = 0
+    var polygonSizeInt: UInt32 = 0
+    var superTileUnitSize: Float = 0
+    var superTileUnitSizeFrac: Float = 0
+    var mapToUnitValue: Float = 0
+    var mapToUnitValueFrac: Float = 0
+    var superTileActiveRange: Int32 = 4
+    var disableHiccupTimer: UInt8 = 0
+    var superTileStatusGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileStatus>?>!
+    var tileWidth: Int = 0
+    var tileDepth: Int = 0
+    var unitWidth: Int = 0
+    var unitDepth: Int = 0
+    var numUniqueSuperTiles: Int = 0
+    var superTileTextureGrid: UnsafeMutablePointer<UnsafeMutablePointer<Int16>?>!
+    var superTilePixelBuffers: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>!
+    var vertexShading: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+    var numSuperTilesDeep: Int = 0
+    var numSuperTilesWide: Int = 0
+    var recentTerrainNormal = OGLVector3D()
 
-// TILE SPLITTING TABLES - file-local only, plain nested Swift arrays.
+    var numTerrainItems: Int32 = 0
+    var masterItemList: UnsafeMutablePointer<TerrainItemEntryType>!
+    var mapYCoords: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+    var mapYCoordsOriginal: UnsafeMutablePointer<UnsafeMutablePointer<Float>?>!
+    var mapSplitMode: UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>!
+    var superTileItemIndexGrid: UnsafeMutablePointer<UnsafeMutablePointer<SuperTileItemIndexType>?>!
+    var numLineMarkers: Int32 = 0
 
-private var gTileTriangles1_A = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
-private var gTileTriangles2_A = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
-private var gTileTriangles1_B = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
-private var gTileTriangles2_B = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
+    fileprivate let superTileTextureObjectsBuf: UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?> = {
+        let buf = UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>.allocate(capacity: maxSuperTileTextures)
+        buf.initialize(repeating: nil, count: maxSuperTileTextures)
+        return buf
+    }()
 
-private var gWorkGrid = Array(repeating: Array(repeating: OGLVertex(), count: Int(SUPERTILE_SIZE) + 1), count: Int(SUPERTILE_SIZE) + 1)
+    fileprivate let superTileMemoryListBuf: UnsafeMutablePointer<SuperTileMemoryType> = {
+        let buf = UnsafeMutablePointer<SuperTileMemoryType>.allocate(capacity: maxSupertiles)
+        buf.initialize(repeating: SuperTileMemoryType(), count: maxSupertiles)
+        return buf
+    }()
 
-// MASTER ARRAYS FOR ALL SUPERTILE DATA FOR CURRENT LEVEL
+    fileprivate let lineMarkerListBuf: UnsafeMutablePointer<LineMarkerDefType> = {
+        let buf = UnsafeMutablePointer<LineMarkerDefType>.allocate(capacity: Int(MAX_LINEMARKERS))
+        buf.initialize(repeating: LineMarkerDefType(), count: Int(MAX_LINEMARKERS))
+        return buf
+    }()
 
-private var gSuperTileMeshData: UnsafeMutablePointer<MOVertexArrayData>?
-private var gSuperTileTriangles: UnsafeMutablePointer<MOTriangleIndecies>?
-private var gSuperTileCoords: UnsafeMutablePointer<OGLPoint3D>?
-private var gSuperTileUVs: UnsafeMutablePointer<OGLTextureCoord>?
-private var gSuperTileNormals: UnsafeMutablePointer<OGLVector3D>?
-private var gSuperTileColors: UnsafeMutablePointer<OGLColorRGBA>?
+    fileprivate var numSuperTilesDrawn: Int16 = 0
+    fileprivate var hiccupTimer: UInt8 = 0
+
+    // polygonSizeFrac had no `extern` declaration anywhere in the headers,
+    // so it was always file-private to Terrain.c.
+    fileprivate var polygonSizeFrac: Float = 0
+
+    fileprivate var numFreeSupertiles: Int16 = 0
+
+    // TILE SPLITTING TABLES - file-local only, plain nested Swift arrays.
+    fileprivate var tileTriangles1_A = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
+    fileprivate var tileTriangles2_A = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
+    fileprivate var tileTriangles1_B = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
+    fileprivate var tileTriangles2_B = Array(repeating: Array(repeating: [UInt8](repeating: 0, count: 3), count: Int(SUPERTILE_SIZE)), count: Int(SUPERTILE_SIZE))
+
+    fileprivate var workGrid = Array(repeating: Array(repeating: OGLVertex(), count: Int(SUPERTILE_SIZE) + 1), count: Int(SUPERTILE_SIZE) + 1)
+
+    // MASTER ARRAYS FOR ALL SUPERTILE DATA FOR CURRENT LEVEL
+    fileprivate var superTileMeshData: UnsafeMutablePointer<MOVertexArrayData>?
+    fileprivate var superTileTriangles: UnsafeMutablePointer<MOTriangleIndecies>?
+    fileprivate var superTileCoords: UnsafeMutablePointer<OGLPoint3D>?
+    fileprivate var superTileUVs: UnsafeMutablePointer<OGLTextureCoord>?
+    fileprivate var superTileNormals: UnsafeMutablePointer<OGLVector3D>?
+    fileprivate var superTileColors: UnsafeMutablePointer<OGLColorRGBA>?
+
+    // Scroll tracking - was `static int[MAX_PLAYERS]` in the original C,
+    // only ever touched from this file.
+    fileprivate var currentSuperTileRow: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var currentSuperTileCol: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var previousSuperTileCol: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var previousSuperTileRow: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+}
+
+func GetSuperTileTextureObjectSlot(_ i: Int32) -> UnsafeMutablePointer<UnsafeMutablePointer<MOMaterialObject>?>! {
+    gEngine.terrain.superTileTextureObjectsBuf + Int(i)
+}
+
+func GetSuperTileMemoryEntry(_ i: Int32) -> UnsafeMutablePointer<SuperTileMemoryType>! {
+    gEngine.terrain.superTileMemoryListBuf + Int(i)
+}
+
+func GetLineMarkerPtr(_ i: Int32) -> UnsafeMutablePointer<LineMarkerDefType> {
+    gEngine.terrain.lineMarkerListBuf + Int(i)
+}
 
 // IsStereo is a parameterized C macro, which Swift can't import as a callable symbol.
 private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
@@ -133,21 +145,21 @@ func InitTerrainManager() {
 
     for y in 0..<Int(SUPERTILE_SIZE) {
         for x in 0..<Int(SUPERTILE_SIZE) {
-            gTileTriangles1_A[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
-            gTileTriangles1_A[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
-            gTileTriangles1_A[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
+            gEngine.terrain.tileTriangles1_A[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
+            gEngine.terrain.tileTriangles1_A[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
+            gEngine.terrain.tileTriangles1_A[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
 
-            gTileTriangles2_A[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
-            gTileTriangles2_A[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
-            gTileTriangles2_A[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
+            gEngine.terrain.tileTriangles2_A[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
+            gEngine.terrain.tileTriangles2_A[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
+            gEngine.terrain.tileTriangles2_A[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
 
-            gTileTriangles1_B[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
-            gTileTriangles1_B[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
-            gTileTriangles1_B[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
+            gEngine.terrain.tileTriangles1_B[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x)
+            gEngine.terrain.tileTriangles1_B[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
+            gEngine.terrain.tileTriangles1_B[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
 
-            gTileTriangles2_B[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
-            gTileTriangles2_B[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
-            gTileTriangles2_B[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
+            gEngine.terrain.tileTriangles2_B[y][x][0] = UInt8((Int(SUPERTILE_SIZE) + 1) * (y + 1) + x + 1)
+            gEngine.terrain.tileTriangles2_B[y][x][1] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x + 1)
+            gEngine.terrain.tileTriangles2_B[y][x][2] = UInt8((Int(SUPERTILE_SIZE) + 1) * y + x)
         }
     }
 }
@@ -155,21 +167,21 @@ func InitTerrainManager() {
 // MARK: - Set terrain scale
 
 func SetTerrainScale(_ polygonSize: Int32) {
-    gTerrainPolygonSize = Float(polygonSize) // size in world units of terrain polygon
-    gTerrainPolygonSizeInt = UInt32(polygonSize)
+    gEngine.terrain.polygonSize = Float(polygonSize) // size in world units of terrain polygon
+    gEngine.terrain.polygonSizeInt = UInt32(polygonSize)
 
-    gTerrainPolygonSizeFrac = 1.0 / gTerrainPolygonSize
+    gEngine.terrain.polygonSizeFrac = 1.0 / gEngine.terrain.polygonSize
 
-    gTerrainSuperTileUnitSize = Float(SUPERTILE_SIZE) * gTerrainPolygonSize // world unit size of a supertile
-    gTerrainSuperTileUnitSizeFrac = 1.0 / gTerrainSuperTileUnitSize
+    gEngine.terrain.superTileUnitSize = Float(SUPERTILE_SIZE) * gEngine.terrain.polygonSize // world unit size of a supertile
+    gEngine.terrain.superTileUnitSizeFrac = 1.0 / gEngine.terrain.superTileUnitSize
 
-    gMapToUnitValue = gTerrainPolygonSize / Float(OREOMAP_TILE_SIZE) // value to xlate Oreo map pixel coords to 3-space unit coords
-    gMapToUnitValueFrac = 1.0 / gMapToUnitValue
+    gEngine.terrain.mapToUnitValue = gEngine.terrain.polygonSize / Float(OREOMAP_TILE_SIZE) // value to xlate Oreo map pixel coords to 3-space unit coords
+    gEngine.terrain.mapToUnitValueFrac = 1.0 / gEngine.terrain.mapToUnitValue
 
     if gGamePrefs.isLowRenderQuality {
-        gSuperTileActiveRange = 7
+        gEngine.terrain.superTileActiveRange = 7
     } else {
-        gSuperTileActiveRange = Int32(MAX_SUPERTILE_ACTIVE_RANGE)
+        gEngine.terrain.superTileActiveRange = Int32(MAX_SUPERTILE_ACTIVE_RANGE)
     }
 }
 
@@ -178,15 +190,15 @@ func SetTerrainScale(_ polygonSize: Int32) {
 func InitCurrentScrollSettings() {
     for i in 0..<Int(gEngine.player.numPlayers) { // init settings for each player in game
         let pi = GetPlayerInfoEntry(Int32(i))
-        let x = Int(pi.pointee.coord.x - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
-        let y = Int(pi.pointee.coord.z - (Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize))
+        let x = Int(pi.pointee.coord.x - (Float(gEngine.terrain.superTileActiveRange) * gEngine.terrain.superTileUnitSize))
+        let y = Int(pi.pointee.coord.z - (Float(gEngine.terrain.superTileActiveRange) * gEngine.terrain.superTileUnitSize))
 
         var dummy1: Int32 = 0
         var dummy2: Int32 = 0
-        GetSuperTileInfo(x, y, &gCurrentSuperTileCol[i], &gCurrentSuperTileRow[i], &dummy1, &dummy2)
+        GetSuperTileInfo(x, y, &gEngine.terrain.currentSuperTileCol[i], &gEngine.terrain.currentSuperTileRow[i], &dummy1, &dummy2)
 
-        gPreviousSuperTileCol[i] = -100000
-        gPreviousSuperTileRow[i] = -100000
+        gEngine.terrain.previousSuperTileCol[i] = -100000
+        gEngine.terrain.previousSuperTileRow[i] = -100000
     }
 
     // CREATE DUMMY CUSTOM OBJECT TO CAUSE TERRAIN DRAWING AT THE DESIRED TIME
@@ -203,25 +215,19 @@ func InitCurrentScrollSettings() {
     obj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.terrain.rawValue)
 }
 
-// gCurrentSuperTileRow/Col and gPreviousSuperTileRow/Col were `static int[MAX_PLAYERS]`
-// in the original C, only ever touched from this file.
-private var gCurrentSuperTileRow: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gCurrentSuperTileCol: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gPreviousSuperTileCol: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gPreviousSuperTileRow: [Int32] = Array(repeating: 0, count: Int(MAX_PLAYERS))
 
 // MARK: - Init supertile grid
 
 func InitSuperTileGrid() {
-    gSuperTileStatusGrid = alloc2DArray(SuperTileStatus.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide)) // alloc 2D grid array
+    gEngine.terrain.superTileStatusGrid = alloc2DArray(SuperTileStatus.self, rows: Int(gEngine.terrain.numSuperTilesDeep), cols: Int(gEngine.terrain.numSuperTilesWide)) // alloc 2D grid array
 
     // INIT ALL GRID SLOTS TO EMPTY AND UNUSED
 
-    for r in 0..<Int(gNumSuperTilesDeep) {
-        for c in 0..<Int(gNumSuperTilesWide) {
-            gSuperTileStatusGrid[r]![c].supertileIndex = 0
-            gSuperTileStatusGrid[r]![c].statusFlags = 0
-            gSuperTileStatusGrid[r]![c].playerHereFlags = 0
+    for r in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+        for c in 0..<Int(gEngine.terrain.numSuperTilesWide) {
+            gEngine.terrain.superTileStatusGrid[r]![c].supertileIndex = 0
+            gEngine.terrain.superTileStatusGrid[r]![c].statusFlags = 0
+            gEngine.terrain.superTileStatusGrid[r]![c].playerHereFlags = 0
         }
     }
 }
@@ -234,74 +240,74 @@ func DisposeTerrain() {
 
     // FREE ALL TEXTURE OBJECTS
 
-    for i in 0..<Int(gNumUniqueSuperTiles) {
+    for i in 0..<Int(gEngine.terrain.numUniqueSuperTiles) {
         MO_DisposeObjectReference(UnsafeMutableRawPointer(GetSuperTileTextureObjectSlot(Int32(i))!.pointee))
         GetSuperTileTextureObjectSlot(Int32(i))!.pointee = nil
     }
-    gNumUniqueSuperTiles = 0
+    gEngine.terrain.numUniqueSuperTiles = 0
 
-    if gSuperTileItemIndexGrid != nil {
-        free2DArray(gSuperTileItemIndexGrid)
-        gSuperTileItemIndexGrid = nil
+    if gEngine.terrain.superTileItemIndexGrid != nil {
+        free2DArray(gEngine.terrain.superTileItemIndexGrid)
+        gEngine.terrain.superTileItemIndexGrid = nil
     }
 
-    if gSuperTileTextureGrid != nil {
-        free2DArray(gSuperTileTextureGrid)
-        gSuperTileTextureGrid = nil
+    if gEngine.terrain.superTileTextureGrid != nil {
+        free2DArray(gEngine.terrain.superTileTextureGrid)
+        gEngine.terrain.superTileTextureGrid = nil
     }
 
-    if gSuperTileStatusGrid != nil {
-        free2DArray(gSuperTileStatusGrid)
-        gSuperTileStatusGrid = nil
+    if gEngine.terrain.superTileStatusGrid != nil {
+        free2DArray(gEngine.terrain.superTileStatusGrid)
+        gEngine.terrain.superTileStatusGrid = nil
     }
 
-    if gVertexShading != nil {
-        free2DArray(gVertexShading)
-        gVertexShading = nil
+    if gEngine.terrain.vertexShading != nil {
+        free2DArray(gEngine.terrain.vertexShading)
+        gEngine.terrain.vertexShading = nil
     }
 
-    if gMasterItemList != nil {
-        SafeDisposePtr(gMasterItemList)
-        gMasterItemList = nil
+    if gEngine.terrain.masterItemList != nil {
+        SafeDisposePtr(gEngine.terrain.masterItemList)
+        gEngine.terrain.masterItemList = nil
     }
 
-    if gMapYCoords != nil {
-        free2DArray(gMapYCoords)
-        gMapYCoords = nil
+    if gEngine.terrain.mapYCoords != nil {
+        free2DArray(gEngine.terrain.mapYCoords)
+        gEngine.terrain.mapYCoords = nil
     }
 
-    if gMapYCoordsOriginal != nil {
-        free2DArray(gMapYCoordsOriginal)
-        gMapYCoordsOriginal = nil
+    if gEngine.terrain.mapYCoordsOriginal != nil {
+        free2DArray(gEngine.terrain.mapYCoordsOriginal)
+        gEngine.terrain.mapYCoordsOriginal = nil
     }
 
-    if gMapSplitMode != nil {
-        free2DArray(gMapSplitMode)
-        gMapSplitMode = nil
+    if gEngine.terrain.mapSplitMode != nil {
+        free2DArray(gEngine.terrain.mapSplitMode)
+        gEngine.terrain.mapSplitMode = nil
     }
 
     // NUKE SPLINE DATA
 
-    if let splineList = gSplineList {
-        for i in 0..<Int(gNumSplines) {
+    if let splineList = gEngine.splines.splineList {
+        for i in 0..<Int(gEngine.splines.numSplines) {
             SafeDisposePtr(splineList[i].pointList) // nuke point list
             SafeDisposePtr(splineList[i].itemList) // nuke item list
         }
         SafeDisposePtr(splineList)
-        gSplineList = nil
+        gEngine.splines.splineList = nil
     }
 
     // NUKE WATER PATCH
 
-    if gWaterListHandle != nil {
-        DisposeWaterListHandle(gWaterListHandle)
-        gWaterListHandle = nil
+    if gEngine.water.listHandle != nil {
+        DisposeWaterListHandle(gEngine.water.listHandle)
+        gEngine.water.listHandle = nil
     }
 
-    gWaterList = nil
-    gNumWaterPatches = 0
-    gNumSuperTilesDeep = 0
-    gNumSuperTilesWide = 0
+    gEngine.water.list = nil
+    gEngine.water.numPatches = 0
+    gEngine.terrain.numSuperTilesDeep = 0
+    gEngine.terrain.numSuperTilesWide = 0
 
     releaseAllSuperTiles()
 
@@ -317,40 +323,40 @@ func DisposeTerrain() {
 func CreateSuperTileMemoryList() {
     // ALLOCATE ARRAYS FOR ALL THE DATA WE WILL NEED
 
-    gNumFreeSupertiles = Int16(maxSupertiles)
+    gEngine.terrain.numFreeSupertiles = Int16(maxSupertiles)
 
     // ALLOC BASE TRIMESH DATA FOR ALL SUPERTILES
 
     guard let meshData = AllocPtrClear(MemoryLayout<MOVertexArrayData>.size * maxSupertiles)?.assumingMemoryBound(to: MOVertexArrayData.self) else {
-        SwFatal("CreateSuperTileMemoryList: AllocPtr failed - gSuperTileMeshData")
+        SwFatal("CreateSuperTileMemoryList: AllocPtr failed - gEngine.terrain.superTileMeshData")
         return
     }
-    gSuperTileMeshData = meshData
+    gEngine.terrain.superTileMeshData = meshData
 
     // ALLOC TRIANGLE ARRAYS ALL SUPERTILES
 
     let triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTrisInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: MOTriangleIndecies.self)
-    gSuperTileTriangles = triangles
+    gEngine.terrain.superTileTriangles = triangles
 
     // ALLOC POINTS FOR ALL SUPERTILES
 
     let coords = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLPoint3D.self)
-    gSuperTileCoords = coords
+    gEngine.terrain.superTileCoords = coords
 
     // ALLOC VERTEX NORMALS FOR ALL SUPERTILES
 
     let normals = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLVector3D>.size * (numVerticesInSupertile * maxSupertiles)), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLVector3D.self)
-    gSuperTileNormals = normals
+    gEngine.terrain.superTileNormals = normals
 
     // ALLOC UVS FOR ALL SUPERTILES
 
     let uvs = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerticesInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLTextureCoord.self)
-    gSuperTileUVs = uvs
+    gEngine.terrain.superTileUVs = uvs
 
     // ALLOC VERTEX COLORS FOR ALL SUPERTILES
 
     let colors = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLColorRGBA>.size * numVerticesInSupertile * maxSupertiles), UInt8(VertexArrayRangeType.terrain.rawValue))!.assumingMemoryBound(to: OGLColorRGBA.self)
-    gSuperTileColors = colors
+    gEngine.terrain.superTileColors = colors
 
     // FOR EACH POSSIBLE SUPERTILE SET INFO
 
@@ -414,35 +420,35 @@ func CreateSuperTileMemoryList() {
 func DisposeSuperTileMemoryList() {
     // NUKE ALL MASTER ARRAYS WHICH WILL FREE UP ALL SUPERTILE MEMORY
 
-    if let meshData = gSuperTileMeshData {
+    if let meshData = gEngine.terrain.superTileMeshData {
         SafeDisposePtr(meshData)
     }
-    gSuperTileMeshData = nil
+    gEngine.terrain.superTileMeshData = nil
 
-    if let triangles = gSuperTileTriangles {
+    if let triangles = gEngine.terrain.superTileTriangles {
         OGL_FreeVertexArrayMemory(triangles, UInt8(VertexArrayRangeType.terrain.rawValue))
-        gSuperTileTriangles = nil
+        gEngine.terrain.superTileTriangles = nil
     }
 
-    if let coords = gSuperTileCoords {
+    if let coords = gEngine.terrain.superTileCoords {
         OGL_FreeVertexArrayMemory(coords, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
-    gSuperTileCoords = nil
+    gEngine.terrain.superTileCoords = nil
 
-    if let normals = gSuperTileNormals {
+    if let normals = gEngine.terrain.superTileNormals {
         OGL_FreeVertexArrayMemory(normals, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
-    gSuperTileNormals = nil
+    gEngine.terrain.superTileNormals = nil
 
-    if let uvs = gSuperTileUVs {
+    if let uvs = gEngine.terrain.superTileUVs {
         OGL_FreeVertexArrayMemory(uvs, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
-    gSuperTileUVs = nil
+    gEngine.terrain.superTileUVs = nil
 
-    if let colors = gSuperTileColors {
+    if let colors = gEngine.terrain.superTileColors {
         OGL_FreeVertexArrayMemory(colors, UInt8(VertexArrayRangeType.terrain.rawValue))
     }
-    gSuperTileColors = nil
+    gEngine.terrain.superTileColors = nil
 }
 
 // MARK: - Get free supertile memory
@@ -458,7 +464,7 @@ private func getFreeSuperTileMemory() -> Int16 {
         let superTile = GetSuperTileMemoryEntry(Int32(i))!
         if superTile.pointee.mode == UInt8(SUPERTILE_MODE_FREE) {
             superTile.pointee.mode = UInt8(SUPERTILE_MODE_USED)
-            gNumFreeSupertiles -= 1
+            gEngine.terrain.numFreeSupertiles -= 1
             return Int16(i)
         }
     }
@@ -490,11 +496,11 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
 
     // SET COORDINATE DATA
 
-    superTilePtr.pointee.x = (Float(startCol) * gTerrainPolygonSize) + (gTerrainSuperTileUnitSize * 0.5) // also remember world coords (center of supertile)
-    superTilePtr.pointee.z = (Float(startRow) * gTerrainPolygonSize) + (gTerrainSuperTileUnitSize * 0.5)
+    superTilePtr.pointee.x = (Float(startCol) * gEngine.terrain.polygonSize) + (gEngine.terrain.superTileUnitSize * 0.5) // also remember world coords (center of supertile)
+    superTilePtr.pointee.z = (Float(startRow) * gEngine.terrain.polygonSize) + (gEngine.terrain.superTileUnitSize * 0.5)
 
-    superTilePtr.pointee.left = Int(Float(startCol) * gTerrainPolygonSize) // also save left/back coord
-    superTilePtr.pointee.back = Int(Float(startRow) * gTerrainPolygonSize)
+    superTilePtr.pointee.left = Int(Float(startCol) * gEngine.terrain.polygonSize) // also save left/back coord
+    superTilePtr.pointee.back = Int(Float(startRow) * gEngine.terrain.polygonSize)
 
     superTilePtr.pointee.tileRow = startRow // save tile row/col
     superTilePtr.pointee.tileCol = startCol
@@ -519,29 +525,29 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
             let col = col2 + Int(startCol)
 
             var height: Float
-            if (row >= Int(gTerrainTileDepth)) || (col >= Int(gTerrainTileWidth)) { // check for edge vertices (off map array)
+            if (row >= Int(gEngine.terrain.tileDepth)) || (col >= Int(gEngine.terrain.tileWidth)) { // check for edge vertices (off map array)
                 height = 0
             } else {
-                height = gMapYCoords[row]![col] // get pixel height here
+                height = gEngine.terrain.mapYCoords[row]![col] // get pixel height here
             }
 
             // SET COORD
 
-            gWorkGrid[row2][col2].point.x = Float(col) * gTerrainPolygonSize
-            gWorkGrid[row2][col2].point.z = Float(row) * gTerrainPolygonSize
-            gWorkGrid[row2][col2].point.y = height // save height @ this tile's upper left corner
+            gEngine.terrain.workGrid[row2][col2].point.x = Float(col) * gEngine.terrain.polygonSize
+            gEngine.terrain.workGrid[row2][col2].point.z = Float(row) * gEngine.terrain.polygonSize
+            gEngine.terrain.workGrid[row2][col2].point.y = height // save height @ this tile's upper left corner
 
             // SET UV
 
-            gWorkGrid[row2][col2].uv.u = Float(col2) * (0.99 / Float(SUPERTILE_SIZE)) // sets uv's 0.0 -> .99 for single texture map
-            gWorkGrid[row2][col2].uv.v = 0.99 - (Float(row2) * (0.99 / Float(SUPERTILE_SIZE)))
+            gEngine.terrain.workGrid[row2][col2].uv.u = Float(col2) * (0.99 / Float(SUPERTILE_SIZE)) // sets uv's 0.0 -> .99 for single texture map
+            gEngine.terrain.workGrid[row2][col2].uv.v = 0.99 - (Float(row2) * (0.99 / Float(SUPERTILE_SIZE)))
 
             // SET COLOR
 
-            gWorkGrid[row2][col2].color.r = 1.0
-            gWorkGrid[row2][col2].color.g = 1.0
-            gWorkGrid[row2][col2].color.b = 1.0
-            gWorkGrid[row2][col2].color.a = 1.0
+            gEngine.terrain.workGrid[row2][col2].color.r = 1.0
+            gEngine.terrain.workGrid[row2][col2].color.g = 1.0
+            gEngine.terrain.workGrid[row2][col2].color.b = 1.0
+            gEngine.terrain.workGrid[row2][col2].color.a = 1.0
 
             if height > maxy { // keep track of min/max
                 maxy = height
@@ -559,7 +565,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
     var numPoints = 0
     for row in 0..<(Int(SUPERTILE_SIZE) + 1) {
         for col in 0..<(Int(SUPERTILE_SIZE) + 1) {
-            vertexPointList[numPoints] = gWorkGrid[row][col].point // copy from work grid
+            vertexPointList[numPoints] = gEngine.terrain.workGrid[row][col].point // copy from work grid
             numPoints += 1
         }
     }
@@ -575,25 +581,25 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
 
             // SET SPLITTING INFO
 
-            if gMapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) { // set coords & uv's based on splitting
+            if gEngine.terrain.mapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) { // set coords & uv's based on splitting
                 // \
-                triangleList[i].vertexIndices.0 = UInt32(gTileTriangles1_B[row2][col2][0])
-                triangleList[i].vertexIndices.1 = UInt32(gTileTriangles1_B[row2][col2][1])
-                triangleList[i].vertexIndices.2 = UInt32(gTileTriangles1_B[row2][col2][2])
+                triangleList[i].vertexIndices.0 = UInt32(gEngine.terrain.tileTriangles1_B[row2][col2][0])
+                triangleList[i].vertexIndices.1 = UInt32(gEngine.terrain.tileTriangles1_B[row2][col2][1])
+                triangleList[i].vertexIndices.2 = UInt32(gEngine.terrain.tileTriangles1_B[row2][col2][2])
                 i += 1
-                triangleList[i].vertexIndices.0 = UInt32(gTileTriangles2_B[row2][col2][0])
-                triangleList[i].vertexIndices.1 = UInt32(gTileTriangles2_B[row2][col2][1])
-                triangleList[i].vertexIndices.2 = UInt32(gTileTriangles2_B[row2][col2][2])
+                triangleList[i].vertexIndices.0 = UInt32(gEngine.terrain.tileTriangles2_B[row2][col2][0])
+                triangleList[i].vertexIndices.1 = UInt32(gEngine.terrain.tileTriangles2_B[row2][col2][1])
+                triangleList[i].vertexIndices.2 = UInt32(gEngine.terrain.tileTriangles2_B[row2][col2][2])
                 i += 1
             } else {
                 // /
-                triangleList[i].vertexIndices.0 = UInt32(gTileTriangles1_A[row2][col2][0])
-                triangleList[i].vertexIndices.1 = UInt32(gTileTriangles1_A[row2][col2][1])
-                triangleList[i].vertexIndices.2 = UInt32(gTileTriangles1_A[row2][col2][2])
+                triangleList[i].vertexIndices.0 = UInt32(gEngine.terrain.tileTriangles1_A[row2][col2][0])
+                triangleList[i].vertexIndices.1 = UInt32(gEngine.terrain.tileTriangles1_A[row2][col2][1])
+                triangleList[i].vertexIndices.2 = UInt32(gEngine.terrain.tileTriangles1_A[row2][col2][2])
                 i += 1
-                triangleList[i].vertexIndices.0 = UInt32(gTileTriangles2_A[row2][col2][0])
-                triangleList[i].vertexIndices.1 = UInt32(gTileTriangles2_A[row2][col2][1])
-                triangleList[i].vertexIndices.2 = UInt32(gTileTriangles2_A[row2][col2][2])
+                triangleList[i].vertexIndices.0 = UInt32(gEngine.terrain.tileTriangles2_A[row2][col2][0])
+                triangleList[i].vertexIndices.1 = UInt32(gEngine.terrain.tileTriangles2_A[row2][col2][1])
+                triangleList[i].vertexIndices.2 = UInt32(gEngine.terrain.tileTriangles2_A[row2][col2][2])
                 i += 1
             }
         }
@@ -637,7 +643,7 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
         i = 0
         for row in 0...Int(SUPERTILE_SIZE) {
             for col in 0...Int(SUPERTILE_SIZE) {
-                let shade = gVertexShading[row + Int(startRow)]![col + Int(startCol)] // get value from shading grid
+                let shade = gEngine.terrain.vertexShading[row + Int(startRow)]![col + Int(startCol)] // get value from shading grid
 
                 // APPLY LIGHTING TO THE VERTEX
 
@@ -683,19 +689,19 @@ private func buildTerrainSuperTile(_ startCol: Int, _ startRow: Int) -> UInt16 {
 
     superTilePtr.pointee.y = (miny + maxy) * 0.5 // calc center y coord as average of top & bottom
 
-    superTilePtr.pointee.bBox.min.x = gWorkGrid[0][0].point.x
-    superTilePtr.pointee.bBox.max.x = gWorkGrid[0][0].point.x + gTerrainSuperTileUnitSize
+    superTilePtr.pointee.bBox.min.x = gEngine.terrain.workGrid[0][0].point.x
+    superTilePtr.pointee.bBox.max.x = gEngine.terrain.workGrid[0][0].point.x + gEngine.terrain.superTileUnitSize
     superTilePtr.pointee.bBox.min.y = miny
     superTilePtr.pointee.bBox.max.y = maxy
-    superTilePtr.pointee.bBox.min.z = gWorkGrid[0][0].point.z
-    superTilePtr.pointee.bBox.max.z = gWorkGrid[0][0].point.z + gTerrainSuperTileUnitSize
+    superTilePtr.pointee.bBox.min.z = gEngine.terrain.workGrid[0][0].point.z
+    superTilePtr.pointee.bBox.max.z = gEngine.terrain.workGrid[0][0].point.z + gEngine.terrain.superTileUnitSize
 
-    if gDisableHiccupTimer != 0 {
+    if gEngine.terrain.disableHiccupTimer != 0 {
         superTilePtr.pointee.hiccupTimer = 0
     } else {
-        superTilePtr.pointee.hiccupTimer = gHiccupTimer
-        gHiccupTimer += 1
-        gHiccupTimer &= 0x1 // spread over 2 frames
+        superTilePtr.pointee.hiccupTimer = gEngine.terrain.hiccupTimer
+        gEngine.terrain.hiccupTimer += 1
+        gEngine.terrain.hiccupTimer &= 0x1 // spread over 2 frames
     }
 
     // WE'VE MODIFIED DATA IN THE VERTEX ARRAY RANGE, SO FORCE AN UPDATE
@@ -772,7 +778,7 @@ private func releaseSuperTileObject(_ superTileNum: Int16) {
     // (VERTEXARRAYRANGES is hardcoded off, so the fence-wait here is dead code and dropped.)
 
     GetSuperTileMemoryEntry(Int32(superTileNum))!.pointee.mode = UInt8(SUPERTILE_MODE_FREE) // it's free!
-    gNumFreeSupertiles += 1
+    gEngine.terrain.numFreeSupertiles += 1
 }
 
 // MARK: - Release all supertiles
@@ -782,7 +788,7 @@ private func releaseAllSuperTiles() {
         releaseSuperTileObject(Int16(i))
     }
 
-    gNumFreeSupertiles = Int16(maxSupertiles)
+    gEngine.terrain.numFreeSupertiles = Int16(maxSupertiles)
 }
 
 // MARK: -
@@ -801,18 +807,18 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     OGL_DisableBlend() // no blending for terrain - its always opaque
     gEngine.renderer.setAlphaTestEnabled(false)
 
-    gNumSuperTilesDrawn = 0
+    gEngine.terrain.numSuperTilesDrawn = 0
 
     // SCAN THE SUPERTILE GRID AND LOOK FOR USED & VISIBLE SUPERTILES
 
-    for r in 0..<Int(gNumSuperTilesDeep) {
-        for c in 0..<Int(gNumSuperTilesWide) {
-            if gSuperTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_USED_THIS_FRAME) != 0 { // see if used
-                let i = Int(gSuperTileStatusGrid[r]![c].supertileIndex) // extract supertile #
+    for r in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+        for c in 0..<Int(gEngine.terrain.numSuperTilesWide) {
+            if gEngine.terrain.superTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_USED_THIS_FRAME) != 0 { // see if used
+                let i = Int(gEngine.terrain.superTileStatusGrid[r]![c].supertileIndex) // extract supertile #
 
                 // SEE WHICH UNIQUE SUPERTILE TEXTURE TO USE
 
-                let unique = Int(gSuperTileTextureGrid[r]![c])
+                let unique = Int(gEngine.terrain.superTileTextureGrid[r]![c])
                 if unique == -1 { // if -1 then its a blank
                     continue
                 }
@@ -841,7 +847,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
                 // SUBMIT THE GEOMETRY
 
                 MO_DrawGeometry_VertexArray(superTile.pointee.meshData)
-                gNumSuperTilesDrawn += 1
+                gEngine.terrain.numSuperTilesDrawn += 1
             }
         }
     }
@@ -859,21 +865,21 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     }
 
     if doPrepGrid {
-        for r in 0..<Int(gNumSuperTilesDeep) {
-            for c in 0..<Int(gNumSuperTilesWide) {
+        for r in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+            for c in 0..<Int(gEngine.terrain.numSuperTilesWide) {
                 // IF THIS SUPERTILE WAS NOT USED BUT IS DEFINED, THEN FREE IT
 
-                if gSuperTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_DEFINED) != 0 { // is it defined?
-                    if gSuperTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_USED_THIS_FRAME) == 0 { // was it used?  If not, then release the supertile definition
-                        releaseSuperTileObject(Int16(gSuperTileStatusGrid[r]![c].supertileIndex))
-                        gSuperTileStatusGrid[r]![c].statusFlags = 0 // no longer defined
+                if gEngine.terrain.superTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_DEFINED) != 0 { // is it defined?
+                    if gEngine.terrain.superTileStatusGrid[r]![c].statusFlags & UInt8(SUPERTILE_IS_USED_THIS_FRAME) == 0 { // was it used?  If not, then release the supertile definition
+                        releaseSuperTileObject(Int16(gEngine.terrain.superTileStatusGrid[r]![c].supertileIndex))
+                        gEngine.terrain.superTileStatusGrid[r]![c].statusFlags = 0 // no longer defined
                     }
                 }
 
                 // ASSUME SUPERTILES WILL BE UNUSED ON NEXT FRAME
 
                 if !isStereo() || (gAnaglyphPass > 0) {
-                    gSuperTileStatusGrid[r]![c].statusFlags &= ~UInt8(SUPERTILE_IS_USED_THIS_FRAME) // clear the isUsed bit
+                    gEngine.terrain.superTileStatusGrid[r]![c].statusFlags &= ~UInt8(SUPERTILE_IS_USED_THIS_FRAME) // clear the isUsed bit
                 }
             }
         }
@@ -886,10 +892,10 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     if gDebugMode == 2 {
         gEngine.renderer.setColor4f(0.5, 1.0, 0.75, 1)
 
-        for splineNum in 0..<Int(gNumSplines) {
+        for splineNum in 0..<Int(gEngine.splines.numSplines) {
             gEngine.renderer.beginImmediate(.lineStrip)
 
-            let spline = gSplineList[splineNum]
+            let spline = gEngine.splines.splineList[splineNum]
             for nubNum in 0..<Int(spline.numPoints) {
                 let x = spline.pointList![nubNum].x
                 let z = spline.pointList![nubNum].z
@@ -930,43 +936,43 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 //
 // OUTPUT: y = world y coord
 func GetTerrainY(_ x: Float, _ z: Float) -> Float {
-    if gMapYCoords == nil { // make sure there's a terrain
+    if gEngine.terrain.mapYCoords == nil { // make sure there's a terrain
         return ILLEGAL_TERRAIN_Y
     }
 
     // CALC TILE ROW/COL INFO
 
-    let col = Int16(x * gTerrainPolygonSizeFrac) // see which tile row/col we're on
-    let row = Int16(z * gTerrainPolygonSizeFrac)
+    let col = Int16(x * gEngine.terrain.polygonSizeFrac) // see which tile row/col we're on
+    let row = Int16(z * gEngine.terrain.polygonSizeFrac)
 
-    if (col < 0) || (col >= Int16(gTerrainTileWidth)) { // check bounds
+    if (col < 0) || (col >= Int16(gEngine.terrain.tileWidth)) { // check bounds
         return 0
     }
-    if (row < 0) || (row >= Int16(gTerrainTileDepth)) {
+    if (row < 0) || (row >= Int16(gEngine.terrain.tileDepth)) {
         return 0
     }
 
-    let xi = x - (Float(col) * Float(gTerrainPolygonSizeInt)) // calc x/z offset into the tile
-    let zi = z - (Float(row) * Float(gTerrainPolygonSizeInt))
+    let xi = x - (Float(col) * Float(gEngine.terrain.polygonSizeInt)) // calc x/z offset into the tile
+    let zi = z - (Float(row) * Float(gEngine.terrain.polygonSizeInt))
 
     // BUILD VERTICES FOR THE 4 CORNERS OF THE TILE
 
     var p = [OGLPoint3D](repeating: OGLPoint3D(), count: 4)
 
-    p[0].x = Float(col) * Float(gTerrainPolygonSizeInt) // far left
-    p[0].y = gMapYCoords[Int(row)]![Int(col)]
-    p[0].z = Float(row) * Float(gTerrainPolygonSizeInt)
+    p[0].x = Float(col) * Float(gEngine.terrain.polygonSizeInt) // far left
+    p[0].y = gEngine.terrain.mapYCoords[Int(row)]![Int(col)]
+    p[0].z = Float(row) * Float(gEngine.terrain.polygonSizeInt)
 
-    p[1].x = p[0].x + gTerrainPolygonSize // far right
-    p[1].y = gMapYCoords[Int(row)]![Int(col) + 1]
+    p[1].x = p[0].x + gEngine.terrain.polygonSize // far right
+    p[1].y = gEngine.terrain.mapYCoords[Int(row)]![Int(col) + 1]
     p[1].z = p[0].z
 
     p[2].x = p[1].x // near right
-    p[2].y = gMapYCoords[Int(row) + 1]![Int(col) + 1]
-    p[2].z = p[1].z + gTerrainPolygonSize
+    p[2].y = gEngine.terrain.mapYCoords[Int(row) + 1]![Int(col) + 1]
+    p[2].z = p[1].z + gEngine.terrain.polygonSize
 
-    p[3].x = Float(col) * Float(gTerrainPolygonSizeInt) // near left
-    p[3].y = gMapYCoords[Int(row) + 1]![Int(col)]
+    p[3].x = Float(col) * Float(gEngine.terrain.polygonSizeInt) // near left
+    p[3].y = gEngine.terrain.mapYCoords[Int(row) + 1]![Int(col)]
     p[3].z = p[2].z
 
     // CALC PLANE EQUATION FOR TRIANGLE
@@ -974,14 +980,14 @@ func GetTerrainY(_ x: Float, _ z: Float) -> Float {
     var planeEq = OGLPlaneEquation()
     var xiAdj = xi
 
-    if gMapSplitMode[Int(row)]![Int(col)] == UInt8(SPLIT_BACKWARD) { // if \ split
+    if gEngine.terrain.mapSplitMode[Int(row)]![Int(col)] == UInt8(SPLIT_BACKWARD) { // if \ split
         if xiAdj < zi { // which triangle are we on?
             CalcPlaneEquationOfTriangle(&planeEq, &p[0], &p[2], &p[3]) // calc plane equation for left triangle
         } else {
             CalcPlaneEquationOfTriangle(&planeEq, &p[0], &p[1], &p[2]) // calc plane equation for right triangle
         }
     } else { // otherwise, / split
-        xiAdj = gTerrainPolygonSize - xiAdj // flip x
+        xiAdj = gEngine.terrain.polygonSize - xiAdj // flip x
         if xiAdj > zi {
             CalcPlaneEquationOfTriangle(&planeEq, &p[0], &p[1], &p[3]) // calc plane equation for left triangle
         } else {
@@ -989,7 +995,7 @@ func GetTerrainY(_ x: Float, _ z: Float) -> Float {
         }
     }
 
-    gRecentTerrainNormal = planeEq.normal // remember the normal here
+    gEngine.terrain.recentTerrainNormal = planeEq.normal // remember the normal here
 
     return (planeEq.constant - ((planeEq.normal.x * x) + (planeEq.normal.z * z))) / planeEq.normal.y // calc intersection (IntersectionOfYAndPlane)
 }
@@ -1044,12 +1050,12 @@ func GetSuperTileInfo(_ x: Int, _ z: Int, _ superCol: UnsafeMutablePointer<Int32
     if (x < 0) || (z < 0) { // see if out of bounds
         return
     }
-    if (x >= gTerrainUnitWidth) || (z >= gTerrainUnitDepth) {
+    if (x >= gEngine.terrain.unitWidth) || (z >= gEngine.terrain.unitDepth) {
         return
     }
 
-    let col = Int32(Float(x) * (1.0 / gTerrainSuperTileUnitSize)) // calc supertile relative row/col that the coord lies on
-    let row = Int32(Float(z) * (1.0 / gTerrainSuperTileUnitSize))
+    let col = Int32(Float(x) * (1.0 / gEngine.terrain.superTileUnitSize)) // calc supertile relative row/col that the coord lies on
+    let row = Int32(Float(z) * (1.0 / gEngine.terrain.superTileUnitSize))
 
     superRow.pointee = row // return which supertile relative row/col it is
     superCol.pointee = col
@@ -1174,19 +1180,19 @@ private let gridMask3: [[UInt8]] = [
 ]
 
 func DoPlayerTerrainUpdate() {
-    if gNumUniqueSuperTiles == 0 { // dont draw if terrain not loaded
+    if gEngine.terrain.numUniqueSuperTiles == 0 { // dont draw if terrain not loaded
         return
     }
 
     // FIRST CLEAR OUT THE PLAYER FLAGS - ASSUME NO PLAYERS ON ANY SUPERTILES
 
-    for row in 0..<Int(gNumSuperTilesDeep) {
-        for col in 0..<Int(gNumSuperTilesWide) {
-            gSuperTileStatusGrid[row]![col].playerHereFlags = 0
+    for row in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+        for col in 0..<Int(gEngine.terrain.numSuperTilesWide) {
+            gEngine.terrain.superTileStatusGrid[row]![col].playerHereFlags = 0
         }
     }
 
-    gHiccupTimer = 0
+    gEngine.terrain.hiccupTimer = 0
 
     for playerNum in 0..<Int(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoEntry(Int32(playerNum))
@@ -1196,18 +1202,18 @@ func DoPlayerTerrainUpdate() {
         var x = pi.pointee.camera.cameraLocation.x
         var y = pi.pointee.camera.cameraLocation.z
 
-        x -= Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize // calc pixel coords of far left supertile
-        y -= Float(gSuperTileActiveRange) * gTerrainSuperTileUnitSize
+        x -= Float(gEngine.terrain.superTileActiveRange) * gEngine.terrain.superTileUnitSize // calc pixel coords of far left supertile
+        y -= Float(gEngine.terrain.superTileActiveRange) * gEngine.terrain.superTileUnitSize
 
         // CALC ROW/COL SUPERTILE
 
-        gCurrentSuperTileCol[playerNum] = Int32(x * gTerrainSuperTileUnitSizeFrac + 0.5) // round to nearest row/col
-        gCurrentSuperTileRow[playerNum] = Int32(y * gTerrainSuperTileUnitSizeFrac + 0.5)
+        gEngine.terrain.currentSuperTileCol[playerNum] = Int32(x * gEngine.terrain.superTileUnitSizeFrac + 0.5) // round to nearest row/col
+        gEngine.terrain.currentSuperTileRow[playerNum] = Int32(y * gEngine.terrain.superTileUnitSizeFrac + 0.5)
 
         // SEE IF ROW/COLUMN HAVE CHANGED
 
-        let deltaRow = abs(gCurrentSuperTileRow[playerNum] - gPreviousSuperTileRow[playerNum])
-        let deltaCol = abs(gCurrentSuperTileCol[playerNum] - gPreviousSuperTileCol[playerNum])
+        let deltaRow = abs(gEngine.terrain.currentSuperTileRow[playerNum] - gEngine.terrain.previousSuperTileRow[playerNum])
+        let deltaCol = abs(gEngine.terrain.currentSuperTileCol[playerNum] - gEngine.terrain.previousSuperTileCol[playerNum])
 
         var moved: Bool
         var fullItemScan: Bool
@@ -1226,37 +1232,37 @@ func DoPlayerTerrainUpdate() {
 
         // SCAN THE GRID AND SEE WHICH SUPERTILES NEED TO BE INITIALIZED
 
-        let maxRow = gCurrentSuperTileRow[playerNum] + (Int32(gSuperTileActiveRange) * 2)
-        let maxCol = gCurrentSuperTileCol[playerNum] + (Int32(gSuperTileActiveRange) * 2)
+        let maxRow = gEngine.terrain.currentSuperTileRow[playerNum] + (Int32(gEngine.terrain.superTileActiveRange) * 2)
+        let maxCol = gEngine.terrain.currentSuperTileCol[playerNum] + (Int32(gEngine.terrain.superTileActiveRange) * 2)
 
         var maskRow = 0
-        var row = gCurrentSuperTileRow[playerNum]
+        var row = gEngine.terrain.currentSuperTileRow[playerNum]
         while row < maxRow {
             defer { row += 1; maskRow += 1 }
 
             if row < 0 { // see if row is out of range
                 continue
             }
-            if row >= gNumSuperTilesDeep {
+            if row >= gEngine.terrain.numSuperTilesDeep {
                 break
             }
 
             var maskCol = 0
-            var col = gCurrentSuperTileCol[playerNum]
+            var col = gEngine.terrain.currentSuperTileCol[playerNum]
             while col < maxCol {
                 defer { col += 1; maskCol += 1 }
 
                 if col < 0 { // see if col is out of range
                     continue
                 }
-                if col >= gNumSuperTilesWide {
+                if col >= gEngine.terrain.numSuperTilesWide {
                     break
                 }
 
                 // CHECK MASK AND SEE IF WE NEED THIS
 
                 let mask: UInt8
-                switch gSuperTileActiveRange {
+                switch gEngine.terrain.superTileActiveRange {
                 case 3:
                     mask = gridMask3[maskRow][maskCol]
                 case 4:
@@ -1278,19 +1284,19 @@ func DoPlayerTerrainUpdate() {
                 if mask == 0 {
                     continue
                 } else {
-                    gSuperTileStatusGrid[Int(row)]![Int(col)].playerHereFlags |= UInt8(1 << playerNum) // remember which players are using this supertile
+                    gEngine.terrain.superTileStatusGrid[Int(row)]![Int(col)].playerHereFlags |= UInt8(1 << playerNum) // remember which players are using this supertile
 
                     // ONLY CREATE GEOMETRY
 
                     // IS THIS SUPERTILE NOT ALREADY DEFINED?
 
-                    if gSuperTileStatusGrid[Int(row)]![Int(col)].statusFlags & UInt8(SUPERTILE_IS_DEFINED) == 0 {
-                        if gSuperTileTextureGrid[Int(row)]![Int(col)] != -1 { // supertiles with texture ID -1 are blank, so dont build them
-                            gSuperTileStatusGrid[Int(row)]![Int(col)].supertileIndex = buildTerrainSuperTile(Int(col) * Int(SUPERTILE_SIZE), Int(row) * Int(SUPERTILE_SIZE)) // build the supertile
-                            gSuperTileStatusGrid[Int(row)]![Int(col)].statusFlags = UInt8(SUPERTILE_IS_DEFINED) | UInt8(SUPERTILE_IS_USED_THIS_FRAME) // mark as defined & used
+                    if gEngine.terrain.superTileStatusGrid[Int(row)]![Int(col)].statusFlags & UInt8(SUPERTILE_IS_DEFINED) == 0 {
+                        if gEngine.terrain.superTileTextureGrid[Int(row)]![Int(col)] != -1 { // supertiles with texture ID -1 are blank, so dont build them
+                            gEngine.terrain.superTileStatusGrid[Int(row)]![Int(col)].supertileIndex = buildTerrainSuperTile(Int(col) * Int(SUPERTILE_SIZE), Int(row) * Int(SUPERTILE_SIZE)) // build the supertile
+                            gEngine.terrain.superTileStatusGrid[Int(row)]![Int(col)].statusFlags = UInt8(SUPERTILE_IS_DEFINED) | UInt8(SUPERTILE_IS_USED_THIS_FRAME) // mark as defined & used
                         }
                     } else {
-                        gSuperTileStatusGrid[Int(row)]![Int(col)].statusFlags |= UInt8(SUPERTILE_IS_USED_THIS_FRAME) // mark this as used
+                        gEngine.terrain.superTileStatusGrid[Int(row)]![Int(col)].statusFlags |= UInt8(SUPERTILE_IS_USED_THIS_FRAME) // mark this as used
                     }
                 }
 
@@ -1306,8 +1312,8 @@ func DoPlayerTerrainUpdate() {
 
         // UPDATE STUFF
 
-        gPreviousSuperTileRow[playerNum] = gCurrentSuperTileRow[playerNum]
-        gPreviousSuperTileCol[playerNum] = gCurrentSuperTileCol[playerNum]
+        gEngine.terrain.previousSuperTileRow[playerNum] = gEngine.terrain.currentSuperTileRow[playerNum]
+        gEngine.terrain.previousSuperTileCol[playerNum] = gEngine.terrain.currentSuperTileCol[playerNum]
 
         calcNewItemDeleteWindow(UInt8(playerNum)) // recalc item delete window
     }
@@ -1320,22 +1326,22 @@ private func calcNewItemDeleteWindow(_ playerNum: UInt8) {
 
     // CALC LEFT SIDE OF WINDOW
 
-    var temp = Float(gCurrentSuperTileCol[Int(playerNum)]) * gTerrainSuperTileUnitSize // convert to unit coords
+    var temp = Float(gEngine.terrain.currentSuperTileCol[Int(playerNum)]) * gEngine.terrain.superTileUnitSize // convert to unit coords
     pi.pointee.itemDeleteWindow.left = temp
 
     // CALC RIGHT SIDE OF WINDOW
 
-    temp += Float(gSuperTileActiveRange * 2) * gTerrainSuperTileUnitSize // calc offset to right side (SUPERTILE_DIST_WIDE)
+    temp += Float(gEngine.terrain.superTileActiveRange * 2) * gEngine.terrain.superTileUnitSize // calc offset to right side (SUPERTILE_DIST_WIDE)
     pi.pointee.itemDeleteWindow.right = temp
 
     // CALC FAR SIDE OF WINDOW
 
-    temp = Float(gCurrentSuperTileRow[Int(playerNum)]) * gTerrainSuperTileUnitSize // convert to unit coords
+    temp = Float(gEngine.terrain.currentSuperTileRow[Int(playerNum)]) * gEngine.terrain.superTileUnitSize // convert to unit coords
     pi.pointee.itemDeleteWindow.top = temp
 
     // CALC NEAR SIDE OF WINDOW
 
-    temp += Float(gSuperTileActiveRange * 2) * gTerrainSuperTileUnitSize // calc offset to bottom side (SUPERTILE_DIST_DEEP)
+    temp += Float(gEngine.terrain.superTileActiveRange * 2) * gEngine.terrain.superTileUnitSize // calc offset to bottom side (SUPERTILE_DIST_DEEP)
     pi.pointee.itemDeleteWindow.bottom = temp
 }
 
@@ -1344,29 +1350,29 @@ private func calcNewItemDeleteWindow(_ playerNum: UInt8) {
 // MARK: - Calculate split mode matrix
 
 func CalculateSplitModeMatrix() {
-    gMapSplitMode = alloc2DArray(UInt8.self, rows: Int(gTerrainTileDepth), cols: Int(gTerrainTileWidth)) // alloc 2D array
+    gEngine.terrain.mapSplitMode = alloc2DArray(UInt8.self, rows: Int(gEngine.terrain.tileDepth), cols: Int(gEngine.terrain.tileWidth)) // alloc 2D array
 
-    for row in 0..<Int(gTerrainTileDepth) {
-        for col in 0..<Int(gTerrainTileWidth) {
+    for row in 0..<Int(gEngine.terrain.tileDepth) {
+        for col in 0..<Int(gEngine.terrain.tileWidth) {
             // GET Y COORDS OF 4 VERTICES
 
-            let y0 = gMapYCoords[row]![col]
-            let y1 = gMapYCoords[row]![col + 1]
-            let y2 = gMapYCoords[row + 1]![col + 1]
-            let y3 = gMapYCoords[row + 1]![col]
+            let y0 = gEngine.terrain.mapYCoords[row]![col]
+            let y1 = gEngine.terrain.mapYCoords[row]![col + 1]
+            let y2 = gEngine.terrain.mapYCoords[row + 1]![col + 1]
+            let y3 = gEngine.terrain.mapYCoords[row + 1]![col]
 
             // QUICK CHECK FOR FLAT POLYS
 
             if (y0 == y1) && (y0 == y2) && (y0 == y3) { // see if all same level
-                gMapSplitMode[row]![col] = UInt8(SPLIT_BACKWARD)
+                gEngine.terrain.mapSplitMode[row]![col] = UInt8(SPLIT_BACKWARD)
             }
 
             // CALC FOLD-SPLIT
             else {
                 if fabsf(y0 - y2) < fabsf(y1 - y3) {
-                    gMapSplitMode[row]![col] = UInt8(SPLIT_BACKWARD) // use \ splits
+                    gEngine.terrain.mapSplitMode[row]![col] = UInt8(SPLIT_BACKWARD) // use \ splits
                 } else {
-                    gMapSplitMode[row]![col] = UInt8(SPLIT_FORWARD) // use / splits
+                    gEngine.terrain.mapSplitMode[row]![col] = UInt8(SPLIT_FORWARD) // use / splits
                 }
             }
         }

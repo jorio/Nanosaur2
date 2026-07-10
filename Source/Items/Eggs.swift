@@ -16,9 +16,9 @@ func FindAllEggItems() {
 
     // SCAN FOR EGG ITEM
 
-    let itemPtr = gMasterItemList! // get pointer to data inside the LOCKED handle
+    let itemPtr = gEngine.terrain.masterItemList! // get pointer to data inside the LOCKED handle
 
-    for i in 0..<Int(gNumTerrainItems) {
+    for i in 0..<Int(gEngine.terrain.numTerrainItems) {
         if itemPtr[i].type == UInt16(MAP_ITEM_EGG) { // see if it's an Egg item
             let eggColor = Int(itemPtr[i].parm.0) // egg color # is in parm 0
             if eggColor >= EggColor.allCases.count {

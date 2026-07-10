@@ -9,13 +9,8 @@
 // reimplemented in plain Swift under the same name/signature so its call
 // sites in Terrain.swift/Holes.swift didn't need to change.
 
-private let gCustomSplinesBuf: UnsafeMutablePointer<CustomSplineType> = {
-    let buf = UnsafeMutablePointer<CustomSplineType>.allocate(capacity: 40)
-    buf.initialize(repeating: CustomSplineType(), count: 40)
-    return buf
-}()
 func GetCustomSplineSlot(_ i: Int32) -> UnsafeMutablePointer<CustomSplineType> {
-    gCustomSplinesBuf + Int(i)
+    gEngine.splines.customSplinesBuf + Int(i)
 }
 
 extension UnsafeMutablePointer where Pointee == CustomSplineType {

@@ -259,7 +259,7 @@ func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineIt
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE BRACH
 

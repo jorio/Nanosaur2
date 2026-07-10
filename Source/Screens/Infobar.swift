@@ -774,8 +774,8 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     // Then we need to scale the scroll value to uv coords.
 
     let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
-    var leftEdge = Double(pi.pointee.coord.x * gMapToUnitValueFrac) // convert world-coord to texture-pixel-coord
-    var topEdge = Double(pi.pointee.coord.z * gMapToUnitValueFrac)
+    var leftEdge = Double(pi.pointee.coord.x * gEngine.terrain.mapToUnitValueFrac) // convert world-coord to texture-pixel-coord
+    var topEdge = Double(pi.pointee.coord.z * gEngine.terrain.mapToUnitValueFrac)
 
     var visibleRange: Float
     var u: Float

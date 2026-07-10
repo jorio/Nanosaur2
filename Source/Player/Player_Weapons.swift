@@ -817,7 +817,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
         } else {
             newObj.pointee.Flag.0 = 1 // BulletTargetLocked
             newObj.pointee.SpecialPtr.0 = UnsafeMutableRawPointer(targetObj) // BulletTargetObj
-            newObj.pointee.Special.1 = Int(targetObj.pointee.Cookie) // BulletTargetCookie
+            newObj.pointee.Special.1 = Int(bitPattern: UInt(targetObj.pointee.Cookie)) // BulletTargetCookie // (bitPattern/truncating: random UInt32 values exceed Int32.max; plain conversion traps on 32-bit Int - 3DS)
         }
     } else {
         // NOTHING HAS BEEN AUTO-TARGETED
@@ -885,7 +885,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
 
         let target = theNode.pointee.SpecialPtr.0!.assumingMemoryBound(to: ObjNode.self) // BulletTargetObj
 
-        if UInt32(theNode.pointee.Special.1) != target.pointee.Cookie { // verify that it's the same object
+        if UInt32(truncatingIfNeeded: theNode.pointee.Special.1) != target.pointee.Cookie { // verify that it's the same object
             theNode.pointee.Flag.0 = 0 // BulletTargetLocked
         } else {
             // UPDATE AIM TO TARGET
@@ -1039,7 +1039,7 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
     if let best {
         bullet.pointee.Flag.0 = 1 // BulletTargetLocked
         bullet.pointee.SpecialPtr.0 = UnsafeMutableRawPointer(best) // BulletTargetObj
-        bullet.pointee.Special.1 = Int(best.pointee.Cookie) // BulletTargetCookie
+        bullet.pointee.Special.1 = Int(bitPattern: UInt(best.pointee.Cookie)) // BulletTargetCookie // (bitPattern/truncating: random UInt32 values exceed Int32.max; plain conversion traps on 32-bit Int - 3DS)
     } else {
         bullet.pointee.Flag.0 = 0 // BulletTargetLocked
     }

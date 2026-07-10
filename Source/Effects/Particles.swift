@@ -1130,11 +1130,11 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
         theNode.pointee.ParticleTimer += 0.05
 
         var particleGroup = theNode.pointee.Special.5 // SmokeParticleGroup
-        let magicNum = UInt32(theNode.pointee.Special.4) // SmokeParticleMagic
+        let magicNum = UInt32(truncatingIfNeeded: theNode.pointee.Special.4) // SmokeParticleMagic
 
         if (particleGroup == -1) || (VerifyParticleGroupMagicNum(Int16(particleGroup), magicNum) == 0) {
             let newMagicNum = MyRandomLong()
-            theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
+            theNode.pointee.Special.4 = Int(bitPattern: UInt(newMagicNum)) // SmokeParticleMagic // (bitPattern/truncating: random UInt32 values exceed Int32.max; plain conversion traps on 32-bit Int - 3DS)
 
             gEngine.particles.newGroupDef.magicNum = newMagicNum
             gEngine.particles.newGroupDef.particleType = .fallingSparks
@@ -1206,11 +1206,11 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
             theNode.pointee.SpecialF.4 += smokeTimer // reset timer
 
             var particleGroup = Int16(theNode.pointee.Special.5) // SmokeParticleGroup
-            let magicNum = UInt32(theNode.pointee.Special.4) // SmokeParticleMagic
+            let magicNum = UInt32(truncatingIfNeeded: theNode.pointee.Special.4) // SmokeParticleMagic
 
             if (particleGroup == -1) || (VerifyParticleGroupMagicNum(particleGroup, magicNum) == 0) {
                 let newMagicNum = MyRandomLong()
-                theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
+                theNode.pointee.Special.4 = Int(bitPattern: UInt(newMagicNum)) // SmokeParticleMagic // (bitPattern/truncating: random UInt32 values exceed Int32.max; plain conversion traps on 32-bit Int - 3DS)
 
                 var groupDef = NewParticleGroupDefType()
                 groupDef.magicNum = newMagicNum

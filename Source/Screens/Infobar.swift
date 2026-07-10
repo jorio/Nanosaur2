@@ -184,9 +184,7 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let halfLW = overlayLogicalWidth * 0.5 + 10
     let halfLH = overlayLogicalHeight * 0.5 + 10
 
-    withUnsafePointer(to: &theNode.pointee.ColorFilter.r) {
-        glColor4fv($0)
-    }
+    gEngine.renderer.setColor4f(theNode.pointee.ColorFilter.r, theNode.pointee.ColorFilter.g, theNode.pointee.ColorFilter.b, theNode.pointee.ColorFilter.a)
     gEngine.renderer.translate(640 / 2, 480 / 2, 0)
     gEngine.renderer.beginImmediate(.quads)
 

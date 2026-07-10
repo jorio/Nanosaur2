@@ -277,6 +277,13 @@ protocol RenderBackend: AnyObject {
 
 // MARK: - OpenGL implementation
 
+// Desktop only: the 3DS renders through Citro3DRenderBackend
+// (Source/3D/Citro3DBackend.swift over ports/3DS/common/c3d_renderer.c) -
+// there is no GL implementation on that platform anymore (picaGL was
+// removed), and the 3DS SDL_opengl.h stub deliberately declares no gl*
+// prototypes so this class couldn't compile there anyway.
+#if !NANOSAUR_3DS
+
 final class GLRenderBackend: RenderBackend {
     // glActiveTexture/glClientActiveTexture must be fetched as proc
     // addresses (necessary on Windows; harmless on macOS). Loaded by
@@ -286,22 +293,11 @@ final class GLRenderBackend: RenderBackend {
     private var clientActiveTextureProc: ActiveTextureProc?
 
     func loadGLProcs() {
-        // 3DS: picaGL statically links glActiveTexture/glClientActiveTexture
-        // as ordinary C functions (not an extension a driver may or may not
-        // expose), so there's nothing to dynamically look up - real SDL3's
-        // 3DS backend is software-rendering-only and doesn't implement
-        // SDL_GL_GetProcAddress at all, which would otherwise return nil
-        // here and fail the assert below at runtime.
-        #if NANOSAUR_3DS
-        activeTextureProc = glActiveTexture
-        clientActiveTextureProc = glClientActiveTexture
-        #else
         activeTextureProc = unsafeBitCast(SDL.glProcAddress("glActiveTexture"), to: ActiveTextureProc?.self)
         SwGameAssert(activeTextureProc != nil)
 
         clientActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glClientActiveTexture"), to: ActiveTextureProc?.self)
         SwGameAssert(clientActiveTextureProc != nil)
-        #endif
     }
 
     func enableBlend() { glEnable(GLenum(GL_BLEND)) }
@@ -622,21 +618,13 @@ final class GLRenderBackend: RenderBackend {
         glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(enabled ? GL_LINE : GL_FILL))
     }
     func present() {
-        #if NANOSAUR_3DS
-        PGL_SwapBuffers()
-        #else
         SDL_GL_SwapWindow(gSDLWindow)
-        #endif
     }
 
     func rendererInfo() -> String {
-        #if NANOSAUR_3DS
-        return "Nintendo 3DS (picaGL)"
-        #else
         let rendererStr = String(cString: glGetString(GLenum(GL_RENDERER))!)
         let versionStr = String(cString: glGetString(GLenum(GL_VERSION))!)
         return "\(rendererStr), OpenGL \(versionStr)"
-        #endif
     }
 
     func setColorMask(_ r: Bool, _ g: Bool, _ b: Bool, _ a: Bool) {
@@ -656,18 +644,6 @@ final class GLRenderBackend: RenderBackend {
     func createContext() {
         SwGameAssertMessage(gEngine.view.aglContext == nil, "GL context already exists")
 
-        #if NANOSAUR_3DS
-        // picaGL/citro3d have no per-window GL-style context object:
-        // pglInit() sets up one global render pipeline for the whole app,
-        // and screens are selected by pglSelectScreen, not a context
-        // handle you make current. aglContext is set to a nominal
-        // sentinel purely so other code's "is there a context" checks
-        // still work (see PlatformBackend.swift's historical
-        // CTRUGraphicsBackend for the same pattern).
-        PGL_Init()
-        PGL_SelectTopScreen()
-        gEngine.view.aglContext = OpaquePointer(bitPattern: 1)
-        #else
         // CREATE AGL CONTEXT & ATTACH TO WINDOW
 
         gEngine.view.aglContext = SDL_GL_CreateContext(gSDLWindow)
@@ -682,29 +658,18 @@ final class GLRenderBackend: RenderBackend {
 
         let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gEngine.view.aglContext)
         SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
-        #endif
 
         // ENABLE VSYNC
 
         setVSync(Int32(gGamePrefs.vsync))
 
         // SEE IF SUPPORT 2048x2048 TEXTURES
-        //
-        // Skipped on 3DS: picaGL's glGetIntegerv(GL_MAX_TEXTURE_SIZE) is a
-        // stub that hardcodes 128 (ports/3DS/vendor/picaGL/source/get.c),
-        // not the real PICA200 capability - this tripped SwFatalAlert() on
-        // every single boot, whose message-box path (DoFatalAlert ->
-        // SDL_ShowSimpleMessageBox) requires a real 3DS system-applet
-        // handoff that never completes without system files installed,
-        // manifesting as an endless GSPGPU_ReleaseRight/APT-sleep-query
-        // retry loop right after OGL_Boot().
-        #if !NANOSAUR_3DS
+
         var maxTexSize: GLint = 0
         glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
         if maxTexSize < 2048 {
             SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
         }
-        #endif
 
         // GET GL PROCEDURES (glActiveTexture etc. - necessary on Windows)
 
@@ -716,18 +681,13 @@ final class GLRenderBackend: RenderBackend {
             return
         }
 
-        #if NANOSAUR_3DS
-        // No-op: nothing owned per-context to tear down (picaGL itself has
-        // no matching pglExit-per-screen call - pglExit() tears down the
-        // whole GPU pipeline, called once at real app shutdown, not per
-        // context).
-        #else
         _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
         SDL_GL_DestroyContext(gEngine.view.aglContext) // nuke context
-        #endif
         gEngine.view.aglContext = nil
     }
 
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
     func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
 }
+
+#endif // !NANOSAUR_3DS

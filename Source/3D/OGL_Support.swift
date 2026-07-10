@@ -513,6 +513,9 @@ private func OGL_CreateDrawContext() {
 // window2 context is currently current. Assumes an orthographic projection
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
+// Desktop only (raw GL against the second GL context); the 3DS bottom
+// screen is SDL software blits (DrawBottomScreenBackground3DS).
+#if !NANOSAUR_3DS
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
     gEngine.renderer.matrixMode(.projection)
     gEngine.renderer.loadIdentity()
@@ -536,6 +539,7 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
 
     glDisable(GLenum(GL_TEXTURE_2D))
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - OGL: Nuke draw context
 
@@ -665,16 +669,19 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 
     // ANISOTRIPIC FILTERING
 
+    #if !NANOSAUR_3DS // raw GL introspection; no equivalent on the PICA200
     if gEngine.view.doAnisotropy, gMetalMode == 0 { // dead flag ("MAJOR PERFORMANCE KILLER") - raw GL introspection, kept guarded
         glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gEngine.view.maxAnisotropy)
         _ = OGL_CheckError()
     }
+    #endif
 }
 
 // MARK: - Clear all buffers to black
 
 private func ClearAllBuffersToBlack() {
     gEngine.renderer.setClearColor(0, 0, 0)
+    #if !NANOSAUR_3DS // shutter stereo needs GL's left/right draw buffers - desktop only
     if isStereoShutter() {
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
@@ -687,14 +694,15 @@ private func ClearAllBuffersToBlack() {
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         gEngine.renderer.present()
         _ = OGL_CheckError()
-    } else {
-        gEngine.renderer.clearColorAndDepth() // clear buffer
-        gEngine.renderer.present()
-        gEngine.renderer.clearColorAndDepth() // clear buffer
-        gEngine.renderer.present()
-
-        _ = OGL_CheckError()
+        return
     }
+    #endif
+    gEngine.renderer.clearColorAndDepth() // clear buffer
+    gEngine.renderer.present()
+    gEngine.renderer.clearColorAndDepth() // clear buffer
+    gEngine.renderer.present()
+
+    _ = OGL_CheckError()
 }
 
 // MARK: - OGL: Create lights
@@ -784,6 +792,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         if needClearAndBufferSelect {
             // SET BUFFER FOR SHUTTER GLASSES
 
+            #if !NANOSAUR_3DS // shutter stereo (GL left/right buffers) - desktop only
             if isStereoShutter() {
                 if gEngine.view.anaglyphPass == 0 {
                     glDrawBuffer(GLenum(GL_BACK_LEFT))
@@ -795,6 +804,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                     SwFatalAlert("OGL_DrawScene: glDrawBuffer()")
                 }
             }
+            #endif
 
             // CLEAR BUFFERS
 
@@ -931,9 +941,11 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     }
     #endif
 
+    #if !NANOSAUR_3DS // shutter stereo (GL left/right buffers) - desktop only
     if isStereoShutter() {
         DrawBlueLine(gEngine.window.width, gEngine.window.height)
     }
+    #endif
 
     // SWAP THE BUFFS
 
@@ -1083,8 +1095,9 @@ private func OGL_DrawDualScreenMinimap() {
 
 // MARK: - Draw blue line
 
-// for stereo blue-line stuff
+// for stereo blue-line stuff (shutter glasses - desktop GL only)
 
+#if !NANOSAUR_3DS
 private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
     glPushAttrib(GLbitfield(GL_ALL_ATTRIB_BITS))
 
@@ -1155,6 +1168,7 @@ private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
         SwFatalAlert("DrawBlueLine failed")
     }
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - OGL: Get current viewport
 

@@ -42,4 +42,11 @@
 // memory per texture - see that function's own comment), so linear
 // memory is no longer the tight pool it was. This rebalances the fixed
 // total pool toward the regular heap accordingly.
-uint32_t __ctru_linear_heap_size = 8 * 1024 * 1024; // 8 MiB (default 32 MiB; downsampled textures need far less linear memory now, so give the freed-up budget to the regular heap instead - 4 MiB was too aggressive and crashed early, before even reaching sprite loading; 8 MiB is the smallest value tested that didn't regress anything else)
+// Re-raised from the picaGL-era 8 MiB: the citro3d renderer
+// (common/c3d_renderer.c) allocates ALL textures from linear memory
+// (C3D_TexInit; ~15 MiB for the full set at GPU_RGBA4) plus two 2 MiB
+// per-frame vertex/index staging rings, so 8 MiB failed at the very first
+// large texture upload. 24 MiB covers that with margin while leaving the
+// regular heap the bulk of the pool (which LoadPlayfield's JPEG-decode
+// temporaries still need - see above).
+uint32_t __ctru_linear_heap_size = 24 * 1024 * 1024;

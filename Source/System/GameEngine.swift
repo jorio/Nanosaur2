@@ -7,10 +7,15 @@
 // cannot move and stay where they are.
 
 final class GameEngine {
-    /// Active rendering backend. GL by default; SwMetalBackend_Activate
-    /// swaps in the Metal backend under --metal during draw-context
-    /// creation, before any drawing happens.
+    /// Active rendering backend. Desktop: GL by default, with
+    /// SwMetalBackend_Activate swapping in the Metal backend under --metal
+    /// during draw-context creation, before any drawing happens.
+    /// 3DS: citro3d (Citro3DBackend.swift over c3d_renderer.c).
+    #if NANOSAUR_3DS
+    var renderer: RenderBackend = Citro3DRenderBackend()
+    #else
     var renderer: RenderBackend = GLRenderBackend()
+    #endif
 
     /// Object system: master ObjNode list, per-move coord/delta scratch,
     /// autofade settings, slot storage (see Objects.swift).

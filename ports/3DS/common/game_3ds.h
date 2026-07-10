@@ -38,11 +38,10 @@ extern _Bool aptMainLoop(void);
 #include "console_shim.h" 
 #define NANOSAUR_3DS_KEY_START 8 // BIT(3), from libctru's hid.h KEY_START - not included via <3ds.h> here (see above)
 
-// picaGL's real GPU init/screen-select/swap, for GLRenderBackend's
-// #if NANOSAUR_3DS branches (Source/3D/RenderBackend.swift) - see
-// picaGL_shim.h for why this is a plain wrapper header rather than
-// picaGL's own <GL/picaGL.h> (which pulls in <3ds.h>).
-#include "picaGL_shim.h"
+// citro3d renderer (replaced picaGL - see c3d_renderer.h's header comment),
+// backing Source/3D/Citro3DBackend.swift. Scalar-typed API, safe alongside
+// game.h for the same Handle-collision reasons as the other shim headers.
+#include "c3d_renderer.h"
 
 // RomFS mount (romfs_shim.c) + gDataSpec setup against it (fs_init_shim.cpp)
 // - see those files' own comments for why they're two separate translation

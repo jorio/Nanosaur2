@@ -468,14 +468,10 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
         gEngine.renderer.beginImmediate(.quads)
 
-        glTexCoord2fv(&uv[0].u)
-        glVertex3fv(&p[0].x)
-        glTexCoord2fv(&uv[1].u)
-        glVertex3fv(&p[1].x)
-        glTexCoord2fv(&uv[2].u)
-        glVertex3fv(&p[2].x)
-        glTexCoord2fv(&uv[3].u)
-        glVertex3fv(&p[3].x)
+        for i in 0..<4 {
+            gEngine.renderer.texCoord2f(uv[i].u, uv[i].v)
+            gEngine.renderer.vertex3f(p[i].x, p[i].y, p[i].z)
+        }
 
         gEngine.renderer.endImmediate()
 
@@ -501,14 +497,10 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
         gEngine.renderer.beginImmediate(.quads)
 
-        glTexCoord2fv(&uv[0].u)
-        glVertex3fv(&p[0].x)
-        glTexCoord2fv(&uv[1].u)
-        glVertex3fv(&p[1].x)
-        glTexCoord2fv(&uv[2].u)
-        glVertex3fv(&p[2].x)
-        glTexCoord2fv(&uv[3].u)
-        glVertex3fv(&p[3].x)
+        for i in 0..<4 {
+            gEngine.renderer.texCoord2f(uv[i].u, uv[i].v)
+            gEngine.renderer.vertex3f(p[i].x, p[i].y, p[i].z)
+        }
 
         gEngine.renderer.endImmediate()
     }

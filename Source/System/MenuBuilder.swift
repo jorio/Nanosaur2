@@ -16,18 +16,6 @@
 // Property assignment goes through ClangImporter's generated setter instead,
 // which is the safe, supported path.
 
-/// Converts a 4-character string into the Int32 four-char-code MenuItem
-/// uses for `.id`/`.next` (e.g. `fourCC("sett")` replaces C's `'sett'`).
-func fourCC(_ s: String) -> Int32 {
-    let scalars = Array(s.unicodeScalars)
-    precondition(scalars.count == 4, "fourCC requires exactly 4 characters")
-    var result: UInt32 = 0
-    for scalar in scalars {
-        result = (result << 8) | (scalar.value & 0xFF)
-    }
-    return Int32(bitPattern: result)
-}
-
 /// Fills the fixed 8-element `MenuCyclerData.choices` tuple
 /// (MAX_MENU_CYCLER_CHOICES) from a plain array, zero-filling the rest.
 /// Mutates field-by-field (`cycler.choices.0.text = ...`) instead of

@@ -2,9 +2,9 @@
 
 var gGamePaused: UInt8 = 0
 
-private let RESU_FOURCC: Int32 = 0x72657375
-private let BAIL_FOURCC: Int32 = 0x6261696C
-private let QUIT_FOURCC: Int32 = 0x71756974
+private let RESU_FOURCC: Int32 = fourCC("resu")
+private let BAIL_FOURCC: Int32 = fourCC("bail")
+private let QUIT_FOURCC: Int32 = fourCC("quit")
 
 // MARK: - Pause menu trees
 

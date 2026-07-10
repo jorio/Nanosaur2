@@ -25,7 +25,7 @@ private let cCheckForLevelCheat: @convention(c) () -> Void = {
 
 private let cDeleteFileSlot: @convention(c) () -> Void = {
     let id = GetCurrentMenuItemID()
-    let base = fourCC("df#0")
+    let base: Int32 = fourCC("df#0")
     if id >= base && id < base + 10 {
         _ = DeleteSavedGame(id - base)
     } else {

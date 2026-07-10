@@ -50,28 +50,28 @@ private struct FileFenceDefType {
     var bBox = Rect() // bounding box of fence area
 }
 
-// Resource FourCCs (Clang's macro-constant importer can't fold multi-char literals)
-private let kResHedr: ResType = 0x48656472
-private let kResBone: ResType = 0x426F6E65
-private let kResBonP: ResType = 0x426F6E50
-private let kResBonN: ResType = 0x426F6E4E
-private let kResRelP: ResType = 0x52656C50
-private let kResAnHd: ResType = 0x416E4864
-private let kResEvnt: ResType = 0x45766E74
-private let kResNumK: ResType = 0x4E756D4B
-private let kResKeyF: ResType = 0x4B657946
-private let kResSTgd: ResType = 0x53546764
-private let kResYCrd: ResType = 0x59437264
-private let kResItms: ResType = 0x49746D73
-private let kResSpln: ResType = 0x53706C6E
-private let kResSpPt: ResType = 0x53705074
-private let kResSpIt: ResType = 0x53704974
-private let kResFenc: ResType = 0x46656E63
-private let kResFnNb: ResType = 0x466E4E62
-private let kResLiqd: ResType = 0x4C697164
-private let kResCkPt: ResType = 0x436B5074
-private let kGameIDFourCC: OSType = 0x4E414E32 // 'NAN2'
-private let kPrefFourCC: OSType = 0x50726566 // 'Pref'
+// Resource FourCCs
+private let kResHedr: ResType = fourCC("Hedr")
+private let kResBone: ResType = fourCC("Bone")
+private let kResBonP: ResType = fourCC("BonP")
+private let kResBonN: ResType = fourCC("BonN")
+private let kResRelP: ResType = fourCC("RelP")
+private let kResAnHd: ResType = fourCC("AnHd")
+private let kResEvnt: ResType = fourCC("Evnt")
+private let kResNumK: ResType = fourCC("NumK")
+private let kResKeyF: ResType = fourCC("KeyF")
+private let kResSTgd: ResType = fourCC("STgd")
+private let kResYCrd: ResType = fourCC("YCrd")
+private let kResItms: ResType = fourCC("Itms")
+private let kResSpln: ResType = fourCC("Spln")
+private let kResSpPt: ResType = fourCC("SpPt")
+private let kResSpIt: ResType = fourCC("SpIt")
+private let kResFenc: ResType = fourCC("Fenc")
+private let kResFnNb: ResType = fourCC("FnNb")
+private let kResLiqd: ResType = fourCC("Liqd")
+private let kResCkPt: ResType = fourCC("CkPt")
+private let kGameIDFourCC: OSType = fourCC("NAN2")
+private let kPrefFourCC: OSType = fourCC("Pref")
 
 // `noErr`/`badFileFormat` come from the named C enum `EErrors`, which doesn't
 // import cleanly as a plain `OSErr` (Int16) constant in this context.

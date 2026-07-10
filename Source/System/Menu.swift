@@ -68,9 +68,9 @@ private let kJoystickDeadZone_BindingThreshold: Int32 = 75 * 32767 / 100
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 private let NORMAL_CHANNEL_RATE: UInt = 0x10000
 private let CLEAR_BINDING_SCANCODE: Int32 = Int32(SDL_SCANCODE_X.rawValue)
-private let BACK_FOURCC: Int32 = 0x4241434B
-private let EXIT_FOURCC: Int32 = 0x45584954
-private let NOOP_FOURCC: Int32 = 0x4E4F4F50
+private let BACK_FOURCC: Int32 = fourCC("BACK")
+private let EXIT_FOURCC: Int32 = fourCC("EXIT")
+private let NOOP_FOURCC: Int32 = fourCC("NOOP")
 private let ANY_PLAYER: Int = -1
 
 @inline(__always) private func playEffectForMenu(_ x: Int16) { PlayEffect_Parms(x, FULL_CHANNEL_VOLUME/4, FULL_CHANNEL_VOLUME/4, NORMAL_CHANNEL_RATE) }

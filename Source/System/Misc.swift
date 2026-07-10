@@ -111,6 +111,18 @@ func InitMyRandomSeed() {
 
 private let PTRCOOKIE_SIZE = 16
 
+// Heap-corruption canary cookies written around every AllocPtr/AllocPtrClear/
+// ReallocPtr block (see PTRCOOKIE_SIZE). The 3rd/4th words also encode which
+// allocator produced the block.
+private let kCookieFACE: UInt32 = fourCC("FACE") // live block
+private let kCookieDEAD: UInt32 = fourCC("DEAD") // freed block
+private let kCookiePTR3: UInt32 = fourCC("PTR3") // AllocPtr
+private let kCookiePTR4: UInt32 = fourCC("PTR4")
+private let kCookiePTC3: UInt32 = fourCC("PTC3") // AllocPtrClear
+private let kCookiePTC4: UInt32 = fourCC("PTC4")
+private let kCookieREA3: UInt32 = fourCC("REA3") // ReallocPtr
+private let kCookieREA4: UInt32 = fourCC("REA4")
+
 @c @implementation
 public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 >= 0)
@@ -121,10 +133,10 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
-    cookiePtr[0] = 0x46414345 // 'FACE'
+    cookiePtr[0] = kCookieFACE
     cookiePtr[1] = UInt32(size)
-    cookiePtr[2] = 0x50545233 // 'PTR3'
-    cookiePtr[3] = 0x50545234 // 'PTR4'
+    cookiePtr[2] = kCookiePTR3
+    cookiePtr[3] = kCookiePTR4
 
     gNumPointers += 1
     gRAMAlloced += size
@@ -141,10 +153,10 @@ func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
-    cookiePtr[0] = 0x46414345 // 'FACE'
+    cookiePtr[0] = kCookieFACE
     cookiePtr[1] = UInt32(size)
-    cookiePtr[2] = 0x50544333 // 'PTC3'
-    cookiePtr[3] = 0x50544334 // 'PTC4'
+    cookiePtr[2] = kCookiePTC3
+    cookiePtr[3] = kCookiePTC4
 
     gNumPointers += 1
     gRAMAlloced += size
@@ -167,15 +179,15 @@ public func ReallocPtr(_ initialPtr: UnsafeMutableRawPointer?, _ newSize0: Int) 
     p = SDL_realloc(p, newSize)! // reallocate it
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
-    SwGameAssert(cookiePtr[0] == 0x46414345) // realloc shouldn't have touched our cookie ('FACE')
+    SwGameAssert(cookiePtr[0] == kCookieFACE) // realloc shouldn't have touched our cookie
 
     let initialSize = cookiePtr[1] // update heap size metric
     gRAMAlloced += newSize - Int(initialSize)
 
-    cookiePtr[0] = 0x46414345 // rewrite cookie ('FACE')
+    cookiePtr[0] = kCookieFACE // rewrite cookie
     cookiePtr[1] = UInt32(newSize)
-    cookiePtr[2] = 0x52454133 // 'REA3'
-    cookiePtr[3] = 0x52454134 // 'REA4'
+    cookiePtr[2] = kCookieREA3
+    cookiePtr[3] = kCookieREA4
 
     return p + PTRCOOKIE_SIZE
 }
@@ -189,10 +201,10 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
     let p = ptr - PTRCOOKIE_SIZE // back up to pt to cookie
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
-    SwGameAssert(cookiePtr[0] == 0x46414345) // 'FACE'
+    SwGameAssert(cookiePtr[0] == kCookieFACE)
     gRAMAlloced -= Int(cookiePtr[1]) // deduct ptr size from heap size
 
-    cookiePtr[0] = 0x44454144 // zap cookie ('DEAD')
+    cookiePtr[0] = kCookieDEAD // zap cookie
 
     SDL_free(p)
 

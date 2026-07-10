@@ -5,7 +5,7 @@
 // anonymous union, and Swift's pointer(to:) nil-crashes on union members —
 // so the pointer is handed out by a C shim instead.
 
-private let TWITCH_DRIVER_COOKIE: UInt32 = 0x55494658 // 'UIFX'
+private let TWITCH_DRIVER_COOKIE: UInt32 = fourCC("UIFX")
 
 // gTwitchPtrPool/gTwitchBackingMemory/gTwitchPresets were `static`
 // (file-private) in C, and gFreeTwitches isn't `extern`'d anywhere, so none

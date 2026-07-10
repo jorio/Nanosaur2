@@ -2374,6 +2374,33 @@ func OGL_SetVertexArrayRangeDirty(_ buffer: Int16) {
 // Defines how much RAM to allocate for the Vertex Array Range buffers.
 
 private func OGL_MaxMemForVARType(_ varType: VertexArrayRangeType) -> Int {
+    #if NANOSAUR_3DS
+    // The desktop budgets below total ~38 MB of regular heap, which is most
+    // of the 3DS's whole pool - with the linear heap grown to hold the
+    // citro3d renderer's textures (boot_shim.c), those budgets starved
+    // malloc during level-intro asset loading (AllocPtr assert). These
+    // trimmed budgets total ~20 MB; OGL_AllocVertexArrayMemory fatal-alerts
+    // loudly (with the overflowing type) if any pool turns out too small.
+    switch varType {
+    case .particles1, .particles2:
+        return 2_000_000
+
+    case .bg3dModels:
+        return 4_000_000
+
+    case .terrain:
+        return 8_000_000 // 4 MB overflowed in CreateSuperTileMemoryList (fatal "Master Block full, type 2") - supertile mesh demand doesn't shrink on 3DS
+
+    case .zaps1, .zaps2:
+        return 300_000
+
+    case .skeletons, .skeletons2:
+        return 2_500_000
+
+    default:
+        return 1_000_000
+    }
+    #else
     switch varType {
     case .particles1, .particles2:
         return 6_000_000
@@ -2393,4 +2420,5 @@ private func OGL_MaxMemForVARType(_ varType: VertexArrayRangeType) -> Int {
     default:
         return 1_000_000
     }
+    #endif
 }

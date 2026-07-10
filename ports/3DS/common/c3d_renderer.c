@@ -115,6 +115,10 @@ static struct {
 	int ringIndex;
 	size_t ringOffset;
 
+	// diagnostics
+	int liveTextures;
+	u32 presentCount;
+
 	// immediate mode
 	int immPrim;
 	int immCount;
@@ -396,6 +400,14 @@ void C3DR_Present(void)
 	ensureFrame(); // nothing drew this frame - still flip so fades keep pumping
 	C3D_FrameEnd(0);
 	R.inFrame = false;
+
+#ifdef DEBUGLOG
+	// Memory-trend heartbeat: a slow texture/linear leak across scene
+	// teardowns only shows up as a trend, so log one every ~30s.
+	if (++R.presentCount % 1800 == 0)
+		c3drLog("c3dr: mem trend: tex=%d linearFree=%u vramFree=%u",
+			R.liveTextures, (unsigned)linearSpaceFree(), (unsigned)vramSpaceFree());
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -638,8 +650,49 @@ static void uploadPixels(TexSlot *t, const void *pixels, int width, int height, 
 	}
 }
 
+// Box-downsample an RGBA8 buffer by 2x (malloc'd result; caller frees).
+static u8 *downsample2xRGBA8(const u8 *src, int w, int h)
+{
+	int nw = w / 2, nh = h / 2;
+	u8 *dst = malloc((size_t)nw * nh * 4);
+	if (!dst)
+		return NULL;
+	for (int y = 0; y < nh; y++)
+	{
+		const u8 *r0 = src + (size_t)(y * 2) * w * 4;
+		const u8 *r1 = r0 + (size_t)w * 4;
+		u8 *out = dst + (size_t)y * nw * 4;
+		for (int x = 0; x < nw; x++)
+		{
+			const u8 *a = r0 + (size_t)x * 8, *b = a + 4;
+			const u8 *c = r1 + (size_t)x * 8, *d = c + 4;
+			for (int ch = 0; ch < 4; ch++)
+				out[x * 4 + ch] = (u8)((a[ch] + b[ch] + c[ch] + d[ch] + 2) >> 2);
+		}
+	}
+	return dst;
+}
+
 unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 {
+	// Downgrade oversized textures: on a 400x240 screen anything above
+	// 512px is oversampled, and the big offenders (1024x1024 font
+	// atlases) each cost 2 MB of linear memory even at RGBA4. Supertiles
+	// (128) and full-screen art (512-wide story slides) pass untouched.
+	u8 *shrunk = NULL;
+	while (width > 512 || height > 512)
+	{
+		u8 *next = downsample2xRGBA8(shrunk ? shrunk : (const u8 *)rgba8Pixels, width, height);
+		if (!next)
+			break;
+		free(shrunk);
+		shrunk = next;
+		width /= 2;
+		height /= 2;
+	}
+	if (shrunk)
+		rgba8Pixels = shrunk;
+
 	int slot = -1;
 	for (int i = 0; i < MAX_TEXTURES; i++)
 	{
@@ -652,6 +705,7 @@ unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 	if (slot < 0)
 	{
 		c3drLog("c3dr: out of texture slots");
+		free(shrunk);
 		return 0;
 	}
 
@@ -663,16 +717,20 @@ unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 	if (!C3D_TexInitVRAM(&t->tex, (u16)width, (u16)height, kTexFormat)
 		&& !C3D_TexInit(&t->tex, (u16)width, (u16)height, kTexFormat))
 	{
-		c3drLog("c3dr: C3D_TexInit %dx%d failed", width, height);
+		c3drLog("c3dr: C3D_TexInit %dx%d failed (linear free=%u vram free=%u)",
+			width, height, (unsigned)linearSpaceFree(), (unsigned)vramSpaceFree());
+		free(shrunk);
 		return 0;
 	}
 
 	uploadPixels(t, rgba8Pixels, width, height, false);
+	free(shrunk);
 
 	C3D_TexSetFilter(&t->tex, GPU_LINEAR, GPU_LINEAR);
 	C3D_TexSetWrap(&t->tex, GPU_REPEAT, GPU_REPEAT);
 	t->clampU = t->clampV = false;
 	t->used = true;
+	R.liveTextures++;
 
 	return (unsigned)slot + 1;
 }
@@ -691,6 +749,7 @@ void C3DR_DeleteTexture(unsigned name)
 		return;
 	C3D_TexDelete(&R.textures[name - 1].tex);
 	R.textures[name - 1].used = false;
+	R.liveTextures--;
 	for (int u = 0; u < 2; u++)
 	{
 		if (R.bound[u] == name)

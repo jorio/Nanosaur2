@@ -32,10 +32,15 @@ extern _Bool aptMainLoop(void);
 
 // console_shim.c - prints a line to the bottom-screen console (mirrors
 // SDL_Log's own output, but callable from Swift, which can't call
-// variadic C functions like SDL_Log directly). Used to insert temporary
-// verbose checkpoint logging into the Swift boot sequence for bisecting
-// boot hangs/crashes that don't throw a catchable C++ exception.
-extern void Debug3DS_Log(const char *message);
+// variadic C functions like SDL_Log directly). Used to insert verbose
+// checkpoint logging into the Swift boot sequence for bisecting boot
+// hangs/crashes that don't throw a catchable C++ exception. Only exists
+// under -DDEBUGLOG (defined by the Makefile's DEBUGLOG=1 default for both
+// Swift and C) - every call site is gated behind the same flag, so
+// flipping it off removes all logging code from the binary.
+#ifdef DEBUGLOG
+extern void DebugLog(const char *message);
+#endif
 #define NANOSAUR_3DS_KEY_START 8 // BIT(3), from libctru's hid.h KEY_START - not included via <3ds.h> here (see above)
 
 // picaGL's real GPU init/screen-select/swap, for GLRenderBackend's

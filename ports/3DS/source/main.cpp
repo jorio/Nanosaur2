@@ -85,13 +85,15 @@ int main()
     // Azahar itself writes never picks up guest output.
     Console3DS_Init();
 
+#ifdef DEBUGLOG
     {
         char msg[128];
         SDL_snprintf(msg, sizeof(msg), "heap_size=%u (%u MiB) linear_heap_size=%u (%u MiB)",
             __ctru_heap_size, __ctru_heap_size / (1024 * 1024),
             __ctru_linear_heap_size, __ctru_linear_heap_size / (1024 * 1024));
-        Debug3DS_Log(msg);
+        DebugLog(msg);
     }
+#endif
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()
     // -> OGL_CreateDrawContext() -> gRenderBackend.createContext()

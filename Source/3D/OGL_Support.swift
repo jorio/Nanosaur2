@@ -715,7 +715,7 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 
 // MARK: - OGL draw scene
 
-#if NANOSAUR_3DS
+#if DEBUGLOG
 private var gDrawSceneLogCounter = 0
 #endif
 
@@ -910,13 +910,13 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // END RENDER
 
-    #if NANOSAUR_3DS
+    #if DEBUGLOG
     // Periodic render-stats heartbeat: distinguishes "no geometry submitted"
     // (culling/scene-graph problem) from "geometry submitted but invisible"
     // (matrix/raster problem) without needing the interactive debug HUD.
     gDrawSceneLogCounter += 1
     if gDrawSceneLogCounter % 120 == 0 {
-        "OGL_DrawScene: frame=\(gDrawSceneLogCounter) polys=\(gEngine.view.polysThisFrame) objs=\(gEngine.objects.numObjectNodes)".withCString { Debug3DS_Log($0) }
+        "OGL_DrawScene: frame=\(gDrawSceneLogCounter) polys=\(gEngine.view.polysThisFrame) objs=\(gEngine.objects.numObjectNodes)".withCString { DebugLog($0) }
     }
     #endif
 
@@ -2087,8 +2087,8 @@ private func OGL_InitVertexArrayMemory() {
     // WE'RE DONE
 
     gEngine.view.varMemoryAllocated = true
-    #if NANOSAUR_3DS
-    Debug3DS_Log("OGL_InitVertexArrayMemory: master blocks allocated")
+    #if DEBUGLOG
+    DebugLog("OGL_InitVertexArrayMemory: master blocks allocated")
     #endif
 }
 
@@ -2110,8 +2110,8 @@ private func OGL_DisableVertexArrayRanges() {
     }
 
     gEngine.view.varMemoryAllocated = false
-    #if NANOSAUR_3DS
-    Debug3DS_Log("OGL_DisableVertexArrayRanges: master blocks freed")
+    #if DEBUGLOG
+    DebugLog("OGL_DisableVertexArrayRanges: master blocks freed")
     #endif
 }
 
@@ -2257,7 +2257,7 @@ func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt
 
     // IF GETS HERE THEN NO MATCH WAS FOUND
 
-    #if NANOSAUR_3DS
+    #if DEBUGLOG
     // Diagnostic detail: whether the pointer even lies inside the CURRENT
     // master block for this type - if not, it was allocated against a
     // previous game view's block (freed+reallocated by OGL_DisposeGameView/
@@ -2268,7 +2268,7 @@ func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt
     var listLen = 0
     var walk = gEngine.view.vertexArrayMemoryHead[Int(type)]
     while let w = walk { listLen += 1; walk = w.pointee.nextNode }
-    "OGL_FreeVertexArrayMemory MISS: ptr=\(String(p, radix: 16)) type=\(type) block=\(String(base, radix: 16))..\(String(base &+ size, radix: 16)) inBlock=\(p >= base && p < base &+ size) listLen=\(listLen)".withCString { Debug3DS_Log($0) }
+    "OGL_FreeVertexArrayMemory MISS: ptr=\(String(p, radix: 16)) type=\(type) block=\(String(base, radix: 16))..\(String(base &+ size, radix: 16)) inBlock=\(p >= base && p < base &+ size) listLen=\(listLen)".withCString { DebugLog($0) }
     #endif
 
     SwFatalAlert("OGL_FreeVertexArrayMemory: no matching pointer found!")

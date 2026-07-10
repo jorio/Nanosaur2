@@ -51,7 +51,8 @@ void Console3DS_Init(void)
     s_consoleReady = 1;
 }
 
-void Debug3DS_Log(const char *message)
+#ifdef DEBUGLOG
+void DebugLog(const char *message)
 {
     if (!s_consoleReady)
     {
@@ -63,3 +64,4 @@ void Debug3DS_Log(const char *message)
     gfxSwapBuffers();
     Console3DS_WriteToSDCard(message);
 }
+#endif // DEBUGLOG

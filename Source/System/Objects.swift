@@ -73,21 +73,21 @@ func InitObjectManager() {
     // Embedded Swift's lazy-init guard on first touch (see
     // feedback_embedded_swift_lazy_globals) - if boot ever hangs at the
     // checkpoint below, gEngine's own lazy init is the first suspect.
-    #if NANOSAUR_3DS
-    "InitObjectManager: sizeof(ObjNode)=\(MemoryLayout<ObjNode>.size) total=\(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)".withCString { Debug3DS_Log($0) }
+    #if DEBUGLOG
+    "InitObjectManager: sizeof(ObjNode)=\(MemoryLayout<ObjNode>.size) total=\(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)".withCString { DebugLog($0) }
     #endif
 
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
         (gEngine.objects.objectListStorage + i).isUsed = false
     }
-    #if NANOSAUR_3DS
-    Debug3DS_Log("InitObjectManager: cleared isUsed loop")
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: cleared isUsed loop")
     #endif
 
     CreateDummyInitObject()
-    #if NANOSAUR_3DS
-    Debug3DS_Log("InitObjectManager: CreateDummyInitObject done")
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: CreateDummyInitObject done")
     #endif
 
     // INIT LINKED LIST
@@ -99,8 +99,8 @@ func InitObjectManager() {
     gEngine.objects.firstNodePtr = nil // no node yet
 
     gEngine.objects.numObjectNodes = 0
-    #if NANOSAUR_3DS
-    Debug3DS_Log("InitObjectManager: done")
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: done")
     #endif
 }
 
@@ -109,8 +109,8 @@ func InitObjectManager() {
 // this dummy node into them.
 private func CreateDummyInitObject() {
     gEngine.objects.clearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
-    #if NANOSAUR_3DS
-    Debug3DS_Log("CreateDummyInitObject: clearedObj allocated")
+    #if DEBUGLOG
+    DebugLog("CreateDummyInitObject: clearedObj allocated")
     #endif
 
     for i in 0..<Int(MAX_NODE_SPARKLES) { // no sparkles

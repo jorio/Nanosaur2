@@ -25,7 +25,14 @@ void Console3DS_Init(void);
 // Safe to call before Console3DS_Init() too (lazily initializes the
 // console on first use), so Swift boot-sequence checkpoints can start
 // before main.cpp's own Console3DS_Init() call if ever needed.
-void Debug3DS_Log(const char *message);
+//
+// Compiled (and declared) only under -DDEBUGLOG - every call site, C and
+// Swift alike, is gated behind the same flag (#ifdef DEBUGLOG / Swift
+// #if DEBUGLOG), so a build without the flag contains no logging code at
+// all (no dead strings, no SD-card writes, no per-call console flushes).
+#ifdef DEBUGLOG
+void DebugLog(const char *message);
+#endif
 
 #ifdef __cplusplus
 }

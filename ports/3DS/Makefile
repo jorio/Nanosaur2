@@ -102,6 +102,18 @@ PIC_FLAGS	:=	-fno-pic -fno-pie
 
 CTRUDEFS	:=	-D__3DS__ -I$(COMMON) -I$(CTRULIB)/include
 
+# DebugLog (console_shim.c + the DebugLog checkpoints throughout the Swift
+# engine) - on by default while the port is being brought up; build with
+# `make DEBUGLOG=0` to compile all logging out of the binary entirely
+# (every call site, C and Swift, is behind the same flag).
+DEBUGLOG	?=	1
+ifeq ($(DEBUGLOG),1)
+CTRUDEFS	+=	-DDEBUGLOG
+DEBUGLOG_SWIFTFLAGS := -DDEBUGLOG -Xcc -DDEBUGLOG
+else
+DEBUGLOG_SWIFTFLAGS :=
+endif
+
 CFLAGS		:=	-g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
 			$(ARCH) $(PIC_FLAGS) $(CTRUDEFS)
 
@@ -176,6 +188,7 @@ SWIFTFLAGS	:=	-target armv6-none-none-eabi \
 			-wmo -Osize \
 			-module-name Nanosaur2 \
 			-DNANOSAUR_3DS \
+			$(DEBUGLOG_SWIFTFLAGS) \
 			-import-objc-header $(COMMON)game_3ds.h \
 			-Xllvm -relocation-model=static \
 			-Xcc -D__3DS__ -Xcc -DNANOSAUR_3DS \
@@ -280,7 +293,7 @@ $(BUILD)/nanosaur2.swift.o: .SWIFT_FILES_TOUCHED $(COMMON)module.modulemap $(COM
 $(BUILD)/main.o: $(PORT_CPP) | $(BUILD)
 	@echo $(notdir $<)
 	$(CXX) -g -Wall -O2 -mword-relocations -ffunction-sections -fdata-sections \
-		$(ARCH) $(PIC_FLAGS) -D__3DS__ -std=c++20 -I$(COMMON) -I$(SDL3_INCLUDE) -I$(CTRULIB)/include -c $(PORT_CPP) -o $@
+		$(ARCH) $(PIC_FLAGS) $(CTRUDEFS) -std=c++20 -I$(COMMON) -I$(SDL3_INCLUDE) -c $(PORT_CPP) -o $@
 
 # Real engine C files (bg3d.c, Main.c, etc. - global-storage-only leftovers
 # after the Swift port, plus a couple of still-C functions like

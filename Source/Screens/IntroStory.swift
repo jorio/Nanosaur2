@@ -199,24 +199,24 @@ private let gSlides: [SlideType] = [
 func DoIntroStoryScreen() {
     // SETUP
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: setupIntroStoryScreen...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: setupIntroStoryScreen...")
     #endif
     setupIntroStoryScreen()
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: MakeFadeEvent...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: MakeFadeEvent...")
     #endif
     _ = MakeFadeEvent(UInt8(kFadeFlags_In), 2.0)
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: PlaySong...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: PlaySong...")
     #endif
     PlaySong(Int16(SONG_INTRO), 1)
 
     // LOOP
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: entering slideshow loop...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: entering slideshow loop...")
     #endif
     gEngine.screens.introStoryEndSlideShow = false
 
@@ -239,19 +239,19 @@ func DoIntroStoryScreen() {
 
     // FADE OUT
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: slideshow loop exited, OGL_FadeOutScene...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: slideshow loop exited, OGL_FadeOutScene...")
     #endif
     OGL_FadeOutScene(DrawObjects, nil)
 
     // CLEANUP
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: freeIntroStoryScreen...")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: freeIntroStoryScreen...")
     #endif
     freeIntroStoryScreen()
-    #if NANOSAUR_3DS
-    Debug3DS_Log("DoIntroStoryScreen: done.")
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: done.")
     #endif
 }
 
@@ -276,8 +276,8 @@ private func setupIntroStoryScreen() {
 
     viewDef.view.clearBackBuffer = 1
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: OGL_SetupGameView...")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: OGL_SetupGameView...")
     #endif
     OGL_SetupGameView(&viewDef)
 
@@ -285,28 +285,28 @@ private func setupIntroStoryScreen() {
 
     // LOAD SPRITES
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: LoadSpriteGroupFromSeries(story)...")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSpriteGroupFromSeries(story)...")
     #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(NUM_SLIDES), "story")
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: LoadSpriteAtlas(swiss)...")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSpriteAtlas(swiss)...")
     #endif
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT3), ":Sprites:fonts:swiss", Int32(kAtlasLoadFont))
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: LoadSoundBank(narration)...")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSoundBank(narration)...")
     #endif
     LoadSoundBank(UInt8(SOUND_BANK_NARRATION))
 
     // MAKE OBJECTS
 
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: buildSlideShowObjects...")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: buildSlideShowObjects...")
     #endif
     buildSlideShowObjects()
-    #if NANOSAUR_3DS
-    Debug3DS_Log("setupIntroStoryScreen: done.")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: done.")
     #endif
 }
 

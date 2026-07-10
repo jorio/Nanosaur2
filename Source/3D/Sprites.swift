@@ -112,14 +112,14 @@ func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesN
         var numStr = String(i)
         while numStr.count < 3 { numStr = "0" + numStr }
         let path = ":Sprites:\(seriesNameStr):\(seriesNameStr)\(numStr)"
-        #if NANOSAUR_3DS
-        "LoadSpriteGroupFromSeries: \(path)".withCString { Debug3DS_Log($0) }
+        #if DEBUGLOG
+        "LoadSpriteGroupFromSeries: \(path)".withCString { DebugLog($0) }
         #endif
         group[Int(i)] = LoadSpriteFromDualImage(path)
         SwGameAssert(group[Int(i)].materialObject != nil)
     }
-    #if NANOSAUR_3DS
-    "LoadSpriteGroupFromSeries(\(seriesNameStr)): done.".withCString { Debug3DS_Log($0) }
+    #if DEBUGLOG
+    "LoadSpriteGroupFromSeries(\(seriesNameStr)): done.".withCString { DebugLog($0) }
     #endif
 }
 

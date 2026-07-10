@@ -202,8 +202,8 @@ func InitSoundTools() {
         gEngine.sound.channels.append(chan)
         gEngine.sound.numAllocatedChannels += 1
     }
-    #if NANOSAUR_3DS
-    "InitSoundTools: numAllocatedChannels=\(gEngine.sound.numAllocatedChannels) (of \(maxChannels) requested)".withCString { Debug3DS_Log($0) }
+    #if DEBUGLOG
+    "InitSoundTools: numAllocatedChannels=\(gEngine.sound.numAllocatedChannels) (of \(maxChannels) requested)".withCString { DebugLog($0) }
     #endif
 
     // SONG CHANNEL
@@ -277,8 +277,8 @@ func LoadSoundBank(_ bank: UInt8) {
 
         // FIND FSSPEC TO EFFECT FILE
 
-        #if NANOSAUR_3DS
-        "LoadSoundBank: effect \(i): \(effectDef.name ?? "?")".withCString { Debug3DS_Log($0) }
+        #if DEBUGLOG
+        "LoadSoundBank: effect \(i): \(effectDef.name ?? "?")".withCString { DebugLog($0) }
         #endif
 
         var spec = FSSpec()
@@ -301,12 +301,12 @@ func LoadSoundBank(_ bank: UInt8) {
 
         gEngine.sound.effectPCM[i] = loadDecodedPCM(&spec, isMP3: matchedExt == "mp3")
         SwGameAssertMessage(gEngine.sound.effectPCM[i] != nil, "failed to decode sound effect")
-        #if NANOSAUR_3DS
-        Debug3DS_Log("  ...decoded")
+        #if DEBUGLOG
+        DebugLog("  ...decoded")
         #endif
     }
-    #if NANOSAUR_3DS
-    Debug3DS_Log("LoadSoundBank: all effects loaded.")
+    #if DEBUGLOG
+    DebugLog("LoadSoundBank: all effects loaded.")
     #endif
 }
 

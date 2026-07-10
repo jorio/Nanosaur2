@@ -115,31 +115,31 @@ extension BG3DFile: ExpressibleByParsing {
                 chunks.append(.geometry(geoHeader))
 
             case .vertexArray:
-                let points = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ParsingError) in
+                let points = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
                     try BG3DPoint3D(parsing: &span)
                 }
                 chunks.append(.vertexArray(points))
 
             case .normalArray:
-                let normals = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ParsingError) in
+                let normals = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
                     try BG3DPoint3D(parsing: &span)
                 }
                 chunks.append(.normalArray(normals))
 
             case .uvArray:
-                let uvs = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ParsingError) in
+                let uvs = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
                     try BG3DTextureCoord(parsing: &span)
                 }
                 chunks.append(.uvArray(uvs))
 
             case .colorArray:
-                let colors = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ParsingError) in
+                let colors = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
                     try BG3DColorRGBAByte(parsing: &span)
                 }
                 chunks.append(.colorArray(colors))
 
             case .triangleArray:
-                let triangles = try Array(parsing: &input, count: currentNumTriangles) { (span: inout ParserSpan) throws(ParsingError) in
+                let triangles = try Array(parsing: &input, count: currentNumTriangles) { (span: inout ParserSpan) throws(ThrownParsingError) in
                     try BG3DTriangle(parsing: &span)
                 }
                 chunks.append(.triangleArray(triangles))

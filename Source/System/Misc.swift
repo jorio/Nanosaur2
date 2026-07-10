@@ -8,12 +8,28 @@
 // anymore. gEngine.misc.seed0/1/2 aren't `extern`'d anywhere else, so unlike those
 // they didn't need this treatment - already private Swift storage.
 
-/// Frame timing, allocator metrics, RNG seeds. Owned by GameEngine as
-/// `gEngine.misc` (fps lives directly on GameEngine - it's the hottest
-/// read in the game).
+// Allocator metrics live at file scope, NOT inside MiscSystem: many
+// subsystem classes allocate their permanent buffers via AllocPtrClear in
+// stored-property initializers, which run while GameEngine itself is being
+// constructed - if the allocator touched gEngine.misc, it would re-enter
+// gEngine's own lazy-global dispatch_once and trap (EXC_BREAKPOINT in
+// _dispatch_once_wait; hit for real on 2026-07-09). The allocators below
+// use this storage directly; MiscSystem exposes it as computed properties
+// so gEngine.misc.ramAlloced/numPointers still read naturally.
+private var gRAMAllocedStorage: Int = 0
+private var gNumPointersStorage: Int32 = 0
+
+/// Allocator metrics + RNG seeds. Owned by GameEngine as `gEngine.misc`
+/// (fps lives directly on GameEngine - it's the hottest read in the game).
 final class MiscSystem {
-    var ramAlloced: Int = 0
-    var numPointers: Int32 = 0
+    var ramAlloced: Int {
+        get { gRAMAllocedStorage }
+        set { gRAMAllocedStorage = newValue }
+    }
+    var numPointers: Int32 {
+        get { gNumPointersStorage }
+        set { gNumPointersStorage = newValue }
+    }
 
     fileprivate var seed0: UInt32 = 0
     fileprivate var seed1: UInt32 = 0
@@ -141,8 +157,8 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     cookiePtr[2] = kCookiePTR3
     cookiePtr[3] = kCookiePTR4
 
-    gEngine.misc.numPointers += 1
-    gEngine.misc.ramAlloced += size
+    gNumPointersStorage += 1
+    gRAMAllocedStorage += size
 
     return p! + PTRCOOKIE_SIZE
 }
@@ -161,8 +177,8 @@ func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     cookiePtr[2] = kCookiePTC3
     cookiePtr[3] = kCookiePTC4
 
-    gEngine.misc.numPointers += 1
-    gEngine.misc.ramAlloced += size
+    gNumPointersStorage += 1
+    gRAMAllocedStorage += size
 
     return p! + PTRCOOKIE_SIZE
 }
@@ -185,7 +201,7 @@ public func ReallocPtr(_ initialPtr: UnsafeMutableRawPointer?, _ newSize0: Int) 
     SwGameAssert(cookiePtr[0] == kCookieFACE) // realloc shouldn't have touched our cookie
 
     let initialSize = cookiePtr[1] // update heap size metric
-    gEngine.misc.ramAlloced += newSize - Int(initialSize)
+    gRAMAllocedStorage += newSize - Int(initialSize)
 
     cookiePtr[0] = kCookieFACE // rewrite cookie
     cookiePtr[1] = UInt32(newSize)
@@ -205,13 +221,13 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
     SwGameAssert(cookiePtr[0] == kCookieFACE)
-    gEngine.misc.ramAlloced -= Int(cookiePtr[1]) // deduct ptr size from heap size
+    gRAMAllocedStorage -= Int(cookiePtr[1]) // deduct ptr size from heap size
 
     cookiePtr[0] = kCookieDEAD // zap cookie
 
     SDL_free(p)
 
-    gEngine.misc.numPointers -= 1
+    gNumPointersStorage -= 1
 }
 
 // MARK: - Time (replaces Pomme's Microseconds/TickCount - see extern/Pomme/src/Time/TimeManager.cpp)

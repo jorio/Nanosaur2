@@ -17,8 +17,8 @@ final class ItemSystem {
     var turretMuzzleTipOff = OGLPoint3D(x: -61, y: 0, z: -115)
     var turretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
 
-    // ForestDoor.swift (maxDamDoors == 10 there; keep in sync)
-    var forestDoorOpen = [Bool](repeating: false, count: 10)
+    // ForestDoor.swift (maxDamDoors == 64 there; keep in sync)
+    var forestDoorOpen = [Bool](repeating: false, count: 64)
 
     // Items.swift
     var cloudScroll = OGLVector2D()

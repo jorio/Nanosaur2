@@ -263,13 +263,15 @@ public func SwBlockMove(_ srcPtr: UnsafeRawPointer?, _ destPtr: UnsafeMutableRaw
 // Seconds since the classic Mac epoch (Jan 1 1904) - replaces Pomme's
 // GetDateTime, same offset from the UNIX epoch it used
 // (extern/Pomme/src/Time/TimeManager.cpp).
-private let kMacEpochOffsetFromUnixEpoch = -2_082_844_800
+private let kMacEpochOffsetFromUnixEpoch: Int64 = -2_082_844_800
 
 @c @implementation
 public func SwGetDateTime(_ secs: UnsafeMutablePointer<UInt>?) {
-    var now: Int = 0
-    _ = time(&now)
-    secs?.pointee = UInt(bitPattern: now + kMacEpochOffsetFromUnixEpoch)
+    // SwTimeNow (file.h), not a raw time() call: time_t's spelling differs
+    // per platform, and calling time() with the wrong pointer width
+    // clobbered this function's stack frame and hung 3DS boot - see the
+    // prototype comment in file.h (2026-07-09).
+    secs?.pointee = UInt(truncatingIfNeeded: SwTimeNow() + kMacEpochOffsetFromUnixEpoch)
 }
 
 // Replaces Pomme's ExitToShell(), which unwound the C++/Swift call stack

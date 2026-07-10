@@ -554,18 +554,18 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // MAKE FIREBALL
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = 0
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 18
-    gNewParticleGroupDef.decayRate = -4.0
-    gNewParticleGroupDef.fadeRate = 1.1
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = 0
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 18
+    gEngine.particles.newGroupDef.decayRate = -4.0
+    gEngine.particles.newGroupDef.fadeRate = 1.1
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<100 {
             var d = OGLVector3D()
@@ -596,18 +596,18 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // MAKE SPARKS
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 700
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 700
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<70 {
             var d = OGLVector3D()
@@ -638,15 +638,15 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // CONFETTI
-    gNewConfettiGroupDef.magicNum = 0
-    gNewConfettiGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewConfettiGroupDef.gravity = 300
-    gNewConfettiGroupDef.baseScale = 6.0
-    gNewConfettiGroupDef.decayRate = 1.0
-    gNewConfettiGroupDef.fadeRate = 1.0
-    gNewConfettiGroupDef.confettiTextureNum = UInt8(PARTICLE_SObjType_Confetti_NanoFlesh)
+    gEngine.confetti.newGroupDef.magicNum = 0
+    gEngine.confetti.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.confetti.newGroupDef.gravity = 300
+    gEngine.confetti.newGroupDef.baseScale = 6.0
+    gEngine.confetti.newGroupDef.decayRate = 1.0
+    gEngine.confetti.newGroupDef.fadeRate = 1.0
+    gEngine.confetti.newGroupDef.confettiTextureNum = UInt8(PARTICLE_SObjType_Confetti_NanoFlesh)
 
-    pg = NewConfettiGroup(&gNewConfettiGroupDef)
+    pg = NewConfettiGroup(&gEngine.confetti.newGroupDef)
     if pg != -1 {
         for _ in 0..<150 {
             var d = OGLVector3D()

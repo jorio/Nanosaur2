@@ -311,18 +311,18 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let y = theNode.pointee.Coord.y
     let z = theNode.pointee.Coord.z
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = 0
-    gNewParticleGroupDef.gravity = 300
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 25
-    gNewParticleGroupDef.decayRate = -1.0
-    gNewParticleGroupDef.fadeRate = 0.8
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_CokeSpray)
-    gNewParticleGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
-    gNewParticleGroupDef.dstBlend = Int32(GL_ONE_MINUS_SRC_ALPHA)
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = 0
+    gEngine.particles.newGroupDef.gravity = 300
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 25
+    gEngine.particles.newGroupDef.decayRate = -1.0
+    gEngine.particles.newGroupDef.fadeRate = 0.8
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_CokeSpray)
+    gEngine.particles.newGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
+    gEngine.particles.newGroupDef.dstBlend = Int32(GL_ONE_MINUS_SRC_ALPHA)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<100 {
             var d = OGLVector3D()

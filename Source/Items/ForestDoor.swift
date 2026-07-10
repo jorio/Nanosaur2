@@ -297,19 +297,19 @@ private func destroyForestDoorKey(_ keyHolder: UnsafeMutablePointer<ObjNode>) {
     let z = key.pointee.Coord.z
     let y = key.pointee.Coord.y + (250.0 * damDoorScale)
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 300
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20.0
-    gNewParticleGroupDef.decayRate = 0
-    gNewParticleGroupDef.fadeRate = 0.5
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
-    gNewParticleGroupDef.dstBlend = Int32(GL_ONE)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 300
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20.0
+    gEngine.particles.newGroupDef.decayRate = 0
+    gEngine.particles.newGroupDef.fadeRate = 0.5
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
+    gEngine.particles.newGroupDef.dstBlend = Int32(GL_ONE)
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<200 {
             var pt = OGLPoint3D()

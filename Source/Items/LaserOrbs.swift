@@ -311,18 +311,18 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let y = theNode.pointee.Coord.y
     let z = theNode.pointee.Coord.z
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = -50
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20
-    gNewParticleGroupDef.decayRate = -5.0
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = -50
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20
+    gEngine.particles.newGroupDef.decayRate = -5.0
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<150 {
             var d = OGLVector3D()
@@ -354,18 +354,18 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15
-    gNewParticleGroupDef.decayRate = 0.5
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15
+    gEngine.particles.newGroupDef.decayRate = 0.5
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<220 {
             let q = RandomFloat() * SwPI2

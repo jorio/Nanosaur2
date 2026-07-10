@@ -302,18 +302,18 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
             let newMagicNum = MyRandomLong() // generate a random magic num
             theNode.pointee.ParticleMagicNum = newMagicNum
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.particleType = .fallingSparks
-            gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-            gNewParticleGroupDef.gravity = 100
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 15.0
-            gNewParticleGroupDef.decayRate = -2.5
-            gNewParticleGroupDef.fadeRate = 0.25
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
-            particleGroup = NewParticleGroup(&gNewParticleGroupDef)
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+            gEngine.particles.newGroupDef.gravity = 100
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 15.0
+            gEngine.particles.newGroupDef.decayRate = -2.5
+            gEngine.particles.newGroupDef.fadeRate = 0.25
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
+            particleGroup = NewParticleGroup(&gEngine.particles.newGroupDef)
             theNode.pointee.ParticleGroup = particleGroup
         }
 

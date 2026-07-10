@@ -27,6 +27,15 @@ final class GameEngine {
     let splines = SplineSystem()
     let fences = FenceSystem()
     let water = WaterSystem()
+
+    /// Effect pools (see Source/Effects/ and Items/Electrodes+DustDevil).
+    let shards = ShardSystem()
+    let particles = ParticleSystem()
+    let confetti = ConfettiSystem()
+    let contrails = ContrailSystem()
+    let sparkles = SparkleSystem()
+    let zaps = ZapSystem()
+    let dustDevils = DustDevilSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

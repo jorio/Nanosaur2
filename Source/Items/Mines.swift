@@ -280,18 +280,18 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 900
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 900
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = mine.pointee.Coord.x
         let y = mine.pointee.Coord.y
@@ -439,18 +439,18 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
             let newMagicNum = MyRandomLong() // generate a random magic num
             flare.pointee.ParticleMagicNum = newMagicNum
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.particleType = .fallingSparks
-            gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-            gNewParticleGroupDef.gravity = -200
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 10.0
-            gNewParticleGroupDef.decayRate = 0
-            gNewParticleGroupDef.fadeRate = 0.6
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE
-            particleGroup = NewParticleGroup(&gNewParticleGroupDef)
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+            gEngine.particles.newGroupDef.gravity = -200
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 10.0
+            gEngine.particles.newGroupDef.decayRate = 0
+            gEngine.particles.newGroupDef.fadeRate = 0.6
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE
+            particleGroup = NewParticleGroup(&gEngine.particles.newGroupDef)
             flare.pointee.ParticleGroup = particleGroup
         }
 

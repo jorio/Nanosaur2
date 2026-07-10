@@ -377,15 +377,15 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 // MARK: - Make leaf confetti
 
 private func makeLeafConfetti(_ x: Float, _ y: Float, _ z: Float, _ texture: Int16, _ quantity: Int) {
-    gNewConfettiGroupDef.magicNum = 0
-    gNewConfettiGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewConfettiGroupDef.gravity = 250
-    gNewConfettiGroupDef.baseScale = 20.0
-    gNewConfettiGroupDef.decayRate = 0
-    gNewConfettiGroupDef.fadeRate = 1.0
-    gNewConfettiGroupDef.confettiTextureNum = UInt8(texture)
+    gEngine.confetti.newGroupDef.magicNum = 0
+    gEngine.confetti.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.confetti.newGroupDef.gravity = 250
+    gEngine.confetti.newGroupDef.baseScale = 20.0
+    gEngine.confetti.newGroupDef.decayRate = 0
+    gEngine.confetti.newGroupDef.fadeRate = 1.0
+    gEngine.confetti.newGroupDef.confettiTextureNum = UInt8(texture)
 
-    let pg = NewConfettiGroup(&gNewConfettiGroupDef)
+    let pg = NewConfettiGroup(&gEngine.confetti.newGroupDef)
     if pg != -1 {
         for _ in 0..<quantity {
             var pt = OGLPoint3D()

@@ -1,21 +1,26 @@
 // Particles.swift - Port of Particles.c to Swift
 //
-// gNewParticleGroupDef is native Swift storage now (converted 2026-07-07):
+// gEngine.particles.newGroupDef is native Swift storage now (converted 2026-07-07):
 // nothing in any .c file touches it anymore (LaserOrbs.c/Turrets.c/Mines.c,
-// its only real C users, are all deleted). gParticleGroups and
-// gNumActiveParticleGroups were plain (non-extern) globals only ever
+// its only real C users, are all deleted). gEngine.particles.groups and
+// gEngine.particles.numActiveGroups were plain (non-extern) globals only ever
 // touched from this file, so they stay private Swift storage.
-// gGravitoidDistBuffer (a big fixed 2D float array) is likewise file-local
+// gEngine.particles.gravitoidDistBuffer (a big fixed 2D float array) is likewise file-local
 // only, so it becomes a plain Swift 2D array.
 
-var gNewParticleGroupDef = NewParticleGroupDefType()
+/// Particle-group state. Owned by GameEngine as `gEngine.particles`.
+final class ParticleSystem {
+    var newGroupDef = NewParticleGroupDefType()
+    fileprivate var groups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
+    fileprivate var gravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
+    fileprivate var numActiveGroups: Int16 = 0
+}
 
 private let fireBlastRadius: Float = gEngine.terrain.polygonSize * 1.5 // unused by any ported call site yet, kept for parity
 
 private let fireTimer: Float = 0.05
 private let smokeTimer: Float = 0.07
 
-private var gParticleGroups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
 
 private extension UnsafeMutablePointer where Pointee == ParticleGroupType {
     var isInPurgeQueue: Bool {
@@ -29,15 +34,13 @@ private extension UnsafeMutablePointer where Pointee == ParticleGroupType {
 }
 
 // Not private: NewParticleGroup callers across Items/Player/Enemies/Effects
-// fill in gNewParticleGroupDef (or a local groupDef) with this.
+// fill in gEngine.particles.newGroupDef (or a local groupDef) with this.
 extension NewParticleGroupDefType {
     var particleType: ParticleType {
         get { ParticleType(rawValue: Int32(type)) ?? .fallingSparks }
         set { type = UInt8(newValue.rawValue) }
     }
 }
-private var gGravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
-private var gNumActiveParticleGroups: Int16 = 0
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -88,10 +91,10 @@ func InitParticleSystem() {
     // INIT GROUP ARRAY
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        gParticleGroups[i] = nil
+        gEngine.particles.groups[i] = nil
     }
 
-    gNumActiveParticleGroups = 0
+    gEngine.particles.numActiveGroups = 0
 
     // LOAD SPRITES
 
@@ -137,7 +140,7 @@ func DeleteAllParticleGroups() {
 // Therefore, we actually put the particle group into a purge queue so that there's time for the
 // GPU to finish with it.
 private func deleteParticleGroup(_ groupNum: Int) {
-    if let group = gParticleGroups[groupNum] {
+    if let group = gEngine.particles.groups[groupNum] {
         group.isInPurgeQueue = true
         group.pointee.purgeTimer = 2
     }
@@ -148,7 +151,7 @@ private func deleteParticleGroup(_ groupNum: Int) {
 // Checks all deleted particle groups to see if they're ok to be purged now (see above).
 private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
     for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[g] else { // does this pg exist?
+        guard let group = gEngine.particles.groups[g] else { // does this pg exist?
             continue
         }
 
@@ -166,9 +169,9 @@ private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
                 // NUKE GROUP ITSELF
 
                 SafeDisposePtr(group)
-                gParticleGroups[g] = nil
+                gEngine.particles.groups[g] = nil
 
-                gNumActiveParticleGroups -= 1
+                gEngine.particles.numActiveGroups -= 1
             }
         }
     }
@@ -183,13 +186,13 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
     // SCAN FOR A FREE GROUP
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        if gParticleGroups[i] == nil {
+        if gEngine.particles.groups[i] == nil {
             // ALLOCATE NEW GROUP
 
             guard let group = AllocPtrClear(MemoryLayout<ParticleGroupType>.size)?.assumingMemoryBound(to: ParticleGroupType.self) else {
                 return -1 // out of memory
             }
-            gParticleGroups[i] = group
+            gEngine.particles.groups[i] = group
 
             // INITIALIZE THE GROUP
 
@@ -282,7 +285,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
                 }
             }
 
-            gNumActiveParticleGroups += 1
+            gEngine.particles.numActiveGroups += 1
 
             return Int16(i)
         }
@@ -302,7 +305,7 @@ func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
 
     SwGameAssertMessage(group >= 0 && group < Int(MAX_PARTICLE_GROUPS), "Illegal group #")
 
-    guard let g = gParticleGroups[group] else {
+    guard let g = gEngine.particles.groups[group] else {
         return 1
     }
 
@@ -341,7 +344,7 @@ func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
 func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ visibleForPlayer2: Bool) {
     SwGameAssertMessage(group >= 0 && group < Int16(MAX_PARTICLE_GROUPS), "Illegal group #")
 
-    if let g = gParticleGroups[Int(group)] {
+    if let g = gEngine.particles.groups[Int(group)] {
         g.pointee.visibleForPlayer1 = visibleForPlayer1
         g.pointee.visibleForPlayer2 = visibleForPlayer2
     }
@@ -365,7 +368,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     theNode.pointee.VertexArrayMode = varMode
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[i] else { continue }
+        guard let group = gEngine.particles.groups[i] else { continue }
 
         if group.isInPurgeQueue { // is this particle group pending purging?
             continue
@@ -448,9 +451,9 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
                             dist = oneOverBaseScaleSquared
                         }
 
-                        gGravitoidDistBuffer[i][j] = dist // remember it
+                        gEngine.particles.gravitoidDistBuffer[i][j] = dist // remember it
                     } else {
-                        dist = gGravitoidDistBuffer[j][i] // use from buffer
+                        dist = gEngine.particles.gravitoidDistBuffer[j][i] // use from buffer
                     }
 
                     // calc vector to particle
@@ -568,7 +571,7 @@ private func updateParticleGroupsGeometry() {
         // UPDATE EACH PARTICLE GROUP
 
         for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-            guard let group = gParticleGroups[g] else { continue }
+            guard let group = gEngine.particles.groups[g] else { continue }
 
             if group.isInPurgeQueue { // skip if it's in the purge queue
                 continue
@@ -723,7 +726,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let pg = gParticleGroups[g] else { // skip if not allocated
+        guard let pg = gEngine.particles.groups[g] else { // skip if not allocated
             continue
         }
 
@@ -754,7 +757,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 // MARK: - Verify particle group magic num
 
 func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
-    guard let g = gParticleGroups[Int(group)] else {
+    guard let g = gEngine.particles.groups[Int(group)] else {
         return 0
     }
 
@@ -770,7 +773,7 @@ func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
 // INPUT:	inFlags = flags to check particle types against
 func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UInt16) -> UInt8 {
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[i] else { // see if group active
+        guard let group = gEngine.particles.groups[i] else { // see if group active
             continue
         }
 
@@ -812,19 +815,19 @@ func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UIn
 func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float, _ texNum: Int16, _ src: Int32, _ dst: Int32, _ decayRate: Float) {
     // white sparks
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = -80
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = scale
-    gNewParticleGroupDef.decayRate = -1.6
-    gNewParticleGroupDef.fadeRate = decayRate
-    gNewParticleGroupDef.particleTextureNum = UInt8(texNum)
-    gNewParticleGroupDef.srcBlend = src
-    gNewParticleGroupDef.dstBlend = dst
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = -80
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = scale
+    gEngine.particles.newGroupDef.decayRate = -1.6
+    gEngine.particles.newGroupDef.fadeRate = decayRate
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(texNum)
+    gEngine.particles.newGroupDef.srcBlend = src
+    gEngine.particles.newGroupDef.dstBlend = dst
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = where_.pointee.x
         let y = where_.pointee.y
@@ -876,19 +879,19 @@ func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ s
 
     // white sparks
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 200
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0 * scale
-    gNewParticleGroupDef.decayRate = 0
-    gNewParticleGroupDef.fadeRate = fadeRate
-    gNewParticleGroupDef.particleTextureNum = UInt8(sparkTexture)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 200
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0 * scale
+    gEngine.particles.newGroupDef.decayRate = 0
+    gEngine.particles.newGroupDef.fadeRate = fadeRate
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(sparkTexture)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<n {
             var pt = OGLPoint3D()
@@ -1010,18 +1013,18 @@ func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePointer<OGL
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 900
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 190
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark3)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 900
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 190
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark3)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let px = where_.x
         let py = where_.y
@@ -1068,19 +1071,19 @@ func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
     var pt = OGLPoint3D()
     pt.y = where_.pointee.y
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = 400
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0 * scale
-    gNewParticleGroupDef.decayRate = -0.6
-    gNewParticleGroupDef.fadeRate = 0.8
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = 400
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0 * scale
+    gEngine.particles.newGroupDef.decayRate = -0.6
+    gEngine.particles.newGroupDef.fadeRate = 0.8
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<30 {
             pt.x = x + RandomFloat2() * (30.0 * scale)
@@ -1133,18 +1136,18 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
             let newMagicNum = MyRandomLong()
             theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.particleType = .fallingSparks
-            gNewParticleGroupDef.flags = 0
-            gNewParticleGroupDef.gravity = 800
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 10
-            gNewParticleGroupDef.decayRate = -1.7
-            gNewParticleGroupDef.fadeRate = 1.5
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE
-            particleGroup = Int(NewParticleGroup(&gNewParticleGroupDef))
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = 0
+            gEngine.particles.newGroupDef.gravity = 800
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 10
+            gEngine.particles.newGroupDef.decayRate = -1.7
+            gEngine.particles.newGroupDef.fadeRate = 1.5
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE
+            particleGroup = Int(NewParticleGroup(&gEngine.particles.newGroupDef))
             theNode.pointee.Special.5 = particleGroup // SmokeParticleGroup
         }
 
@@ -1331,18 +1334,18 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // FIRST MAKE FLAMES
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.particleType = .fallingSparks
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = -120
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 18
-    gNewParticleGroupDef.decayRate = -1.0
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = -120
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 18
+    gEngine.particles.newGroupDef.decayRate = -1.0
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = where_.pointee.x
         let y = where_.pointee.y

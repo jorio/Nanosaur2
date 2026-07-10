@@ -877,10 +877,12 @@ public func GameMain() {
     #endif
     DoLegalScreen()
 
-    #if DEBUGLOG
-    DebugLog("GameMain: DoIntroStoryScreen...")
-    #endif
+    // Skip the intro story slideshow on 3DS launch - it's long, and boot
+    // iteration on the emulator/hardware matters more than the fluff.
+    // (It remains reachable however the game itself invokes it elsewhere.)
+    #if !NANOSAUR_3DS
     DoIntroStoryScreen()
+    #endif
 
     // MAIN LOOP
 

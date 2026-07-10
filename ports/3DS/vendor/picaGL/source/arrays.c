@@ -1,4 +1,7 @@
 #include "internal.h"
+#ifdef DEBUGLOG
+#include <stdio.h>
+#endif
 
 static inline bool _addressIsLinear(const void* addr)
 {
@@ -271,6 +274,33 @@ void glDrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count, 
 		glFlush();
 
 	_stateFlush();
+
+#ifdef DEBUGLOG
+	// TEMP vendoring patch (white-texture diagnosis): periodically snapshot
+	// the per-unit state that gates texture sampling on the PICA200. If
+	// texUnitState[0]/texCoordArrayState[0] read 0 during scene draws, the
+	// engine's state cache desynced from picaGL's real state and meshes
+	// render flat vertex color (white) with no texture.
+	{
+		extern void DebugLog(const char *msg);
+		static int dbgDrawCount = 0;
+		if (++dbgDrawCount % 2000 == 0)
+		{
+			const float *uv = (const float *)pglState->texCoordArrayPointer[0].pointer;
+			char dbgBuf[192];
+			snprintf(dbgBuf, sizeof dbgBuf,
+				"pgl draw#%d: n=%d unit0 tex=%d coord=%d texWH=%dx%d env=%x uv0=%.2f,%.2f uv1=%.2f,%.2f",
+				dbgDrawCount, (int)count,
+				(int)pglState->texUnitState[0], (int)pglState->texCoordArrayState[0],
+				pglState->textureBound[0] ? (int)pglState->textureBound[0]->width : -1,
+				pglState->textureBound[0] ? (int)pglState->textureBound[0]->height : -1,
+				(unsigned)pglState->texenv[0].func_rgb,
+				uv ? uv[0] : -99.0f, uv ? uv[1] : -99.0f,
+				uv ? uv[2] : -99.0f, uv ? uv[3] : -99.0f);
+			DebugLog(dbgBuf);
+		}
+	}
+#endif
 
 	if(vertexArray->inLinearMem)
 		arrayCache = (void*)vertexArray->pointer;

@@ -289,23 +289,26 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
 
     // FACTOR IN THIS JOINT'S MATRIX
 
-    let matPtr: UnsafeMutablePointer<OGLMatrix4x4>
+    // (a local copy, not a pointer into gEngine.bones.matrix - a
+    // withUnsafeMutablePointer pointer must not escape its closure, and the
+    // escaped-temporary version of this code read garbage on 3DS, deforming
+    // every skeleton into invisibility)
+    var mat: OGLMatrix4x4
     let jointMatricesBase = jointTransformMatrixBase(currentSkelObjData)
     if currentSkelObjData.jointsAreGlobal {
-        matPtr = jointMatricesBase + Int(joint)
+        mat = jointMatricesBase[Int(joint)]
     } else {
-        let jointMat = jointMatricesBase + Int(joint)
-        matPtr = withUnsafeMutablePointer(to: &gEngine.bones.matrix) { $0 }
-        matPtr.pointee = jointMat.pointee.multiplied(by: matPtr.pointee)
+        gEngine.bones.matrix = jointMatricesBase[Int(joint)].multiplied(by: gEngine.bones.matrix)
+        mat = gEngine.bones.matrix
     }
 
     // LOAD THE MATRIX INTO REGISTERS
     //
     // note:  we load the bottom row later when we need it for point transforms.
 
-    let m00 = matValue(&matPtr.pointee, M00); let m01 = matValue(&matPtr.pointee, Int32(M10)); let m02 = matValue(&matPtr.pointee, Int32(M20))
-    let m10 = matValue(&matPtr.pointee, Int32(M01)); let m11 = matValue(&matPtr.pointee, M11); let m12 = matValue(&matPtr.pointee, Int32(M21))
-    let m20 = matValue(&matPtr.pointee, Int32(M02)); let m21 = matValue(&matPtr.pointee, Int32(M12)); let m22 = matValue(&matPtr.pointee, M22)
+    let m00 = matValue(&mat, M00); let m01 = matValue(&mat, Int32(M10)); let m02 = matValue(&mat, Int32(M20))
+    let m10 = matValue(&mat, Int32(M01)); let m11 = matValue(&mat, M11); let m12 = matValue(&mat, Int32(M21))
+    let m20 = matValue(&mat, Int32(M02)); let m21 = matValue(&mat, Int32(M12)); let m22 = matValue(&mat, M22)
 
     // TRANSFORM THE NORMALS
 
@@ -353,7 +356,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
 
     // LOAD THE REMAINING MATRIX VALUES
 
-    let m30 = matValue(&matPtr.pointee, M03); let m31 = matValue(&matPtr.pointee, M13); let m32 = matValue(&matPtr.pointee, M23)
+    let m30 = matValue(&mat, M03); let m31 = matValue(&mat, M13); let m32 = matValue(&mat, M23)
 
     for p in 0..<numPoints {
         let i = Int(bonePtr.pointee.pointList![p]) // get index to point in gDecomposedPointList

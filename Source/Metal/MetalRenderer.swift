@@ -347,26 +347,6 @@ public final class MetalRenderer {
         depthTexture = device.makeTexture(descriptor: depthDesc)
     }
 
-    /// Phase 0 spike: clear the whole drawable to a colour and present it.
-    /// Kept for the `--metal` spike path (Boot.cpp's `RunMetalSpike`).
-    public func clearFrame(red: Float, green: Float, blue: Float) {
-        guard let drawable = layer.nextDrawable() else { return }
-
-        let pass = MTLRenderPassDescriptor()
-        pass.colorAttachments[0].texture = drawable.texture
-        pass.colorAttachments[0].loadAction = .clear
-        pass.colorAttachments[0].storeAction = .store
-        pass.colorAttachments[0].clearColor = MTLClearColor(red: Double(red), green: Double(green), blue: Double(blue), alpha: 1)
-
-        guard let commandBuffer = queue.makeCommandBuffer(),
-              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else {
-            return
-        }
-        encoder.endEncoding()
-        commandBuffer.present(drawable)
-        commandBuffer.commit()
-    }
-
     // MARK: - Real frame lifecycle
 
     /// Starts a frame: acquires a drawable, clears colour+depth, and opens a

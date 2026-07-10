@@ -1,7 +1,7 @@
 // MetalActivation.swift
 //
 // Phase 2 "real" Metal activation (docs/metal-renderer-plan.md), as opposed
-// to MetalSpike.swift's Phase 0 throwaway clear-loop. Called once from
+// to the (now-deleted) Phase 0 throwaway clear-loop spike. Called once from
 // OGL_CreateDrawContext() (OGL_Support.swift) when gMetalMode is set - NOT
 // from Boot.cpp - as a full REPLACEMENT for GL context creation, not an
 // addition to it: gSDLWindow was created SDL_WINDOW_METAL-only (Boot.cpp),

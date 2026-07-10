@@ -219,7 +219,9 @@ target_link_libraries(Nanosaur2Saver PRIVATE
 # as the .saver; dumps a rendered frame to a PPM for eyeballing.
 #------------------------------------------------------------------------------
 
-add_executable(SaverSmoke ${CMAKE_CURRENT_SOURCE_DIR}/test/SmokeTest.swift)
+# main.swift, not SmokeTest.swift: Swift only allows top-level statements
+# in a file named main.swift.
+add_executable(SaverSmoke ${CMAKE_CURRENT_SOURCE_DIR}/test/main.swift)
 
 target_compile_options(SaverSmoke PRIVATE
 	$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>

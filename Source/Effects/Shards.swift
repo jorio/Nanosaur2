@@ -410,7 +410,7 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
     // SET STATE
 
-    gRenderBackend.setTwoSidedLighting(true)
+    gEngine.renderer.setTwoSidedLighting(true)
 
     for i in 0..<maxShards {
         if gShards[i].isUsed {
@@ -433,18 +433,18 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             // SET MATRIX
 
-            gRenderBackend.pushMatrix()
-            gRenderBackend.multMatrix(matrixFloatBase(&gShards[i].matrix))
+            gEngine.renderer.pushMatrix()
+            gEngine.renderer.multMatrix(matrixFloatBase(&gShards[i].matrix))
 
             // DRAW THE TRIANGLE
 
-            gRenderBackend.beginImmediate(.triangles)
-            gRenderBackend.texCoord2f(gShards[i].uvs[0].u, gShards[i].uvs[0].v); gRenderBackend.vertex3f(gShards[i].points[0].x, gShards[i].points[0].y, gShards[i].points[0].z)
-            gRenderBackend.texCoord2f(gShards[i].uvs[1].u, gShards[i].uvs[1].v); gRenderBackend.vertex3f(gShards[i].points[1].x, gShards[i].points[1].y, gShards[i].points[1].z)
-            gRenderBackend.texCoord2f(gShards[i].uvs[2].u, gShards[i].uvs[2].v); gRenderBackend.vertex3f(gShards[i].points[2].x, gShards[i].points[2].y, gShards[i].points[2].z)
-            gRenderBackend.endImmediate()
+            gEngine.renderer.beginImmediate(.triangles)
+            gEngine.renderer.texCoord2f(gShards[i].uvs[0].u, gShards[i].uvs[0].v); gEngine.renderer.vertex3f(gShards[i].points[0].x, gShards[i].points[0].y, gShards[i].points[0].z)
+            gEngine.renderer.texCoord2f(gShards[i].uvs[1].u, gShards[i].uvs[1].v); gEngine.renderer.vertex3f(gShards[i].points[1].x, gShards[i].points[1].y, gShards[i].points[1].z)
+            gEngine.renderer.texCoord2f(gShards[i].uvs[2].u, gShards[i].uvs[2].v); gEngine.renderer.vertex3f(gShards[i].points[2].x, gShards[i].points[2].y, gShards[i].points[2].z)
+            gEngine.renderer.endImmediate()
 
-            gRenderBackend.popMatrix()
+            gEngine.renderer.popMatrix()
         }
     }
 
@@ -455,5 +455,5 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     gGlobalColorFilter.b = 1
     gGlobalTransparency = 1
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
-    gRenderBackend.setTwoSidedLighting(false)
+    gEngine.renderer.setTwoSidedLighting(false)
 }

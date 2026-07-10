@@ -460,7 +460,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
                 // SET COMBINE MODE FOR TEXTURE LAYER #2
 
                 if i > 0 {
-                    gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(materials[0]!.pointee.objectData.multiTextureCombine)))
+                    gEngine.renderer.setTextureEnv(rbTextureEnv(forCombineMode: Int(materials[0]!.pointee.objectData.multiTextureCombine)))
                 }
 
                 // SUBMIT MATERIAL FOR THIS TEXTURE UNIT
@@ -514,7 +514,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     if data.pointee.numTriangles != 0 {
         SwGameAssert(data.pointee.triangles != nil)
     }
-    gRenderBackend.drawIndexedGeometry(
+    gEngine.renderer.drawIndexedGeometry(
         points: data.pointee.points!,
         normals: needNormals ? data.pointee.normals : nil,
         colors: data.pointee.colorsFloat,
@@ -531,11 +531,11 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     if multiTexture {
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1)) // turn off textureing for multi-texture layer 2 since it isnt needed anymore
         OGL_DisableTexture2D()
-        gRenderBackend.setSphereMapTexGen(false)
+        gEngine.renderer.setSphereMapTexGen(false)
 
         OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0)) // make sure #0 is active when we leave
-        gRenderBackend.setTextureEnv(.modulate)
-        gRenderBackend.setSphereMapTexGen(false)
+        gEngine.renderer.setTextureEnv(.modulate)
+        gEngine.renderer.setSphereMapTexGen(false)
     }
 }
 
@@ -570,12 +570,12 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
 
                         if i == 0 {
                             uv0 = uvs[0]
-                            gRenderBackend.setTextureEnv(.modulate)
+                            gEngine.renderer.setTextureEnv(.modulate)
                         } else {
                             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_SPHEREMAPS))![Int(envMapNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate reflection map texture
 
-                            gRenderBackend.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gGlobalTransparency will have no effect
-                            gRenderBackend.setSphereMapTexGen(true) // activate reflection mapping (unit 1 gets generated coords, no uv array)
+                            gEngine.renderer.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gGlobalTransparency will have no effect
+                            gEngine.renderer.setSphereMapTexGen(true) // activate reflection mapping (unit 1 gets generated coords, no uv array)
                             texGen = true
                         }
                     }
@@ -622,12 +622,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_U) != 0 { // we want to clamp the U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) == 0 { // see if clamping needs to be enabled
-                gRenderBackend.setTextureWrap(.u, clamp: true) // nope, so set clamping
+                gEngine.renderer.setTextureWrap(.u, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp U
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) != 0 { // see clamping is still enabled
-                gRenderBackend.setTextureWrap(.u, clamp: false)
+                gEngine.renderer.setTextureWrap(.u, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_U_TRUE) // and remember that we cleared it
             }
         }
@@ -636,12 +636,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
         if matFlags & UInt32(BG3D_MATERIALFLAG_CLAMP_V) != 0 { // we want to clamp the V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) == 0 { // see if clamping needs to be enabled
-                gRenderBackend.setTextureWrap(.v, clamp: true) // nope, so set clamping
+                gEngine.renderer.setTextureWrap(.v, clamp: true) // nope, so set clamping
                 matData.pointee.flags |= UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we set it
             }
         } else { // we DONT want to clamp V
             if matData.pointee.flags & UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) != 0 { // see clamping is still enabled
-                gRenderBackend.setTextureWrap(.v, clamp: false)
+                gEngine.renderer.setTextureWrap(.v, clamp: false)
                 matData.pointee.flags &= ~UInt32(BG3D_MATERIALFLAG_CLAMP_V_TRUE) // and remember that we cleared it
             }
         }
@@ -690,7 +690,7 @@ func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
 
     withUnsafePointer(to: matObj.pointee.matrix) {
         $0.withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.multMatrix($0)
+            gEngine.renderer.multMatrix($0)
         }
     }
 }
@@ -722,8 +722,8 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     let yOffset = (scale - 1) * 0.333 // apply small offset to keep nano within frame
 
-    gRenderBackend.translate(-x, -y + yOffset * height, 0)
-    gRenderBackend.scale(scale, scale, 1)
+    gEngine.renderer.translate(-x, -y + yOffset * height, 0)
+    gEngine.renderer.scale(scale, scale, 1)
 
     // ACTIVATE THE MATERIAL
 
@@ -731,12 +731,12 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
 
     // DRAW QUAD
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(x, y + height, z)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(x + width, y + height, z)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(x + width, y, z)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(x, y, z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex3f(x, y + height, z)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex3f(x + width, y + height, z)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex3f(x + width, y, z)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(x, y, z)
+    gEngine.renderer.endImmediate()
 
     gPolysThisFrame += 2 // 2 more triangles
 
@@ -802,14 +802,14 @@ func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
     // DRAW IT
 
-    gRenderBackend.beginImmediate(.quads)
+    gEngine.renderer.beginImmediate(.quads)
 
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p[0].x + x, p[0].y + y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p[1].x + x, p[1].y + y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(p[2].x + x, p[2].y + y)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(p[3].x + x, p[3].y + y)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(p[0].x + x, p[0].y + y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(p[1].x + x, p[1].y + y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(p[2].x + x, p[2].y + y)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(p[3].x + x, p[3].y + y)
 
-    gRenderBackend.endImmediate()
+    gEngine.renderer.endImmediate()
 
     gPolysThisFrame += 2 // 2 more tris
 }
@@ -1036,7 +1036,7 @@ private func deleteObjectInfoMaterial(_ obj: UnsafeMutablePointer<MOMaterialObje
     // DISPOSE OF TEXTURE NAMES
 
     if data.pointee.numMipmaps > 0 {
-        gRenderBackend.deleteTextures(textureNameBase(data), count: Int32(data.pointee.numMipmaps))
+        gEngine.renderer.deleteTextures(textureNameBase(data), count: Int32(data.pointee.numMipmaps))
     }
 }
 

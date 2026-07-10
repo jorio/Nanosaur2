@@ -61,12 +61,12 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_EnableBlend()
     OGL_SetColor4f(0, 0, 0, 1.0 - gGammaFadeFrac)
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
-    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.top, 0)
-    gRenderBackend.vertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
-    gRenderBackend.vertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
+    gEngine.renderer.vertex3f(gLogicalRect.left, gLogicalRect.top, 0)
+    gEngine.renderer.vertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
+    gEngine.renderer.vertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }
@@ -247,5 +247,5 @@ func SetFullscreenMode(_ enforceDisplayPref: Bool) {
         _ = SDL_SyncWindow(gSDLWindow)
     }
 
-    gRenderBackend.setVSync(Int32(gGamePrefs.vsync))
+    gEngine.renderer.setVSync(Int32(gGamePrefs.vsync))
 }

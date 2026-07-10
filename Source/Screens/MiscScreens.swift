@@ -31,10 +31,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     OGL_SetColor4f(0.5, 0.5, 0.5, 1)
     OGL_DisableTexture2D()
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y)
-    gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y); gEngine.renderer.vertex2f(THERMO_RIGHT, THERMO_Y)
+    gEngine.renderer.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gEngine.renderer.endImmediate()
 
     // DRAW THERMO METER
 
@@ -48,10 +48,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
         OGL_SetColor4f(0.8, 0, 0, 1)
     }
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(x, THERMO_Y)
-    gRenderBackend.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y); gEngine.renderer.vertex2f(x, THERMO_Y)
+    gEngine.renderer.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gEngine.renderer.endImmediate()
 
     OGL_SetColor4f(1, 1, 1, 1)
 
@@ -68,10 +68,10 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
 
     do {
         OGL_SetColor4f(0, 0, 0, fadeOpacity > 1 ? 1 : fadeOpacity)
-        gRenderBackend.beginImmediate(.quads)
-        gRenderBackend.vertex2f(0, 0); gRenderBackend.vertex2f(640, 0)
-        gRenderBackend.vertex2f(640, 480); gRenderBackend.vertex2f(0, 480)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.beginImmediate(.quads)
+        gEngine.renderer.vertex2f(0, 0); gEngine.renderer.vertex2f(640, 0)
+        gEngine.renderer.vertex2f(640, 480); gEngine.renderer.vertex2f(0, 480)
+        gEngine.renderer.endImmediate()
     }
 }
 
@@ -218,14 +218,14 @@ func DrawLoading(_ percent: Float) {
     // }
 
     // Kill vsync so we don't waste 16ms before loading the next asset
-    let vsyncBackup = gRenderBackend.getVSync()
-    gRenderBackend.setVSync(0)
+    let vsyncBackup = gEngine.renderer.getVSync()
+    gEngine.renderer.setVSync(0)
 
     // Draw thermometer
-    gRenderBackend.clearColorAndDepth()
+    gEngine.renderer.clearColorAndDepth()
     OGL_DrawScene(cDrawLoadingCallback)
     gLoadingThermoPercent = percent
 
     // Restore vsync setting
-    gRenderBackend.setVSync(vsyncBackup)
+    gEngine.renderer.setVSync(vsyncBackup)
 }

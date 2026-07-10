@@ -195,12 +195,12 @@ func DrawSparkles() {
 
         // DRAW QUAD
 
-        gRenderBackend.beginImmediate(.quads)
-        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(tc[0].x, tc[0].y, tc[0].z)
-        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(tc[1].x, tc[1].y, tc[1].z)
-        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(tc[2].x, tc[2].y, tc[2].z)
-        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(tc[3].x, tc[3].y, tc[3].z)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.beginImmediate(.quads)
+        gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(tc[0].x, tc[0].y, tc[0].z)
+        gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex3f(tc[1].x, tc[1].y, tc[1].z)
+        gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex3f(tc[2].x, tc[2].y, tc[2].z)
+        gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex3f(tc[3].x, tc[3].y, tc[3].z)
+        gEngine.renderer.endImmediate()
     }
 
     // RESTORE STATE

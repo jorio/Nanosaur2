@@ -165,11 +165,11 @@ func DrawLensFlare() {
 
     // INIT MATRICES
 
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.loadIdentity()
 
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.loadIdentity()
 
     for i in 0..<numFlares {
         if i == 0 {
@@ -198,12 +198,12 @@ func DrawLensFlare() {
         let fx = x / (Float(pw) / 2) - 1.0
         let fy = (Float(ph) - y) / (Float(ph) / 2) - 1.0
 
-        gRenderBackend.beginImmediate(.quads)
-        gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(fx - sx, fy - sy)
-        gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(fx + sx, fy - sy)
-        gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(fx + sx, fy + sy)
-        gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(fx - sx, fy + sy)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.beginImmediate(.quads)
+        gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(fx - sx, fy - sy)
+        gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(fx + sx, fy - sy)
+        gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(fx + sx, fy + sy)
+        gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(fx - sx, fy + sy)
+        gEngine.renderer.endImmediate()
     }
 
     // RESTORE MODES

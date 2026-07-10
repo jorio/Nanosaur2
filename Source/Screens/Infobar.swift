@@ -181,27 +181,27 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     withUnsafePointer(to: &theNode.pointee.ColorFilter.r) {
         glColor4fv($0)
     }
-    gRenderBackend.translate(640 / 2, 480 / 2, 0)
-    gRenderBackend.beginImmediate(.quads)
+    gEngine.renderer.translate(640 / 2, 480 / 2, 0)
+    gEngine.renderer.beginImmediate(.quads)
 
     switch gActiveSplitScreenMode {
     case UInt8(SplitscreenMode.horizontal.rawValue):
-        gRenderBackend.vertex2f(-halfLW, -halfThickness)
-        gRenderBackend.vertex2f(-halfLW, +halfThickness)
-        gRenderBackend.vertex2f(+halfLW, +halfThickness)
-        gRenderBackend.vertex2f(+halfLW, -halfThickness)
+        gEngine.renderer.vertex2f(-halfLW, -halfThickness)
+        gEngine.renderer.vertex2f(-halfLW, +halfThickness)
+        gEngine.renderer.vertex2f(+halfLW, +halfThickness)
+        gEngine.renderer.vertex2f(+halfLW, -halfThickness)
 
     case UInt8(SplitscreenMode.vertical.rawValue):
-        gRenderBackend.vertex2f(-halfThickness, -halfLH)
-        gRenderBackend.vertex2f(-halfThickness, +halfLH)
-        gRenderBackend.vertex2f(+halfThickness, +halfLH)
-        gRenderBackend.vertex2f(+halfThickness, -halfLH)
+        gEngine.renderer.vertex2f(-halfThickness, -halfLH)
+        gEngine.renderer.vertex2f(-halfThickness, +halfLH)
+        gEngine.renderer.vertex2f(+halfThickness, +halfLH)
+        gEngine.renderer.vertex2f(+halfThickness, -halfLH)
 
     default:
         break
     }
 
-    gRenderBackend.endImmediate()
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }
@@ -441,8 +441,8 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // INIT MATRICES
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.loadIdentity()
 
     gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
     let left = gLogicalRect.left
@@ -452,16 +452,16 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
 
     if isStereo() {
         if gAnaglyphPass == 0 {
-            gRenderBackend.ortho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gEngine.renderer.ortho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         } else {
-            gRenderBackend.ortho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
+            gEngine.renderer.ortho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         }
     } else {
-        gRenderBackend.ortho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
+        gEngine.renderer.ortho(GLdouble(left), GLdouble(right), GLdouble(bottom), GLdouble(top), 0, 1)
     }
 
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.loadIdentity()
 }
 
 // MARK: - Draw infobar
@@ -546,12 +546,12 @@ func DrawInfobarSprite(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) {
     let aspect = Float(mo!.height) / Float(mo!.width)
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + size, y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + size, y + (size * aspect))
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + (size * aspect))
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite: centered
@@ -569,12 +569,12 @@ func DrawInfobarSprite_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texNu
     let y = y0 - (size * aspect) * 0.5
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + size, y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + size, y + (size * aspect))
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + (size * aspect))
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 2
@@ -589,12 +589,12 @@ func DrawInfobarSprite2(_ x: Float, _ y: Float, _ size: Float, _ group: Int16, _
     let aspect = Float(mo!.height) / Float(mo!.width)
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + size, y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + size, y + (size * aspect))
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + (size * aspect))
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 3
@@ -609,12 +609,12 @@ func DrawInfobarSprite3(_ x: Float, _ y: Float, _ size: Float, _ texNum: Int16) 
     let aspect = Float(mo!.width) / Float(mo!.height)
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + (size * aspect), y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + (size * aspect), y + size)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + size)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + (size * aspect), y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + (size * aspect), y + size)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + size)
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 3: centered
@@ -630,12 +630,12 @@ func DrawInfobarSprite3_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ texN
     let x = x0 - (size * aspect) * 0.5
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + (size * aspect), y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + (size * aspect), y + size)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + size)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + (size * aspect), y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + (size * aspect), y + size)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + size)
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite 2: centered
@@ -657,12 +657,12 @@ func DrawInfobarSprite2_Centered(_ x0: Float, _ y0: Float, _ size: Float, _ grou
     let y = y0 - (size * aspect) * 0.5
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(x, y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(x + size, y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(x + size, y + (size * aspect))
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(x, y + (size * aspect))
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(x, y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(x + size, y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(x + size, y + (size * aspect))
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(x, y + (size * aspect))
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Draw infobar sprite: rotated
@@ -693,12 +693,12 @@ private func drawInfobarSpriteRotated(_ x: Float, _ y: Float, _ size: Float, _ t
     }
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(p.0.x + x, p.0.y + y)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(p.1.x + x, p.1.y + y)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(p.2.x + x, p.2.y + y)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(p.3.x + x, p.3.y + y)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(p.0.x + x, p.0.y + y)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(p.1.x + x, p.1.y + y)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(p.2.x + x, p.2.y + y)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(p.3.x + x, p.3.y + y)
+    gEngine.renderer.endImmediate()
 }
 
 // MARK: - Infobar: draw number
@@ -930,8 +930,8 @@ private func infobarDrawHealth() {
     gHealthuv1[2].v = v + 0.5; gHealthuv1[3].v = v + 0.5
 
     // DRAW IT
-    gRenderBackend.pushMatrix()
-    gRenderBackend.translate(healthX(), healthY(), 0)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.translate(healthX(), healthY(), 0)
 
     // DRAW SHADOW
     if !gGamePrefs.isLowRenderQuality {
@@ -947,7 +947,7 @@ private func infobarDrawHealth() {
     DrawInfobarSprite_Centered(0, 0, HEALTH_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    gRenderBackend.popMatrix()
+    gEngine.renderer.popMatrix()
 }
 
 // MARK: - Draw shield
@@ -963,8 +963,8 @@ private func infobarDrawShield() {
     gShielduv1[2].v = v + 0.5; gShielduv1[3].v = v + 0.5
 
     // DRAW IT
-    gRenderBackend.pushMatrix()
-    gRenderBackend.translate(shieldX(), shieldY(), 0)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.translate(shieldX(), shieldY(), 0)
 
     // DRAW SHADOW
     if !gGamePrefs.isLowRenderQuality {
@@ -980,7 +980,7 @@ private func infobarDrawShield() {
     DrawInfobarSprite_Centered(0, 0, SHIELD_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    gRenderBackend.popMatrix()
+    gEngine.renderer.popMatrix()
 }
 
 // MARK: - Draw fuel
@@ -994,8 +994,8 @@ private func infobarDrawFuel() {
     gFueluv1[2].v = v + 0.5; gFueluv1[3].v = v + 0.5
 
     // DRAW IT
-    gRenderBackend.pushMatrix()
-    gRenderBackend.translate(fuelX(), fuelY(), 0)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.translate(fuelX(), fuelY(), 0)
 
     // DRAW SHADOW
     if !gGamePrefs.isLowRenderQuality {
@@ -1011,7 +1011,7 @@ private func infobarDrawFuel() {
     DrawInfobarSprite_Centered(0, 0, FUEL_SCALE, Int16(INFOBAR_SObjType_HealthShine))
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
-    gRenderBackend.popMatrix()
+    gEngine.renderer.popMatrix()
 }
 
 // MARK: - Start blinking egg
@@ -1416,9 +1416,9 @@ private func drawAnaglyphCrosshairs() {
             SetLookAtMatrixAndTranslate(&m, upPtr, crosshairCoordBase(pi) + i, &pi.pointee.coord)
         }
 
-        gRenderBackend.pushMatrix()
+        gEngine.renderer.pushMatrix()
         withUnsafePointer(to: &m) {
-            $0.withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.multMatrix($0) }
+            $0.withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.multMatrix($0) }
         }
 
         // DRAW LARGE
@@ -1428,40 +1428,40 @@ private func drawAnaglyphCrosshairs() {
 
             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_OuterRing)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-            gRenderBackend.beginImmediate(.quads)
-            gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
-            gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
-            gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
-            gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
-            gRenderBackend.endImmediate()
+            gEngine.renderer.beginImmediate(.quads)
+            gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)
+            gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size, size)
+            gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size, size)
+            gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size, -size)
+            gEngine.renderer.endImmediate()
 
             if lockedOn {
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Locked)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                gRenderBackend.beginImmediate(.quads)
-                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
-                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
-                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
-                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
-                gRenderBackend.endImmediate()
+                gEngine.renderer.beginImmediate(.quads)
+                gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)
+                gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size, size)
+                gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size, size)
+                gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size, -size)
+                gEngine.renderer.endImmediate()
             } else {
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Normal)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                gRenderBackend.beginImmediate(.quads)
-                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size2, -size2)
-                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size2, size2)
-                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size2, size2)
-                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size2, -size2)
-                gRenderBackend.endImmediate()
+                gEngine.renderer.beginImmediate(.quads)
+                gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size2, -size2)
+                gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size2, size2)
+                gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size2, size2)
+                gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size2, -size2)
+                gEngine.renderer.endImmediate()
 
                 MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Pointer)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-                gRenderBackend.beginImmediate(.quads)
-                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
-                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
-                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
-                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
-                gRenderBackend.endImmediate()
+                gEngine.renderer.beginImmediate(.quads)
+                gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)
+                gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size, size)
+                gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size, size)
+                gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size, -size)
+                gEngine.renderer.endImmediate()
             }
         }
         // DRAW SMALL
@@ -1470,15 +1470,15 @@ private func drawAnaglyphCrosshairs() {
 
             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_GunSight_Normal)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
-            gRenderBackend.beginImmediate(.quads)
-            gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
-            gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
-            gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
-            gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
-            gRenderBackend.endImmediate()
+            gEngine.renderer.beginImmediate(.quads)
+            gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)
+            gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size, size)
+            gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size, size)
+            gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size, -size)
+            gEngine.renderer.endImmediate()
         }
 
-        gRenderBackend.popMatrix()
+        gEngine.renderer.popMatrix()
     }
 }
 

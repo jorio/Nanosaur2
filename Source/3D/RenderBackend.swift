@@ -680,5 +680,3 @@ final class GLRenderBackend: RenderBackend {
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
     func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
 }
-
-var gRenderBackend: RenderBackend = GLRenderBackend()

@@ -306,7 +306,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
         let theNode = gDustDevilObjects[d]! // get ptr to this devil's objNode
 
-        gRenderBackend.pushMatrix()
+        gEngine.renderer.pushMatrix()
 
         MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_LEVELSPECIFIC))![Int(LEVEL2_SObjType_DustDevil)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
@@ -314,31 +314,31 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
         var m = OGLMatrix4x4()
         m.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-        gRenderBackend.multMatrix(&m.value.0)
+        gEngine.renderer.multMatrix(&m.value.0)
 
         // SCALE DOWN AND DRAW INNER SHELL
 
         if !gGamePrefs.isLowRenderQuality {
-            gRenderBackend.pushMatrix()
+            gEngine.renderer.pushMatrix()
             OGL_SetColor4f(1, 1, 1, 0.5)
 
             m.setScale(0.8, 1, 0.8)
-            gRenderBackend.multMatrix(&m.value.0)
+            gEngine.renderer.multMatrix(&m.value.0)
 
             m.setRotateY(Float.pi)
-            gRenderBackend.multMatrix(&m.value.0)
+            gEngine.renderer.multMatrix(&m.value.0)
 
             MO_DrawGeometry_VertexArray(&gDustDevilMeshes[buffNum])
 
             OGL_SetColor4f(1, 1, 1, 1)
-            gRenderBackend.popMatrix()
+            gEngine.renderer.popMatrix()
         }
 
         // DRAW OUTER SHELL
 
         MO_DrawGeometry_VertexArray(&gDustDevilMeshes[buffNum])
 
-        gRenderBackend.popMatrix()
+        gEngine.renderer.popMatrix()
     }
 
     gGlobalMaterialFlags = 0

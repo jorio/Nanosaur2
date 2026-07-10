@@ -403,7 +403,7 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // SUBMIT THE MATRIX
     withUnsafePointer(to: &theNode.pointee.BaseTransformMatrix) {
         UnsafeRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.multMatrix($0)
+            gEngine.renderer.multMatrix($0)
         }
     }
 
@@ -413,12 +413,12 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
     MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_GLOBAL))![Int(GLOBAL_SObjType_Shadow_Circular) + shadowType].materialObject?.assumingMemoryBound(to: MOMaterialObject.self))
 
     // DRAW THE SHADOW
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(-20, 0, 20)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(20, 0, 20)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(20, 0, -20)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(-20, 0, -20)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(-20, 0, 20)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex3f(20, 0, 20)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex3f(20, 0, -20)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex3f(-20, 0, -20)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
     gGlobalTransparency = 1.0
@@ -544,15 +544,15 @@ func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
 // MARK: - World points
 
 func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.pushMatrix()
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.loadIdentity()
 
     gMeshNum = 0
 
     moCalcWorldPointsObject(theNode, UnsafeMutableRawPointer(theNode.pointee.BaseGroup))
 
-    gRenderBackend.popMatrix()
+    gEngine.renderer.popMatrix()
 
     theNode.hasWorldPoints = true
     gNumWorldCalcsThisFrame += 1
@@ -589,8 +589,8 @@ private func moCalcWorldPointsObject(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
 private func moCalcWorldPointsGroup(_ theNode: UnsafeMutablePointer<ObjNode>, _ object: UnsafeMutablePointer<MOGroupObject>) {
     // PUSH MATRIES WITH OPENGL
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.pushMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.pushMatrix()
 
     // PARSE GROUP
     let numChildren = Int(object.numObjectsInGroup) // get # objects in group
@@ -600,15 +600,15 @@ private func moCalcWorldPointsGroup(_ theNode: UnsafeMutablePointer<ObjNode>, _ 
     }
 
     // RETREIVE OPENGL MATRICES
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.popMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.popMatrix()
 }
 
 private func moCalcWorldPointsMatrix(_ matObj: UnsafeMutablePointer<MOMatrixObject>) {
     // MULTIPLY CURRENT MATRIX BY THIS
     withUnsafePointer(to: &matObj.pointee.matrix) {
         UnsafeRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.multMatrix($0)
+            gEngine.renderer.multMatrix($0)
         }
     }
 }
@@ -637,7 +637,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
     var localToWorld = OGLMatrix4x4()
     withUnsafeMutablePointer(to: &localToWorld) {
         UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.getModelViewMatrix($0)
+            gEngine.renderer.getModelViewMatrix($0)
         }
     }
 

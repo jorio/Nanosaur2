@@ -7,9 +7,9 @@ private var gAnaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
 private let cOnChangeAnaglyphMode: @convention(c) () -> Void = {
     gAnaglyphPass = 0
     for _ in 0..<4 {
-        gRenderBackend.setColorMask(true, true, true, true)
-        gRenderBackend.clearColorAndDepth()
-        gRenderBackend.present()
+        gEngine.renderer.setColorMask(true, true, true, true)
+        gEngine.renderer.clearColorAndDepth()
+        gEngine.renderer.present()
     }
     SetUpAnaglyphCalibrationScreen()
     LayoutCurrentMenuAgain(true)

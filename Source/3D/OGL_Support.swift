@@ -137,12 +137,12 @@ private var gMyState_DepthMask = true
 
 func OGL_SetNormalizeNormals(_ enabled: Bool) {
     gMyState_Normalize = enabled
-    gRenderBackend.setNormalizeNormals(enabled)
+    gEngine.renderer.setNormalizeNormals(enabled)
 }
 
 func OGL_SetDepthWrite(_ enabled: Bool) {
     gMyState_DepthMask = enabled
-    gRenderBackend.setDepthWrite(enabled)
+    gEngine.renderer.setDepthWrite(enabled)
 }
 
 // MARK: - Macro shims (parameterless/parameterized macros aren't importable)
@@ -422,7 +422,7 @@ private func OGL_CreateDrawContext() {
     // CREATE THE BACKEND'S CONTEXT (GL: SDL context + make-current + vsync
     // + proc loading + capability check - see GLRenderBackend.createContext)
 
-    gRenderBackend.createContext()
+    gEngine.renderer.createContext()
 
     // DUAL-SCREEN MODE: CREATE A SECOND CONTEXT FOR THE BOTTOM WINDOW AND
     // LOAD THE MAIN MENU BACKGROUND IMAGE FOR IT
@@ -480,17 +480,17 @@ private var gDualScreenBackgroundTexture: GLuint = 0
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.loadIdentity()
     glOrtho(0, GLdouble(windowWidth), GLdouble(windowHeight), 0, -1, 1)
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.loadIdentity()
 
-    gRenderBackend.setClearColor(0, 0, 0)
-    gRenderBackend.clearColorAndDepth()
+    gEngine.renderer.setClearColor(0, 0, 0)
+    gEngine.renderer.clearColorAndDepth()
 
     glEnable(GLenum(GL_TEXTURE_2D))
-    gRenderBackend.bindTexture(gDualScreenBackgroundTexture)
+    gEngine.renderer.bindTexture(gDualScreenBackgroundTexture)
     glColor4f(1, 1, 1, 1)
 
     glBegin(GLenum(GL_QUADS))
@@ -517,7 +517,7 @@ private func OGL_DisposeDrawContext() {
         gAGLContext2 = nil
     }
 
-    gRenderBackend.destroyContext()
+    gEngine.renderer.destroyContext()
 }
 
 // MARK: - OGL: Init draw context
@@ -552,13 +552,13 @@ private func OGL_InitDrawContext(_ def: UnsafeMutablePointer<OGLSetupInputType>!
 
     // SET VARIOUS STATE INFO
 
-    gRenderBackend.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
+    gEngine.renderer.setClearColor(def!.pointee.view.clearColor.r, def!.pointee.view.clearColor.g, def!.pointee.view.clearColor.b)
     OGL_EnableDepthTest() // use z-buffer
 
     // Fixed-function scene defaults (cull orientation, alpha test, white
     // color-tracking material, normalization, fog hint) - one facade call,
     // no-op on backends without those concepts.
-    gRenderBackend.prepareSceneDefaults()
+    gEngine.renderer.prepareSceneDefaults()
 
     // INIT DEBUG FONT
 
@@ -608,7 +608,7 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
         case GL_EXP2: mode = .exp2
         default: mode = .linear
         }
-        gRenderBackend.setFog(
+        gEngine.renderer.setFog(
             mode: mode,
             density: styleDefPtr.pointee.fogDensity,
             start: styleDefPtr.pointee.fogStart,
@@ -637,7 +637,7 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 // MARK: - Clear all buffers to black
 
 private func ClearAllBuffersToBlack() {
-    gRenderBackend.setClearColor(0, 0, 0)
+    gEngine.renderer.setClearColor(0, 0, 0)
     if isStereoShutter() {
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
@@ -651,10 +651,10 @@ private func ClearAllBuffersToBlack() {
         SDL_GL_SwapWindow(gSDLWindow)
         _ = OGL_CheckError()
     } else {
-        gRenderBackend.clearColorAndDepth() // clear buffer
-        gRenderBackend.present()
-        gRenderBackend.clearColorAndDepth() // clear buffer
-        gRenderBackend.present()
+        gEngine.renderer.clearColorAndDepth() // clear buffer
+        gEngine.renderer.present()
+        gEngine.renderer.clearColorAndDepth() // clear buffer
+        gEngine.renderer.present()
 
         _ = OGL_CheckError()
     }
@@ -678,7 +678,7 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
         fillDirection[i] = fillDirection[i].normalized()
     }
 
-    gRenderBackend.setLights(
+    gEngine.renderer.setLights(
         ambientR: lightDefPtr.pointee.ambientColor.r,
         ambientG: lightDefPtr.pointee.ambientColor.g,
         ambientB: lightDefPtr.pointee.ambientColor.b,
@@ -744,14 +744,14 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                 // Bringing up dialogs can write into green channel, so always be sure it's clear
 
                 if isStereoAnaglyphColor() {
-                    gRenderBackend.setColorMask(true, true, true, true) // make sure clearing Red/Green/Blue channels
+                    gEngine.renderer.setColorMask(true, true, true, true) // make sure clearing Red/Green/Blue channels
                 } else if isStereoAnaglyphMono() {
-                    gRenderBackend.setColorMask(true, false, true, true) // make sure clearing Red/Blue channels
+                    gEngine.renderer.setColorMask(true, false, true, true) // make sure clearing Red/Blue channels
                 }
 
-                gRenderBackend.clearColorAndDepth()
+                gEngine.renderer.clearColorAndDepth()
             } else {
-                gRenderBackend.clearDepthOnly()
+                gEngine.renderer.clearDepthOnly()
             }
         }
 
@@ -761,14 +761,14 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             // SET COLOR MASK
 
             if gAnaglyphPass == 0 {
-                gRenderBackend.setColorMask(true, false, false, true)
+                gEngine.renderer.setColorMask(true, false, false, true)
             } else {
                 if isStereoAnaglyphColor() {
-                    gRenderBackend.setColorMask(false, true, true, true)
+                    gEngine.renderer.setColorMask(false, true, true, true)
                 } else {
-                    gRenderBackend.setColorMask(false, false, true, true)
+                    gEngine.renderer.setColorMask(false, false, true, true)
                 }
-                gRenderBackend.clearDepthOnly()
+                gEngine.renderer.clearDepthOnly()
             }
         }
 
@@ -792,7 +792,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             var w: Int32 = 1
             var h: Int32 = 1
             OGL_GetCurrentViewport(&x, &y, &w, &h, gCurrentSplitScreenPane)
-            gRenderBackend.setViewport(x, y, w, h)
+            gEngine.renderer.setViewport(x, y, w, h)
             gCurrentPaneAspectRatio = Float(h) / Float(w)
 
             // GET UPDATED GLOBAL COPIES OF THE VARIOUS MATRICES
@@ -825,7 +825,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
             gDebugMode = 0
         }
 
-        gRenderBackend.setWireframe(gDebugMode == 3) // see if show wireframe
+        gEngine.renderer.setWireframe(gDebugMode == 3) // see if show wireframe
     }
 
     if gTimeDemo != 0 {
@@ -867,7 +867,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // SWAP THE BUFFS
 
-    gRenderBackend.present() // end render loop
+    gEngine.renderer.present() // end render loop
 
     if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
         gGameViewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
@@ -1104,7 +1104,7 @@ func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32
     default: format = .rgba8
     }
 
-    let textureName = gRenderBackend.createTexture(
+    let textureName = gEngine.renderer.createTexture(
         width: width, height: height, format: format, pixels: imageMemory)
 
     // SEE IF RAN OUT OF MEMORY WHILE COPYING TO OPENGL
@@ -1429,7 +1429,7 @@ private func ConvertTextureToColorAnaglyph(_ imageMemory: UnsafeMutableRawPointe
 // MARK: - OGL: RAM texture has changed
 
 func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: Int16, _ pixels: UnsafeMutablePointer<UInt32>!) {
-    gRenderBackend.updateTexture(textureName, width: Int32(width), height: Int32(height), bgraPixels: pixels)
+    gEngine.renderer.updateTexture(textureName, width: Int32(width), height: Int32(height), bgraPixels: pixels)
 }
 
 // MARK: - OGL: Texture set OpenGL texture
@@ -1437,7 +1437,7 @@ func OGL_RAMTextureHasChanged(_ textureName: GLuint, _ width: Int16, _ height: I
 // Sets the current OpenGL texture using glBindTexture et.al. so any textured triangles will use it.
 
 func OGL_Texture_SetOpenGLTexture(_ textureName: GLuint) {
-    gRenderBackend.bindTexture(textureName)
+    gEngine.renderer.bindTexture(textureName)
     if OGL_CheckError() != 0 {
         SwFatalAlert("OGL_Texture_SetOpenGLTexture: glBindTexture failed!")
     }
@@ -1530,8 +1530,8 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
     // INIT PROJECTION MATRIX
 
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.loadIdentity()
 
     let placements = cameraPlacementsBase()
     let fov = fovBase()
@@ -1554,7 +1554,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             right = aspect * wd2 - 0.5 * gAnaglyphEyeSeparation * ndfl
         }
 
-        gRenderBackend.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
+        gEngine.renderer.frustum(Double(left), Double(right), Double(-wd2), Double(wd2), Double(gGameViewInfoPtr!.pointee.hither), Double(gGameViewInfoPtr!.pointee.yon))
     } else {
         // SETUP STANDARD PERSPECTIVE CAMERA
 
@@ -1565,9 +1565,9 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
             gGameViewInfoPtr!.pointee.hither,
             gGameViewInfoPtr!.pointee.yon)
 
-        gRenderBackend.matrixMode(.projection)
+        gEngine.renderer.matrixMode(.projection)
         withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
+            UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.loadMatrix($0) }
         }
     }
 
@@ -1579,16 +1579,16 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
         &placements[Int(camNum)].pointOfInterest,
         &placements[Int(camNum)].upVector)
 
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.modelview)
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.loadMatrix($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.loadMatrix($0) }
     }
 
     // UPDATE LIGHT POSITIONS
 
     do {
         let lights = gGameViewInfoPtr!.pointer(to: \.lightList)!
-        gRenderBackend.updateLightPositions(
+        gEngine.renderer.updateLightPositions(
             numFillLights: Int32(lights.pointee.numFillLights),
             fillDirections: fillDirectionBase(lights))
     }
@@ -1601,13 +1601,13 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
     // projection backend-side. Portable now: matrix-stack-tracking backends
     // serve these from their CPU-side stacks.
     withUnsafeMutablePointer(to: &gWorldToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.getModelViewMatrix($0) }
     }
     withUnsafeMutablePointer(to: &gLocalToViewMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getModelViewMatrix($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.getModelViewMatrix($0) }
     }
     withUnsafeMutablePointer(to: &gViewToFrustumMatrix) {
-        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gRenderBackend.getProjectionMatrix($0) }
+        UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) { gEngine.renderer.getProjectionMatrix($0) }
     }
     gLocalToFrustumMatrix = gLocalToViewMatrix.multiplied(by: gViewToFrustumMatrix)
     gWorldToFrustumMatrix = gWorldToViewMatrix.multiplied(by: gViewToFrustumMatrix)
@@ -1629,7 +1629,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 // MARK: - OGL: Check error
 
 func OGL_CheckError_Impl(_ file: String, _ line: Int32) -> GLenum {
-    let error = gRenderBackend.checkError()
+    let error = gEngine.renderer.checkError()
     if error != 0 {
         var text = ""
         switch Int32(error) {
@@ -1651,12 +1651,12 @@ func OGL_CheckError_Impl(_ file: String, _ line: Int32) -> GLenum {
 func OGL_PushState() {
     // PUSH MATRIES WITH OPENGL
 
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.pushMatrix()
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.pushMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.pushMatrix()
 
-    gRenderBackend.matrixMode(.modelview) // in my code, I keep modelview matrix as the currently active one all the time.
+    gEngine.renderer.matrixMode(.modelview) // in my code, I keep modelview matrix as the currently active one all the time.
 
     // SAVE OTHER INFO
 
@@ -1687,10 +1687,10 @@ func OGL_PushState() {
 func OGL_PopState() {
     // RETREIVE OPENGL MATRICES
 
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.popMatrix()
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.popMatrix()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.popMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.popMatrix()
 
     // GET OTHER INFO
 
@@ -1749,7 +1749,7 @@ func OGL_PopState() {
 func OGL_EnableLighting() {
     if gMyState_Lighting == 0 {
         gMyState_Lighting = 1
-        gRenderBackend.enableLighting()
+        gEngine.renderer.enableLighting()
     }
 }
 
@@ -1758,7 +1758,7 @@ func OGL_EnableLighting() {
 func OGL_DisableLighting() {
     if gMyState_Lighting != 0 {
         gMyState_Lighting = 0
-        gRenderBackend.disableLighting()
+        gEngine.renderer.disableLighting()
     }
 }
 
@@ -1767,7 +1767,7 @@ func OGL_DisableLighting() {
 func OGL_EnableBlend() {
     if !gMyState_Blend {
         gMyState_Blend = true
-        gRenderBackend.enableBlend()
+        gEngine.renderer.enableBlend()
     }
 }
 
@@ -1776,7 +1776,7 @@ func OGL_EnableBlend() {
 func OGL_DisableBlend() {
     if gMyState_Blend {
         gMyState_Blend = false
-        gRenderBackend.disableBlend()
+        gEngine.renderer.disableBlend()
     }
 }
 
@@ -1788,12 +1788,12 @@ func OGL_EnableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if !gMyState_Texture2D {
             gMyState_Texture2D = true
-            gRenderBackend.enableTexture2D()
+            gEngine.renderer.enableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        gRenderBackend.enableTexture2D()
+        gEngine.renderer.enableTexture2D()
     }
 }
 
@@ -1805,12 +1805,12 @@ func OGL_DisableTexture2D() {
     if gMyState_TextureUnit == UInt32(GL_TEXTURE0) {
         if gMyState_Texture2D {
             gMyState_Texture2D = false
-            gRenderBackend.disableTexture2D()
+            gEngine.renderer.disableTexture2D()
         }
     } else {
         // FOR ALL OTHER TEXTURE UNITS JUST DO IT
 
-        gRenderBackend.disableTexture2D()
+        gEngine.renderer.disableTexture2D()
     }
 }
 
@@ -1821,7 +1821,7 @@ func OGL_DisableTexture2D() {
 func OGL_ActiveTextureUnit(_ texUnit: UInt32) {
     // Legacy GL-typed shim: callers pass GL_TEXTURE0 + n; the facade takes
     // a plain unit index.
-    gRenderBackend.activeTextureUnit(Int32(texUnit) - GL_TEXTURE0)
+    gEngine.renderer.activeTextureUnit(Int32(texUnit) - GL_TEXTURE0)
 
     gMyState_TextureUnit = texUnit
 }
@@ -1834,7 +1834,7 @@ func OGL_SetColor4fv(_ color: UnsafeMutablePointer<OGLColorRGBA>!) {
         color.pointee.b != gMyState_Color.b ||
         color.pointee.a != gMyState_Color.a
     {
-        gRenderBackend.setColor4f(color.pointee.r, color.pointee.g, color.pointee.b, color.pointee.a)
+        gEngine.renderer.setColor4f(color.pointee.r, color.pointee.g, color.pointee.b, color.pointee.a)
 
         gMyState_Color = color.pointee
     }
@@ -1848,7 +1848,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
         b != gMyState_Color.b ||
         a != gMyState_Color.a
     {
-        gRenderBackend.setColor4f(r, g, b, a)
+        gEngine.renderer.setColor4f(r, g, b, a)
 
         gMyState_Color.r = r
         gMyState_Color.g = g
@@ -1862,7 +1862,7 @@ func OGL_SetColor4f(_ r: Float, _ g: Float, _ b: Float, _ a: Float) {
 func OGL_EnableCullFace() {
     if !gMyState_CullFace {
         gMyState_CullFace = true
-        gRenderBackend.enableCullFace()
+        gEngine.renderer.enableCullFace()
     }
 }
 
@@ -1871,7 +1871,7 @@ func OGL_EnableCullFace() {
 func OGL_DisableCullFace() {
     if gMyState_CullFace {
         gMyState_CullFace = false
-        gRenderBackend.disableCullFace()
+        gEngine.renderer.disableCullFace()
     }
 }
 
@@ -1880,7 +1880,7 @@ func OGL_DisableCullFace() {
 func OGL_EnableFog() {
     if !gMyState_Fog {
         gMyState_Fog = true
-        gRenderBackend.enableFog()
+        gEngine.renderer.enableFog()
     }
 }
 
@@ -1889,13 +1889,13 @@ func OGL_EnableFog() {
 func OGL_DisableFog() {
     if gMyState_Fog {
         gMyState_Fog = false
-        gRenderBackend.disableFog()
+        gEngine.renderer.disableFog()
     }
 }
 
 // MARK: - OGL enable/disable depth test
 
-// Cached, unlike a plain gRenderBackend.enableDepthTest() call, so
+// Cached, unlike a plain gEngine.renderer.enableDepthTest() call, so
 // OGL_PushState/OGL_PopState (below) can read back "is depth test on?"
 // without GL introspection (glIsEnabled) - needed so those functions (called
 // by every 2D draw: MO_DrawPicture, Atlas_DrawString2, ...) don't require a
@@ -1904,14 +1904,14 @@ func OGL_DisableFog() {
 func OGL_EnableDepthTest() {
     if !gMyState_DepthTest {
         gMyState_DepthTest = true
-        gRenderBackend.enableDepthTest()
+        gEngine.renderer.enableDepthTest()
     }
 }
 
 func OGL_DisableDepthTest() {
     if gMyState_DepthTest {
         gMyState_DepthTest = false
-        gRenderBackend.disableDepthTest()
+        gEngine.renderer.disableDepthTest()
     }
 }
 
@@ -1933,7 +1933,7 @@ private func rbBlendFactor(_ glFactor: GLenum) -> RBBlendFactor {
 
 func OGL_BlendFunc(_ sfactor: GLenum, _ dfactor: GLenum) {
     if sfactor != gMyState_BlendFuncS || dfactor != gMyState_BlendFuncD {
-        gRenderBackend.blendFunc(rbBlendFactor(sfactor), rbBlendFactor(dfactor))
+        gEngine.renderer.blendFunc(rbBlendFactor(sfactor), rbBlendFactor(dfactor))
 
         gMyState_BlendFuncS = sfactor
         gMyState_BlendFuncD = dfactor
@@ -1955,14 +1955,14 @@ private func OGL_FreeFont() {
 func OGL_DrawString(_ s: String, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(.projection)
-    gRenderBackend.loadIdentity()
-    gRenderBackend.ortho(0, 640, 480, 0, -10.0, 10.0)
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.matrixMode(.projection)
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.ortho(0, 640, 480, 0, -10.0, 10.0)
 
     OGL_DisableLighting()
-    gRenderBackend.setColorMaterialEnabled(true)
+    gEngine.renderer.setColorMaterialEnabled(true)
 
     OGL_SetColor4f(1, 1, 1, 1)
 

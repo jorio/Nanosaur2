@@ -341,7 +341,7 @@ private func drawConfettiGroups() {
 
     // SETUP ENVIRONTMENT
     OGL_PushState()
-    gRenderBackend.setTwoSidedLighting(true)
+    gEngine.renderer.setTwoSidedLighting(true)
 
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
@@ -456,7 +456,7 @@ private func drawConfettiGroups() {
     // RESTORE MODES
     OGL_PopState()
     OGL_SetColor4f(1, 1, 1, 1) // reset this
-    gRenderBackend.setTwoSidedLighting(false)
+    gEngine.renderer.setTwoSidedLighting(false)
 }
 
 // MARK: - Verify

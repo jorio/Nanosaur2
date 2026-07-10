@@ -45,7 +45,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
     let theNode = theNodeOpt!
     let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
 
-    gRenderBackend.setAlphaTestEnabled(false) // --------
+    gEngine.renderer.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -58,7 +58,7 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
 
     MO_DrawObject(theNode.pointee.BaseGroup)
 
-    gRenderBackend.setAlphaTestEnabled(true) // --------
+    gEngine.renderer.setAlphaTestEnabled(true) // --------
 }
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
@@ -103,7 +103,7 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     let theNode = theNodeOpt!
     let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
 
-    gRenderBackend.setAlphaTestEnabled(false) // --------
+    gEngine.renderer.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -117,9 +117,9 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gCloudScroll.x
     theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gCloudScroll.y
 
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
+    gEngine.renderer.matrixMode(.modelview)
 
     // DRAW THE OBJECT
 
@@ -127,11 +127,11 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // RESET UV MATRIX
 
-    gRenderBackend.matrixMode(.texture)
-    gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture)
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
 
-    gRenderBackend.setAlphaTestEnabled(true) // --------
+    gEngine.renderer.setAlphaTestEnabled(true) // --------
 }
 
 // MARK: -

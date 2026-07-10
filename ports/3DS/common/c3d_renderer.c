@@ -117,6 +117,7 @@ static struct {
 
 	// diagnostics
 	int liveTextures;
+	u32 liveTexBytes;
 	u32 presentCount;
 
 	// immediate mode
@@ -174,6 +175,15 @@ static void applyViewport(void)
 	// GL viewport (origin bottom-left of the 400x240 screen) -> rotated
 	// 240x400 framebuffer. Exact for the full screen; see header for panes.
 	C3D_SetViewport(R.viewport[1], R.viewport[0], R.viewport[3], R.viewport[2]);
+
+#ifdef DEBUGLOG
+	static int lastVp[4] = {-1, -1, -1, -1};
+	if (memcmp(lastVp, R.viewport, sizeof lastVp) != 0)
+	{
+		memcpy(lastVp, R.viewport, sizeof lastVp);
+		c3drLog("c3dr: viewport %d %d %d %d", R.viewport[0], R.viewport[1], R.viewport[2], R.viewport[3]);
+	}
+#endif
 }
 
 static void ensureFrame(void)
@@ -239,7 +249,15 @@ static void flushRaster(void)
 	if (R.colorMask[2]) mask |= GPU_WRITE_BLUE;
 	if (R.colorMask[3]) mask |= GPU_WRITE_ALPHA;
 	if (R.depthWrite)   mask |= GPU_WRITE_DEPTH;
-	C3D_DepthTest(R.depthTest, GPU_LESS, (GPU_WRITEMASK)mask);
+	// GPU_GREATER, not GL's LESS: fixProjection maps GL depth so NEAR lands
+	// at 1 and FAR at 0 in the PICA depth buffer (z' = 0.5z - 0.5w over
+	// [-1,0], negated into the buffer), and clears write 0 - the standard
+	// citro3d convention. A closer fragment therefore has a LARGER buffer
+	// value. With GPU_LESS nothing ever passed against the cleared buffer:
+	// gameplay's depth-tested world rendered as pure black while
+	// depth-test-off draws (HUD, the level-intro scene's objects) showed
+	// fine, which is exactly how this bug presented.
+	C3D_DepthTest(R.depthTest, GPU_GREATER, (GPU_WRITEMASK)mask);
 }
 
 static void flushTexEnv(void)
@@ -405,8 +423,9 @@ void C3DR_Present(void)
 	// Memory-trend heartbeat: a slow texture/linear leak across scene
 	// teardowns only shows up as a trend, so log one every ~30s.
 	if (++R.presentCount % 1800 == 0)
-		c3drLog("c3dr: mem trend: tex=%d linearFree=%u vramFree=%u",
-			R.liveTextures, (unsigned)linearSpaceFree(), (unsigned)vramSpaceFree());
+		c3drLog("c3dr: mem trend: tex=%d texKB=%u linearFree=%u vramFree=%u",
+			R.liveTextures, (unsigned)(R.liveTexBytes / 1024),
+			(unsigned)linearSpaceFree(), (unsigned)vramSpaceFree());
 #endif
 }
 
@@ -676,11 +695,16 @@ static u8 *downsample2xRGBA8(const u8 *src, int w, int h)
 unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 {
 	// Downgrade oversized textures: on a 400x240 screen anything above
-	// 512px is oversampled, and the big offenders (1024x1024 font
-	// atlases) each cost 2 MB of linear memory even at RGBA4. Supertiles
-	// (128) and full-screen art (512-wide story slides) pass untouched.
+	// 512px is oversampled, and the big offenders (font atlases, 512x512
+	// sprite/model atlases) each cost 0.5-2 MB of linear memory even at
+	// RGBA4 - a big level (650+ unique supertiles) doesn't fit otherwise.
+	// SQUARE textures shrink down to 256 (atlases - their glyphs/cells are
+	// drawn small on this screen); non-square art (512x256 story slides,
+	// shown full-screen) only shrinks above 512. Supertiles (128) pass
+	// untouched.
 	u8 *shrunk = NULL;
-	while (width > 512 || height > 512)
+	int cap = (width == height) ? 256 : 512;
+	while (width > cap || height > cap)
 	{
 		u8 *next = downsample2xRGBA8(shrunk ? shrunk : (const u8 *)rgba8Pixels, width, height);
 		if (!next)
@@ -731,6 +755,7 @@ unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 	t->clampU = t->clampV = false;
 	t->used = true;
 	R.liveTextures++;
+	R.liveTexBytes += (u32)width * height * TEX_BPP;
 
 	return (unsigned)slot + 1;
 }
@@ -747,8 +772,10 @@ void C3DR_DeleteTexture(unsigned name)
 {
 	if (name == 0 || name > MAX_TEXTURES || !R.textures[name - 1].used)
 		return;
-	C3D_TexDelete(&R.textures[name - 1].tex);
-	R.textures[name - 1].used = false;
+	TexSlot *slot = &R.textures[name - 1];
+	R.liveTexBytes -= (u32)slot->tex.width * slot->tex.height * TEX_BPP;
+	C3D_TexDelete(&slot->tex);
+	slot->used = false;
 	R.liveTextures--;
 	for (int u = 0; u < 2; u++)
 	{
@@ -824,6 +851,23 @@ void C3DR_DrawIndexedTriangles(
 	int numIndices = numTriangles * 3;
 
 	flushAll();
+
+#ifdef DEBUGLOG
+	// Draw probe: coarse per-draw state to compare scenes that render
+	// against ones that don't (positions, texture, transform).
+	static int dbgDraw = 0;
+	if (++dbgDraw % 500 == 0)
+	{
+		float mvp[16];
+		mulCM(mvp, R.stacks[1][R.stackTop[1]], R.stacks[0][R.stackTop[0]]);
+		c3drLog("c3dr: draw#%d tris=%d tex=%u(%dx%d) p0=%.0f,%.0f,%.0f mvpd=%.3f",
+			dbgDraw, numTriangles, R.bound[0],
+			R.bound[0] ? R.textures[R.bound[0]-1].tex.width : 0,
+			R.bound[0] ? R.textures[R.bound[0]-1].tex.height : 0,
+			points[0], points[1], points[2],
+			mvp[0]);
+	}
+#endif
 
 	// Downcast indices to u16 (PICA has no 32-bit index path), finding the
 	// vertex count in the same scan.

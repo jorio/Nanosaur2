@@ -1277,7 +1277,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
     // SCAN FOR INTERESTING STUFF
 
-    for i in 0..<Int(gNumCollisions) {
+    for i in 0..<Int(gEngine.collision.numCollisions) {
         let entry = GetCollisionListEntry(Int32(i))!
         if entry.pointee.type == UInt8(COLLISION_TYPE_OBJ) {
             guard let hitObj = entry.pointee.objectPtr else { continue } // get ObjNode of this collision

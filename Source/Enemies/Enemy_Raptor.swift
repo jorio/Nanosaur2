@@ -308,8 +308,8 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
         return
     }
 
-    if gTotalSides != 0 { // if touched something then slow us down
-        if gNumCollisions == 0 { // if it wasn't an objNode (probably fence), then switch mode
+    if gEngine.collision.totalSides != 0 { // if touched something then slow us down
+        if gEngine.collision.numCollisions == 0 { // if it wasn't an objNode (probably fence), then switch mode
             theNode.pointee.Mode = raptorModeWalkHome
             theNode.pointee.SpecialF.1 = 3.0 // HomeTimer
         }

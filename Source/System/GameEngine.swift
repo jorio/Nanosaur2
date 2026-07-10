@@ -18,6 +18,9 @@ final class GameEngine {
 
     /// Player state for both players (see Player.swift).
     let player = PlayerSystem()
+
+    /// Collision-detection scratch (see Collision.swift).
+    let collision = CollisionSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

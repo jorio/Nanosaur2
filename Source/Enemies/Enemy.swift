@@ -121,7 +121,7 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
 
     // SCAN FOR INTERESTING STUFF
 
-    for i in 0..<Int32(gNumCollisions) {
+    for i in 0..<Int32(gEngine.collision.numCollisions) {
         let entry = GetCollisionListEntry(i)!
         if entry.pointee.type == UInt8(COLLISION_TYPE_OBJ) {
             guard let hitObj = entry.pointee.objectPtr else { continue } // get ObjNode of this collision

@@ -141,7 +141,14 @@ add_library(SaverEngine STATIC
 	${ENGINE_C}
 )
 
-set_target_properties(SaverEngine PROPERTIES Swift_COMPILATION_MODE wholemodule)
+set_target_properties(SaverEngine PROPERTIES
+	Swift_COMPILATION_MODE wholemodule
+	# Xcode's canvas preview refuses to load a module unless it was built
+	# -Onone ("Cannot preview in this file - Not built with -Onone") - the
+	# CMake Xcode generator doesn't set this per-config on its own, unlike
+	# an Xcode-templated target, which defaults Debug to -Onone.
+	XCODE_ATTRIBUTE_SWIFT_OPTIMIZATION_LEVEL[variant=Debug] "-Onone"
+)
 
 target_include_directories(SaverEngine PRIVATE ${SRC}/Headers ${ENGINE_ROOT}/extern/minimp3)
 target_compile_definitions(SaverEngine PRIVATE NANOSAUR_SCREENSAVER GL_SILENCE_DEPRECATION)
@@ -195,6 +202,9 @@ set_target_properties(Nanosaur2Saver PROPERTIES
 	MACOSX_BUNDLE_BUNDLE_VERSION "${GAME_VERSION}"
 	MACOSX_BUNDLE_COPYRIGHT "${GAME_COPYRIGHT}"
 	Swift_COMPILATION_MODE wholemodule
+	# See SaverEngine's matching property above - the previewed target
+	# itself needs this too, not just its static-library dependency.
+	XCODE_ATTRIBUTE_SWIFT_OPTIMIZATION_LEVEL[variant=Debug] "-Onone"
 )
 
 target_compile_options(Nanosaur2Saver PRIVATE

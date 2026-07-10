@@ -24,8 +24,18 @@ private let OBJ_DEL_Q_SIZE_COUNT = 1500
 // unworkable giant tuple anyway, so we manage the backing storage ourselves
 // with the same zero-initializing allocator the C code already used for
 // gClearedObj.
-private let gObjectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
-private let gObjectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
+//
+// Explicitly allocated in InitObjectManager() rather than at declaration
+// (which would rely on Swift's lazy-global-init machinery, first
+// triggered on whichever of these runs first at runtime) - that lazy
+// init is thread-safety-guarded (a swift_once-style token), and on 3DS's
+// Embedded Swift runtime that guard deadlocked outright the first time
+// either global was touched (observed as GameMain hanging forever right
+// at "InitObjectManager..." with near-zero CPU use, i.e. blocked, not
+// spinning). Deterministic, explicit initialization at a known call site
+// sidesteps that runtime path entirely.
+private var gObjectListStorage: UnsafeMutablePointer<ObjNode>!
+private var gObjectDeleteQueueStorage: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!
 private var gClearedObj: UnsafeMutablePointer<ObjNode>!
 
 private var gMostRecentlyAddedNode: UnsafeMutablePointer<ObjNode>?
@@ -53,12 +63,32 @@ private var gNumObjsInDeleteQueue: Int32 = 0
 // MARK: - Object creation
 
 func InitObjectManager() {
+    #if NANOSAUR_3DS
+    "InitObjectManager: sizeof(ObjNode)=\(MemoryLayout<ObjNode>.size) total=\(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)".withCString { Debug3DS_Log($0) }
+    #endif
+    if gObjectListStorage == nil {
+        gObjectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
+        #if NANOSAUR_3DS
+        Debug3DS_Log("InitObjectManager: gObjectListStorage allocated")
+        #endif
+        gObjectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
+        #if NANOSAUR_3DS
+        Debug3DS_Log("InitObjectManager: gObjectDeleteQueueStorage allocated")
+        #endif
+    }
+
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
         gObjectListStorage[i].isUsed = 0
     }
+    #if NANOSAUR_3DS
+    Debug3DS_Log("InitObjectManager: cleared isUsed loop")
+    #endif
 
     CreateDummyInitObject()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("InitObjectManager: CreateDummyInitObject done")
+    #endif
 
     // INIT LINKED LIST
 
@@ -69,6 +99,9 @@ func InitObjectManager() {
     gFirstNodePtr = nil // no node yet
 
     gNumObjectNodes = 0
+    #if NANOSAUR_3DS
+    Debug3DS_Log("InitObjectManager: done")
+    #endif
 }
 
 // We make a dummy ObjNode which is initialized to the default settings
@@ -76,6 +109,9 @@ func InitObjectManager() {
 // this dummy node into them.
 private func CreateDummyInitObject() {
     gClearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
+    #if NANOSAUR_3DS
+    Debug3DS_Log("CreateDummyInitObject: gClearedObj allocated")
+    #endif
 
     for i in 0..<Int(MAX_NODE_SPARKLES) { // no sparkles
         sparklesBase(gClearedObj)[i] = -1

@@ -15,7 +15,7 @@ struct ShardMode: OptionSet, Sendable {
 private let maxShards = 2500
 
 private struct ShardType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
     var rot = OGLVector3D()
     var rotDelta = OGLVector3D()
     var coord = OGLPoint3D()
@@ -76,7 +76,7 @@ func InitShardSystem() {
     gNumShards = 0
 
     for i in 0..<maxShards {
-        gShards[i].isUsed = 0
+        gShards[i].isUsed = false
     }
 
     // MAKE DUMMY OBJECT
@@ -97,7 +97,7 @@ private func findFreeShard() -> Int {
     }
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed == 0 {
+        if !gShards[i].isUsed {
             return i
         }
     }
@@ -330,7 +330,7 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
 
         // SET VALID & INC COUNTER
 
-        gShards[i].isUsed = 1
+        gShards[i].isUsed = true
         gNumShards += 1
 
         t += gShardDensity
@@ -345,7 +345,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     let fps = gFramesPerSecondFrac
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed == 0 {
+        if !gShards[i].isUsed {
             continue
         }
 
@@ -380,7 +380,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 gShards[i].coordDelta.x *= 0.9
                 gShards[i].coordDelta.z *= 0.9
             } else {
-                gShards[i].isUsed = 0
+                gShards[i].isUsed = false
                 gNumShards -= 1
                 continue
             }
@@ -392,7 +392,7 @@ private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
         if gShards[i].scale <= 0.0 {
             // DEACTIVATE THIS PARTICLE
 
-            gShards[i].isUsed = 0
+            gShards[i].isUsed = false
             gNumShards -= 1
             continue
         }
@@ -413,7 +413,7 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     gRenderBackend.setTwoSidedLighting(true)
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed != 0 {
+        if gShards[i].isUsed {
             // SUBMIT MATERIAL
 
             gGlobalColorFilter.r = gShards[i].colorFilter.r

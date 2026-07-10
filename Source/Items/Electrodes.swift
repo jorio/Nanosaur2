@@ -8,7 +8,7 @@ private let maxZaps = 30
 private let maxZapEndpoints = 30
 
 private struct ZapType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
     var numEndpoints = 0
     var alpha: Float = 0
 
@@ -385,7 +385,7 @@ func InitZaps() {
     gZapBuffer = 0
 
     for i in 0..<maxZaps {
-        gZaps[i].isUsed = 0 // all slots are free
+        gZaps[i].isUsed = false // all slots are free
     }
 
     // CREATE DUMMY CUSTOM OBJECT TO CAUSE ZAP DRAWING AT THE DESIRED TIME
@@ -405,7 +405,7 @@ func InitZaps() {
 
 func FreeAllZaps() {
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed != 0 {
+        if gZaps[i].isUsed {
             freeZap(i)
         }
     }
@@ -495,7 +495,7 @@ private let cMoveZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
     gZapBuffer ^= 1 // toggle buffer to move & then draw
 
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 { // is this one active
+        if !gZaps[i].isUsed { // is this one active
             continue
         }
 
@@ -543,7 +543,7 @@ private let cDrawZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
     OGL_SetColor4f(1, 1, 1, 1)
 
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 { // is this one active
+        if !gZaps[i].isUsed { // is this one active
             continue
         }
 
@@ -557,8 +557,8 @@ private let cDrawZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
 
 private func getFreeZapSlot() -> Int {
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 {
-            gZaps[i].isUsed = 1
+        if !gZaps[i].isUsed {
+            gZaps[i].isUsed = true
             return i
         }
     }
@@ -566,7 +566,7 @@ private func getFreeZapSlot() -> Int {
 }
 
 private func freeZap(_ zapNum: Int) {
-    SwGameAssert(gZaps[zapNum].isUsed != 0)
+    SwGameAssert(gZaps[zapNum].isUsed)
 
     for b in 0..<2 {
         OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].points, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
@@ -587,5 +587,5 @@ private func freeZap(_ zapNum: Int) {
         }
     }
 
-    gZaps[zapNum].isUsed = 0
+    gZaps[zapNum].isUsed = false
 }

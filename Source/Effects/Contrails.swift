@@ -5,7 +5,7 @@ private let maxRefPointsInContrail = 50
 private let playerWingContrailAlpha: Float = 0.6
 
 private struct ContrailType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
 
     var width: Float = 0
     var indexPtr: UnsafeMutablePointer<Int16>?
@@ -37,7 +37,7 @@ func InitContrails() {
     // INIT THE CONTRAIL LISTS
 
     for i in 0..<maxContrails {
-        gContrails[i].isUsed = 0 // mark as free
+        gContrails[i].isUsed = false // mark as free
 
         // INIT THE DOUBLE-BUFFERED MESH DATA
 
@@ -93,7 +93,7 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
 
     var foundIndex = -1
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed == 0 {
+        if !gContrails[i].isUsed {
             foundIndex = i
             break
         }
@@ -107,7 +107,7 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
     // INIT THIS CONTRAIL SLOT
 
     let i = foundIndex
-    gContrails[i].isUsed = 1 // make this slot as used
+    gContrails[i].isUsed = true // make this slot as used
     gContrails[i].numPoints = 0
     gContrails[i].nextPointIndex = 0
     gContrails[i].width = width
@@ -122,7 +122,7 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
 
 func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!, _ aim: UnsafeMutablePointer<OGLVector3D>!, _ alpha: Float) {
     let contrailNum = Int(contrailNum)
-    if gContrails[contrailNum].isUsed == 0 {
+    if !gContrails[contrailNum].isUsed {
         SwFatal("AddPointToContrail:  bad contrailNum")
     }
 
@@ -147,7 +147,7 @@ func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: UnsafeMuta
     if contrailNum < 0 {
         SwFatal("ModifyContrailPreviousAddition:  bad contrailNum")
     }
-    if gContrails[contrailNum].isUsed == 0 {
+    if !gContrails[contrailNum].isUsed {
         SwFatal("ModifyContrailPreviousAddition:  bad contrailNum")
     }
 
@@ -174,7 +174,7 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
     theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(buffNum)) // update the VAR range info
 
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed == 0 {
+        if !gContrails[i].isUsed {
             continue
         }
 
@@ -210,7 +210,7 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
         // IF NO ACTIVE PTS THEN DISABLE THE CONTRAIL
 
         if numActivePts == 0 {
-            gContrails[i].isUsed = 0 // not used anymore
+            gContrails[i].isUsed = false // not used anymore
             if let indexPtr = gContrails[i].indexPtr {
                 indexPtr.pointee = -1 // pass -1 back to the index
             }
@@ -330,7 +330,7 @@ private let cDrawContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
     OGL_DisableTexture2D()
 
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed != 0, gContrails[i].meshData[buffNum].numTriangles > 0 {
+        if gContrails[i].isUsed, gContrails[i].meshData[buffNum].numTriangles > 0 {
             MO_DrawGeometry_VertexArray(&gContrails[i].meshData[buffNum])
         }
     }

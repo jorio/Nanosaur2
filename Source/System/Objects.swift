@@ -55,7 +55,7 @@ private var gNumObjsInDeleteQueue: Int32 = 0
 func InitObjectManager() {
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
-        gObjectListStorage[i].isUsed = 0
+        (gObjectListStorage + i).isUsed = false
     }
 
     CreateDummyInitObject()
@@ -118,7 +118,7 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
     var newNodePtr: UnsafeMutablePointer<ObjNode>!
     var i: Int32 = -1
     for idx in 0..<Int32(MAX_OBJECTS_COUNT) {
-        if gObjectListStorage[Int(idx)].isUsed == 0 {
+        if !(gObjectListStorage + Int(idx)).isUsed {
             newNodePtr = gObjectListStorage + Int(idx) // point to object from list
             i = idx
             break
@@ -136,7 +136,7 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
     newNodePtr.pointee = gClearedObj.pointee // copy the cleared/initied obj into here
 
     newNodePtr.pointee.objectNum = Int16(i) // not from gObjectList array
-    newNodePtr.pointee.isUsed = 1
+    newNodePtr.isUsed = true
 
     newNodePtr.pointee.Cookie = MyRandomLong() // give each object a unique cookie
 
@@ -1230,7 +1230,7 @@ private func FlushObjectDeleteQueue() {
         if node.pointee.objectNum == -1 { // see if dispose by freeing memory...
             SafeDisposePtr(node)
         } else {
-            node.pointee.isUsed = 0 //.. or just return to gObjectList array
+            node.isUsed = false //.. or just return to gObjectList array
         }
     }
 

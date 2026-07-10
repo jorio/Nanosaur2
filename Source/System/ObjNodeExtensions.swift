@@ -30,6 +30,13 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func hide() { setStatus(STATUS_BIT_HIDDEN) }
     func show() { clearStatus(STATUS_BIT_HIDDEN) }
 
+    /// Sugar over the `Boolean` (UInt8) `isUsed` slot-allocation flag in
+    /// gObjectListStorage, replacing `pointee.isUsed = 1` / `== 0` boilerplate.
+    var isUsed: Bool {
+        get { pointee.isUsed != 0 }
+        nonmutating set { pointee.isUsed = newValue ? 1 : 0 }
+    }
+
     func calcRadiusFromBBox() { CalcObjectRadiusFromBBox(self) }
     func resetDisplayGroup() { ResetDisplayGroupObject(self) }
     func attachGeometryToDisplayGroup(_ geometry: MetaObjectPtr?) { AttachGeometryToDisplayGroupObject(self, geometry) }

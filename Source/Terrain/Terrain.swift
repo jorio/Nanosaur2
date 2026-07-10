@@ -904,7 +904,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         gRenderBackend.setColor4f(1.0, 0.5, 0.2, 1)
         for customSplineNum in 0..<Int(MAX_CUSTOM_SPLINES) {
             let customSpline = GetCustomSplineSlot(Int32(customSplineNum))
-            if customSpline.pointee.isUsed == 0 {
+            if !customSpline.isUsed {
                 continue
             }
 

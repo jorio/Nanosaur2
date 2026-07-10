@@ -610,6 +610,34 @@ static void tilePixels(void *out, const u8 *in, int width, int height, bool bgra
 	}
 }
 
+// Tile + upload into a texture, handling VRAM destinations (which the CPU
+// can't write): tile into a temporary linear buffer, then GX-copy it over.
+static void uploadPixels(TexSlot *t, const void *pixels, int width, int height, bool bgra)
+{
+	u32 size = (u32)width * height * TEX_BPP;
+
+	void *dst = t->tex.data;
+	bool inVRAM = ((u32)dst >= OS_VRAM_VADDR && (u32)dst < OS_VRAM_VADDR + OS_VRAM_SIZE);
+	if (inVRAM)
+	{
+		dst = linearAlloc(size);
+		if (!dst)
+		{
+			c3drLog("c3dr: no staging memory for %dx%d VRAM upload", width, height);
+			return;
+		}
+	}
+
+	tilePixels(dst, (const u8 *)pixels, width, height, bgra);
+	GSPGPU_FlushDataCache(dst, size);
+
+	if (inVRAM)
+	{
+		C3D_SyncTextureCopy((u32 *)dst, 0, (u32 *)t->tex.data, 0, size, 8);
+		linearFree(dst);
+	}
+}
+
 unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 {
 	int slot = -1;
@@ -629,14 +657,17 @@ unsigned C3DR_CreateTexture(int width, int height, const void *rgba8Pixels)
 
 	TexSlot *t = &R.textures[slot];
 	memset(&t->tex, 0, sizeof t->tex);
-	if (!C3D_TexInit(&t->tex, (u16)width, (u16)height, kTexFormat))
+	// VRAM first (the ~3.5MB not used by the render target is free real
+	// estate the linear heap doesn't have to carry - same trick picaGL
+	// used), falling back to linear when VRAM fills up.
+	if (!C3D_TexInitVRAM(&t->tex, (u16)width, (u16)height, kTexFormat)
+		&& !C3D_TexInit(&t->tex, (u16)width, (u16)height, kTexFormat))
 	{
 		c3drLog("c3dr: C3D_TexInit %dx%d failed", width, height);
 		return 0;
 	}
 
-	tilePixels(t->tex.data, (const u8 *)rgba8Pixels, width, height, false);
-	GSPGPU_FlushDataCache(t->tex.data, (u32)width * height * TEX_BPP);
+	uploadPixels(t, rgba8Pixels, width, height, false);
 
 	C3D_TexSetFilter(&t->tex, GPU_LINEAR, GPU_LINEAR);
 	C3D_TexSetWrap(&t->tex, GPU_REPEAT, GPU_REPEAT);
@@ -651,8 +682,7 @@ void C3DR_UpdateTextureBGRA(unsigned name, int width, int height, const void *bg
 	if (name == 0 || name > MAX_TEXTURES || !R.textures[name - 1].used)
 		return;
 	TexSlot *t = &R.textures[name - 1];
-	tilePixels(t->tex.data, (const u8 *)bgraPixels, width, height, true);
-	GSPGPU_FlushDataCache(t->tex.data, (u32)width * height * TEX_BPP);
+	uploadPixels(t, bgraPixels, width, height, true);
 }
 
 void C3DR_DeleteTexture(unsigned name)

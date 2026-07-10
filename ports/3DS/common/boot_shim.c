@@ -49,4 +49,4 @@
 // large texture upload. 24 MiB covers that with margin while leaving the
 // regular heap the bulk of the pool (which LoadPlayfield's JPEG-decode
 // temporaries still need - see above).
-uint32_t __ctru_linear_heap_size = 24 * 1024 * 1024;
+uint32_t __ctru_linear_heap_size = 28 * 1024 * 1024; // 24 wasn't enough for a full level's textures even at RGBA4 (C3D_TexInit failures mid-LoadPlayfield); textures also go VRAM-first now, but the level set still needs this much linear behind it

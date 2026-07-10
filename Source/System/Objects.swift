@@ -283,7 +283,7 @@ func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
             planeEQs[i] = nil
         }
     }
-    theNode.pointee.HasWorldPoints = 0
+    theNode.hasWorldPoints = false
 }
 
 // Attaches a geometry object to the BaseGroup object. MakeNewDisplayGroupObject must have already been
@@ -1085,7 +1085,7 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
             planeEQs[i] = nil
         }
     }
-    theNode.pointee.HasWorldPoints = 0
+    theNode.hasWorldPoints = false
 
     // REMOVE NODE FROM LINKED LIST
 
@@ -1356,7 +1356,7 @@ func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>) {
         mo.pointee.matrix = theNode.pointee.BaseTransformMatrix
     }
 
-    theNode.pointee.HasWorldPoints = 0 // these need to be recalculated now that we've updated the matrix
+    theNode.hasWorldPoints = false // these need to be recalculated now that we've updated the matrix
 
     SetObjectGridLocation(theNode)
 }

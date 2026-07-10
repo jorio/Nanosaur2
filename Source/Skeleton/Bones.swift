@@ -242,7 +242,7 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // DO RECURSION TO BUILD IT
 
-    if currentSkelObjData.pointee.JointsAreGlobal != 0 {
+    if currentSkelObjData.jointsAreGlobal {
         gMatrix.setIdentity()
     } else {
         gMatrix = theNode.pointee.BaseTransformMatrix
@@ -287,7 +287,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
 
     let matPtr: UnsafeMutablePointer<OGLMatrix4x4>
     let jointMatricesBase = jointTransformMatrixBase(currentSkelObjData)
-    if currentSkelObjData.pointee.JointsAreGlobal != 0 {
+    if currentSkelObjData.jointsAreGlobal {
         matPtr = jointMatricesBase + Int(joint)
     } else {
         let jointMat = jointMatricesBase + Int(joint)

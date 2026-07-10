@@ -98,7 +98,7 @@ private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
     skeleton.pointee.PauseTimer = 0
     skeleton.pointee.MaxAnimTime = calcMaxKeyFrameTime(skeleton)
     skeleton.animHasStopped = false
-    skeleton.pointee.IsMorphing = 0
+    skeleton.isMorphing = false
     skeleton.pointee.AnimSpeed = 1.0
 }
 
@@ -121,7 +121,7 @@ func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!,
 
     // NOW SET MORPHING STUFF
 
-    skeleton.pointee.IsMorphing = 1
+    skeleton.isMorphing = true
     skeleton.pointee.MorphPercent = 0
     skeleton.pointee.MorphSpeed = speed
 
@@ -146,10 +146,10 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // IF JUST GOT A MORPH POSITION, THEN UPDATE MORPH
 
-    if skeleton.pointee.IsMorphing != 0 {
+    if skeleton.isMorphing {
         skeleton.pointee.MorphPercent += skeleton.pointee.MorphSpeed * fps
         if skeleton.pointee.MorphPercent >= 1.0 {
-            skeleton.pointee.IsMorphing = 0
+            skeleton.isMorphing = false
         }
         GetModelCurrentPosition(skeleton)
         return
@@ -292,7 +292,7 @@ func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataTyp
     let currentAnimTimeInt = Int32(currentAnimTime)
     let skeletonDef = skeleton.pointee.skeletonDefinition!
 
-    if skeleton.pointee.JointsAreGlobal != 0 {
+    if skeleton.jointsAreGlobal {
         return
     }
 
@@ -304,7 +304,7 @@ func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataTyp
     for jointNum in 0..<Int(skeletonDef.pointee.NumBones) {
         // SEE IF MORPHING
 
-        if skeleton.pointee.IsMorphing != 0 {
+        if skeleton.isMorphing {
             getModelMorphPosition(skeleton, jointNum, jointCurrentPosition + jointNum)
         } else {
             // SCAN KEYFRAMES FOR CURRENT TIME

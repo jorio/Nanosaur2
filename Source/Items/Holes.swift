@@ -168,7 +168,7 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
 
     let worm = MakeNewSkeletonObject(&def)!
 
-    worm.pointee.Skeleton!.pointee.JointsAreGlobal = 1
+    worm.pointee.Skeleton!.jointsAreGlobal = true
 
     worm.pointee.SplineNum = UInt8(splineNum)
     worm.pointee.SplinePlacement = 0.04

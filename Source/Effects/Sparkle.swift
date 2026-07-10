@@ -18,11 +18,18 @@ func GetSparkleSlot(_ i: Int32) -> UnsafeMutablePointer<SparkleType>! {
     gSparklesBuf + Int(i)
 }
 
+extension UnsafeMutablePointer where Pointee == SparkleType {
+    var isActive: Bool {
+        get { pointee.isActive != 0 }
+        nonmutating set { pointee.isActive = newValue ? 1 : 0 }
+    }
+}
+
 private var gPlayerSparkleColor: Float = 0
 
 func InitSparkles() {
     for i in 0..<Int32(MAX_SPARKLES) {
-        GetSparkleSlot(i)!.pointee.isActive = 0
+        GetSparkleSlot(i)!.isActive = false
     }
 
     gPlayerSparkleColor = 0
@@ -35,9 +42,9 @@ func GetFreeSparkle(_ theNode: UnsafeMutablePointer<ObjNode>?) -> Int16 {
     // FIND A FREE SLOT
     var i: Int32 = 0
     while i < Int32(MAX_SPARKLES) {
-        if GetSparkleSlot(i)!.pointee.isActive == 0 {
+        if !GetSparkleSlot(i)!.isActive {
             let slot = GetSparkleSlot(i)!
-            slot.pointee.isActive = 1
+            slot.isActive = true
             slot.pointee.owner = theNode
             gNumSparkles += 1
             return Int16(i)
@@ -53,8 +60,8 @@ func DeleteSparkle(_ i: Int16) {
     }
 
     let slot = GetSparkleSlot(Int32(i))!
-    if slot.pointee.isActive != 0 {
-        slot.pointee.isActive = 0
+    if slot.isActive {
+        slot.isActive = false
         gNumSparkles -= 1
     } else {
         SwAlert("DeleteSparkle: double delete sparkle")
@@ -83,7 +90,7 @@ func DrawSparkles() {
 
         let sparkle = GetSparkleSlot(i)!
 
-        if sparkle.pointee.isActive == 0 { // must be active
+        if !sparkle.isActive { // must be active
             continue
         }
 

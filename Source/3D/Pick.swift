@@ -367,7 +367,7 @@ func OGL_RayGetHitInfo_DisplayGroup(_ rayOpt: UnsafeMutablePointer<OGLRay>?, _ t
 
     // MAKE SURE WE HAVE WORLD-SPACE DATA FOR THIS OBJNODE
 
-    if theNode.pointee.HasWorldPoints == 0 {
+    if !theNode.hasWorldPoints {
         CalcDisplayGroupWorldPoints(theNode)
     }
 
@@ -967,7 +967,7 @@ private func OGL_LineSegGetHitInfo_DisplayGroup(_ lineSeg: UnsafePointer<OGLLine
 
     // MAKE SURE WE HAVE WORLD-SPACE DATA FOR THIS OBJNODE
 
-    if theNode.pointee.HasWorldPoints == 0 {
+    if !theNode.hasWorldPoints {
         CalcDisplayGroupWorldPoints(theNode)
     }
 
@@ -1512,7 +1512,7 @@ private func OGL_DoesSkeletonIntersectSphere(_ sphere: UnsafePointer<OGLBounding
 private func OGL_DoesDisplayGroupIntersectSphere(_ sphere: UnsafePointer<OGLBoundingSphere>, _ theNode: UnsafeMutablePointer<ObjNode>) -> Bool {
     // MAKE SURE WE HAVE WORLD-SPACE DATA FOR THIS OBJNODE
 
-    if theNode.pointee.HasWorldPoints == 0 {
+    if !theNode.hasWorldPoints {
         CalcDisplayGroupWorldPoints(theNode)
     }
 

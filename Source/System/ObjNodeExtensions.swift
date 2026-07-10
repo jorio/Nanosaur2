@@ -37,6 +37,14 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         nonmutating set { pointee.isUsed = newValue ? 1 : 0 }
     }
 
+    /// True if WorldMeshes/WorldPlaneEQs hold current world-space copies of
+    /// the model's vertices (used for picking; invalidated on every
+    /// transform update).
+    var hasWorldPoints: Bool {
+        get { pointee.HasWorldPoints != 0 }
+        nonmutating set { pointee.HasWorldPoints = newValue ? 1 : 0 }
+    }
+
     func calcRadiusFromBBox() { CalcObjectRadiusFromBBox(self) }
     func resetDisplayGroup() { ResetDisplayGroupObject(self) }
     func attachGeometryToDisplayGroup(_ geometry: MetaObjectPtr?) { AttachGeometryToDisplayGroupObject(self, geometry) }

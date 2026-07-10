@@ -18,4 +18,16 @@ extension UnsafeMutablePointer where Pointee == SkeletonObjDataType {
         get { pointee.AnimHasStopped != 0 }
         nonmutating set { pointee.AnimHasStopped = newValue ? 1 : 0 }
     }
+
+    /// True when joints are already in world-space coords.
+    var jointsAreGlobal: Bool {
+        get { pointee.JointsAreGlobal != 0 }
+        nonmutating set { pointee.JointsAreGlobal = newValue ? 1 : 0 }
+    }
+
+    /// Set while morphing from one anim to another.
+    var isMorphing: Bool {
+        get { pointee.IsMorphing != 0 }
+        nonmutating set { pointee.IsMorphing = newValue ? 1 : 0 }
+    }
 }

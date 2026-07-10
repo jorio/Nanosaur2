@@ -7,4 +7,9 @@ extension UnsafeMutablePointer where Pointee == OGLSetupOutputType {
         get { pointee.fadeSound != 0 }
         nonmutating set { pointee.fadeSound = newValue ? 1 : 0 }
     }
+
+    var isActive: Bool {
+        get { pointee.isActive != 0 }
+        nonmutating set { pointee.isActive = newValue ? 1 : 0 }
+    }
 }

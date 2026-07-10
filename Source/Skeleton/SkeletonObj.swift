@@ -179,7 +179,7 @@ private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePoint
 
     skeletonData.pointee.skeletonDefinition = skeletonDefPtr // point to source skeletal data
     skeletonData.pointee.AnimSpeed = 1.0
-    skeletonData.pointee.JointsAreGlobal = 0
+    skeletonData.jointsAreGlobal = false
 
     let overrideTextureBase = UnsafeMutableRawPointer(skeletonData.pointer(to: \.overrideTexture)!).assumingMemoryBound(to: UnsafeMutablePointer<MOMaterialObject>?.self)
     for i in 0..<Int(MAX_DECOMPOSED_TRIMESHES) {

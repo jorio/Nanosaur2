@@ -343,7 +343,7 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
     gGameViewInfoPtr!.pointee.clearBackBuffer = setupDefPtr.pointee.view.clearBackBuffer
     gGameViewInfoPtr!.pointee.clearColor = setupDefPtr.pointee.view.clearColor
 
-    gGameViewInfoPtr!.pointee.isActive = 1 // it's now an active structure
+    gGameViewInfoPtr!.isActive = true // it's now an active structure
 
     gGameViewInfoPtr!.pointee.lightList = setupDefPtr.pointee.lights // copy lights
 
@@ -385,7 +385,7 @@ func OGL_DisposeGameView() {
 
     // FREE MEMORY & NIL POINTER
 
-    gGameViewInfoPtr!.pointee.isActive = 0 // now inactive
+    gGameViewInfoPtr!.isActive = false // now inactive
     SafeDisposePtr(UnsafeMutableRawPointer(gGameViewInfoPtr))
     gGameViewInfoPtr = nil
 }
@@ -692,7 +692,7 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     SDL_GetWindowSizeInPixels(gSDLWindow, &gGameWindowWidth, &gGameWindowHeight)
 
-    if gGameViewInfoPtr!.pointee.isActive == 0 {
+    if !gGameViewInfoPtr!.isActive {
         SwFatalAlert("OGL_DrawScene isActive == false")
     }
 

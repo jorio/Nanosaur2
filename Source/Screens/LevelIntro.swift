@@ -217,7 +217,7 @@ private func setupLevelIntroScreen() {
     wormholeDef.scale = 26
 
     let newObj = MakeNewSkeletonObject(&wormholeDef)!
-    newObj.pointee.Skeleton!.pointee.JointsAreGlobal = 1
+    newObj.pointee.Skeleton!.jointsAreGlobal = true
     newObj.updateTransforms()
     updateLevelIntroWormJoints(newObj)
 

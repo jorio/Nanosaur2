@@ -554,7 +554,7 @@ func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     gRenderBackend.popMatrix()
 
-    theNode.pointee.HasWorldPoints = 1
+    theNode.hasWorldPoints = true
     gNumWorldCalcsThisFrame += 1
 }
 

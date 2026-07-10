@@ -16,6 +16,13 @@ private let fireTimer: Float = 0.05
 private let smokeTimer: Float = 0.07
 
 private var gParticleGroups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
+
+private extension UnsafeMutablePointer where Pointee == ParticleGroupType {
+    var isInPurgeQueue: Bool {
+        get { pointee.inPurgeQueue != 0 }
+        nonmutating set { pointee.inPurgeQueue = newValue ? 1 : 0 }
+    }
+}
 private var gGravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
 private var gNumActiveParticleGroups: Int16 = 0
 
@@ -118,7 +125,7 @@ func DeleteAllParticleGroups() {
 // GPU to finish with it.
 private func deleteParticleGroup(_ groupNum: Int) {
     if let group = gParticleGroups[groupNum] {
-        group.pointee.inPurgeQueue = 1
+        group.isInPurgeQueue = true
         group.pointee.purgeTimer = 2
     }
 }
@@ -132,7 +139,7 @@ private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
             continue
         }
 
-        if group.pointee.inPurgeQueue != 0 { // is it in the purge queue?
+        if group.isInPurgeQueue { // is it in the purge queue?
             group.pointee.purgeTimer -= 1
 
             if forcePurgeNow || (group.pointee.purgeTimer <= 0) { // time to purge?
@@ -179,7 +186,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
                 isUsed[p] = 0
             }
 
-            group.pointee.inPurgeQueue = 0
+            group.isInPurgeQueue = false
 
             group.pointee.flags = def.pointee.flags
             group.pointee.gravity = def.pointee.gravity
@@ -347,7 +354,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
         guard let group = gParticleGroups[i] else { continue }
 
-        if group.pointee.inPurgeQueue != 0 { // is this particle group pending purging?
+        if group.isInPurgeQueue { // is this particle group pending purging?
             continue
         }
 
@@ -550,7 +557,7 @@ private func updateParticleGroupsGeometry() {
         for g in 0..<Int(MAX_PARTICLE_GROUPS) {
             guard let group = gParticleGroups[g] else { continue }
 
-            if group.pointee.inPurgeQueue != 0 { // skip if it's in the purge queue
+            if group.isInPurgeQueue { // skip if it's in the purge queue
                 continue
             }
 
@@ -707,7 +714,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
             continue
         }
 
-        if pg.pointee.inPurgeQueue != 0 // skip if it's in the purge queue
+        if pg.isInPurgeQueue // skip if it's in the purge queue
             || OGL_IsBBoxVisible(&pg.pointee.bbox, nil) == 0 // skip if culled
             || (paneNum == 0 && !pg.pointee.visibleForPlayer1) // skip if hidden for this pane
             || (paneNum == 1 && !pg.pointee.visibleForPlayer2) { // skip if hidden for this pane

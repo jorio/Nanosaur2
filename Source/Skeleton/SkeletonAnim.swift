@@ -488,8 +488,9 @@ private func calcMaxKeyFrameTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
 
 private func getNextAnimEventAtTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>, _ time: Float) -> UInt8 {
     let animNum = Int(skeleton.pointee.AnimNum)
-    let numEvents = skeleton.pointee.skeletonDefinition!.pointee.NumAnimEvents![animNum]
-    let events = skeleton.pointee.skeletonDefinition!.pointee.AnimEventsList![animNum]!
+    let skeletonDef = skeleton.pointee.skeletonDefinition!
+    let numEvents = skeletonDef.pointee.NumAnimEvents![animNum]
+    let events = skeletonDef.pointee.AnimEventsList![animNum]!
 
     for i in 0..<numEvents {
         if Float(events[Int(i)].time) >= time {

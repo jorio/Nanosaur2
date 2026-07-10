@@ -65,7 +65,8 @@ private func makeRamphor(_ x: Float, _ z: Float, _ animNum: Int16, _ height: Int
 
     // SET BETTER INFO
 
-    newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
+    let skeleton = newObj.pointee.Skeleton!
+    skeleton.pointee.CurrentAnimTime = skeleton.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = ramphorHealth
     if gGamePrefs.isKiddieMode { // no damage in kiddie mode
@@ -122,9 +123,11 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
         // SEE IF CHANGE ANIMS
 
-        if theNode.pointee.Skeleton!.pointee.AnimNum == UInt8(ramphorAnimDisoriented) { // see if done with disorientation
-            if theNode.pointee.Skeleton!.animHasStopped {
-                MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimCoast, 3)
+        let skeleton = theNode.pointee.Skeleton!
+
+        if skeleton.pointee.AnimNum == UInt8(ramphorAnimDisoriented) { // see if done with disorientation
+            if skeleton.animHasStopped {
+                MorphToSkeletonAnim(skeleton, ramphorAnimCoast, 3)
             }
         }
 
@@ -133,8 +136,8 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
         else {
             var playerNum: Int16 = 0
             if CalcDistanceToClosestPlayer(&theNode.pointee.Coord, &playerNum) < blockDist {
-                if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimBlock) {
-                    MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimBlock, 2.0)
+                if skeleton.pointee.AnimNum != UInt8(ramphorAnimBlock) {
+                    MorphToSkeletonAnim(skeleton, ramphorAnimBlock, 2.0)
                 }
             }
 
@@ -142,12 +145,12 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
             else {
                 if theNode.pointee.SpecialF.0 < Float.pi { // coast when going down the curve
-                    if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimCoast) {
-                        MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimCoast, 4.0)
+                    if skeleton.pointee.AnimNum != UInt8(ramphorAnimCoast) {
+                        MorphToSkeletonAnim(skeleton, ramphorAnimCoast, 4.0)
                     }
                 } else { // flap when going up
-                    if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimFlap) {
-                        MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimFlap, 4.0)
+                    if skeleton.pointee.AnimNum != UInt8(ramphorAnimFlap) {
+                        MorphToSkeletonAnim(skeleton, ramphorAnimFlap, 4.0)
                     }
                 }
             }

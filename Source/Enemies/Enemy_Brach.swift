@@ -60,7 +60,8 @@ private func makeBrach(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutabl
 
     // SET BETTER INFO
 
-    newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
+    let skeleton = newObj.pointee.Skeleton!
+    skeleton.pointee.CurrentAnimTime = skeleton.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = brachHealth
     newObj.pointee.Damage = brachDamage
@@ -132,10 +133,11 @@ private func moveBrachStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.7 // slow this down
+    let skeleton = theNode.pointee.Skeleton!
+    skeleton.pointee.AnimSpeed = 0.7 // slow this down
 
-    if theNode.pointee.Skeleton!.animHasStopped {
-        SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
+    if skeleton.animHasStopped {
+        SetSkeletonAnim(skeleton, brachAnimStand)
     }
 
     // DO ENEMY COLLISION
@@ -148,10 +150,11 @@ private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachEat(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.4 // slow this down
+    let skeleton = theNode.pointee.Skeleton!
+    skeleton.pointee.AnimSpeed = 0.4 // slow this down
 
-    if theNode.pointee.Skeleton!.animHasStopped {
-        SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
+    if skeleton.animHasStopped {
+        SetSkeletonAnim(skeleton, brachAnimStand)
     }
 
     // DO ENEMY COLLISION
@@ -242,8 +245,9 @@ private func updateBrach(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SET WALK ANIM SPEED
 
-    if theNode.pointee.Skeleton!.pointee.AnimNum == UInt8(brachAnimWalk) {
-        theNode.pointee.Skeleton!.pointee.AnimSpeed = theNode.pointee.Speed * 0.003
+    let skeleton = theNode.pointee.Skeleton!
+    if skeleton.pointee.AnimNum == UInt8(brachAnimWalk) {
+        skeleton.pointee.AnimSpeed = theNode.pointee.Speed * 0.003
     }
 }
 

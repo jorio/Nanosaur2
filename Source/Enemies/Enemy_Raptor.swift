@@ -81,7 +81,8 @@ private func makeRaptor(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutab
 
     // SET BETTER INFO
 
-    newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
+    let skeleton = newObj.pointee.Skeleton!
+    skeleton.pointee.CurrentAnimTime = skeleton.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = raptorHealth
     if gGamePrefs.isKiddieMode { // no damage in kiddie mode
@@ -175,6 +176,7 @@ private func moveRaptorStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move raptor: walking
 
 private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
+    let skeleton = theNode.pointee.Skeleton!
     let fps = gFramesPerSecondFrac
 
     let oldRotY = theNode.pointee.Rot.y
@@ -261,7 +263,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     let walkSpeed = theNode.pointee.SpecialF.0
 
-    theNode.pointee.Skeleton!.pointee.AnimSpeed = walkSpeed * raptorWalkAnimSpeedFactor
+    skeleton.pointee.AnimSpeed = walkSpeed * raptorWalkAnimSpeedFactor
 
     // MOVE
 
@@ -280,16 +282,16 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     if fabsf(theNode.pointee.DeltaRot.y) > 1.5 {
         if cross < 0.0 {
-            if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(raptorAnimWalkLeft) {
-                MorphToSkeletonAnim(theNode.pointee.Skeleton, raptorAnimWalkLeft, 5)
+            if skeleton.pointee.AnimNum != UInt8(raptorAnimWalkLeft) {
+                MorphToSkeletonAnim(skeleton, raptorAnimWalkLeft, 5)
             }
         } else {
-            if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(raptorAnimWalkRight) {
-                MorphToSkeletonAnim(theNode.pointee.Skeleton, raptorAnimWalkRight, 5)
+            if skeleton.pointee.AnimNum != UInt8(raptorAnimWalkRight) {
+                MorphToSkeletonAnim(skeleton, raptorAnimWalkRight, 5)
             }
         }
-    } else if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(raptorAnimWalk) {
-        MorphToSkeletonAnim(theNode.pointee.Skeleton, raptorAnimWalk, 5)
+    } else if skeleton.pointee.AnimNum != UInt8(raptorAnimWalk) {
+        MorphToSkeletonAnim(skeleton, raptorAnimWalk, 5)
     }
 
     // SEE IF STAND
@@ -607,8 +609,9 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
 // Returns true if raptor killed
 @discardableResult
 private func hurtRaptor(_ enemy: UnsafeMutablePointer<ObjNode>, _ damage: Float) -> Bool {
-    if (enemy.pointee.Skeleton!.pointee.AnimNum != UInt8(raptorAnimKnockedDown)) // only hurt if not dead or knocked down already
-        && (enemy.pointee.Skeleton!.pointee.AnimNum != UInt8(raptorAnimDeath)) {
+    let skeleton = enemy.pointee.Skeleton!
+    if (skeleton.pointee.AnimNum != UInt8(raptorAnimKnockedDown)) // only hurt if not dead or knocked down already
+        && (skeleton.pointee.AnimNum != UInt8(raptorAnimDeath)) {
         enemy.pointee.Health -= damage
         if enemy.pointee.Health <= 0.0 {
             killRaptor(enemy)

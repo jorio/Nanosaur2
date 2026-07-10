@@ -1340,8 +1340,9 @@ private func infobarDrawPlayerArrows() {
         v.y = pi1.pointee.coord.z - pi0.pointee.coord.z
         FastNormalizeVector2D(v.x, v.y, &v, 0)
 
-        v2.x = pi0.pointee.objNode!.pointee.MotionVector.x // get aim vector of P1
-        v2.y = pi0.pointee.objNode!.pointee.MotionVector.z
+        let p1Motion = pi0.pointee.objNode!.pointee.MotionVector // get aim vector of P1
+        v2.x = p1Motion.x
+        v2.y = p1Motion.z
     }
     // GET ANGLE TO P1
     else {
@@ -1352,8 +1353,9 @@ private func infobarDrawPlayerArrows() {
         v.y = pi0.pointee.coord.z - pi1.pointee.coord.z
         FastNormalizeVector2D(v.x, v.y, &v, 0)
 
-        v2.x = pi1.pointee.objNode!.pointee.MotionVector.x // get aim vector of P2
-        v2.y = pi1.pointee.objNode!.pointee.MotionVector.z
+        let p2Motion = pi1.pointee.objNode!.pointee.MotionVector // get aim vector of P2
+        v2.x = p2Motion.x
+        v2.y = p2Motion.z
     }
 
     // SEE WHICH ARROW TO DRAW
@@ -1518,13 +1520,15 @@ private func infobarDrawCrosshairs() {
         return
     }
 
+    let playerNode = pi.pointee.objNode!
+
     // DON'T SHOW DURING DUST DEVIL
-    if pi.pointee.objNode!.pointee.Skeleton!.isAnim(.dustDevil) {
+    if playerNode.pointee.Skeleton!.isAnim(.dustDevil) {
         return
     }
 
     // DONT DRAW IF PLAYER IS > n DEGREES TO CAMERA
-    let v1 = pi.pointee.objNode!.pointee.MotionVector
+    let v1 = playerNode.pointee.MotionVector
     let v2 = pi.pointee.camera.cameraAim
 
     let v1m = v1

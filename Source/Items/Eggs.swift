@@ -343,9 +343,10 @@ func DropEgg_NoWormhole(_ playerNum: Int16) {
     if let egg = playerInfo.pointee.carriedObj { // get egg
         egg.pointee.Timer = 1.0 // DelayUntilCanPickup: delay until can be picked back up
         egg.pointee.MoveCall = cMoveEggNotCarried
-        egg.pointee.Delta.x = playerInfo.pointee.objNode!.pointee.Delta.x * 0.8 // match player's delta minus some friction
-        egg.pointee.Delta.y = playerInfo.pointee.objNode!.pointee.Delta.y * 0.8
-        egg.pointee.Delta.z = playerInfo.pointee.objNode!.pointee.Delta.z * 0.8
+        let playerDelta = playerInfo.pointee.objNode!.pointee.Delta
+        egg.pointee.Delta.x = playerDelta.x * 0.8 // match player's delta minus some friction
+        egg.pointee.Delta.y = playerDelta.y * 0.8
+        egg.pointee.Delta.z = playerDelta.z * 0.8
         playerInfo.pointee.carriedObj = nil // player not holding anything
     }
 }

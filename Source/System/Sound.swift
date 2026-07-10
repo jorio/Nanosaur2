@@ -1,6 +1,6 @@
 // Sound.swift - Port of Sound.c to Swift
 //
-// gChannelInfo, gSongPlayingFlag, and gCurrentSong are native Swift storage
+// gEngine.sound.channelInfo, gEngine.sound.songPlayingFlag, and gEngine.sound.currentSong are native Swift storage
 // now: nothing in any .c file touches them anymore (verified 2026-07-07,
 // after MainMenu.c was deleted). ToggleMusic is declared in sound2.h but
 // its entire implementation was already #if 0'd out in the original
@@ -16,9 +16,28 @@ struct ChannelInfoType {
 
 private let maxChannels = 40
 
-var gChannelInfo: [ChannelInfoType] = Array(repeating: ChannelInfoType(), count: maxChannels)
-var gSongPlayingFlag: UInt8 = 0
-var gCurrentSong: Int16 = -1
+/// Sound state. Owned by GameEngine as `gEngine.sound`.
+final class SoundSystem {
+    var channelInfo: [ChannelInfoType] = Array(repeating: ChannelInfoType(), count: maxChannels)
+    var songPlayingFlag: UInt8 = 0
+    var currentSong: Int16 = -1
+
+    fileprivate var globalVolumeFade: Float = 1.0 // multiplier applied to sfx/song volumes (changes during fade out)
+    fileprivate var effectsVolume: Float = fullEffectsVolume
+    fileprivate var musicVolume: Float = fullSongVolume
+    fileprivate var musicVolumeTweak: Float = 1.0
+
+    fileprivate var earCoords = [OGLPoint3D](repeating: OGLPoint3D(), count: Int(MAX_PLAYERS)) // coord of camera plus a tad to get pt in front of camera
+    fileprivate var eyeVector = [OGLVector3D](repeating: OGLVector3D(), count: Int(MAX_PLAYERS))
+
+    fileprivate var effectPCM: [DecodedPCMBuffer?] = Array(repeating: nil, count: maxEffects) // decoded PCM for ALL sounds
+
+    fileprivate var channels: [SwSoundChannel] = []
+    fileprivate var musicChannel: SwSoundChannel?
+
+    fileprivate var numAllocatedChannels: Int16 = 0
+    fileprivate var mostRecentChannel: Int16 = -1
+}
 private let maxEffects = 70
 private let maxAudioStreams = 9
 
@@ -161,44 +180,33 @@ private let gSongs: [SongDef] = [
 
 // MARK: - State
 
-private var gGlobalVolumeFade: Float = 1.0 // multiplier applied to sfx/song volumes (changes during fade out)
-private var gEffectsVolume: Float = fullEffectsVolume
-private var gMusicVolume: Float = fullSongVolume
-private var gMusicVolumeTweak: Float = 1.0
 
-private var gEarCoords = [OGLPoint3D](repeating: OGLPoint3D(), count: Int(MAX_PLAYERS)) // coord of camera plus a tad to get pt in front of camera
-private var gEyeVector = [OGLVector3D](repeating: OGLVector3D(), count: Int(MAX_PLAYERS))
 
-private var gEffectPCM: [DecodedPCMBuffer?] = Array(repeating: nil, count: maxEffects) // decoded PCM for ALL sounds
 
-private var gChannels: [SwSoundChannel] = []
-private var gMusicSwChannel: SwSoundChannel?
 
-private var gMaxChannels: Int16 = 0
-private var gMostRecentChannel: Int16 = -1
 
 // MARK: - Init sound tools
 
 func InitSoundTools() {
-    gMaxChannels = 0
-    gMostRecentChannel = -1
+    gEngine.sound.numAllocatedChannels = 0
+    gEngine.sound.mostRecentChannel = -1
 
     // ALLOC CHANNELS
 
-    gChannels = []
-    while gMaxChannels < Int16(maxChannels) {
+    gEngine.sound.channels = []
+    while gEngine.sound.numAllocatedChannels < Int16(maxChannels) {
         let chan = SwSoundChannel()
         if !chan.isValid { // if err, stop allocating channels
             break
         }
-        gChannels.append(chan)
-        gMaxChannels += 1
+        gEngine.sound.channels.append(chan)
+        gEngine.sound.numAllocatedChannels += 1
     }
 
     // SONG CHANNEL
 
-    gMusicSwChannel = SwSoundChannel()
-    SwGameAssert(gMusicSwChannel?.isValid == true)
+    gEngine.sound.musicChannel = SwSoundChannel()
+    SwGameAssert(gEngine.sound.musicChannel?.isValid == true)
 
     // SET INITIAL VOLUME IN ALL CHANNELS FROM PREFS
 
@@ -220,9 +228,9 @@ func ShutdownSound() {
 
     // DISPOSE OF CHANNELS
 
-    gChannels = []
-    gMusicSwChannel = nil
-    gMaxChannels = 0
+    gEngine.sound.channels = []
+    gEngine.sound.musicChannel = nil
+    gEngine.sound.numAllocatedChannels = 0
 
     // DISPOSE OF ALL SOUND BANKS
 
@@ -234,10 +242,10 @@ func ShutdownSound() {
 // MARK: - Maintain sound channels (called once a frame from UpdateListenerLocation)
 
 func MaintainSoundChannels() {
-    for channel in gChannels {
+    for channel in gEngine.sound.channels {
         channel.topUp()
     }
-    gMusicSwChannel?.topUp()
+    gEngine.sound.musicChannel?.topUp()
 }
 
 // MARK: -
@@ -284,8 +292,8 @@ func LoadSoundBank(_ bank: UInt8) {
 
         // LOAD & DECODE
 
-        gEffectPCM[i] = loadDecodedPCM(&spec, isMP3: matchedExt == "mp3")
-        SwGameAssertMessage(gEffectPCM[i] != nil, "failed to decode sound effect")
+        gEngine.sound.effectPCM[i] = loadDecodedPCM(&spec, isMP3: matchedExt == "mp3")
+        SwGameAssertMessage(gEngine.sound.effectPCM[i] != nil, "failed to decode sound effect")
     }
 }
 
@@ -298,7 +306,7 @@ func DisposeSoundBank(_ bank: UInt8) {
 
     for i in 0..<Int(NUM_EFFECTS) {
         if gEffectsTable[i].bank == bank {
-            gEffectPCM[i] = nil
+            gEngine.sound.effectPCM[i] = nil
         }
     }
 }
@@ -311,15 +319,15 @@ func DisposeSoundBank(_ bank: UInt8) {
 func StopAChannel(_ channelNum: UnsafeMutablePointer<Int16>!) {
     let c = channelNum.pointee
 
-    if (c < 0) || (c >= gMaxChannels) { // make sure its a legal #
+    if (c < 0) || (c >= gEngine.sound.numAllocatedChannels) { // make sure its a legal #
         return
     }
 
-    gChannels[Int(c)].stop()
+    gEngine.sound.channels[Int(c)].stop()
 
     channelNum.pointee = -1
 
-    gChannelInfo[Int(c)].effectNum = -1
+    gEngine.sound.channelInfo[Int(c)].effectNum = -1
 }
 
 // MARK: - Stop a channel if effect num
@@ -332,7 +340,7 @@ func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effec
         return 0
     }
 
-    if gChannelInfo[Int(c)].effectNum != effectNum { // make sure its the right effect
+    if gEngine.sound.channelInfo[Int(c)].effectNum != effectNum { // make sure its the right effect
         return 0
     }
 
@@ -344,7 +352,7 @@ func StopAChannelIfEffectNum(_ channelNum: UnsafeMutablePointer<Int16>!, _ effec
 // MARK: - Stop all effect channels
 
 func StopAllEffectChannels() {
-    for i in 0..<Int(gMaxChannels) {
+    for i in 0..<Int(gEngine.sound.numAllocatedChannels) {
         var c = Int16(i)
         StopAChannel(&c)
     }
@@ -358,13 +366,13 @@ func StopAllEffectChannels() {
 //
 // INPUT: loopFlag = true if want song to loop
 func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
-    if songNum == gCurrentSong { // see if this is already playing
+    if songNum == gEngine.sound.currentSong { // see if this is already playing
         return
     }
 
     // ZAP ANY EXISTING SONG
 
-    gCurrentSong = songNum
+    gEngine.sound.currentSong = songNum
     KillSong()
 
     // OPEN APPROPRIATE SONG FILE, DECODE, AND PLAY
@@ -381,14 +389,14 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
         return
     }
 
-    gCurrentSong = songNum
-    gMusicVolumeTweak = song.volumeTweak
+    gEngine.sound.currentSong = songNum
+    gEngine.sound.musicVolumeTweak = song.volumeTweak
 
-    let volume = gMusicVolumeTweak * gMusicVolume
-    gMusicSwChannel?.play(pcm, leftVolume: volume, rightVolume: volume, rateRatio: 1.0)
-    gMusicSwChannel?.loop = loopFlag != 0
+    let volume = gEngine.sound.musicVolumeTweak * gEngine.sound.musicVolume
+    gEngine.sound.musicChannel?.play(pcm, leftVolume: volume, rightVolume: volume, rateRatio: 1.0)
+    gEngine.sound.musicChannel?.loop = loopFlag != 0
 
-    gSongPlayingFlag = 1
+    gEngine.sound.songPlayingFlag = 1
 
     // (the #if 0'd "mute music" block referenced gMuteMusicFlag/gSongMovie,
     // neither of which exist anymore, so it's dropped.)
@@ -397,15 +405,15 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 // MARK: - Kill song
 
 func KillSong() {
-    gCurrentSong = -1
+    gEngine.sound.currentSong = -1
 
-    if gSongPlayingFlag == 0 {
+    if gEngine.sound.songPlayingFlag == 0 {
         return
     }
 
-    gSongPlayingFlag = 0 // tell callback to do nothing
+    gEngine.sound.songPlayingFlag = 0 // tell callback to do nothing
 
-    gMusicSwChannel?.stop()
+    gEngine.sound.musicChannel?.stop()
 }
 
 // MARK: -
@@ -432,7 +440,7 @@ func PlayEffect3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(NORMAL_CHANNEL_RATE))
 
     if theChan != -1 {
-        gChannelInfo[Int(theChan)].volumeAdjust = 1.0 // full volume adjust
+        gEngine.sound.channelInfo[Int(theChan)].volumeAdjust = 1.0 // full volume adjust
     }
 
     return theChan // return channel #
@@ -462,7 +470,7 @@ func PlayEffect_Parms3D(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     let theChan = PlayEffect_Parms(effectNum, leftVol, rightVol, UInt(rateMultiplier))
 
     if theChan != -1 {
-        gChannelInfo[Int(theChan)].volumeAdjust = volumeAdjust // remember volume adjuster
+        gEngine.sound.channelInfo[Int(theChan)].volumeAdjust = volumeAdjust // remember volume adjuster
     }
 
     return theChan // return channel #
@@ -480,7 +488,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
 
     // MAKE SURE THE SAME SOUND IS STILL ON THIS CHANNEL
 
-    if effectNum != gChannelInfo[Int(c)].effectNum {
+    if effectNum != gEngine.sound.channelInfo[Int(c)].effectNum {
         channel.pointee = -1
         return 1
     }
@@ -496,7 +504,7 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
     if where_ != nil {
         var leftVol: UInt32 = 0
         var rightVol: UInt32 = 0
-        calc3DEffectVolume(gChannelInfo[Int(c)].effectNum, where_, gChannelInfo[Int(c)].volumeAdjust, &leftVol, &rightVol)
+        calc3DEffectVolume(gEngine.sound.channelInfo[Int(c)].effectNum, where_, gEngine.sound.channelInfo[Int(c)].volumeAdjust, &leftVol, &rightVol)
         if (leftVol + rightVol) == 0 { // if volume goes to 0, then kill channel
             StopAChannel(channel)
             return 0
@@ -512,9 +520,9 @@ func Update3DSoundChannel(_ effectNum: Int16, _ channel: UnsafeMutablePointer<In
 private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ volAdjust: Float, _ leftVolOut: UnsafeMutablePointer<UInt32>!, _ rightVolOut: UnsafeMutablePointer<UInt32>!) {
     var whichEar = 0
 
-    var dist = where_.pointee.distance(to: gEarCoords[0]) // calc dist to sound for pane 0
+    var dist = where_.pointee.distance(to: gEngine.sound.earCoords[0]) // calc dist to sound for pane 0
     if gEngine.player.numPlayers > 1 { // see if other pane is closer (thus louder)
-        let dist2 = where_.pointee.distance(to: gEarCoords[1])
+        let dist2 = where_.pointee.distance(to: gEngine.sound.earCoords[1])
 
         if dist2 < dist {
             dist = dist2
@@ -545,14 +553,14 @@ private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePoint
     // CALC VECTOR TO SOUND
 
     var earToSound = OGLVector2D()
-    earToSound.x = where_.pointee.x - gEarCoords[whichEar].x
-    earToSound.y = where_.pointee.z - gEarCoords[whichEar].z
+    earToSound.x = where_.pointee.x - gEngine.sound.earCoords[whichEar].x
+    earToSound.y = where_.pointee.z - gEngine.sound.earCoords[whichEar].z
     FastNormalizeVector2D(earToSound.x, earToSound.y, &earToSound, 1)
 
     // CALC EYE LOOK VECTOR
 
     var lookVec = OGLVector2D()
-    FastNormalizeVector2D(gEyeVector[whichEar].x, gEyeVector[whichEar].z, &lookVec, 1)
+    FastNormalizeVector2D(gEngine.sound.eyeVector[whichEar].x, gEngine.sound.eyeVector[whichEar].z, &lookVec, 1)
 
     // DOT PRODUCT  TELLS US HOW MUCH STEREO SHIFT
 
@@ -608,11 +616,11 @@ func UpdateListenerLocation() {
         v.z = p.pointOfInterest.z - p.cameraLocation.z
         FastNormalizeVector(v.x, v.y, v.z, &v)
 
-        gEarCoords[i].x = p.cameraLocation.x + (v.x * 300.0) // put ear coord in front of camera
-        gEarCoords[i].y = p.cameraLocation.y + (v.y * 300.0)
-        gEarCoords[i].z = p.cameraLocation.z + (v.z * 300.0)
+        gEngine.sound.earCoords[i].x = p.cameraLocation.x + (v.x * 300.0) // put ear coord in front of camera
+        gEngine.sound.earCoords[i].y = p.cameraLocation.y + (v.y * 300.0)
+        gEngine.sound.earCoords[i].z = p.cameraLocation.z + (v.z * 300.0)
 
-        gEyeVector[i] = v
+        gEngine.sound.eyeVector[i] = v
     }
 
     MaintainSoundChannels()
@@ -637,7 +645,7 @@ func PlayEffect(_ effectNum: Int16) -> Int16 {
 func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: UInt32, _ rateMultiplier: UInt) -> Int16 {
     SwGameAssert(effectNum >= 0)
     SwGameAssert(effectNum < Int16(maxEffects))
-    SwGameAssertMessage(gEffectPCM[Int(effectNum)] != nil, "sound effect wasn't loaded!")
+    SwGameAssertMessage(gEngine.sound.effectPCM[Int(effectNum)] != nil, "sound effect wasn't loaded!")
 
     // LOOK FOR FREE CHANNEL
 
@@ -646,25 +654,25 @@ func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: U
         return -1
     }
 
-    let lv2 = Float(leftVolume) * gEffectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
-    let rv2 = Float(rightVolume) * gEffectsVolume / Float(FULL_CHANNEL_VOLUME)
+    let lv2 = Float(leftVolume) * gEngine.sound.effectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
+    let rv2 = Float(rightVolume) * gEngine.sound.effectsVolume / Float(FULL_CHANNEL_VOLUME)
 
     // GET IT GOING
 
-    guard let pcm = gEffectPCM[Int(effectNum)] else {
+    guard let pcm = gEngine.sound.effectPCM[Int(effectNum)] else {
         return -1
     }
     let rateRatio = Float(rateMultiplier) / 65536.0 // 16.16 fixed-point, 0x10000 = 1.0x
-    gChannels[Int(theChan)].play(pcm, leftVolume: lv2, rightVolume: rv2, rateRatio: rateRatio)
+    gEngine.sound.channels[Int(theChan)].play(pcm, leftVolume: lv2, rightVolume: rv2, rateRatio: rateRatio)
 
     // (the #if 0'd "looping effect" block is a source-port no-op per the
     // original comment, so it's dropped.)
 
     // SET MY INFO
 
-    gChannelInfo[Int(theChan)].effectNum = effectNum // remember what effect is playing on this channel
-    gChannelInfo[Int(theChan)].leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
-    gChannelInfo[Int(theChan)].rightVolume = Float(rightVolume)
+    gEngine.sound.channelInfo[Int(theChan)].effectNum = effectNum // remember what effect is playing on this channel
+    gEngine.sound.channelInfo[Int(theChan)].leftVolume = Float(leftVolume) // remember requested volume (not the adjusted volume!)
+    gEngine.sound.channelInfo[Int(theChan)].rightVolume = Float(rightVolume)
     return theChan // return channel #
 }
 
@@ -675,23 +683,23 @@ func PlayEffect_Parms(_ effectNum: Int16, _ leftVolume: UInt32, _ rightVolume: U
 // Call this whenever gGlobalVolume is changed.  This will update
 // all of the sounds with the correct volume.
 func UpdateGlobalVolume() {
-    gEffectsVolume = fullEffectsVolume * (0.01 * Float(gGamePrefs.sfxVolumePercent)) * gGlobalVolumeFade
+    gEngine.sound.effectsVolume = fullEffectsVolume * (0.01 * Float(gGamePrefs.sfxVolumePercent)) * gEngine.sound.globalVolumeFade
 
     // ADJUST VOLUMES OF ALL CHANNELS REGARDLESS IF THEY ARE PLAYING OR NOT
 
-    for c in 0..<Int(gMaxChannels) {
-        ChangeChannelVolume(Int16(c), gChannelInfo[c].leftVolume, gChannelInfo[c].rightVolume)
+    for c in 0..<Int(gEngine.sound.numAllocatedChannels) {
+        ChangeChannelVolume(Int16(c), gEngine.sound.channelInfo[c].leftVolume, gEngine.sound.channelInfo[c].rightVolume)
     }
 
     // UPDATE SONG VOLUME
 
     // First, resume song playback if it was paused -- e.g. when we're adjusting the volume via pause menu
-    gMusicSwChannel?.resumeDevice()
+    gEngine.sound.musicChannel?.resumeDevice()
 
     // Now update song channel volume
-    gMusicVolume = fullSongVolume * (0.01 * Float(gGamePrefs.musicVolumePercent)) * gGlobalVolumeFade
-    let musicVol = gMusicVolumeTweak * gMusicVolume
-    gMusicSwChannel?.setVolume(left: musicVol, right: musicVol)
+    gEngine.sound.musicVolume = fullSongVolume * (0.01 * Float(gGamePrefs.musicVolumePercent)) * gEngine.sound.globalVolumeFade
+    let musicVol = gEngine.sound.musicVolumeTweak * gEngine.sound.musicVolume
+    gEngine.sound.musicChannel?.setVolume(left: musicVol, right: musicVol)
 }
 
 // MARK: - Change channel volume
@@ -702,13 +710,13 @@ func ChangeChannelVolume(_ channel: Int16, _ leftVol: Float, _ rightVol: Float) 
         return
     }
 
-    let lv2 = leftVol * gEffectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
-    let rv2 = rightVol * gEffectsVolume / Float(FULL_CHANNEL_VOLUME)
+    let lv2 = leftVol * gEngine.sound.effectsVolume / Float(FULL_CHANNEL_VOLUME) // amplify by global volume, normalize to 0...1
+    let rv2 = rightVol * gEngine.sound.effectsVolume / Float(FULL_CHANNEL_VOLUME)
 
-    gChannels[Int(channel)].setVolume(left: lv2, right: rv2)
+    gEngine.sound.channels[Int(channel)].setVolume(left: lv2, right: rv2)
 
-    gChannelInfo[Int(channel)].leftVolume = leftVol // remember requested volume (not the adjusted volume!)
-    gChannelInfo[Int(channel)].rightVolume = rightVol
+    gEngine.sound.channelInfo[Int(channel)].leftVolume = leftVol // remember requested volume (not the adjusted volume!)
+    gEngine.sound.channelInfo[Int(channel)].rightVolume = rightVol
 }
 
 // MARK: - Change channel rate
@@ -722,7 +730,7 @@ func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
         return
     }
 
-    gChannels[Int(channel)].setRateRatio(Float(rateMult) / 65536.0)
+    gEngine.sound.channels[Int(channel)].setRateRatio(Float(rateMult) / 65536.0)
 }
 
 // MARK: -
@@ -730,19 +738,19 @@ func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
 // MARK: - Find silent channel
 
 private func findSilentChannel() -> Int16 {
-    var theChan = gMostRecentChannel + 1 // start on channel after the most recently acquired one - assuming it has the best chance of being silent
-    if theChan >= gMaxChannels {
+    var theChan = gEngine.sound.mostRecentChannel + 1 // start on channel after the most recently acquired one - assuming it has the best chance of being silent
+    if theChan >= gEngine.sound.numAllocatedChannels {
         theChan = 0
     }
     let startChan = theChan
 
     repeat {
-        if !gChannels[Int(theChan)].isBusy { // not playing anything, pick this one
-            gMostRecentChannel = theChan
+        if !gEngine.sound.channels[Int(theChan)].isBusy { // not playing anything, pick this one
+            gEngine.sound.mostRecentChannel = theChan
             return theChan
         } else {
             theChan += 1 // try next channel
-            if theChan >= gMaxChannels {
+            if theChan >= gEngine.sound.numAllocatedChannels {
                 theChan = 0
             }
         }
@@ -756,20 +764,20 @@ private func findSilentChannel() -> Int16 {
 // MARK: - Is effect channel playing
 
 func IsEffectChannelPlaying(_ chanNum: Int16) -> UInt8 {
-    gChannels[Int(chanNum)].isBusy ? 1 : 0
+    gEngine.sound.channels[Int(chanNum)].isBusy ? 1 : 0
 }
 
 // MARK: - Pause all sound channels
 
 func PauseAllChannels(_ pause: UInt8) {
-    for channel in gChannels {
+    for channel in gEngine.sound.channels {
         pause != 0 ? channel.pauseDevice() : channel.resumeDevice()
     }
 
     if pause != 0 {
-        gMusicSwChannel?.pauseDevice()
+        gEngine.sound.musicChannel?.pauseDevice()
     } else {
-        gMusicSwChannel?.resumeDevice()
+        gEngine.sound.musicChannel?.resumeDevice()
     }
 }
 
@@ -778,7 +786,7 @@ func PauseAllChannels(_ pause: UInt8) {
 // MARK: - Global volume fade
 
 func FadeSound(_ loudness: Float) {
-    gGlobalVolumeFade = loudness
+    gEngine.sound.globalVolumeFade = loudness
     UpdateGlobalVolume()
 }
 

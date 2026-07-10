@@ -121,7 +121,7 @@ func DoMainMenuScreen() {
     gPlayNow = 0
 
     while gPlayNow == 0 {
-        if gCurrentSong != Int16(SONG_THEME) {
+        if gEngine.sound.currentSong != Int16(SONG_THEME) {
             PlaySong(Int16(SONG_THEME), 1)
         }
 
@@ -355,15 +355,15 @@ private let cMoveMouseCursorObject: @convention(c) (UnsafeMutablePointer<ObjNode
 
     // UPDATE CROSSHAIR POSITION
 
-    gCursorCoord = GetMouseCoords640x480()
+    gEngine.input.cursorCoord = GetMouseCoords640x480()
 
-    theNode.pointee.Coord.x = gCursorCoord.x
-    theNode.pointee.Coord.y = gCursorCoord.y
+    theNode.pointee.Coord.x = gEngine.input.cursorCoord.x
+    theNode.pointee.Coord.y = gEngine.input.cursorCoord.y
 
     theNode.updateTransforms()
 
-    // Boolean visible = !gUserPrefersGamepad;
-    let visible = gUserPrefersGamepad == 0 && IsMenuMouseControlled()
+    // Boolean visible = !gEngine.input.userPrefersGamepad;
+    let visible = gEngine.input.userPrefersGamepad == 0 && IsMenuMouseControlled()
 
     if visible {
         // Fade in to prevent jarring cursor warp when exiting mouse grab mode

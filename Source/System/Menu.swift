@@ -409,8 +409,8 @@ private func navigateMenuVertically(_ delta: Int32) {
 private func navigateMenuMouseHover() {
     if gNav!.pointee.mouseState == .grabbing { return }
     var cursor = OGLPoint2D(x: -1, y: -1)
-    if cursor.x == gCursorCoord.x && cursor.y == gCursorCoord.y { return }
-    cursor = gCursorCoord
+    if cursor.x == gEngine.input.cursorCoord.x && cursor.y == gEngine.input.cursorCoord.y { return }
+    cursor = gEngine.input.cursorCoord
     gNav!.pointee.mouseState = .wandering; gNav!.pointee.mouseFocusComponent = -1
     for row in 0..<gNav!.pointee.numRows {
         let mi = gNav!.pointee.menu!.advanced(by: Int(row))
@@ -617,18 +617,18 @@ private func navigateSlider(_ e: UnsafePointer<MenuItem>!) {
     let root = GetCurrentMenuItemObject(); var p = getSliderComponents(e, root)
     if gNav!.pointee.mouseState == .hovering && SwIsClickDown(Int(SDL_BUTTON_LEFT)) {
         switch gNav!.pointee.mouseFocusComponent {
-        case 1: _ = setNewSliderValue(e, &p, sliderKnobXToValue(p, gCursorCoord.x)); beingDragged = true
+        case 1: _ = setNewSliderValue(e, &p, sliderKnobXToValue(p, gEngine.input.cursorCoord.x)); beingDragged = true
         case 3, 4: beingDragged = true
         default: break
         }
         if beingDragged {
-            prevTickX = p.knob!.pointee.Coord.x; grabOffset = gCursorCoord.x - p.knob!.pointee.Coord.x
+            prevTickX = p.knob!.pointee.Coord.x; grabOffset = gEngine.input.cursorCoord.x - p.knob!.pointee.Coord.x
             gNav!.pointee.mouseState = .grabbing; playStartBindingEffect(); twitchSelection()
         }
     } else if beingDragged && SwIsClickHeld(Int(SDL_BUTTON_LEFT)) {
-        let kx = setNewSliderValue(e, &p, sliderKnobXToValue(p, gCursorCoord.x - grabOffset))
+        let kx = setNewSliderValue(e, &p, sliderKnobXToValue(p, gEngine.input.cursorCoord.x - grabOffset))
         if abs(prevTickX - kx) >= 7 {
-            let pitch = RangeTranspose(sliderKnobXToValue(p, gCursorCoord.x - grabOffset), p.vmin, p.vmax, Float(0.5), Float(0.9))
+            let pitch = RangeTranspose(sliderKnobXToValue(p, gEngine.input.cursorCoord.x - grabOffset), p.vmin, p.vmax, Float(0.5), Float(0.9))
             PlayEffect_Parms(Int16(EFFECT_CHANGESELECT), FULL_CHANNEL_VOLUME/3, FULL_CHANNEL_VOLUME/3, UInt(Float(NORMAL_CHANNEL_RATE) * pitch))
             playNavigateEffect(); prevTickX = kx; twitchSelection()
         }

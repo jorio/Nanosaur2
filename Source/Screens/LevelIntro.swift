@@ -511,7 +511,7 @@ private func setupScreensaverObjects() {
     textDef.moveCall = cMovePressAnyKey
     textDef.scale = 0.35
 
-    let text = gUserPrefersGamepad != 0 ? STR_PRESS_START : STR_PRESS_ANY_KEY
+    let text = gEngine.input.userPrefersGamepad != 0 ? STR_PRESS_START : STR_PRESS_ANY_KEY
     let newObj = TextMesh_New(localized(text), Int32(kTextMeshAlignCenter), &textDef)
     newObj.pointee.ColorFilter.a = 0.6
     newObj.pointee.AnaglyphZ = 6.0

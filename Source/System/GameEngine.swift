@@ -42,6 +42,10 @@ final class GameEngine {
     let bones = BoneSystem()
     let bg3d = BG3DSystem()
     let metaObjects = MetaObjectSystem()
+
+    /// Sound and input.
+    let sound = SoundSystem()
+    let input = InputSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

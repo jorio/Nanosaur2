@@ -160,7 +160,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     if theNode.pointee.EffectChannel == -1 {
         theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_WORMHOLE), &theNode.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE) * 3 / 2, 1.0)
     } else {
-        gChannelInfo[Int(theNode.pointee.EffectChannel)].volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
+        gEngine.sound.channelInfo[Int(theNode.pointee.EffectChannel)].volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
 
         _ = Update3DSoundChannel(Int16(EFFECT_WORMHOLE), &theNode.pointee.EffectChannel, &theNode.pointee.Coord)
     }

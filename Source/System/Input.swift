@@ -113,7 +113,7 @@ private func updateRawKeyboardStates() {
 }
 
 private func processSystemKeyChords() {
-    if (gGamePaused != 0 || gPlayNow == 0) && IsCmdQDown() != 0 {
+    if (gEngine.screens.gamePaused != 0 || gEngine.screens.playNow == 0) && IsCmdQDown() != 0 {
         CleanQuit()
     }
 

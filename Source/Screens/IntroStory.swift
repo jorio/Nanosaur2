@@ -38,9 +38,7 @@ struct SlideType {
     var subtitleKey: Int32 = 0
 }
 
-private var gEndSlideShow = false
 
-private var gSlideActive = [Bool](repeating: false, count: NUM_SLIDES)
 
 private let gSlides: [SlideType] = [
     // PANGEA LOGO
@@ -208,9 +206,9 @@ func DoIntroStoryScreen() {
 
     // LOOP
 
-    gEndSlideShow = false
+    gEngine.screens.introStoryEndSlideShow = false
 
-    while !gEndSlideShow {
+    while !gEngine.screens.introStoryEndSlideShow {
         CalcFramesPerSecond()
         DoSDLMaintenance()
         if UserWantsOut() != 0 {
@@ -302,11 +300,11 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     gEngine.renderer.beginImmediate(.quads)
     gEngine.renderer.setColor4f(0, 0, 0, 0)
-    gEngine.renderer.vertex2f(gLogicalRect.left, y)
-    gEngine.renderer.vertex2f(gLogicalRect.right, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, y)
     gEngine.renderer.setColor4f(0, 0, 0, 1)
-    gEngine.renderer.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    gEngine.renderer.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.bottom)
     gEngine.renderer.endImmediate()
 
     OGL_PopState()
@@ -334,7 +332,7 @@ private func buildSlideShowObjects() {
 
         slideObj.pointee.ColorFilter.a = gSlides[i].alpha
 
-        gSlideActive[i] = i == 0 // (this sets which frame we start on)
+        gEngine.screens.introStorySlideActive[i] = i == 0 // (this sets which frame we start on)
 
         slideObj.pointee.Timer = gSlides[i].delayToNext // set time to show before starting next slide
         slideObj.pointee.Health = gSlides[i].delayToVanish // time to show before start fadeout of this slide
@@ -367,7 +365,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
     let slideNum = Int(theNode.pointee.Kind)
     let isLastSlide = slideNum >= NUM_SLIDES - 1
 
-    if !gSlideActive[slideNum] { // is this slide still waiting?
+    if !gEngine.screens.introStorySlideActive[slideNum] { // is this slide still waiting?
         return
     }
 
@@ -386,7 +384,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     theNode.pointee.Timer -= fps
     if !isLastSlide && theNode.pointee.Timer <= 0.0 {
-        gSlideActive[slideNum + 1] = true
+        gEngine.screens.introStorySlideActive[slideNum + 1] = true
     }
 
     // SEE IF FADE OUT/IN
@@ -399,7 +397,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
             if theNode.pointee.Timer <= 0.0 { // dont delete until the other timer is also done
                 DeleteObject(theNode)
                 if isLastSlide { // was that the last slide?
-                    gEndSlideShow = true
+                    gEngine.screens.introStoryEndSlideShow = true
                 }
                 return
             }

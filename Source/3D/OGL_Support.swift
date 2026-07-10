@@ -869,7 +869,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     gEngine.renderer.present() // end render loop
 
-    if gGamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
+    if gEngine.screens.gamePaused == 0 { // freeze frame count if paused (otherwise double-buffered skeletons will flicker)
         gEngine.game.viewInfoPtr!.pointee.frameCount += 1 // inc frame count AFTER drawing (so that the previous Move calls were in sync with this draw frame count)
     }
 

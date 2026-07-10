@@ -48,7 +48,7 @@ func LoadLevelArt() {
     var timeStartLoad = UnsignedWide()
     SwMicroseconds(&timeStartLoad)
 
-    gLoadingThermoPercent = 0
+    gEngine.screens.loadingThermoPercent = 0
 
     gEngine.renderer.setClearColor(0, 0, 0) // clear to black for loading screen
 

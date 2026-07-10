@@ -65,10 +65,10 @@ private let cDrawFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     OGL_SetColor4f(0, 0, 0, 1.0 - gEngine.window.gammaFadeFrac)
 
     gEngine.renderer.beginImmediate(.quads)
-    gEngine.renderer.vertex3f(gLogicalRect.right, gLogicalRect.top, 0)
-    gEngine.renderer.vertex3f(gLogicalRect.left, gLogicalRect.top, 0)
-    gEngine.renderer.vertex3f(gLogicalRect.left, gLogicalRect.bottom, 0)
-    gEngine.renderer.vertex3f(gLogicalRect.right, gLogicalRect.bottom, 0)
+    gEngine.renderer.vertex3f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.top, 0)
+    gEngine.renderer.vertex3f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.top, 0)
+    gEngine.renderer.vertex3f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.bottom, 0)
+    gEngine.renderer.vertex3f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.bottom, 0)
     gEngine.renderer.endImmediate()
 
     OGL_PopState()

@@ -3,28 +3,26 @@
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 private let NORMAL_CHANNEL_RATE: UInt = 0x10000
 
-private var gGatherPrompt: UnsafeMutablePointer<ObjNode>!
-private var gNumControllersMissing: Int32 = 4
 
 private func UpdateGatherPrompt(_ numControllersMissing: Int32) {
     if numControllersMissing <= 0 {
-        TextMesh_Update("OK", 0, gGatherPrompt)
-        gGatherPrompt.pointee.Scale.x = 1
-        gGatherPrompt.pointee.Scale.y = 1
-        UpdateObjectTransforms(gGatherPrompt)
+        TextMesh_Update("OK", 0, gEngine.screens.gatherPrompt)
+        gEngine.screens.gatherPrompt.pointee.Scale.x = 1
+        gEngine.screens.gatherPrompt.pointee.Scale.y = 1
+        UpdateObjectTransforms(gEngine.screens.gatherPrompt)
         // gEngine.game.viewInfoPtr->fadeOutDuration = .3f;
     } else {
         let message = numControllersMissing == 1
             ? localized(STR_CONNECT_1_CONTROLLER)
             : localized(STR_CONNECT_2_CONTROLLERS)
 
-        TextMesh_Update(message, 0, gGatherPrompt)
+        TextMesh_Update(message, 0, gEngine.screens.gatherPrompt)
     }
 }
 
 // Return true if user aborts.
 func DoLocalGatherScreen() -> UInt8 {
-    gNumControllersMissing = Int32(gEngine.player.numPlayers)
+    gEngine.screens.numControllersMissing = Int32(gEngine.player.numPlayers)
     // UnlockPlayerControllerMapping();
 
     if GetNumGamepad() >= Int32(gEngine.player.numPlayers) {
@@ -48,12 +46,12 @@ func DoLocalGatherScreen() -> UInt8 {
 
         let numControllers = GetNumGamepad()
 
-        gNumControllersMissing = Int32(gEngine.player.numPlayers) - numControllers
-        if gNumControllersMissing < 0 {
-            gNumControllersMissing = 0
+        gEngine.screens.numControllersMissing = Int32(gEngine.player.numPlayers) - numControllers
+        if gEngine.screens.numControllersMissing < 0 {
+            gEngine.screens.numControllersMissing = 0
         }
 
-        UpdateGatherPrompt(gNumControllersMissing)
+        UpdateGatherPrompt(gEngine.screens.numControllersMissing)
 
         // DRAW STUFF
 
@@ -125,8 +123,8 @@ private func SetupLocalGatherScreen() {
     def2.slot = Int16(SPRITE_SLOT)
     def2.group = UInt8(ATLAS_GROUP_FONT2)
 
-    gGatherPrompt = TextMesh_NewEmpty(256, &def2)
-    SendNodeToOverlayPane(gGatherPrompt)
+    gEngine.screens.gatherPrompt = TextMesh_NewEmpty(256, &def2)
+    SendNodeToOverlayPane(gEngine.screens.gatherPrompt)
 
     def2.coord.y = 480 / 2 + 220
     def2.scale = 0.27
@@ -137,7 +135,7 @@ private func SetupLocalGatherScreen() {
 }
 
 private func DoLocalGatherControls() -> Int32 {
-    if gNumControllersMissing == 0 {
+    if gEngine.screens.numControllersMissing == 0 {
         return 1
     }
 
@@ -149,18 +147,18 @@ private func DoLocalGatherControls() -> Int32 {
 
     if SwIsKeyDown(Int(SDL_SCANCODE_RETURN.rawValue)) || SwIsKeyDown(Int(SDL_SCANCODE_KP_ENTER.rawValue)) {
         // User pressed [ENTER] on keyboard
-        if gNumControllersMissing == 1 {
+        if gEngine.screens.numControllersMissing == 1 {
             PlayEffect_Parms(Int16(EFFECT_MENUSELECT), FULL_CHANNEL_VOLUME, FULL_CHANNEL_VOLUME, NORMAL_CHANNEL_RATE * 2 / 3)
             return 1
         } else {
             PlayEffect_Parms(Int16(EFFECT_BADSELECT), FULL_CHANNEL_VOLUME / 4, FULL_CHANNEL_VOLUME / 4, NORMAL_CHANNEL_RATE)
-            _ = MakeTwitch(gGatherPrompt, Int32(kTwitchPreset_PadlockWiggle))
+            _ = MakeTwitch(gEngine.screens.gatherPrompt, Int32(kTwitchPreset_PadlockWiggle))
         }
     } else if SwIsNeedDown(kNeed_UIConfirm, ANY_PLAYER) {
         // User pressed [A] on gamepad
-        if gNumControllersMissing > 0 {
+        if gEngine.screens.numControllersMissing > 0 {
             PlayEffect_Parms(Int16(EFFECT_BADSELECT), FULL_CHANNEL_VOLUME / 4, FULL_CHANNEL_VOLUME / 4, NORMAL_CHANNEL_RATE)
-            _ = MakeTwitch(gGatherPrompt, Int32(kTwitchPreset_PadlockWiggle))
+            _ = MakeTwitch(gEngine.screens.gatherPrompt, Int32(kTwitchPreset_PadlockWiggle))
         }
     } else if IsCheatKeyComboDown() != 0 { // useful to test local multiplayer without having all controllers plugged in
         PlayEffect(Int16(EFFECT_CRYSTALSHATTER))

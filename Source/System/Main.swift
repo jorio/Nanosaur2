@@ -422,7 +422,7 @@ private func playLevel() {
 
         DoSDLMaintenance()
 
-        if gGamePaused != 0 {
+        if gEngine.screens.gamePaused != 0 {
             MoveObjects()
             CalcFramesPerSecond()
             DoPlayerTerrainUpdate()

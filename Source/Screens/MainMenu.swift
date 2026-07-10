@@ -1,10 +1,9 @@
 // MainMenu.swift - Port of MainMenu.c to Swift
 //
-// gPlayNow is native Swift storage now (converted 2026-07-07): nothing in
+// gEngine.screens.playNow is native Swift storage now (converted 2026-07-07): nothing in
 // any .c file touches it anymore (MainMenuGlobals.c, its last real C
 // owner, is deleted).
 
-var gPlayNow: UInt8 = 0
 
 // MARK: - Main menu tree
 
@@ -33,7 +32,7 @@ private let cDeleteFileSlot: @convention(c) () -> Void = {
     }
 }
 
-var gMainMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
+let gMainMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
     miRoot(fourCC("root")),
     miPick(STR_PLAY_GAME, next: fourCC("play")),
     miPick(STR_SETTINGS,  next: fourCC("sett")),
@@ -96,8 +95,6 @@ private let screensaverDelay: Float = 15.0
 private let menuTextAnaglyphZ: Float = 4.0
 private let cursorScale: Float = 35.0
 
-private var gMainMenuBackground: UnsafeMutablePointer<ObjNode>?
-private var gMainMenuMouseCursor: UnsafeMutablePointer<ObjNode>?
 
 // MARK: - Main menu move callback
 
@@ -118,9 +115,9 @@ private func moveMainMenu() {
 // MARK: - Do mainmenu screen
 
 func DoMainMenuScreen() {
-    gPlayNow = 0
+    gEngine.screens.playNow = 0
 
-    while gPlayNow == 0 {
+    while gEngine.screens.playNow == 0 {
         if gEngine.sound.currentSong != Int16(SONG_THEME) {
             PlaySong(Int16(SONG_THEME), 1)
         }
@@ -165,16 +162,16 @@ func DoMainMenuScreen() {
 // always reflects the current anaglyph settings
 
 func BuildMainMenuObjects() {
-    if let gMainMenuBackground {
-        DeleteObject(gMainMenuBackground)
+    if let background = gEngine.screens.mainMenuBackground {
+        DeleteObject(background)
     }
 
-    if let gMainMenuMouseCursor {
-        DeleteObject(gMainMenuMouseCursor)
+    if let cursor = gEngine.screens.mainMenuMouseCursor {
+        DeleteObject(cursor)
     }
 
-    gMainMenuBackground = MakeBackgroundPictureObject(":Sprites:menu:menuback")
-    gMainMenuMouseCursor = MakeMouseCursorObject()
+    gEngine.screens.mainMenuBackground = MakeBackgroundPictureObject(":Sprites:menu:menuback")
+    gEngine.screens.mainMenuMouseCursor = MakeMouseCursorObject()
 }
 
 // MARK: - Setup mainmenu screen
@@ -184,7 +181,7 @@ private func setupMainMenuScreen() {
     let fillDirection1 = OGLVector3D(x: -0.7, y: 0.9, z: -1.0)
     let fillDirection2 = OGLVector3D(x: 0.3, y: 0.8, z: 1.0)
 
-    gPlayNow = 0
+    gEngine.screens.playNow = 0
 
     // SETUP VIEW
 
@@ -241,8 +238,8 @@ private func freeMainMenuScreen() {
     MyFlushEvents()
 
     DeleteAllObjects()
-    gMainMenuMouseCursor = nil
-    gMainMenuBackground = nil
+    gEngine.screens.mainMenuMouseCursor = nil
+    gEngine.screens.mainMenuBackground = nil
 
     DisposeSpriteGroup(Int32(SPRITE_GROUP_LEVELSPECIFIC))
     DisposeAllBG3DContainers()
@@ -254,7 +251,7 @@ private func freeMainMenuScreen() {
 // MARK: - Process menu outcome
 
 private func processMenuOutcome(_ outcome: Int32) {
-    gPlayNow = 0
+    gEngine.screens.playNow = 0
 
     switch outcome {
     case 0x7175_6974: // 'quit'
@@ -280,7 +277,7 @@ private func processMenuOutcome(_ outcome: Int32) {
         gEngine.game.timeDemo = 1
         gEngine.game.skipLevelIntro = 1
         gEngine.player.numPlayers = 1
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
         gEngine.game.levelNum = Int16(LevelNum.adventure3.rawValue)
         gEngine.renderer.setVSync(0) // no vsync for time demo
@@ -289,7 +286,7 @@ private func processMenuOutcome(_ outcome: Int32) {
         setMainController1P()
 
         gEngine.player.numPlayers = 1
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
         gEngine.game.levelNum = Int16(LevelNum.adventure1.rawValue)
 
@@ -297,7 +294,7 @@ private func processMenuOutcome(_ outcome: Int32) {
         setMainController1P()
 
         gEngine.player.numPlayers = 1
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
         gEngine.game.skipLevelIntro = 1
         gEngine.game.levelNum = Int16(LevelNum.adventure1.rawValue) + Int16(outcome - 0x6368_7431)
@@ -311,28 +308,28 @@ private func processMenuOutcome(_ outcome: Int32) {
             UseSaveGame(&loaded)
             gEngine.game.playingFromSavedGame = 1
             gEngine.player.numPlayers = 1
-            gPlayNow = 1
+            gEngine.screens.playNow = 1
         }
 
     case 0x7261_6331, 0x7261_6332: // 'rac1','rac2' RACE
         gEngine.player.numPlayers = 2
         gEngine.game.vsMode = .race
         gEngine.game.levelNum = Int16(LevelNum.race1.rawValue) + Int16(outcome - 0x7261_6331)
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
 
     case 0x6261_7431, 0x6261_7432: // 'bat1','bat2' BATTLE
         gEngine.player.numPlayers = 2
         gEngine.game.vsMode = .battle
         gEngine.game.levelNum = Int16(LevelNum.battle1.rawValue) + Int16(outcome - 0x6261_7431)
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
 
     case 0x6361_7031, 0x6361_7032: // 'cap1','cap2' CAPTURE THE FLAG
         gEngine.player.numPlayers = 2
         gEngine.game.vsMode = .captureTheFlag
         gEngine.game.levelNum = Int16(LevelNum.flag1.rawValue) + Int16(outcome - 0x6361_7031)
-        gPlayNow = 1
+        gEngine.screens.playNow = 1
         gEngine.game.playingFromSavedGame = 0
 
     default:

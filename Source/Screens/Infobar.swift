@@ -1,19 +1,32 @@
 // Infobar.swift - Port of Infobar.c to Swift
 //
-// gLogicalRect is native Swift storage now (converted 2026-07-07): nothing
+// gEngine.infobar.logicalRect is native Swift storage now (converted 2026-07-07): nothing
 // in any .c file touches it anymore (the old comment claiming LevelIntro.c/
 // IntroStory.c still needed it was stale - LevelIntro.c is deleted and
-// IntroStory.c is an empty stub). g640x480Scaling and gHideInfobar aren't
+// IntroStory.c is an empty stub). gEngine.infobar.scaling640x480 and gEngine.infobar.hideInfobar aren't
 // referenced by any other file, so they stay private Swift state along
 // with everything else here (the blinking-egg state, the overhead-map/
 // health/shield/fuel mesh data), which was all `static` (file-private) in C.
 
-var gLogicalRect = OGLRect()
+/// Infobar (HUD) state. Owned by GameEngine as `gEngine.infobar`.
+final class InfobarSystem {
+    var logicalRect = OGLRect()
+
+    fileprivate var scaling640x480: Float = 1
+    fileprivate var hideInfobar: UInt8 = 0
+    fileprivate var blinkingEggType: Int32 = -1
+    fileprivate var blinkingEggTimer: Float = 0
+    fileprivate var overheadMapMaterial: UnsafeMutablePointer<MOMaterialObject>?
+    fileprivate var ohmTriMesh = MOVertexArrayData()
+    fileprivate var healthTriMesh = MOVertexArrayData()
+    fileprivate var shieldTriMesh = MOVertexArrayData()
+    fileprivate var fuelTriMesh = MOVertexArrayData()
+    fileprivate var missionStatusFlux: Float = 0
+    fileprivate var crosshairSpinAngle: Float = 0
+}
 
 private let SPLITSCREEN_DIVIDER_THICKNESS: Float = 1
 
-private var g640x480Scaling: Float = 1
-private var gHideInfobar: UInt8 = 0
 
 private func isStereo() -> Bool { gGamePrefs.stereoGlassesMode != UInt8(StereoGlassesMode.off.rawValue) }
 
@@ -73,34 +86,27 @@ private func capEggsY() -> Float { anchorTop(0) }
 
 // MARK: - State
 
-private var gBlinkingEggType: Int32 = -1
-private var gBlinkingEggTimer: Float = 0
 
 // OVERHEAD MAP
-private var gOverheadMapMaterial: UnsafeMutablePointer<MOMaterialObject>?
 
-private var gOHMTriMesh = MOVertexArrayData()
 private let gOHMTriangles = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
 private let gOHMuv1 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gOHMuv2 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gOHMPoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
 
 // HEALTH
-private var gHealthTriMesh = MOVertexArrayData()
 private let gHealthTriangles = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
 private let gHealthuv1 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gHealthuv2 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gHealthPoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
 
 // SHIELD
-private var gShieldTriMesh = MOVertexArrayData()
 private let gShieldTriangles = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
 private let gShielduv1 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gShielduv2 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gShieldPoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
 
 // FUEL
-private var gFuelTriMesh = MOVertexArrayData()
 private let gFuelTriangles = AllocPtrClear(MemoryLayout<MOTriangleIndecies>.size * 2)!.assumingMemoryBound(to: MOTriangleIndecies.self)
 private let gFueluv1 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 private let gFueluv2 = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
@@ -131,27 +137,27 @@ private func setUpMeterQuad(triangles: UnsafeMutablePointer<MOTriangleIndecies>,
 }
 
 private func anchorLeft(_ x: Float) -> Float {
-    gGamePrefs.force4x3HUD != 0 ? x : (gLogicalRect.left + x)
+    gGamePrefs.force4x3HUD != 0 ? x : (gEngine.infobar.logicalRect.left + x)
 }
 
 private func anchorRight(_ x: Float) -> Float {
-    gGamePrefs.force4x3HUD != 0 ? (640 * g640x480Scaling - x) : (gLogicalRect.right - x)
+    gGamePrefs.force4x3HUD != 0 ? (640 * gEngine.infobar.scaling640x480 - x) : (gEngine.infobar.logicalRect.right - x)
 }
 
 private func anchorTop(_ y: Float) -> Float {
-    gGamePrefs.force4x3HUD != 0 ? y : (gLogicalRect.top + y)
+    gGamePrefs.force4x3HUD != 0 ? y : (gEngine.infobar.logicalRect.top + y)
 }
 
 private func anchorBottom(_ y: Float) -> Float {
-    gGamePrefs.force4x3HUD != 0 ? (480 * g640x480Scaling - y) : (gLogicalRect.bottom - y)
+    gGamePrefs.force4x3HUD != 0 ? (480 * gEngine.infobar.scaling640x480 - y) : (gEngine.infobar.logicalRect.bottom - y)
 }
 
 private func anchorCenterX(_ x: Float) -> Float {
-    x + (640 * g640x480Scaling) * 0.5
+    x + (640 * gEngine.infobar.scaling640x480) * 0.5
 }
 
 private func anchorCenterY(_ y: Float) -> Float {
-    y + (480 * g640x480Scaling) * 0.5
+    y + (480 * gEngine.infobar.scaling640x480) * 0.5
 }
 
 // MARK: - Pane divider
@@ -171,8 +177,8 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     OGL_EnableCullFace()
     OGL_DisableTexture2D()
 
-    let overlayLogicalWidth = gLogicalRect.right - gLogicalRect.left
-    let overlayLogicalHeight = gLogicalRect.bottom - gLogicalRect.top
+    let overlayLogicalWidth = gEngine.infobar.logicalRect.right - gEngine.infobar.logicalRect.left
+    let overlayLogicalHeight = gEngine.infobar.logicalRect.bottom - gEngine.infobar.logicalRect.top
 
     let halfThickness = (SPLITSCREEN_DIVIDER_THICKNESS + 1.0) / 2.0
     let halfLW = overlayLogicalWidth * 0.5 + 10
@@ -225,8 +231,8 @@ private func makePaneDivider() -> UnsafeMutablePointer<ObjNode> {
 // MARK: - Init
 
 func InitInfobar() {
-    gBlinkingEggType = -1
-    gBlinkingEggTimer = 0
+    gEngine.infobar.blinkingEggType = -1
+    gEngine.infobar.blinkingEggTimer = 0
 
     // CREATE PANE DIVIDER FOR MULTIPLAYER
     makePaneDivider()
@@ -261,15 +267,15 @@ func InitInfobar() {
     // LOAD OVERHEAD MAP
     var haveOHM = true
     if GetNumSpritesInGroup(Int32(SPRITE_GROUP_OVERHEADMAP)) != 0 {
-        gOverheadMapMaterial = GetSpriteGroupPtr(Int32(SPRITE_GROUP_OVERHEADMAP))![0].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // get illegal ref to texture
+        gEngine.infobar.overheadMapMaterial = GetSpriteGroupPtr(Int32(SPRITE_GROUP_OVERHEADMAP))![0].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // get illegal ref to texture
     } else {
-        gOverheadMapMaterial = nil
+        gEngine.infobar.overheadMapMaterial = nil
         haveOHM = false
     }
 
     if haveOHM {
         // SET TO BE MULTI-TEXTURE FOR MASKING
-        let ohm = gOverheadMapMaterial!
+        let ohm = gEngine.infobar.overheadMapMaterial!
         ohm.flags |= UInt32(BG3D_MATERIALFLAG_MULTITEXTURE)
         ohm.multiTextureCombine = UInt16(MULTI_TEXTURE_COMBINE_MODULATE)
 
@@ -285,19 +291,19 @@ func InitInfobar() {
         gOHMuv2[2] = OGLTextureCoord(u: 1, v: 1)
         gOHMuv2[3] = OGLTextureCoord(u: 1, v: 0)
 
-        gOHMTriMesh.VARtype = -1
-        gOHMTriMesh.numMaterials = 2
-        gOHMTriMesh.materials.0 = ohm
-        gOHMTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
+        gEngine.infobar.ohmTriMesh.VARtype = -1
+        gEngine.infobar.ohmTriMesh.numMaterials = 2
+        gEngine.infobar.ohmTriMesh.materials.0 = ohm
+        gEngine.infobar.ohmTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
 
-        gOHMTriMesh.numPoints = 4
-        gOHMTriMesh.numTriangles = 2
-        gOHMTriMesh.points = gOHMPoints
-        gOHMTriMesh.normals = nil
-        gOHMTriMesh.uvs.0 = gOHMuv1
-        gOHMTriMesh.uvs.1 = gOHMuv2
-        gOHMTriMesh.colorsFloat = nil
-        gOHMTriMesh.triangles = gOHMTriangles
+        gEngine.infobar.ohmTriMesh.numPoints = 4
+        gEngine.infobar.ohmTriMesh.numTriangles = 2
+        gEngine.infobar.ohmTriMesh.points = gOHMPoints
+        gEngine.infobar.ohmTriMesh.normals = nil
+        gEngine.infobar.ohmTriMesh.uvs.0 = gOHMuv1
+        gEngine.infobar.ohmTriMesh.uvs.1 = gOHMuv2
+        gEngine.infobar.ohmTriMesh.colorsFloat = nil
+        gEngine.infobar.ohmTriMesh.triangles = gOHMTriangles
     }
 
     // INIT HEALTH MESH
@@ -308,19 +314,19 @@ func InitInfobar() {
 
         setUpMeterQuad(triangles: gHealthTriangles, uv1: gHealthuv1, uv2: gHealthuv2, points: gHealthPoints, halfSize: HEALTH_SCALE2)
 
-        gHealthTriMesh.VARtype = -1
-        gHealthTriMesh.numMaterials = 2
-        gHealthTriMesh.materials.0 = mo
-        gHealthTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
+        gEngine.infobar.healthTriMesh.VARtype = -1
+        gEngine.infobar.healthTriMesh.numMaterials = 2
+        gEngine.infobar.healthTriMesh.materials.0 = mo
+        gEngine.infobar.healthTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
 
-        gHealthTriMesh.numPoints = 4
-        gHealthTriMesh.numTriangles = 2
-        gHealthTriMesh.points = gHealthPoints
-        gHealthTriMesh.normals = nil
-        gHealthTriMesh.uvs.0 = gHealthuv1
-        gHealthTriMesh.uvs.1 = gHealthuv2
-        gHealthTriMesh.colorsFloat = nil
-        gHealthTriMesh.triangles = gHealthTriangles
+        gEngine.infobar.healthTriMesh.numPoints = 4
+        gEngine.infobar.healthTriMesh.numTriangles = 2
+        gEngine.infobar.healthTriMesh.points = gHealthPoints
+        gEngine.infobar.healthTriMesh.normals = nil
+        gEngine.infobar.healthTriMesh.uvs.0 = gHealthuv1
+        gEngine.infobar.healthTriMesh.uvs.1 = gHealthuv2
+        gEngine.infobar.healthTriMesh.colorsFloat = nil
+        gEngine.infobar.healthTriMesh.triangles = gHealthTriangles
     }
 
     // INIT SHIELD MESH
@@ -331,19 +337,19 @@ func InitInfobar() {
 
         setUpMeterQuad(triangles: gShieldTriangles, uv1: gShielduv1, uv2: gShielduv2, points: gShieldPoints, halfSize: SHIELD_SCALE2)
 
-        gShieldTriMesh.VARtype = -1
-        gShieldTriMesh.numMaterials = 2
-        gShieldTriMesh.materials.0 = mo
-        gShieldTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
+        gEngine.infobar.shieldTriMesh.VARtype = -1
+        gEngine.infobar.shieldTriMesh.numMaterials = 2
+        gEngine.infobar.shieldTriMesh.materials.0 = mo
+        gEngine.infobar.shieldTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
 
-        gShieldTriMesh.numPoints = 4
-        gShieldTriMesh.numTriangles = 2
-        gShieldTriMesh.points = gShieldPoints
-        gShieldTriMesh.normals = nil
-        gShieldTriMesh.uvs.0 = gShielduv1
-        gShieldTriMesh.uvs.1 = gShielduv2
-        gShieldTriMesh.colorsFloat = nil
-        gShieldTriMesh.triangles = gShieldTriangles
+        gEngine.infobar.shieldTriMesh.numPoints = 4
+        gEngine.infobar.shieldTriMesh.numTriangles = 2
+        gEngine.infobar.shieldTriMesh.points = gShieldPoints
+        gEngine.infobar.shieldTriMesh.normals = nil
+        gEngine.infobar.shieldTriMesh.uvs.0 = gShielduv1
+        gEngine.infobar.shieldTriMesh.uvs.1 = gShielduv2
+        gEngine.infobar.shieldTriMesh.colorsFloat = nil
+        gEngine.infobar.shieldTriMesh.triangles = gShieldTriangles
     }
 
     // INIT FUEL MESH
@@ -354,24 +360,24 @@ func InitInfobar() {
 
         setUpMeterQuad(triangles: gFuelTriangles, uv1: gFueluv1, uv2: gFueluv2, points: gFuelPoints, halfSize: FUEL_SCALE2)
 
-        gFuelTriMesh.VARtype = -1
-        gFuelTriMesh.numMaterials = 2
-        gFuelTriMesh.materials.0 = mo
-        gFuelTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
+        gEngine.infobar.fuelTriMesh.VARtype = -1
+        gEngine.infobar.fuelTriMesh.numMaterials = 2
+        gEngine.infobar.fuelTriMesh.materials.0 = mo
+        gEngine.infobar.fuelTriMesh.materials.1 = GetSpriteGroupPtr(Int32(SPRITE_GROUP_INFOBAR))![Int(INFOBAR_SObjType_MapMask)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)
 
-        gFuelTriMesh.numPoints = 4
-        gFuelTriMesh.numTriangles = 2
-        gFuelTriMesh.points = gFuelPoints
-        gFuelTriMesh.normals = nil
-        gFuelTriMesh.uvs.0 = gFueluv1
-        gFuelTriMesh.uvs.1 = gFueluv2
-        gFuelTriMesh.colorsFloat = nil
-        gFuelTriMesh.triangles = gFuelTriangles
+        gEngine.infobar.fuelTriMesh.numPoints = 4
+        gEngine.infobar.fuelTriMesh.numTriangles = 2
+        gEngine.infobar.fuelTriMesh.points = gFuelPoints
+        gEngine.infobar.fuelTriMesh.normals = nil
+        gEngine.infobar.fuelTriMesh.uvs.0 = gFueluv1
+        gEngine.infobar.fuelTriMesh.uvs.1 = gFueluv2
+        gEngine.infobar.fuelTriMesh.colorsFloat = nil
+        gEngine.infobar.fuelTriMesh.triangles = gFuelTriangles
     }
 }
 
 func DisposeInfobar() {
-    // gOverheadMapMaterial borrows a pointer into SPRITE_GROUP_OVERHEADMAP
+    // gEngine.infobar.overheadMapMaterial borrows a pointer into SPRITE_GROUP_OVERHEADMAP
     // (see InitInfobar) without a matching reference, and is otherwise only
     // ever read from the infobar's own ObjNode draw callback, which stops
     // getting called once the level's objects are torn down - so the
@@ -379,7 +385,7 @@ func DisposeInfobar() {
     // DrawMinimapOnSecondaryScreen (dual-screen mode) checks it directly
     // every frame regardless of ObjNode lifecycle, so it must be nilled out
     // here to avoid reading freed memory after cleanup.
-    gOverheadMapMaterial = nil
+    gEngine.infobar.overheadMapMaterial = nil
 }
 
 // MARK: - Set infobar sprite state
@@ -396,9 +402,9 @@ func Get2DLogicalRect(_ splitScreenPane: UInt8, _ zoom: Float) -> OGLRect {
     var referenceW: Float = 640
     var referenceH: Float = 480
 
-    g640x480Scaling = 1.0 / zoom
-    referenceW *= g640x480Scaling
-    referenceH *= g640x480Scaling
+    gEngine.infobar.scaling640x480 = 1.0 / zoom
+    referenceW *= gEngine.infobar.scaling640x480
+    referenceH *= gEngine.infobar.scaling640x480
 
     let referenceAR = referenceW / referenceH
 
@@ -444,11 +450,11 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gEngine.renderer.matrixMode(.projection)
     gEngine.renderer.loadIdentity()
 
-    gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
-    let left = gLogicalRect.left
-    let top = gLogicalRect.top
-    let right = gLogicalRect.right
-    let bottom = gLogicalRect.bottom
+    gEngine.infobar.logicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
+    let left = gEngine.infobar.logicalRect.left
+    let top = gEngine.infobar.logicalRect.top
+    let right = gEngine.infobar.logicalRect.right
+    let bottom = gEngine.infobar.logicalRect.bottom
 
     if isStereo() {
         if gAnaglyphPass == 0 {
@@ -477,10 +483,10 @@ func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     if gCurrentSplitScreenPane == 0
         && gAnaglyphPass == 0
         && SwIsKeyDown(Int(SDL_SCANCODE_F9.rawValue)) { // see if toggle statbar
-        gHideInfobar = gHideInfobar == 0 ? 1 : 0
+        gEngine.infobar.hideInfobar = gEngine.infobar.hideInfobar == 0 ? 1 : 0
     }
 
-    if gHideInfobar != 0 {
+    if gEngine.infobar.hideInfobar != 0 {
         return
     }
 
@@ -737,7 +743,7 @@ func Infobar_DrawNumber(_ number0: Int32, _ x0: Float, _ y0: Float, _ scale: Flo
 // original corner-anchored HUD call site; DrawMinimapOnSecondaryScreen
 // (dual-screen mode) passes an explicit center position and a larger scale.
 private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0) {
-    guard gOverheadMapMaterial != nil else {
+    guard gEngine.infobar.overheadMapMaterial != nil else {
         return
     }
 
@@ -872,7 +878,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     DrawInfobarSprite_Centered(mapXValue, y, MAP_SCALE * scale, Int16(INFOBAR_SObjType_MapLines))
 
     // DRAW MAP
-    MO_DrawGeometry_VertexArray(&gOHMTriMesh)
+    MO_DrawGeometry_VertexArray(&gEngine.infobar.ohmTriMesh)
 
     // DRAW FRAME OVERLAY
     drawInfobarSpriteRotated(mapXValue, y, MAP_SCALE * scale, Int16(INFOBAR_SObjType_MapFrame), 0)
@@ -894,9 +900,9 @@ private let kSecondaryScreenMapScale: Float = 3.0
 
 // So OGL_Support.swift's dual-screen draw path can skip the whole
 // context-switch/swap excursion when there's nothing to draw (outside
-// gameplay) without needing access to the private gOverheadMapMaterial.
+// gameplay) without needing access to the private gEngine.infobar.overheadMapMaterial.
 func IsMinimapActive() -> Bool {
-    gOverheadMapMaterial != nil
+    gEngine.infobar.overheadMapMaterial != nil
 }
 
 // Caller (OGL_Support.swift) is responsible for OGL_PushState/PopState
@@ -904,7 +910,7 @@ func IsMinimapActive() -> Bool {
 // it here would push/pop while already on the secondary context, saving
 // and restoring the wrong context's state.
 func DrawMinimapOnSecondaryScreen() {
-    guard gOverheadMapMaterial != nil else {
+    guard gEngine.infobar.overheadMapMaterial != nil else {
         return
     }
 
@@ -914,8 +920,8 @@ func DrawMinimapOnSecondaryScreen() {
 
     SetInfobarSpriteState(0, 1.0)
 
-    let centerX = (gLogicalRect.left + gLogicalRect.right) * 0.5
-    let centerY = (gLogicalRect.top + gLogicalRect.bottom) * 0.5
+    let centerX = (gEngine.infobar.logicalRect.left + gEngine.infobar.logicalRect.right) * 0.5
+    let centerY = (gEngine.infobar.logicalRect.top + gEngine.infobar.logicalRect.bottom) * 0.5
     infobarDrawMap(centerX, centerY, kSecondaryScreenMapScale)
 }
 
@@ -938,7 +944,7 @@ private func infobarDrawHealth() {
         DrawInfobarSprite_Centered(2, 2, HEALTH_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
-    MO_DrawGeometry_VertexArray(&gHealthTriMesh)
+    MO_DrawGeometry_VertexArray(&gEngine.infobar.healthTriMesh)
 
     // DRAW FRAME OVERLAY
     DrawInfobarSprite_Centered(0, 0, HEALTH_SCALE, Int16(INFOBAR_SObjType_HealthFrame))
@@ -971,7 +977,7 @@ private func infobarDrawShield() {
         DrawInfobarSprite_Centered(2, 2, SHIELD_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
-    MO_DrawGeometry_VertexArray(&gShieldTriMesh)
+    MO_DrawGeometry_VertexArray(&gEngine.infobar.shieldTriMesh)
 
     // DRAW FRAME OVERLAY
     DrawInfobarSprite_Centered(0, 0, SHIELD_SCALE, Int16(INFOBAR_SObjType_ShieldFrame))
@@ -1002,7 +1008,7 @@ private func infobarDrawFuel() {
         DrawInfobarSprite_Centered(2, 2, FUEL_SCALE * 1.3, Int16(INFOBAR_SObjType_CircleShadow))
     }
 
-    MO_DrawGeometry_VertexArray(&gFuelTriMesh)
+    MO_DrawGeometry_VertexArray(&gEngine.infobar.fuelTriMesh)
 
     // DRAW FRAME OVERLAY
     DrawInfobarSprite_Centered(0, 0, FUEL_SCALE, Int16(INFOBAR_SObjType_FuelFrame))
@@ -1017,14 +1023,14 @@ private func infobarDrawFuel() {
 // MARK: - Start blinking egg
 
 func HighlightInfobarEgg(_ eggType: Int32) {
-    gBlinkingEggType = eggType
-    gBlinkingEggTimer = 0
+    gEngine.infobar.blinkingEggType = eggType
+    gEngine.infobar.blinkingEggTimer = 0
 }
 
 // MARK: - Draw eggs
 
 private func infobarDrawEggs() {
-    gBlinkingEggTimer += gEngine.framesPerSecondFrac
+    gEngine.infobar.blinkingEggTimer += gEngine.framesPerSecondFrac
 
     var x = eggsX()
     for (eggType, _) in EggColor.allCases.enumerated() {
@@ -1042,10 +1048,10 @@ private func infobarDrawEggs() {
             }
 
             // BLINKING HALO IF JUST SAVED THIS EGG
-            if gBlinkingEggTimer < 4.66
-                && eggType == Int(gBlinkingEggType)
+            if gEngine.infobar.blinkingEggTimer < 4.66
+                && eggType == Int(gEngine.infobar.blinkingEggType)
                 && i == Int(gEngine.items.numEggsSaved[eggType]) - 1 {
-                let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
+                let flux = cosf(gEngine.infobar.blinkingEggTimer * Float(PI) * 3 - Float(PI))
                 gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
                 gEngine.metaObjects.globalTransparency = 1.0
@@ -1063,7 +1069,7 @@ private func infobarDrawEggs() {
 private func infobarCaptureFlagEggs() {
     let eggType = Int(gCurrentSplitScreenPane) ^ 1 // egg type is OTHER player's, so ^ 1
 
-    gBlinkingEggTimer += gEngine.framesPerSecondFrac / Float(gEngine.player.numPlayers)
+    gEngine.infobar.blinkingEggTimer += gEngine.framesPerSecondFrac / Float(gEngine.player.numPlayers)
 
     let y = capEggsY()
     var x = capEggsX()
@@ -1079,10 +1085,10 @@ private func infobarCaptureFlagEggs() {
         }
 
         // BLINKING HALO IF JUST CAPTURED THIS EGG
-        if gBlinkingEggTimer < 4.66
-            && eggType == Int(gBlinkingEggType)
+        if gEngine.infobar.blinkingEggTimer < 4.66
+            && eggType == Int(gEngine.infobar.blinkingEggType)
             && i == Int(gEngine.items.numEggsSaved[eggType]) - 1 {
-            let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
+            let flux = cosf(gEngine.infobar.blinkingEggTimer * Float(PI) * 3 - Float(PI))
             gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
             gEngine.metaObjects.globalTransparency = 1.0
@@ -1100,11 +1106,10 @@ private func infobarDrawPlayerLabels() {
 
 // MARK: - Draw "enter wormhole" or "mission failed"
 
-private var gMissionStatusFlux: Float = 0
 
 private func infobarDrawMissionStatus() {
-    if gGamePaused != 0 {
-        gMissionStatusFlux = 0
+    if gEngine.screens.gamePaused != 0 {
+        gEngine.infobar.missionStatusFlux = 0
         return
     }
 
@@ -1119,9 +1124,9 @@ private func infobarDrawMissionStatus() {
     }
     // ENTER WORMHOLE
     else if gEngine.items.openPlayerWormhole != 0 && gEngine.camera.inExitMode == 0 {
-        gMissionStatusFlux += gEngine.framesPerSecondFrac
+        gEngine.infobar.missionStatusFlux += gEngine.framesPerSecondFrac
 
-        var scale: Float = 0.5 * (1.0 + sinf(min(Float(PI), gMissionStatusFlux * 6.0) - (Float(PI) * 0.5)))
+        var scale: Float = 0.5 * (1.0 + sinf(min(Float(PI), gEngine.infobar.missionStatusFlux * 6.0) - (Float(PI) * 0.5)))
         var flags: Int32 = 0
 
         if gGamePrefs.language == UInt8(LANGUAGE_ITALIAN.rawValue) {
@@ -1135,12 +1140,12 @@ private func infobarDrawMissionStatus() {
         let x = anchorCenterX(0)
         let y = anchorCenterY(120)
         let text = localized(STR_ENTER_WORMHOLE)
-        gEngine.metaObjects.globalTransparency = 0.75 + 0.25 * sinf(gMissionStatusFlux * (2.0 * Float(PI)))
+        gEngine.metaObjects.globalTransparency = 0.75 + 0.25 * sinf(gEngine.infobar.missionStatusFlux * (2.0 * Float(PI)))
 
         Atlas_DrawString2(Int32(ATLAS_GROUP_FONT1), text, x, y, scale, scale, 0, UInt32(bitPattern: flags))
         gEngine.metaObjects.globalTransparency = 1.0
     } else {
-        gMissionStatusFlux = 0
+        gEngine.infobar.missionStatusFlux = 0
     }
 }
 
@@ -1280,7 +1285,7 @@ private func moveLapMessage(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.pointee.Coord.y = anchorCenterY(75)
     UpdateObjectTransforms(theNode)
 
-    if gGamePaused == 0 {
+    if gEngine.screens.gamePaused == 0 {
         theNode.pointee.ColorFilter.a -= gEngine.framesPerSecondFrac
         if theNode.pointee.ColorFilter.a <= 0.0 {
             DeleteObject(theNode)
@@ -1488,7 +1493,6 @@ private func drawAnaglyphCrosshairs() {
 
 // MARK: - Draw infobar crosshairs
 
-private var gCrosshairSpinAngle: Float = 0
 
 private func infobarDrawCrosshairs() {
     let playerNum = gCurrentSplitScreenPane
@@ -1542,8 +1546,8 @@ private func infobarDrawCrosshairs() {
     var px: Int32 = 0, py: Int32 = 0, pw: Int32 = 0, ph: Int32 = 0
     OGL_GetCurrentViewport(&px, &py, &pw, &ph, playerNum)
 
-    let lrw = gLogicalRect.right - gLogicalRect.left
-    let lrh = gLogicalRect.bottom - gLogicalRect.top
+    let lrw = gEngine.infobar.logicalRect.right - gEngine.infobar.logicalRect.left
+    let lrh = gEngine.infobar.logicalRect.bottom - gEngine.infobar.logicalRect.top
 
     let screenToPaneX = lrw / Float(pw)
     let screenToPaneY = lrh / Float(ph)
@@ -1560,12 +1564,12 @@ private func infobarDrawCrosshairs() {
     var screenCoord = (crosshairCoordBase(pi) + 0).pointee.transformed(by: GetWorldToWindowMatrixEntry(Int32(playerNum)).pointee)
     screenCoord.x = screenCoord.x * screenToPaneX
     screenCoord.y = screenCoord.y * screenToPaneY
-    screenCoord.x += gLogicalRect.left
-    screenCoord.y += gLogicalRect.top
+    screenCoord.x += gEngine.infobar.logicalRect.left
+    screenCoord.y += gEngine.infobar.logicalRect.top
 
     if lockedOn {
-        gCrosshairSpinAngle += gEngine.framesPerSecondFrac * SwPI2
-        drawInfobarSpriteRotated(screenCoord.x, screenCoord.y, scale * 1.3, Int16(INFOBAR_SObjType_GunSight_Locked), gCrosshairSpinAngle)
+        gEngine.infobar.crosshairSpinAngle += gEngine.framesPerSecondFrac * SwPI2
+        drawInfobarSpriteRotated(screenCoord.x, screenCoord.y, scale * 1.3, Int16(INFOBAR_SObjType_GunSight_Locked), gEngine.infobar.crosshairSpinAngle)
         DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale * 1.6, Int16(INFOBAR_SObjType_GunSight_OuterRing))
     } else {
         DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale, Int16(INFOBAR_SObjType_GunSight_Normal))
@@ -1588,8 +1592,8 @@ private func infobarDrawCrosshairs() {
     screenCoord = (crosshairCoordBase(pi) + 1).pointee.transformed(by: GetWorldToWindowMatrixEntry(Int32(playerNum)).pointee)
     screenCoord.x = screenCoord.x * screenToPaneX
     screenCoord.y = screenCoord.y * screenToPaneY
-    screenCoord.x += gLogicalRect.left
-    screenCoord.y += gLogicalRect.top
+    screenCoord.x += gEngine.infobar.logicalRect.left
+    screenCoord.y += gEngine.infobar.logicalRect.top
 
     DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale * 0.6, Int16(INFOBAR_SObjType_GunSight_Normal))
 }

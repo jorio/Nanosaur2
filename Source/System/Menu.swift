@@ -306,11 +306,11 @@ private let cDrawDarkenPane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
     gEngine.renderer.beginImmediate(.quads)
     let s = node.pointee.Scale.y; let menuTop = node.pointee.Coord.y - s/2; let menuBottom = node.pointee.Coord.y + s/2
     let taper: Float = 16; let c = node.pointee.ColorFilter
-    gEngine.renderer.setColor4f(c.r, c.g, c.b, 0); gEngine.renderer.vertex2f(gLogicalRect.right, menuTop - taper); gEngine.renderer.vertex2f(gLogicalRect.left, menuTop - taper)
-    gEngine.renderer.setColor4f(c.r, c.g, c.b, c.a); gEngine.renderer.vertex2f(gLogicalRect.left, menuTop); gEngine.renderer.vertex2f(gLogicalRect.right, menuTop)
-    gEngine.renderer.vertex2f(gLogicalRect.right, menuTop); gEngine.renderer.vertex2f(gLogicalRect.left, menuTop); gEngine.renderer.vertex2f(gLogicalRect.left, menuBottom); gEngine.renderer.vertex2f(gLogicalRect.right, menuBottom)
-    gEngine.renderer.vertex2f(gLogicalRect.right, menuBottom); gEngine.renderer.vertex2f(gLogicalRect.left, menuBottom)
-    gEngine.renderer.setColor4f(c.r, c.g, c.b, 0); gEngine.renderer.vertex2f(gLogicalRect.left, menuBottom + taper); gEngine.renderer.vertex2f(gLogicalRect.right, menuBottom + taper)
+    gEngine.renderer.setColor4f(c.r, c.g, c.b, 0); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuTop - taper); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuTop - taper)
+    gEngine.renderer.setColor4f(c.r, c.g, c.b, c.a); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuTop); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuTop)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuTop); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuTop); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuBottom); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuBottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuBottom); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuBottom)
+    gEngine.renderer.setColor4f(c.r, c.g, c.b, 0); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, menuBottom + taper); gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, menuBottom + taper)
     gEngine.renderer.endImmediate(); OGL_PopState()
 }
 private func rescaleDarkenPane(_ node: UnsafeMutablePointer<ObjNode>!, _ totalHeight: Float) {

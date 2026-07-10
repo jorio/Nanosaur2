@@ -1,6 +1,5 @@
 // Paused.swift - Port of Paused.c (menu trees + DoPaused/DoReallyQuit/OnExitPause)
 
-var gGamePaused: UInt8 = 0
 
 private let RESU_FOURCC: Int32 = fourCC("resu")
 private let BAIL_FOURCC: Int32 = fourCC("bail")
@@ -43,17 +42,16 @@ private let gReallyQuitMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTre
     miRoot(),
 ])
 
-private var gMouseCursor: UnsafeMutablePointer<ObjNode>?
 
 private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     SavePrefs() // save prefs in case user touched them
 
-    gGamePaused = 0
+    gEngine.screens.gamePaused = 0
     GrabMouse(1)
     PauseAllChannels(0)
 
-    DeleteObject(gMouseCursor)
-    gMouseCursor = nil
+    DeleteObject(gEngine.screens.pausedMouseCursor)
+    gEngine.screens.pausedMouseCursor = nil
 
     InvalidateAllInputs()
 
@@ -81,11 +79,11 @@ func DoPaused() {
     }
 
     gEngine.window.gammaFadeFrac = 1
-    gGamePaused = 1
+    gEngine.screens.gamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)
 
-    gMouseCursor = MakeMouseCursorObject()
+    gEngine.screens.pausedMouseCursor = MakeMouseCursorObject()
 
     var style = kDefaultMenuStyle
     style.canBackOutOfRootMenu = true
@@ -98,11 +96,11 @@ func DoPaused() {
 
 func DoReallyQuit() {
     gEngine.window.gammaFadeFrac = 1
-    gGamePaused = 1
+    gEngine.screens.gamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)
 
-    gMouseCursor = MakeMouseCursorObject()
+    gEngine.screens.pausedMouseCursor = MakeMouseCursorObject()
 
     var style = kDefaultMenuStyle
     style.canBackOutOfRootMenu = true

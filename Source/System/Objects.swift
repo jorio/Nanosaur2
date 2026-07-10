@@ -385,7 +385,7 @@ func MoveObjects() {
         repeat { // goto-next simulator
             // SEE IF SHOULD SKIP WHEN PAUSED
 
-            if gGamePaused != 0 && !node.hasStatus(STATUS_BIT_MOVEINPAUSE) {
+            if gEngine.screens.gamePaused != 0 && !node.hasStatus(STATUS_BIT_MOVEINPAUSE) {
                 break
             }
 

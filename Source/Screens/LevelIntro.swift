@@ -55,8 +55,6 @@ private let kCreditsText: [(role: String, name: String)] = [
     ("ADDITIONAL PROGRAMMING", "Iliyas Jorio"),
 ]
 
-private var gWormholeDeformPoints = [OGLPoint3D](repeating: OGLPoint3D(), count: 30)
-private var gIntroMode: UInt8 = 0
 
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
@@ -74,7 +72,7 @@ func DoLevelIntroScreen(_ mode: UInt8) {
 
     // (SKIPFLUFF is hardcoded off in this build, so this early-return never fires.)
 
-    gIntroMode = mode
+    gEngine.screens.introMode = mode
 
     // SETUP
 
@@ -90,7 +88,7 @@ func DoLevelIntroScreen(_ mode: UInt8) {
         MoveObjects()
         OGL_DrawScene(DrawObjects)
 
-        switch Int(gIntroMode) {
+        switch Int(gEngine.screens.introMode) {
         case INTRO_MODE_SCREENSAVER, INTRO_MODE_CREDITS:
             if UserWantsOut() != 0 {
                 bail = true
@@ -221,7 +219,7 @@ private func setupLevelIntroScreen() {
     newObj.updateTransforms()
     updateLevelIntroWormJoints(newObj)
 
-    if Int(gIntroMode) != INTRO_MODE_SCREENSAVER && Int(gIntroMode) != INTRO_MODE_CREDITS {
+    if Int(gEngine.screens.introMode) != INTRO_MODE_SCREENSAVER && Int(gEngine.screens.introMode) != INTRO_MODE_CREDITS {
         PlayEffect_Parms(Int16(EFFECT_WORMHOLE), FULL_CHANNEL_VOLUME / 2, FULL_CHANNEL_VOLUME / 3, UInt(NORMAL_CHANNEL_RATE))
     }
 
@@ -235,7 +233,7 @@ private func setupLevelIntroScreen() {
 
     // DO MODE SPECIFICS
 
-    switch Int(gIntroMode) {
+    switch Int(gEngine.screens.introMode) {
     case INTRO_MODE_SAVEGAME:
         MakeLevelIntroSaveSprites()
 
@@ -398,9 +396,9 @@ private func moveLevelIntroNano(_ theNode: UnsafeMutablePointer<ObjNode>) {
     var v = OGLVector3D()
     var p = OGLPoint3D()
 
-    theNode.pointee.Coord = gWormholeDeformPoints[1]
+    theNode.pointee.Coord = gEngine.screens.wormholeDeformPoints[1]
 
-    OGLPoint3D_Subtract(&gWormholeDeformPoints[4], &gWormholeDeformPoints[8], &v)
+    OGLPoint3D_Subtract(&gEngine.screens.wormholeDeformPoints[4], &gEngine.screens.wormholeDeformPoints[8], &v)
     v = v.normalized()
 
     SetAlignmentMatrix(&theNode.pointee.AlignmentMatrix, &v)
@@ -449,9 +447,9 @@ private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>
     for jointNum in 0..<numJoints {
         let q = Float(jointNum) * 80.0 // gets more wiggly the farther down the skeleton we go
 
-        gWormholeDeformPoints[jointNum].x = sin(waveX + w) * q
-        gWormholeDeformPoints[jointNum].y = sin(waveY + w) * q
-        gWormholeDeformPoints[jointNum].z = z
+        gEngine.screens.wormholeDeformPoints[jointNum].x = sin(waveX + w) * q
+        gEngine.screens.wormholeDeformPoints[jointNum].y = sin(waveY + w) * q
+        gEngine.screens.wormholeDeformPoints[jointNum].z = z
 
         w += 0.16
         z -= 350.0
@@ -469,13 +467,13 @@ private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>
 
         // GET COORDS OF THIS SEGMENT
 
-        let coord = gWormholeDeformPoints[jointNum]
+        let coord = gEngine.screens.wormholeDeformPoints[jointNum]
 
         // GET PREVIOUS COORD FOR ROTATION CALCULATION
 
         var prevCoord = OGLPoint3D()
         if jointNum > 0 {
-            prevCoord = gWormholeDeformPoints[jointNum - 1]
+            prevCoord = gEngine.screens.wormholeDeformPoints[jointNum - 1]
         }
 
         // TRANSFORM JOINT'S MATRIX TO WORLD COORDS
@@ -638,11 +636,11 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     gEngine.renderer.beginImmediate(.quads)
     gEngine.renderer.setColor4f(0, 0, 0, 0)
-    gEngine.renderer.vertex2f(gLogicalRect.left, y)
-    gEngine.renderer.vertex2f(gLogicalRect.right, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, y)
     gEngine.renderer.setColor4f(0, 0, 0, 1)
-    gEngine.renderer.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    gEngine.renderer.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.bottom)
     gEngine.renderer.endImmediate()
 
     OGL_PopState()

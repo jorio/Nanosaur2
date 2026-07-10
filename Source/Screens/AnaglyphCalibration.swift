@@ -1,6 +1,5 @@
 // AnaglyphCalibration.swift - Port of AnaglyphCalibration.c to Swift
 
-private var gAnaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
 
 // MARK: - Anaglyph menu trees
 
@@ -108,16 +107,16 @@ private func DisposeAnaglyphCalibrationScreen() {
     DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT3))
     DisposeSpriteGroup(Int32(SPRITE_GROUP_LEVELSPECIFIC))
 
-    if let head = gAnaglyphScreenHead {
+    if let head = gEngine.screens.anaglyphScreenHead {
         DeleteObject(head)
-        gAnaglyphScreenHead = nil
+        gEngine.screens.anaglyphScreenHead = nil
     }
 }
 
 func SetUpAnaglyphCalibrationScreen() {
     // REGISTER MENU
 
-    if gPlayNow != 0 {
+    if gEngine.screens.playNow != 0 {
         RegisterMenu(gInGameAnaglyphMenuPtr) // can't show actual menu in-game
         return
     } else {
@@ -145,7 +144,7 @@ func SetUpAnaglyphCalibrationScreen() {
     headSentinelDef.flags = UInt32(STATUS_BIT_HIDDEN | STATUS_BIT_MOVEINPAUSE)
     headSentinelDef.moveCall = cMoveAnaglyphScreenHeadObject
     let anaglyphScreenHead = MakeNewObject(&headSentinelDef)!
-    gAnaglyphScreenHead = anaglyphScreenHead
+    gEngine.screens.anaglyphScreenHead = anaglyphScreenHead
 
     // MAKE TEST PATTERN
 

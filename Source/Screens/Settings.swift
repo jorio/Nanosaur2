@@ -5,15 +5,15 @@ private let kSettingsFULL_CHANNEL_VOLUME: UInt32 = 0x0100 // kFullVolume
 // MARK: - Layout flag callbacks
 
 private let cDisableMenuEntryInGame: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? Int32(kMILayoutFlagDisabled) : 0
+    gEngine.screens.playNow != 0 ? Int32(kMILayoutFlagDisabled) : 0
 }
 
 private let cHideMenuEntryInGame: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? Int32(kMILayoutFlagHidden) : 0
+    gEngine.screens.playNow != 0 ? Int32(kMILayoutFlagHidden) : 0
 }
 
 private let cShowMenuEntryInGameOnly: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? 0 : Int32(kMILayoutFlagHidden)
+    gEngine.screens.playNow != 0 ? 0 : Int32(kMILayoutFlagHidden)
 }
 
 private let cShouldDisplayMonitorCycler: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
@@ -59,12 +59,11 @@ private let cOnChangeVSync: @convention(c) () -> Void = {
 
 // MARK: - Graphics / Gamepad menu callbacks
 
-private var gMSAAWarningNode: UnsafeMutablePointer<ObjNode>? = nil
 
 private let cMoveTemporaryGraphicsMenuText: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode = theNode else { return }
     if GetCurrentMenu() != fourCC("graf") {
-        if theNode == gMSAAWarningNode { gMSAAWarningNode = nil }
+        if theNode == gEngine.screens.msaaWarningNode { gEngine.screens.msaaWarningNode = nil }
         DeleteObject(theNode)
     }
 }
@@ -76,9 +75,9 @@ private let cMoveTemporaryGamepadMenuText: @convention(c) (UnsafeMutablePointer<
 
 private let cOnChangeMSAA: @convention(c) () -> Void = {
     if gCurrentAntialiasingLevel == Int32(gGamePrefs.antialiasingLevel) {
-        if let n = gMSAAWarningNode { DeleteObject(n); gMSAAWarningNode = nil }
+        if let n = gEngine.screens.msaaWarningNode { DeleteObject(n); gEngine.screens.msaaWarningNode = nil }
         return
-    } else if gMSAAWarningNode != nil {
+    } else if gEngine.screens.msaaWarningNode != nil {
         return
     }
     var def = NewObjectDefinitionType()
@@ -90,7 +89,7 @@ private let cOnChangeMSAA: @convention(c) () -> Void = {
     def.moveCall = cMoveTemporaryGraphicsMenuText
     let node = TextMesh_New(localized(STR_ANTIALIASING_CHANGE_WARNING), 0, &def)
     node.pointee.ColorFilter = OGLColorRGBA(r: 1, g: 0, b: 0, a: 1)
-    gMSAAWarningNode = node
+    gEngine.screens.msaaWarningNode = node
     SendNodeToOverlayPane(node)
     MakeTwitch(node, Int32(kTwitchPreset_MenuSelect))
 }

@@ -69,6 +69,10 @@ final class GameEngine {
     let items = ItemSystem()
     let skeletons = SkeletonSystem()
     let metalBackend = MetalBackendHolder()
+
+    /// HUD + screen-flow state.
+    let infobar = InfobarSystem()
+    let screens = ScreenSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

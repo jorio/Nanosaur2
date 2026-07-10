@@ -180,6 +180,7 @@ target_link_libraries(SaverEngine PUBLIC
 
 add_library(Nanosaur2Saver MODULE
 	${SAVER}/Nanosaur2SaverView.swift
+	${SAVER}/Nanosaur2SaverView+Preview.swift
 )
 
 set_target_properties(Nanosaur2Saver PROPERTIES
@@ -200,6 +201,9 @@ target_compile_options(Nanosaur2Saver PRIVATE
 	$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>
 	$<$<COMPILE_LANGUAGE:Swift>:${SAVER}/saver_api.h>
 	$<$<COMPILE_LANGUAGE:Swift>:-parse-as-library>
+	# Gates Nanosaur2SaverView+Preview.swift's #Preview - Debug only, same
+	# as a normal Xcode-templated target's SWIFT_ACTIVE_COMPILATION_CONDITIONS.
+	$<$<AND:$<COMPILE_LANGUAGE:Swift>,$<CONFIG:Debug>>:-DDEBUG>
 )
 
 target_link_libraries(Nanosaur2Saver PRIVATE

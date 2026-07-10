@@ -152,7 +152,7 @@ func OGL_SetDepthWrite(_ enabled: Bool) {
 @inline(__always) private func isStereoAnaglyphColor() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphColor.rawValue) }
 @inline(__always) private func isStereoAnaglyphMono() -> Bool { gGamePrefs.stereoGlassesMode == UInt8(StereoGlassesMode.anaglyphMono.rawValue) }
 @inline(__always) private func isStereoAnaglyph() -> Bool { isStereoAnaglyphColor() || isStereoAnaglyphMono() }
-@inline(__always) private func getOverlayPaneNumber() -> Int { Int(gNumPlayers) }
+@inline(__always) private func getOverlayPaneNumber() -> Int { Int(gEngine.player.numPlayers) }
 
 // MARK: - Dual-screen mode (--dual-screen)
 //
@@ -311,7 +311,7 @@ func OGL_SetupGameView(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType>!) 
     // SET SOME PANE INFO
 
     gCurrentSplitScreenPane = 0
-    switch gNumPlayers {
+    switch gEngine.player.numPlayers {
     case 1:
         gActiveSplitScreenMode = UInt8(SplitscreenMode.none.rawValue)
 
@@ -774,7 +774,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
         // DRAW EACH SPLIT-SCREEN PANE IF ANY
 
-        let numPasses = Int(gNumPlayers) + 1
+        let numPasses = Int(gEngine.player.numPlayers) + 1
 
         for pane in 0..<numPasses {
             gCurrentSplitScreenPane = UInt8(pane)

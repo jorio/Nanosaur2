@@ -1,31 +1,42 @@
 // Player.swift - Port of Player.c to Swift
 //
-// gNumPlayers, gPlayerInfo, gDeathTimer, gPlayerIsDead are native Swift
-// storage now (converted 2026-07-07): nothing in any .c file touches them
-// anymore. gPlayerInfo is a tuple (MAX_PLAYERS==2), matching the
-// tuple-not-Array pattern already established elsewhere in this codebase
-// (e.g. OGL_Support.swift's gFrustumToWindowMatrix) so
-// withUnsafeMutablePointer(to:) addresses real contiguous storage.
-// GetPlayerInfoEntry (SwiftInternal.h)/GetPlayerInfoPtr (PlayerRaceInternal.h)/
-// GetPlayerIsDead/SetPlayerIsDead (SwiftInternal.h/PlayerInternal.h)/
-// GetDeathTimer/SetDeathTimer (PlayerInternal.h) are now plain Swift
-// functions with the same names/signatures, so none of their call sites
-// elsewhere needed to change.
+// Player-system state lives in PlayerSystem (gEngine.player); nothing in
+// any .c file touches it. infoTuple is a tuple (MAX_PLAYERS==2), matching
+// the tuple-not-Array pattern established elsewhere in this codebase so
+// withUnsafeMutablePointer(to:) addresses real contiguous storage (class
+// stored properties are heap storage - stable addresses, same guarantee
+// the old file-scope global gave). GetPlayerInfoEntry/GetPlayerInfoPtr/
+// GetPlayerIsDead/SetPlayerIsDead/GetDeathTimer/SetDeathTimer keep their
+// C-era names/signatures, so their call sites didn't change.
 //
-// One exception: PausedInternal.h's PausedInternal_UpdateSplitscreenFOV
-// (a static-inline C shim compiled into the bridging-header PCH) used
-// gNumPlayers as a loop bound directly - since gNumPlayers is now pure
-// Swift, that shim's signature gained a numPlayers parameter instead,
-// computed by its one Swift caller (Paused.swift) and passed in.
+// PausedInternal.h's PausedInternal_UpdateSplitscreenFOV (a static-inline
+// C shim compiled into the bridging-header PCH) takes numPlayers as a
+// parameter, computed by its one Swift caller (Paused.swift).
 
-var gNumPlayers: UInt8 = 1 // 2 if split-screen, otherwise 1
+/// Player state for both possible players. Owned by GameEngine as
+/// `gEngine.player`.
+final class PlayerSystem {
+    var numPlayers: UInt8 = 1 // 2 if split-screen, otherwise 1
 
-private var gPlayerInfoTuple: (PlayerInfoType, PlayerInfoType) = (PlayerInfoType(), PlayerInfoType())
-private var gDeathTimerArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gPlayerIsDeadArr: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var infoTuple: (PlayerInfoType, PlayerInfoType) = (PlayerInfoType(), PlayerInfoType())
+    fileprivate var deathTimer: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var playerIsDead: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+
+    // Player_Terrain.swift state (fileprivate wouldn't reach across files)
+    var targetMaxSpeed: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+    var currentMaxSpeed: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+    var playerBottomOff: Float = 0
+
+    // Player_Weapons.swift state
+    var autoFireDelay: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    var playerMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1) // aim vector of root body matrix (not the gun joint!)
+
+    // Player_Race.swift state
+    var numLapsThisRace: Int16 = 3
+}
 
 @inline(__always) private func gPlayerInfoBase() -> UnsafeMutablePointer<PlayerInfoType> {
-    withUnsafeMutablePointer(to: &gPlayerInfoTuple) {
+    withUnsafeMutablePointer(to: &gEngine.player.infoTuple) {
         UnsafeMutableRawPointer($0).assumingMemoryBound(to: PlayerInfoType.self)
     }
 }
@@ -33,11 +44,11 @@ private var gPlayerIsDeadArr: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYE
 func GetPlayerInfoEntry(_ i: Int32) -> UnsafeMutablePointer<PlayerInfoType> { gPlayerInfoBase() + Int(i) }
 func GetPlayerInfoPtr(_ i: Int32) -> UnsafeMutablePointer<PlayerInfoType> { gPlayerInfoBase() + Int(i) }
 
-func GetPlayerIsDead(_ i: Int32) -> UInt8 { gPlayerIsDeadArr[Int(i)] }
-func SetPlayerIsDead(_ i: Int32, _ v: UInt8) { gPlayerIsDeadArr[Int(i)] = v }
+func GetPlayerIsDead(_ i: Int32) -> UInt8 { gEngine.player.playerIsDead[Int(i)] }
+func SetPlayerIsDead(_ i: Int32, _ v: UInt8) { gEngine.player.playerIsDead[Int(i)] = v }
 
-func GetDeathTimer(_ i: Int32) -> Float { gDeathTimerArr[Int(i)] }
-func SetDeathTimer(_ i: Int32, _ v: Float) { gDeathTimerArr[Int(i)] = v }
+func GetDeathTimer(_ i: Int32) -> Float { gEngine.player.deathTimer[Int(i)] }
+func SetDeathTimer(_ i: Int32, _ v: Float) { gEngine.player.deathTimer[Int(i)] = v }
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -112,7 +123,7 @@ func InitPlayerAtStartOfLevel() {
     DoPlayerTerrainUpdate()
 
     // INIT EACH PLAYER'S INFO
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoEntry(Int32(i))
 
         pi.pointee.invincibilityTimer = 0
@@ -511,7 +522,7 @@ func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playe
     playerNum?.pointee = 0
 
     // CHECK PLAYER 2
-    if gNumPlayers > 1 {
+    if gEngine.player.numPlayers > 1 {
         if GetPlayerIsDead(1) != 0 { // ignore dead player
             return d1
         }
@@ -974,7 +985,7 @@ func UpdatePlayerSteering(_ playerNum: Int32) {
     var yaw = GetNeedAnalogSteering(Int32(kNeed_YawLeft), Int32(kNeed_YawRight), playerNum)
 
     // AND FINALLY SEE IF MOUSE DELTAS ARE BEST (FOR KB/M FALLBACK PLAYER ONLY)
-    if playerNum == Int32(gNumPlayers) - 1 {
+    if playerNum == Int32(gEngine.player.numPlayers) - 1 {
         let mouseSensitivityFrac = Float(gGamePrefs.mouseSensitivityLevel) * 0.01
 
         let mouseDelta = GetMouseDelta()

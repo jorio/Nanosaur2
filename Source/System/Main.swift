@@ -238,7 +238,7 @@ private func initLevel() {
     gGameOver = 0
     gLevelCompleted = 0
 
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         SetBestCheckpointNum(Int32(i), -1)
         GetPlayerInfoEntry(Int32(i)).pointee.objNode = nil
     }
@@ -387,7 +387,7 @@ private func initLevel() {
 
     // INIT CAMERAS
 
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         InitCamera_Terrain(Int16(i))
     }
 }
@@ -424,7 +424,7 @@ private func playLevel() {
             continue
         }
 
-        for i in 0..<Int(gNumPlayers) {
+        for i in 0..<Int(gEngine.player.numPlayers) {
             UpdatePlayerSteering(Int32(i))
         }
 
@@ -445,7 +445,7 @@ private func playLevel() {
 
         // SEE IF RESET PLAYER NOW
 
-        for i in 0..<Int(gNumPlayers) { // check all players
+        for i in 0..<Int(gEngine.player.numPlayers) { // check all players
             if GetPlayerIsDead(Int32(i)) != 0 { // is this player dead?
                 let oldTimer = GetDeathTimer(Int32(i))
                 var deathTimer = oldTimer - fps
@@ -454,7 +454,7 @@ private func playLevel() {
                     let fadeOutSpeed: Float = 4.0
 
                     if oldTimer > 0.0 { // if just now crossed zero then start fade
-                        if gNumPlayers > 1
+                        if gEngine.player.numPlayers > 1
                             || GetPlayerInfoEntry(Int32(i)).pointee.numFreeLives > 0 { // ...only if hasn't lost adventure mode yet (gameover will freeze-frame fadeout)
                             _ = MakeFadeEvent(UInt8(kFadeFlags_Out) | (UInt8(kFadeFlags_P1) << i), fadeOutSpeed)
                         }
@@ -592,7 +592,7 @@ private func cleanupLevel() {
     // SET SOME IMPORTANT GLOBALS BACK TO DEFAULTS
 
     gVSMode = .none
-    gNumPlayers = 1
+    gEngine.player.numPlayers = 1
 }
 
 // MARK: -
@@ -821,7 +821,7 @@ public func GameMain() {
         } else {
             if DoLocalGatherScreen() != 0 {
                 gVSMode = .none
-                gNumPlayers = 1
+                gEngine.player.numPlayers = 1
                 continue
             }
             playGameVersus()

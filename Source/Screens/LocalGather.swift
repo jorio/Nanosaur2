@@ -24,10 +24,10 @@ private func UpdateGatherPrompt(_ numControllersMissing: Int32) {
 
 // Return true if user aborts.
 func DoLocalGatherScreen() -> UInt8 {
-    gNumControllersMissing = Int32(gNumPlayers)
+    gNumControllersMissing = Int32(gEngine.player.numPlayers)
     // UnlockPlayerControllerMapping();
 
-    if GetNumGamepad() >= Int32(gNumPlayers) {
+    if GetNumGamepad() >= Int32(gEngine.player.numPlayers) {
         // Skip gather screen if we already have enough controllers
         return 0
     }
@@ -48,7 +48,7 @@ func DoLocalGatherScreen() -> UInt8 {
 
         let numControllers = GetNumGamepad()
 
-        gNumControllersMissing = Int32(gNumPlayers) - numControllers
+        gNumControllersMissing = Int32(gEngine.player.numPlayers) - numControllers
         if gNumControllersMissing < 0 {
             gNumControllersMissing = 0
         }

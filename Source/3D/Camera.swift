@@ -313,7 +313,7 @@ func UpdateCameras() {
         }
     }
 
-    for playerNum in 0..<Int(gNumPlayers) {
+    for playerNum in 0..<Int(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoEntry(Int32(playerNum))
         guard let playerObj = pi.pointee.objNode else {
             continue
@@ -551,7 +551,7 @@ private func updateCamera_FirstPerson(_ i: Int16) {
 // Make a copy of the camera's real coord info before we do anaglyph offsetting.
 
 func PrepAnaglyphCameras() {
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         gAnaglyphCameraBackup[i] = (cameraPlacementsBase() + Int(Int32(i))).pointee
     }
 }
@@ -559,7 +559,7 @@ func PrepAnaglyphCameras() {
 // MARK: - Restore cameras from anaglyph
 
 func RestoreCamerasFromAnaglyph() {
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         (cameraPlacementsBase() + Int(Int32(i))).pointee = gAnaglyphCameraBackup[i]
     }
 }

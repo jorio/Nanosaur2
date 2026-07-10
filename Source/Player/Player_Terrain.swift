@@ -6,13 +6,11 @@
 // (formerly shims in PlayerInternal.h) are now plain Swift functions with
 // the same names/signatures.
 
-private var gTargetMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
-private var gCurrentMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
 
-func GetTargetMaxSpeed(_ i: Int32) -> Float { gTargetMaxSpeedArr[Int(i)] }
-func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gTargetMaxSpeedArr[Int(i)] = v }
-func GetCurrentMaxSpeed(_ i: Int32) -> Float { gCurrentMaxSpeedArr[Int(i)] }
-func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gCurrentMaxSpeedArr[Int(i)] = v }
+func GetTargetMaxSpeed(_ i: Int32) -> Float { gEngine.player.targetMaxSpeed[Int(i)] }
+func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gEngine.player.targetMaxSpeed[Int(i)] = v }
+func GetCurrentMaxSpeed(_ i: Int32) -> Float { gEngine.player.currentMaxSpeed[Int(i)] }
+func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gEngine.player.currentMaxSpeed[Int(i)] = v }
 
 private let flightSlideFactor: Float = 15.0 // smaller == more slide, larger = less slide
 private let flightTurnSensitivity: Float = 1.9 // smaller == slower turns, larger == faster turns
@@ -23,7 +21,6 @@ private let defaultPlayerShadowScale: Float = 8.0
 
 private let playerMinSpeed: Float = 650.0
 
-private var gPlayerBottomOff: Float = 0
 
 private let gJetpackButtOff = OGLPoint3D(x: 0, y: 11.3, z: 33)
 
@@ -67,7 +64,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
 
     // SET COLLISION INFO
 
-    gPlayerBottomOff = newObj.pointee.LocalBBox.min.y // calc offset to bottom for collision function later
+    gEngine.player.playerBottomOff = newObj.pointee.LocalBBox.min.y // calc offset to bottom for collision function later
 
     newObj.pointee.CType = UInt32(CTYPE_PLAYER1) << UInt32(playerNum)
     newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
@@ -1266,7 +1263,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
     if useBBoxForTerrain != 0 {
         theNode.pointee.BottomOff = theNode.pointee.LocalBBox.min.y
     } else {
-        theNode.pointee.BottomOff = gPlayerBottomOff
+        theNode.pointee.BottomOff = gEngine.player.playerBottomOff
     }
 
     var ctype = UInt32(CTYPE_TRIGGER | CTYPE_HURTME | CTYPE_PLAYERONLY) // get default ctypes (PLAYER_COLLISION_CTYPE)

@@ -372,7 +372,7 @@ func UpdateFences() {
     // 		the fades are different for each pane which means we'd have to wait
     //		for P1's drawing to complete before modifying P2's fence.
 
-    if (gAutoFadeStatusBits != 0) && (gNumPlayers == 1) {
+    if (gAutoFadeStatusBits != 0) && (gEngine.player.numPlayers == 1) {
         let camX = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.x // get camera coords
         let camZ = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.z
 

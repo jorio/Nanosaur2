@@ -158,7 +158,7 @@ private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
             if forcePurgeNow || (group.pointee.purgeTimer <= 0) { // time to purge?
                 // NUKE GEOMETRY DATA
 
-                for i in 0..<Int(gNumPlayers) {
+                for i in 0..<Int(gEngine.player.numPlayers) {
                     MO_DisposeObjectReference(UnsafeMutableRawPointer(geometryObj(group, 0, i)))
                     MO_DisposeObjectReference(UnsafeMutableRawPointer(geometryObj(group, 1, i)))
                 }
@@ -225,7 +225,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
             // this frame's particle geometry.
 
             for b in 0..<2 {
-                for playerNum in 0..<Int(gNumPlayers) {
+                for playerNum in 0..<Int(gEngine.player.numPlayers) {
                     // SET THE DATA
 
                     var vertexArrayData = MOVertexArrayData()
@@ -560,7 +560,7 @@ private func updateParticleGroupsGeometry() {
 
     // BUILD GEOMETRY FOR EACH PLAYER'S PANE
 
-    for paneNum in 0..<Int(gNumPlayers) {
+    for paneNum in 0..<Int(gEngine.player.numPlayers) {
         // GET CAMERA INFO FOR THIS PANE
 
         let camCoords = cameraPlacementsBase()[paneNum].cameraLocation

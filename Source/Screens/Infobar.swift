@@ -1063,7 +1063,7 @@ private func infobarDrawEggs() {
 private func infobarCaptureFlagEggs() {
     let eggType = Int(gCurrentSplitScreenPane) ^ 1 // egg type is OTHER player's, so ^ 1
 
-    gBlinkingEggTimer += gFramesPerSecondFrac / Float(gNumPlayers)
+    gBlinkingEggTimer += gFramesPerSecondFrac / Float(gEngine.player.numPlayers)
 
     let y = capEggsY()
     var x = capEggsX()

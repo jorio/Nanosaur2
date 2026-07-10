@@ -513,7 +513,7 @@ private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePoint
     var whichEar = 0
 
     var dist = where_.pointee.distance(to: gEarCoords[0]) // calc dist to sound for pane 0
-    if gNumPlayers > 1 { // see if other pane is closer (thus louder)
+    if gEngine.player.numPlayers > 1 { // see if other pane is closer (thus louder)
         let dist2 = where_.pointee.distance(to: gEarCoords[1])
 
         if dist2 < dist {
@@ -599,7 +599,7 @@ private func calc3DEffectVolume(_ effectNum: Int16, _ where_: UnsafeMutablePoint
 
 // Get ear coord for all local players
 func UpdateListenerLocation() {
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         let p = cameraPlacementsBase()[i]
 
         var v = OGLVector3D()

@@ -270,7 +270,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // SEE IF SMOKE HITS PLAYER
 
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         if GetPlayerIsDead(Int32(i)) == 0 { // ingore dead players
             let pi = GetPlayerInfoEntry(Int32(i))
             var dist = CalcQuickDistance(theNode.pointee.Coord.x, theNode.pointee.Coord.z, pi.pointee.coord.x, pi.pointee.coord.z)

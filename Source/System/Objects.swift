@@ -449,7 +449,7 @@ func DrawObjects() {
     let cameraX = cam.pointee.cameraLocation.x
     let cameraZ = cam.pointee.cameraLocation.z
 
-    let isOverlayPane = gCurrentSplitScreenPane == gNumPlayers
+    let isOverlayPane = gCurrentSplitScreenPane == gEngine.player.numPlayers
 
     // MAIN NODE TASK LOOP
 
@@ -1483,5 +1483,5 @@ func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
 func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.setStatus(STATUS_BIT_ONLYSHOWTHISPLAYER)
-    theNode.pointee.PlayerNum = gNumPlayers
+    theNode.pointee.PlayerNum = gEngine.player.numPlayers
 }

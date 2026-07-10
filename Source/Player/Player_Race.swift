@@ -1,6 +1,5 @@
 // Player_Race.swift - Port of Player_Race.c to Swift
 
-private var gNumLapsThisRace: Int16 = 3
 
 private func raceCheckpointTaggedBase(_ pi: UnsafeMutablePointer<PlayerInfoType>) -> UnsafeMutablePointer<UInt8> {
     UnsafeMutableRawPointer(pi.pointer(to: \.raceCheckpointTagged)!).assumingMemoryBound(to: UInt8.self)
@@ -10,7 +9,7 @@ private func PlayerCompletedRace(_ playerNum: Int16) {
     GetPlayerInfoPtr(Int32(playerNum)).pointee.raceComplete = 1
 
     if gLevelCompleted == 0 { // only if this is the 1st guy to win
-        for i in 0..<Int16(gNumPlayers) { // see which player Won (was not eliminated)
+        for i in 0..<Int16(gEngine.player.numPlayers) { // see which player Won (was not eliminated)
             if i != playerNum {
                 _ = ShowWinLose(i, 1) // lost
             } else {
@@ -61,7 +60,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
                 if count > Int16(gNumLineMarkers / 2) { // if crossed at least 50% of the checkpoints then assume we did a full lap
                     pi.pointee.lapNum += 1
 
-                    if pi.pointee.lapNum >= gNumLapsThisRace { // see if completed race
+                    if pi.pointee.lapNum >= gEngine.player.numLapsThisRace { // see if completed race
                         PlayerCompletedRace(Int16(p))
                     } else {
                         _ = ShowLapNum(Int16(p))
@@ -122,7 +121,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
                 // SEE IF COMPLETED THE RACE
 
-                if pi.pointee.lapNum >= gNumLapsThisRace {
+                if pi.pointee.lapNum >= gEngine.player.numLapsThisRace {
                     PlayerCompletedRace(Int16(p))
                 } else {
                     _ = ShowLapNum(Int16(p))
@@ -194,7 +193,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
 // Determine placing by counting how many players are in front of each player.
 func CalcPlayerPlaces() {
-    for p in 0..<Int32(gNumPlayers) {
+    for p in 0..<Int32(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoPtr(p)
         if pi.pointee.raceComplete != 0 { // if player already done, then dont do anything
             continue
@@ -202,7 +201,7 @@ func CalcPlayerPlaces() {
 
         var place: Int16 = 0 // assume 1st place
 
-        for i in 0..<Int32(gNumPlayers) { // check place with other players
+        for i in 0..<Int32(gEngine.player.numPlayers) { // check place with other players
             if p == i { // dont compare against self
                 continue
             }

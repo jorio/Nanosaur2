@@ -101,7 +101,7 @@ func DoLegalScreen() {
     var viewDef = OGLSetupInputType()
     var timeout: Float = 10.0
 
-    gNumPlayers = 1 // make sure don't do split-screen
+    gEngine.player.numPlayers = 1 // make sure don't do split-screen
 
     // SETUP VIEW
 

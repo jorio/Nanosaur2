@@ -522,7 +522,7 @@ private let cMoveDustDevilOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode
 // MARK: - See if dust devil hits player
 
 private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
-    for p in 0..<Int(gNumPlayers) {
+    for p in 0..<Int(gEngine.player.numPlayers) {
         // SEE IF WE CARE ABOUT THIS PLAYER
 
         if GetPlayerIsDead(Int32(p)) != 0 { // skip dead players

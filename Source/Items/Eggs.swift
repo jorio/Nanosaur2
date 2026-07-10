@@ -236,7 +236,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     egg.pointee.Timer -= fps // DelayUntilCanPickup
     if egg.pointee.Timer <= 0.0 { // only allow pickup if timer is ready
-        for i in 0..<Int(gNumPlayers) {
+        for i in 0..<Int(gEngine.player.numPlayers) {
             if GetPlayerIsDead(Int32(i)) != 0 { // dead players can't pick up eggs
                 continue
             }

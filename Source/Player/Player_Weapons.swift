@@ -5,9 +5,8 @@
 // SetAutoFireDelay (formerly a shim in PlayerInternal.h) are now plain
 // Swift functions with the same names/signatures.
 
-private var gAutoFireDelayArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-func GetAutoFireDelay(_ i: Int32) -> Float { gAutoFireDelayArr[Int(i)] }
-func SetAutoFireDelay(_ i: Int32, _ v: Float) { gAutoFireDelayArr[Int(i)] = v }
+func GetAutoFireDelay(_ i: Int32) -> Float { gEngine.player.autoFireDelay[Int(i)] }
+func SetAutoFireDelay(_ i: Int32, _ v: Float) { gEngine.player.autoFireDelay[Int(i)] = v }
 
 private let blasterBulletSpeed: Float = 4000.0
 private let blasterAutoFireDelay: Float = 0.16
@@ -24,7 +23,6 @@ private let heatSeekerButtOff: Float = 50.0
 private let clusterShotSingle: Int32 = 0
 private let clusterShotFragment: Int32 = 1
 
-private var gPlayerMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1) // aim vector of root body matrix (not the gun joint!)
 
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
@@ -53,7 +51,7 @@ func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     // FIRST SEE IF RAY HITS ANY OBJNODES
 
     var ray = OGLRay()
-    ray.direction = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+    ray.direction = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
 
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things which auto target the weapon
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(p) // and also other players
@@ -1813,14 +1811,14 @@ private func CalcPlayerGunMuzzleInfo(_ player: UnsafeMutablePointer<ObjNode>!, _
 
     if pi.pointee.turretSide != 0 {
         muzzleCoord.pointee = muzzleTipOff_Left.transformed(by: player.pointee.BaseTransformMatrix)
-        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+        muzzleVector.pointee = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // RIGHT
 
     else {
         muzzleCoord.pointee = muzzleTipOff_Right.transformed(by: player.pointee.BaseTransformMatrix)
-        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+        muzzleVector.pointee = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // MAKE THIS MUZZLE'S SPARKLE GLOW BRIGHTER

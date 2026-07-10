@@ -9,12 +9,12 @@ private let QUIT_FOURCC: Int32 = fourCC("quit")
 // MARK: - Pause menu trees
 
 private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gNumPlayers >= 2 ? 0 : Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
+    gEngine.player.numPlayers >= 2 ? 0 : Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
 }
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
     gActiveSplitScreenMode = gGamePrefs.splitScreenMode
-    PausedInternal_UpdateSplitscreenFOV(gGameViewInfoPtr, GetSplitscreenPaneFOV(), Int32(gNumPlayers))
+    PausedInternal_UpdateSplitscreenFOV(gGameViewInfoPtr, GetSplitscreenPaneFOV(), Int32(gEngine.player.numPlayers))
 }
 
 private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([

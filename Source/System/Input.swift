@@ -330,7 +330,7 @@ public func GetNeedState(_ needID: Int32, _ playerID: Int32) -> Int32 {
     }
 
     // Fallback to KB/M
-    if playerID == Int32(gNumPlayers) - 1 { // KBMFallbackPlayer()
+    if playerID == Int32(gEngine.player.numPlayers) - 1 { // KBMFallbackPlayer()
         return Int32(gNeedStates[Int(needID)])
     }
 
@@ -352,7 +352,7 @@ private func getNeedAnalogValueAnyP(_ needID: Int32) -> Float {
     }
 
     // Fallback to KB/M
-    return GetNeedAnalogValue(needID, Int32(gNumPlayers) - 1) // KBMFallbackPlayer()
+    return GetNeedAnalogValue(needID, Int32(gEngine.player.numPlayers) - 1) // KBMFallbackPlayer()
 }
 
 func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
@@ -372,7 +372,7 @@ func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
     }
 
     // Fallback to KB/M
-    if playerID == Int32(gNumPlayers) - 1 { // KBMFallbackPlayer()
+    if playerID == Int32(gEngine.player.numPlayers) - 1 { // KBMFallbackPlayer()
         if gNeedStates[Int(needID)] & UInt8(KEYSTATE_ACTIVE_BIT) != 0 {
             return 1.0
         }
@@ -781,7 +781,7 @@ func GetMouseCoords640x480() -> OGLPoint2D {
     let (_, mx, my) = SDL.mouseState
     SDL_GetWindowSize(gSDLWindow, &ww, &wh)
 
-    let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)
+    let r = Get2DLogicalRect(UInt8(gEngine.player.numPlayers), 1)
 
     let screenToPaneX = (r.right - r.left) / Float(ww)
     let screenToPaneY = (r.bottom - r.top) / Float(wh)
@@ -796,7 +796,7 @@ func BackupRestoreCursorCoord(_ backup: UInt8) {
         gCursorCoordBackup = gCursorCoord
     } else if gCursorCoordBackup.x >= 0 {
         gCursorCoord = gCursorCoordBackup
-        let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)
+        let r = Get2DLogicalRect(UInt8(gEngine.player.numPlayers), 1)
 
         var ww: Int32 = 0
         var wh: Int32 = 0

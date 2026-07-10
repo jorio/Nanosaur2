@@ -529,7 +529,7 @@ func CullTestAllObjects() {
 
 // Returns true if object is culled in all panes
 func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         let culledThisPane = theNode.pointee.StatusBits & (UInt32(STATUS_BIT_ISCULLED1) << i)
         if culledThisPane == 0 {
             return 0

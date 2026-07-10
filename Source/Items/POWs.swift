@@ -124,7 +124,7 @@ private let cMovePOW: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = 
         mem.pointee.ColorFilter.a -= fps * 2.0
         if mem.pointee.ColorFilter.a <= 0.0 {
             mem.pointee.ColorFilter.a = 0.0
-            if gNumPlayers > 1 { // if in multi-player level, then set delay until POW fades back in
+            if gEngine.player.numPlayers > 1 { // if in multi-player level, then set delay until POW fades back in
                 pow.pointee.Mode = PowMode.delay.rawValue
 
                 if gVSMode == .race {

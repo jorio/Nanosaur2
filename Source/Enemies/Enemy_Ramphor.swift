@@ -362,7 +362,7 @@ private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> 
         return false
     }
 
-    for p in 0..<Int(gNumPlayers) {
+    for p in 0..<Int(gEngine.player.numPlayers) {
         let playerInfo = GetPlayerInfoEntry(Int32(p))
         if playerInfo.pointee.shieldPower > 0.0 { // if player has shield then skip since other collision code handles this
             continue

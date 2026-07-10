@@ -15,6 +15,9 @@ final class GameEngine {
     /// Object system: master ObjNode list, per-move coord/delta scratch,
     /// autofade settings, slot storage (see Objects.swift).
     let objects = ObjectSystem()
+
+    /// Player state for both players (see Player.swift).
+    let player = PlayerSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

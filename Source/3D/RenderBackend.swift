@@ -277,6 +277,13 @@ protocol RenderBackend: AnyObject {
 
 // MARK: - OpenGL implementation
 
+// Desktop only: the 3DS renders through Citro3DRenderBackend
+// (Source/3D/Citro3DBackend.swift over ports/3DS/common/c3d_renderer.c) -
+// there is no GL implementation on that platform anymore (picaGL was
+// removed), and the 3DS SDL_opengl.h stub deliberately declares no gl*
+// prototypes so this class couldn't compile there anyway.
+#if !NANOSAUR_3DS
+
 final class GLRenderBackend: RenderBackend {
     // glActiveTexture/glClientActiveTexture must be fetched as proc
     // addresses (necessary on Windows; harmless on macOS). Loaded by
@@ -610,7 +617,9 @@ final class GLRenderBackend: RenderBackend {
     func setWireframe(_ enabled: Bool) {
         glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(enabled ? GL_LINE : GL_FILL))
     }
-    func present() { SDL_GL_SwapWindow(gSDLWindow) }
+    func present() {
+        SDL_GL_SwapWindow(gSDLWindow)
+    }
 
     func rendererInfo() -> String {
         let rendererStr = String(cString: glGetString(GLenum(GL_RENDERER))!)
@@ -680,3 +689,5 @@ final class GLRenderBackend: RenderBackend {
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
     func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
 }
+
+#endif // !NANOSAUR_3DS

@@ -85,3 +85,44 @@ func free2DArray<T>(_ array: UnsafeMutablePointer<UnsafeMutablePointer<T>?>?) {
     SafeDisposePtr(array[0])
     SafeDisposePtr(array)
 }
+
+// MARK: - Located fatal/assert helpers
+//
+// These own the SwFatal*/SwGameAssert* names outright (their old C inlines
+// were removed from MenuInternal.h/SwiftInternal.h - an imported C
+// declaration wins Swift overload resolution, which would silently defeat
+// these) so every fatal error and failed assertion reports WHERE it fired.
+// Before this, a failed SwGameAssert could only say "GAME_ASSERT failed",
+// which made a 3DS level-load crash undiagnosable from the SD log. All of
+// them funnel into SwFatalRaw (SwiftInternal.h), the one C sink around
+// variadic DoFatalAlert.
+
+private func swLocation(_ file: StaticString, _ line: UInt, _ function: StaticString) -> String {
+    let fileStr = file.withUTF8Buffer { String(decoding: $0, as: UTF8.self) }
+    let funcStr = function.withUTF8Buffer { String(decoding: $0, as: UTF8.self) }
+    return "\(fileStr):\(line) \(funcStr)"
+}
+
+func SwFatal(_ message: String, file: StaticString = #fileID, line: UInt = #line, function: StaticString = #function) {
+    "\(message) [\(swLocation(file, line, function))]".withCString { SwFatalRaw($0) }
+}
+
+func SwFatal2(_ a: String, _ b: String, file: StaticString = #fileID, line: UInt = #line, function: StaticString = #function) {
+    SwFatal("\(a): \(b)", file: file, line: line, function: function)
+}
+
+func SwFatalAlert(_ message: String, file: StaticString = #fileID, line: UInt = #line, function: StaticString = #function) {
+    SwFatal(message, file: file, line: line, function: function)
+}
+
+func SwGameAssert(_ cond: Bool, file: StaticString = #fileID, line: UInt = #line, function: StaticString = #function) {
+    if !cond {
+        SwFatal("GAME_ASSERT failed", file: file, line: line, function: function)
+    }
+}
+
+func SwGameAssertMessage(_ cond: Bool, _ message: String, file: StaticString = #fileID, line: UInt = #line, function: StaticString = #function) {
+    if !cond {
+        SwFatal(message, file: file, line: line, function: function)
+    }
+}

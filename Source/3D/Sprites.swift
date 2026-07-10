@@ -112,9 +112,15 @@ func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesN
         var numStr = String(i)
         while numStr.count < 3 { numStr = "0" + numStr }
         let path = ":Sprites:\(seriesNameStr):\(seriesNameStr)\(numStr)"
+        #if DEBUGLOG
+        "LoadSpriteGroupFromSeries: \(path)".withCString { DebugLog($0) }
+        #endif
         group[Int(i)] = LoadSpriteFromDualImage(path)
         SwGameAssert(group[Int(i)].materialObject != nil)
     }
+    #if DEBUGLOG
+    "LoadSpriteGroupFromSeries(\(seriesNameStr)): done.".withCString { DebugLog($0) }
+    #endif
 }
 
 func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ spritePaths: [String]) {

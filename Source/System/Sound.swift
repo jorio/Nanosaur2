@@ -202,6 +202,9 @@ func InitSoundTools() {
         gEngine.sound.channels.append(chan)
         gEngine.sound.numAllocatedChannels += 1
     }
+    #if DEBUGLOG
+    "InitSoundTools: numAllocatedChannels=\(gEngine.sound.numAllocatedChannels) (of \(maxChannels) requested)".withCString { DebugLog($0) }
+    #endif
 
     // SONG CHANNEL
 
@@ -274,13 +277,17 @@ func LoadSoundBank(_ bank: UInt8) {
 
         // FIND FSSPEC TO EFFECT FILE
 
+        #if DEBUGLOG
+        "LoadSoundBank: effect \(i): \(effectDef.name ?? "?")".withCString { DebugLog($0) }
+        #endif
+
         var spec = FSSpec()
         var iErr: OSErr = kNoErr
         var matchedExt = ""
 
         for ext in kSoundExts {
             let path = ":Audio:\(gSoundBankNames[Int(effectDef.bank)] ?? ""):\(effectDef.name ?? "").\(ext)"
-            iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
+            iErr = ResolveDataFileSpec(path, &spec)
             if iErr == kNoErr { // if the file exists, stop; otherwise try next extension
                 matchedExt = ext
                 break
@@ -294,7 +301,13 @@ func LoadSoundBank(_ bank: UInt8) {
 
         gEngine.sound.effectPCM[i] = loadDecodedPCM(&spec, isMP3: matchedExt == "mp3")
         SwGameAssertMessage(gEngine.sound.effectPCM[i] != nil, "failed to decode sound effect")
+        #if DEBUGLOG
+        DebugLog("  ...decoded")
+        #endif
     }
+    #if DEBUGLOG
+    DebugLog("LoadSoundBank: all effects loaded.")
+    #endif
 }
 
 // MARK: - Dispose sound bank
@@ -381,7 +394,7 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 
     let song = gSongs[Int(songNum)]
 
-    let iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, song.path, &spec)
+    let iErr = ResolveDataFileSpec(song.path, &spec)
     SwGameAssert(iErr == kNoErr)
 
     guard let pcm = loadDecodedPCM(&spec, isMP3: true) else {
@@ -738,6 +751,14 @@ func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
 // MARK: - Find silent channel
 
 private func findSilentChannel() -> Int16 {
+    if gEngine.sound.numAllocatedChannels <= 0 { // no channels were successfully allocated at all
+        // (seen on 3DS 2026-07-09: the first effect-channel SDL audio
+        // stream failed to open while the later music stream succeeded,
+        // leaving the channel list empty - without this guard, the repeat
+        // loop below subscripts channels[0] before its bound check and traps)
+        return -1
+    }
+
     var theChan = gEngine.sound.mostRecentChannel + 1 // start on channel after the most recently acquired one - assuming it has the best chance of being silent
     if theChan >= gEngine.sound.numAllocatedChannels {
         theChan = 0

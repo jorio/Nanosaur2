@@ -7,10 +7,15 @@
 // cannot move and stay where they are.
 
 final class GameEngine {
-    /// Active rendering backend. GL by default; SwMetalBackend_Activate
-    /// swaps in the Metal backend under --metal during draw-context
-    /// creation, before any drawing happens.
+    /// Active rendering backend. Desktop: GL by default, with
+    /// SwMetalBackend_Activate swapping in the Metal backend under --metal
+    /// during draw-context creation, before any drawing happens.
+    /// 3DS: citro3d (Citro3DBackend.swift over c3d_renderer.c).
+    #if NANOSAUR_3DS
+    var renderer: RenderBackend = Citro3DRenderBackend()
+    #else
     var renderer: RenderBackend = GLRenderBackend()
+    #endif
 
     /// Object system: master ObjNode list, per-move coord/delta scratch,
     /// autofade settings, slot storage (see Objects.swift).
@@ -68,7 +73,12 @@ final class GameEngine {
     let enemies = EnemySystem()
     let items = ItemSystem()
     let skeletons = SkeletonSystem()
+    // MetalBackendHolder is defined in MetalActivation.swift, which the 3DS
+    // build excludes entirely (it `import MetalRenderer`s, a separate
+    // desktop-only module - see ports/3DS/Makefile's ENGINE_SWIFT comment).
+    #if !NANOSAUR_3DS
     let metalBackend = MetalBackendHolder()
+    #endif
 
     /// HUD + screen-flow state.
     let infobar = InfobarSystem()

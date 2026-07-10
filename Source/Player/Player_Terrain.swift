@@ -577,7 +577,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // HIDE SMOKE TRAIL IF FIRST-PERSON
 
     let particleGroup = Int16(theNode.pointee.Special.5) // SmokeParticleGroup
-    let magicNum = UInt32(theNode.pointee.Special.4) // SmokeParticleMagic
+    let magicNum = UInt32(truncatingIfNeeded: theNode.pointee.Special.4) // SmokeParticleMagic
 
     if particleGroup != -1 && VerifyParticleGroupMagicNum(particleGroup, magicNum) != 0 {
         if GetCameraMode(playerNum) == UInt8(CameraMode.firstPerson.rawValue) {
@@ -598,11 +598,11 @@ private func MakePlayerSmoke(_ theNode: UnsafeMutablePointer<ObjNode>) {
         theNode.pointee.SpecialF.4 += 0.02 // reset timer
 
         var particleGroup = Int16(theNode.pointee.Special.5) // SmokeParticleGroup
-        let magicNum = UInt32(theNode.pointee.Special.4) // SmokeParticleMagic
+        let magicNum = UInt32(truncatingIfNeeded: theNode.pointee.Special.4) // SmokeParticleMagic
 
         if (particleGroup == -1) || (VerifyParticleGroupMagicNum(particleGroup, magicNum) == 0) {
             let newMagicNum = MyRandomLong()
-            theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
+            theNode.pointee.Special.4 = Int(bitPattern: UInt(newMagicNum)) // SmokeParticleMagic // (bitPattern/truncating: random UInt32 values exceed Int32.max; plain conversion traps on 32-bit Int - 3DS)
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum

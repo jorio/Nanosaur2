@@ -64,7 +64,9 @@ public func CleanQuit() -> Never {
         ShutdownSound() // cleanup sound stuff
     }
 
-    SDL_ShowCursor()
+    #if !NANOSAUR_3DS
+    SDL_ShowCursor() // no pointer cursor to restore on a 3DS touchscreen
+    #endif
     MyFlushEvents()
 
     SwExitToShell()
@@ -148,7 +150,11 @@ public func AllocPtr(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 <= 0x7FFFFFFF)
 
     let size = size0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
+    #if NANOSAUR_3DS
+    let p = malloc(size)
+    #else
     let p = SDL_malloc(size)
+    #endif
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
@@ -168,7 +174,11 @@ func AllocPtrClear(_ size0: Int) -> UnsafeMutableRawPointer? {
     SwGameAssert(size0 <= 0x7FFFFFFF)
 
     let size = size0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
+    #if NANOSAUR_3DS
+    let p = calloc(1, size)
+    #else
     let p = SDL_calloc(1, size)
+    #endif
     SwGameAssert(p != nil)
 
     let cookiePtr = p!.assumingMemoryBound(to: UInt32.self)
@@ -195,7 +205,11 @@ public func ReallocPtr(_ initialPtr: UnsafeMutableRawPointer?, _ newSize0: Int) 
     var p = initialPtr - PTRCOOKIE_SIZE // back up pointer to cookie
     let newSize = newSize0 + PTRCOOKIE_SIZE // make room for our cookie & whatever else (also keep to 16-byte alignment!)
 
+    #if NANOSAUR_3DS
+    p = realloc(p, newSize)! // reallocate it
+    #else
     p = SDL_realloc(p, newSize)! // reallocate it
+    #endif
 
     let cookiePtr = p.assumingMemoryBound(to: UInt32.self)
     SwGameAssert(cookiePtr[0] == kCookieFACE) // realloc shouldn't have touched our cookie
@@ -225,7 +239,11 @@ public func SafeDisposePtr(_ ptr: UnsafeMutableRawPointer?) {
 
     cookiePtr[0] = kCookieDEAD // zap cookie
 
+    #if NANOSAUR_3DS
+    free(p)
+    #else
     SDL_free(p)
+    #endif
 
     gNumPointersStorage -= 1
 }
@@ -276,13 +294,15 @@ public func SwBlockMove(_ srcPtr: UnsafeRawPointer?, _ destPtr: UnsafeMutableRaw
 // Seconds since the classic Mac epoch (Jan 1 1904) - replaces Pomme's
 // GetDateTime, same offset from the UNIX epoch it used
 // (extern/Pomme/src/Time/TimeManager.cpp).
-private let kMacEpochOffsetFromUnixEpoch = -2_082_844_800
+private let kMacEpochOffsetFromUnixEpoch: Int64 = -2_082_844_800
 
 @c @implementation
 public func SwGetDateTime(_ secs: UnsafeMutablePointer<UInt>?) {
-    var now: Int = 0
-    _ = time(&now)
-    secs?.pointee = UInt(bitPattern: now + kMacEpochOffsetFromUnixEpoch)
+    // SwTimeNow (file.h), not a raw time() call: time_t's spelling differs
+    // per platform, and calling time() with the wrong pointer width
+    // clobbered this function's stack frame and hung 3DS boot - see the
+    // prototype comment in file.h (2026-07-09).
+    secs?.pointee = UInt(truncatingIfNeeded: SwTimeNow() + kMacEpochOffsetFromUnixEpoch)
 }
 
 // Replaces Pomme's ExitToShell(), which unwound the C++/Swift call stack
@@ -330,13 +350,20 @@ func CalcFramesPerSecond() {
                 fps = DEFAULT_FPS
             } else if fps > MAX_FPS { // limit to avoid issue
                 if fps - MAX_FPS > 1000 { // try to sneak in some sleep if we have 1 ms to spare
+                    #if !NANOSAUR_3DS
                     SDL_Delay(1)
+                    #endif
+                    // 3DS: no real sleep call available without pulling in
+                    // <3ds.h> wholesale (see game_3ds.h's Handle-collision
+                    // comment) - just busy-spin instead, matching what
+                    // happens here today whenever this branch fires without
+                    // 1ms to spare anyway.
                 }
                 continue
             }
         }
 
-        #if _DEBUG
+        #if _DEBUG && !NANOSAUR_3DS
         if SwIsKeyDown(Int(SDL_SCANCODE_KP_PLUS.rawValue)) { // debug speed-up with KP_PLUS
             fps = DEFAULT_FPS
         }

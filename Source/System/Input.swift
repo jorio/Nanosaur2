@@ -56,6 +56,12 @@ private struct Gamepad {
 }
 
 
+// See PlatformBackend.swift - raw digital-input polling is the one seam in
+// this file that's genuinely swappable per-platform (3DS hid vs SDL
+// keyboard). The polled states land in gEngine.input.keyboardStates like
+// everything else; only the raw poll itself is backend-specific.
+private var gInputBackend = PlatformInput()
+private var gRawDigitalInputStates = [Bool](repeating: false, count: Int(SDL_SCANCODE_COUNT.rawValue))
 
 
 // MARK: - Init input
@@ -98,17 +104,10 @@ func InvalidateAllInputs() {
 }
 
 private func updateRawKeyboardStates() {
-    let keystate = SDL.keyboardState
+    gInputBackend.pollDigitalInputs(into: &gRawDigitalInputStates)
 
-    let minNumKeys = min(keystate.count, Int(SDL_SCANCODE_COUNT.rawValue))
-
-    for i in 0..<minNumKeys {
-        updateKeyState(&gEngine.input.keyboardStates[i], keystate[i])
-    }
-
-    // fill out the rest
-    for i in minNumKeys..<Int(SDL_SCANCODE_COUNT.rawValue) {
-        updateKeyState(&gEngine.input.keyboardStates[i], false)
+    for i in 0..<gRawDigitalInputStates.count {
+        updateKeyState(&gEngine.input.keyboardStates[i], gRawDigitalInputStates[i])
     }
 }
 
@@ -225,6 +224,18 @@ func DoSDLMaintenance() {
     gEngine.input.mouseMotionNow = false
     var mouseWheelDeltaX: Int32 = 0
     var mouseWheelDeltaY: Int32 = 0
+
+    // 3DS: aptMainLoop() must be polled regularly to service APT's
+    // sleep/suspend/home-button protocol - without it, nothing ever acks
+    // APT's events and it gets stuck forever (observed as the app hanging
+    // partway through boot, spinning on GSPGPU_ReleaseRight/
+    // ReplySleepQuery with no further progress). Desktop has no equivalent
+    // requirement, so this only runs on 3DS.
+    #if NANOSAUR_3DS
+    if !aptMainLoop() {
+        CleanQuit() // -> SwExitToShell() (Misc.swift) -> exit(0), noreturn
+    }
+    #endif
 
     // DO SDL MAINTENANCE
 

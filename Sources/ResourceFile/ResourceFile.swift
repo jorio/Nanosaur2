@@ -34,6 +34,20 @@ public enum ResourceFileParsingError: Error, Sendable, Equatable {
     case compressedResourceUnsupported
 }
 
+// See BG3DFile.swift's bg3dThrow for why this is needed: ThrownParsingError
+// aliases the concrete ParsingError type (with no user-error payload) under
+// Embedded Swift, so ResourceFileParsingError's specific cases can't be
+// carried through there - downgrades to a plain `.invalidValue` status.
+#if $Embedded
+private func resourceFileThrow(_ error: ResourceFileParsingError) -> ParsingError {
+    ParsingError(statusOnly: .invalidValue)
+}
+#else
+private func resourceFileThrow(_ error: ResourceFileParsingError) -> ResourceFileParsingError {
+    error
+}
+#endif
+
 public struct ResourceFileEntry: Sendable, Equatable {
     public var type: UInt32 // OSType, e.g. 'Bone'
     public var id: Int16
@@ -63,7 +77,7 @@ public struct ResourceFile: Sendable, Equatable {
 }
 
 extension ResourceFile: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         // These .rsrc files aren't raw resource-fork data - they're wrapped
         // in AppleDouble format (the standard way to store a classic Mac
         // resource fork as a standalone file on a non-HFS filesystem; see
@@ -75,7 +89,7 @@ extension ResourceFile: ExpressibleByParsing {
         // the classic resource-fork format below.
         let adfMagic = try UInt64(parsingBigEndian: &input)
         guard adfMagic == 0x0005_1607_0002_0000 else {
-            throw ResourceFileParsingError.notAppleDouble
+            throw resourceFileThrow(.notAppleDouble)
         }
         input = try input.seeking(toRelativeOffset: 16) // filler
         let numEntries = Int(try UInt16(parsingBigEndian: &input))
@@ -91,7 +105,7 @@ extension ResourceFile: ExpressibleByParsing {
             }
         }
         guard let resForkOffset else {
-            throw ResourceFileParsingError.noResourceForkEntry
+            throw resourceFileThrow(.noResourceForkEntry)
         }
 
         var forkInput = try input.seeking(toAbsoluteOffset: resForkOffset)
@@ -127,7 +141,7 @@ extension ResourceFile: ExpressibleByParsing {
 
                 let resFlags = UInt8((packedAttr & 0xFF00_0000) >> 24)
                 guard (resFlags & 1) == 0 else {
-                    throw ResourceFileParsingError.compressedResourceUnsupported
+                    throw resourceFileThrow(.compressedResourceUnsupported)
                 }
                 let resDataOff = dataSectionOff + Int(packedAttr & 0x00FF_FFFF)
 

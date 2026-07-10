@@ -26,7 +26,22 @@ extern long long lseek(int fd, long long offset, int whence);
 extern int mkdir(const char* path, unsigned short mode);
 extern int unlink(const char* path);
 extern int access(const char* path, int mode);
-extern long time(long* tloc); // time_t is a typedef for a signed integer; long matches its size on this platform
+// time_t is 64-bit on BOTH platforms, but spelled differently: macOS's is
+// `long` (8 bytes on LP64, and the SDK's own <time.h> declaration - which
+// C++ TUs like Boot.cpp also see - must be matched EXACTLY or C++ rejects
+// the conflicting redeclaration), while devkitARM newlib's is
+// __int_least64_t = `long long` (ARM32 `long` is only 4 bytes - declaring
+// it as long* there let the real time() write 8 bytes through a 4-byte
+// pointer, clobbering SwGetDateTime's stack frame and hanging 3DS boot;
+// found 2026-07-09). SwTimeNow gives Swift one platform-independent
+// signature so Misc.swift doesn't need its own #if over the two widths.
+#ifdef __3DS__
+extern long long time(long long* tloc);
+static inline long long SwTimeNow(void) { long long t = 0; time(&t); return t; }
+#else
+extern long time(long* tloc);
+static inline long long SwTimeNow(void) { long t = 0; time(&t); return (long long)t; }
+#endif
 
 // Swift can't call variadic C functions - this non-variadic wrapper always
 // passes a mode (harmless when SwO_CREAT isn't set, since it's ignored).

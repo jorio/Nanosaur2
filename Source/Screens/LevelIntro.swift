@@ -185,10 +185,10 @@ private func setupLevelIntroScreen() {
 
     // LOAD MODELS
 
-    SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:playerparts.bg3d", &spec)
+    ResolveDataFileSpec(":Models:playerparts.bg3d", &spec)
     ImportBG3D(&spec, Int32(MODEL_GROUP_PLAYER), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
-    SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, ":Models:levelintro.bg3d", &spec)
+    ResolveDataFileSpec(":Models:levelintro.bg3d", &spec)
     ImportBG3D(&spec, Int32(MODEL_GROUP_LEVELINTRO), Int16(VertexArrayRangeType.bg3dModels.rawValue))
 
     // LOAD SPRITES

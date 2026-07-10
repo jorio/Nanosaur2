@@ -623,7 +623,7 @@ private func getExtentsFromMetrics(_ metrics: TextMetrics) -> OGLRect {
 
 func TextMesh_Update(_ text: String, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
     let font = gEngine.atlases.pool[Int(textNode.pointee.Group)]!
-    let codepoints = text.unicodeScalars.map(\.value)
+    let codepoints = text.unicodeScalars.map { $0.value } // closure, not \.value: key paths aren't supported in Embedded Swift (3DS)
 
     // Get mesh from ObjNode
     let mesh = GetQuadMeshWithin(textNode)
@@ -739,7 +739,7 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
     SwGameAssert(Int(groupNum) < Int(MAX_ATLASES))
 
     let font = gEngine.atlases.pool[Int(groupNum)]!
-    let codepoints = text.unicodeScalars.map(\.value)
+    let codepoints = text.unicodeScalars.map { $0.value } // closure, not \.value: key paths aren't supported in Embedded Swift (3DS)
 
     // GET TEXT METRICS
     var metrics = TextMetrics()

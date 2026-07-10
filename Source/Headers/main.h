@@ -27,6 +27,9 @@
 
 void GameMain(void);
 
+#ifdef NANOSAUR_3DS
+void GameMainCreditsPOC(void); // Source/System/Main.swift - TEMPORARY 3DS proof-of-concept entry point
+#endif
 
 // Phase 2 real Metal backend activation (Source/3D/MetalActivation.swift).
 // Called from main() after Boot() when --metal is passed.

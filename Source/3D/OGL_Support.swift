@@ -422,12 +422,20 @@ private func OGL_CreateDrawContext() {
     // game makes behind RenderBackend, except a handful of inherently-GL
     // features (shutter stereo, dual-screen's 2nd context) this backend
     // can't reach anyway.
+    //
+    // Desktop-only: SwMetalBackend_Activate (MetalActivation.swift) isn't
+    // built for 3DS at all (see the 3DS Makefile's ENGINE_SWIFT exclusion
+    // list) - gMetalMode is also never set to true there (no --metal CLI
+    // flag on 3DS), so this is dead at runtime regardless, but the call
+    // still needs to not exist in the compiled/linked 3DS binary.
+    #if !NANOSAUR_3DS
     if gMetalMode != 0 {
         if !SwMetalBackend_Activate() {
             SwFatalAlert("--metal: SwMetalBackend_Activate failed")
         }
         return
     }
+    #endif
 
     // CREATE THE BACKEND'S CONTEXT (GL: SDL context + make-current + vsync
     // + proc loading + capability check - see GLRenderBackend.createContext)
@@ -448,6 +456,22 @@ private func OGL_CreateDrawContext() {
     // producing a visible flicker; redrawing the full frame every time
     // keeps both buffers identical.
 
+    #if NANOSAUR_3DS
+    // 3DS dual-screen: the bottom screen is an SDL software-rendered
+    // window (created in ports/3DS/source/main.cpp on SDL's second - the
+    // bottom - display; gDualScreenMode is only set when it exists).
+    // picaGL renders the TOP screen only and never touches the bottom:
+    // everything down there is plain images blitted through SDL's n3ds
+    // software framebuffer (SDL_GetWindowSurface/SDL_UpdateWindowSurface),
+    // never 3D content. Show the menu background now.
+    if gDualScreenMode != 0 {
+        DrawBottomScreenBackground3DS()
+    }
+    #else
+    // Dual-screen on desktop: a second GL context on a second window,
+    // sharing texture/VBO namespace with gEngine.view.aglContext (set via
+    // SDL_GL_SHARE_WITH_CURRENT_CONTEXT while it's current, right before
+    // creating the second context).
     if gDualScreenMode != 0, let window2 = gSDLWindow2 {
         try? SDL.glSetAttribute(.shareWithCurrentContext, 1)
 
@@ -479,6 +503,7 @@ private func OGL_CreateDrawContext() {
 
         _ = SDL_GL_MakeCurrent(gSDLWindow, gEngine.view.aglContext)
     }
+    #endif
 }
 
 // MARK: - OGL draw scene (dual-screen background)
@@ -488,6 +513,9 @@ private func OGL_CreateDrawContext() {
 // window2 context is currently current. Assumes an orthographic projection
 // matching (windowWidth, windowHeight) is already (or about to be) set up
 // by the caller - this only sets up the modelview matrix.
+// Desktop only (raw GL against the second GL context); the 3DS bottom
+// screen is SDL software blits (DrawBottomScreenBackground3DS).
+#if !NANOSAUR_3DS
 private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: Int32) {
     gEngine.renderer.matrixMode(.projection)
     gEngine.renderer.loadIdentity()
@@ -511,6 +539,7 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
 
     glDisable(GLenum(GL_TEXTURE_2D))
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - OGL: Nuke draw context
 
@@ -519,12 +548,15 @@ private func OGL_DrawDualScreenBackground(_ windowWidth: Int32, _ windowHeight: 
 
 private func OGL_DisposeDrawContext() {
     // The dual-screen bottom window's second context is a GL-only extra,
-    // torn down here before the backend's own context.
+    // torn down here before the backend's own context. Compiles out on
+    // 3DS - see the matching #if in OGL_CreateDrawContext.
+    #if !NANOSAUR_3DS
     if gEngine.view.aglContext2 != nil, let window2 = gSDLWindow2 {
         _ = SDL_GL_MakeCurrent(window2, nil)
         SDL_GL_DestroyContext(gEngine.view.aglContext2)
         gEngine.view.aglContext2 = nil
     }
+    #endif
 
     gEngine.renderer.destroyContext()
 }
@@ -637,36 +669,40 @@ private func OGL_SetStyles(_ setupDefPtr: UnsafeMutablePointer<OGLSetupInputType
 
     // ANISOTRIPIC FILTERING
 
+    #if !NANOSAUR_3DS // raw GL introspection; no equivalent on the PICA200
     if gEngine.view.doAnisotropy, gMetalMode == 0 { // dead flag ("MAJOR PERFORMANCE KILLER") - raw GL introspection, kept guarded
         glGetFloatv(GLenum(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT), &gEngine.view.maxAnisotropy)
         _ = OGL_CheckError()
     }
+    #endif
 }
 
 // MARK: - Clear all buffers to black
 
 private func ClearAllBuffersToBlack() {
     gEngine.renderer.setClearColor(0, 0, 0)
+    #if !NANOSAUR_3DS // shutter stereo needs GL's left/right draw buffers - desktop only
     if isStereoShutter() {
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        SDL_GL_SwapWindow(gSDLWindow)
+        gEngine.renderer.present()
         glDrawBuffer(GLenum(GL_BACK_LEFT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
         glDrawBuffer(GLenum(GL_BACK_RIGHT))
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT) | GLbitfield(GL_DEPTH_BUFFER_BIT))
-        SDL_GL_SwapWindow(gSDLWindow)
-        _ = OGL_CheckError()
-    } else {
-        gEngine.renderer.clearColorAndDepth() // clear buffer
         gEngine.renderer.present()
-        gEngine.renderer.clearColorAndDepth() // clear buffer
-        gEngine.renderer.present()
-
         _ = OGL_CheckError()
+        return
     }
+    #endif
+    gEngine.renderer.clearColorAndDepth() // clear buffer
+    gEngine.renderer.present()
+    gEngine.renderer.clearColorAndDepth() // clear buffer
+    gEngine.renderer.present()
+
+    _ = OGL_CheckError()
 }
 
 // MARK: - OGL: Create lights
@@ -698,8 +734,21 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 
 // MARK: - OGL draw scene
 
+#if DEBUGLOG
+private var gDrawSceneLogCounter = 0
+#endif
+
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
+    // picaGL's top screen framebuffer is a fixed 400x240 regardless of
+    // what SDL3's software-only 3DS backend reports for the real
+    // gSDLWindow it creates (see ports/3DS/source/main.cpp) - use the
+    // known-correct hardware resolution rather than querying it.
+    #if NANOSAUR_3DS
+    gEngine.window.width = 400
+    gEngine.window.height = 240
+    #else
     SDL_GetWindowSizeInPixels(gSDLWindow, &gEngine.window.width, &gEngine.window.height)
+    #endif
 
     if !gEngine.game.viewInfoPtr!.isActive {
         SwFatalAlert("OGL_DrawScene isActive == false")
@@ -716,6 +765,16 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     gEngine.metaObjects.mostRecentMaterial = nil
     gEngine.metaObjects.globalMaterialFlags = 0
     gEngine.metaObjects.globalTransparency = 1.0
+    // Invalidate the color cache before resetting: several draw paths
+    // (fade overlays, IntroStory letterboxes, Atlas debug text, Menu
+    // gradients) call the backend's setColor4f DIRECTLY, bypassing
+    // stateColor - if one of them left the real current color at
+    // black while the cache still says white, this SetColor would be
+    // skipped and every colorless-vertex mesh in the frame renders black
+    // (exactly what happened on 3DS/picaGL, where the fixed color
+    // attribute substitutes for missing color arrays; desktop was only
+    // masked by lighting). Forcing a mismatch guarantees the real call.
+    gEngine.view.stateColor = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
     OGL_SetColor4f(1, 1, 1, 1)
 
     // The original C used `goto do_shutter`/`goto do_anaglyph` to re-run this
@@ -733,6 +792,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         if needClearAndBufferSelect {
             // SET BUFFER FOR SHUTTER GLASSES
 
+            #if !NANOSAUR_3DS // shutter stereo (GL left/right buffers) - desktop only
             if isStereoShutter() {
                 if gEngine.view.anaglyphPass == 0 {
                     glDrawBuffer(GLenum(GL_BACK_LEFT))
@@ -744,6 +804,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
                     SwFatalAlert("OGL_DrawScene: glDrawBuffer()")
                 }
             }
+            #endif
 
             // CLEAR BUFFERS
 
@@ -870,9 +931,21 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // END RENDER
 
+    #if DEBUGLOG
+    // Periodic render-stats heartbeat: distinguishes "no geometry submitted"
+    // (culling/scene-graph problem) from "geometry submitted but invisible"
+    // (matrix/raster problem) without needing the interactive debug HUD.
+    gDrawSceneLogCounter += 1
+    if gDrawSceneLogCounter % 120 == 0 {
+        "OGL_DrawScene: frame=\(gDrawSceneLogCounter) polys=\(gEngine.view.polysThisFrame) objs=\(gEngine.objects.numObjectNodes)".withCString { DebugLog($0) }
+    }
+    #endif
+
+    #if !NANOSAUR_3DS // shutter stereo (GL left/right buffers) - desktop only
     if isStereoShutter() {
         DrawBlueLine(gEngine.window.width, gEngine.window.height)
     }
+    #endif
 
     // SWAP THE BUFFS
 
@@ -893,14 +966,81 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
 // MARK: - OGL draw scene (dual-screen minimap)
 
-// The bottom window is otherwise static (see OGL_CreateDrawContext), but
+// The bottom screen is otherwise static (see OGL_CreateDrawContext), but
 // while a level's overhead map is active, redraw it there every frame,
-// centered and enlarged. Runs as a self-contained excursion onto
-// gEngine.view.aglContext2: OGL_PushState/PopState save and restore the cached GL
-// state flags (gMyState_*) around it, so nothing here can desync context1's
+// centered and enlarged. Runs as a self-contained excursion onto the
+// bottom-screen target: OGL_PushState/PopState save and restore the cached
+// GL state flags around it, so nothing here can desync the main scene's
 // real GL state from what this file's cache believes it to be. Skips
-// entirely (no context switch, no swap) when there's no map to draw, so
-// the bottom window doesn't do needless work outside gameplay.
+// entirely (no target switch, no swap) when there's no map to draw, so
+// the bottom screen doesn't do needless work outside gameplay.
+#if NANOSAUR_3DS
+// MARK: - 3DS bottom screen (SDL software rendering - images only)
+
+// Cached decoded background so re-showing it (e.g. after a minimap phase)
+// doesn't re-hit the SD card. Plain optional var: statically zero-
+// initialized, no lazy-global init code (see
+// feedback_embedded_swift_lazy_globals).
+private var gBottomScreenBackground: UnsafeMutablePointer<SDL_Surface>?
+
+// Decodes <partialPath>.jpg (or .png) into an SDL surface (RGBA8 via
+// stb_image - same decode path as OGL_TextureMap_LoadImageFile, but the
+// pixels go to an SDL software surface instead of a GL texture). Also
+// used by the bottom-screen DebugLog console (BottomLog3DS.swift).
+func LoadSDLSurface3DS(_ partialPath: String) -> UnsafeMutablePointer<SDL_Surface>? {
+    var dummySpec = FSSpec()
+    var path = partialPath + ".jpg"
+    if kNoErr != SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) {
+        path = partialPath + ".png"
+        guard kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) else { return nil }
+    }
+
+    var length = 0
+    guard let data = LoadDataFile(path, &length) else { return nil }
+    defer { SafeDisposePtr(UnsafeMutableRawPointer(data)) }
+
+    var w: Int32 = 0
+    var h: Int32 = 0
+    guard let pixels = stbi_load_from_memory(UnsafeRawPointer(data).assumingMemoryBound(to: UInt8.self), Int32(length), &w, &h, nil, 4) else { return nil }
+    defer { stbi_image_free(pixels) }
+
+    // Wrap the stb buffer, then duplicate so the surface owns its pixels.
+    guard let wrapped = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, pixels, w * 4) else { return nil }
+    defer { SDL_DestroySurface(wrapped) }
+    return SDL_DuplicateSurface(wrapped)
+}
+
+// Stretches the menu background over the whole bottom screen and presents
+// it. Called once at boot (OGL_CreateDrawContext) - the image then just
+// stays up, since SDL's software framebuffer persists between updates.
+func DrawBottomScreenBackground3DS() {
+    guard let window2 = gSDLWindow2, let winSurf = SDL_GetWindowSurface(window2) else { return }
+
+    if gBottomScreenBackground == nil {
+        gBottomScreenBackground = LoadSDLSurface3DS(":Sprites:menu:menuback")
+    }
+
+    if let bg = gBottomScreenBackground {
+        _ = SDL_BlitSurfaceScaled(bg, nil, winSurf, nil, SDL_SCALEMODE_LINEAR)
+    } else {
+        _ = SDL_FillSurfaceRect(winSurf, nil, 0) // black fallback
+    }
+    _ = SDL_UpdateWindowSurface(window2)
+}
+#endif
+
+#if NANOSAUR_3DS
+// 3DS: the bottom screen is SDL-software (images only - see
+// OGL_CreateDrawContext's 3DS branch); the boot-time background stays up
+// as-is. Porting the overhead-map minimap to SDL blits (map image +
+// player markers) is the follow-up here - the GL sprite implementation
+// below (desktop branch) can't run on the bottom screen anymore since
+// picaGL only drives the top screen.
+private func OGL_DrawDualScreenMinimap() {
+    // TODO: blit ":Sprites:maps:<level>" + player markers onto
+    // gSDLWindow2's surface when IsMinimapActive().
+}
+#else
 private func OGL_DrawDualScreenMinimap() {
     guard let window2 = gSDLWindow2, gEngine.view.aglContext2 != nil, IsMinimapActive() else {
         return
@@ -951,11 +1091,13 @@ private func OGL_DrawDualScreenMinimap() {
     _ = SDL_GL_MakeCurrent(gSDLWindow, gEngine.view.aglContext)
     OGL_PopState()
 }
+#endif
 
 // MARK: - Draw blue line
 
-// for stereo blue-line stuff
+// for stereo blue-line stuff (shutter glasses - desktop GL only)
 
+#if !NANOSAUR_3DS
 private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
     glPushAttrib(GLbitfield(GL_ALL_ATTRIB_BITS))
 
@@ -1026,6 +1168,7 @@ private func DrawBlueLine(_ windowWidth: Int32, _ windowHeight: Int32) {
         SwFatalAlert("DrawBlueLine failed")
     }
 }
+#endif // !NANOSAUR_3DS
 
 // MARK: - OGL: Get current viewport
 
@@ -2030,6 +2173,9 @@ private func OGL_InitVertexArrayMemory() {
     // WE'RE DONE
 
     gEngine.view.varMemoryAllocated = true
+    #if DEBUGLOG
+    DebugLog("OGL_InitVertexArrayMemory: master blocks allocated")
+    #endif
 }
 
 // MARK: - OGL: Disable vertex array ranges
@@ -2050,6 +2196,9 @@ private func OGL_DisableVertexArrayRanges() {
     }
 
     gEngine.view.varMemoryAllocated = false
+    #if DEBUGLOG
+    DebugLog("OGL_DisableVertexArrayRanges: master blocks freed")
+    #endif
 }
 
 // MARK: - OGL alloc vertex array memory
@@ -2067,7 +2216,7 @@ func OGL_AllocVertexArrayMemory(_ size: Int, _ type: UInt8) -> UnsafeMutableRawP
 
     // TO BE SAFE, LETS ROUND UP THE SIZE TO THE NEAREST MULTIPLE OF 16
 
-    let roundedSize = (size + 15) & 0xffff_fff0
+    let roundedSize = (size + 15) & ~15
 
     let newNode = AllocPtrClear(MemoryLayout<VertexArrayMemoryNode>.size)!.assumingMemoryBound(to: VertexArrayMemoryNode.self) // allocate the node (assume we'll find room for it below)
     newNode.pointee.size = roundedSize // remember how big a chunk we're allocating
@@ -2194,6 +2343,20 @@ func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt
 
     // IF GETS HERE THEN NO MATCH WAS FOUND
 
+    #if DEBUGLOG
+    // Diagnostic detail: whether the pointer even lies inside the CURRENT
+    // master block for this type - if not, it was allocated against a
+    // previous game view's block (freed+reallocated by OGL_DisposeGameView/
+    // OGL_SetupGameView) and this free is happening too late.
+    let base = UInt(bitPattern: gEngine.view.vertexArrayMemoryBlock[Int(type)])
+    let size = UInt(OGL_MaxMemForVARType(VertexArrayRangeType(rawValue: UInt32(type))!))
+    let p = UInt(bitPattern: pointer)
+    var listLen = 0
+    var walk = gEngine.view.vertexArrayMemoryHead[Int(type)]
+    while let w = walk { listLen += 1; walk = w.pointee.nextNode }
+    "OGL_FreeVertexArrayMemory MISS: ptr=\(String(p, radix: 16)) type=\(type) block=\(String(base, radix: 16))..\(String(base &+ size, radix: 16)) inBlock=\(p >= base && p < base &+ size) listLen=\(listLen)".withCString { DebugLog($0) }
+    #endif
+
     SwFatalAlert("OGL_FreeVertexArrayMemory: no matching pointer found!")
 }
 
@@ -2211,6 +2374,33 @@ func OGL_SetVertexArrayRangeDirty(_ buffer: Int16) {
 // Defines how much RAM to allocate for the Vertex Array Range buffers.
 
 private func OGL_MaxMemForVARType(_ varType: VertexArrayRangeType) -> Int {
+    #if NANOSAUR_3DS
+    // The desktop budgets below total ~38 MB of regular heap, which is most
+    // of the 3DS's whole pool - with the linear heap grown to hold the
+    // citro3d renderer's textures (boot_shim.c), those budgets starved
+    // malloc during level-intro asset loading (AllocPtr assert). These
+    // trimmed budgets total ~20 MB; OGL_AllocVertexArrayMemory fatal-alerts
+    // loudly (with the overflowing type) if any pool turns out too small.
+    switch varType {
+    case .particles1, .particles2:
+        return 2_000_000
+
+    case .bg3dModels:
+        return 4_000_000
+
+    case .terrain:
+        return 8_000_000 // 4 MB overflowed in CreateSuperTileMemoryList (fatal "Master Block full, type 2") - supertile mesh demand doesn't shrink on 3DS
+
+    case .zaps1, .zaps2:
+        return 300_000
+
+    case .skeletons, .skeletons2:
+        return 2_500_000
+
+    default:
+        return 1_000_000
+    }
+    #else
     switch varType {
     case .particles1, .particles2:
         return 6_000_000
@@ -2230,4 +2420,5 @@ private func OGL_MaxMemForVARType(_ varType: VertexArrayRangeType) -> Int {
     default:
         return 1_000_000
     }
+    #endif
 }

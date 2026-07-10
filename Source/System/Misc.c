@@ -11,6 +11,10 @@
 
 #include "game.h"
 
+#ifdef __3DS__
+#include "fatal_shim.h" // ports/3DS/common - real SDL_ShowSimpleMessageBox equivalent doesn't exist on 3DS's software-only SDL backend
+#endif
+
 /*********************** DO ALERT *******************/
 
 void DoAlert(const char* format, ...)
@@ -24,7 +28,13 @@ void DoAlert(const char* format, ...)
 	va_end(args);
 
 	SDL_Log("Nanosaur 2 Alert: %s\n", message);
+#ifdef __3DS__
+	// Non-fatal: just log, don't take over the screen (matches this
+	// function returning normally to its caller). SDL_ShowSimpleMessageBox
+	// doesn't exist on 3DS's software-only SDL backend.
+#else
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
+#endif
 
 	Exit2D();
 }
@@ -43,7 +53,14 @@ void DoFatalAlert(const char* format, ...)
 	va_end(args);
 
 	SDL_Log("Nanosaur 2 Fatal Alert: %s\n", message);
+#ifdef __3DS__
+	// Real message box doesn't exist on 3DS - print to the bottom screen
+	// via libctru's console instead and never return, rather than hanging
+	// invisibly trying (and failing) to show a system dialog.
+	Fatal3DS_Print(message);
+#else
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Nanosaur 2", message, /*gSDLWindow*/NULL);
+#endif
 
 	Exit2D();
 	CleanQuit();

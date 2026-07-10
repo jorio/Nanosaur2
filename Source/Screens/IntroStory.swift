@@ -199,13 +199,25 @@ private let gSlides: [SlideType] = [
 func DoIntroStoryScreen() {
     // SETUP
 
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: setupIntroStoryScreen...")
+    #endif
     setupIntroStoryScreen()
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: MakeFadeEvent...")
+    #endif
     _ = MakeFadeEvent(UInt8(kFadeFlags_In), 2.0)
 
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: PlaySong...")
+    #endif
     PlaySong(Int16(SONG_INTRO), 1)
 
     // LOOP
 
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: entering slideshow loop...")
+    #endif
     gEngine.screens.introStoryEndSlideShow = false
 
     while !gEngine.screens.introStoryEndSlideShow {
@@ -227,11 +239,20 @@ func DoIntroStoryScreen() {
 
     // FADE OUT
 
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: slideshow loop exited, OGL_FadeOutScene...")
+    #endif
     OGL_FadeOutScene(DrawObjects, nil)
 
     // CLEANUP
 
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: freeIntroStoryScreen...")
+    #endif
     freeIntroStoryScreen()
+    #if DEBUGLOG
+    DebugLog("DoIntroStoryScreen: done.")
+    #endif
 }
 
 // MARK: - Setup intro story
@@ -255,20 +276,38 @@ private func setupIntroStoryScreen() {
 
     viewDef.view.clearBackBuffer = 1
 
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: OGL_SetupGameView...")
+    #endif
     OGL_SetupGameView(&viewDef)
 
     // LOAD ART
 
     // LOAD SPRITES
 
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSpriteGroupFromSeries(story)...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(NUM_SLIDES), "story")
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSpriteAtlas(swiss)...")
+    #endif
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT3), ":Sprites:fonts:swiss", Int32(kAtlasLoadFont))
 
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: LoadSoundBank(narration)...")
+    #endif
     LoadSoundBank(UInt8(SOUND_BANK_NARRATION))
 
     // MAKE OBJECTS
 
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: buildSlideShowObjects...")
+    #endif
     buildSlideShowObjects()
+    #if DEBUGLOG
+    DebugLog("setupIntroStoryScreen: done.")
+    #endif
 }
 
 // MARK: - Free intro story

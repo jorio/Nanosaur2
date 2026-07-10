@@ -67,12 +67,28 @@ final class ObjectSystem {
 // MARK: - Object creation
 
 func InitObjectManager() {
+    // NOTE for 3DS: ObjectSystem's objectListStorage/objectDeleteQueueStorage
+    // are instance properties allocated when gEngine is constructed. An
+    // earlier file-scope-lazy-global version of this storage deadlocked
+    // Embedded Swift's lazy-init guard on first touch (see
+    // feedback_embedded_swift_lazy_globals) - if boot ever hangs at the
+    // checkpoint below, gEngine's own lazy init is the first suspect.
+    #if DEBUGLOG
+    "InitObjectManager: sizeof(ObjNode)=\(MemoryLayout<ObjNode>.size) total=\(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)".withCString { DebugLog($0) }
+    #endif
+
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
         (gEngine.objects.objectListStorage + i).isUsed = false
     }
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: cleared isUsed loop")
+    #endif
 
     CreateDummyInitObject()
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: CreateDummyInitObject done")
+    #endif
 
     // INIT LINKED LIST
 
@@ -83,6 +99,9 @@ func InitObjectManager() {
     gEngine.objects.firstNodePtr = nil // no node yet
 
     gEngine.objects.numObjectNodes = 0
+    #if DEBUGLOG
+    DebugLog("InitObjectManager: done")
+    #endif
 }
 
 // We make a dummy ObjNode which is initialized to the default settings
@@ -90,6 +109,9 @@ func InitObjectManager() {
 // this dummy node into them.
 private func CreateDummyInitObject() {
     gEngine.objects.clearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
+    #if DEBUGLOG
+    DebugLog("CreateDummyInitObject: clearedObj allocated")
+    #endif
 
     for i in 0..<Int(MAX_NODE_SPARKLES) { // no sparkles
         sparklesBase(gEngine.objects.clearedObj)[i] = -1

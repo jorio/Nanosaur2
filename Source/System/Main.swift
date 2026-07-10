@@ -744,14 +744,38 @@ private let cMoveTimeDemoOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>
 // MARK: - Load/dispose font used throughout the game
 
 func LoadGlobalAssets() {
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: font atlases...")
+    #endif
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
     LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: cursor...")
+    #endif
     LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_CURSOR), ":Sprites:menu:cursor", 0)
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: infobar...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_INFOBAR), Int32(INFOBAR_SObjType_COUNT), "infobar")
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: global...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_GLOBAL), Int32(GLOBAL_SObjType_COUNT), "global")
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: spheremap...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_SPHEREMAPS), Int32(SPHEREMAP_SObjType_COUNT), "spheremap")
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: particle...")
+    #endif
     LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_COUNT), "particle")
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: BlendAllSpritesInGroup(particles)...")
+    #endif
     BlendAllSpritesInGroup(Int16(SPRITE_GROUP_PARTICLES))
+    #if DEBUGLOG
+    DebugLog("LoadGlobalAssets: done.")
+    #endif
 }
 
 func DisposeGlobalAssets() {
@@ -772,46 +796,99 @@ func DisposeGlobalAssets() {
 public func GameMain() {
     // BOOT STUFF
 
+    #if DEBUGLOG
+    DebugLog("GameMain: ToolBoxInit...")
+    #endif
     ToolBoxInit()
 
     #if !DEBUG
     SDL_HideCursor()
     #endif
 
+    #if DEBUGLOG
+    DebugLog("GameMain: DoWarmUpScreen...")
+    #endif
     DoWarmUpScreen()
 
     // INIT SOME OF MY STUFF
 
+    #if DEBUGLOG
+    DebugLog("GameMain: LoadLocalizedStrings...")
+    #endif
     LoadLocalizedStrings(GameLanguageID(rawValue: Int32(gGamePrefs.language)))
+    #if DEBUGLOG
+    DebugLog("GameMain: InitSpriteManager...")
+    #endif
     InitSpriteManager()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitBG3DManager...")
+    #endif
     InitBG3DManager()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitWindowStuff...")
+    #endif
     InitWindowStuff()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitTerrainManager...")
+    #endif
     InitTerrainManager()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitSkeletonManager...")
+    #endif
     InitSkeletonManager()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitSoundTools...")
+    #endif
     InitSoundTools()
+    #if DEBUGLOG
+    DebugLog("GameMain: InitTwitchSystem...")
+    #endif
     InitTwitchSystem()
 
     // INIT MORE MY STUFF
 
+    #if DEBUGLOG
+    DebugLog("GameMain: InitObjectManager...")
+    #endif
     InitObjectManager()
 
     var someLong: UInt = 0
     SwGetDateTime(&someLong) // init random seed
+    #if DEBUGLOG
+    "GameMain: SwGetDateTime done, someLong=\(someLong)".withCString { DebugLog($0) }
+    #endif
     SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong)) // matches original C's implicit truncation on cast
+    #if DEBUGLOG
+    DebugLog("GameMain: SetMyRandomSeed done")
+    #endif
 
     // PRELOAD SPRITES FOR ENTIRE GAME
 
+    #if DEBUGLOG
+    DebugLog("GameMain: LoadGlobalAssets...")
+    #endif
     LoadGlobalAssets()
 
     // SHOW TITLES
     // (SKIPFLUFF is hardcoded off in this build, so this block always runs.)
 
+    #if DEBUGLOG
+    DebugLog("GameMain: DoLegalScreen...")
+    #endif
     DoLegalScreen()
 
+    // Skip the intro story slideshow on 3DS launch - it's long, and boot
+    // iteration on the emulator/hardware matters more than the fluff.
+    // (It remains reachable however the game itself invokes it elsewhere.)
+    #if !NANOSAUR_3DS
     DoIntroStoryScreen()
+    #endif
 
     // MAIN LOOP
 
+    #if DEBUGLOG
+    DebugLog("GameMain: entering main loop / DoMainMenuScreen...")
+    #endif
     while true {
         gEngine.game.timeDemo = 0
 
@@ -834,3 +911,54 @@ public func GameMain() {
         }
     }
 }
+
+// MARK: - 3DS proof-of-concept entry point (credits scene only)
+//
+// Temporary alternate entry point for bringing up the 3DS port
+// incrementally: skips warm-up/legal/intro-slideshow/main-menu/gameplay
+// entirely and jumps straight to the "flying through the wormhole" credits
+// scene (DoLevelIntroScreen(INTRO_MODE_CREDITS) - see LevelIntro.swift),
+// looping it forever. No audio init (InitSoundTools/InitTwitchSystem)
+// since Pomme's sound mixer is compiled out for this build
+// (-DPOMME_NO_SOUND_MIXER) and this scene doesn't need it. No
+// InitTerrainManager() either - unused by this scene. See
+// ports/3DS/source/main.cpp, which calls this instead of GameMain() for
+// this proof-of-concept build.
+#if NANOSAUR_3DS
+@c @implementation
+public func GameMainCreditsPOC() {
+    ToolBoxInit() // confirmed clean now (maxTexSize fix)
+
+    LoadLocalizedStrings(GameLanguageID(rawValue: Int32(gGamePrefs.language)))
+    InitSpriteManager()
+    InitBG3DManager()
+    InitWindowStuff()
+    InitSkeletonManager()
+    InitObjectManager()
+
+    var someLong: UInt = 0
+    SwGetDateTime(&someLong)
+    SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong))
+
+    // NOT calling the real LoadGlobalAssets(): it also loads cursor/
+    // infobar/global/spheremap sprite groups, none of which are in the
+    // trimmed romfs-poc RomFS (only fonts + particles are) - a missing
+    // file there was hanging boot the same way the maxTexSize bug did.
+    // Load only what the credits scene actually needs.
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT1), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly))
+    LoadSpriteAtlas(Int32(ATLAS_GROUP_FONT2), ":Sprites:fonts:font", Int32(kAtlasLoadFont | kAtlasLoadFontIsUpperCaseOnly | kAtlasLoadAltSkin1))
+    LoadSpriteGroupFromSeries(Int32(SPRITE_GROUP_PARTICLES), Int32(PARTICLE_SObjType_COUNT), "particle")
+    // NOTE: BlendAllSpritesInGroup(SPRITE_GROUP_PARTICLES) deliberately
+    // skipped - bisected to be the trigger for a SwFatal("material == nil"
+    // or "group is empty") that (like the maxTexSize/font-loading issues
+    // above) manifests as an unrecoverable APT/GSP hang via the
+    // message-box path. Only sets an always-blend flag on particle
+    // sprite materials (used for gun-turret sparkle glow) - cosmetic,
+    // not required for the credits scene to render correctly enough to
+    // prove the pipeline works. Worth root-causing properly later.
+
+    while true {
+        DoLevelIntroScreen(UInt8(INTRO_MODE_CREDITS))
+    }
+}
+#endif

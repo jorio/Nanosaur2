@@ -10,6 +10,23 @@ public enum BG3DParsingError: Error, Sendable, Equatable {
     case unknownTag(UInt32)
 }
 
+// ThrownParsingError is `any Error` in non-Embedded builds (so any error
+// type, including BG3DParsingError, throws through unchanged) but aliases
+// the concrete `ParsingError` type under Embedded Swift (ports/3DS build),
+// which has no user-error payload in that configuration (ParsingError's
+// `init(userError:)` and `userError` property are both `#if !$Embedded`) -
+// there's no way to carry BG3DParsingError's specific case through, so this
+// downgrades to a plain `.invalidValue` status there instead.
+#if $Embedded
+private func bg3dThrow(_ error: BG3DParsingError) -> ParsingError {
+    ParsingError(statusOnly: .invalidValue)
+}
+#else
+private func bg3dThrow(_ error: BG3DParsingError) -> BG3DParsingError {
+    error
+}
+#endif
+
 /// One entry in the tag-stream body of a BG3D file. `.endFile` is not
 /// represented here — reaching it ends parsing.
 public enum BG3DChunk: Sendable, Equatable {
@@ -41,9 +58,9 @@ public struct BG3DFile: Sendable, Equatable {
 }
 
 extension BG3DFile: ExpressibleByParsing {
-    public init(parsing input: inout ParserSpan) throws {
+    public init(parsing input: inout ParserSpan) throws(ThrownParsingError) {
         let header = try BG3DHeader(parsing: &input)
-        guard header.isValid else { throw BG3DParsingError.invalidMagic }
+        guard header.isValid else { throw bg3dThrow(.invalidMagic) }
         self.header = header
 
         var chunks: [BG3DChunk] = []
@@ -58,7 +75,7 @@ extension BG3DFile: ExpressibleByParsing {
         while true {
             let rawTag = try UInt32(parsingBigEndian: &input)
             guard let tag = BG3DTag(rawValue: rawTag) else {
-                throw BG3DParsingError.unknownTag(rawTag)
+                throw bg3dThrow(.unknownTag(rawTag))
             }
 
             switch tag {
@@ -98,32 +115,32 @@ extension BG3DFile: ExpressibleByParsing {
                 chunks.append(.geometry(geoHeader))
 
             case .vertexArray:
-                let points = try Array(parsing: &input, count: currentNumPoints) {
-                    try BG3DPoint3D(parsing: &$0)
+                let points = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
+                    try BG3DPoint3D(parsing: &span)
                 }
                 chunks.append(.vertexArray(points))
 
             case .normalArray:
-                let normals = try Array(parsing: &input, count: currentNumPoints) {
-                    try BG3DPoint3D(parsing: &$0)
+                let normals = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
+                    try BG3DPoint3D(parsing: &span)
                 }
                 chunks.append(.normalArray(normals))
 
             case .uvArray:
-                let uvs = try Array(parsing: &input, count: currentNumPoints) {
-                    try BG3DTextureCoord(parsing: &$0)
+                let uvs = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
+                    try BG3DTextureCoord(parsing: &span)
                 }
                 chunks.append(.uvArray(uvs))
 
             case .colorArray:
-                let colors = try Array(parsing: &input, count: currentNumPoints) {
-                    try BG3DColorRGBAByte(parsing: &$0)
+                let colors = try Array(parsing: &input, count: currentNumPoints) { (span: inout ParserSpan) throws(ThrownParsingError) in
+                    try BG3DColorRGBAByte(parsing: &span)
                 }
                 chunks.append(.colorArray(colors))
 
             case .triangleArray:
-                let triangles = try Array(parsing: &input, count: currentNumTriangles) {
-                    try BG3DTriangle(parsing: &$0)
+                let triangles = try Array(parsing: &input, count: currentNumTriangles) { (span: inout ParserSpan) throws(ThrownParsingError) in
+                    try BG3DTriangle(parsing: &span)
                 }
                 chunks.append(.triangleArray(triangles))
 

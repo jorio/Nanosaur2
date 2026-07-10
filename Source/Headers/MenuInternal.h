@@ -101,8 +101,10 @@ typedef struct
 
 // ---- Swift-compatible inline wrappers for C macros ----
 
-static inline void SwFatal(const char* msg) { DoFatalAlert("%s", msg); }
-static inline void SwFatal2(const char* a, const char* b) { DoFatalAlert("%s: %s", a, b); }
+// SwFatal/SwFatal2 live in Swift now (SwiftSupport.swift) so fatal errors
+// report their #fileID:#line #function. No C code ever called these; they
+// existed only for Swift import, and an imported C declaration wins Swift
+// overload resolution, which would defeat the located Swift versions.
 
 static inline bool SwIsKeyDown(long sc) { return GetKeyState((uint16_t)sc) == KEYSTATE_DOWN; }
 static inline bool SwIsKeyHeld(long sc) { return GetKeyState((uint16_t)sc) == KEYSTATE_HELD; }
@@ -115,7 +117,9 @@ static inline bool SwIsNeedHeld(long need, long player) { return GetNeedState((i
 static inline bool SwIsNeedActive(long need, long player) { return (KEYSTATE_ACTIVE_BIT & GetNeedState((int)need, (int)player)) != 0; }
 static inline bool SwIsNeedUp(long need, long player) { return GetNeedState((int)need, (int)player) == KEYSTATE_UP; }
 
-static inline void SwGameAssert(bool cond) { if (!cond) DoFatalAlert("GAME_ASSERT failed"); }
+// SwGameAssert also lives in Swift now (SwiftSupport.swift) - same
+// located-diagnostics reasoning as SwFatal above; its old C inline could
+// only say "GAME_ASSERT failed", which made crashes undiagnosable.
 static inline float SwGameClampF(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
 static inline int SwGameClampI(int x, int lo, int hi) { return x < lo ? lo : (x > hi ? hi : x); }
 

@@ -3,11 +3,14 @@ import PackageDescription
 
 // NOTE: this package currently only defines the standalone, independently
 // tested parser libraries (BG3DFile, ResourceFile). The full CNanosaur2Core/
-// Pomme/Nanosaur2Swift/Nanosaur2Exe targets from the CMake->SwiftPM migration
-// are commented out below - that migration is paused (see
+// Nanosaur2Swift/Nanosaur2Exe targets from the CMake->SwiftPM migration are
+// commented out below - that migration is paused (see
 // project_nanosaur2_spm_migration in memory) and its file moves were
 // reverted, so those targets' `path:`s no longer exist. Re-enable them (and
-// restore the moves) when that migration resumes.
+// restore the moves) when that migration resumes. The project no longer
+// depends on Pomme at all (removed entirely, including from the 3DS port),
+// so that target is gone too - CNanosaur2Core/Nanosaur2Exe below no longer
+// reference it.
 
 let package = Package(
     name: "Nanosaur2",
@@ -50,59 +53,15 @@ let package = Package(
 
         /* Paused pending SPM migration resuming - see note above.
 
-        // MARK: - Pomme (Mac-toolbox-on-SDL compatibility layer)
-        //
-        // Mirrors extern/Pomme/CMakeLists.txt's POMME_NO_GRAPHICS/INPUT/VIDEO/QD3D=true
-        // configuration (Nanosaur2 does its own OpenGL rendering and SDL input
-        // handling, and doesn't use Pomme's QuickDraw 3D or QuickTime video code).
-        .target(
-            name: "Pomme",
-            path: "extern/Pomme/src",
-            exclude: [
-                "Graphics",
-                "Input",
-                "Video",
-                "QD3D",
-                "Platform/Windows",
-            ],
-            // Pomme's real public surface (Pomme.h, PommeInit.h, etc.) lives
-            // flat alongside its .cpp files, mixed across several
-            // subdirectories - not a layout SPM's public-headers validator
-            // accepts directly (naming Pomme.h as the umbrella conflicts with
-            // the sibling source directories). Nothing needs to `import
-            // Pomme` as a Clang module; CNanosaur2Core/Nanosaur2Exe reach its
-            // headers via their own explicit headerSearchPath instead. This
-            // points at a placeholder directory (SPMPublicHeaders/) that
-            // nothing else includes into - pointing it at a real subdirectory
-            // like CompilerSupport/ causes a "module Pomme is needed but has
-            // not been provided" error the moment another target's raw
-            // #include reaches a header under that same subdirectory, since
-            // Clang then considers it part of the Pomme module.
-            publicHeadersPath: "SPMPublicHeaders",
-            cxxSettings: [
-                .define("POMME_NO_GRAPHICS"),
-                .define("POMME_NO_INPUT"),
-                .define("POMME_NO_VIDEO"),
-                .define("POMME_NO_QD3D"),
-                .headerSearchPath("."),
-                .unsafeFlags(sdlFrameworkSearchPath),
-            ],
-            linkerSettings: [
-                .unsafeFlags(sdlLinkFlags)
-            ]
-        ),
-
         // MARK: - CNanosaur2Core (remaining C surface: real data tables, C-variadic
         // functions, platform code, and the game's ~50 shared C headers)
 
         .target(
             name: "CNanosaur2Core",
-            dependencies: ["Pomme"],
             path: "Sources/CNanosaur2Core",
             publicHeadersPath: "SPMPublicHeaders",
             cSettings: [
                 .headerSearchPath("include"),
-                .headerSearchPath("../../extern/Pomme/src"),
                 .unsafeFlags(sdlFrameworkSearchPath),
             ],
             linkerSettings: [
@@ -139,7 +98,6 @@ let package = Package(
                 .unsafeFlags([
                     "-import-objc-header", "Sources/CNanosaur2Core/include/Nanosaur2-Bridging-Header.h",
                     "-Xcc", "-I", "-Xcc", "Sources/CNanosaur2Core/include",
-                    "-Xcc", "-I", "-Xcc", "extern/Pomme/src",
                     "-Xcc", "-F", "-Xcc", "extern",
                 ]),
             ]
@@ -150,10 +108,9 @@ let package = Package(
 
         .executableTarget(
             name: "Nanosaur2Exe",
-            dependencies: ["CNanosaur2Core", "Nanosaur2Swift", "Pomme"],
+            dependencies: ["CNanosaur2Core", "Nanosaur2Swift"],
             path: "Sources/Nanosaur2Exe",
             cxxSettings: [
-                .headerSearchPath("../../extern/Pomme/src"),
                 .headerSearchPath("../CNanosaur2Core/include"),
                 .unsafeFlags(sdlFrameworkSearchPath),
             ],

@@ -15,7 +15,6 @@ static const float SwPI2 = PI2;
 static const unsigned short SwALL_SOLID_SIDES = ALL_SOLID_SIDES;
 static const int SwMAX_BG3D_GROUPS = MAX_BG3D_GROUPS;
 
-static inline void SwGameAssertMessage(bool cond, const char* msg) { if (!cond) DoFatalAlert("%s", msg); }
 
 // SDL_Log is variadic, which Swift can't call directly.
 static inline void SwLog(const char* msg) { SDL_Log("%s", msg); }
@@ -23,8 +22,10 @@ static inline void SwLog(const char* msg) { SDL_Log("%s", msg); }
 // DoAlert is variadic, which Swift can't call directly.
 static inline void SwAlert(const char* msg) { DoAlert("%s", msg); }
 
-// DoFatalAlert is variadic, which Swift can't call directly. Callers that
-// need dynamic content should build the string with Swift interpolation
-// first, then pass the finished string here.
-static inline void SwFatalAlert(const char* msg) { DoFatalAlert("%s", msg); }
+// DoFatalAlert is variadic, which Swift can't call directly. This is the
+// single C sink behind every Swift-side fatal/assert helper (SwFatal,
+// SwFatalAlert, SwGameAssert, SwGameAssertMessage - SwiftSupport.swift),
+// which append #fileID:#line #function before funneling the finished
+// string here.
+static inline void SwFatalRaw(const char* msg) { DoFatalAlert("%s", msg); }
 

@@ -338,7 +338,7 @@ private func MovePlayer_AppearWormhole(_ player: UnsafeMutablePointer<ObjNode>) 
 
     if gCoord.y < (GetTerrainY(gCoord.x, gCoord.z) + MAX_ALTITUDE_DIFF) {
         SetCurrentMaxSpeed(playerNum, -gDelta.y) // match speeds when exiting wormhole
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.flap.rawValue), 2)
+        MorphToSkeletonAnim(player.pointee.Skeleton, .flap, 2)
         _ = FadePlayer(player, 1.0) // make sure totally faded in
     }
 
@@ -420,7 +420,7 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     // SPIN PLAYER
 
     if player.pointee.Timer > 0.0 {
-        if PlayerLoseHealth(Int16(p), 0.04 * fps, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 0) != 0 { // lose some health while spinning
+        if PlayerLoseHealth(Int16(p), 0.04 * fps, .explode, &gCoord, 0) != 0 { // lose some health while spinning
             return
         }
 
@@ -609,7 +609,7 @@ private func MakePlayerSmoke(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1058,7 +1058,7 @@ private func MakeJetpackExhaust(_ jetpack: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1195,7 +1195,7 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
 
     if DoFenceCollision(theNode) != 0 {
         killed = true
-        KillPlayer(Int16(playerNum), UInt8(PlayerDeathType.explode.rawValue), &gCoord)
+        KillPlayer(Int16(playerNum), .explode, &gCoord)
     }
 
     // CHECK LINE-SEGMENT COLLISION
@@ -1239,7 +1239,7 @@ private func DoPlayerLineSegmentCollision(_ player: UnsafeMutablePointer<ObjNode
             } else {
                 let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
                 if pi.pointee.invincibilityTimer <= 0.0 { // otherwise, just kill player
-                    KillPlayer(Int16(player.pointee.PlayerNum), UInt8(PlayerDeathType.explode.rawValue), &gCoord)
+                    KillPlayer(Int16(player.pointee.PlayerNum), .explode, &gCoord)
                 }
             }
 
@@ -1331,13 +1331,13 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
         }
 
         if kaboom {
-            killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+            killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, .explode, &gCoord, 1) != 0)
         }
 
         // NOT SO HARD
         else {
             if gDelta.y < -200.0 {
-                killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 0.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+                killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 0.1, .explode, &gCoord, 1) != 0)
             }
 
             DoPlayerGroundScrape(theNode, Int16(playerNum))
@@ -1378,7 +1378,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
             // SEE IF HIT WATER HARD
 
             if gDelta.y < -400.0 {
-                killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+                killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, .explode, &gCoord, 1) != 0)
 
                 splashPt.x = gCoord.x
                 splashPt.y = waterY
@@ -1395,7 +1395,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
                 // SEE IF HIT LAVA
 
                 if isLava {
-                    killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 1.0, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+                    killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 1.0, .explode, &gCoord, 1) != 0)
                 }
 
                 theNode.pointee.Rot.z = DecayToZero(theNode.pointee.Rot.z, SwPI2 * fps)
@@ -1440,14 +1440,14 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 // MARK: - Player smacked into object
 
 // Returns true if player was killed by impact
-func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: Int16) -> UInt8 {
+func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: PlayerDeathType) -> UInt8 {
     let player = playerOpt!
     let hitObj = hitObjOpt!
 
     // HANDLE SPECIAL STUFF BASED ON DEATH TYPE
 
     switch deathType {
-    case Int16(PlayerDeathType.deathDive.rawValue):
+    case .deathDive:
         // DETERMINE WHAT ANGLE TO BOUNCE
 
         let r = player.pointee.Rot.y
@@ -1470,10 +1470,7 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 
         MakeSparkExplosion(&gCoord, 200, 1.0, Int16(PARTICLE_SObjType_RedSpark), 100, 1.0)
 
-    case Int16(PlayerDeathType.explode.rawValue):
-        break
-
-    default:
+    case .explode:
         break
     }
 
@@ -1481,7 +1478,7 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 
     let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
     if pi.pointee.invincibilityTimer <= 0.0 {
-        KillPlayer(Int16(player.pointee.PlayerNum), UInt8(deathType), &gCoord)
+        KillPlayer(Int16(player.pointee.PlayerNum), deathType, &gCoord)
     }
     return 1
 }
@@ -1489,8 +1486,8 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 // MARK: - Set player flying anim
 
 func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
-    let currentAnim = UInt32(player.pointee.Skeleton!.pointee.AnimNum)
-    var desiredAnim: Int32 = -1
+    let currentAnim = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+    var desiredAnim: PlayerAnim?
     var bestDist: Float = 100_000_000
 
     // SEE IF SHOULD GO INTO GRAB ANIM
@@ -1518,7 +1515,7 @@ func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
 
                 let dot = v.dot(player.pointee.MotionVector)
                 if dot > -0.1 {
-                    desiredAnim = Int32(PlayerAnim.readyToGrab.rawValue)
+                    desiredAnim = .readyToGrab
                     bestDist = dist
                 }
             }
@@ -1527,77 +1524,77 @@ func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // SEE WHICH GENERAL FLIGHT ANIM TO USE
 
-    if desiredAnim != Int32(PlayerAnim.readyToGrab.rawValue) { // do we want to be grabbing?
+    if desiredAnim != .readyToGrab { // do we want to be grabbing?
         // SEE IF BANKING RIGHT
 
         if player.pointee.Rot.z < (-Float.pi / 7) {
-            desiredAnim = Int32(PlayerAnim.bankRight.rawValue)
+            desiredAnim = .bankRight
         }
 
         // SEE IF BANKING LEFT
 
         else if player.pointee.Rot.z > (Float.pi / 7) {
-            desiredAnim = Int32(PlayerAnim.bankLeft.rawValue)
+            desiredAnim = .bankLeft
         }
 
         // FLAP / COAST
         else {
-            switch PlayerAnim(rawValue: currentAnim) {
+            switch currentAnim {
             case .flap: // if currently flapping, then see if time to coast
                 player.pointee.SpecialF.3 -= gFramesPerSecondFrac // FlapCoastTimer
                 if player.pointee.SpecialF.3 <= 0.0 {
-                    desiredAnim = Int32(PlayerAnim.coasting.rawValue)
+                    desiredAnim = .coasting
                     player.pointee.SpecialF.3 = 2.0 + RandomFloat() * 3.0
                 } else {
-                    desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                    desiredAnim = .flap
                 }
 
             case .coasting: // if currently coasting, then see if time to flap
                 player.pointee.SpecialF.3 -= gFramesPerSecondFrac // FlapCoastTimer
                 if player.pointee.SpecialF.3 <= 0.0 {
-                    desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                    desiredAnim = .flap
                     player.pointee.SpecialF.3 = 1.0 + RandomFloat() * 3.0
                 } else {
-                    desiredAnim = Int32(PlayerAnim.coasting.rawValue)
+                    desiredAnim = .coasting
                 }
 
             default: // coming out of another anim, so always flap
-                desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                desiredAnim = .flap
                 player.pointee.SpecialF.3 = 1.0 + RandomFloat() * 3.0
             }
         }
     }
 
-    if desiredAnim != Int32(currentAnim) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(desiredAnim), 4.0)
+    if let desiredAnim, desiredAnim != currentAnim {
+        MorphToSkeletonAnim(player.pointee.Skeleton, desiredAnim, 4.0)
     }
 }
 
 // MARK: - Set player flying anim with egg
 
 private func SetPlayerFlyingAnim_WithEgg(_ player: UnsafeMutablePointer<ObjNode>) {
-    let currentAnim = UInt32(player.pointee.Skeleton!.pointee.AnimNum)
-    var desiredAnim: Int32
+    let currentAnim = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+    var desiredAnim: PlayerAnim
 
     // SEE IF BANKING RIGHT
 
     if player.pointee.Rot.z < (-Float.pi / 7) {
-        desiredAnim = Int32(PlayerAnim.bankRightEgg.rawValue)
+        desiredAnim = .bankRightEgg
     }
 
     // SEE IF BANKING LEFT
 
     else if player.pointee.Rot.z > (Float.pi / 7) {
-        desiredAnim = Int32(PlayerAnim.bankLeftEgg.rawValue)
+        desiredAnim = .bankLeftEgg
     }
 
     // FLAP
     else {
-        desiredAnim = Int32(PlayerAnim.flapWithEgg.rawValue)
+        desiredAnim = .flapWithEgg
     }
 
-    if desiredAnim != Int32(currentAnim) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(desiredAnim), 3.0)
+    if desiredAnim != currentAnim {
+        MorphToSkeletonAnim(player.pointee.Skeleton, desiredAnim, 3.0)
     }
 }
 

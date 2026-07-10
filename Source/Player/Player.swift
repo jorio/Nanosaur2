@@ -99,7 +99,7 @@ func InitPlayerInfo_Game() {
 
         pi.pointee.wormhole = nil
 
-        pi.pointee.currentWeapon = Int16(WeaponType.sonicScream.rawValue)
+        pi.currentWeapon = .sonicScream
         weaponQuantityBase(pi)[Int(WeaponType.sonicScream.rawValue)] = 999 // we have infinite of these, but set to 999 anyways
     }
 }
@@ -192,7 +192,7 @@ func InitPlayerAtStartOfLevel() {
 
         pi0.pointee.coord = player.pointee.Coord
 
-        SetSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.appearWormhole.rawValue))
+        SetSkeletonAnim(player.pointee.Skeleton, .appearWormhole)
         player.pointee.Rot.x = -Float(PI) / 2 + wormhole.pointee.Rot.x
 
         FadePlayer(player, -0.99) // start faded out
@@ -208,8 +208,8 @@ func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
         DropEgg_NoWormhole(Int16(playerNum))
     }
 
-    if Int(player.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.disoriented.rawValue) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.disoriented.rawValue), 3.0)
+    if !player.pointee.Skeleton!.isAnim(.disoriented) {
+        MorphToSkeletonAnim(player.pointee.Skeleton, .disoriented, 3.0)
     }
 }
 
@@ -219,7 +219,7 @@ func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 //
 // where is usually gCoord, but if nil then use coord from player's objNode
 
-func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
+func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
     var killed: UInt8 = 0
 
     let pi = GetPlayerInfoEntry(Int32(playerNum))
@@ -258,7 +258,7 @@ func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _
 //
 // where is usually gCoord, but if nil then use coord from player's objNode
 
-func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
+func KillPlayer(_ playerNum: Int16, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
     let player = pi.pointee.objNode!
 
@@ -284,20 +284,17 @@ func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutableP
     pi.pointee.health = 0 // make sure this is set correctly
 
     switch deathType {
-    case UInt8(PlayerDeathType.explode.rawValue):
+    case .explode:
         ExplodePlayer(player, playerNum, where_)
 
-    case UInt8(PlayerDeathType.deathDive.rawValue):
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.deathDive.rawValue), 3.0)
+    case .deathDive:
+        MorphToSkeletonAnim(player.pointee.Skeleton, .deathDive, 3.0)
         let t: Float = 8.0
         SetDeathTimer(Int32(playerNum), t)
         pi.pointee.invincibilityTimer = t
         SetCameraInDeathDiveMode(Int32(playerNum), 1)
         PlayEffect3D(Int16(EFFECT_BODYHIT), &player.pointee.Coord)
         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(playerNum))
-
-    default:
-        break
     }
 
     // SPECIAL STUFF FOR BATTLE MODE
@@ -364,7 +361,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
     let player = pi.pointee.objNode!
 
-    SetSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.coasting.rawValue))
+    SetSkeletonAnim(player.pointee.Skeleton, .coasting)
 
     // FIRST TAKE AWAY A LIFE AND SEE IF IT'S ALL OVER
     switch gVSMode { // not all game modes have lives
@@ -547,7 +544,7 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
 
     // MAKE FIREBALL
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = 0
     gNewParticleGroupDef.gravity = 0
     gNewParticleGroupDef.magnetism = 0
@@ -589,7 +586,7 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
 
     // MAKE SPARKS
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 700
     gNewParticleGroupDef.magnetism = 0
@@ -704,13 +701,13 @@ func PlayerHitByWeaponCallback(_ weapon: UnsafeMutablePointer<ObjNode>, _ player
     // However, some things like the bomb shockwaves will hit both the
     // shield and the player, so be careful.
     if pi.pointee.shieldPower > 0 {
-        if weapon.pointee.Kind == Int32(WeaponType.sonicScream.rawValue) {
+        if weapon.weaponKind == .sonicScream {
             _ = playerShieldHitByWeaponCallback(weapon, pi.pointee.shieldObj, hitCoord, hitNormal)
         }
     }
     // NO SHIELD, SO HURT PLAYER
     else {
-        playerKilled = PlayerLoseHealth(Int16(p), weapon.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+        playerKilled = PlayerLoseHealth(Int16(p), weapon.pointee.Damage, .deathDive, nil, 1)
     }
 
     return playerKilled
@@ -738,10 +735,10 @@ func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMu
     let p1 = trigger.pointee.PlayerNum
     let p2 = theNode.pointee.PlayerNum
 
-    let p1Dead = PlayerLoseHealth(Int16(p1), damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1) != 0
+    let p1Dead = PlayerLoseHealth(Int16(p1), damage, .deathDive, nil, 1) != 0
     GetPlayerInfoEntry(Int32(p1)).pointee.invincibilityTimer = 0.5
 
-    let p2Dead = PlayerLoseHealth(Int16(p2), damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1) != 0
+    let p2Dead = PlayerLoseHealth(Int16(p2), damage, .deathDive, &gCoord, 1) != 0
     GetPlayerInfoEntry(Int32(p2)).pointee.invincibilityTimer = 0.5
 
     PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(p1))

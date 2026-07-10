@@ -147,7 +147,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 // Returns TRUE if want to handle hit as a solid
 private let cDoTrigTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { theNodeOpt, triggerOpt in
-    if PlayerSmackedIntoObject(theNodeOpt, triggerOpt, Int16(PlayerDeathType.explode.rawValue)) != 0 {
+    if PlayerSmackedIntoObject(theNodeOpt, triggerOpt, .explode) != 0 {
         return 0
     }
     return 1
@@ -170,7 +170,7 @@ private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
                 return 0
             }
 
-            PlayerLoseHealth(Int16(p), 0.2, UInt8(PlayerDeathType.deathDive.rawValue), &player.pointee.Coord, 1)
+            PlayerLoseHealth(Int16(p), 0.2, .deathDive, &player.pointee.Coord, 1)
             PlayEffect3D(Int16(EFFECT_BODYHIT), &player.pointee.Coord)
             PlayRumbleEffect(Int16(EFFECT_BODYHIT), p)
             pi.pointee.invincibilityTimer = 0.6
@@ -236,12 +236,12 @@ private let cDoTrigSmallTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, Un
 // MARK: - Tree hit by weapon callback
 
 // Returns true if object should stop bullet.
-private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<OGLPoint3D>?, UnsafeMutablePointer<OGLVector3D>?) -> UInt8 = { _, treeOpt, hitCoord, _ in
+private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<OGLPoint3D>?, UnsafeMutablePointer<OGLVector3D>?) -> UInt8 = { bulletOpt, treeOpt, hitCoord, _ in
     guard let tree = treeOpt else { return 1 }
 
-    switch tree.pointee.Kind {
+    switch bulletOpt?.weaponKind {
     // WEAPONS THAT WILL LIGHT TREE ON FIRE
-    case Int32(WeaponType.blaster.rawValue), Int32(WeaponType.clusterShot.rawValue), Int32(WeaponType.bomb.rawValue), Int32(WeaponType.heatSeeker.rawValue):
+    case .blaster, .clusterShot, .bomb, .heatSeeker:
         if (tree.pointee.Flag.0 == 0) && (hitCoord != nil) { // note:  make sure hitCoord is not nil
             if MyRandomLong() & 0x1 != 0 { // randomly decide if this ignites the tree
                 tree.pointee.MoveCall = cMoveTreeBurning
@@ -253,7 +253,7 @@ private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNo
         }
 
     // WEAPONS THAT FURR THE TREE
-    case Int32(WeaponType.sonicScream.rawValue):
+    case .sonicScream:
         makeLeafConfetti(tree.pointee.Coord.x, gCoord.y, tree.pointee.Coord.z, Int16(PARTICLE_SObjType_Confetti_Birch), 200)
 
     default:
@@ -325,7 +325,7 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = -200
             groupDef.magnetism = 0
@@ -748,9 +748,9 @@ private let cDoTrigFallenSwampTree: @convention(c) (UnsafeMutablePointer<ObjNode
 
     if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         if MyRandomLong() & 1 != 0 {
-            PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+            PlayerLoseHealth(Int16(p), tree.pointee.Damage, .deathDive, nil, 1)
         } else {
-            PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.explode.rawValue), nil, 1)
+            PlayerLoseHealth(Int16(p), tree.pointee.Damage, .explode, nil, 1)
         }
     }
 

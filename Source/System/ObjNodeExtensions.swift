@@ -45,6 +45,14 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         nonmutating set { pointee.HasWorldPoints = newValue ? 1 : 0 }
     }
 
+    /// ObjNode.Kind interpreted as a WeaponType - only meaningful on
+    /// bullet/projectile nodes. (Kind is polysemous: it holds EnemyKind for
+    /// enemies and WhatType for pickable terrain items.)
+    var weaponKind: WeaponType? {
+        get { WeaponType(rawValue: pointee.Kind) }
+        nonmutating set { pointee.Kind = (newValue ?? .none).rawValue }
+    }
+
     func calcRadiusFromBBox() { CalcObjectRadiusFromBBox(self) }
     func resetDisplayGroup() { ResetDisplayGroupObject(self) }
     func attachGeometryToDisplayGroup(_ geometry: MetaObjectPtr?) { AttachGeometryToDisplayGroupObject(self, geometry) }

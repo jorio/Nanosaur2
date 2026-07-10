@@ -13,6 +13,10 @@ extension UnsafeMutablePointer where Pointee == SkeletonObjDataType {
     func morphToAnim(_ animNum: Int, speed: Float) { MorphToSkeletonAnim(self, animNum, speed) }
     func setAnimTime(_ timeRatio: Float) { SetSkeletonAnimTime(self, timeRatio) }
 
+    /// True if AnimNum is currently this player anim (player skeletons only;
+    /// enemy anim numbers are plain Int constants local to each enemy file).
+    func isAnim(_ anim: PlayerAnim) -> Bool { pointee.AnimNum == UInt8(anim.rawValue) }
+
     /// Set when a non-looping anim reaches the end of its sequence.
     var animHasStopped: Bool {
         get { pointee.AnimHasStopped != 0 }

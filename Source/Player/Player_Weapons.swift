@@ -98,9 +98,9 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
     let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
-    let weaponType = pi.pointee.currentWeapon
+    let weaponType = pi.currentWeapon
 
-    if weaponType == Int16(WeaponType.none.rawValue) { // bail if no weapon selected
+    if weaponType == .none { // bail if no weapon selected
         return
     }
 
@@ -110,7 +110,7 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
 
     switch weaponType {
     // BLASTER
-    case Int16(WeaponType.blaster.rawValue):
+    case .blaster:
         if GetAutoFireDelay(playerNum) <= 0.0 {
             ShootBlaster(player)
             SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) + blasterAutoFireDelay)
@@ -118,14 +118,14 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
         }
 
     // CLUSTER SHOT
-    case Int16(WeaponType.clusterShot.rawValue):
+    case .clusterShot:
         if newFireButton != 0 {
             ShootClusterShot(player)
             didShoot = true
         }
 
     // SONIC SCREAM
-    case Int16(WeaponType.sonicScream.rawValue):
+    case .sonicScream:
         if newFireButton != 0 {
             pi.pointee.weaponCharge = 0 // start it charging
         } else {
@@ -140,14 +140,14 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
         }
 
     // HEAT SEEKER
-    case Int16(WeaponType.heatSeeker.rawValue):
+    case .heatSeeker:
         if newFireButton != 0 {
             ShootHeatSeeker(player)
             didShoot = true
         }
 
     // BOMB
-    case Int16(WeaponType.bomb.rawValue):
+    case .bomb:
         if newFireButton != 0 {
             ShootBomb(player)
             didShoot = true
@@ -159,10 +159,10 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
 
     // DEC THE QUANTITY
 
-    if didShoot && (weaponType != Int16(WeaponType.sonicScream.rawValue)) {
+    if didShoot && (weaponType != .sonicScream) {
         let quantity = weaponQuantityBase(pi)
-        quantity[Int(weaponType)] -= 1 // dec bullet count
-        if quantity[Int(weaponType)] <= 0 { // if we're out, try to select next weapon in inventory
+        quantity[Int(weaponType.rawValue)] -= 1 // dec bullet count
+        if quantity[Int(weaponType.rawValue)] <= 0 { // if we're out, try to select next weapon in inventory
             SelectNextWeapon(Int16(playerNum), 0, 1)
         }
     }
@@ -178,9 +178,9 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
     let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
-    let weaponType = pi.pointee.currentWeapon
+    let weaponType = pi.currentWeapon
 
-    if weaponType == Int16(WeaponType.none.rawValue) { // bail if no weapon selected
+    if weaponType == .none { // bail if no weapon selected
         return
     }
 
@@ -188,7 +188,7 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     switch weaponType {
     // SONIC SCREAM
-    case Int16(WeaponType.sonicScream.rawValue):
+    case .sonicScream:
         StopAChannel(&pi.pointee.weaponChargeChannel)
 
         if pi.pointee.weaponCharge > 0.3 { // see if sufficient charge to fire the weapon
@@ -206,8 +206,8 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     if didShoot {
         let quantity = weaponQuantityBase(pi)
-        quantity[Int(weaponType)] -= 1 // dec bullet count
-        if quantity[Int(weaponType)] <= 0 { // if we're out, try to select next weapon in inventory
+        quantity[Int(weaponType.rawValue)] -= 1 // dec bullet count
+        if quantity[Int(weaponType.rawValue)] <= 0 { // if we're out, try to select next weapon in inventory
             SelectNextWeapon(Int16(playerNum), 0, 1)
         }
     }
@@ -224,7 +224,7 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
     pi.pointee.weaponCharge = 0 // make sure not charging
 
     var startWeapon = Int32(pi.pointee.currentWeapon) // get currently selected weapon
-    if startWeapon == Int32(WeaponType.none.rawValue) { // if nothing was selected then just start as though we had the first weapon type
+    if startWeapon == WeaponType.none.rawValue { // if nothing was selected then just start as though we had the first weapon type
         startWeapon = 0
     }
 
@@ -237,11 +237,11 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
         i = PositiveModulo(i, UInt32(numWeaponTypes)) // loop back to front of list?
 
         if i == startWeapon { // did we loop to where we started?
-            if i == Int32(WeaponType.sonicScream.rawValue) { // if already SS, then bail
+            if i == WeaponType.sonicScream.rawValue { // if already SS, then bail
                 return
             }
 
-            i = Int32(WeaponType.sonicScream.rawValue) // must be out of everything, so default to sonic scream
+            i = WeaponType.sonicScream.rawValue // must be out of everything, so default to sonic scream
             StopAChannel(&pi.pointee.weaponChargeChannel) // make sure to stop this
             PlayEffect_Parms(Int16(EFFECT_CHANGEWEAPON), FULL_CHANNEL_VOLUME / 2, FULL_CHANNEL_VOLUME / 2, UInt(NORMAL_CHANNEL_RATE))
             pi.pointee.currentWeapon = Int16(i)
@@ -249,7 +249,7 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
         }
 
         if allowSonicScream == 0 // see if skip sonic scream
-            && i == Int32(WeaponType.sonicScream.rawValue) {
+            && i == WeaponType.sonicScream.rawValue {
             continue
         }
 
@@ -284,7 +284,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.blaster.rawValue)
+    newObj.weaponKind = .blaster
     newObj.pointee.PlayerNum = player.pointee.PlayerNum // remember which player shot this
 
     newObj.pointee.ColorFilter.a = 0.99 // do this just to turn on transparency so it'll glow
@@ -435,7 +435,7 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
     // CREATE NEW PARTICLE GROUP
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 1000
     gNewParticleGroupDef.magnetism = 0
@@ -494,7 +494,7 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
     // CREATE NEW PARTICLE GROUP
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
     gNewParticleGroupDef.gravity = 100
     gNewParticleGroupDef.magnetism = 0
@@ -567,7 +567,7 @@ private func ShootClusterShot(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.clusterShot.rawValue)
+    newObj.weaponKind = .clusterShot
     newObj.pointee.PlayerNum = player.pointee.PlayerNum // remember which player shot this
 
     newObj.pointee.Mode = clusterShotSingle
@@ -616,7 +616,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
 
         let newObj = MakeNewDisplayGroupObject(&def)!
 
-        newObj.pointee.Kind = Int32(WeaponType.clusterShot.rawValue)
+        newObj.weaponKind = .clusterShot
         newObj.pointee.PlayerNum = parentShot.pointee.PlayerNum // remember which player shot this
 
         newObj.pointee.Mode = clusterShotFragment
@@ -717,7 +717,7 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 50
             groupDef.magnetism = 0
@@ -784,7 +784,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.heatSeeker.rawValue)
+    newObj.weaponKind = .heatSeeker
     newObj.pointee.PlayerNum = playerNum // remember which player shot this
 
     let speed = player.pointee.Speed + 300.0
@@ -949,7 +949,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1112,7 +1112,7 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
     // FIRST MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 1000
     gNewParticleGroupDef.magnetism = 0
@@ -1155,7 +1155,7 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
     // MAKE FLAMES
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 0
     gNewParticleGroupDef.magnetism = 0
@@ -1232,7 +1232,7 @@ private func ShootSonicScream(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.sonicScream.rawValue)
+    newObj.weaponKind = .sonicScream
     newObj.pointee.PlayerNum = p // remember which player shot this
 
     newObj.pointee.BoundingSphereRadius = 100 // set the bounding sphere for fence collisions
@@ -1305,7 +1305,7 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 50
             groupDef.magnetism = 0
@@ -1425,7 +1425,7 @@ private func ShootBomb(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.bomb.rawValue)
+    newObj.weaponKind = .bomb
     newObj.pointee.PlayerNum = playerNum // remember which player shot this
 
     newObj.pointee.Rot.x = player.pointee.Rot.x
@@ -1505,7 +1505,7 @@ private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1623,7 +1623,7 @@ private func DoBombImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // FIRST MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 1200
     gNewParticleGroupDef.magnetism = 0
@@ -1666,7 +1666,7 @@ private func DoBombImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // MAKE FLAMES
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 0
     gNewParticleGroupDef.magnetism = 0

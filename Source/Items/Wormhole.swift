@@ -451,7 +451,7 @@ private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNod
     DropEgg_NoWormhole(Int16(player.pointee.PlayerNum)) // drop any egg
     JetpackOff(Int16(player.pointee.PlayerNum))
 
-    MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.enterWormhole.rawValue), 2.0)
+    MorphToSkeletonAnim(player.pointee.Skeleton, .enterWormhole, 2.0)
 
     player.pointee.MotionVector = v2
 

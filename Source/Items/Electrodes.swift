@@ -216,7 +216,7 @@ private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 // Returns TRUE if want to handle hit as a solid
 private let cDoTrigElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { mine, playerOpt in
     let player = playerOpt!
-    _ = PlayerSmackedIntoObject(player, mine, Int16(PlayerDeathType.explode.rawValue))
+    _ = PlayerSmackedIntoObject(player, mine, .explode)
 
     return 1
 }

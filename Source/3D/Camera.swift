@@ -235,7 +235,7 @@ func InitCamera_Terrain(_ playerNum: Int16) {
 
         // SPECIAL INIT FOR WORMHOLE START
 
-        if Int(playerObj.pointee.Skeleton!.pointee.AnimNum) == Int(PlayerAnim.appearWormhole.rawValue) { // if coming out of a wormhole, move camera farther out to init
+        if playerObj.pointee.Skeleton!.isAnim(.appearWormhole) { // if coming out of a wormhole, move camera farther out to init
             let wormhole = GetPlayerInfoEntry(Int32(playerNum)).pointee.wormhole!
 
             r += Float.pi * 0.8
@@ -306,7 +306,7 @@ func UpdateCameras() {
     // the camera from moving.  Once we're out of the wormhole, we
     // accelerate gCameraFromAccel to it's regular value.
 
-    if Int(GetPlayerInfoEntry(0).pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.appearWormhole.rawValue) {
+    if !GetPlayerInfoEntry(0).pointee.objNode!.pointee.Skeleton!.isAnim(.appearWormhole) {
         gCameraFromAccel += fps * 0.6
         if gCameraFromAccel > maxCameraAccel {
             gCameraFromAccel = maxCameraAccel
@@ -346,7 +346,7 @@ func UpdateCameras() {
 
         // SPECIAL FOR DUST DEVIL
 
-        if Int(skeleton.pointee.AnimNum) == Int(PlayerAnim.dustDevil.rawValue) {
+        if skeleton.isAnim(.dustDevil) {
             moveCamera_DustDevil(playerObj)
             continue
         }

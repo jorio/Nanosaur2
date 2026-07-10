@@ -22,6 +22,19 @@ private extension UnsafeMutablePointer where Pointee == ParticleGroupType {
         get { pointee.inPurgeQueue != 0 }
         nonmutating set { pointee.inPurgeQueue = newValue ? 1 : 0 }
     }
+
+    var particleType: ParticleType? {
+        ParticleType(rawValue: Int32(pointee.type))
+    }
+}
+
+// Not private: NewParticleGroup callers across Items/Player/Enemies/Effects
+// fill in gNewParticleGroupDef (or a local groupDef) with this.
+extension NewParticleGroupDefType {
+    var particleType: ParticleType {
+        get { ParticleType(rawValue: Int32(type)) ?? .fallingSparks }
+        set { type = UInt8(newValue.rawValue) }
+    }
 }
 private var gGravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
 private var gNumActiveParticleGroups: Int16 = 0
@@ -392,9 +405,9 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
             rotZ[p] += rotDZ[p] * fps
 
-            switch group.pointee.type {
+            switch group.particleType {
             // FALLING SPARKS
-            case UInt8(ParticleType.fallingSparks.rawValue):
+            case .fallingSparks:
                 coord[p].x += delta[p].x * fps // move it
                 coord[p].y += delta[p].y * fps
                 coord[p].z += delta[p].z * fps
@@ -402,7 +415,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
             // GRAVITOIDS
             //
             // Every particle has gravity pull on other particle
-            case UInt8(ParticleType.gravitoids.rawValue):
+            case .gravitoids:
                 for j in stride(from: Int(MAX_PARTICLES) - 1, through: 0, by: -1) {
                     if p == j { // dont check against self
                         continue
@@ -800,7 +813,7 @@ func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ 
     // white sparks
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
     gNewParticleGroupDef.gravity = -80
     gNewParticleGroupDef.magnetism = 0
@@ -864,7 +877,7 @@ func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ s
     // white sparks
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 200
     gNewParticleGroupDef.magnetism = 0
@@ -936,7 +949,7 @@ func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -998,7 +1011,7 @@ func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePointer<OGL
     // FIRST MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 900
     gNewParticleGroupDef.magnetism = 0
@@ -1056,7 +1069,7 @@ func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
     pt.y = where_.pointee.y
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM)
     gNewParticleGroupDef.gravity = 400
     gNewParticleGroupDef.magnetism = 0
@@ -1121,7 +1134,7 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
             theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
 
             gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            gNewParticleGroupDef.particleType = .fallingSparks
             gNewParticleGroupDef.flags = 0
             gNewParticleGroupDef.gravity = 800
             gNewParticleGroupDef.magnetism = 0
@@ -1198,7 +1211,7 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 
                 var groupDef = NewParticleGroupDefType()
                 groupDef.magicNum = newMagicNum
-                groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+                groupDef.particleType = .fallingSparks
                 groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND) | moreFlags
                 groupDef.gravity = 0
                 groupDef.magnetism = 0
@@ -1262,7 +1275,7 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND) | moreFlags
             groupDef.gravity = -200
             groupDef.magnetism = 0
@@ -1319,7 +1332,7 @@ func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // FIRST MAKE FLAMES
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = -120
     gNewParticleGroupDef.magnetism = 0
@@ -1438,7 +1451,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = 100
             groupDef.magnetism = 0
@@ -1512,7 +1525,7 @@ func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum:
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 1000
             groupDef.magnetism = 0

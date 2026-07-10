@@ -351,11 +351,8 @@ func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // SEE IF DO CONTRAIL ON WINGS
 
-    switch Int32(player.pointee.Skeleton!.pointee.AnimNum) {
-    case Int32(PlayerAnim.flap.rawValue),
-         Int32(PlayerAnim.deathDive.rawValue),
-         Int32(PlayerAnim.dustDevil.rawValue),
-         Int32(PlayerAnim.readyToGrab.rawValue):
+    switch PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum)) {
+    case .flap, .deathDive, .dustDevil, .readyToGrab:
         disconnectPlayerContrails(player, contrailSlots)
         return
 

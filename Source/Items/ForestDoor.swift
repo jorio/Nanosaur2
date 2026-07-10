@@ -256,7 +256,7 @@ private let doTrigForestDoorKey: @convention(c) (UnsafeMutablePointer<ObjNode>?,
 
     destroyForestDoorKey(theNode)
 
-    _ = PlayerSmackedIntoObject(player, theNode, Int16(PlayerDeathType.explode.rawValue))
+    _ = PlayerSmackedIntoObject(player, theNode, .explode)
 
     return 1
 }
@@ -298,7 +298,7 @@ private func destroyForestDoorKey(_ keyHolder: UnsafeMutablePointer<ObjNode>) {
     let y = key.pointee.Coord.y + (250.0 * damDoorScale)
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 300
     gNewParticleGroupDef.magnetism = 0

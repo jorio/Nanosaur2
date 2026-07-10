@@ -12,7 +12,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
     // MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 500
     gNewParticleGroupDef.magnetism = 0

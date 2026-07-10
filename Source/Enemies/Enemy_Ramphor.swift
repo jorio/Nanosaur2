@@ -262,7 +262,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
         // NO SHIELD, SO HURT PLAYER
 
         else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
-            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1)
+            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gCoord, 1)
         }
 
         playerInfo.pointee.invincibilityTimer = 1.0
@@ -309,7 +309,7 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let z = theNode.pointee.Coord.z
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = 0
     gNewParticleGroupDef.gravity = 300
     gNewParticleGroupDef.magnetism = 0

@@ -580,7 +580,7 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
         // NO SHIELD, SO HURT PLAYER
 
         else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
-            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1)
+            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gCoord, 1)
         }
 
         playerInfo.pointee.invincibilityTimer = 1.0

@@ -1165,22 +1165,22 @@ private func infobarDrawWeaponInventory() {
 
     // DRAW ICON
     let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
-    let weaponType = pi.pointee.currentWeapon
-    if Int(weaponType) == Int(WeaponType.none.rawValue) {
+    let weaponType = pi.currentWeapon
+    if weaponType == .none {
         return
     }
 
     var x = weaponX() + WEAPON_SCALE * 0.026
     var y = weaponY() + WEAPON_SCALE * 0.024
 
-    DrawInfobarSprite(x, y, WEAPON_SCALE * 0.45, Int16(Int(INFOBAR_SObjType_Blaster) + Int(weaponType)))
+    DrawInfobarSprite(x, y, WEAPON_SCALE * 0.45, Int16(Int(INFOBAR_SObjType_Blaster) + Int(weaponType.rawValue)))
 
     // DRAW QUANTITY
     x = weaponX() + (WEAPON_SCALE * 0.45)
     y = weaponY() + (WEAPON_SCALE * 0.222)
 
-    if Int(weaponType) != Int(WeaponType.sonicScream.rawValue) { // dont draw quantity for SS since it's infinite
-        Infobar_DrawNumber(Int32(weaponQuantityBase(pi)[Int(weaponType)]), x, y, WEAPON_SCALE * 0.2, 3, 1)
+    if weaponType != .sonicScream { // dont draw quantity for SS since it's infinite
+        Infobar_DrawNumber(Int32(weaponQuantityBase(pi)[Int(weaponType.rawValue)]), x, y, WEAPON_SCALE * 0.2, 3, 1)
     }
     // DRAW SONIC SCREAM BARS
     else {
@@ -1395,12 +1395,12 @@ private func drawAnaglyphCrosshairs() {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
-    if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {
+    if pi.currentWeapon == .bomb {
         return
     }
 
     // DON'T SHOW DURING DUST DEVIL
-    if Int(pi.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) == Int(PlayerAnim.dustDevil.rawValue) {
+    if pi.pointee.objNode!.pointee.Skeleton!.isAnim(.dustDevil) {
         return
     }
 
@@ -1514,12 +1514,12 @@ private func infobarDrawCrosshairs() {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // ONLY SHOW CROSSHAIRS FOR CERTAIN WEAPONS
-    if Int(pi.pointee.currentWeapon) == Int(WeaponType.bomb.rawValue) {
+    if pi.currentWeapon == .bomb {
         return
     }
 
     // DON'T SHOW DURING DUST DEVIL
-    if Int(pi.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) == Int(PlayerAnim.dustDevil.rawValue) {
+    if pi.pointee.objNode!.pointee.Skeleton!.isAnim(.dustDevil) {
         return
     }
 

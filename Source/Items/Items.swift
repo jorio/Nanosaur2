@@ -278,12 +278,12 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
             if dist < 150.0 {
                 dist = pi.pointee.coord.y - theNode.pointee.Coord.y
                 if dist < 700.0 {
-                    if Int(pi.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.disoriented.rawValue) { // play effect on 1st hit
+                    if !pi.pointee.objNode!.pointee.Skeleton!.isAnim(.disoriented) { // play effect on 1st hit
                         PlayEffect3D(Int16(EFFECT_BODYHIT), &pi.pointee.coord)
                         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(i))
                     }
 
-                    _ = PlayerLoseHealth(Int16(i), fps * 0.1, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+                    _ = PlayerLoseHealth(Int16(i), fps * 0.1, .deathDive, nil, 1)
                 }
             }
         }
@@ -303,7 +303,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
             theNode.pointee.ParticleMagicNum = newMagicNum
 
             gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            gNewParticleGroupDef.particleType = .fallingSparks
             gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             gNewParticleGroupDef.gravity = 100
             gNewParticleGroupDef.magnetism = 0
@@ -364,7 +364,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
 // Returns TRUE if want to handle hit as a solid
 func DoTrig_MiscSmackableObject(_ trigger: UnsafeMutablePointer<ObjNode>!, _ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
-    if PlayerSmackedIntoObject(theNode, trigger, Int16(PlayerDeathType.explode.rawValue)) != 0 {
+    if PlayerSmackedIntoObject(theNode, trigger, .explode) != 0 {
         return 0
     }
 

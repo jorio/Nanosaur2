@@ -349,9 +349,9 @@ private let cDoTrigDesertBush: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
 
     if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         if MyRandomLong() & 1 != 0 {
-            _ = PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+            _ = PlayerLoseHealth(Int16(p), tree.pointee.Damage, .deathDive, nil, 1)
         } else {
-            _ = PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.explode.rawValue), nil, 1)
+            _ = PlayerLoseHealth(Int16(p), tree.pointee.Damage, .explode, nil, 1)
         }
     }
 

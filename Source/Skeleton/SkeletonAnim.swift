@@ -83,6 +83,18 @@ func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ a
     GetModelCurrentPosition(skeleton) // update matrices
 }
 
+// PlayerAnim boundary overloads - the player is the only skeleton whose anim
+// numbers are a Swift enum (enemy anims are still plain Int constants local
+// to each enemy file), so these let player call sites drop the
+// Int(...rawValue) cast noise.
+func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ anim: PlayerAnim) {
+    SetSkeletonAnim(skeleton, Int(anim.rawValue))
+}
+
+func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ anim: PlayerAnim, _ speed: Float) {
+    MorphToSkeletonAnim(skeleton, Int(anim.rawValue), speed)
+}
+
 private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>?, _ animNum: Int) {
     guard let skeleton else { return }
 
@@ -545,7 +557,7 @@ func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float
             theNode.pointee.ParticleMagicNum = magicNum
 
             groupDef.magicNum = magicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = -200
             groupDef.magnetism = 0

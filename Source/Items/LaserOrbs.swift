@@ -312,7 +312,7 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let z = theNode.pointee.Coord.z
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = -50
     gNewParticleGroupDef.magnetism = 0
@@ -355,7 +355,7 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 0
     gNewParticleGroupDef.magnetism = 0

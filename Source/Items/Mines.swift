@@ -255,7 +255,7 @@ private let cDoTrig_AirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
     // NO SHIELD, SO KABOOM
 
     else if !gGamePrefs.isKiddieMode { // dont hurt in kiddie mode
-        _ = PlayerSmackedIntoObject(player, mine, Int16(PlayerDeathType.deathDive.rawValue))
+        _ = PlayerSmackedIntoObject(player, mine, .deathDive)
     }
 
     explodeAirMine(mine)
@@ -281,7 +281,7 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
     // FIRST MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 900
     gNewParticleGroupDef.magnetism = 0
@@ -440,7 +440,7 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
             flare.pointee.ParticleMagicNum = newMagicNum
 
             gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            gNewParticleGroupDef.particleType = .fallingSparks
             gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             gNewParticleGroupDef.gravity = -200
             gNewParticleGroupDef.magnetism = 0

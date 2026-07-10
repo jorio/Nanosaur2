@@ -24,7 +24,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     func addWeaponPOW(x: Float, z: Float) -> UInt8 {
         let weaponType = Int16(pointee.parm.0)
 
-        if weaponType == Int16(WeaponType.sonicScream.rawValue) { // since this in an infinite weapon, don't need POW's
+        if weaponType == Int16(WeaponType.sonicScream.rawValue) { // since this is an infinite weapon, don't need POW's
             return 1
         }
 
@@ -184,7 +184,7 @@ private let cDoTrig_WeaponPOW: @convention(c) (UnsafeMutablePointer<ObjNode>?, U
         weaponQuantityBase(pi)[weaponType] = 999
     }
 
-    if pi.pointee.currentWeapon == Int16(WeaponType.none.rawValue) { // if no weapon was selected then select this
+    if pi.currentWeapon == .none { // if no weapon was selected then select this
         pi.pointee.currentWeapon = Int16(weaponType)
     }
 

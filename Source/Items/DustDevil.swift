@@ -393,7 +393,7 @@ private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
             theNode.pointee.ParticleMagicNum = newMagicNum
 
             gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            gNewParticleGroupDef.particleType = .fallingSparks
             gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             gNewParticleGroupDef.gravity = 10
             gNewParticleGroupDef.magnetism = 0
@@ -531,11 +531,11 @@ private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
 
         let player = GetPlayerInfoEntry(Int32(p)).pointee.objNode! // get player ObjNode
 
-        let animNum = Int(player.pointee.Skeleton!.pointee.AnimNum)
-        if animNum == Int(PlayerAnim.deathDive.rawValue) ||
-            animNum == Int(PlayerAnim.appearWormhole.rawValue) ||
-            animNum == Int(PlayerAnim.enterWormhole.rawValue) ||
-            animNum == Int(PlayerAnim.dustDevil.rawValue) {
+        let animNum = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+        if animNum == .deathDive ||
+            animNum == .appearWormhole ||
+            animNum == .enterWormhole ||
+            animNum == .dustDevil {
             continue
         }
 
@@ -572,7 +572,7 @@ private func putPlayerInDirtDevil(_ player: UnsafeMutablePointer<ObjNode>, _ dus
     DropEgg_NoWormhole(Int16(p))
     JetpackOff(Int16(p))
 
-    MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.dustDevil.rawValue), 3.0)
+    MorphToSkeletonAnim(player.pointee.Skeleton, .dustDevil, 3.0)
 
     player.pointee.Timer = 4.0 // set duration of time in dust devil
 

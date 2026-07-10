@@ -325,7 +325,7 @@ private func spewDirtFromHole(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = magicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
             groupDef.gravity = 2000
             groupDef.magnetism = 0

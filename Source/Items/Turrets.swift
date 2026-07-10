@@ -275,7 +275,7 @@ private func explodeTurret(_ base: UnsafeMutablePointer<ObjNode>) {
     let z = base.pointee.Coord.z
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = -50
     gNewParticleGroupDef.magnetism = 0
@@ -318,7 +318,7 @@ private func explodeTurret(_ base: UnsafeMutablePointer<ObjNode>) {
     // MAKE SPARKS
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
     gNewParticleGroupDef.gravity = 100
     gNewParticleGroupDef.magnetism = 0
@@ -418,7 +418,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.blaster.rawValue)
+    newObj.weaponKind = .blaster
 
     newObj.pointee.ColorFilter.a = 0.99 // do this just to turn on transparency so it'll glow
 
@@ -548,7 +548,7 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
     // CREATE NEW PARTICLE GROUP
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
     gNewParticleGroupDef.gravity = 1000
     gNewParticleGroupDef.magnetism = 0
@@ -607,7 +607,7 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
     // CREATE NEW PARTICLE GROUP
 
     gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+    gNewParticleGroupDef.particleType = .fallingSparks
     gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
     gNewParticleGroupDef.gravity = 100
     gNewParticleGroupDef.magnetism = 0

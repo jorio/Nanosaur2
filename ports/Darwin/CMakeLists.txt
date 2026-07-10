@@ -214,6 +214,25 @@ target_link_libraries(Nanosaur2Saver PRIVATE
 # Nanosaur2Saver_Boot). Mirrors ports/3DS/romfs-poc's asset list.
 #------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
+# HEADLESS SMOKE TEST (optional) - offscreen CGL + FBO, same C entry points
+# as the .saver; dumps a rendered frame to a PPM for eyeballing.
+#------------------------------------------------------------------------------
+
+add_executable(SaverSmoke ${CMAKE_CURRENT_SOURCE_DIR}/test/SmokeTest.swift)
+
+target_compile_options(SaverSmoke PRIVATE
+	$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>
+	$<$<COMPILE_LANGUAGE:Swift>:${SAVER}/saver_api.h>
+)
+
+target_link_libraries(SaverSmoke PRIVATE
+	SaverEngine
+	"-framework OpenGL"
+)
+
+#------------------------------------------------------------------------------
+
 # Explicit POST_BUILD copies (MACOSX_PACKAGE_LOCATION on a MODULE bundle
 # only creates the directories under the Ninja generator).
 set(BUNDLE_RES "$<TARGET_BUNDLE_DIR:Nanosaur2Saver>/Contents/Resources/Data")
@@ -243,5 +262,7 @@ add_custom_command(TARGET Nanosaur2Saver POST_BUILD
 		${DATA}/Sprites/particle "${BUNDLE_RES}/Sprites/particle"
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${DATA}/System/strings.csv "${BUNDLE_RES}/System"
-	COMMENT "Copying the wormhole scene's assets into Nanosaur2.saver"
+	# Ad-hoc sign so legacyScreenSaver will load a locally built bundle.
+	COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:Nanosaur2Saver>"
+	COMMENT "Copying the wormhole scene's assets into Nanosaur2.saver + ad-hoc signing"
 	VERBATIM)

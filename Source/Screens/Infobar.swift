@@ -228,6 +228,10 @@ private func makePaneDivider() -> UnsafeMutablePointer<ObjNode> {
 
 // MARK: - Init
 
+// Gameplay HUD setup - not compiled for the screen saver (which only uses
+// the 2D-overlay state functions further down).
+#if !NANOSAUR_SCREENSAVER
+
 func InitInfobar() {
     gEngine.infobar.blinkingEggType = -1
     gEngine.infobar.blinkingEggTimer = 0
@@ -386,6 +390,8 @@ func DisposeInfobar() {
     gEngine.infobar.overheadMapMaterial = nil
 }
 
+#endif // !NANOSAUR_SCREENSAVER (gameplay HUD init)
+
 // MARK: - Set infobar sprite state
 //
 // anaglyphZ: +5...-5 where + values are in front of screen, and - values are in back
@@ -469,6 +475,11 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
 }
 
 // MARK: - Draw infobar
+
+// Everything below draws the gameplay HUD (weapons, health, eggs, map,
+// dual-screen minimap) - the screen saver only needs the 2D-overlay state
+// setup above (Get2DLogicalRect/SetInfobarSpriteState).
+#if !NANOSAUR_SCREENSAVER
 
 private let cDrawInfobar: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
     DrawInfobar(nil)
@@ -1616,3 +1627,5 @@ private func infobarDrawCrosshairs() {
 
     DrawInfobarSprite_Centered(screenCoord.x, screenCoord.y, scale * 0.6, Int16(INFOBAR_SObjType_GunSight_Normal))
 }
+
+#endif // !NANOSAUR_SCREENSAVER (gameplay HUD)

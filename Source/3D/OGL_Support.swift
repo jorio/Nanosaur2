@@ -407,7 +407,9 @@ func OGL_DisposeGameView() {
 
 private func OGL_CreateDrawContext() {
     SwGameAssertMessage(gEngine.view.aglContext == nil, "GL context already exists")
+    #if !NANOSAUR_SCREENSAVER // no SDL window in the screen-saver bundle; the host view owns the GL context
     SwGameAssertMessage(gSDLWindow != nil, "Window must be created before the DC!")
+    #endif
 
     // ACTIVATE THE REAL METAL BACKEND, IF REQUESTED (--metal), AND SKIP GL
     // CONTEXT CREATION ENTIRELY.
@@ -428,7 +430,7 @@ private func OGL_CreateDrawContext() {
     // list) - gMetalMode is also never set to true there (no --metal CLI
     // flag on 3DS), so this is dead at runtime regardless, but the call
     // still needs to not exist in the compiled/linked 3DS binary.
-    #if !NANOSAUR_3DS
+    #if !NANOSAUR_3DS && !NANOSAUR_SCREENSAVER // saver build: GL only, MetalActivation.swift isn't compiled
     if gMetalMode != 0 {
         if !SwMetalBackend_Activate() {
             SwFatalAlert("--metal: SwMetalBackend_Activate failed")
@@ -467,7 +469,7 @@ private func OGL_CreateDrawContext() {
     if gDualScreenMode != 0 {
         DrawBottomScreenBackground3DS()
     }
-    #else
+    #elseif !NANOSAUR_SCREENSAVER // (no SDL nor dual-screen in the screen-saver bundle)
     // Dual-screen on desktop: a second GL context on a second window,
     // sharing texture/VBO namespace with gEngine.view.aglContext (set via
     // SDL_GL_SHARE_WITH_CURRENT_CONTEXT while it's current, right before
@@ -746,6 +748,9 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     #if NANOSAUR_3DS
     gEngine.window.width = 400
     gEngine.window.height = 240
+    #elseif NANOSAUR_SCREENSAVER
+    // The screen-saver host (Nanosaur2SaverView) writes the view's backing
+    // pixel size into gEngine.window before each frame - nothing to query.
     #else
     SDL_GetWindowSizeInPixels(gSDLWindow, &gEngine.window.width, &gEngine.window.height)
     #endif
@@ -889,6 +894,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
     // SEE IF SHOW DEBUG INFO
 
+    #if !NANOSAUR_SCREENSAVER // no input polling in the screen-saver bundle (Input.swift isn't compiled there)
     if SwIsKeyDown(Int(SDL_SCANCODE_F8.rawValue)) {
         gEngine.game.debugMode += 1
         if gEngine.game.debugMode > 3 {
@@ -897,6 +903,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
 
         gEngine.renderer.setWireframe(gEngine.game.debugMode == 3) // see if show wireframe
     }
+    #endif // !NANOSAUR_SCREENSAVER
 
     if gEngine.game.timeDemo != 0 {
         OGL_DrawInt(Int32(gEngine.game.frameNum), 20, 20)
@@ -1264,6 +1271,11 @@ private func OGL_DrawDualScreenMinimap() {
 
     _ = SDL_UpdateWindowSurface(window2)
     gMinimapWasActive3DS = true
+}
+#elseif NANOSAUR_SCREENSAVER
+private func OGL_DrawDualScreenMinimap() {
+    // No dual-screen mode in the screen-saver bundle (gDualScreenMode is
+    // never set; Infobar.swift's minimap code isn't compiled).
 }
 #else
 private func OGL_DrawDualScreenMinimap() {

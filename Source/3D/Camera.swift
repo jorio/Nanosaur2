@@ -219,6 +219,10 @@ func DrawLensFlare() {
 // MARK: -
 
 // MARK: - Init camera: terrain
+
+// Gameplay camera (player follow-cam, dust devils, first person) - the
+// screen saver drives the camera itself via OGL_UpdateCameraFromTo.
+#if !NANOSAUR_SCREENSAVER
 //
 // This MUST be called after the players have been created so that we know
 // where to put the camera.
@@ -547,6 +551,8 @@ private func updateCamera_FirstPerson(_ i: Int16) {
     pi.pointee.camera.cameraLocation = player.pointee.Coord
     pi.pointee.camera.pointOfInterest = to
 }
+
+#endif // !NANOSAUR_SCREENSAVER
 
 // MARK: -
 

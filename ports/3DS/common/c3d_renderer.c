@@ -343,7 +343,13 @@ void C3DR_Init(void)
 
 	memset(&R, 0, sizeof R);
 
-	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE * 2);
+	// 8x the default command buffer: gameplay emits hundreds of draws per
+	// frame (each re-sending attr/buffer configs, uniforms and state), and
+	// heavy frames - explosions, lots of particles - overflowed a 2x
+	// buffer. On overflow citro3d's GPUCMD_AddInternal calls
+	// svcBreak(USERBREAK_PANIC), which is exactly the repeating
+	// "Break reason: PANIC" guest crash Azahar reported during gameplay.
+	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE * 8);
 
 	R.target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
 

@@ -988,20 +988,52 @@ private var gBottomScreenBackground: UnsafeMutablePointer<SDL_Surface>?
 // pixels go to an SDL software surface instead of a GL texture). Also
 // used by the bottom-screen DebugLog console (BottomLog3DS.swift).
 func LoadSDLSurface3DS(_ partialPath: String) -> UnsafeMutablePointer<SDL_Surface>? {
+    // Same file convention as OGL_TextureMap_LoadImageFile: when BOTH
+    // <name>.jpg and <name>.png exist, the JPEG is the color image and the
+    // PNG is its alpha mask; a lone PNG is a plain RGBA image. Loading only
+    // the JPEG (the original behavior here) drew jpg+png sprites - the
+    // minimap frame among them - fully opaque.
     var dummySpec = FSSpec()
-    var path = partialPath + ".jpg"
-    if kNoErr != SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) {
-        path = partialPath + ".png"
-        guard kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &dummySpec) else { return nil }
-    }
-
-    var length = 0
-    guard let data = LoadDataFile(path, &length) else { return nil }
-    defer { SafeDisposePtr(UnsafeMutableRawPointer(data)) }
+    let jpgPath = partialPath + ".jpg"
+    let pngPath = partialPath + ".png"
+    let jpgExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, jpgPath, &dummySpec)
+    let pngExists = kNoErr == SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pngPath, &dummySpec)
 
     var w: Int32 = 0
     var h: Int32 = 0
-    guard let pixels = stbi_load_from_memory(UnsafeRawPointer(data).assumingMemoryBound(to: UInt8.self), Int32(length), &w, &h, nil, 4) else { return nil }
+    var pixels: UnsafeMutablePointer<UInt8>?
+
+    if jpgExists {
+        var length = 0
+        guard let data = LoadDataFile(jpgPath, &length) else { return nil }
+        pixels = stbi_load_from_memory(UnsafeRawPointer(data).assumingMemoryBound(to: UInt8.self), Int32(length), &w, &h, nil, 4)
+        SafeDisposePtr(UnsafeMutableRawPointer(data))
+    }
+
+    if pngExists {
+        var length = 0
+        guard let data = LoadDataFile(pngPath, &length) else {
+            if let pixels { stbi_image_free(pixels) }
+            return nil
+        }
+        if pixels == nil {
+            pixels = stbi_load_from_memory(UnsafeRawPointer(data).assumingMemoryBound(to: UInt8.self), Int32(length), &w, &h, nil, 4)
+        } else {
+            var aw: Int32 = 0
+            var ah: Int32 = 0
+            if let alpha = stbi_load_from_memory(UnsafeRawPointer(data).assumingMemoryBound(to: UInt8.self), Int32(length), &aw, &ah, nil, 1) {
+                if aw == w && ah == h {
+                    for i in 0..<Int(w * h) {
+                        pixels![i * 4 + 3] = alpha[i]
+                    }
+                }
+                stbi_image_free(alpha)
+            }
+        }
+        SafeDisposePtr(UnsafeMutableRawPointer(data))
+    }
+
+    guard let pixels else { return nil }
     defer { stbi_image_free(pixels) }
 
     // Wrap the stb buffer, then duplicate so the surface owns its pixels.
@@ -1031,14 +1063,197 @@ func DrawBottomScreenBackground3DS() {
 
 #if NANOSAUR_3DS
 // 3DS: the bottom screen is SDL-software (images only - see
-// OGL_CreateDrawContext's 3DS branch); the boot-time background stays up
-// as-is. Porting the overhead-map minimap to SDL blits (map image +
-// player markers) is the follow-up here - the GL sprite implementation
-// below (desktop branch) can't run on the bottom screen anymore since
-// picaGL only drives the top screen.
+// OGL_CreateDrawContext's 3DS branch), so the minimap is plain surface
+// blits: this level's overhead-map image (":Sprites:maps:<level>", 512px
+// class), windowed around the player with the same per-level UV math the
+// desktop GL minimap uses (OverheadMapUVWindow, Infobar.swift), drawn
+// north-up with a heading marker. No rotation like desktop's GL quad -
+// SDL surface blits can't rotate, so the marker carries the heading
+// instead.
+
+private var gMinimapSurface3DS: UnsafeMutablePointer<SDL_Surface>?
+private var gMinimapLevel3DS: Int16 = -1
+private var gMinimapWasActive3DS = false
+private var gMinimapFrameCounter3DS: UInt32 = 0
+
+// HUD dressing sprites around the map (same ones desktop's infobarDrawMap
+// uses, loaded from their source images since the GL sprite atlas isn't
+// SDL-reachable). Loaded once, kept for the app's lifetime.
+private var gMinimapLines3DS: UnsafeMutablePointer<SDL_Surface>?
+private var gMinimapFrame3DS: UnsafeMutablePointer<SDL_Surface>?
+private var gMinimapGlass3DS: UnsafeMutablePointer<SDL_Surface>?
+private var gMinimapSpritesLoaded3DS = false
+
+// Scratch surface + precomputed circular alpha mask: the map window is a
+// square blit, but it sits inside a round frame - blit it here first,
+// stamp the circle into its alpha channel, then alpha-blit the disc onto
+// the screen so no square corners poke out of the frame.
+private var gMinimapScratch3DS: UnsafeMutablePointer<SDL_Surface>?
+private var gMinimapCircleMask3DS: [UInt8] = []
+
+private func minimapScratch3DS(_ size: Int32) -> UnsafeMutablePointer<SDL_Surface>? {
+    if let scratch = gMinimapScratch3DS, scratch.pointee.w == size {
+        return scratch
+    }
+    if let old = gMinimapScratch3DS {
+        SDL_DestroySurface(old)
+    }
+    gMinimapScratch3DS = SDL_CreateSurface(size, size, SDL_PIXELFORMAT_RGBA32)
+
+    // Anti-aliased disc mask, computed once per size.
+    let n = Int(size)
+    gMinimapCircleMask3DS = [UInt8](repeating: 0, count: n * n)
+    let radius = Float(n) * 0.5
+    for y in 0..<n {
+        for x in 0..<n {
+            let dx = Float(x) + 0.5 - radius
+            let dy = Float(y) + 0.5 - radius
+            let d = radius - sqrtf(dx * dx + dy * dy)
+            gMinimapCircleMask3DS[y * n + x] = UInt8(max(0, min(255, d * 128)))
+        }
+    }
+    return gMinimapScratch3DS
+}
+
+private func loadMinimapSprites3DS() {
+    gMinimapSpritesLoaded3DS = true
+    gMinimapFrame3DS = LoadSDLSurface3DS(":Sprites:infobar:infobar046") // INFOBAR_SObjType_MapFrame
+    gMinimapGlass3DS = LoadSDLSurface3DS(":Sprites:infobar:infobar047") // INFOBAR_SObjType_MapGlass
+    gMinimapLines3DS = LoadSDLSurface3DS(":Sprites:infobar:infobar049") // INFOBAR_SObjType_MapLines
+    if let glass = gMinimapGlass3DS {
+        _ = SDL_SetSurfaceBlendMode(glass, SDL_BLENDMODE_ADD) // desktop draws it GL_SRC_ALPHA/GL_ONE
+    }
+}
+
 private func OGL_DrawDualScreenMinimap() {
-    // TODO: blit ":Sprites:maps:<level>" + player markers onto
-    // gSDLWindow2's surface when IsMinimapActive().
+    guard let window2 = gSDLWindow2 else { return }
+
+    guard IsMinimapActive() else {
+        if gMinimapWasActive3DS { // back at the menus: put the background back up
+            gMinimapWasActive3DS = false
+            DrawBottomScreenBackground3DS()
+        }
+        return
+    }
+
+    // The bottom screen doesn't need the game's frame rate; SDL software
+    // blits aren't free on the 3DS CPU, so update it at 1/4 rate.
+    gMinimapFrameCounter3DS += 1
+    if gMinimapFrameCounter3DS % 4 != 0 { return }
+
+    guard let winSurf = SDL_GetWindowSurface(window2) else { return }
+
+    // (RE)LOAD THIS LEVEL'S MAP IMAGE
+
+    if gMinimapSurface3DS == nil || gMinimapLevel3DS != gEngine.game.levelNum {
+        if let old = gMinimapSurface3DS {
+            SDL_DestroySurface(old)
+            gMinimapSurface3DS = nil
+        }
+        gMinimapSurface3DS = LoadSDLSurface3DS(":Sprites:maps:\(GetLevelName(gEngine.game.levelNum))")
+        gMinimapLevel3DS = gEngine.game.levelNum
+    }
+    guard let map = gMinimapSurface3DS else { return }
+
+    // CALC THE MAP WINDOW AROUND THE PLAYER (same math as the HUD minimap)
+
+    let pi = GetPlayerInfoEntry(0)
+    let leftEdge = Double(pi.pointee.coord.x * gEngine.terrain.mapToUnitValueFrac)
+    let topEdge = Double(pi.pointee.coord.z * gEngine.terrain.mapToUnitValueFrac)
+    guard let window = OverheadMapUVWindow(leftEdge, topEdge) else { return }
+
+    // BACKGROUND, THEN THE CENTERED MAP WINDOW
+
+    if let bg = gBottomScreenBackground {
+        _ = SDL_BlitSurfaceScaled(bg, nil, winSurf, nil, SDL_SCALEMODE_LINEAR)
+    } else {
+        _ = SDL_FillSurfaceRect(winSurf, nil, 0)
+    }
+
+    if !gMinimapSpritesLoaded3DS {
+        loadMinimapSprites3DS()
+    }
+
+    // Sizes match desktop's proportions: the map quad is 0.8x the frame
+    // sprite (MAP_SCALE2*2 / MAP_SCALE in infobarDrawMap).
+    let kFrameSize: Int32 = 230
+    let kMapSize: Int32 = Int32(Float(kFrameSize) * 0.8)
+    let cx: Int32 = 160
+    let cy: Int32 = 120
+
+    func centeredRect(_ size: Int32) -> SDL_Rect {
+        SDL_Rect(x: cx - size / 2, y: cy - size / 2, w: size, h: size)
+    }
+
+    // BACKING LINES (under the map)
+    if let lines = gMinimapLines3DS {
+        var r = centeredRect(kFrameSize)
+        _ = SDL_BlitSurfaceScaled(lines, nil, winSurf, &r, SDL_SCALEMODE_LINEAR)
+    }
+
+    let mapW = Float(map.pointee.w)
+    let mapH = Float(map.pointee.h)
+    var src = SDL_Rect(
+        x: Int32((window.u - window.visibleRange) * mapW),
+        y: Int32((window.v - window.visibleRange) * mapH),
+        w: Int32(2 * window.visibleRange * mapW),
+        h: Int32(2 * window.visibleRange * mapH))
+    if src.w > map.pointee.w { src.w = map.pointee.w }
+    if src.h > map.pointee.h { src.h = map.pointee.h }
+    src.x = max(0, min(src.x, map.pointee.w - src.w))
+    src.y = max(0, min(src.y, map.pointee.h - src.h))
+
+    if let scratch = minimapScratch3DS(kMapSize) {
+        _ = SDL_BlitSurfaceScaled(map, &src, scratch, nil, SDL_SCALEMODE_LINEAR)
+
+        // Stamp the disc into the alpha channel (RGBA32: alpha at byte 3).
+        if let rawPixels = scratch.pointee.pixels {
+            let pixels = rawPixels.assumingMemoryBound(to: UInt8.self)
+            let pitch = Int(scratch.pointee.pitch)
+            let n = Int(kMapSize)
+            for y in 0..<n {
+                let row = pixels + y * pitch
+                for x in 0..<n {
+                    row[x * 4 + 3] = gMinimapCircleMask3DS[y * n + x]
+                }
+            }
+        }
+
+        var dst = centeredRect(kMapSize)
+        _ = SDL_BlitSurfaceScaled(scratch, nil, winSurf, &dst, SDL_SCALEMODE_NEAREST)
+    }
+
+    // FRAME + GLASS OVERLAYS
+    if let frame = gMinimapFrame3DS {
+        var r = centeredRect(kFrameSize)
+        _ = SDL_BlitSurfaceScaled(frame, nil, winSurf, &r, SDL_SCALEMODE_LINEAR)
+    }
+    if let glass = gMinimapGlass3DS {
+        var r = centeredRect(kFrameSize)
+        _ = SDL_BlitSurfaceScaled(glass, nil, winSurf, &r, SDL_SCALEMODE_LINEAR)
+    }
+
+    // PLAYER MARKER: heading tick + dot at the window center
+
+    let markerColor = SDL_MapSurfaceRGB(winSurf, 255, 40, 40)
+
+    if let objNode = pi.pointee.objNode {
+        let rot = objNode.pointee.Rot.y
+        let dx = -sinf(rot) // world +x = map right; rot 0 faces -z = map up
+        let dz = -cosf(rot)
+        for i in 2...9 {
+            var tick = SDL_Rect(
+                x: cx + Int32(dx * Float(i) * 2) - 1,
+                y: cy + Int32(dz * Float(i) * 2) - 1,
+                w: 2, h: 2)
+            _ = SDL_FillSurfaceRect(winSurf, &tick, markerColor)
+        }
+    }
+    var dot = SDL_Rect(x: cx - 3, y: cy - 3, w: 6, h: 6)
+    _ = SDL_FillSurfaceRect(winSurf, &dot, markerColor)
+
+    _ = SDL_UpdateWindowSurface(window2)
+    gMinimapWasActive3DS = true
 }
 #else
 private func OGL_DrawDualScreenMinimap() {

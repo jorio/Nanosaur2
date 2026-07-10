@@ -848,7 +848,13 @@ public func GameMain() {
 
     var someLong: UInt = 0
     SwGetDateTime(&someLong) // init random seed
+    #if NANOSAUR_3DS
+    "GameMain: SwGetDateTime done, someLong=\(someLong)".withCString { Debug3DS_Log($0) }
+    #endif
     SetMyRandomSeed(UInt32(truncatingIfNeeded: someLong)) // matches original C's implicit truncation on cast
+    #if NANOSAUR_3DS
+    Debug3DS_Log("GameMain: SetMyRandomSeed done")
+    #endif
 
     // PRELOAD SPRITES FOR ENTIRE GAME
 

@@ -241,11 +241,20 @@ func DoIntroStoryScreen() {
 
     // FADE OUT
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: slideshow loop exited, OGL_FadeOutScene...")
+    #endif
     OGL_FadeOutScene(DrawObjects, nil)
 
     // CLEANUP
 
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: freeIntroStoryScreen...")
+    #endif
     freeIntroStoryScreen()
+    #if NANOSAUR_3DS
+    Debug3DS_Log("DoIntroStoryScreen: done.")
+    #endif
 }
 
 // MARK: - Setup intro story

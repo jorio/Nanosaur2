@@ -706,6 +706,10 @@ private func OGL_CreateLights(_ lightDefPtr: UnsafeMutablePointer<OGLLightDefTyp
 
 // MARK: - OGL draw scene
 
+#if NANOSAUR_3DS
+private var gDrawSceneLogCounter = 0
+#endif
+
 func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     // picaGL's top screen framebuffer is a fixed 400x240 regardless of
     // what SDL3's software-only 3DS backend reports for the real
@@ -733,6 +737,16 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     gMostRecentMaterial = nil
     gGlobalMaterialFlags = 0
     gGlobalTransparency = 1.0
+    // Invalidate the color cache before resetting: several draw paths
+    // (fade overlays, IntroStory letterboxes, Atlas debug text, Menu
+    // gradients) call gRenderBackend.setColor4f DIRECTLY, bypassing
+    // gMyState_Color - if one of them left the real current color at
+    // black while the cache still says white, this SetColor would be
+    // skipped and every colorless-vertex mesh in the frame renders black
+    // (exactly what happened on 3DS/picaGL, where the fixed color
+    // attribute substitutes for missing color arrays; desktop was only
+    // masked by lighting). Forcing a mismatch guarantees the real call.
+    gMyState_Color = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
     OGL_SetColor4f(1, 1, 1, 1)
 
     // The original C used `goto do_shutter`/`goto do_anaglyph` to re-run this
@@ -886,6 +900,16 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     }
 
     // END RENDER
+
+    #if NANOSAUR_3DS
+    // Periodic render-stats heartbeat: distinguishes "no geometry submitted"
+    // (culling/scene-graph problem) from "geometry submitted but invisible"
+    // (matrix/raster problem) without needing the interactive debug HUD.
+    gDrawSceneLogCounter += 1
+    if gDrawSceneLogCounter % 120 == 0 {
+        "OGL_DrawScene: frame=\(gDrawSceneLogCounter) polys=\(gPolysThisFrame) objs=\(gNumObjectNodes)".withCString { Debug3DS_Log($0) }
+    }
+    #endif
 
     if isStereoShutter() {
         DrawBlueLine(gGameWindowWidth, gGameWindowHeight)
@@ -2056,6 +2080,9 @@ private func OGL_InitVertexArrayMemory() {
     // WE'RE DONE
 
     gVARMemoryAllocated = true
+    #if NANOSAUR_3DS
+    Debug3DS_Log("OGL_InitVertexArrayMemory: master blocks allocated")
+    #endif
 }
 
 // MARK: - OGL: Disable vertex array ranges
@@ -2076,6 +2103,9 @@ private func OGL_DisableVertexArrayRanges() {
     }
 
     gVARMemoryAllocated = false
+    #if NANOSAUR_3DS
+    Debug3DS_Log("OGL_DisableVertexArrayRanges: master blocks freed")
+    #endif
 }
 
 // MARK: - OGL alloc vertex array memory
@@ -2219,6 +2249,20 @@ func OGL_FreeVertexArrayMemory(_ pointer: UnsafeMutableRawPointer!, _ type: UInt
     }
 
     // IF GETS HERE THEN NO MATCH WAS FOUND
+
+    #if NANOSAUR_3DS
+    // Diagnostic detail: whether the pointer even lies inside the CURRENT
+    // master block for this type - if not, it was allocated against a
+    // previous game view's block (freed+reallocated by OGL_DisposeGameView/
+    // OGL_SetupGameView) and this free is happening too late.
+    let base = UInt(bitPattern: gVertexArrayMemoryBlock[Int(type)])
+    let size = UInt(OGL_MaxMemForVARType(VertexArrayRangeType(rawValue: UInt32(type))!))
+    let p = UInt(bitPattern: pointer)
+    var listLen = 0
+    var walk = gVertexArrayMemory_Head[Int(type)]
+    while let w = walk { listLen += 1; walk = w.pointee.nextNode }
+    "OGL_FreeVertexArrayMemory MISS: ptr=\(String(p, radix: 16)) type=\(type) block=\(String(base, radix: 16))..\(String(base &+ size, radix: 16)) inBlock=\(p >= base && p < base &+ size) listLen=\(listLen)".withCString { Debug3DS_Log($0) }
+    #endif
 
     SwFatalAlert("OGL_FreeVertexArrayMemory: no matching pointer found!")
 }

@@ -5,7 +5,7 @@ private let maxRefPointsInContrail = 50
 private let playerWingContrailAlpha: Float = 0.6
 
 private struct ContrailType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
 
     var width: Float = 0
     var indexPtr: UnsafeMutablePointer<Int16>?
@@ -19,7 +19,10 @@ private struct ContrailType {
     var meshData: InlineArray<2, MOVertexArrayData> = InlineArray(repeating: MOVertexArrayData())
 }
 
-private var gContrails: InlineArray<15, ContrailType> = InlineArray(repeating: ContrailType())
+/// Contrail state. Owned by GameEngine as `gEngine.contrails`.
+final class ContrailSystem {
+    fileprivate var pool: InlineArray<15, ContrailType> = InlineArray(repeating: ContrailType())
+}
 
 @inline(__always) private func contrailSlotBase(_ n: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<Int16> {
     UnsafeMutableRawPointer(n.pointer(to: \.ContrailSlot)!).assumingMemoryBound(to: Int16.self)
@@ -37,24 +40,24 @@ func InitContrails() {
     // INIT THE CONTRAIL LISTS
 
     for i in 0..<maxContrails {
-        gContrails[i].isUsed = 0 // mark as free
+        gEngine.contrails.pool[i].isUsed = false // mark as free
 
         // INIT THE DOUBLE-BUFFERED MESH DATA
 
         for b in 0..<2 {
             let varType = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(b))
-            gContrails[i].meshData[b].VARtype = Int16(varType)
-            gContrails[i].meshData[b].numMaterials = 0
-            gContrails[i].meshData[b].numPoints = 0
-            gContrails[i].meshData[b].numTriangles = 0
-            gContrails[i].meshData[b].normals = nil
-            gContrails[i].meshData[b].colorsFloat = nil
-            gContrails[i].meshData[b].uvs.0 = nil
-            gContrails[i].meshData[b].uvs.1 = nil
+            gEngine.contrails.pool[i].meshData[b].VARtype = Int16(varType)
+            gEngine.contrails.pool[i].meshData[b].numMaterials = 0
+            gEngine.contrails.pool[i].meshData[b].numPoints = 0
+            gEngine.contrails.pool[i].meshData[b].numTriangles = 0
+            gEngine.contrails.pool[i].meshData[b].normals = nil
+            gEngine.contrails.pool[i].meshData[b].colorsFloat = nil
+            gEngine.contrails.pool[i].meshData[b].uvs.0 = nil
+            gEngine.contrails.pool[i].meshData[b].uvs.1 = nil
 
-            gContrails[i].meshData[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * maxRefPointsInContrail * 2), varType)!.assumingMemoryBound(to: OGLPoint3D.self)
-            gContrails[i].meshData[b].colorsFloat = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLColorRGBA>.size * maxRefPointsInContrail * 2), varType)!.assumingMemoryBound(to: OGLColorRGBA.self)
-            gContrails[i].meshData[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * maxRefPointsInContrail * 2 - 2), varType)!.assumingMemoryBound(to: MOTriangleIndecies.self)
+            gEngine.contrails.pool[i].meshData[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * maxRefPointsInContrail * 2), varType)!.assumingMemoryBound(to: OGLPoint3D.self)
+            gEngine.contrails.pool[i].meshData[b].colorsFloat = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLColorRGBA>.size * maxRefPointsInContrail * 2), varType)!.assumingMemoryBound(to: OGLColorRGBA.self)
+            gEngine.contrails.pool[i].meshData[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * maxRefPointsInContrail * 2 - 2), varType)!.assumingMemoryBound(to: MOTriangleIndecies.self)
         }
     }
 
@@ -75,15 +78,15 @@ func InitContrails() {
 func DisposeContrails() {
     for i in 0..<maxContrails {
         for b in 0..<2 {
-            let mesh = gContrails[i].meshData[b]
+            let mesh = gEngine.contrails.pool[i].meshData[b]
 
             OGL_FreeVertexArrayMemory(mesh.points, UInt8(mesh.VARtype))
             OGL_FreeVertexArrayMemory(mesh.colorsFloat, UInt8(mesh.VARtype))
             OGL_FreeVertexArrayMemory(mesh.triangles, UInt8(mesh.VARtype))
 
-            gContrails[i].meshData[b].points = nil
-            gContrails[i].meshData[b].colorsFloat = nil
-            gContrails[i].meshData[b].triangles = nil
+            gEngine.contrails.pool[i].meshData[b].points = nil
+            gEngine.contrails.pool[i].meshData[b].colorsFloat = nil
+            gEngine.contrails.pool[i].meshData[b].triangles = nil
         }
     }
 }
@@ -93,7 +96,7 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
 
     var foundIndex = -1
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed == 0 {
+        if !gEngine.contrails.pool[i].isUsed {
             foundIndex = i
             break
         }
@@ -107,14 +110,14 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
     // INIT THIS CONTRAIL SLOT
 
     let i = foundIndex
-    gContrails[i].isUsed = 1 // make this slot as used
-    gContrails[i].numPoints = 0
-    gContrails[i].nextPointIndex = 0
-    gContrails[i].width = width
-    gContrails[i].indexPtr = contrailNum
+    gEngine.contrails.pool[i].isUsed = true // make this slot as used
+    gEngine.contrails.pool[i].numPoints = 0
+    gEngine.contrails.pool[i].nextPointIndex = 0
+    gEngine.contrails.pool[i].width = width
+    gEngine.contrails.pool[i].indexPtr = contrailNum
 
     for j in 0..<maxRefPointsInContrail {
-        gContrails[i].alphas[j] = 0 // clear all alpha values
+        gEngine.contrails.pool[i].alphas[j] = 0 // clear all alpha values
     }
 
     contrailNum.pointee = Int16(i)
@@ -122,15 +125,15 @@ func MakeNewContrail(_ width: Float, _ contrailNum: UnsafeMutablePointer<Int16>!
 
 func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!, _ aim: UnsafeMutablePointer<OGLVector3D>!, _ alpha: Float) {
     let contrailNum = Int(contrailNum)
-    if gContrails[contrailNum].isUsed == 0 {
+    if !gEngine.contrails.pool[contrailNum].isUsed {
         SwFatal("AddPointToContrail:  bad contrailNum")
     }
 
-    var p = Int(gContrails[contrailNum].nextPointIndex) // get index into ref point list
+    var p = Int(gEngine.contrails.pool[contrailNum].nextPointIndex) // get index into ref point list
 
-    gContrails[contrailNum].alphas[p] = alpha // set initial alpha for this ref pt.
-    gContrails[contrailNum].refPoints[p] = wherePtr.pointee // set coord of ref pt.
-    gContrails[contrailNum].aimVectors[p] = aim.pointee // remember the aim vector at this pt
+    gEngine.contrails.pool[contrailNum].alphas[p] = alpha // set initial alpha for this ref pt.
+    gEngine.contrails.pool[contrailNum].refPoints[p] = wherePtr.pointee // set coord of ref pt.
+    gEngine.contrails.pool[contrailNum].aimVectors[p] = aim.pointee // remember the aim vector at this pt
 
     // INC REF PT INDEX
 
@@ -139,7 +142,7 @@ func AddPointToContrail(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<O
         p = 0
     }
 
-    gContrails[contrailNum].nextPointIndex = Int16(p) // set where next pt will go
+    gEngine.contrails.pool[contrailNum].nextPointIndex = Int16(p) // set where next pt will go
 }
 
 func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: UnsafeMutablePointer<OGLPoint3D>!) {
@@ -147,40 +150,40 @@ func ModifyContrailPreviousAddition(_ contrailNum: Int16, _ wherePtr: UnsafeMuta
     if contrailNum < 0 {
         SwFatal("ModifyContrailPreviousAddition:  bad contrailNum")
     }
-    if gContrails[contrailNum].isUsed == 0 {
+    if !gEngine.contrails.pool[contrailNum].isUsed {
         SwFatal("ModifyContrailPreviousAddition:  bad contrailNum")
     }
 
-    var p = Int(gContrails[contrailNum].nextPointIndex) - 1 // get index into ref point list, then back 1
+    var p = Int(gEngine.contrails.pool[contrailNum].nextPointIndex) - 1 // get index into ref point list, then back 1
     if p < 0 {
         p = maxRefPointsInContrail - 1
     }
 
-    gContrails[contrailNum].refPoints[p] = wherePtr.pointee // set coord of ref pt.
+    gEngine.contrails.pool[contrailNum].refPoints[p] = wherePtr.pointee // set coord of ref pt.
 }
 
 func DisconnectContrail(_ contrailNum: Int16) {
     if contrailNum != -1 {
-        gContrails[Int(contrailNum)].indexPtr = nil
+        gEngine.contrails.pool[Int(contrailNum)].indexPtr = nil
     }
 }
 
 private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
 
-    let fps = gFramesPerSecondFrac
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let fps = gEngine.framesPerSecondFrac
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.contrails1.rawValue) + Int32(buffNum)) // update the VAR range info
 
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed == 0 {
+        if !gEngine.contrails.pool[i].isUsed {
             continue
         }
 
         // GET INDEX TO MOST RECENTLY ADDED REF PT
 
-        var startRefP = Int(gContrails[i].nextPointIndex) - 1
+        var startRefP = Int(gEngine.contrails.pool[i].nextPointIndex) - 1
         if startRefP < 0 {
             startRefP = maxRefPointsInContrail - 1
         }
@@ -190,9 +193,9 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
         var numActivePts = 0 // init ref pt counter
         var refP = startRefP
 
-        while gContrails[i].alphas[refP] > 0.0 {
-            gContrails[i].alphas[refP] -= fps * 0.5 // dec this alpha
-            if gContrails[i].alphas[refP] <= 0.0 { // if the alpha has gone to zero then this is the tail end of the contrail
+        while gEngine.contrails.pool[i].alphas[refP] > 0.0 {
+            gEngine.contrails.pool[i].alphas[refP] -= fps * 0.5 // dec this alpha
+            if gEngine.contrails.pool[i].alphas[refP] <= 0.0 { // if the alpha has gone to zero then this is the tail end of the contrail
                 break
             }
 
@@ -210,8 +213,8 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
         // IF NO ACTIVE PTS THEN DISABLE THE CONTRAIL
 
         if numActivePts == 0 {
-            gContrails[i].isUsed = 0 // not used anymore
-            if let indexPtr = gContrails[i].indexPtr {
+            gEngine.contrails.pool[i].isUsed = false // not used anymore
+            if let indexPtr = gEngine.contrails.pool[i].indexPtr {
                 indexPtr.pointee = -1 // pass -1 back to the index
             }
 
@@ -221,19 +224,19 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
         // BUILD GEOMETRY
 
         if numActivePts < 2 { // it takes at least 2 ref pts to build any geometry
-            gContrails[i].meshData[buffNum].numPoints = 0
-            gContrails[i].meshData[buffNum].numTriangles = 0
+            gEngine.contrails.pool[i].meshData[buffNum].numPoints = 0
+            gEngine.contrails.pool[i].meshData[buffNum].numTriangles = 0
             continue
         }
 
         // SET MESH BASIC INFO
 
-        gContrails[i].meshData[buffNum].numPoints = Int32(numActivePts * 2) // set # pts in geometry
-        gContrails[i].meshData[buffNum].numTriangles = Int32(numActivePts * 2 - 2) // set # triangles in geometry
+        gEngine.contrails.pool[i].meshData[buffNum].numPoints = Int32(numActivePts * 2) // set # pts in geometry
+        gEngine.contrails.pool[i].meshData[buffNum].numTriangles = Int32(numActivePts * 2 - 2) // set # triangles in geometry
 
-        let points = gContrails[i].meshData[buffNum].points! // get ptrs to vertex arrays
-        let triangles = gContrails[i].meshData[buffNum].triangles!
-        let colors = gContrails[i].meshData[buffNum].colorsFloat!
+        let points = gEngine.contrails.pool[i].meshData[buffNum].points! // get ptrs to vertex arrays
+        let triangles = gEngine.contrails.pool[i].meshData[buffNum].triangles!
+        let colors = gEngine.contrails.pool[i].meshData[buffNum].colorsFloat!
 
         refP = startRefP
 
@@ -243,17 +246,17 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
         var remainingActivePts = numActivePts
 
         while remainingActivePts > 0 { // loop thru all active ref pts to build geometry from
-            let refX = gContrails[i].refPoints[refP].x // get ref pt coords
-            let refY = gContrails[i].refPoints[refP].y
-            let refZ = gContrails[i].refPoints[refP].z
+            let refX = gEngine.contrails.pool[i].refPoints[refP].x // get ref pt coords
+            let refY = gEngine.contrails.pool[i].refPoints[refP].y
+            let refZ = gEngine.contrails.pool[i].refPoints[refP].z
 
-            let v = gContrails[i].aimVectors[refP] // get ref pt's aim vector
+            let v = gEngine.contrails.pool[i].aimVectors[refP] // get ref pt's aim vector
 
             // CALC CROSS PRODUCT TO GIVE US THE SIDE VECTOR (AND MULTIPLY BY WIDTH)
 
             var cross = OGLVector3D()
-            cross.x = -v.z * gContrails[i].width
-            cross.z = v.x * gContrails[i].width
+            cross.x = -v.z * gEngine.contrails.pool[i].width
+            cross.z = v.x * gEngine.contrails.pool[i].width
 
             // SET THE COORDS OF THE LEFT & RIGHT VERTICES
 
@@ -277,8 +280,8 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
             // OTHERWISE USE CALCULATION
 
             else {
-                colors[vertexIndex].a = gContrails[i].alphas[refP] * alphaFade
-                colors[vertexIndex + 1].a = gContrails[i].alphas[refP] * alphaFade
+                colors[vertexIndex].a = gEngine.contrails.pool[i].alphas[refP] * alphaFade
+                colors[vertexIndex + 1].a = gEngine.contrails.pool[i].alphas[refP] * alphaFade
 
                 alphaFade += 0.05
                 if alphaFade > 1.0 {
@@ -324,14 +327,14 @@ private let cMoveContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 }
 
 private let cDrawContrails: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     OGL_EnableBlend()
     OGL_DisableTexture2D()
 
     for i in 0..<maxContrails {
-        if gContrails[i].isUsed != 0, gContrails[i].meshData[buffNum].numTriangles > 0 {
-            MO_DrawGeometry_VertexArray(&gContrails[i].meshData[buffNum])
+        if gEngine.contrails.pool[i].isUsed, gEngine.contrails.pool[i].meshData[buffNum].numTriangles > 0 {
+            MO_DrawGeometry_VertexArray(&gEngine.contrails.pool[i].meshData[buffNum])
         }
     }
 }
@@ -351,11 +354,8 @@ func UpdatePlayerContrails(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     // SEE IF DO CONTRAIL ON WINGS
 
-    switch Int32(player.pointee.Skeleton!.pointee.AnimNum) {
-    case Int32(PlayerAnim.flap.rawValue),
-         Int32(PlayerAnim.deathDive.rawValue),
-         Int32(PlayerAnim.dustDevil.rawValue),
-         Int32(PlayerAnim.readyToGrab.rawValue):
+    switch PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum)) {
+    case .flap, .deathDive, .dustDevil, .readyToGrab:
         disconnectPlayerContrails(player, contrailSlots)
         return
 

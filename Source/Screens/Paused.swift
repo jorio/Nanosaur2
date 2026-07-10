@@ -1,20 +1,19 @@
 // Paused.swift - Port of Paused.c (menu trees + DoPaused/DoReallyQuit/OnExitPause)
 
-var gGamePaused: UInt8 = 0
 
-private let RESU_FOURCC: Int32 = 0x72657375
-private let BAIL_FOURCC: Int32 = 0x6261696C
-private let QUIT_FOURCC: Int32 = 0x71756974
+private let RESU_FOURCC: Int32 = fourCC("resu")
+private let BAIL_FOURCC: Int32 = fourCC("bail")
+private let QUIT_FOURCC: Int32 = fourCC("quit")
 
 // MARK: - Pause menu trees
 
 private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gNumPlayers >= 2 ? 0 : Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
+    gEngine.player.numPlayers >= 2 ? 0 : Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
 }
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
-    gActiveSplitScreenMode = gGamePrefs.splitScreenMode
-    PausedInternal_UpdateSplitscreenFOV(gGameViewInfoPtr, GetSplitscreenPaneFOV(), Int32(gNumPlayers))
+    gEngine.view.activeSplitScreenMode = gGamePrefs.splitScreenMode
+    PausedInternal_UpdateSplitscreenFOV(gEngine.game.viewInfoPtr, GetSplitscreenPaneFOV(), Int32(gEngine.player.numPlayers))
 }
 
 private let gPauseMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTreeBuffer([
@@ -43,17 +42,16 @@ private let gReallyQuitMenuTreePtr: UnsafeMutablePointer<MenuItem> = makeMenuTre
     miRoot(),
 ])
 
-private var gMouseCursor: UnsafeMutablePointer<ObjNode>?
 
 private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     SavePrefs() // save prefs in case user touched them
 
-    gGamePaused = 0
+    gEngine.screens.gamePaused = 0
     GrabMouse(1)
     PauseAllChannels(0)
 
-    DeleteObject(gMouseCursor)
-    gMouseCursor = nil
+    DeleteObject(gEngine.screens.pausedMouseCursor)
+    gEngine.screens.pausedMouseCursor = nil
 
     InvalidateAllInputs()
 
@@ -61,10 +59,10 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
     case RESU_FOURCC: // RESUME
         break
     case BAIL_FOURCC: // EXIT
-        gGameViewInfoPtr!.pointee.fadeSound = 1
-        gGameOver = 1
+        gEngine.game.viewInfoPtr!.fadeSound = true
+        gEngine.game.gameOver = 1
     case QUIT_FOURCC: // QUIT
-        gGameViewInfoPtr!.pointee.fadeSound = 1
+        gEngine.game.viewInfoPtr!.fadeSound = true
         CleanQuit()
     default:
         break
@@ -73,19 +71,19 @@ private let cOnExitPause: @convention(c) (Int32) -> Void = { outcome in
 
 func DoPaused() {
     // In single-player, reassign main controller to whoever pressed the start button
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         let whoPressedStart = GetLastControllerForNeedAnyP(Int32(kNeed_UIPause))
         if whoPressedStart >= 0 {
             SetMainController(whoPressedStart)
         }
     }
 
-    gGammaFadeFrac = 1
-    gGamePaused = 1
+    gEngine.window.gammaFadeFrac = 1
+    gEngine.screens.gamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)
 
-    gMouseCursor = MakeMouseCursorObject()
+    gEngine.screens.pausedMouseCursor = MakeMouseCursorObject()
 
     var style = kDefaultMenuStyle
     style.canBackOutOfRootMenu = true
@@ -97,12 +95,12 @@ func DoPaused() {
 }
 
 func DoReallyQuit() {
-    gGammaFadeFrac = 1
-    gGamePaused = 1
+    gEngine.window.gammaFadeFrac = 1
+    gEngine.screens.gamePaused = 1
     GrabMouse(0)
     PauseAllChannels(1)
 
-    gMouseCursor = MakeMouseCursorObject()
+    gEngine.screens.pausedMouseCursor = MakeMouseCursorObject()
 
     var style = kDefaultMenuStyle
     style.canBackOutOfRootMenu = true

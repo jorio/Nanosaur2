@@ -8,7 +8,7 @@ private let maxZaps = 30
 private let maxZapEndpoints = 30
 
 private struct ZapType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
     var numEndpoints = 0
     var alpha: Float = 0
 
@@ -23,8 +23,11 @@ private let zapThickness: Float = 20.0
 private let zapRandomSize: Float = 20.0
 private let endpointOffset: Float = 70.0
 
-private var gZaps = [ZapType](repeating: ZapType(), count: maxZaps)
-private var gZapBuffer: Int16 = 0 // which VAR double buffer? 0 or 1
+/// Electrode-zap state. Owned by GameEngine as `gEngine.zaps`.
+final class ZapSystem {
+    fileprivate var pool = [ZapType](repeating: ZapType(), count: maxZaps)
+    fileprivate var buffer: Int16 = 0 // which VAR double buffer? 0 or 1
+}
 
 @inline(__always) private func vertexArrayUVsBase(_ data: inout MOVertexArrayData) -> UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?> {
     withUnsafeMutablePointer(to: &data) {
@@ -53,7 +56,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = electrodeScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 161
         def.moveCall = cMoveElectrode
         def.rot = 0
@@ -127,7 +130,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { poleOpt in
     guard let pole = poleOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let isAlive = pole.pointee.What == Int32(WhatType.electrode.rawValue)
 
     // SEE IF GONE
@@ -190,21 +193,17 @@ private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 
         // BUILD LIST OF ELIGIBLE TARGET ELECTRODES
 
-        var thisNode = gFirstNodePtr
-        repeat {
-            if thisNode != pole {
-                if thisNode!.pointee.What == Int32(WhatType.electrode.rawValue) { // only look for electrodes
-                    if CalcQuickDistance(x, z, thisNode!.pointee.Coord.x, thisNode!.pointee.Coord.z) < 4000.0 { // in range?
-                        targets[numTargets] = thisNode
-                        numTargets += 1
-                        if numTargets >= maxElectrodeTargets {
-                            break
-                        }
-                    }
+        for node in allObjectNodes {
+            if node != pole,
+               node.pointee.What == Int32(WhatType.electrode.rawValue), // only look for electrodes
+               CalcQuickDistance(x, z, node.pointee.Coord.x, node.pointee.Coord.z) < 4000.0 { // in range?
+                targets[numTargets] = node
+                numTargets += 1
+                if numTargets >= maxElectrodeTargets {
+                    break
                 }
             }
-            thisNode = thisNode!.pointee.NextNode
-        } while thisNode != nil
+        }
 
         // CHOOSE A RANDOM TARGET
 
@@ -220,7 +219,7 @@ private let cMoveElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 // Returns TRUE if want to handle hit as a solid
 private let cDoTrigElectrode: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { mine, playerOpt in
     let player = playerOpt!
-    _ = PlayerSmackedIntoObject(player, mine, Int16(PlayerDeathType.explode.rawValue))
+    _ = PlayerSmackedIntoObject(player, mine, .explode)
 
     return 1
 }
@@ -272,7 +271,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
         return
     }
 
-    gZaps[zapSlot].alpha = 1.3 // set inital alpha of this zap
+    gEngine.zaps.pool[zapSlot].alpha = 1.3 // set inital alpha of this zap
 
     // CALCULATE ENDPOINTS
 
@@ -285,7 +284,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
     var z = fromObj.pointee.Coord.z
 
     var numEndpoints: Int
-    if gGamePrefs.lowRenderQuality != 0 {
+    if gGamePrefs.isLowRenderQuality {
         numEndpoints = Int(dist * 0.01) // calc # zap endpoints based on distance
     } else {
         numEndpoints = Int(dist * 0.015) // calc # zap endpoints based on distance
@@ -298,7 +297,7 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
         numEndpoints = 2
     }
 
-    gZaps[zapSlot].numEndpoints = numEndpoints
+    gEngine.zaps.pool[zapSlot].numEndpoints = numEndpoints
 
     // CALC VECTOR FROM->TO
 
@@ -320,9 +319,9 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
 
     // SET STARTING POINT
 
-    gZaps[zapSlot].endpointCoords[0].x = x + v.x * endpointOffset // offset to get endoing away from center of pole
-    gZaps[zapSlot].endpointCoords[0].z = z + v.z * endpointOffset
-    gZaps[zapSlot].endpointCoords[0].y = y
+    gEngine.zaps.pool[zapSlot].endpointCoords[0].x = x + v.x * endpointOffset // offset to get endoing away from center of pole
+    gEngine.zaps.pool[zapSlot].endpointCoords[0].z = z + v.z * endpointOffset
+    gEngine.zaps.pool[zapSlot].endpointCoords[0].y = y
 
     // CALC INTERMEDIATE & END POINTS
 
@@ -331,9 +330,9 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
         y += boltVector.y
         z += boltVector.z
 
-        gZaps[zapSlot].endpointCoords[i].x = x
-        gZaps[zapSlot].endpointCoords[i].y = y
-        gZaps[zapSlot].endpointCoords[i].z = z
+        gEngine.zaps.pool[zapSlot].endpointCoords[i].x = x
+        gEngine.zaps.pool[zapSlot].endpointCoords[i].y = y
+        gEngine.zaps.pool[zapSlot].endpointCoords[i].z = z
     }
 
     // ALLOCATE ZAP GEOMETRY
@@ -345,11 +344,11 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
     // FROM
 
     var i = GetFreeSparkle(nil) // make new sparkle
-    gZaps[zapSlot].endpointSparkles[0] = i
+    gEngine.zaps.pool[zapSlot].endpointSparkles[0] = i
     if i != -1 {
         let sparkle = GetSparkleSlot(Int32(i))!
         sparkle.pointee.flags = UInt32(SPARKLE_FLAG_OMNIDIRECTIONAL | SPARKLE_FLAG_RANDOMSPIN | SPARKLE_FLAG_FLICKER)
-        sparkle.pointee.where = gZaps[zapSlot].endpointCoords[0]
+        sparkle.pointee.where = gEngine.zaps.pool[zapSlot].endpointCoords[0]
 
         sparkle.pointee.color.r = 1
         sparkle.pointee.color.g = 1
@@ -365,11 +364,11 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
     // TO
 
     i = GetFreeSparkle(nil) // make new sparkle
-    gZaps[zapSlot].endpointSparkles[1] = i
+    gEngine.zaps.pool[zapSlot].endpointSparkles[1] = i
     if i != -1 {
         let sparkle = GetSparkleSlot(Int32(i))!
         sparkle.pointee.flags = UInt32(SPARKLE_FLAG_OMNIDIRECTIONAL | SPARKLE_FLAG_RANDOMSPIN | SPARKLE_FLAG_FLICKER)
-        sparkle.pointee.where = gZaps[zapSlot].endpointCoords[numEndpoints - 1]
+        sparkle.pointee.where = gEngine.zaps.pool[zapSlot].endpointCoords[numEndpoints - 1]
 
         sparkle.pointee.color.r = 1
         sparkle.pointee.color.g = 1
@@ -386,10 +385,10 @@ private func doElectrodeZap(_ fromObj: UnsafeMutablePointer<ObjNode>, _ toObj: U
 // MARK: - Init/Free Zaps
 
 func InitZaps() {
-    gZapBuffer = 0
+    gEngine.zaps.buffer = 0
 
     for i in 0..<maxZaps {
-        gZaps[i].isUsed = 0 // all slots are free
+        gEngine.zaps.pool[i].isUsed = false // all slots are free
     }
 
     // CREATE DUMMY CUSTOM OBJECT TO CAUSE ZAP DRAWING AT THE DESIRED TIME
@@ -409,7 +408,7 @@ func InitZaps() {
 
 func FreeAllZaps() {
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed != 0 {
+        if gEngine.zaps.pool[i].isUsed {
             freeZap(i)
         }
     }
@@ -417,25 +416,25 @@ func FreeAllZaps() {
 
 // Initializes the trimesh vertex array data for this zap
 private func allocateZapGeometry(_ zapSlot: Int) {
-    let numEndpoints = gZaps[zapSlot].numEndpoints
+    let numEndpoints = gEngine.zaps.pool[zapSlot].numEndpoints
     let numVerts = numEndpoints * 2
     let numTriangles = numVerts - 2
 
     for b in 0..<2 { // allocate for both double-buffers
-        gZaps[zapSlot].triMesh[b].VARtype = Int16(VertexArrayRangeType.zaps1.rawValue) + Int16(b)
-        gZaps[zapSlot].triMesh[b].numMaterials = 1
-        vertexArrayMaterialsBase(&gZaps[zapSlot].triMesh[b])[0] = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_ZapBeam)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // set illegal ref
-        gZaps[zapSlot].triMesh[b].numPoints = Int32(numVerts)
-        gZaps[zapSlot].triMesh[b].numTriangles = Int32(numTriangles)
+        gEngine.zaps.pool[zapSlot].triMesh[b].VARtype = Int16(VertexArrayRangeType.zaps1.rawValue) + Int16(b)
+        gEngine.zaps.pool[zapSlot].triMesh[b].numMaterials = 1
+        vertexArrayMaterialsBase(&gEngine.zaps.pool[zapSlot].triMesh[b])[0] = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_ZapBeam)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // set illegal ref
+        gEngine.zaps.pool[zapSlot].triMesh[b].numPoints = Int32(numVerts)
+        gEngine.zaps.pool[zapSlot].triMesh[b].numTriangles = Int32(numTriangles)
 
         // ALLOCATE VARS
 
-        gZaps[zapSlot].triMesh[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLPoint3D.self)
-        vertexArrayUVsBase(&gZaps[zapSlot].triMesh[b])[0] = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLTextureCoord.self)
-        gZaps[zapSlot].triMesh[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTriangles), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: MOTriangleIndecies.self)
+        gEngine.zaps.pool[zapSlot].triMesh[b].points = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLPoint3D>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLPoint3D.self)
+        vertexArrayUVsBase(&gEngine.zaps.pool[zapSlot].triMesh[b])[0] = OGL_AllocVertexArrayMemory(Int(MemoryLayout<OGLTextureCoord>.size * numVerts), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: OGLTextureCoord.self)
+        gEngine.zaps.pool[zapSlot].triMesh[b].triangles = OGL_AllocVertexArrayMemory(Int(MemoryLayout<MOTriangleIndecies>.size * numTriangles), UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))?.assumingMemoryBound(to: MOTriangleIndecies.self)
 
-        gZaps[zapSlot].triMesh[b].normals = nil
-        gZaps[zapSlot].triMesh[b].colorsFloat = nil
+        gEngine.zaps.pool[zapSlot].triMesh[b].normals = nil
+        gEngine.zaps.pool[zapSlot].triMesh[b].colorsFloat = nil
 
         // BUILD THE GEOMETRY
 
@@ -443,13 +442,13 @@ private func allocateZapGeometry(_ zapSlot: Int) {
 
         var p = 0
         for i in 0..<numEndpoints {
-            gZaps[zapSlot].triMesh[b].points[p].x = gZaps[zapSlot].endpointCoords[i].x // top vertex
-            gZaps[zapSlot].triMesh[b].points[p].y = gZaps[zapSlot].endpointCoords[i].y + zapThickness
-            gZaps[zapSlot].triMesh[b].points[p].z = gZaps[zapSlot].endpointCoords[i].z
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p].x = gEngine.zaps.pool[zapSlot].endpointCoords[i].x // top vertex
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p].y = gEngine.zaps.pool[zapSlot].endpointCoords[i].y + zapThickness
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p].z = gEngine.zaps.pool[zapSlot].endpointCoords[i].z
 
-            gZaps[zapSlot].triMesh[b].points[p + 1].x = gZaps[zapSlot].endpointCoords[i].x // bottom vertex
-            gZaps[zapSlot].triMesh[b].points[p + 1].y = gZaps[zapSlot].endpointCoords[i].y - zapThickness
-            gZaps[zapSlot].triMesh[b].points[p + 1].z = gZaps[zapSlot].endpointCoords[i].z
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p + 1].x = gEngine.zaps.pool[zapSlot].endpointCoords[i].x // bottom vertex
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p + 1].y = gEngine.zaps.pool[zapSlot].endpointCoords[i].y - zapThickness
+            gEngine.zaps.pool[zapSlot].triMesh[b].points[p + 1].z = gEngine.zaps.pool[zapSlot].endpointCoords[i].z
 
             p += 2
         }
@@ -458,7 +457,7 @@ private func allocateZapGeometry(_ zapSlot: Int) {
 
         p = 0
         var u: Float = 0
-        let uvs0 = vertexArrayUVsBase(&gZaps[zapSlot].triMesh[b])[0]!
+        let uvs0 = vertexArrayUVsBase(&gEngine.zaps.pool[zapSlot].triMesh[b])[0]!
         for _ in 0..<numEndpoints {
             uvs0[p].u = u // top vertex
             uvs0[p].v = 1.0
@@ -475,13 +474,13 @@ private func allocateZapGeometry(_ zapSlot: Int) {
         var t = 0
         p = 0
         for _ in 0..<(numEndpoints - 1) {
-            let triangleBase = gZaps[zapSlot].triMesh[b].triangles! + t
+            let triangleBase = gEngine.zaps.pool[zapSlot].triMesh[b].triangles! + t
             vertexIndicesBase(triangleBase)[0] = GLuint(p)
             vertexIndicesBase(triangleBase)[1] = GLuint(p + 1)
             vertexIndicesBase(triangleBase)[2] = GLuint(p + 2)
             t += 1
 
-            let triangleBase2 = gZaps[zapSlot].triMesh[b].triangles! + t
+            let triangleBase2 = gEngine.zaps.pool[zapSlot].triMesh[b].triangles! + t
             vertexIndicesBase(triangleBase2)[0] = GLuint(p + 2)
             vertexIndicesBase(triangleBase2)[1] = GLuint(p + 1)
             vertexIndicesBase(triangleBase2)[2] = GLuint(p + 3)
@@ -494,45 +493,45 @@ private func allocateZapGeometry(_ zapSlot: Int) {
 // MARK: - Move / Draw Zaps
 
 private let cMoveZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
-    gZapBuffer ^= 1 // toggle buffer to move & then draw
+    gEngine.zaps.buffer ^= 1 // toggle buffer to move & then draw
 
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 { // is this one active
+        if !gEngine.zaps.pool[i].isUsed { // is this one active
             continue
         }
 
         // FADE OUT
 
-        gZaps[i].alpha -= fps * 1.2
-        if gZaps[i].alpha <= 0.0 {
+        gEngine.zaps.pool[i].alpha -= fps * 1.2
+        if gEngine.zaps.pool[i].alpha <= 0.0 {
             freeZap(i)
             continue
         }
 
-        let numEndpoints = gZaps[i].numEndpoints
+        let numEndpoints = gEngine.zaps.pool[i].numEndpoints
 
         // RANDOMIZE THE COORDS
 
         var p = 0
         for j in 0..<numEndpoints {
-            let y = gZaps[i].endpointCoords[j].y + RandomFloat2() * zapRandomSize
+            let y = gEngine.zaps.pool[i].endpointCoords[j].y + RandomFloat2() * zapRandomSize
             let thick = (zapThickness / 3) + zapThickness * RandomFloat()
 
-            gZaps[i].triMesh[Int(gZapBuffer)].points[p].y = y + thick
-            gZaps[i].triMesh[Int(gZapBuffer)].points[p + 1].y = y - thick
+            gEngine.zaps.pool[i].triMesh[Int(gEngine.zaps.buffer)].points[p].y = y + thick
+            gEngine.zaps.pool[i].triMesh[Int(gEngine.zaps.buffer)].points[p + 1].y = y - thick
 
             p += 2
         }
 
-        OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.zaps1.rawValue) + gZapBuffer)
+        OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.zaps1.rawValue) + gEngine.zaps.buffer)
 
         // SEE IF HIT PLAYER
 
         var lineSeg = OGLLineSegment()
-        lineSeg.p1 = gZaps[i].endpointCoords[0]
-        lineSeg.p2 = gZaps[i].endpointCoords[numEndpoints - 1]
+        lineSeg.p1 = gEngine.zaps.pool[i].endpointCoords[0]
+        lineSeg.p2 = gEngine.zaps.pool[i].endpointCoords[numEndpoints - 1]
 
         var worldHitCoord = OGLPoint3D()
         if let hitObj = OGL_DoLineSegmentCollision_ObjNodes(&lineSeg, UInt32(STATUS_BIT_HIDDEN), UInt32(CTYPE_PLAYERSHIELD | CTYPE_ENEMY | CTYPE_PLAYER1 | CTYPE_PLAYER2), &worldHitCoord, nil, nil, 0) {
@@ -547,22 +546,22 @@ private let cDrawZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
     OGL_SetColor4f(1, 1, 1, 1)
 
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 { // is this one active
+        if !gEngine.zaps.pool[i].isUsed { // is this one active
             continue
         }
 
-        gGlobalTransparency = gZaps[i].alpha
+        gEngine.metaObjects.globalTransparency = gEngine.zaps.pool[i].alpha
 
-        MO_DrawGeometry_VertexArray(&gZaps[i].triMesh[Int(gZapBuffer)])
+        MO_DrawGeometry_VertexArray(&gEngine.zaps.pool[i].triMesh[Int(gEngine.zaps.buffer)])
     }
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }
 
 private func getFreeZapSlot() -> Int {
     for i in 0..<maxZaps {
-        if gZaps[i].isUsed == 0 {
-            gZaps[i].isUsed = 1
+        if !gEngine.zaps.pool[i].isUsed {
+            gEngine.zaps.pool[i].isUsed = true
             return i
         }
     }
@@ -570,26 +569,26 @@ private func getFreeZapSlot() -> Int {
 }
 
 private func freeZap(_ zapNum: Int) {
-    SwGameAssert(gZaps[zapNum].isUsed != 0)
+    SwGameAssert(gEngine.zaps.pool[zapNum].isUsed)
 
     for b in 0..<2 {
-        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].points, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
-        OGL_FreeVertexArrayMemory(vertexArrayUVsBase(&gZaps[zapNum].triMesh[b])[0], UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
-        OGL_FreeVertexArrayMemory(gZaps[zapNum].triMesh[b].triangles, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
+        OGL_FreeVertexArrayMemory(gEngine.zaps.pool[zapNum].triMesh[b].points, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
+        OGL_FreeVertexArrayMemory(vertexArrayUVsBase(&gEngine.zaps.pool[zapNum].triMesh[b])[0], UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
+        OGL_FreeVertexArrayMemory(gEngine.zaps.pool[zapNum].triMesh[b].triangles, UInt8(VertexArrayRangeType.zaps1.rawValue) + UInt8(b))
 
-        gZaps[zapNum].triMesh[b].points = nil
-        vertexArrayUVsBase(&gZaps[zapNum].triMesh[b])[0] = nil
-        gZaps[zapNum].triMesh[b].triangles = nil
+        gEngine.zaps.pool[zapNum].triMesh[b].points = nil
+        vertexArrayUVsBase(&gEngine.zaps.pool[zapNum].triMesh[b])[0] = nil
+        gEngine.zaps.pool[zapNum].triMesh[b].triangles = nil
     }
 
     // FREE SPARKLES
 
     for i in 0..<2 {
-        if gZaps[zapNum].endpointSparkles[i] != -1 {
-            DeleteSparkle(gZaps[zapNum].endpointSparkles[i])
-            gZaps[zapNum].endpointSparkles[i] = -1
+        if gEngine.zaps.pool[zapNum].endpointSparkles[i] != -1 {
+            DeleteSparkle(gEngine.zaps.pool[zapNum].endpointSparkles[i])
+            gEngine.zaps.pool[zapNum].endpointSparkles[i] = -1
         }
     }
 
-    gZaps[zapNum].isUsed = 0
+    gEngine.zaps.pool[zapNum].isUsed = false
 }

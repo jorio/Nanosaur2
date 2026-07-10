@@ -15,7 +15,7 @@ struct ShardMode: OptionSet, Sendable {
 private let maxShards = 2500
 
 private struct ShardType {
-    var isUsed: UInt8 = 0
+    var isUsed = false
     var rot = OGLVector3D()
     var rotDelta = OGLVector3D()
     var coord = OGLPoint3D()
@@ -32,15 +32,18 @@ private struct ShardType {
     var glow: UInt32 = 0
 }
 
-private var gNumShards = 0
-private var gShards: InlineArray<2500, ShardType> = InlineArray(repeating: ShardType())
+/// Shard (exploding-geometry) state. Owned by GameEngine as `gEngine.shards`.
+final class ShardSystem {
+    fileprivate var numShards = 0
+    fileprivate var pool: InlineArray<2500, ShardType> = InlineArray(repeating: ShardType())
 
-private var gBoomForce: Float = 0
-private var gShardDecaySpeed: Float = 0
-private var gShardMode: ShardMode = []
-private var gShardDensity = 0
-private var gWorkMatrix = OGLMatrix4x4()
-private var gShardSrcObj: UnsafeMutablePointer<ObjNode>?
+    fileprivate var boomForce: Float = 0
+    fileprivate var decaySpeed: Float = 0
+    fileprivate var mode: ShardMode = []
+    fileprivate var density = 0
+    fileprivate var workMatrix = OGLMatrix4x4()
+    fileprivate var srcObj: UnsafeMutablePointer<ObjNode>?
+}
 
 @inline(__always) private func deformedMeshesBase(_ skelObjData: UnsafeMutablePointer<SkeletonObjDataType>) -> UnsafeMutablePointer<MOVertexArrayData> {
     UnsafeMutableRawPointer(skelObjData.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
@@ -73,10 +76,10 @@ private var gShardSrcObj: UnsafeMutablePointer<ObjNode>?
 }
 
 func InitShardSystem() {
-    gNumShards = 0
+    gEngine.shards.numShards = 0
 
     for i in 0..<maxShards {
-        gShards[i].isUsed = 0
+        gEngine.shards.pool[i].isUsed = false
     }
 
     // MAKE DUMMY OBJECT
@@ -92,12 +95,12 @@ func InitShardSystem() {
 }
 
 private func findFreeShard() -> Int {
-    if gNumShards >= maxShards {
+    if gEngine.shards.numShards >= maxShards {
         return -1
     }
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed == 0 {
+        if !gEngine.shards.pool[i].isUsed {
             return i
         }
     }
@@ -125,17 +128,17 @@ private func updateShardTransformMatrix(_ shard: inout ShardType) {
 }
 
 func ExplodeGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!, _ boomForce: Float, _ particleMode: ShardMode, _ particleDensity: Int, _ particleDecaySpeed: Float) {
-    gShardSrcObj = theNode
-    gBoomForce = boomForce
-    gShardMode = particleMode
-    gShardDensity = particleDensity
-    gShardDecaySpeed = particleDecaySpeed
-    gWorkMatrix.setIdentity() // init to identity matrix
+    gEngine.shards.srcObj = theNode
+    gEngine.shards.boomForce = boomForce
+    gEngine.shards.mode = particleMode
+    gEngine.shards.density = particleDensity
+    gEngine.shards.decaySpeed = particleDecaySpeed
+    gEngine.shards.workMatrix.setIdentity() // init to identity matrix
 
     // SKELETON
 
     if theNode.pointee.Genre == UInt32(SKELETON_GENRE) {
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
         let skeleton = theNode.pointee.Skeleton!
         let numMeshes = Int(skeleton.pointee.skeletonDefinition!.pointee.numDecomposedTriMeshes)
         let meshes = deformedMeshesBase(skeleton) + (buffNum * Int(MAX_DECOMPOSED_TRIMESHES))
@@ -190,7 +193,7 @@ private func explodeGeometryRecurse(_ obj: MetaObjectPtr?) {
     case .group:
         let groupObj = obj.assumingMemoryBound(to: MOGroupObject.self)
         let groupData = groupObj.pointer(to: \.objectData)!
-        let stashMatrix = gWorkMatrix // push matrix
+        let stashMatrix = gEngine.shards.workMatrix // push matrix
 
         let numChildren = Int(groupData.pointee.numObjectsInGroup) // get # objects in group
         let contents = groupContentsBase(groupData)
@@ -198,15 +201,15 @@ private func explodeGeometryRecurse(_ obj: MetaObjectPtr?) {
             explodeGeometryRecurse(contents[i]) // sub-recurse this object
         }
 
-        gWorkMatrix = stashMatrix // pop matrix
+        gEngine.shards.workMatrix = stashMatrix // pop matrix
 
     case .matrix:
         let matObj = obj.assumingMemoryBound(to: MOMatrixObject.self)
         let transform = matObj.pointer(to: \.matrix)! // point to matrix
-        var currentMatrix = gWorkMatrix
+        var currentMatrix = gEngine.shards.workMatrix
         var multipliedMatrix = OGLMatrix4x4()
         multipliedMatrix = transform.pointee.multiplied(by: currentMatrix) // multiply it in
-        gWorkMatrix = multipliedMatrix
+        gEngine.shards.workMatrix = multipliedMatrix
 
     default:
         break
@@ -216,8 +219,8 @@ private func explodeGeometryRecurse(_ obj: MetaObjectPtr?) {
 private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ overrideTexture: UnsafeMutablePointer<MOMaterialObject>?) {
     var centerPt = OGLPoint3D(x: 0, y: 0, z: 0)
     var origin = OGLPoint3D()
-    let boomForce = gBoomForce
-    let shardSrcObj = gShardSrcObj!
+    let boomForce = gEngine.shards.boomForce
+    let shardSrcObj = gEngine.shards.srcObj!
 
     origin.x = shardSrcObj.pointee.Coord.x + (shardSrcObj.pointee.LocalBBox.max.x + shardSrcObj.pointee.LocalBBox.min.x) * 0.5 // set origin to center of object's bbox
     origin.y = shardSrcObj.pointee.Coord.y + (shardSrcObj.pointee.LocalBBox.max.y + shardSrcObj.pointee.LocalBBox.min.y) * 0.5
@@ -242,61 +245,61 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
         let ind1 = Int(indices[1])
         let ind2 = Int(indices[2])
 
-        gShards[i].points[0] = data.pointee.points![ind0] // get coords of 3 points
-        gShards[i].points[1] = data.pointee.points![ind1]
-        gShards[i].points[2] = data.pointee.points![ind2]
+        gEngine.shards.pool[i].points[0] = data.pointee.points![ind0] // get coords of 3 points
+        gEngine.shards.pool[i].points[1] = data.pointee.points![ind1]
+        gEngine.shards.pool[i].points[2] = data.pointee.points![ind2]
 
-        gShards[i].points[0] = gShards[i].points[0].transformed(by: gWorkMatrix) // transform points
-        gShards[i].points[1] = gShards[i].points[1].transformed(by: gWorkMatrix)
-        gShards[i].points[2] = gShards[i].points[2].transformed(by: gWorkMatrix)
+        gEngine.shards.pool[i].points[0] = gEngine.shards.pool[i].points[0].transformed(by: gEngine.shards.workMatrix) // transform points
+        gEngine.shards.pool[i].points[1] = gEngine.shards.pool[i].points[1].transformed(by: gEngine.shards.workMatrix)
+        gEngine.shards.pool[i].points[2] = gEngine.shards.pool[i].points[2].transformed(by: gEngine.shards.workMatrix)
 
-        centerPt.x = (gShards[i].points[0].x + gShards[i].points[1].x + gShards[i].points[2].x) * 0.3333 // calc center of polygon
-        centerPt.y = (gShards[i].points[0].y + gShards[i].points[1].y + gShards[i].points[2].y) * 0.3333
-        centerPt.z = (gShards[i].points[0].z + gShards[i].points[1].z + gShards[i].points[2].z) * 0.3333
+        centerPt.x = (gEngine.shards.pool[i].points[0].x + gEngine.shards.pool[i].points[1].x + gEngine.shards.pool[i].points[2].x) * 0.3333 // calc center of polygon
+        centerPt.y = (gEngine.shards.pool[i].points[0].y + gEngine.shards.pool[i].points[1].y + gEngine.shards.pool[i].points[2].y) * 0.3333
+        centerPt.z = (gEngine.shards.pool[i].points[0].z + gEngine.shards.pool[i].points[1].z + gEngine.shards.pool[i].points[2].z) * 0.3333
 
-        gShards[i].points[0].x -= centerPt.x // offset coords to be around center
-        gShards[i].points[0].y -= centerPt.y
-        gShards[i].points[0].z -= centerPt.z
-        gShards[i].points[1].x -= centerPt.x
-        gShards[i].points[1].y -= centerPt.y
-        gShards[i].points[1].z -= centerPt.z
-        gShards[i].points[2].x -= centerPt.x
-        gShards[i].points[2].y -= centerPt.y
-        gShards[i].points[2].z -= centerPt.z
+        gEngine.shards.pool[i].points[0].x -= centerPt.x // offset coords to be around center
+        gEngine.shards.pool[i].points[0].y -= centerPt.y
+        gEngine.shards.pool[i].points[0].z -= centerPt.z
+        gEngine.shards.pool[i].points[1].x -= centerPt.x
+        gEngine.shards.pool[i].points[1].y -= centerPt.y
+        gEngine.shards.pool[i].points[1].z -= centerPt.z
+        gEngine.shards.pool[i].points[2].x -= centerPt.x
+        gEngine.shards.pool[i].points[2].y -= centerPt.y
+        gEngine.shards.pool[i].points[2].z -= centerPt.z
 
         // DO VERTEX UV'S
 
         let uvPtr = vertexArrayUVsBase(data)[0]
         if let uvPtr { // see if also has UV (texture layer 0 only!)
-            gShards[i].uvs[0] = uvPtr[ind0] // get vertex u/v's
-            gShards[i].uvs[1] = uvPtr[ind1]
-            gShards[i].uvs[2] = uvPtr[ind2]
+            gEngine.shards.pool[i].uvs[0] = uvPtr[ind0] // get vertex u/v's
+            gEngine.shards.pool[i].uvs[1] = uvPtr[ind1]
+            gEngine.shards.pool[i].uvs[2] = uvPtr[ind2]
         }
 
         // DO MATERIAL INFO
 
         if let overrideTexture {
-            gShards[i].material = overrideTexture
+            gEngine.shards.pool[i].material = overrideTexture
         } else {
             if data.pointee.numMaterials > 0 {
-                gShards[i].material = vertexArrayMaterialsBase(data)[0] // keep material ptr
+                gEngine.shards.pool[i].material = vertexArrayMaterialsBase(data)[0] // keep material ptr
             } else {
-                gShards[i].material = nil
+                gEngine.shards.pool[i].material = nil
             }
         }
 
-        gShards[i].colorFilter = shardSrcObj.pointee.ColorFilter // keep color
-        gShards[i].glow = shardSrcObj.pointee.StatusBits & UInt32(STATUS_BIT_GLOW)
+        gEngine.shards.pool[i].colorFilter = shardSrcObj.pointee.ColorFilter // keep color
+        gEngine.shards.pool[i].glow = shardSrcObj.pointee.StatusBits & UInt32(STATUS_BIT_GLOW)
 
         // SET PHYSICS STUFF
 
-        gShards[i].coord = centerPt
-        gShards[i].rot.x = 0
-        gShards[i].rot.y = 0
-        gShards[i].rot.z = 0
-        gShards[i].scale = 1.0
+        gEngine.shards.pool[i].coord = centerPt
+        gEngine.shards.pool[i].rot.x = 0
+        gEngine.shards.pool[i].rot.y = 0
+        gEngine.shards.pool[i].rot.z = 0
+        gEngine.shards.pool[i].scale = 1.0
 
-        if gShardMode.contains(.fromOrigin) { // see if random deltas or from origin
+        if gEngine.shards.mode.contains(.fromOrigin) { // see if random deltas or from origin
             var v = OGLVector3D()
 
             v.x = centerPt.x - origin.x // calc vector from object's origin
@@ -304,156 +307,156 @@ private func explodeVertexArray(_ data: UnsafeMutablePointer<MOVertexArrayData>,
             v.z = centerPt.z - origin.z
             FastNormalizeVector(v.x, v.y, v.z, &v)
 
-            gShards[i].coordDelta.x = v.x * boomForce
-            gShards[i].coordDelta.y = v.y * boomForce
-            gShards[i].coordDelta.z = v.z * boomForce
+            gEngine.shards.pool[i].coordDelta.x = v.x * boomForce
+            gEngine.shards.pool[i].coordDelta.y = v.y * boomForce
+            gEngine.shards.pool[i].coordDelta.z = v.z * boomForce
         } else {
-            gShards[i].coordDelta.x = RandomFloat2() * boomForce
-            gShards[i].coordDelta.y = RandomFloat2() * boomForce
-            gShards[i].coordDelta.z = RandomFloat2() * boomForce
+            gEngine.shards.pool[i].coordDelta.x = RandomFloat2() * boomForce
+            gEngine.shards.pool[i].coordDelta.y = RandomFloat2() * boomForce
+            gEngine.shards.pool[i].coordDelta.z = RandomFloat2() * boomForce
         }
 
-        if gShardMode.contains(.upthrust) {
-            gShards[i].coordDelta.y += 1.5 * gBoomForce
+        if gEngine.shards.mode.contains(.upthrust) {
+            gEngine.shards.pool[i].coordDelta.y += 1.5 * gEngine.shards.boomForce
         }
 
-        gShards[i].rotDelta.x = RandomFloat2() * (boomForce * 0.008) // random rotation deltas
-        gShards[i].rotDelta.y = RandomFloat2() * (boomForce * 0.008)
-        gShards[i].rotDelta.z = RandomFloat2() * (boomForce * 0.008)
+        gEngine.shards.pool[i].rotDelta.x = RandomFloat2() * (boomForce * 0.008) // random rotation deltas
+        gEngine.shards.pool[i].rotDelta.y = RandomFloat2() * (boomForce * 0.008)
+        gEngine.shards.pool[i].rotDelta.z = RandomFloat2() * (boomForce * 0.008)
 
-        gShards[i].decaySpeed = gShardDecaySpeed
-        gShards[i].mode = gShardMode
+        gEngine.shards.pool[i].decaySpeed = gEngine.shards.decaySpeed
+        gEngine.shards.pool[i].mode = gEngine.shards.mode
 
         // SET INITIAL XFORM MATRIX
 
-        updateShardTransformMatrix(&gShards[i])
+        updateShardTransformMatrix(&gEngine.shards.pool[i])
 
         // SET VALID & INC COUNTER
 
-        gShards[i].isUsed = 1
-        gNumShards += 1
+        gEngine.shards.pool[i].isUsed = true
+        gEngine.shards.numShards += 1
 
-        t += gShardDensity
+        t += gEngine.shards.density
     }
 }
 
 private let cMoveShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    if gNumShards == 0 { // quick check if any particles at all
+    if gEngine.shards.numShards == 0 { // quick check if any particles at all
         return
     }
 
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed == 0 {
+        if !gEngine.shards.pool[i].isUsed {
             continue
         }
 
         // ROTATE IT
 
-        gShards[i].rot.x += gShards[i].rotDelta.x * fps
-        gShards[i].rot.y += gShards[i].rotDelta.y * fps
-        gShards[i].rot.z += gShards[i].rotDelta.z * fps
+        gEngine.shards.pool[i].rot.x += gEngine.shards.pool[i].rotDelta.x * fps
+        gEngine.shards.pool[i].rot.y += gEngine.shards.pool[i].rotDelta.y * fps
+        gEngine.shards.pool[i].rot.z += gEngine.shards.pool[i].rotDelta.z * fps
 
         // MOVE IT
 
-        if gShards[i].mode.contains(.heavyGravity) {
-            gShards[i].coordDelta.y -= fps * 1000.0 // gravity
+        if gEngine.shards.pool[i].mode.contains(.heavyGravity) {
+            gEngine.shards.pool[i].coordDelta.y -= fps * 1000.0 // gravity
         } else {
-            gShards[i].coordDelta.y -= fps * 300.0 // gravity
+            gEngine.shards.pool[i].coordDelta.y -= fps * 300.0 // gravity
         }
 
-        gShards[i].coord.x += gShards[i].coordDelta.x * fps
-        gShards[i].coord.y += gShards[i].coordDelta.y * fps
-        gShards[i].coord.z += gShards[i].coordDelta.z * fps
-        let x = gShards[i].coord.x
-        let y = gShards[i].coord.y
-        let z = gShards[i].coord.z
+        gEngine.shards.pool[i].coord.x += gEngine.shards.pool[i].coordDelta.x * fps
+        gEngine.shards.pool[i].coord.y += gEngine.shards.pool[i].coordDelta.y * fps
+        gEngine.shards.pool[i].coord.z += gEngine.shards.pool[i].coordDelta.z * fps
+        let x = gEngine.shards.pool[i].coord.x
+        let y = gEngine.shards.pool[i].coord.y
+        let z = gEngine.shards.pool[i].coord.z
 
         // SEE IF BOUNCE
 
         let ty = GetTerrainY(x, z) // get terrain height here
         if y <= ty {
-            if gShards[i].mode.contains(.bounce) {
-                gShards[i].coord.y = ty
-                gShards[i].coordDelta.y *= -0.5
-                gShards[i].coordDelta.x *= 0.9
-                gShards[i].coordDelta.z *= 0.9
+            if gEngine.shards.pool[i].mode.contains(.bounce) {
+                gEngine.shards.pool[i].coord.y = ty
+                gEngine.shards.pool[i].coordDelta.y *= -0.5
+                gEngine.shards.pool[i].coordDelta.x *= 0.9
+                gEngine.shards.pool[i].coordDelta.z *= 0.9
             } else {
-                gShards[i].isUsed = 0
-                gNumShards -= 1
+                gEngine.shards.pool[i].isUsed = false
+                gEngine.shards.numShards -= 1
                 continue
             }
         }
 
         // SCALE IT
 
-        gShards[i].scale -= gShards[i].decaySpeed * fps
-        if gShards[i].scale <= 0.0 {
+        gEngine.shards.pool[i].scale -= gEngine.shards.pool[i].decaySpeed * fps
+        if gEngine.shards.pool[i].scale <= 0.0 {
             // DEACTIVATE THIS PARTICLE
 
-            gShards[i].isUsed = 0
-            gNumShards -= 1
+            gEngine.shards.pool[i].isUsed = false
+            gEngine.shards.numShards -= 1
             continue
         }
 
         // UPDATE TRANSFORM MATRIX
 
-        updateShardTransformMatrix(&gShards[i])
+        updateShardTransformMatrix(&gEngine.shards.pool[i])
     }
 }
 
 private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    if gNumShards == 0 { // quick check if any particles at all
+    if gEngine.shards.numShards == 0 { // quick check if any particles at all
         return
     }
 
     // SET STATE
 
-    gRenderBackend.setTwoSidedLighting(true)
+    gEngine.renderer.setTwoSidedLighting(true)
 
     for i in 0..<maxShards {
-        if gShards[i].isUsed != 0 {
+        if gEngine.shards.pool[i].isUsed {
             // SUBMIT MATERIAL
 
-            gGlobalColorFilter.r = gShards[i].colorFilter.r
-            gGlobalColorFilter.g = gShards[i].colorFilter.g
-            gGlobalColorFilter.b = gShards[i].colorFilter.b
-            gGlobalTransparency = gShards[i].colorFilter.a
+            gEngine.metaObjects.globalColorFilter.r = gEngine.shards.pool[i].colorFilter.r
+            gEngine.metaObjects.globalColorFilter.g = gEngine.shards.pool[i].colorFilter.g
+            gEngine.metaObjects.globalColorFilter.b = gEngine.shards.pool[i].colorFilter.b
+            gEngine.metaObjects.globalTransparency = gEngine.shards.pool[i].colorFilter.a
 
-            if gShards[i].glow != 0 {
+            if gEngine.shards.pool[i].glow != 0 {
                 OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
             } else {
                 OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
             }
 
-            if let material = gShards[i].material {
+            if let material = gEngine.shards.pool[i].material {
                 MO_DrawMaterial(material)
             }
 
             // SET MATRIX
 
-            gRenderBackend.pushMatrix()
-            gRenderBackend.multMatrix(matrixFloatBase(&gShards[i].matrix))
+            gEngine.renderer.pushMatrix()
+            gEngine.renderer.multMatrix(matrixFloatBase(&gEngine.shards.pool[i].matrix))
 
             // DRAW THE TRIANGLE
 
-            gRenderBackend.beginImmediate(.triangles)
-            gRenderBackend.texCoord2f(gShards[i].uvs[0].u, gShards[i].uvs[0].v); gRenderBackend.vertex3f(gShards[i].points[0].x, gShards[i].points[0].y, gShards[i].points[0].z)
-            gRenderBackend.texCoord2f(gShards[i].uvs[1].u, gShards[i].uvs[1].v); gRenderBackend.vertex3f(gShards[i].points[1].x, gShards[i].points[1].y, gShards[i].points[1].z)
-            gRenderBackend.texCoord2f(gShards[i].uvs[2].u, gShards[i].uvs[2].v); gRenderBackend.vertex3f(gShards[i].points[2].x, gShards[i].points[2].y, gShards[i].points[2].z)
-            gRenderBackend.endImmediate()
+            gEngine.renderer.beginImmediate(.triangles)
+            gEngine.renderer.texCoord2f(gEngine.shards.pool[i].uvs[0].u, gEngine.shards.pool[i].uvs[0].v); gEngine.renderer.vertex3f(gEngine.shards.pool[i].points[0].x, gEngine.shards.pool[i].points[0].y, gEngine.shards.pool[i].points[0].z)
+            gEngine.renderer.texCoord2f(gEngine.shards.pool[i].uvs[1].u, gEngine.shards.pool[i].uvs[1].v); gEngine.renderer.vertex3f(gEngine.shards.pool[i].points[1].x, gEngine.shards.pool[i].points[1].y, gEngine.shards.pool[i].points[1].z)
+            gEngine.renderer.texCoord2f(gEngine.shards.pool[i].uvs[2].u, gEngine.shards.pool[i].uvs[2].v); gEngine.renderer.vertex3f(gEngine.shards.pool[i].points[2].x, gEngine.shards.pool[i].points[2].y, gEngine.shards.pool[i].points[2].z)
+            gEngine.renderer.endImmediate()
 
-            gRenderBackend.popMatrix()
+            gEngine.renderer.popMatrix()
         }
     }
 
     // CLEANUP
 
-    gGlobalColorFilter.r = 1
-    gGlobalColorFilter.g = 1
-    gGlobalColorFilter.b = 1
-    gGlobalTransparency = 1
+    gEngine.metaObjects.globalColorFilter.r = 1
+    gEngine.metaObjects.globalColorFilter.g = 1
+    gEngine.metaObjects.globalColorFilter.b = 1
+    gEngine.metaObjects.globalTransparency = 1
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
-    gRenderBackend.setTwoSidedLighting(false)
+    gEngine.renderer.setTwoSidedLighting(false)
 }

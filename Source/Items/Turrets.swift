@@ -4,8 +4,6 @@ private let turretShootDist: Float = 3000.0
 
 private let towerTurretScale: Float = 2.5
 
-private var gTurretMuzzleTipOff = OGLPoint3D(x: -61, y: 0, z: -115)
-private var gTurretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
 
 // MARK: - Add tower turret
 
@@ -17,7 +15,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let typeW: Int32
         let typeG: Int32
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             typeB = Int32(LEVEL1_ObjType_TowerTurret_Base)
             typeT = Int32(LEVEL1_ObjType_TowerTurret_Turret)
@@ -49,7 +47,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = towerTurretScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 331
         def.moveCall = cMoveTowerTurret
         def.rot = RandomFloat() * SwPI2
@@ -101,7 +99,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         // MAKE GUN
 
         def.type = UInt8(typeG)
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot += 1
         let gun = MakeNewDisplayGroupObject(&def)!
 
@@ -137,7 +135,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     let wheel = turret.pointee.ChainNode!
     let gun = wheel.pointee.ChainNode!
     let lens = gun.pointee.ChainNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var shootNow = false
 
     // SEE IF GONE
@@ -149,18 +147,18 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // UPDATE TURRET
 
-    if gGamePrefs.kiddieMode == 0 {
+    if !gGamePrefs.isKiddieMode {
         gun.pointee.SpecialF.0 -= fps // ShootTimer
 
         var playerNum: Int16 = 0
         let dist = CalcDistanceToClosestPlayer(&turret.pointee.Coord, &playerNum) // calc dist to player
 
-        let shootDist: Float = (gLevelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
+        let shootDist: Float = (gEngine.game.levelNum == Int16(LevelNum.adventure1.rawValue)) ? (turretShootDist * 2 / 3) : turretShootDist // make this easier on level 1
 
         if dist < (shootDist * 1.2) { // see if player is close enough for turret to aim
             let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
             var aimPt = aimOff.transformed(by: player.pointee.BaseTransformMatrix) // calc pt in front of player to aim ag
-            var muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
+            var muzzleCoord = gEngine.items.turretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
             let angle = turret.turnTowardTarget(from: &muzzleCoord, toX: aimPt.x, toZ: aimPt.z, turnSpeed: Float.pi / 2, useOffsets: 0, crossOut: nil) // turn turret on y-axis
 
             turret.updateTransforms()
@@ -274,18 +272,18 @@ private func explodeTurret(_ base: UnsafeMutablePointer<ObjNode>) {
     let y = base.pointee.Coord.y
     let z = base.pointee.Coord.z
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = -50
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 18
-    gNewParticleGroupDef.decayRate = -4.0
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = -50
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 18
+    gEngine.particles.newGroupDef.decayRate = -4.0
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<150 {
             var d = OGLVector3D()
@@ -317,18 +315,18 @@ private func explodeTurret(_ base: UnsafeMutablePointer<ObjNode>) {
 
     // MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 100
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15
-    gNewParticleGroupDef.decayRate = 0.2
-    gNewParticleGroupDef.fadeRate = 0.5
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 100
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15
+    gEngine.particles.newGroupDef.decayRate = 0.2
+    gEngine.particles.newGroupDef.fadeRate = 0.5
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<200 {
             let q = RandomFloat() * SwPI2
@@ -384,7 +382,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
     if i != -1 {
         let sparkle = GetSparkleSlot(Int32(i))!
         sparkle.pointee.flags = UInt32(SPARKLE_FLAG_TRANSFORMWITHOWNER | SPARKLE_FLAG_OMNIDIRECTIONAL)
-        sparkle.pointee.where = gTurretMuzzleTipOff
+        sparkle.pointee.where = gEngine.items.turretMuzzleTipOff
 
         sparkle.pointee.color.r = 1
         sparkle.pointee.color.g = 1
@@ -401,8 +399,8 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
     // CALC COORD & VECTOR OF MUZZLE
 
-    let muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix)
-    var muzzleVector = gTurretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
+    let muzzleCoord = gEngine.items.turretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix)
+    var muzzleVector = gEngine.items.turretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
 
     // MAKE OBJECT
 
@@ -418,7 +416,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.blaster.rawValue)
+    newObj.weaponKind = .blaster
 
     newObj.pointee.ColorFilter.a = 0.99 // do this just to turn on transparency so it'll glow
 
@@ -463,7 +461,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
 private let cMoveTurretBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -477,9 +475,9 @@ private let cMoveTurretBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -504,9 +502,9 @@ private func doTurretBlastCollisionDetection(_ theNode: UnsafeMutablePointer<Obj
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + theNode.pointee.MotionVector.x * 50.0 // to new coord (in front of center)
-    lineSegment.p2.y = gCoord.y + theNode.pointee.MotionVector.y * 50.0
-    lineSegment.p2.z = gCoord.z + theNode.pointee.MotionVector.z * 50.0
+    lineSegment.p2.x = gEngine.objects.coord.x + theNode.pointee.MotionVector.x * 50.0 // to new coord (in front of center)
+    lineSegment.p2.y = gEngine.objects.coord.y + theNode.pointee.MotionVector.y * 50.0
+    lineSegment.p2.z = gEngine.objects.coord.z + theNode.pointee.MotionVector.z * 50.0
 
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
@@ -547,19 +545,19 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
 
     // CREATE NEW PARTICLE GROUP
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 1000
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0
-    gNewParticleGroupDef.decayRate = -1.7
-    gNewParticleGroupDef.fadeRate = 0.6
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 1000
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0
+    gEngine.particles.newGroupDef.decayRate = -1.7
+    gEngine.particles.newGroupDef.fadeRate = 0.6
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<130 {
             // CALC NEW VECTOR IN CONE OF AIM
@@ -596,7 +594,7 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
         }
     }
 
-    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord)
 }
 
 // MARK: - Do turret blast impact object effect
@@ -606,19 +604,19 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
 
     // CREATE NEW PARTICLE GROUP
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = 100
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10.0
-    gNewParticleGroupDef.decayRate = -1.2
-    gNewParticleGroupDef.fadeRate = 0.9
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = 100
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10.0
+    gEngine.particles.newGroupDef.decayRate = -1.2
+    gEngine.particles.newGroupDef.fadeRate = 0.9
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<50 {
             // CALC NEW VECTOR IN CONE OF AIM
@@ -655,5 +653,5 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
         }
     }
 
-    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord)
 }

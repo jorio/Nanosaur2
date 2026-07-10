@@ -3,7 +3,6 @@
 private let damDoorScale: Float = 1.85
 private let maxDamDoors = 64
 
-private var gForestDoorOpen = [Bool](repeating: false, count: maxDamDoors)
 
 @inline(__always) private func sparklesBase(_ n: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<Int16> {
     UnsafeMutableRawPointer(n.pointer(to: \.Sparkles)!).assumingMemoryBound(to: Int16.self)
@@ -11,7 +10,7 @@ private var gForestDoorOpen = [Bool](repeating: false, count: maxDamDoors)
 
 func InitForestDoors() {
     for i in 0..<maxDamDoors {
-        gForestDoorOpen[i] = false
+        gEngine.items.forestDoorOpen[i] = false
     }
 }
 
@@ -22,7 +21,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let rot = Float(pointee.parm.1) * (Float.pi / 2)
         let type: Int32
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue):
             type = Int32(LEVEL1_ObjType_ForestDoor_Wall)
         case Int16(LevelNum.adventure2.rawValue):
@@ -76,7 +75,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
         door.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
 
-        if gForestDoorOpen[Int(keyID)] { // see if door is open
+        if gEngine.items.forestDoorOpen[Int(keyID)] { // see if door is open
             door.pointee.Rot.z = -Float.pi
             UpdateObjectTransforms(door)
         }
@@ -104,7 +103,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { wallOpt in
     guard let wall = wallOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let door = wall.pointee.ChainNode!
     let ring = door.pointee.ChainNode!
 
@@ -117,10 +116,10 @@ private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // SEE IF OPEN DOOR
 
-    if gForestDoorOpen[Int(wall.pointee.Kind)] {
+    if gEngine.items.forestDoorOpen[Int(wall.pointee.Kind)] {
         door.pointee.Rot.z -= fps
 
-        if gLevelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
+        if gEngine.game.levelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
             if door.pointee.Rot.z < -Float.pi {
                 door.pointee.Rot.z = -Float.pi
             }
@@ -155,7 +154,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 209
         def.moveCall = cMoveForestDoorKey
         def.rot = rot
@@ -244,7 +243,7 @@ private let cMoveForestDoorKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
     // SPIN THE KEY
 
     if let key {
-        key.pointee.Rot.y += gFramesPerSecondFrac * 2.0
+        key.pointee.Rot.y += gEngine.framesPerSecondFrac * 2.0
         UpdateObjectTransforms(key)
     }
 }
@@ -256,7 +255,7 @@ private let doTrigForestDoorKey: @convention(c) (UnsafeMutablePointer<ObjNode>?,
 
     destroyForestDoorKey(theNode)
 
-    _ = PlayerSmackedIntoObject(player, theNode, Int16(PlayerDeathType.explode.rawValue))
+    _ = PlayerSmackedIntoObject(player, theNode, .explode)
 
     return 1
 }
@@ -282,7 +281,7 @@ private func destroyForestDoorKey(_ keyHolder: UnsafeMutablePointer<ObjNode>) {
         return
     }
 
-    gForestDoorOpen[Int(keyHolder.pointee.Kind)] = true
+    gEngine.items.forestDoorOpen[Int(keyHolder.pointee.Kind)] = true
 
     PlayEffect3D(Int16(EFFECT_TURRETEXPLOSION), &keyHolder.pointee.Coord)
 
@@ -297,19 +296,19 @@ private func destroyForestDoorKey(_ keyHolder: UnsafeMutablePointer<ObjNode>) {
     let z = key.pointee.Coord.z
     let y = key.pointee.Coord.y + (250.0 * damDoorScale)
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 300
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20.0
-    gNewParticleGroupDef.decayRate = 0
-    gNewParticleGroupDef.fadeRate = 0.5
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
-    gNewParticleGroupDef.dstBlend = Int32(GL_ONE)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 300
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20.0
+    gEngine.particles.newGroupDef.decayRate = 0
+    gEngine.particles.newGroupDef.fadeRate = 0.5
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
+    gEngine.particles.newGroupDef.dstBlend = Int32(GL_ONE)
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<200 {
             var pt = OGLPoint3D()

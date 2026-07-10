@@ -75,79 +75,6 @@ tryAgain:
 	return dataPath;
 }
 
-// Phase 0 Metal spike (docs/metal-renderer-plan.md): `--metal-spike`
-// bypasses the normal GL boot/game path entirely and just proves SDL's
-// Metal layer -> MetalRenderer module -> on-screen present path works.
-// Deliberately kept isolated from Boot()/GameMain() and gSDLWindow's usual
-// GL setup so this throwaway spike can't affect the real (still GL)
-// rendering path. Superseded by `--metal` (see SwMetalBackend_Activate() in
-// main()) for actually rendering the game via Metal, but kept around as a
-// minimal regression check for the SDL-layer -> Metal present path in
-// isolation.
-static int RunMetalSpike()
-{
-	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
-	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
-
-	if (!SDL_Init(SDL_INIT_VIDEO))
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError());
-		return 1;
-	}
-
-	// No SDL_WINDOW_OPENGL here -- SDL_Metal_CreateView wants a window that
-	// wasn't set up for GL. gSDLWindow is reused (rather than a local
-	// variable) purely because SwMetalSpike_Init() (MetalSpike.swift) reads
-	// that existing global; nothing else in this spike path touches it.
-	gSDLWindow = SDL_CreateWindow(
-		GAME_FULL_NAME " (" GAME_VERSION ") - Metal Spike", 640, 480,
-		SDL_WINDOW_METAL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-
-	if (!gSDLWindow)
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create Metal window: %s", SDL_GetError());
-		return 1;
-	}
-
-	if (!SwMetalSpike_Init())
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SwMetalSpike_Init failed");
-		return 1;
-	}
-
-	SDL_Log("Metal spike running -- close the window or press Escape to quit.");
-
-	bool running = true;
-	float hue = 0.0f;
-	while (running)
-	{
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_EVENT_QUIT)
-				running = false;
-			else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
-				running = false;
-		}
-
-		// Cycle the clear colour every frame so it's visually obvious this is
-		// a live Metal-rendered (not a static) frame.
-		hue += 0.01f;
-		if (hue > 1.0f)
-			hue -= 1.0f;
-		SwMetalSpike_ClearFrame(
-			0.5f + 0.5f * SDL_sinf(hue * 6.28318f),
-			0.5f + 0.5f * SDL_sinf(hue * 6.28318f + 2.09439f),
-			0.5f + 0.5f * SDL_sinf(hue * 6.28318f + 4.18879f));
-	}
-
-	SwMetalSpike_Shutdown();
-	SDL_DestroyWindow(gSDLWindow);
-	gSDLWindow = NULL;
-	SDL_Quit();
-	return 0;
-}
-
 static void Boot(int argc, char** argv)
 {
 	SDL_SetAppMetadata(GAME_FULL_NAME, GAME_VERSION, GAME_IDENTIFIER);
@@ -197,9 +124,20 @@ retryVideo:
 	// there's no GL context to fail to create with the requested MSAA level.
 	if (!gMetalMode)
 	{
+#if (defined(__arm__) || defined(__aarch64__) || defined(_M_ARM) || defined(_M_ARM64)) && !defined(__APPLE__)
+		// ARM/ARM64 devices (embedded Linux boards, handhelds) typically
+		// only provide OpenGL ES, so request an ES 2.0 context there.
+		// Apple Silicon is excluded: macOS has no native GL ES support -
+		// its ARM Macs still create desktop GL compatibility contexts
+		// (and the Metal backend is the forward path on that platform).
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+#else
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 	}
 
 	gCurrentAntialiasingLevel = gGamePrefs.antialiasingLevel;
@@ -323,19 +261,6 @@ extern "C" void SwPlatformShutdown()
 
 int main(int argc, char** argv)
 {
-	// Phase 0 Metal spike (docs/metal-renderer-plan.md) -- takes over the
-	// process entirely instead of going through the normal Boot()/GameMain()
-	// GL path; see RunMetalSpike()'s comment for why. Kept behind its own
-	// flag as a minimal regression check, separate from `--metal` (real
-	// integration, handled below via gMetalMode).
-	for (int i = 1; i < argc; i++)
-	{
-		if (0 == strcmp(argv[i], "--metal-spike"))
-		{
-			return RunMetalSpike();
-		}
-	}
-
 	// Normal clean-quit path: CleanQuit() (Misc.swift) runs its own cleanup,
 	// then SwExitToShell() calls Shutdown() and exits the process directly -
 	// main() never regains control in that case (see SwExitToShell's

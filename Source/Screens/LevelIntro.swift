@@ -5,7 +5,7 @@
 private let cGetLevelSpecificMenuLayoutFlags: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { mi in
     guard let mi = mi else { return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled) }
     let id = mi.pointee.id
-    if (gLevelNum == 1 && id == fourCC("lvl1")) || (gLevelNum == 2 && id == fourCC("lvl2")) {
+    if (gEngine.game.levelNum == 1 && id == fourCC("lvl1")) || (gEngine.game.levelNum == 2 && id == fourCC("lvl2")) {
         return 0
     }
     return Int32(kMILayoutFlagHidden | kMILayoutFlagDisabled)
@@ -55,8 +55,6 @@ private let kCreditsText: [(role: String, name: String)] = [
     ("ADDITIONAL PROGRAMMING", "Iliyas Jorio"),
 ]
 
-private var gWormholeDeformPoints = [OGLPoint3D](repeating: OGLPoint3D(), count: 30)
-private var gIntroMode: UInt8 = 0
 
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
@@ -74,7 +72,7 @@ func DoLevelIntroScreen(_ mode: UInt8) {
 
     // (SKIPFLUFF is hardcoded off in this build, so this early-return never fires.)
 
-    gIntroMode = mode
+    gEngine.screens.introMode = mode
 
     // SETUP
 
@@ -90,20 +88,20 @@ func DoLevelIntroScreen(_ mode: UInt8) {
         MoveObjects()
         OGL_DrawScene(DrawObjects)
 
-        switch Int(gIntroMode) {
+        switch Int(gEngine.screens.introMode) {
         case INTRO_MODE_SCREENSAVER, INTRO_MODE_CREDITS:
             if UserWantsOut() != 0 {
                 bail = true
             }
 
         case INTRO_MODE_NOSAVE:
-            timer -= gFramesPerSecondFrac
+            timer -= gEngine.framesPerSecondFrac
             if timer < 0.0 || UserWantsOut() != 0 {
                 bail = true
             }
 
         case INTRO_MODE_SAVEGAME:
-            if gMenuOutcome != 0 {
+            if gEngine.menu.outcome != 0 {
                 bail = true
             }
 
@@ -118,9 +116,9 @@ func DoLevelIntroScreen(_ mode: UInt8) {
 
     // DO SAVE
 
-    switch gMenuOutcome {
+    switch gEngine.menu.outcome {
     case 0x7366_2330...0x7366_2339: // 'sf#0'...'sf#9'
-        _ = SaveGame(gMenuOutcome - 0x7366_2330)
+        _ = SaveGame(gEngine.menu.outcome - 0x7366_2330)
 
     default: // 'dont'
         break
@@ -170,8 +168,8 @@ private func setupLevelIntroScreen() {
     // INIT ANAGLYPH INFO
 
     if isStereo() {
-        gAnaglyphFocallength = 300.0
-        gAnaglyphEyeSeparation = 20.0
+        gEngine.view.anaglyphFocallength = 300.0
+        gEngine.view.anaglyphEyeSeparation = 20.0
 
         if isStereoAnaglyph() {
             viewDef.lights.ambientColor = OGLColorRGBA(r: 0.8, g: 0.8, b: 0.8, a: 1.0)
@@ -217,11 +215,11 @@ private func setupLevelIntroScreen() {
     wormholeDef.scale = 26
 
     let newObj = MakeNewSkeletonObject(&wormholeDef)!
-    newObj.pointee.Skeleton!.pointee.JointsAreGlobal = 1
+    newObj.pointee.Skeleton!.jointsAreGlobal = true
     newObj.updateTransforms()
     updateLevelIntroWormJoints(newObj)
 
-    if Int(gIntroMode) != INTRO_MODE_SCREENSAVER && Int(gIntroMode) != INTRO_MODE_CREDITS {
+    if Int(gEngine.screens.introMode) != INTRO_MODE_SCREENSAVER && Int(gEngine.screens.introMode) != INTRO_MODE_CREDITS {
         PlayEffect_Parms(Int16(EFFECT_WORMHOLE), FULL_CHANNEL_VOLUME / 2, FULL_CHANNEL_VOLUME / 3, UInt(NORMAL_CHANNEL_RATE))
     }
 
@@ -235,7 +233,7 @@ private func setupLevelIntroScreen() {
 
     // DO MODE SPECIFICS
 
-    switch Int(gIntroMode) {
+    switch Int(gEngine.screens.introMode) {
     case INTRO_MODE_SAVEGAME:
         MakeLevelIntroSaveSprites()
 
@@ -384,7 +382,7 @@ private func freeLevelIntroScreen() {
 
 private let cMoveIntroStarDome: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Rot.z += gFramesPerSecondFrac * 0.6
+    theNode.pointee.Rot.z += gEngine.framesPerSecondFrac * 0.6
     theNode.updateTransforms()
 }
 
@@ -398,9 +396,9 @@ private func moveLevelIntroNano(_ theNode: UnsafeMutablePointer<ObjNode>) {
     var v = OGLVector3D()
     var p = OGLPoint3D()
 
-    theNode.pointee.Coord = gWormholeDeformPoints[1]
+    theNode.pointee.Coord = gEngine.screens.wormholeDeformPoints[1]
 
-    OGLPoint3D_Subtract(&gWormholeDeformPoints[4], &gWormholeDeformPoints[8], &v)
+    OGLPoint3D_Subtract(&gEngine.screens.wormholeDeformPoints[4], &gEngine.screens.wormholeDeformPoints[8], &v)
     v = v.normalized()
 
     SetAlignmentMatrix(&theNode.pointee.AlignmentMatrix, &v)
@@ -411,7 +409,7 @@ private func moveLevelIntroNano(_ theNode: UnsafeMutablePointer<ObjNode>) {
     p.y = theNode.pointee.Coord.y * 0.5
     p.z = theNode.pointee.Coord.z - 500.0
 
-    OGL_UpdateCameraFromTo(&gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation, &p, 0)
+    OGL_UpdateCameraFromTo(&gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation, &p, 0)
 }
 
 // MARK: - Move level intro worm
@@ -421,8 +419,8 @@ private let cMoveLevelIntroWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     updateLevelIntroWormJoints(theNode)
 
-    theNode.pointee.TextureTransformU += gFramesPerSecondFrac * 0.6
-    theNode.pointee.TextureTransformV -= gFramesPerSecondFrac * 0.9
+    theNode.pointee.TextureTransformU += gEngine.framesPerSecondFrac * 0.6
+    theNode.pointee.TextureTransformV -= gEngine.framesPerSecondFrac * 0.9
 }
 
 // MARK: - Update level intro worm joints
@@ -433,7 +431,7 @@ private var waveY: Float = 1.0
 private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let skeleton = theNode.pointee.Skeleton!
     let skeletonDef = skeleton.pointee.skeletonDefinition!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     let numJoints = Int(skeletonDef.pointee.NumBones) // get # joints in this skeleton
 
@@ -449,9 +447,9 @@ private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>
     for jointNum in 0..<numJoints {
         let q = Float(jointNum) * 80.0 // gets more wiggly the farther down the skeleton we go
 
-        gWormholeDeformPoints[jointNum].x = sin(waveX + w) * q
-        gWormholeDeformPoints[jointNum].y = sin(waveY + w) * q
-        gWormholeDeformPoints[jointNum].z = z
+        gEngine.screens.wormholeDeformPoints[jointNum].x = sin(waveX + w) * q
+        gEngine.screens.wormholeDeformPoints[jointNum].y = sin(waveY + w) * q
+        gEngine.screens.wormholeDeformPoints[jointNum].z = z
 
         w += 0.16
         z -= 350.0
@@ -469,13 +467,13 @@ private func updateLevelIntroWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>
 
         // GET COORDS OF THIS SEGMENT
 
-        let coord = gWormholeDeformPoints[jointNum]
+        let coord = gEngine.screens.wormholeDeformPoints[jointNum]
 
         // GET PREVIOUS COORD FOR ROTATION CALCULATION
 
         var prevCoord = OGLPoint3D()
         if jointNum > 0 {
-            prevCoord = gWormholeDeformPoints[jointNum - 1]
+            prevCoord = gEngine.screens.wormholeDeformPoints[jointNum - 1]
         }
 
         // TRANSFORM JOINT'S MATRIX TO WORLD COORDS
@@ -511,8 +509,8 @@ private func setupScreensaverObjects() {
     textDef.moveCall = cMovePressAnyKey
     textDef.scale = 0.35
 
-    let text = gUserPrefersGamepad != 0 ? STR_PRESS_START : STR_PRESS_ANY_KEY
-    let newObj = TextMesh_New(Localize(text), Int32(kTextMeshAlignCenter), &textDef)
+    let text = gEngine.input.userPrefersGamepad != 0 ? STR_PRESS_START : STR_PRESS_ANY_KEY
+    let newObj = TextMesh_New(localized(text), Int32(kTextMeshAlignCenter), &textDef)
     newObj.pointee.ColorFilter.a = 0.6
     newObj.pointee.AnaglyphZ = 6.0
 
@@ -592,7 +590,7 @@ private func setupCreditsObjects() {
 
 private let cMovePressAnyKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Timer += gFramesPerSecondFrac * 4.0
+    theNode.pointee.Timer += gEngine.framesPerSecondFrac * 4.0
     theNode.pointee.ColorFilter.a = 0.66 + sin(theNode.pointee.Timer) * 0.33
 }
 
@@ -600,7 +598,7 @@ private let cMovePressAnyKey: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
 private let cMoveCreditsLine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    theNode.pointee.Timer += gFramesPerSecondFrac
+    theNode.pointee.Timer += gEngine.framesPerSecondFrac
     let t = theNode.pointee.Timer
 
     let liveForever = theNode.pointee.Flag.0 != 0
@@ -636,14 +634,14 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     let y: Float = 200
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.setColor4f(0, 0, 0, 0)
-    gRenderBackend.vertex2f(gLogicalRect.left, y)
-    gRenderBackend.vertex2f(gLogicalRect.right, y)
-    gRenderBackend.setColor4f(0, 0, 0, 1)
-    gRenderBackend.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    gRenderBackend.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.setColor4f(0, 0, 0, 0)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, y)
+    gEngine.renderer.setColor4f(0, 0, 0, 1)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }

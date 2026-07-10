@@ -25,12 +25,12 @@ private let brachAnimEat = 4
 extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     @discardableResult
     func addEnemyBrach(x: Float, z: Float) -> UInt8 {
-        if gNumEnemies >= gMaxEnemies { // keep from getting absurd
+        if gEngine.enemies.numEnemies >= gEngine.enemies.maxEnemies { // keep from getting absurd
             return 0
         }
 
         if pointee.parm.3 & 1 == 0 { // see if always add
-            if gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] >= maxBrachs {
+            if gEngine.enemies.numEnemyOfKind[Int(EnemyKind.brach.rawValue)] >= maxBrachs {
                 return 0
             }
         }
@@ -46,8 +46,8 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         newObj.pointee.Rot.y = Float(pointee.parm.0) * (Float.pi * 2 / 8.0)
         UpdateObjectTransforms(newObj)
 
-        gNumEnemies += 1
-        gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] += 1
+        gEngine.enemies.numEnemies += 1
+        gEngine.enemies.numEnemyOfKind[Int(EnemyKind.brach.rawValue)] += 1
 
         return 1
     }
@@ -60,7 +60,8 @@ private func makeBrach(_ x: Float, _ z: Float, _ animNum: Int16) -> UnsafeMutabl
 
     // SET BETTER INFO
 
-    newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
+    let skeleton = newObj.pointee.Skeleton!
+    skeleton.pointee.CurrentAnimTime = skeleton.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = brachHealth
     newObj.pointee.Damage = brachDamage
@@ -111,7 +112,7 @@ private func moveBrachStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF DO SCRATCH / EAT
 
-    theNode.pointee.Timer -= gFramesPerSecondFrac
+    theNode.pointee.Timer -= gEngine.framesPerSecondFrac
     if theNode.pointee.Timer <= 0.0 {
         if MyRandomLong() & 1 != 0 {
             MorphToSkeletonAnim(theNode.pointee.Skeleton, brachAnimScratch, 3)
@@ -132,10 +133,11 @@ private func moveBrachStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.7 // slow this down
+    let skeleton = theNode.pointee.Skeleton!
+    skeleton.pointee.AnimSpeed = 0.7 // slow this down
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
-        SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
+    if skeleton.animHasStopped {
+        SetSkeletonAnim(skeleton, brachAnimStand)
     }
 
     // DO ENEMY COLLISION
@@ -148,10 +150,11 @@ private func moveBrachScratch(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachEat(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.4 // slow this down
+    let skeleton = theNode.pointee.Skeleton!
+    skeleton.pointee.AnimSpeed = 0.4 // slow this down
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
-        SetSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand)
+    if skeleton.animHasStopped {
+        SetSkeletonAnim(skeleton, brachAnimStand)
     }
 
     // DO ENEMY COLLISION
@@ -164,27 +167,27 @@ private func moveBrachEat(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // MOVE TOWARD PLAYER
 
     var playerNum: Int16 = 0
-    _ = CalcDistanceToClosestPlayer(&gCoord, &playerNum) // find out who's the closest player
+    _ = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum) // find out who's the closest player
 
     if GetPlayerIsDead(Int32(playerNum)) == 0 { // don't aim at dead players
         let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
-        _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
+        _ = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
                                     turnSpeed: brachTurnSpeed, useOffsets: 0, crossOut: nil)
     }
 
     let r = theNode.pointee.Rot.y
-    gDelta.x = -sin(r) * brachWalkSpeed
-    gDelta.z = -cos(r) * brachWalkSpeed
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.delta.x = -sin(r) * brachWalkSpeed
+    gEngine.objects.delta.z = -cos(r) * brachWalkSpeed
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     if IsWaterInFrontOfEnemy(r) != 0 { // if about to enter water then stop
         MorphToSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand, 8)
@@ -200,7 +203,7 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.Skeleton!.pointee.AnimSpeed = 0.4
 
@@ -210,7 +213,7 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     if IsObjectTotallyCulled(theNode) != 0 {
         var playerNum: Int16 = 0
-        let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
+        let dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
 
         if dist > 3000.0 {
             DeleteEnemy(theNode)
@@ -218,13 +221,13 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 { // if on ground, add friction
-        gDelta.applyFriction(2000.0)
+    if theNode.hasStatus(STATUS_BIT_ONGROUND) { // if on ground, add friction
+        gEngine.objects.delta.applyFriction(2000.0)
     }
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // DO ENEMY COLLISION
 
@@ -242,8 +245,9 @@ private func updateBrach(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SET WALK ANIM SPEED
 
-    if theNode.pointee.Skeleton!.pointee.AnimNum == UInt8(brachAnimWalk) {
-        theNode.pointee.Skeleton!.pointee.AnimSpeed = theNode.pointee.Speed * 0.003
+    let skeleton = theNode.pointee.Skeleton!
+    if skeleton.pointee.AnimNum == UInt8(brachAnimWalk) {
+        skeleton.pointee.AnimSpeed = theNode.pointee.Speed * 0.003
     }
 }
 
@@ -255,7 +259,7 @@ func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineIt
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE BRACH
 
@@ -263,7 +267,7 @@ func PrimeEnemy_Brach(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineIt
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -331,7 +335,7 @@ private func killBrach(_ enemy: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveBrach)
     }
 

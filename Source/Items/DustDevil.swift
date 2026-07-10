@@ -14,43 +14,48 @@ private let numPointsPerDevil = numDevilSegments * numPointsPerSegment
 private let numTrianglesPerSegment = numPointsPerSegment - 2
 private let numTrianglesPerDevil = numTrianglesPerSegment * numDevilSegments
 
-private var gNumDustDevils: Int16 = 0
+/// Dust-devil state. Owned by GameEngine as `gEngine.dustDevils`.
+final class DustDevilSystem {
+    fileprivate var numDustDevils: Int16 = 0
+    fileprivate var isUsed = [Bool](repeating: false, count: maxDevils)
+    fileprivate var objects: [UnsafeMutablePointer<ObjNode>?] = Array(repeating: nil, count: maxDevils)
 
-private var gDustDevilIsUsed = [Bool](repeating: false, count: maxDevils)
-private var gDustDevilObjects: [UnsafeMutablePointer<ObjNode>?] = Array(repeating: nil, count: maxDevils)
+    fileprivate let trianglesStorage = UnsafeMutablePointer<MOTriangleIndecies>.allocate(capacity: 2 * numTrianglesPerDevil)
+    fileprivate let pointsStorage = UnsafeMutablePointer<OGLPoint3D>.allocate(capacity: 2 * numPointsPerDevil)
+    fileprivate let normalsStorage = UnsafeMutablePointer<OGLVector3D>.allocate(capacity: 2 * numPointsPerDevil)
+    fileprivate let uvsStorage = UnsafeMutablePointer<OGLTextureCoord>.allocate(capacity: 2 * numPointsPerDevil)
+
+    fileprivate var meshes = [MOVertexArrayData](repeating: MOVertexArrayData(), count: 2)
+    fileprivate var ribOffset = [OGLPoint3D](repeating: OGLPoint3D(), count: numRibs * numPointsPerRib)
+}
+
 
 // Flat, stable-address, double-buffered vertex array storage:
 // layout is [buffer(2)][point/triangle within one devil mesh].
-private let gDustDevilTrianglesStorage = UnsafeMutablePointer<MOTriangleIndecies>.allocate(capacity: 2 * numTrianglesPerDevil)
-private let gDustDevilPointsStorage = UnsafeMutablePointer<OGLPoint3D>.allocate(capacity: 2 * numPointsPerDevil)
-private let gDustDevilNormalsStorage = UnsafeMutablePointer<OGLVector3D>.allocate(capacity: 2 * numPointsPerDevil)
-private let gDustDevilUVsStorage = UnsafeMutablePointer<OGLTextureCoord>.allocate(capacity: 2 * numPointsPerDevil)
 
 @inline(__always) private func dustDevilTrianglesBase(_ b: Int) -> UnsafeMutablePointer<MOTriangleIndecies> {
-    gDustDevilTrianglesStorage + b * numTrianglesPerDevil
+    gEngine.dustDevils.trianglesStorage + b * numTrianglesPerDevil
 }
 @inline(__always) private func dustDevilPointsBase(_ b: Int) -> UnsafeMutablePointer<OGLPoint3D> {
-    gDustDevilPointsStorage + b * numPointsPerDevil
+    gEngine.dustDevils.pointsStorage + b * numPointsPerDevil
 }
 @inline(__always) private func dustDevilNormalsBase(_ b: Int) -> UnsafeMutablePointer<OGLVector3D> {
-    gDustDevilNormalsStorage + b * numPointsPerDevil
+    gEngine.dustDevils.normalsStorage + b * numPointsPerDevil
 }
 @inline(__always) private func dustDevilUVsBase(_ b: Int) -> UnsafeMutablePointer<OGLTextureCoord> {
-    gDustDevilUVsStorage + b * numPointsPerDevil
+    gEngine.dustDevils.uvsStorage + b * numPointsPerDevil
 }
 
-private var gDustDevilMeshes = [MOVertexArrayData](repeating: MOVertexArrayData(), count: 2)
 
-// gRibOffset[seg][j], flattened: index = seg * numPointsPerRib + j
-private var gRibOffset = [OGLPoint3D](repeating: OGLPoint3D(), count: numRibs * numPointsPerRib)
+// gEngine.dustDevils.ribOffset[seg][j], flattened: index = seg * numPointsPerRib + j
 
 // MARK: - Init dust devil memory
 
 func InitDustDevilMemory() {
-    gNumDustDevils = 0 // none build yet
+    gEngine.dustDevils.numDustDevils = 0 // none build yet
 
     for d in 0..<maxDevils {
-        gDustDevilIsUsed[d] = false // this one is available
+        gEngine.dustDevils.isUsed[d] = false // this one is available
     }
 
     // MAKE DUMMY OBJECT
@@ -82,9 +87,9 @@ func InitDustDevilMemory() {
             ribNormals[idx].z = cos(rot)
             ribNormals[idx].y = 0
 
-            gRibOffset[idx].x = ribNormals[idx].x * scale
-            gRibOffset[idx].z = ribNormals[idx].z * scale
-            gRibOffset[idx].y = Float(seg) * 250.0
+            gEngine.dustDevils.ribOffset[idx].x = ribNormals[idx].x * scale
+            gEngine.dustDevils.ribOffset[idx].z = ribNormals[idx].z * scale
+            gEngine.dustDevils.ribOffset[idx].y = Float(seg) * 250.0
 
             rot += SwPI2 / Float(numPointsPerRib - 1)
         }
@@ -95,19 +100,19 @@ func InitDustDevilMemory() {
     for b in 0..<2 { // make geometry for each double-buffer
         // INIT TRIMESH STRUCT
 
-        gDustDevilMeshes[b].VARtype = -1
+        gEngine.dustDevils.meshes[b].VARtype = -1
 
-        gDustDevilMeshes[b].numMaterials = -1
-        gDustDevilMeshes[b].materials.0 = nil
+        gEngine.dustDevils.meshes[b].numMaterials = -1
+        gEngine.dustDevils.meshes[b].materials.0 = nil
 
-        gDustDevilMeshes[b].numPoints = Int32(numPointsPerDevil)
-        gDustDevilMeshes[b].numTriangles = Int32(numTrianglesPerDevil)
+        gEngine.dustDevils.meshes[b].numPoints = Int32(numPointsPerDevil)
+        gEngine.dustDevils.meshes[b].numTriangles = Int32(numTrianglesPerDevil)
 
-        gDustDevilMeshes[b].points = dustDevilPointsBase(b)
-        gDustDevilMeshes[b].triangles = dustDevilTrianglesBase(b)
-        gDustDevilMeshes[b].normals = dustDevilNormalsBase(b)
-        gDustDevilMeshes[b].uvs.0 = dustDevilUVsBase(b)
-        gDustDevilMeshes[b].colorsFloat = nil
+        gEngine.dustDevils.meshes[b].points = dustDevilPointsBase(b)
+        gEngine.dustDevils.meshes[b].triangles = dustDevilTrianglesBase(b)
+        gEngine.dustDevils.meshes[b].normals = dustDevilNormalsBase(b)
+        gEngine.dustDevils.meshes[b].uvs.0 = dustDevilUVsBase(b)
+        gEngine.dustDevils.meshes[b].colorsFloat = nil
 
         // INIT UV ARRAY
 
@@ -141,14 +146,14 @@ func InitDustDevilMemory() {
             // SET LOWER RIB POINTS
 
             for j in 0..<numPointsPerRib {
-                dustDevilPointsBase(b)[ribPtIndex] = gRibOffset[i * numPointsPerRib + j]
+                dustDevilPointsBase(b)[ribPtIndex] = gEngine.dustDevils.ribOffset[i * numPointsPerRib + j]
                 ribPtIndex += 1
             }
 
             // SET UPPER RIB POINTS
 
             for j in 0..<numPointsPerRib {
-                dustDevilPointsBase(b)[ribPtIndex] = gRibOffset[(i + 1) * numPointsPerRib + j]
+                dustDevilPointsBase(b)[ribPtIndex] = gEngine.dustDevils.ribOffset[(i + 1) * numPointsPerRib + j]
                 ribPtIndex += 1
             }
         }
@@ -202,10 +207,10 @@ func InitDustDevilMemory() {
 // old to modify the new.
 
 func UpdateDustDevilUVAnimation() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
-    if gNumDustDevils > 0 { // only bother if there are dirt devils around
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    if gEngine.dustDevils.numDustDevils > 0 { // only bother if there are dirt devils around
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
         var n: Float = 4.0 // uv scroll speed for bottom segment
 
@@ -266,9 +271,9 @@ private func makeDustDevil(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNo
 
     newObj.pointee.Mode = Int32(devilNum)
 
-    gNumDustDevils += 1
+    gEngine.dustDevils.numDustDevils += 1
 
-    gDustDevilObjects[devilNum] = newObj
+    gEngine.dustDevils.objects[devilNum] = newObj
 
     return newObj
 }
@@ -277,8 +282,8 @@ private func makeDustDevil(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNo
 
 private func findFreeDustDevilSlot() -> Int {
     for i in 0..<maxDevils {
-        if !gDustDevilIsUsed[i] {
-            gDustDevilIsUsed[i] = true
+        if !gEngine.dustDevils.isUsed[i] {
+            gEngine.dustDevils.isUsed[i] = true
             return i
         }
     }
@@ -289,24 +294,24 @@ private func findFreeDustDevilSlot() -> Int {
 // MARK: - Draw dust devils
 
 private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    if gNumDustDevils == 0 {
+    if gEngine.dustDevils.numDustDevils == 0 {
         return
     }
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     // DRAW EACH ACTIVE DUST DEVIL
 
-    gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V)
+    gEngine.metaObjects.globalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V)
 
     for d in 0..<maxDevils {
-        if !gDustDevilIsUsed[d] { // is this one used?
+        if !gEngine.dustDevils.isUsed[d] { // is this one used?
             continue
         }
 
-        let theNode = gDustDevilObjects[d]! // get ptr to this devil's objNode
+        let theNode = gEngine.dustDevils.objects[d]! // get ptr to this devil's objNode
 
-        gRenderBackend.pushMatrix()
+        gEngine.renderer.pushMatrix()
 
         MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_LEVELSPECIFIC))![Int(LEVEL2_SObjType_DustDevil)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
 
@@ -314,34 +319,34 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
         var m = OGLMatrix4x4()
         m.setTranslate(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-        gRenderBackend.multMatrix(&m.value.0)
+        gEngine.renderer.multMatrix(&m.value.0)
 
         // SCALE DOWN AND DRAW INNER SHELL
 
-        if gGamePrefs.lowRenderQuality == 0 {
-            gRenderBackend.pushMatrix()
+        if !gGamePrefs.isLowRenderQuality {
+            gEngine.renderer.pushMatrix()
             OGL_SetColor4f(1, 1, 1, 0.5)
 
             m.setScale(0.8, 1, 0.8)
-            gRenderBackend.multMatrix(&m.value.0)
+            gEngine.renderer.multMatrix(&m.value.0)
 
             m.setRotateY(Float.pi)
-            gRenderBackend.multMatrix(&m.value.0)
+            gEngine.renderer.multMatrix(&m.value.0)
 
-            MO_DrawGeometry_VertexArray(&gDustDevilMeshes[buffNum])
+            MO_DrawGeometry_VertexArray(&gEngine.dustDevils.meshes[buffNum])
 
             OGL_SetColor4f(1, 1, 1, 1)
-            gRenderBackend.popMatrix()
+            gEngine.renderer.popMatrix()
         }
 
         // DRAW OUTER SHELL
 
-        MO_DrawGeometry_VertexArray(&gDustDevilMeshes[buffNum])
+        MO_DrawGeometry_VertexArray(&gEngine.dustDevils.meshes[buffNum])
 
-        gRenderBackend.popMatrix()
+        gEngine.renderer.popMatrix()
     }
 
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalMaterialFlags = 0
 }
 
 // MARK: -
@@ -353,8 +358,8 @@ private let cMoveDustDevil: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
     let devilNum = Int(theNode.pointee.Mode)
 
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
-        gDustDevilIsUsed[devilNum] = false
-        gNumDustDevils -= 1
+        gEngine.dustDevils.isUsed[devilNum] = false
+        gEngine.dustDevils.numDustDevils -= 1
         DeleteObject(theNode)
         return
     }
@@ -375,7 +380,7 @@ private let cMoveDustDevil: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> V
 // MARK: - Make dust devil dust
 
 private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.getInfo()
 
@@ -392,25 +397,25 @@ private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
             let newMagicNum = MyRandomLong() // generate a random magic num
             theNode.pointee.ParticleMagicNum = newMagicNum
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-            gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-            gNewParticleGroupDef.gravity = 10
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 35.0
-            gNewParticleGroupDef.decayRate = -8.0
-            gNewParticleGroupDef.fadeRate = 0.25
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
-            particleGroup = NewParticleGroup(&gNewParticleGroupDef)
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+            gEngine.particles.newGroupDef.gravity = 10
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 35.0
+            gEngine.particles.newGroupDef.decayRate = -8.0
+            gEngine.particles.newGroupDef.fadeRate = 0.25
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
+            particleGroup = NewParticleGroup(&gEngine.particles.newGroupDef)
             theNode.pointee.ParticleGroup = particleGroup
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let y = gCoord.y
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let y = gEngine.objects.coord.y
+            let z = gEngine.objects.coord.z
 
             for _ in 0..<2 {
                 var p = OGLPoint3D()
@@ -462,7 +467,7 @@ func PrimeDustDevil(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItem
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE IT
 
@@ -470,7 +475,7 @@ func PrimeDustDevil(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItem
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -522,7 +527,7 @@ private let cMoveDustDevilOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode
 // MARK: - See if dust devil hits player
 
 private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
-    for p in 0..<Int(gNumPlayers) {
+    for p in 0..<Int(gEngine.player.numPlayers) {
         // SEE IF WE CARE ABOUT THIS PLAYER
 
         if GetPlayerIsDead(Int32(p)) != 0 { // skip dead players
@@ -531,11 +536,11 @@ private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
 
         let player = GetPlayerInfoEntry(Int32(p)).pointee.objNode! // get player ObjNode
 
-        let animNum = Int(player.pointee.Skeleton!.pointee.AnimNum)
-        if animNum == Int(PlayerAnim.deathDive.rawValue) ||
-            animNum == Int(PlayerAnim.appearWormhole.rawValue) ||
-            animNum == Int(PlayerAnim.enterWormhole.rawValue) ||
-            animNum == Int(PlayerAnim.dustDevil.rawValue) {
+        let animNum = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+        if animNum == .deathDive ||
+            animNum == .appearWormhole ||
+            animNum == .enterWormhole ||
+            animNum == .dustDevil {
             continue
         }
 
@@ -549,10 +554,10 @@ private func seeIfDustDevilHitsPlayer(_ devil: UnsafeMutablePointer<ObjNode>) {
         // SCAN ONE RIB AT A TIME
 
         for r in 0..<numRibs {
-            let ribY = gRibOffset[r * numPointsPerRib].y + devil.pointee.Coord.y // calc y coord of rib
+            let ribY = gEngine.dustDevils.ribOffset[r * numPointsPerRib].y + devil.pointee.Coord.y // calc y coord of rib
 
             if playerY > ribY { // is player above this rib?
-                let radius = gRibOffset[r * numPointsPerRib].z + 50.0 // get radius of rib from first point's z offset (plus a tweak factor)
+                let radius = gEngine.dustDevils.ribOffset[r * numPointsPerRib].z + 50.0 // get radius of rib from first point's z offset (plus a tweak factor)
 
                 if distXZ < radius { // is player within this rib's radius?
                     // IT'S A HIT
@@ -572,7 +577,7 @@ private func putPlayerInDirtDevil(_ player: UnsafeMutablePointer<ObjNode>, _ dus
     DropEgg_NoWormhole(Int16(p))
     JetpackOff(Int16(p))
 
-    MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.dustDevil.rawValue), 3.0)
+    MorphToSkeletonAnim(player.pointee.Skeleton, .dustDevil, 3.0)
 
     player.pointee.Timer = 4.0 // set duration of time in dust devil
 

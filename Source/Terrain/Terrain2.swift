@@ -1,7 +1,7 @@
 // Terrain2.swift - Port of Terrain2.c to Swift
 //
-// gNumTerrainItems, gMasterItemList, gMapYCoords, gMapYCoordsOriginal,
-// gMapSplitMode, gSuperTileItemIndexGrid, gNumLineMarkers, and
+// gEngine.terrain.numTerrainItems, gEngine.terrain.masterItemList, gEngine.terrain.mapYCoords, gEngine.terrain.mapYCoordsOriginal,
+// gEngine.terrain.mapSplitMode, gEngine.terrain.superTileItemIndexGrid, gEngine.terrain.numLineMarkers, and
 // gLineMarkerList stay defined in Terrain.c (which already holds the rest
 // of the shared terrain globals): many other already-ported and
 // still-unported files read/write them directly via `extern`.
@@ -219,42 +219,42 @@ private let gTerrainItemAddRoutines: [(@convention(c) (UnsafeMutablePointer<Terr
 func BuildTerrainItemList() {
     // ALLOC MEMORY FOR SUPERTILE ITEM INDEX GRID
 
-    gSuperTileItemIndexGrid = alloc2DArray(SuperTileItemIndexType.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide))
+    gEngine.terrain.superTileItemIndexGrid = alloc2DArray(SuperTileItemIndexType.self, rows: Int(gEngine.terrain.numSuperTilesDeep), cols: Int(gEngine.terrain.numSuperTilesWide))
 
-    if gNumTerrainItems == 0 {
+    if gEngine.terrain.numTerrainItems == 0 {
         SwFatal("BuildTerrainItemList: there must be at least 1 terrain item!")
     }
 
     // ALLOC MEMORY FOR NEW LIST
 
-    guard let tempItemList = AllocPtrClear(MemoryLayout<TerrainItemEntryType>.size * Int(gNumTerrainItems))?.assumingMemoryBound(to: TerrainItemEntryType.self) else {
+    guard let tempItemList = AllocPtrClear(MemoryLayout<TerrainItemEntryType>.size * Int(gEngine.terrain.numTerrainItems))?.assumingMemoryBound(to: TerrainItemEntryType.self) else {
         SwFatal("BuildTerrainItemList: AllocPtr failed!")
         return
     }
 
-    let srcList = gMasterItemList!
+    let srcList = gEngine.terrain.masterItemList!
     let newList = tempItemList
 
     // SCAN ALL SUPERTILES
 
     var total = 0
 
-    for row in 0..<Int(gNumSuperTilesDeep) {
-        for col in 0..<Int(gNumSuperTilesWide) {
-            gSuperTileItemIndexGrid[row]![col].numItems = 0 // no items on this supertile yet
+    for row in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+        for col in 0..<Int(gEngine.terrain.numSuperTilesWide) {
+            gEngine.terrain.superTileItemIndexGrid[row]![col].numItems = 0 // no items on this supertile yet
 
             // FIND ALL ITEMS ON THIS SUPERTILE
 
-            for i in 0..<Int(gNumTerrainItems) {
+            for i in 0..<Int(gEngine.terrain.numTerrainItems) {
                 var itemX = Int(srcList[i].x) // get pixel coords of item
                 var itemZ = Int(srcList[i].y)
 
-                itemX /= Int(gTerrainSuperTileUnitSize) // convert to supertile row
-                itemZ /= Int(gTerrainSuperTileUnitSize) // convert to supertile column
+                itemX /= Int(gEngine.terrain.superTileUnitSize) // convert to supertile row
+                itemZ /= Int(gEngine.terrain.superTileUnitSize) // convert to supertile column
 
                 if itemX == col && itemZ == row { // see if its on this supertile
-                    if gSuperTileItemIndexGrid[row]![col].numItems == 0 { // see if this is the 1st item
-                        gSuperTileItemIndexGrid[row]![col].itemIndex = UInt16(total) // set starting index
+                    if gEngine.terrain.superTileItemIndexGrid[row]![col].numItems == 0 { // see if this is the 1st item
+                        gEngine.terrain.superTileItemIndexGrid[row]![col].itemIndex = UInt16(total) // set starting index
                     }
 
                     newList[total] = srcList[i] // copy into new list
@@ -266,7 +266,7 @@ func BuildTerrainItemList() {
                     // INC
 
                     total += 1 // inc counter
-                    gSuperTileItemIndexGrid[row]![col].numItems += 1 // inc # items on this supertile
+                    gEngine.terrain.superTileItemIndexGrid[row]![col].numItems += 1 // inc # items on this supertile
                 } else if itemX > col { // since original list is sorted, we can know when we are past the usable edge
                     break
                 }
@@ -276,8 +276,8 @@ func BuildTerrainItemList() {
 
     // NUKE THE ORIGINAL ITEM LIST AND REASSIGN TO THE NEW SORTED LIST
 
-    SafeDisposePtr(UnsafeMutableRawPointer(gMasterItemList)) // nuke old list
-    gMasterItemList = tempItemList // reassign
+    SafeDisposePtr(UnsafeMutableRawPointer(gEngine.terrain.masterItemList)) // nuke old list
+    gEngine.terrain.masterItemList = tempItemList // reassign
 
     // DO SOME ITEM INITIALIZATION
 
@@ -293,11 +293,11 @@ func BuildTerrainItemList() {
 private func findPlayerStartCoordItems() {
     var flags = [Bool](repeating: false, count: Int(MAX_PLAYERS))
 
-    let itemPtr = gMasterItemList! // get pointer to data inside the LOCKED handle
+    let itemPtr = gEngine.terrain.masterItemList! // get pointer to data inside the LOCKED handle
 
     // SCAN FOR "START COORD" ITEM
 
-    for i in 0..<Int(gNumTerrainItems) {
+    for i in 0..<Int(gEngine.terrain.numTerrainItems) {
         if itemPtr[i].type == UInt16(MAP_ITEM_MYSTARTCOORD) { // see if it's a MyStartCoord item
             // CHECK FOR BIT INFO
 
@@ -330,13 +330,13 @@ private func findPlayerStartCoordItems() {
 // This scans all of the items on this supertile and attempts to add them.
 
 func AddTerrainItemsOnSuperTile(_ row: Int, _ col: Int) {
-    let numItems = Int(gSuperTileItemIndexGrid[row]![col].numItems) // see how many items are on this supertile
+    let numItems = Int(gEngine.terrain.superTileItemIndexGrid[row]![col].numItems) // see how many items are on this supertile
     if numItems == 0 {
         return
     }
 
-    let startIndex = Int(gSuperTileItemIndexGrid[row]![col].itemIndex) // get starting index into item list
-    let itemPtr = gMasterItemList! + startIndex // get pointer to 1st item on this supertile
+    let startIndex = Int(gEngine.terrain.superTileItemIndexGrid[row]![col].itemIndex) // get starting index into item list
+    let itemPtr = gEngine.terrain.masterItemList! + startIndex // get pointer to 1st item on this supertile
 
     // SCAN ALL ITEMS UNDER HERE
 
@@ -373,7 +373,7 @@ private extension UInt32 {
 // Returns true if theNode is out of range
 
 func TrackTerrainItem(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DONTPURGE) != 0 { // see if non-purgable
+    if theNode.hasStatus(STATUS_BIT_DONTPURGE) { // see if non-purgable
         return 0
     }
 
@@ -391,16 +391,16 @@ func SeeIfCoordsOutOfRange(_ x: Float, _ z: Float) -> UInt8 {
     if x < 0 || z < 0 {
         return 1
     }
-    if x >= Float(gTerrainUnitWidth) || z >= Float(gTerrainUnitDepth) {
+    if x >= Float(gEngine.terrain.unitWidth) || z >= Float(gEngine.terrain.unitDepth) {
         return 1
     }
 
     // SEE IF A PLAYER USES THIS SUPERTILE
 
-    let col = Int(x * gTerrainSuperTileUnitSizeFrac) // calc supertile relative row/col that the coord lies on
-    let row = Int(z * gTerrainSuperTileUnitSizeFrac)
+    let col = Int(x * gEngine.terrain.superTileUnitSizeFrac) // calc supertile relative row/col that the coord lies on
+    let row = Int(z * gEngine.terrain.superTileUnitSizeFrac)
 
-    if gSuperTileStatusGrid[row]![col].playerHereFlags != 0 { // if a player is using this supertile, then coords are in range
+    if gEngine.terrain.superTileStatusGrid[row]![col].playerHereFlags != 0 { // if a player is using this supertile, then coords are in range
         return 0
     } else {
         return 1 // otherwise, out of range since no players can see this supertile
@@ -428,7 +428,7 @@ func RotateOnTerrain(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffset: Float
     if let surfaceNormal {
         up = surfaceNormal.pointee
     } else {
-        up = gRecentTerrainNormal
+        up = gEngine.terrain.recentTerrainNormal
     }
 
     // CALC "TO" COORD
@@ -468,7 +468,7 @@ func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffs
     let x = theNode.pointee.Coord.x
     let z = theNode.pointee.Coord.z
     _ = GetTerrainY(x, z)
-    var up = gRecentTerrainNormal
+    var up = gEngine.terrain.recentTerrainNormal
 
     // AVERAGE IN THE RADIAL NORMALS
 
@@ -478,9 +478,9 @@ func RotateOnTerrain_WideArea(_ theNode: UnsafeMutablePointer<ObjNode>!, _ yOffs
         // float z2 = z + cos(r) * radius;
 
         _ = GetTerrainY(x, z)
-        up.x += gRecentTerrainNormal.x
-        up.y += gRecentTerrainNormal.y
-        up.z += gRecentTerrainNormal.z
+        up.x += gEngine.terrain.recentTerrainNormal.x
+        up.y += gEngine.terrain.recentTerrainNormal.y
+        up.z += gEngine.terrain.recentTerrainNormal.z
 
         r += Float.pi / 8
     }
@@ -501,14 +501,14 @@ func CalcTileNormals(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVecto
     var p3 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p4 = OGLPoint3D(x: 0, y: 0, z: 0)
 
-    p2.z = gTerrainPolygonSize
-    p3.x = gTerrainPolygonSize
-    p3.z = gTerrainPolygonSize
-    p4.x = gTerrainPolygonSize
+    p2.z = gEngine.terrain.polygonSize
+    p3.x = gEngine.terrain.polygonSize
+    p3.z = gEngine.terrain.polygonSize
+    p4.x = gEngine.terrain.polygonSize
 
     // MAKE SURE ROW/COL IS IN RANGE
 
-    if row >= Int(gTerrainTileDepth) || row < 0 || col >= Int(gTerrainTileWidth) || col < 0 {
+    if row >= Int(gEngine.terrain.tileDepth) || row < 0 || col >= Int(gEngine.terrain.tileWidth) || col < 0 {
         n1.pointee.x = 0 // pass back up vector by default since our of range
         n2.pointee.x = 0
         n1.pointee.y = 1
@@ -518,14 +518,14 @@ func CalcTileNormals(_ row: Int, _ col: Int, _ n1: UnsafeMutablePointer<OGLVecto
         return
     }
 
-    p1.y = gMapYCoords[row]![col] // far left
-    p2.y = gMapYCoords[row + 1]![col] // near left
-    p3.y = gMapYCoords[row + 1]![col + 1] // near right
-    p4.y = gMapYCoords[row]![col + 1] // far right
+    p1.y = gEngine.terrain.mapYCoords[row]![col] // far left
+    p2.y = gEngine.terrain.mapYCoords[row + 1]![col] // near left
+    p3.y = gEngine.terrain.mapYCoords[row + 1]![col + 1] // near right
+    p4.y = gEngine.terrain.mapYCoords[row]![col + 1] // far right
 
     // CALC NORMALS BASED ON SPLIT
 
-    if gMapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) {
+    if gEngine.terrain.mapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) {
         CalcFaceNormal(&p2, &p3, &p1, n1) // fl, nl, nr
         CalcFaceNormal(&p3, &p4, &p1, n2) // fl, nr, fr
     } else {
@@ -544,14 +544,14 @@ func CalcTileNormals_NotNormalized(_ row: Int, _ col: Int, _ n1: UnsafeMutablePo
     var p3 = OGLPoint3D(x: 0, y: 0, z: 0)
     var p4 = OGLPoint3D(x: 0, y: 0, z: 0)
 
-    p2.z = gTerrainPolygonSize
-    p3.x = gTerrainPolygonSize
-    p3.z = gTerrainPolygonSize
-    p4.x = gTerrainPolygonSize
+    p2.z = gEngine.terrain.polygonSize
+    p3.x = gEngine.terrain.polygonSize
+    p3.z = gEngine.terrain.polygonSize
+    p4.x = gEngine.terrain.polygonSize
 
     // MAKE SURE ROW/COL IS IN RANGE
 
-    if row >= Int(gTerrainTileDepth) || row < 0 || col >= Int(gTerrainTileWidth) || col < 0 {
+    if row >= Int(gEngine.terrain.tileDepth) || row < 0 || col >= Int(gEngine.terrain.tileWidth) || col < 0 {
         n1.pointee.x = 0 // pass back up vector by default since our of range
         n2.pointee.x = 0
         n1.pointee.y = 1
@@ -561,14 +561,14 @@ func CalcTileNormals_NotNormalized(_ row: Int, _ col: Int, _ n1: UnsafeMutablePo
         return
     }
 
-    p1.y = gMapYCoords[row]![col] // far left
-    p2.y = gMapYCoords[row + 1]![col] // near left
-    p3.y = gMapYCoords[row + 1]![col + 1] // near right
-    p4.y = gMapYCoords[row]![col + 1] // far right
+    p1.y = gEngine.terrain.mapYCoords[row]![col] // far left
+    p2.y = gEngine.terrain.mapYCoords[row + 1]![col] // near left
+    p3.y = gEngine.terrain.mapYCoords[row + 1]![col + 1] // near right
+    p4.y = gEngine.terrain.mapYCoords[row]![col + 1] // far right
 
     // CALC NORMALS BASED ON SPLIT
 
-    if gMapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) {
+    if gEngine.terrain.mapSplitMode[row]![col] == UInt8(SPLIT_BACKWARD) {
         CalcFaceNormal_NotNormalized(&p2, &p3, &p1, n1) // fl, nl, nr
         CalcFaceNormal_NotNormalized(&p3, &p4, &p1, n2) // fl, nr, fr
     } else {
@@ -590,42 +590,42 @@ func DoItemShadowCasting() {
 
     // INIT SHADING GRID
 
-    gVertexShading = alloc2DArray(Float.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1) // alloc 2D array for map
-    for row in 0...Int(gTerrainTileDepth) {
-        for col in 0...Int(gTerrainTileWidth) {
-            gVertexShading[row]![col] = 1.0
+    gEngine.terrain.vertexShading = alloc2DArray(Float.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1) // alloc 2D array for map
+    for row in 0...Int(gEngine.terrain.tileDepth) {
+        for col in 0...Int(gEngine.terrain.tileWidth) {
+            gEngine.terrain.vertexShading[row]![col] = 1.0
         }
     }
 
     // INIT SHADOW FLAGS TEMP BUFFER
 
-    let shadowFlags = alloc2DArray(UInt8.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1)
+    let shadowFlags = alloc2DArray(UInt8.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1)
 
-    for row in 0...Int(gTerrainTileDepth) {
-        for col in 0...Int(gTerrainTileWidth) {
+    for row in 0...Int(gEngine.terrain.tileDepth) {
+        for col in 0...Int(gEngine.terrain.tileWidth) {
             shadowFlags[row]![col] = 0
         }
     }
 
     // GET MAIN LIGHT VECTOR INFO
 
-    var lightVector = OGLVector2D(x: gGameViewInfoPtr!.pointee.lightList.fillDirection.0.x, y: gGameViewInfoPtr!.pointee.lightList.fillDirection.0.z)
+    var lightVector = OGLVector2D(x: gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0.x, y: gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0.z)
     var lightVectorNorm = OGLVector2D()
     OGLVector2D_Normalize(&lightVector, &lightVectorNorm)
     lightVector = lightVectorNorm
 
     let upVar = up
-    let fillDir = gGameViewInfoPtr!.pointee.lightList.fillDirection.0
+    let fillDir = gEngine.game.viewInfoPtr!.pointee.lightList.fillDirection.0
     var dot = upVar.dot(fillDir)
     dot = 1.0 - dot
 
     // SCAN THRU ITEM LIST
 
-    for i in 0..<Int(gNumTerrainItems) {
+    for i in 0..<Int(gEngine.terrain.numTerrainItems) {
         // SEE WHICH THINGS WE SUPPORT & GET PARMS
 
         let height: Float
-        switch gMasterItemList![i].type {
+        switch gEngine.terrain.masterItemList![i].type {
         case 1: // birch
             height = 1000
 
@@ -638,7 +638,7 @@ func DoItemShadowCasting() {
 
         // CALCULATE LINE TO DRAW SHADOW ALONG
 
-        var from = OGLPoint2D(x: Float(gMasterItemList![i].x), y: Float(gMasterItemList![i].y))
+        var from = OGLPoint2D(x: Float(gEngine.terrain.masterItemList![i].x), y: Float(gEngine.terrain.masterItemList![i].y))
         var to = OGLPoint2D(x: from.x + lightVector.x * (height * dot), y: from.y + lightVector.y * (height * dot))
 
         let length = OGLPoint2D_Distance(&from, &to)
@@ -656,14 +656,14 @@ func DoItemShadowCasting() {
             while ro <= 0.5 {
                 var co: Float = -0.5
                 while co <= 0.5 {
-                    let row = Int(z / gTerrainPolygonSize + ro) // calc row/col
-                    let col = Int(x / gTerrainPolygonSize + co)
+                    let row = Int(z / gEngine.terrain.polygonSize + ro) // calc row/col
+                    let col = Int(x / gEngine.terrain.polygonSize + co)
 
                     if row < 0 || col < 0 { // check for out of bounds
                         co += 0.5
                         continue
                     }
-                    if row >= Int(gTerrainTileDepth) || col >= Int(gTerrainTileWidth) {
+                    if row >= Int(gEngine.terrain.tileDepth) || col >= Int(gEngine.terrain.tileWidth) {
                         co += 0.5
                         continue
                     }
@@ -675,14 +675,14 @@ func DoItemShadowCasting() {
 
                     shadowFlags[row]![col] = 1 // set flag
 
-                    gVertexShading[row]![col] = shadeFactor // set shading
+                    gEngine.terrain.vertexShading[row]![col] = shadeFactor // set shading
 
                     co += 0.5
                 } // co
                 ro += 0.5
             } // ro
 
-            t -= 1.0 / (length / gTerrainPolygonSize)
+            t -= 1.0 / (length / gEngine.terrain.polygonSize)
         }
     }
 
@@ -702,12 +702,12 @@ func SeeIfCrossedLineMarker(_ theNode: UnsafeMutablePointer<ObjNode>!, _ whichLi
 
     let fromX = theNode.pointee.OldCoord.x
     let fromZ = theNode.pointee.OldCoord.z
-    let toX = gCoord.x
-    let toZ = gCoord.z
+    let toX = gEngine.objects.coord.x
+    let toZ = gEngine.objects.coord.z
 
     // SEE IF CROSSED ANY LINE MARKERS
 
-    for c in 0..<Int(gNumLineMarkers) {
+    for c in 0..<Int(gEngine.terrain.numLineMarkers) {
         var intersectX: Float = 0
         var intersectZ: Float = 0
 

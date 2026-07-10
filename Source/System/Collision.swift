@@ -1,6 +1,6 @@
 // Collision.swift - Port of Collision.c to Swift
 //
-// gCollisionList/gNumCollisions/gTotalSides are native Swift storage now
+// gCollisionList/gEngine.collision.numCollisions/gEngine.collision.totalSides are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore.
 // gCollisionList was a fixed-size C array exposed via EnemyInternal.h's
 // GetCollisionListEntry shim; it's now a permanent, never-freed
@@ -9,32 +9,37 @@
 // (Player_Terrain.swift, Enemy.swift, Player_Weapons.swift) didn't need
 // to change.
 
-var gNumCollisions: Int16 = 0
-var gTotalSides: UInt8 = 0
-
 private let maxCollisions = 60
 
-private let gCollisionListBuf: UnsafeMutablePointer<CollisionRec> = {
-    let buf = UnsafeMutablePointer<CollisionRec>.allocate(capacity: maxCollisions)
-    buf.initialize(repeating: CollisionRec(), count: maxCollisions)
-    return buf
-}()
-func GetCollisionListEntry(_ i: Int32) -> UnsafeMutablePointer<CollisionRec>! {
-    gCollisionListBuf + Int(i)
+/// Collision-detection state. Owned by GameEngine as `gEngine.collision`.
+final class CollisionSystem {
+    var numCollisions: Int16 = 0
+    var totalSides: UInt8 = 0
+
+    fileprivate let listBuf: UnsafeMutablePointer<CollisionRec> = {
+        let buf = UnsafeMutablePointer<CollisionRec>.allocate(capacity: maxCollisions)
+        buf.initialize(repeating: CollisionRec(), count: maxCollisions)
+        return buf
+    }()
+
+    // Not extern'd in any header in the original C source, so nothing
+    // outside Collision.c ever referenced them despite having external
+    // linkage there.
+    fileprivate var solidTriggerKeepDelta: UInt8 = 0
+    fileprivate var triggerSides: UInt8 = 0
 }
 
-// Not extern'd in any header in the original C source, so nothing outside
-// Collision.c ever referenced them despite having external linkage there.
-private var gSolidTriggerKeepDelta: UInt8 = 0
-private var gTriggerSides: UInt8 = 0
+func GetCollisionListEntry(_ i: Int32) -> UnsafeMutablePointer<CollisionRec>! {
+    gEngine.collision.listBuf + Int(i)
+}
 
 @inline(__always) private func collisionBoxesBase(_ n: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<CollisionBoxType> {
     UnsafeMutableRawPointer(n.pointer(to: \.CollisionBoxes)!).assumingMemoryBound(to: CollisionBoxType.self)
 }
 
-// INPUT: startNumCollisions = value to start gNumCollisions at should we need to keep existing data in collision list
+// INPUT: startNumCollisions = value to start gEngine.collision.numCollisions at should we need to keep existing data in collision list
 func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32, _ startNumCollisions: Int16) {
-    gNumCollisions = startNumCollisions // clear list
+    gEngine.collision.numCollisions = startNumCollisions // clear list
 
     // GET BASE BOX INFO
 
@@ -53,16 +58,10 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
 
     // SCAN AGAINST ALL OBJECTS
 
-    var thisNode = gFirstNodePtr // start on 1st node
-
-    repeat {
-        let cType = thisNode!.pointee.CType
+    scan: for thisNode in usableObjectNodes {
+        let cType = thisNode.pointee.CType
         if cType == INVALID_NODE_FLAG { // see if something went wrong
-            break
-        }
-
-        if thisNode!.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-            break
+            break scan
         }
 
         nextNode: repeat {
@@ -70,7 +69,7 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
                 break nextNode
             }
 
-            if thisNode!.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 
@@ -84,9 +83,9 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
 
             // NOW DO COLLISION BOX CHECK
 
-            let targetNumBoxes = thisNode!.pointee.NumCollisionBoxes // see if target has any boxes
+            let targetNumBoxes = thisNode.pointee.NumCollisionBoxes // see if target has any boxes
             if targetNumBoxes != 0 {
-                let targetBoxList = collisionBoxesBase(thisNode!)
+                let targetBoxList = collisionBoxesBase(thisNode)
 
                 // CHECK BASE BOX AGAINST EACH TARGET BOX
 
@@ -120,7 +119,7 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
                     // THERE HAS BEEN A COLLISION SO CHECK WHICH SIDE PASSED THRU
 
                     var sideBits: UInt16 = 0
-                    let cBits = thisNode!.pointee.CBits // get collision info bits
+                    let cBits = thisNode.pointee.CBits // get collision info bits
 
                     var gotSides = false
                     if cBits & UInt32(CBITS_ALLSOLID) == 0 { // if not a solid, then add it without side info
@@ -198,13 +197,13 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
 
                         if sideBits == 0 { // if 0 then no new sides passed thru this time
                             if cBits & UInt32(CBITS_IMPENETRABLE) != 0 { // if its impenetrable, add to list regardless of sides
-                                if gCoord.x < thisNode!.pointee.Coord.x { // try to assume some side info based on which side we're on relative to the target
+                                if gEngine.objects.coord.x < thisNode.pointee.Coord.x { // try to assume some side info based on which side we're on relative to the target
                                     sideBits |= UInt16(SIDE_BITS_RIGHT)
                                 } else {
                                     sideBits |= UInt16(SIDE_BITS_LEFT)
                                 }
 
-                                if gCoord.z < thisNode!.pointee.Coord.z {
+                                if gEngine.objects.coord.z < thisNode.pointee.Coord.z {
                                     sideBits |= UInt16(SIDE_BITS_FRONT)
                                 } else {
                                     sideBits |= UInt16(SIDE_BITS_BACK)
@@ -224,23 +223,21 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
 
                     // ADD TO COLLISION LIST
 
-                    let entry = GetCollisionListEntry(Int32(gNumCollisions))!
+                    let entry = GetCollisionListEntry(Int32(gEngine.collision.numCollisions))!
                     entry.pointee.baseBox = 0
                     entry.pointee.targetBox = UInt8(target)
                     entry.pointee.sides = sideBits
                     entry.pointee.type = UInt8(COLLISION_TYPE_OBJ)
                     entry.pointee.objectPtr = thisNode
-                    gNumCollisions += 1
-                    gTotalSides |= UInt8(truncatingIfNeeded: sideBits) // remember total of this
+                    gEngine.collision.numCollisions += 1
+                    gEngine.collision.totalSides |= UInt8(truncatingIfNeeded: sideBits) // remember total of this
                 }
             }
         } while false
+    }
 
-        thisNode = thisNode!.pointee.NextNode // next target node
-    } while thisNode != nil
-
-    if gNumCollisions > maxCollisions { // see if overflowed (memory corruption ensued)
-        SwFatal("CollisionDetect: gNumCollisions > MAX_COLLISIONS")
+    if gEngine.collision.numCollisions > maxCollisions { // see if overflowed (memory corruption ensued)
+        SwFatal("CollisionDetect: gEngine.collision.numCollisions > MAX_COLLISIONS")
     }
 }
 
@@ -263,18 +260,18 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
         deltaBounce = -deltaBounce
     }
 
-    let previouslyOnGround = theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND) != 0 // remember if was on ground or not
+    let previouslyOnGround = theNode.hasStatus(STATUS_BIT_ONGROUND) // remember if was on ground or not
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_ONGROUND) // assume not on anything now
+    theNode.clearStatus(STATUS_BIT_ONGROUND) // assume not on anything now
 
-    gNumCollisions = 0
+    gEngine.collision.numCollisions = 0
     let oldNumCollisions: Int16 = 0
     totalSides = 0
 
     passLoop: while true {
-        let originalX = gCoord.x // remember starting coords
-        let originalY = gCoord.y
-        let originalZ = gCoord.z
+        let originalX = gEngine.objects.coord.x // remember starting coords
+        let originalY = gEngine.objects.coord.y
+        let originalZ = gEngine.objects.coord.z
 
         var numSolidHits = 0
 
@@ -282,7 +279,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
         // GET THE COLLISION LIST
 
-        CollisionDetect(theNode, cType, gNumCollisions) // get collision info
+        CollisionDetect(theNode, cType, gEngine.collision.numCollisions) // get collision info
 
         var maxOffsetX: Float = -10000
         var maxOffsetZ: Float = -10000
@@ -301,7 +298,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
         // SCAN THRU ALL RETURNED COLLISIONS
 
-        for i in Int(oldNumCollisions)..<Int(gNumCollisions) {
+        for i in Int(oldNumCollisions)..<Int(gEngine.collision.numCollisions) {
             let entry = GetCollisionListEntry(Int32(i))!
             let base = entry.pointee.baseBox // get collision box index for base & target
             let target = entry.pointee.targetBox
@@ -327,10 +324,10 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
                 if ((targetCType & UInt32(CTYPE_TRIGGER) != 0) && (cType & UInt32(CTYPE_TRIGGER) != 0)) || // target must be trigger and we must have been looking for them as well
                     ((targetCType & UInt32(CTYPE_TRIGGER2) != 0) && (cType & UInt32(CTYPE_TRIGGER2) != 0)) {
-                    gSolidTriggerKeepDelta = 0 // assume solid triggers will cause delta to stop below
+                    gEngine.collision.solidTriggerKeepDelta = 0 // assume solid triggers will cause delta to stop below
 
                     if let triggerCallback = targetObj!.pointee.TriggerCallback { // make sure there's a callback installed
-                        gTriggerSides = UInt8(truncatingIfNeeded: entry.pointee.sides) // set this global in case the trigger handler needs it (rather than passing it to the trigger func)
+                        gEngine.collision.triggerSides = UInt8(truncatingIfNeeded: entry.pointee.sides) // set this global in case the trigger handler needs it (rather than passing it to the trigger func)
                         if triggerCallback(targetObj, theNode) == 0 { // returns false if handle as non-solid trigger
                             entry.pointee.sides = 0
                         }
@@ -340,7 +337,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
                     numSolidHits += 1
 
-                    maxOffsetX = gCoord.x - originalX // see if trigger caused a move
+                    maxOffsetX = gEngine.objects.coord.x - originalX // see if trigger caused a move
                     if maxOffsetX < 0.0 {
                         maxOffsetX = -maxOffsetX
                         offXSign = -1
@@ -348,7 +345,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                         offXSign = 1
                     }
 
-                    maxOffsetZ = gCoord.z - originalZ
+                    maxOffsetZ = gEngine.objects.coord.z - originalZ
                     if maxOffsetZ < 0.0 {
                         maxOffsetZ = -maxOffsetZ
                         offZSign = -1
@@ -358,7 +355,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
                     hasTriggered = true // dont allow multi-pass collision once there is a trigger (to avoid multiple hits on the same trigger)
 
-                    if gSolidTriggerKeepDelta != 0 { // if trigger's callback set this then set delta bounce to 1.0 so it'll no affect the deltas
+                    if gEngine.collision.solidTriggerKeepDelta != 0 { // if trigger's callback set this then set delta bounce to 1.0 so it'll no affect the deltas
                         deltaBounce = 1.0
                     }
                 }
@@ -384,14 +381,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetZ = offset
                             offZSign = 1
                         }
-                        gDelta.z *= deltaBounce
+                        gEngine.objects.delta.z *= deltaBounce
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_FRONT) != 0 { // SEE IF FRONT HIT
                         let offset = (baseBoxPtr.pointee.front - targetBoxPtr!.pointee.back) + 0.01 // see how far over it went
                         if offset > maxOffsetZ {
                             maxOffsetZ = offset
                             offZSign = -1
                         }
-                        gDelta.z *= deltaBounce
+                        gEngine.objects.delta.z *= deltaBounce
                     }
 
                     if entry.pointee.sides & UInt16(SIDE_BITS_LEFT) != 0 { // SEE IF HIT LEFT
@@ -400,14 +397,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetX = offset
                             offXSign = 1
                         }
-                        gDelta.x *= deltaBounce
+                        gEngine.objects.delta.x *= deltaBounce
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_RIGHT) != 0 { // SEE IF HIT RIGHT
                         let offset = (baseBoxPtr.pointee.right - targetBoxPtr!.pointee.left) + 0.01 // see how far over it went
                         if offset > maxOffsetX {
                             maxOffsetX = offset
                             offXSign = -1
                         }
-                        gDelta.x *= deltaBounce
+                        gEngine.objects.delta.x *= deltaBounce
                     }
 
                     if entry.pointee.sides & UInt16(SIDE_BITS_BOTTOM) != 0 { // SEE IF HIT BOTTOM
@@ -416,14 +413,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetY = offset
                             offYSign = 1
                         }
-                        gDelta.y = -150 // keep some downward momentum!!
+                        gEngine.objects.delta.y = -150 // keep some downward momentum!!
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_TOP) != 0 { // SEE IF HIT TOP
                         let offset = (baseBoxPtr.pointee.top - targetBoxPtr!.pointee.bottom) + 1.0 // see how far over it went
                         if offset > maxOffsetY {
                             maxOffsetY = offset
                             offYSign = -1
                         }
-                        gDelta.y = 0
+                        gEngine.objects.delta.y = 0
                     }
                 }
             }
@@ -440,9 +437,9 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
         if numSolidHits > 0 {
             // ADJUST MAX AMOUNTS
 
-            gCoord.x = originalX + (maxOffsetX * offXSign)
-            gCoord.z = originalZ + (maxOffsetZ * offZSign)
-            gCoord.y = originalY + (maxOffsetY * offYSign) // y is special - we do some additional rouding to avoid the jitter problem
+            gEngine.objects.coord.x = originalX + (maxOffsetX * offXSign)
+            gEngine.objects.coord.z = originalZ + (maxOffsetZ * offZSign)
+            gEngine.objects.coord.y = originalY + (maxOffsetY * offYSign) // y is special - we do some additional rouding to avoid the jitter problem
 
             // SEE IF NEED TO SET GROUND FLAG
 
@@ -450,7 +447,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                 if !previouslyOnGround { // if not already on ground, then add some friction upon landing
                     // (hitMPlatform is always false in the original C source; special-case dropped)
                 }
-                theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+                theNode.setStatus(STATUS_BIT_ONGROUND)
             }
 
             // SEE IF DO ANOTHER PASS
@@ -486,19 +483,19 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
     // SEE IF DO AUTOMATIC TERRAIN GROUND HIT
 
     if cType & UInt32(CTYPE_TERRAIN) != 0 {
-        let y = GetTerrainY(gCoord.x, gCoord.z) // get terrain Y
+        let y = GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) // get terrain Y
 
         if bottomSide <= y { // see if bottom is under ground
-            gCoord.y += y - bottomSide
+            gEngine.objects.coord.y += y - bottomSide
 
-            if gDelta.y < 0.0 { // if was going down then bounce y
-                gDelta.y *= deltaBounce
-                if abs(gDelta.y) < 30.0 { // if small enough just make zero
-                    gDelta.y = 0
+            if gEngine.objects.delta.y < 0.0 { // if was going down then bounce y
+                gEngine.objects.delta.y *= deltaBounce
+                if abs(gEngine.objects.delta.y) < 30.0 { // if small enough just make zero
+                    gEngine.objects.delta.y = 0
                 }
             }
 
-            theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+            theNode.setStatus(STATUS_BIT_ONGROUND)
 
             totalSides |= UInt8(SIDE_BITS_BOTTOM)
         }
@@ -508,10 +505,10 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
     if cType & UInt32(CTYPE_WATER) != 0 {
         var patchNum: Int32 = 0
-        DoWaterCollisionDetect(theNode, gCoord.x, gCoord.y, gCoord.z, &patchNum)
+        DoWaterCollisionDetect(theNode, gEngine.objects.coord.x, gEngine.objects.coord.y, gEngine.objects.coord.z, &patchNum)
     }
 
-    gTotalSides = totalSides
+    gEngine.collision.totalSides = totalSides
     return totalSides
 }
 
@@ -749,39 +746,33 @@ func IsPointInTriangle(_ pt_x: Float, _ pt_y: Float, _ x0: Float, _ y0: Float, _
 //
 // OUTPUT: # collisions detected
 func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!, _ cType: UInt32, _ except: UnsafeMutablePointer<ObjNode>!) -> Int16 {
-    gNumCollisions = 0
+    gEngine.collision.numCollisions = 0
 
-    var thisNode = gFirstNodePtr // start on 1st node
-
-    repeat {
+    for thisNode in usableObjectNodes {
         nextNode: repeat {
-            if thisNode!.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-                return gNumCollisions
-            }
-
             if thisNode == except { // see if skip this one
                 break nextNode
             }
 
-            if thisNode!.pointee.CType & cType == 0 { // see if we want to check this Type
+            if thisNode.pointee.CType & cType == 0 { // see if we want to check this Type
                 break nextNode
             }
 
-            if thisNode!.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 
-            if thisNode!.pointee.CBits == 0 { // see if this obj doesn't need collisioning
+            if thisNode.pointee.CBits == 0 { // see if this obj doesn't need collisioning
                 break nextNode
             }
 
             // GET BOX INFO FOR THIS NODE
 
-            let targetNumBoxes = thisNode!.pointee.NumCollisionBoxes // if target has no boxes, then skip
+            let targetNumBoxes = thisNode.pointee.NumCollisionBoxes // if target has no boxes, then skip
             if targetNumBoxes == 0 {
                 break nextNode
             }
-            let targetBoxList = collisionBoxesBase(thisNode!)
+            let targetBoxList = collisionBoxesBase(thisNode)
 
             // CHECK POINT AGAINST EACH TARGET BOX
 
@@ -814,47 +805,39 @@ func DoSimplePointCollision(_ thePoint: UnsafeMutablePointer<OGLPoint3D>!, _ cTy
 
                 // THERE HAS BEEN A COLLISION
 
-                let entry = GetCollisionListEntry(Int32(gNumCollisions))!
+                let entry = GetCollisionListEntry(Int32(gEngine.collision.numCollisions))!
                 entry.pointee.targetBox = UInt8(target)
                 entry.pointee.type = UInt8(COLLISION_TYPE_OBJ)
                 entry.pointee.objectPtr = thisNode
-                gNumCollisions += 1
+                gEngine.collision.numCollisions += 1
             }
         } while false
+    }
 
-        thisNode = thisNode!.pointee.NextNode // next target node
-    } while thisNode != nil
-
-    return gNumCollisions
+    return gEngine.collision.numCollisions
 }
 
 // OUTPUT: # collisions detected
 func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float, _ cType: UInt32) -> Int16 {
-    gNumCollisions = 0
+    gEngine.collision.numCollisions = 0
 
-    var thisNode = gFirstNodePtr // start on 1st node
-
-    bail: repeat {
+    bail: for thisNode in usableObjectNodes {
         nextNode: repeat {
-            if thisNode!.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-                break bail
-            }
-
-            if thisNode!.pointee.CType & cType == 0 { // see if we want to check this Type
+            if thisNode.pointee.CType & cType == 0 { // see if we want to check this Type
                 break nextNode
             }
 
-            if thisNode!.pointee.StatusBits & UInt32(STATUS_BIT_NOCOLLISION) != 0 { // don't collide against these
+            if thisNode.hasStatus(STATUS_BIT_NOCOLLISION) { // don't collide against these
                 break nextNode
             }
 
             // GET BOX INFO FOR THIS NODE
 
-            let targetNumBoxes = thisNode!.pointee.NumCollisionBoxes // if target has no boxes, then skip
+            let targetNumBoxes = thisNode.pointee.NumCollisionBoxes // if target has no boxes, then skip
             if targetNumBoxes == 0 {
                 break nextNode
             }
-            let targetBoxList = collisionBoxesBase(thisNode!)
+            let targetBoxList = collisionBoxesBase(thisNode)
 
             // CHECK AGAINST EACH TARGET BOX
 
@@ -887,19 +870,17 @@ func DoSimpleBoxCollision(_ top: Float, _ bottom: Float, _ left: Float, _ right:
 
                 // THERE HAS BEEN A COLLISION
 
-                let entry = GetCollisionListEntry(Int32(gNumCollisions))!
+                let entry = GetCollisionListEntry(Int32(gEngine.collision.numCollisions))!
                 entry.pointee.targetBox = UInt8(target)
                 entry.pointee.type = UInt8(COLLISION_TYPE_OBJ)
                 entry.pointee.objectPtr = thisNode
-                gNumCollisions += 1
+                gEngine.collision.numCollisions += 1
                 break bail
             }
         } while false
+    }
 
-        thisNode = thisNode!.pointee.NextNode // next target node
-    } while thisNode != nil
-
-    return gNumCollisions
+    return gEngine.collision.numCollisions
 }
 
 func DoSimpleBoxCollisionAgainstPlayer(_ playerNum: Int16, _ top: Float, _ bottom: Float, _ left: Float, _ right: Float, _ front: Float, _ back: Float) -> UInt8 {
@@ -1050,29 +1031,23 @@ func DoSimpleBoxCollisionAgainstObject(_ top: Float, _ bottom: Float, _ left: Fl
 func FindHighestCollisionAtXZ(_ x: Float, _ z: Float, _ cType: UInt32) -> Float {
     var topY: Float = -10000000
 
-    var thisNode = gFirstNodePtr // start on 1st node
-
-    repeat {
+    for thisNode in usableObjectNodes {
         nextNode: repeat {
-            if thisNode!.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-                return finishFindHighestCollisionAtXZ(topY, x, z, cType)
-            }
-
-            if thisNode!.pointee.CType & cType == 0 { // matching ctype
+            if thisNode.pointee.CType & cType == 0 { // matching ctype
                 break nextNode
             }
 
-            if thisNode!.pointee.CBits & UInt32(CBITS_TOP) == 0 { // only top solid objects
+            if thisNode.pointee.CBits & UInt32(CBITS_TOP) == 0 { // only top solid objects
                 break nextNode
             }
 
             // GET BOX INFO FOR THIS NODE
 
-            let targetNumBoxes = thisNode!.pointee.NumCollisionBoxes // if target has no boxes, then skip
+            let targetNumBoxes = thisNode.pointee.NumCollisionBoxes // if target has no boxes, then skip
             if targetNumBoxes == 0 {
                 break nextNode
             }
-            let targetBoxList = collisionBoxesBase(thisNode!)
+            let targetBoxList = collisionBoxesBase(thisNode)
 
             // CHECK POINT AGAINST EACH TARGET BOX
 
@@ -1102,9 +1077,7 @@ func FindHighestCollisionAtXZ(_ x: Float, _ z: Float, _ cType: UInt32) -> Float 
                 topY = targetBoxList[target].top + 0.1 // save as highest Y
             }
         } while false
-
-        thisNode = thisNode!.pointee.NextNode // next target node
-    } while thisNode != nil
+    }
 
     return finishFindHighestCollisionAtXZ(topY, x, z, cType)
 }

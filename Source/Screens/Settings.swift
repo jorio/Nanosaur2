@@ -5,15 +5,15 @@ private let kSettingsFULL_CHANNEL_VOLUME: UInt32 = 0x0100 // kFullVolume
 // MARK: - Layout flag callbacks
 
 private let cDisableMenuEntryInGame: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? Int32(kMILayoutFlagDisabled) : 0
+    gEngine.screens.playNow != 0 ? Int32(kMILayoutFlagDisabled) : 0
 }
 
 private let cHideMenuEntryInGame: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? Int32(kMILayoutFlagHidden) : 0
+    gEngine.screens.playNow != 0 ? Int32(kMILayoutFlagHidden) : 0
 }
 
 private let cShowMenuEntryInGameOnly: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
-    gPlayNow != 0 ? 0 : Int32(kMILayoutFlagHidden)
+    gEngine.screens.playNow != 0 ? 0 : Int32(kMILayoutFlagHidden)
 }
 
 private let cShouldDisplayMonitorCycler: @convention(c) (UnsafePointer<MenuItem>?) -> Int32 = { _ in
@@ -54,17 +54,16 @@ private let cOnPickResetMouseBindings: @convention(c) () -> Void = {
 private let cTestGamepadRumble: @convention(c) () -> Void = { Rumble(1, 1, 200, Int32(ANY_PLAYER)) }
 
 private let cOnChangeVSync: @convention(c) () -> Void = {
-    gRenderBackend.setVSync(Int32(gGamePrefs.vsync))
+    gEngine.renderer.setVSync(Int32(gGamePrefs.vsync))
 }
 
 // MARK: - Graphics / Gamepad menu callbacks
 
-private var gMSAAWarningNode: UnsafeMutablePointer<ObjNode>? = nil
 
 private let cMoveTemporaryGraphicsMenuText: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode = theNode else { return }
     if GetCurrentMenu() != fourCC("graf") {
-        if theNode == gMSAAWarningNode { gMSAAWarningNode = nil }
+        if theNode == gEngine.screens.msaaWarningNode { gEngine.screens.msaaWarningNode = nil }
         DeleteObject(theNode)
     }
 }
@@ -76,9 +75,9 @@ private let cMoveTemporaryGamepadMenuText: @convention(c) (UnsafeMutablePointer<
 
 private let cOnChangeMSAA: @convention(c) () -> Void = {
     if gCurrentAntialiasingLevel == Int32(gGamePrefs.antialiasingLevel) {
-        if let n = gMSAAWarningNode { DeleteObject(n); gMSAAWarningNode = nil }
+        if let n = gEngine.screens.msaaWarningNode { DeleteObject(n); gEngine.screens.msaaWarningNode = nil }
         return
-    } else if gMSAAWarningNode != nil {
+    } else if gEngine.screens.msaaWarningNode != nil {
         return
     }
     var def = NewObjectDefinitionType()
@@ -88,9 +87,9 @@ private let cOnChangeMSAA: @convention(c) () -> Void = {
     def.slot = Int16(SPRITE_SLOT)
     def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
     def.moveCall = cMoveTemporaryGraphicsMenuText
-    let node = TextMesh_New(Localize(STR_ANTIALIASING_CHANGE_WARNING), 0, &def)
+    let node = TextMesh_New(localized(STR_ANTIALIASING_CHANGE_WARNING), 0, &def)
     node.pointee.ColorFilter = OGLColorRGBA(r: 1, g: 0, b: 0, a: 1)
-    gMSAAWarningNode = node
+    gEngine.screens.msaaWarningNode = node
     SendNodeToOverlayPane(node)
     MakeTwitch(node, Int32(kTwitchPreset_MenuSelect))
 }
@@ -104,18 +103,16 @@ private let cOnEnterGraphicsMenu: @convention(c) () -> Void = {
     def.moveCall = cMoveTemporaryGraphicsMenuText
     def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
     let driverStr   = String(cString: SDL_GetCurrentVideoDriver()!)
-    let info = "\(gRenderBackend.rendererInfo()), \(driverStr)"
-    info.withCString { cStr in
-        let text = TextMesh_New(cStr, Int32(kTextMeshSmallCaps | kTextMeshAlignBottom), &def)
-        text.pointee.ColorFilter.a = 0.75
-        SendNodeToOverlayPane(text)
-    }
+    let info = "\(gEngine.renderer.rendererInfo()), \(driverStr)"
+    let text = TextMesh_New(info, Int32(kTextMeshSmallCaps | kTextMeshAlignBottom), &def)
+    text.pointee.ColorFilter.a = 0.75
+    SendNodeToOverlayPane(text)
     cOnChangeMSAA()
 }
 
 private let cOnEnterGamepadMenu: @convention(c) () -> Void = {
     let sdlGamepad = GetGamepad(0)
-    let name: UnsafePointer<CChar> = sdlGamepad.flatMap { SDL_GetGamepadName($0) } ?? Localize(STR_NO_GAMEPAD_DETECTED)
+    let name = sdlGamepad.flatMap { SDL_GetGamepadName($0) }.map { String(cString: $0) } ?? localized(STR_NO_GAMEPAD_DETECTED)
     var def = NewObjectDefinitionType()
     def.coord = OGLPoint3D(x: 320, y: 480 - 8, z: 0)
     def.group = UInt8(ATLAS_GROUP_FONT2)

@@ -1,10 +1,8 @@
 // Wormhole.swift - Port of Wormhole.c to Swift
 //
-// gOpenPlayerWormhole/gExitWormhole are native Swift storage now
+// gEngine.items.openPlayerWormhole/gEngine.items.exitWormhole are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore.
 
-var gOpenPlayerWormhole: UInt8 = 0
-var gExitWormhole: UnsafeMutablePointer<ObjNode>!
 
 private let playerWormholeSize: Float = 4.0
 private let eggWormholeSize: Float = 4.0
@@ -23,8 +21,8 @@ private let minDistToGetEgg: Float = 1600.0
 }
 
 func InitWormholes() {
-    gOpenPlayerWormhole = 0
-    gExitWormhole = nil
+    gEngine.items.openPlayerWormhole = 0
+    gEngine.items.exitWormhole = nil
 
     modifyWormholeTextures()
 }
@@ -73,8 +71,8 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     func addEggWormhole(x: Float, z: Float) -> UInt8 {
         // SEE IF NEED TO CREATE AN EXIT WORMHOLE INSTEAD
 
-        if gOpenPlayerWormhole != 0 {
-            if gExitWormhole == nil {
+        if gEngine.items.openPlayerWormhole != 0 {
+            if gEngine.items.exitWormhole == nil {
                 makeExitWormhole(x, z)
             }
             return 0
@@ -110,7 +108,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -129,7 +127,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // SEE IF NEED TO MAKE VANISH
 
-    if gOpenPlayerWormhole != 0 {
+    if gEngine.items.openPlayerWormhole != 0 {
         if theNode.pointee.Skeleton!.pointee.AnimNum != 1 { // see if need to change to vanish anim
             MorphToSkeletonAnim(theNode.pointee.Skeleton, 1, 2.0)
             PlayEffect3D(Int16(EFFECT_WORMHOLEVANISH), &theNode.pointee.Coord)
@@ -144,7 +142,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         if theNode.pointee.Scale.x <= 0.0 {
             // SEE IF MAKE PLAYER'S EXIT WORMHOLE HERE
 
-            if gExitWormhole == nil {
+            if gEngine.items.exitWormhole == nil {
                 makeExitWormhole(theNode.pointee.Coord.x, theNode.pointee.Coord.z)
             }
 
@@ -160,7 +158,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     if theNode.pointee.EffectChannel == -1 {
         theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_WORMHOLE), &theNode.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE) * 3 / 2, 1.0)
     } else {
-        gChannelInfo[Int(theNode.pointee.EffectChannel)].volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
+        gEngine.sound.channelInfo[Int(theNode.pointee.EffectChannel)].volumeAdjust = theNode.pointee.Scale.x / eggWormholeSize // set volume based on scale
 
         _ = Update3DSoundChannel(Int16(EFFECT_WORMHOLE), &theNode.pointee.EffectChannel, &theNode.pointee.Coord)
     }
@@ -172,50 +170,46 @@ func FindClosestEggWormholeInRange(_ playerNum: Int16, _ pt: UnsafeMutablePointe
 
     // FIND CLOSEST WORMHOLE
 
-    var thisNodePtr = gFirstNodePtr
-    repeat {
-        nextNode: repeat {
-            if thisNodePtr!.pointee.What == Int32(WhatType.eggWormhole.rawValue) {
-                if gVSMode == .captureTheFlag { // only find wormhole valid for this player
-                    if Int16(thisNodePtr!.pointee.PlayerNum) == playerNum {
-                        break nextNode
-                    }
-                }
+    for node in allObjectNodes {
+        guard node.pointee.What == Int32(WhatType.eggWormhole.rawValue) else {
+            continue
+        }
 
-                // POINT MUST BE IN FRONT OF WORMHOLE
+        if gEngine.game.vsMode == .captureTheFlag, // only find wormhole valid for this player
+           Int16(node.pointee.PlayerNum) == playerNum {
+            continue
+        }
 
-                var mouthPt = OGLPoint3D()
-                var mouthPt2 = OGLPoint3D()
-                FindCoordOfJoint(thisNodePtr!, 1, &mouthPt) // calc coord of mouth of wormhole
-                FindCoordOfJoint(thisNodePtr!, 0, &mouthPt2)
+        // POINT MUST BE IN FRONT OF WORMHOLE
 
-                var vraw = OGLVector3D() // calc aim vector of mouth
-                vraw.x = mouthPt2.x - mouthPt.x
-                vraw.y = mouthPt2.y - mouthPt.y
-                vraw.z = mouthPt2.z - mouthPt.z
-                let v = vraw.normalized()
+        var mouthPt = OGLPoint3D()
+        var mouthPt2 = OGLPoint3D()
+        FindCoordOfJoint(node, 1, &mouthPt) // calc coord of mouth of wormhole
+        FindCoordOfJoint(node, 0, &mouthPt2)
 
-                var v2raw = OGLVector3D() // calc vector from pt to mouth
-                v2raw.x = mouthPt2.x - pt.pointee.x
-                v2raw.y = mouthPt2.y - pt.pointee.y
-                v2raw.z = mouthPt2.z - pt.pointee.z
-                let v2 = v2raw.normalized()
+        var vraw = OGLVector3D() // calc aim vector of mouth
+        vraw.x = mouthPt2.x - mouthPt.x
+        vraw.y = mouthPt2.y - mouthPt.y
+        vraw.z = mouthPt2.z - mouthPt.z
+        let v = vraw.normalized()
 
-                let dot = v.dot(v2) // calc angle between vectors to determine if in front
-                if dot < 0.0 {
-                    // POINT MUST BE CLOSE ENOUGH
+        var v2raw = OGLVector3D() // calc vector from pt to mouth
+        v2raw.x = mouthPt2.x - pt.pointee.x
+        v2raw.y = mouthPt2.y - pt.pointee.y
+        v2raw.z = mouthPt2.z - pt.pointee.z
+        let v2 = v2raw.normalized()
 
-                    let d = pt.pointee.distance(to: mouthPt2) // calc dist to mouth
-                    if d < minDist {
-                        minDist = d
-                        best = thisNodePtr
-                    }
-                }
+        let dot = v.dot(v2) // calc angle between vectors to determine if in front
+        if dot < 0.0 {
+            // POINT MUST BE CLOSE ENOUGH
+
+            let d = pt.pointee.distance(to: mouthPt2) // calc dist to mouth
+            if d < minDist {
+                minDist = d
+                best = node
             }
-        } while false
-
-        thisNodePtr = thisNodePtr!.pointee.NextNode // next node
-    } while thisNodePtr != nil
+        }
+    }
 
     // IS IT IN RANGE?
 
@@ -272,7 +266,7 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     if theNode.pointee.What == Int32(WhatType.eggWormhole.rawValue) { // gotta handle the two types differently
         let skeleton = theNode.pointee.Skeleton!
-        let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+        let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
         va = deformedMeshesBase(skeleton) + (buffNum * Int(MAX_DECOMPOSED_TRIMESHES)) // point to triMesh
     } else {
@@ -290,10 +284,10 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = uvsBase[0]
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.loadIdentity()
-    gRenderBackend.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
+    gEngine.renderer.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 
     // DRAW IT
@@ -311,15 +305,15 @@ private let cDrawWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     uvsBase[1] = nil
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 
 private let cMoveEntryWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let oldH = theNode.pointee.Health
 
     theNode.pointee.Health -= fps
@@ -374,17 +368,17 @@ private func makeExitWormhole(_ x: Float, _ z: Float) {
     def.rot = 0
     def.scale = 0.001 // start shrunken
 
-    gExitWormhole = MakeNewDisplayGroupObject(&def)
+    gEngine.items.exitWormhole = MakeNewDisplayGroupObject(&def)
 
-    gExitWormhole!.pointee.Rot.x = Float.pi / 8
-    UpdateObjectTransforms(gExitWormhole)
+    gEngine.items.exitWormhole!.pointee.Rot.x = Float.pi / 8
+    UpdateObjectTransforms(gEngine.items.exitWormhole)
 
-    PlayEffect_Parms3D(Int16(EFFECT_WORMHOLEAPPEAR), &gExitWormhole!.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE), 2.0)
+    PlayEffect_Parms3D(Int16(EFFECT_WORMHOLEAPPEAR), &gEngine.items.exitWormhole!.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE), 2.0)
 }
 
 private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SCALE IT UP
 
@@ -455,9 +449,9 @@ private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNod
     DropEgg_NoWormhole(Int16(player.pointee.PlayerNum)) // drop any egg
     JetpackOff(Int16(player.pointee.PlayerNum))
 
-    MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.enterWormhole.rawValue), 2.0)
+    MorphToSkeletonAnim(player.pointee.Skeleton, .enterWormhole, 2.0)
 
     player.pointee.MotionVector = v2
 
-    gCameraInExitMode = 1
+    gEngine.camera.inExitMode = 1
 }

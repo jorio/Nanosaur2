@@ -1,34 +1,37 @@
 // Enemy.swift - Port of Enemy.c to Swift
 
-var gNumEnemyOfKind: [Int8] = Array(repeating: 0, count: EnemyKind.allCases.count)
-var gNumEnemies: Int32 = 0
-var gMaxEnemies: Int32 = 0
+/// Enemy population counters. Owned by GameEngine as `gEngine.enemies`.
+final class EnemySystem {
+    var numEnemyOfKind: [Int8] = Array(repeating: 0, count: EnemyKind.allCases.count)
+    var numEnemies: Int32 = 0
+    var maxEnemies: Int32 = 0
+}
 
 func InitEnemyManager() {
-    gNumEnemies = 0
-    gMaxEnemies = 16
+    gEngine.enemies.numEnemies = 0
+    gEngine.enemies.maxEnemies = 16
 
-    for i in 0..<gNumEnemyOfKind.count {
-        gNumEnemyOfKind[i] = 0
+    for i in 0..<gEngine.enemies.numEnemyOfKind.count {
+        gEngine.enemies.numEnemyOfKind[i] = 0
     }
 }
 
 func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
-    if theEnemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) == 0 { // spline enemies dont factor into the enemy counts!
-        gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
-        if gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
+    if !theEnemy.hasStatus(STATUS_BIT_ONSPLINE) { // spline enemies dont factor into the enemy counts!
+        gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
+        if gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
             SwAlert("DeleteEnemy: < 0")
-            gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] = 0
+            gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] = 0
         }
 
-        gNumEnemies -= 1 // dec global count
+        gEngine.enemies.numEnemies -= 1 // dec global count
     }
 
     DeleteObject(theEnemy) // nuke the obj
 }
 
 func UpdateEnemy(_ theNode: UnsafeMutablePointer<ObjNode>!) {
-    theNode.pointee.Speed = gDelta.length
+    theNode.pointee.Speed = gEngine.objects.delta.length
 
     theNode.update()
 }
@@ -47,7 +50,7 @@ func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z:
     def.coord.x = x
     def.coord.y = GetTerrainY(x, z)
     def.coord.z = z
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot = Int16(ENEMY_SLOT) + Int16(skeletonType)
     def.moveCall = moveCall
     def.rot = rot
@@ -71,14 +74,14 @@ func MakeEnemySkeleton(_ skeletonType: UInt8, _ animNum: Int16, _ x: Float, _ z:
 
 // OUTPUT: true if was on spline, false if wasnt
 func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall: (@convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void)!) {
-    guard theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 else { // must be on spline
+    guard theNode.hasStatus(STATUS_BIT_ONSPLINE) else { // must be on spline
         return
     }
 
     DetachObjectFromSpline(theNode, moveCall)
 
-    gNumEnemies += 1 // count as a normal enemy now
-    gNumEnemyOfKind[Int(theNode.pointee.Kind)] += 1
+    gEngine.enemies.numEnemies += 1 // count as a normal enemy now
+    gEngine.enemies.numEnemyOfKind[Int(theNode.pointee.Kind)] += 1
 }
 
 // OUTPUT: nil if no enemies
@@ -86,14 +89,7 @@ func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMut
     var best: UnsafeMutablePointer<ObjNode>?
     var minDist: Float = 10_000_000
 
-    var thisNodePtr = gFirstNodePtr
-    while true {
-        guard let node = thisNodePtr else { break }
-
-        if node.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-            break
-        }
-
+    for node in usableObjectNodes {
         if node.pointee.CType & UInt32(CTYPE_ENEMY) != 0 {
             let d = CalcQuickDistance(pt.pointee.x, pt.pointee.z, node.pointee.Coord.x, node.pointee.Coord.z)
             if d < minDist {
@@ -101,17 +97,16 @@ func FindClosestEnemy(_ pt: UnsafeMutablePointer<OGLPoint3D>!, _ dist: UnsafeMut
                 best = node
             }
         }
-        thisNodePtr = node.pointee.NextNode // next node
     }
 
     dist.pointee = minDist
     return best
 }
 
-// coord is in gCoord
+// coord is in gEngine.objects.coord
 func IsWaterInFrontOfEnemy(_ r: Float) -> UInt8 {
-    let x = gCoord.x - sin(r) * 30.0
-    let z = gCoord.z - cos(r) * 30.0
+    let x = gEngine.objects.coord.x - sin(r) * 30.0
+    let z = gEngine.objects.coord.z - cos(r) * 30.0
 
     return IsXZOverWater(x, z)
 }
@@ -129,7 +124,7 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
 
     // SCAN FOR INTERESTING STUFF
 
-    for i in 0..<Int32(gNumCollisions) {
+    for i in 0..<Int32(gEngine.collision.numCollisions) {
         let entry = GetCollisionListEntry(i)!
         if entry.pointee.type == UInt8(COLLISION_TYPE_OBJ) {
             guard let hitObj = entry.pointee.objectPtr else { continue } // get ObjNode of this collision
@@ -161,13 +156,13 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
 
     let bottomOff = useBBoxBottom != 0 ? theEnemy.pointee.LocalBBox.min.y : theEnemy.pointee.BottomOff // use bbox's bottom or collision box's bottom
 
-    let terrainY = GetTerrainY(gCoord.x, gCoord.z) // get terrain Y
-    let distToFloor = (gCoord.y + bottomOff) - terrainY // calc amount I'm above or under
+    let terrainY = GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) // get terrain Y
+    let distToFloor = (gEngine.objects.coord.y + bottomOff) - terrainY // calc amount I'm above or under
 
     if distToFloor <= 0.0 { // see if on or under floor
-        gCoord.y = terrainY - bottomOff
-        gDelta.y = 0
-        theEnemy.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+        gEngine.objects.coord.y = terrainY - bottomOff
+        gEngine.objects.delta.y = 0
+        theEnemy.setStatus(STATUS_BIT_ONGROUND)
 
         // DEAL WITH SLOPES
         //
@@ -178,12 +173,12 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
     // SEE IF HIT WATER SURFACE
 
     if ctype & UInt32(CTYPE_WATER) != 0 {
-        if gDelta.y <= 0.0 { // only check water if moving down
+        if gEngine.objects.delta.y <= 0.0 { // only check water if moving down
             var patchNum: Int32 = 0
 
             // CHECK IF IN WATER NOW
 
-            if DoWaterCollisionDetect(theEnemy, gCoord.x, gCoord.y + theEnemy.pointee.BottomOff, gCoord.z, &patchNum) != 0 {
+            if DoWaterCollisionDetect(theEnemy, gEngine.objects.coord.x, gEngine.objects.coord.y + theEnemy.pointee.BottomOff, gEngine.objects.coord.z, &patchNum) != 0 {
                 let waterY = GetWaterBBoxEntry(patchNum)!.pointee.max.y
                 var splashPt = OGLPoint3D()
 
@@ -195,17 +190,17 @@ func DoEnemyCollisionDetect(_ theEnemy: UnsafeMutablePointer<ObjNode>!, _ ctype:
 
                 // OTHERWISE JUST UPDATE RIPPLES
                 else {
-                    theEnemy.pointee.SpecialF.4 -= gFramesPerSecondFrac // EnemyWaterRippleTimer
+                    theEnemy.pointee.SpecialF.4 -= gEngine.framesPerSecondFrac // EnemyWaterRippleTimer
                     if theEnemy.pointee.SpecialF.4 <= 0.0 {
                         theEnemy.pointee.SpecialF.4 += 0.1
-                        splashPt.x = gCoord.x
+                        splashPt.x = gEngine.objects.coord.x
                         splashPt.y = waterY
-                        splashPt.z = gCoord.z
+                        splashPt.z = gEngine.objects.coord.z
                         CreateNewRipple(&splashPt, 30.0, 50.0, 0.7)
                     }
                 }
 
-                gDelta.y = 0
+                gEngine.objects.delta.y = 0
             }
         }
     }
@@ -222,17 +217,17 @@ func EnemyTouchedPlayer(_ enemy: UnsafeMutablePointer<ObjNode>!, _ player: Unsaf
 }
 
 func MoveEnemySkipChunk(_ chunk: UnsafeMutablePointer<ObjNode>!) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     chunk.getInfo()
 
-    gDelta.y -= 2000.0 * fps // gravity
+    gEngine.objects.delta.y -= 2000.0 * fps // gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
-    if gCoord.y < (GetTerrainY(gCoord.x, gCoord.z) - 600.0) { // see if gone
+    if gEngine.objects.coord.y < (GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) - 600.0) { // see if gone
         DeleteObject(chunk)
         return
     }

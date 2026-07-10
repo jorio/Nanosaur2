@@ -43,14 +43,14 @@ func GetBiomeName(_ biome: Biome) -> String {
 }
 
 func LoadLevelArt() {
-    let currentBiome = GetLevelBiome(gLevelNum)
+    let currentBiome = GetLevelBiome(gEngine.game.levelNum)
 
     var timeStartLoad = UnsignedWide()
     SwMicroseconds(&timeStartLoad)
 
-    gLoadingThermoPercent = 0
+    gEngine.screens.loadingThermoPercent = 0
 
-    gRenderBackend.setClearColor(0, 0, 0) // clear to black for loading screen
+    gEngine.renderer.setClearColor(0, 0, 0) // clear to black for loading screen
 
     // LOAD GLOBAL BG3D GEOMETRY
 
@@ -97,17 +97,11 @@ func LoadLevelArt() {
         break
     }
 
-    var levelSpecificSpritePathsCStrings = levelSpecificSpritePaths.map { strdup($0)! }
-    levelSpecificSpritePathsCStrings.withUnsafeMutableBufferPointer { buf -> Void in
-        buf.withMemoryRebound(to: UnsafePointer<CChar>.self) { cbuf in
-            LoadSpriteGroupFromFiles(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(cbuf.count), cbuf.baseAddress!)
-        }
-    }
-    for p in levelSpecificSpritePathsCStrings { free(p) }
+    LoadSpriteGroupFromFiles(Int32(SPRITE_GROUP_LEVELSPECIFIC), levelSpecificSpritePaths)
 
     // LOAD OVERHEAD MAP
     do {
-        let path = ":Sprites:maps:\(GetLevelName(gLevelNum))"
+        let path = ":Sprites:maps:\(GetLevelName(gEngine.game.levelNum))"
         _ = ResolveDataFileSpec(path, &spec)
         LoadSpriteGroupFromFile(Int32(SPRITE_GROUP_OVERHEADMAP), path, 0)
     }
@@ -127,15 +121,15 @@ func LoadLevelArt() {
     // LOAD TERRAIN
 
     do {
-        let path = ":Terrain:\(GetLevelName(gLevelNum)).ter"
+        let path = ":Terrain:\(GetLevelName(gEngine.game.levelNum)).ter"
         _ = ResolveDataFileSpec(path, &spec)
         LoadPlayfield(&spec)
     }
 
     // RESTORE CLEAR COLOR
 
-    let cc = gGameViewInfoPtr!.pointee.clearColor
-    gRenderBackend.setClearColor(cc.r, cc.g, cc.b)
+    let cc = gEngine.game.viewInfoPtr!.pointee.clearColor
+    gEngine.renderer.setClearColor(cc.r, cc.g, cc.b)
 
     // DO BIOME SPECIFIC STUFF
 

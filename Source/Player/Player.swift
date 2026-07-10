@@ -1,31 +1,42 @@
 // Player.swift - Port of Player.c to Swift
 //
-// gNumPlayers, gPlayerInfo, gDeathTimer, gPlayerIsDead are native Swift
-// storage now (converted 2026-07-07): nothing in any .c file touches them
-// anymore. gPlayerInfo is a tuple (MAX_PLAYERS==2), matching the
-// tuple-not-Array pattern already established elsewhere in this codebase
-// (e.g. OGL_Support.swift's gFrustumToWindowMatrix) so
-// withUnsafeMutablePointer(to:) addresses real contiguous storage.
-// GetPlayerInfoEntry (SwiftInternal.h)/GetPlayerInfoPtr (PlayerRaceInternal.h)/
-// GetPlayerIsDead/SetPlayerIsDead (SwiftInternal.h/PlayerInternal.h)/
-// GetDeathTimer/SetDeathTimer (PlayerInternal.h) are now plain Swift
-// functions with the same names/signatures, so none of their call sites
-// elsewhere needed to change.
+// Player-system state lives in PlayerSystem (gEngine.player); nothing in
+// any .c file touches it. infoTuple is a tuple (MAX_PLAYERS==2), matching
+// the tuple-not-Array pattern established elsewhere in this codebase so
+// withUnsafeMutablePointer(to:) addresses real contiguous storage (class
+// stored properties are heap storage - stable addresses, same guarantee
+// the old file-scope global gave). GetPlayerInfoEntry/GetPlayerInfoPtr/
+// GetPlayerIsDead/SetPlayerIsDead/GetDeathTimer/SetDeathTimer keep their
+// C-era names/signatures, so their call sites didn't change.
 //
-// One exception: PausedInternal.h's PausedInternal_UpdateSplitscreenFOV
-// (a static-inline C shim compiled into the bridging-header PCH) used
-// gNumPlayers as a loop bound directly - since gNumPlayers is now pure
-// Swift, that shim's signature gained a numPlayers parameter instead,
-// computed by its one Swift caller (Paused.swift) and passed in.
+// PausedInternal.h's PausedInternal_UpdateSplitscreenFOV (a static-inline
+// C shim compiled into the bridging-header PCH) takes numPlayers as a
+// parameter, computed by its one Swift caller (Paused.swift).
 
-var gNumPlayers: UInt8 = 1 // 2 if split-screen, otherwise 1
+/// Player state for both possible players. Owned by GameEngine as
+/// `gEngine.player`.
+final class PlayerSystem {
+    var numPlayers: UInt8 = 1 // 2 if split-screen, otherwise 1
 
-private var gPlayerInfoTuple: (PlayerInfoType, PlayerInfoType) = (PlayerInfoType(), PlayerInfoType())
-private var gDeathTimerArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-private var gPlayerIsDeadArr: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var infoTuple: (PlayerInfoType, PlayerInfoType) = (PlayerInfoType(), PlayerInfoType())
+    fileprivate var deathTimer: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    fileprivate var playerIsDead: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+
+    // Player_Terrain.swift state (fileprivate wouldn't reach across files)
+    var targetMaxSpeed: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+    var currentMaxSpeed: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
+    var playerBottomOff: Float = 0
+
+    // Player_Weapons.swift state
+    var autoFireDelay: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    var playerMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1) // aim vector of root body matrix (not the gun joint!)
+
+    // Player_Race.swift state
+    var numLapsThisRace: Int16 = 3
+}
 
 @inline(__always) private func gPlayerInfoBase() -> UnsafeMutablePointer<PlayerInfoType> {
-    withUnsafeMutablePointer(to: &gPlayerInfoTuple) {
+    withUnsafeMutablePointer(to: &gEngine.player.infoTuple) {
         UnsafeMutableRawPointer($0).assumingMemoryBound(to: PlayerInfoType.self)
     }
 }
@@ -33,11 +44,11 @@ private var gPlayerIsDeadArr: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYE
 func GetPlayerInfoEntry(_ i: Int32) -> UnsafeMutablePointer<PlayerInfoType> { gPlayerInfoBase() + Int(i) }
 func GetPlayerInfoPtr(_ i: Int32) -> UnsafeMutablePointer<PlayerInfoType> { gPlayerInfoBase() + Int(i) }
 
-func GetPlayerIsDead(_ i: Int32) -> UInt8 { gPlayerIsDeadArr[Int(i)] }
-func SetPlayerIsDead(_ i: Int32, _ v: UInt8) { gPlayerIsDeadArr[Int(i)] = v }
+func GetPlayerIsDead(_ i: Int32) -> UInt8 { gEngine.player.playerIsDead[Int(i)] }
+func SetPlayerIsDead(_ i: Int32, _ v: UInt8) { gEngine.player.playerIsDead[Int(i)] = v }
 
-func GetDeathTimer(_ i: Int32) -> Float { gDeathTimerArr[Int(i)] }
-func SetDeathTimer(_ i: Int32, _ v: Float) { gDeathTimerArr[Int(i)] = v }
+func GetDeathTimer(_ i: Int32) -> Float { gEngine.player.deathTimer[Int(i)] }
+func SetDeathTimer(_ i: Int32, _ v: Float) { gEngine.player.deathTimer[Int(i)] = v }
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -62,8 +73,8 @@ func InitPlayerInfo_Game() {
         let pi = GetPlayerInfoEntry(Int32(i))
 
         // INIT SOME THINGS IF NOT LOADING SAVED GAME
-        if gPlayingFromSavedGame == 0 {
-            if gVSMode == .battle { // more lives in battle mode
+        if gEngine.game.playingFromSavedGame == 0 {
+            if gEngine.game.vsMode == .battle { // more lives in battle mode
                 pi.pointee.numFreeLives = 5
             } else {
                 pi.pointee.numFreeLives = 3
@@ -71,7 +82,7 @@ func InitPlayerInfo_Game() {
 
             pi.pointee.health = 1.0
 
-            if gVSMode == .race { // start with very little fuel in races
+            if gEngine.game.vsMode == .race { // start with very little fuel in races
                 pi.pointee.jetpackFuel = 0.25
             } else {
                 pi.pointee.jetpackFuel = 1.0
@@ -99,7 +110,7 @@ func InitPlayerInfo_Game() {
 
         pi.pointee.wormhole = nil
 
-        pi.pointee.currentWeapon = Int16(WeaponType.sonicScream.rawValue)
+        pi.currentWeapon = .sonicScream
         weaponQuantityBase(pi)[Int(WeaponType.sonicScream.rawValue)] = 999 // we have infinite of these, but set to 999 anyways
     }
 }
@@ -112,7 +123,7 @@ func InitPlayerAtStartOfLevel() {
     DoPlayerTerrainUpdate()
 
     // INIT EACH PLAYER'S INFO
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoEntry(Int32(i))
 
         pi.pointee.invincibilityTimer = 0
@@ -150,7 +161,7 @@ func InitPlayerAtStartOfLevel() {
         pi.pointee.wrongWay = 0
 
         pi.pointee.lapNum = -1 // start @ -1 since we cross the finish line @ start
-        pi.pointee.raceCheckpointNum = Int16(gNumLineMarkers) - 1
+        pi.pointee.raceCheckpointNum = Int16(gEngine.terrain.numLineMarkers) - 1
         pi.pointee.place = Int16(i)
         pi.pointee.distToNextCheckpoint = 0
         pi.pointee.raceComplete = 0
@@ -171,7 +182,7 @@ func InitPlayerAtStartOfLevel() {
     }
 
     // LAY DOWN ENTRY WORMHOLE IN ADVENTURE MODE
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         var wormStartOff = OGLPoint3D(x: 0, y: 1200, z: 0)
         var wormVector = OGLVector3D(x: 0, y: 1, z: 0)
 
@@ -192,7 +203,7 @@ func InitPlayerAtStartOfLevel() {
 
         pi0.pointee.coord = player.pointee.Coord
 
-        SetSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.appearWormhole.rawValue))
+        SetSkeletonAnim(player.pointee.Skeleton, .appearWormhole)
         player.pointee.Rot.x = -Float(PI) / 2 + wormhole.pointee.Rot.x
 
         FadePlayer(player, -0.99) // start faded out
@@ -204,12 +215,12 @@ func InitPlayerAtStartOfLevel() {
 func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     let playerNum = player.pointee.PlayerNum
 
-    if gGamePrefs.kiddieMode == 0 { // don't drop eggs in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't drop eggs in kiddie mode
         DropEgg_NoWormhole(Int16(playerNum))
     }
 
-    if Int(player.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.disoriented.rawValue) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.disoriented.rawValue), 3.0)
+    if !player.pointee.Skeleton!.isAnim(.disoriented) {
+        MorphToSkeletonAnim(player.pointee.Skeleton, .disoriented, 3.0)
     }
 }
 
@@ -217,9 +228,9 @@ func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 //
 // return true if player killed
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
-func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
+func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
     var killed: UInt8 = 0
 
     let pi = GetPlayerInfoEntry(Int32(playerNum))
@@ -256,9 +267,9 @@ func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: UInt8, _
 
 // MARK: - Kill player
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
-func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
+func KillPlayer(_ playerNum: Int16, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
     let player = pi.pointee.objNode!
 
@@ -284,24 +295,21 @@ func KillPlayer(_ playerNum: Int16, _ deathType: UInt8, _ where_: UnsafeMutableP
     pi.pointee.health = 0 // make sure this is set correctly
 
     switch deathType {
-    case UInt8(PlayerDeathType.explode.rawValue):
+    case .explode:
         ExplodePlayer(player, playerNum, where_)
 
-    case UInt8(PlayerDeathType.deathDive.rawValue):
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.deathDive.rawValue), 3.0)
+    case .deathDive:
+        MorphToSkeletonAnim(player.pointee.Skeleton, .deathDive, 3.0)
         let t: Float = 8.0
         SetDeathTimer(Int32(playerNum), t)
         pi.pointee.invincibilityTimer = t
         SetCameraInDeathDiveMode(Int32(playerNum), 1)
         PlayEffect3D(Int16(EFFECT_BODYHIT), &player.pointee.Coord)
         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(playerNum))
-
-    default:
-        break
     }
 
     // SPECIAL STUFF FOR BATTLE MODE
-    if gVSMode == .battle {
+    if gEngine.game.vsMode == .battle {
         if pi.pointee.numFreeLives <= 0 { // is this player out of lives?
             ShowWinLose(playerNum, 1) // lost
             ShowWinLose(playerNum ^ 1, 0) // win
@@ -316,7 +324,7 @@ func HidePlayer(_ player: UnsafeMutablePointer<ObjNode>) {
     var node: UnsafeMutablePointer<ObjNode>? = player
 
     while let n = node {
-        n.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN) | UInt32(STATUS_BIT_NOMOVE)
+        n.setStatus(STATUS_BIT_HIDDEN | STATUS_BIT_NOMOVE)
         node = n.pointee.ChainNode
     }
 
@@ -364,10 +372,10 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
     let player = pi.pointee.objNode!
 
-    SetSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.coasting.rawValue))
+    SetSkeletonAnim(player.pointee.Skeleton, .coasting)
 
     // FIRST TAKE AWAY A LIFE AND SEE IF IT'S ALL OVER
-    switch gVSMode { // not all game modes have lives
+    switch gEngine.game.vsMode { // not all game modes have lives
     case .race, .captureTheFlag: // infinite lives in racing & flag modes
         break
 
@@ -380,7 +388,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
 
     default:
         if pi.pointee.numFreeLives <= 0 { // if no free lives then cannot reset, so game over
-            gGameOver = 1
+            gEngine.game.gameOver = 1
             return
         }
         pi.pointee.numFreeLives -= 1 // dec # lives
@@ -424,7 +432,7 @@ func ResetPlayerAtBestCheckpoint(_ playerNum: Int16) {
     // RESET COLLISION & STATUS INFO
     player.pointee.CType = UInt32(CTYPE_PLAYER1) << playerNum // make sure collision is set
 
-    if gVSMode != .none { // be sure to reset this for 2P modes
+    if gEngine.game.vsMode != .none { // be sure to reset this for 2P modes
         player.pointee.CType |= UInt32(CTYPE_TRIGGER)
         player.pointee.CBits |= UInt32(CBITS_ALWAYSTRIGGER)
         player.pointee.TriggerCallback = cDoTrig_Player
@@ -514,7 +522,7 @@ func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playe
     playerNum?.pointee = 0
 
     // CHECK PLAYER 2
-    if gNumPlayers > 1 {
+    if gEngine.player.numPlayers > 1 {
         if GetPlayerIsDead(1) != 0 { // ignore dead player
             return d1
         }
@@ -531,7 +539,7 @@ func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playe
 
 // MARK: - Explode player
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
 func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let x: Float, y: Float, z: Float
@@ -546,18 +554,18 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // MAKE FIREBALL
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = 0
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 18
-    gNewParticleGroupDef.decayRate = -4.0
-    gNewParticleGroupDef.fadeRate = 1.1
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = 0
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 18
+    gEngine.particles.newGroupDef.decayRate = -4.0
+    gEngine.particles.newGroupDef.fadeRate = 1.1
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<100 {
             var d = OGLVector3D()
@@ -588,18 +596,18 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // MAKE SPARKS
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 700
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 700
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<70 {
             var d = OGLVector3D()
@@ -630,15 +638,15 @@ func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, 
     }
 
     // CONFETTI
-    gNewConfettiGroupDef.magicNum = 0
-    gNewConfettiGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewConfettiGroupDef.gravity = 300
-    gNewConfettiGroupDef.baseScale = 6.0
-    gNewConfettiGroupDef.decayRate = 1.0
-    gNewConfettiGroupDef.fadeRate = 1.0
-    gNewConfettiGroupDef.confettiTextureNum = UInt8(PARTICLE_SObjType_Confetti_NanoFlesh)
+    gEngine.confetti.newGroupDef.magicNum = 0
+    gEngine.confetti.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.confetti.newGroupDef.gravity = 300
+    gEngine.confetti.newGroupDef.baseScale = 6.0
+    gEngine.confetti.newGroupDef.decayRate = 1.0
+    gEngine.confetti.newGroupDef.fadeRate = 1.0
+    gEngine.confetti.newGroupDef.confettiTextureNum = UInt8(PARTICLE_SObjType_Confetti_NanoFlesh)
 
-    pg = NewConfettiGroup(&gNewConfettiGroupDef)
+    pg = NewConfettiGroup(&gEngine.confetti.newGroupDef)
     if pg != -1 {
         for _ in 0..<150 {
             var d = OGLVector3D()
@@ -704,13 +712,13 @@ func PlayerHitByWeaponCallback(_ weapon: UnsafeMutablePointer<ObjNode>, _ player
     // However, some things like the bomb shockwaves will hit both the
     // shield and the player, so be careful.
     if pi.pointee.shieldPower > 0 {
-        if weapon.pointee.Kind == Int32(WeaponType.sonicScream.rawValue) {
+        if weapon.weaponKind == .sonicScream {
             _ = playerShieldHitByWeaponCallback(weapon, pi.pointee.shieldObj, hitCoord, hitNormal)
         }
     }
     // NO SHIELD, SO HURT PLAYER
     else {
-        playerKilled = PlayerLoseHealth(Int16(p), weapon.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+        playerKilled = PlayerLoseHealth(Int16(p), weapon.pointee.Damage, .deathDive, nil, 1)
     }
 
     return playerKilled
@@ -738,10 +746,10 @@ func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMu
     let p1 = trigger.pointee.PlayerNum
     let p2 = theNode.pointee.PlayerNum
 
-    let p1Dead = PlayerLoseHealth(Int16(p1), damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1) != 0
+    let p1Dead = PlayerLoseHealth(Int16(p1), damage, .deathDive, nil, 1) != 0
     GetPlayerInfoEntry(Int32(p1)).pointee.invincibilityTimer = 0.5
 
-    let p2Dead = PlayerLoseHealth(Int16(p2), damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1) != 0
+    let p2Dead = PlayerLoseHealth(Int16(p2), damage, .deathDive, &gEngine.objects.coord, 1) != 0
     GetPlayerInfoEntry(Int32(p2)).pointee.invincibilityTimer = 0.5
 
     PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(p1))
@@ -750,7 +758,7 @@ func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMu
     // SPECIAL STUFF FOR BATTLE MODE
     //
     // We need to check if both players lost simultaneously
-    if gVSMode == .battle {
+    if gEngine.game.vsMode == .battle {
         let p0Info = GetPlayerInfoEntry(0)
         let p1Info = GetPlayerInfoEntry(1)
 
@@ -821,7 +829,7 @@ func UpdatePlayerShield(_ playerNum: Int16) {
     }
 
     let player = pi.pointee.objNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE OUT
     shield.pointee.ColorFilter.a -= fps * 3.0
@@ -837,10 +845,10 @@ func UpdatePlayerShield(_ playerNum: Int16) {
     }
 
     // HIDE WITH PLAYER
-    if player.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 {
-        shield.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+    if player.hasStatus(STATUS_BIT_HIDDEN) {
+        shield.setStatus(STATUS_BIT_HIDDEN)
     } else {
-        shield.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        shield.clearStatus(STATUS_BIT_HIDDEN)
     }
 
     // DO TEXTURE ANIMATION
@@ -928,9 +936,9 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
     va.pointee.uvs.1 = va.pointee.uvs.0
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.translate(theNode.pointee.SpecialF.0, theNode.pointee.SpecialF.1, 0)
+    gEngine.renderer.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 
     // DRAW IT
@@ -942,9 +950,9 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
     va.pointee.uvs.1 = nil
 
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE1))
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
     OGL_ActiveTextureUnit(UInt32(GL_TEXTURE0))
 }
 
@@ -953,7 +961,7 @@ private func drawPlayerShield(_ theNode: UnsafeMutablePointer<ObjNode>) {
 func CalcPlayerMaxAltitude(_ x: Float, _ z: Float) -> Float {
     var maxAlt: Float
 
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue):
         maxAlt = GetTerrainY(x, z) + MAX_ALTITUDE_DIFF
         if maxAlt > MAX_ALTITUDE {
@@ -977,7 +985,7 @@ func UpdatePlayerSteering(_ playerNum: Int32) {
     var yaw = GetNeedAnalogSteering(Int32(kNeed_YawLeft), Int32(kNeed_YawRight), playerNum)
 
     // AND FINALLY SEE IF MOUSE DELTAS ARE BEST (FOR KB/M FALLBACK PLAYER ONLY)
-    if playerNum == Int32(gNumPlayers) - 1 {
+    if playerNum == Int32(gEngine.player.numPlayers) - 1 {
         let mouseSensitivityFrac = Float(gGamePrefs.mouseSensitivityLevel) * 0.01
 
         let mouseDelta = GetMouseDelta()

@@ -15,6 +15,44 @@
 // Purely additive: existing call sites are untouched.
 
 extension UnsafeMutablePointer where Pointee == ObjNode {
+    // StatusBits sugar - replaces the raw `StatusBits |= UInt32(STATUS_BIT_X)`
+    // / `&= ~UInt32(...)` / `& UInt32(...) != 0` trio. Takes the STATUS_BIT_*
+    // constants at their imported type (untyped Int from the anonymous C
+    // enum in globals.h) so call sites need no casts; combined bits
+    // (STATUS_BIT_A | STATUS_BIT_B) work too.
+    func hasStatus(_ bits: Int) -> Bool { pointee.StatusBits & UInt32(bits) != 0 }
+    func setStatus(_ bits: Int) { pointee.StatusBits |= UInt32(bits) }
+    func clearStatus(_ bits: Int) { pointee.StatusBits &= ~UInt32(bits) }
+
+    /// Hidden = not drawn (STATUS_BIT_HIDDEN). `hide()`/`show()` affect this
+    /// node only; see `hideChain()`/`showChain()` for whole chains.
+    var isHidden: Bool { hasStatus(STATUS_BIT_HIDDEN) }
+    func hide() { setStatus(STATUS_BIT_HIDDEN) }
+    func show() { clearStatus(STATUS_BIT_HIDDEN) }
+
+    /// Sugar over the `Boolean` (UInt8) `isUsed` slot-allocation flag in
+    /// gEngine.objects.objectListStorage, replacing `pointee.isUsed = 1` / `== 0` boilerplate.
+    var isUsed: Bool {
+        get { pointee.isUsed != 0 }
+        nonmutating set { pointee.isUsed = newValue ? 1 : 0 }
+    }
+
+    /// True if WorldMeshes/WorldPlaneEQs hold current world-space copies of
+    /// the model's vertices (used for picking; invalidated on every
+    /// transform update).
+    var hasWorldPoints: Bool {
+        get { pointee.HasWorldPoints != 0 }
+        nonmutating set { pointee.HasWorldPoints = newValue ? 1 : 0 }
+    }
+
+    /// ObjNode.Kind interpreted as a WeaponType - only meaningful on
+    /// bullet/projectile nodes. (Kind is polysemous: it holds EnemyKind for
+    /// enemies and WhatType for pickable terrain items.)
+    var weaponKind: WeaponType? {
+        get { WeaponType(rawValue: pointee.Kind) }
+        nonmutating set { pointee.Kind = (newValue ?? .none).rawValue }
+    }
+
     func calcRadiusFromBBox() { CalcObjectRadiusFromBBox(self) }
     func resetDisplayGroup() { ResetDisplayGroupObject(self) }
     func attachGeometryToDisplayGroup(_ geometry: MetaObjectPtr?) { AttachGeometryToDisplayGroupObject(self, geometry) }

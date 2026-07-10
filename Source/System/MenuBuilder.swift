@@ -16,18 +16,6 @@
 // Property assignment goes through ClangImporter's generated setter instead,
 // which is the safe, supported path.
 
-/// Converts a 4-character string into the Int32 four-char-code MenuItem
-/// uses for `.id`/`.next` (e.g. `fourCC("sett")` replaces C's `'sett'`).
-func fourCC(_ s: String) -> Int32 {
-    let scalars = Array(s.unicodeScalars)
-    precondition(scalars.count == 4, "fourCC requires exactly 4 characters")
-    var result: UInt32 = 0
-    for scalar in scalars {
-        result = (result << 8) | (scalar.value & 0xFF)
-    }
-    return Int32(bitPattern: result)
-}
-
 /// Fills the fixed 8-element `MenuCyclerData.choices` tuple
 /// (MAX_MENU_CYCLER_CHOICES) from a plain array, zero-filling the rest.
 /// Mutates field-by-field (`cycler.choices.0.text = ...`) instead of
@@ -45,7 +33,7 @@ private func setCyclerChoices(_ cycler: inout MenuCyclerData, _ pairs: [(LocStrI
 
 /// A fixed-size, never-deallocated buffer of `MenuItem` - same storage-
 /// duration contract as the C `static`/file-scope arrays this replaces.
-/// `gNav.pointee.menu`/`gMenuRegistry` cache raw pointers into these for the
+/// `gEngine.menu.nav.pointee.menu`/`gMenuRegistry` cache raw pointers into these for the
 /// menu's (or app's) lifetime, so this can't be a Swift `Array`.
 func makeMenuTreeBuffer(_ items: [MenuItem]) -> UnsafeMutablePointer<MenuItem> {
     let buffer = UnsafeMutablePointer<MenuItem>.allocate(capacity: items.count)

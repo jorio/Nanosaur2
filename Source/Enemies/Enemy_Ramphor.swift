@@ -29,7 +29,7 @@ func PrimeEnemy_Ramphor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Spline
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE RAMPHOR
 
@@ -39,7 +39,7 @@ func PrimeEnemy_Ramphor(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<Spline
 
     newObj.pointee.SpecialF.2 = 180 + Float(speed) * 30 // SplineSpeed
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement
@@ -65,10 +65,11 @@ private func makeRamphor(_ x: Float, _ z: Float, _ animNum: Int16, _ height: Int
 
     // SET BETTER INFO
 
-    newObj.pointee.Skeleton!.pointee.CurrentAnimTime = newObj.pointee.Skeleton!.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
+    let skeleton = newObj.pointee.Skeleton!
+    skeleton.pointee.CurrentAnimTime = skeleton.pointee.MaxAnimTime * RandomFloat() // set random time index so all of these are not in sync
 
     newObj.pointee.Health = ramphorHealth
-    if gGamePrefs.kiddieMode != 0 { // no damage in kiddie mode
+    if gGamePrefs.isKiddieMode { // no damage in kiddie mode
         newObj.pointee.Damage = 0
     } else {
         newObj.pointee.Damage = ramphorDamage
@@ -110,7 +111,7 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
     // UPDATE STUFF IF IN RANGE
 
     if isInRange != 0 {
-        let fps = gFramesPerSecondFrac
+        let fps = gEngine.framesPerSecondFrac
 
         // DO Y CALC
 
@@ -122,9 +123,11 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
         // SEE IF CHANGE ANIMS
 
-        if theNode.pointee.Skeleton!.pointee.AnimNum == UInt8(ramphorAnimDisoriented) { // see if done with disorientation
-            if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
-                MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimCoast, 3)
+        let skeleton = theNode.pointee.Skeleton!
+
+        if skeleton.pointee.AnimNum == UInt8(ramphorAnimDisoriented) { // see if done with disorientation
+            if skeleton.animHasStopped {
+                MorphToSkeletonAnim(skeleton, ramphorAnimCoast, 3)
             }
         }
 
@@ -133,8 +136,8 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
         else {
             var playerNum: Int16 = 0
             if CalcDistanceToClosestPlayer(&theNode.pointee.Coord, &playerNum) < blockDist {
-                if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimBlock) {
-                    MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimBlock, 2.0)
+                if skeleton.pointee.AnimNum != UInt8(ramphorAnimBlock) {
+                    MorphToSkeletonAnim(skeleton, ramphorAnimBlock, 2.0)
                 }
             }
 
@@ -142,12 +145,12 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
             else {
                 if theNode.pointee.SpecialF.0 < Float.pi { // coast when going down the curve
-                    if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimCoast) {
-                        MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimCoast, 4.0)
+                    if skeleton.pointee.AnimNum != UInt8(ramphorAnimCoast) {
+                        MorphToSkeletonAnim(skeleton, ramphorAnimCoast, 4.0)
                     }
                 } else { // flap when going up
-                    if theNode.pointee.Skeleton!.pointee.AnimNum != UInt8(ramphorAnimFlap) {
-                        MorphToSkeletonAnim(theNode.pointee.Skeleton, ramphorAnimFlap, 4.0)
+                    if skeleton.pointee.AnimNum != UInt8(ramphorAnimFlap) {
+                        MorphToSkeletonAnim(skeleton, ramphorAnimFlap, 4.0)
                     }
                 }
             }
@@ -178,22 +181,22 @@ private let cMoveRamphorOnSpline: @convention(c) (UnsafeMutablePointer<ObjNode>?
 
 private let cMoveRamphorDeath: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     GetObjectInfo(theNode)
 
     // MOVE
 
-    gDelta.y -= 4000.0 * fps // add gravity
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.delta.y -= 4000.0 * fps // add gravity
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     theNode.pointee.Rot.z -= fps * SwPI2
 
     // SEE IF HIT GROUND
 
-    if gCoord.y <= GetTerrainY(gCoord.x, gCoord.z) {
+    if gEngine.objects.coord.y <= GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) {
         explodeRamphor(theNode)
         return
     }
@@ -233,7 +236,7 @@ private let cRamphorHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 private func killRamphor(_ enemy: UnsafeMutablePointer<ObjNode>) {
     // SEE IF REMOVE FROM SPLINE
 
-    if enemy.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if enemy.hasStatus(STATUS_BIT_ONSPLINE) {
         DetachEnemyFromSpline(enemy, cMoveRamphorDeath)
     }
 
@@ -261,8 +264,8 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
 
         // NO SHIELD, SO HURT PLAYER
 
-        else if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
-            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), &gCoord, 1)
+        else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
+            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gEngine.objects.coord, 1)
         }
 
         playerInfo.pointee.invincibilityTimer = 1.0
@@ -273,7 +276,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
 
         // PLAY BODYHIT EFFECT
 
-        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
+        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(playerNum))
     }
 
@@ -308,18 +311,18 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let y = theNode.pointee.Coord.y
     let z = theNode.pointee.Coord.z
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = 0
-    gNewParticleGroupDef.gravity = 300
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 25
-    gNewParticleGroupDef.decayRate = -1.0
-    gNewParticleGroupDef.fadeRate = 0.8
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_CokeSpray)
-    gNewParticleGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
-    gNewParticleGroupDef.dstBlend = Int32(GL_ONE_MINUS_SRC_ALPHA)
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = 0
+    gEngine.particles.newGroupDef.gravity = 300
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 25
+    gEngine.particles.newGroupDef.decayRate = -1.0
+    gEngine.particles.newGroupDef.fadeRate = 0.8
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_CokeSpray)
+    gEngine.particles.newGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
+    gEngine.particles.newGroupDef.dstBlend = Int32(GL_ONE_MINUS_SRC_ALPHA)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<100 {
             var d = OGLVector3D()
@@ -348,18 +351,18 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.5)
+    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.5)
 
     DeleteEnemy(theNode)
 }
 
 // Returns true if enemy killed
 private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> Bool {
-    if gGamePrefs.kiddieMode != 0 { // don't hurt in kiddie mode
+    if gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         return false
     }
 
-    for p in 0..<Int(gNumPlayers) {
+    for p in 0..<Int(gEngine.player.numPlayers) {
         let playerInfo = GetPlayerInfoEntry(Int32(p))
         if playerInfo.pointee.shieldPower > 0.0 { // if player has shield then skip since other collision code handles this
             continue
@@ -373,10 +376,10 @@ private func checkIfRamphorHitPlayer(_ enemy: UnsafeMutablePointer<ObjNode>) -> 
 
         // SEE IF LINE SEG HITS PLAYER GEOMETRY
 
-        gPickAllTrianglesAsDoubleSided = 1
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 1
         var hitPt = OGLPoint3D()
         let hitObj = OGL_DoLineSegmentCollision_ObjNodes(&lineSeg, 0, UInt32(CTYPE_PLAYER1) << UInt32(p), &hitPt, nil, nil, 1)
-        gPickAllTrianglesAsDoubleSided = 0
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 0
 
         if let hitObj {
             // HURT PLAYER

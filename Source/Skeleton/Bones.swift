@@ -12,11 +12,15 @@
 // Not declared in any header, not referenced from any other C file despite
 // lacking `static` — private is safe here (same situation Enemy.swift's
 // file-scoped statics were in).
-private var gCurrentSkeleton: UnsafeMutablePointer<SkeletonDefType>?
-private var gCurrentSkelObjData: UnsafeMutablePointer<SkeletonObjDataType>?
-private var gMatrix = OGLMatrix4x4()
-private var gBBox: UnsafeMutablePointer<OGLBoundingBox>?
-private var gTransformedNormals: InlineArray<2000, OGLVector3D> = InlineArray(repeating: OGLVector3D())
+/// Bone-transform scratch state (set up per skeleton draw). Owned by
+/// GameEngine as `gEngine.bones`.
+final class BoneSystem {
+    fileprivate var currentSkeleton: UnsafeMutablePointer<SkeletonDefType>?
+    fileprivate var currentSkelObjData: UnsafeMutablePointer<SkeletonObjDataType>?
+    fileprivate var matrix = OGLMatrix4x4()
+    fileprivate var bbox: UnsafeMutablePointer<OGLBoundingBox>?
+    fileprivate var transformedNormals: InlineArray<2000, OGLVector3D> = InlineArray(repeating: OGLVector3D())
+}
 
 // MARK: - Fixed-array-field helpers (all plain struct fields, never unions)
 
@@ -49,7 +53,7 @@ private let kDeformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
 
 // INPUT: inSpec = spec of 3dmf file to load or nil to StdDialog it.
 func LoadBonesReferenceModel(_ inSpec: UnsafeMutablePointer<FSSpec>!, _ skeleton: UnsafeMutablePointer<SkeletonDefType>!, _ skeletonType: Int32) {
-    gCurrentSkeleton = skeleton
+    gEngine.bones.currentSkeleton = skeleton
 
     let g = Int32(MODEL_GROUP_SKELETONBASE) + skeletonType // calc group # to store model into
     ImportBG3D(inSpec, g, -1) // load skeleton model (no VAR memory)
@@ -60,9 +64,9 @@ func LoadBonesReferenceModel(_ inSpec: UnsafeMutablePointer<FSSpec>!, _ skeleton
 }
 
 private func decomposeReferenceModel(_ theModel: MetaObjectPtr?) {
-    gCurrentSkeleton!.pointee.numDecomposedTriMeshes = 0
-    gCurrentSkeleton!.pointee.numDecomposedPoints = 0
-    gCurrentSkeleton!.pointee.numDecomposedNormals = 0
+    gEngine.bones.currentSkeleton!.pointee.numDecomposedTriMeshes = 0
+    gEngine.bones.currentSkeleton!.pointee.numDecomposedPoints = 0
+    gEngine.bones.currentSkeleton!.pointee.numDecomposedNormals = 0
 
     // DO SUBRECURSIVE SCAN
 
@@ -98,7 +102,7 @@ private func decompRefMoRecurse(_ inObj: MetaObjectPtr?) {
 }
 
 private func decomposeVertexArrayGeometry(_ theTriMesh: UnsafeMutablePointer<MOVertexArrayObject>) {
-    let skeleton = gCurrentSkeleton!
+    let skeleton = gEngine.bones.currentSkeleton!
 
     let n = Int(skeleton.pointee.numDecomposedTriMeshes) // get index into list of trimeshes
     if n >= Int(MAX_DECOMPOSED_TRIMESHES) {
@@ -205,17 +209,17 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     guard let currentSkelObjData = theNode.pointee.Skeleton else {
         return
     }
-    gCurrentSkelObjData = currentSkelObjData
+    gEngine.bones.currentSkelObjData = currentSkelObjData
 
     guard let skeletonDef = currentSkelObjData.pointee.skeletonDefinition else {
-        SwFatal("UpdateSkinnedGeometry: gCurrentSkeleton is invalid!")
+        SwFatal("UpdateSkinnedGeometry: gEngine.bones.currentSkeleton is invalid!")
         return
     }
-    gCurrentSkeleton = skeletonDef
+    gEngine.bones.currentSkeleton = skeletonDef
 
     // TOGGLE VERTEX ARRAY DOUBLE-BUFFER
 
-    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.skeletons.rawValue) + Int32(gGameViewInfoPtr!.pointee.frameCount & 1))
+    theNode.pointee.VertexArrayMode = UInt8(Int32(VertexArrayRangeType.skeletons.rawValue) + Int32(gEngine.game.viewInfoPtr!.pointee.frameCount & 1))
 
     // INIT BBOX
     //
@@ -225,7 +229,7 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     // lineseg->bbox test is faster and more accurate.
 
     let bbox = theNode.pointer(to: \.WorldBBox)! // point objnode's world-space bbox
-    gBBox = bbox
+    gEngine.bones.bbox = bbox
 
     bbox.pointee.min.x = 10_000_000
     bbox.pointee.min.y = 10_000_000
@@ -242,10 +246,10 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // DO RECURSION TO BUILD IT
 
-    if currentSkelObjData.pointee.JointsAreGlobal != 0 {
-        gMatrix.setIdentity()
+    if currentSkelObjData.jointsAreGlobal {
+        gEngine.bones.matrix.setIdentity()
     } else {
-        gMatrix = theNode.pointee.BaseTransformMatrix
+        gEngine.bones.matrix = theNode.pointee.BaseTransformMatrix
     }
 
     // CALL RECURSION
@@ -268,11 +272,11 @@ func UpdateSkinnedGeometry(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 }
 
 private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
-    let currentSkelObjData = gCurrentSkelObjData!
-    let currentSkeleton = gCurrentSkeleton!
-    let bbox = gBBox!
+    let currentSkelObjData = gEngine.bones.currentSkelObjData!
+    let currentSkeleton = gEngine.bones.currentSkeleton!
+    let bbox = gEngine.bones.bbox!
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let localTriMeshes = deformedMeshesBase(currentSkelObjData) + (buffNum * kDeformedMeshesStride) // get ptr to skeleton's triMeshes
 
@@ -287,11 +291,11 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
 
     let matPtr: UnsafeMutablePointer<OGLMatrix4x4>
     let jointMatricesBase = jointTransformMatrixBase(currentSkelObjData)
-    if currentSkelObjData.pointee.JointsAreGlobal != 0 {
+    if currentSkelObjData.jointsAreGlobal {
         matPtr = jointMatricesBase + Int(joint)
     } else {
         let jointMat = jointMatricesBase + Int(joint)
-        matPtr = withUnsafeMutablePointer(to: &gMatrix) { $0 }
+        matPtr = withUnsafeMutablePointer(to: &gEngine.bones.matrix) { $0 }
         matPtr.pointee = jointMat.pointee.multiplied(by: matPtr.pointee)
     }
 
@@ -319,9 +323,9 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
         let y = decomposedNormalsList[i].y
         let z = decomposedNormalsList[i].z
 
-        gTransformedNormals[i].x = (m00 * x) + (m10 * y) + (m20 * z) // transform the normal
-        gTransformedNormals[i].y = (m01 * x) + (m11 * y) + (m21 * z)
-        gTransformedNormals[i].z = (m02 * x) + (m12 * y) + (m22 * z)
+        gEngine.bones.transformedNormals[i].x = (m00 * x) + (m10 * y) + (m20 * z) // transform the normal
+        gEngine.bones.transformedNormals[i].y = (m01 * x) + (m11 * y) + (m21 * z)
+        gEngine.bones.transformedNormals[i].z = (m02 * x) + (m12 * y) + (m22 * z)
     }
 
     // APPLY TRANSFORMED VECTORS TO ALL REFERENCES
@@ -341,7 +345,7 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
             let n = Int(whichNormalBase(decomposedPt)[r]) // get index into gDecomposedNormalsList
 
             let normalAttribs = localTriMeshes[triMeshNum].normals! // point to normals list
-            normalAttribs[p2] = gTransformedNormals[n] // copy transformed normal into triMesh
+            normalAttribs[p2] = gEngine.bones.transformedNormals[n] // copy transformed normal into triMesh
         }
     }
 
@@ -404,9 +408,9 @@ private func updateSkinnedGeometryRecurse(_ joint: Int16, _ skelType: Int16) {
     let numChildren = Int(numChildrenBase(currentSkeleton)[Int(joint)]) // get # children
     let childIdxBase = childIndeciesBase(currentSkeleton)
     for c in 0..<numChildren {
-        let oldM = gMatrix // push matrix
+        let oldM = gEngine.bones.matrix // push matrix
         updateSkinnedGeometryRecurse(Int16(childIdxBase[Int(joint) * Int(MAX_CHILDREN) + c]), skelType)
-        gMatrix = oldM // pop matrix
+        gEngine.bones.matrix = oldM // pop matrix
     }
 
     OGL_SetVertexArrayRangeDirty(Int16(VertexArrayRangeType.skeletons.rawValue) + Int16(buffNum)) // remember to update VAR

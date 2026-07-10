@@ -5,20 +5,24 @@
 // anonymous union, and Swift's pointer(to:) nil-crashes on union members —
 // so the pointer is handed out by a C shim instead.
 
-private let TWITCH_DRIVER_COOKIE: UInt32 = 0x55494658 // 'UIFX'
+private let TWITCH_DRIVER_COOKIE: UInt32 = fourCC("UIFX")
 
-// gTwitchPtrPool/gTwitchBackingMemory/gTwitchPresets were `static`
-// (file-private) in C, and gFreeTwitches isn't `extern`'d anywhere, so none
+// gEngine.twitches.ptrPool/gEngine.twitches.backingMemory/gEngine.twitches.presets were `static`
+// (file-private) in C, and gEngine.twitches.freeTwitches isn't `extern`'d anywhere, so none
 // of them need to stay C-linked. Fixed-size C arrays this shape would import
 // as unworkable tuples anyway, so we manage the backing storage ourselves
 // with the same zero-initializing allocator the C code effectively relied on.
-private var gFreeTwitches = Int(MAX_TWITCHES)
-private var gTwitchPtrPoolInitialized = false
-private let gTwitchPtrPool = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<Twitch>?>.size * Int(MAX_TWITCHES))!.assumingMemoryBound(to: UnsafeMutablePointer<Twitch>?.self)
-private let gTwitchBackingMemory = AllocPtrClear(MemoryLayout<Twitch>.size * Int(MAX_TWITCHES))!.assumingMemoryBound(to: Twitch.self)
+/// UI twitch-effect pool. Owned by GameEngine as `gEngine.twitches`.
+final class TwitchSystem {
+    fileprivate var freeTwitches = Int(MAX_TWITCHES)
+    fileprivate var ptrPoolInitialized = false
+    fileprivate let ptrPool = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<Twitch>?>.size * Int(MAX_TWITCHES))!.assumingMemoryBound(to: UnsafeMutablePointer<Twitch>?.self)
+    fileprivate let backingMemory = AllocPtrClear(MemoryLayout<Twitch>.size * Int(MAX_TWITCHES))!.assumingMemoryBound(to: Twitch.self)
+    fileprivate let presets = AllocPtrClear(MemoryLayout<Twitch>.size * Int(kTwitchPresetCOUNT))!.assumingMemoryBound(to: Twitch.self)
+    fileprivate var presetsLoaded = false
+    fileprivate var detectedDoubleFree = false // was function-static in C, debug builds only
+}
 
-private let gTwitchPresets = AllocPtrClear(MemoryLayout<Twitch>.size * Int(kTwitchPresetCOUNT))!.assumingMemoryBound(to: Twitch.self)
-private var gTwitchPresetsLoaded = false
 
 // The C original indexed this array by enum value via designated
 // initializers; tuples of (enum value, name) preserve that mapping.
@@ -95,16 +99,16 @@ private let kTwitchEnumNames: [(Int, String)] = [
 
 private func initTwitchPool() {
     for i in 0..<Int(MAX_TWITCHES) {
-        gTwitchPtrPool[i] = gTwitchBackingMemory + i
+        gEngine.twitches.ptrPool[i] = gEngine.twitches.backingMemory + i
     }
 
-    gFreeTwitches = Int(MAX_TWITCHES)
-    gTwitchPtrPoolInitialized = true
+    gEngine.twitches.freeTwitches = Int(MAX_TWITCHES)
+    gEngine.twitches.ptrPoolInitialized = true
 }
 
 private func isPooledTwitchFree(_ e: UnsafeMutablePointer<Twitch>) -> Bool {
     for i in 0..<Int(MAX_TWITCHES) {
-        if gTwitchPtrPool[i] == e {
+        if gEngine.twitches.ptrPool[i] == e {
             return true
         }
     }
@@ -112,20 +116,19 @@ private func isPooledTwitchFree(_ e: UnsafeMutablePointer<Twitch>) -> Bool {
 }
 
 private func allocTwitch() -> UnsafeMutablePointer<Twitch>? {
-    if gFreeTwitches <= 0 {
+    if gEngine.twitches.freeTwitches <= 0 {
         return nil
     }
 
     // Grab free slot
-    let e = gTwitchPtrPool[gFreeTwitches - 1]
-    gTwitchPtrPool[gFreeTwitches - 1] = nil
+    let e = gEngine.twitches.ptrPool[gEngine.twitches.freeTwitches - 1]
+    gEngine.twitches.ptrPool[gEngine.twitches.freeTwitches - 1] = nil
 
-    gFreeTwitches -= 1
+    gEngine.twitches.freeTwitches -= 1
 
     return e
 }
 
-private var gDetectedDoubleFree = false // was function-static in C, debug builds only
 
 private func disposeTwitch(_ e: UnsafeMutablePointer<Twitch>?) {
     guard let e else {
@@ -133,17 +136,17 @@ private func disposeTwitch(_ e: UnsafeMutablePointer<Twitch>?) {
     }
 
     #if _DEBUG
-    if !gDetectedDoubleFree && isPooledTwitchFree(e) {
-        gDetectedDoubleFree = true // avoid endless double-free messages caused by final cleanup in DoFatalAlert
+    if !gEngine.twitches.detectedDoubleFree && isPooledTwitchFree(e) {
+        gEngine.twitches.detectedDoubleFree = true // avoid endless double-free messages caused by final cleanup in DoFatalAlert
         SwGameAssertMessage(false, "double-freeing pooled ptr")
     }
     #endif
 
-    let i = gFreeTwitches
+    let i = gEngine.twitches.freeTwitches
     SwGameAssert(i < Int(MAX_TWITCHES))
 
-    gTwitchPtrPool[i] = e
-    gFreeTwitches += 1
+    gEngine.twitches.ptrPool[i] = e
+    gEngine.twitches.freeTwitches += 1
 }
 
 // MARK: - Parse presets from CSV file
@@ -173,7 +176,7 @@ private func loadTwitchPresets() {
     let kCSVColumn_Phase = 7
     let kCSVColumn_Delay = 8
 
-    gTwitchPresets.update(repeating: Twitch(), count: Int(kTwitchPresetCOUNT))
+    gEngine.twitches.presets.update(repeating: Twitch(), count: Int(kTwitchPresetCOUNT))
 
     let csv = LoadTextFile(":System:twitch.csv", nil)
 
@@ -195,7 +198,7 @@ private func loadTwitchPresets() {
                 preset = nil
                 let n = findEnumString("kTwitchPreset_", cell)
                 if n >= 0 && n < Int(kTwitchPresetCOUNT) {
-                    preset = gTwitchPresets + n
+                    preset = gEngine.twitches.presets + n
                 } else if cell != "PRESET" { // skip header row
                     SwFatal2("Unknown twitch preset name", cell)
                 }
@@ -260,7 +263,7 @@ private func loadTwitchPresets() {
 
     SafeDisposePtr(csv)
 
-    gTwitchPresetsLoaded = true
+    gEngine.twitches.presetsLoaded = true
 }
 
 // MARK: - Easing
@@ -420,7 +423,7 @@ private func moveTwitchDriver(_ driverNode: UnsafeMutablePointer<ObjNode>) {
                 fxChain[fxNum] = fxChain[lastFx]
             }
         } else {
-            timers[fxNum] += gFramesPerSecondFrac // tick effect timer
+            timers[fxNum] += gEngine.framesPerSecondFrac // tick effect timer
             anyEffectActive = anyEffectActive || timers[fxNum] >= fxChain[fxNum]!.pointee.delay
 
             fxNum += 1 // onto next effect in chain
@@ -487,8 +490,8 @@ func MakeTwitch(_ puppet: UnsafeMutablePointer<ObjNode>?, _ presetAndFlags: Int3
         return nil
     }
 
-    SwGameAssert(gTwitchPresetsLoaded)
-    SwGameAssert(gTwitchPtrPoolInitialized)
+    SwGameAssert(gEngine.twitches.presetsLoaded)
+    SwGameAssert(gEngine.twitches.ptrPoolInitialized)
 
     var driverNode: UnsafeMutablePointer<ObjNode>! = nil
     var driverData: UnsafeMutablePointer<TwitchDriverData>! = nil
@@ -545,7 +548,7 @@ func MakeTwitch(_ puppet: UnsafeMutablePointer<ObjNode>?, _ presetAndFlags: Int3
 
     let presetNum = Int(presetAndFlags & 0xFF)
     SwGameAssertMessage(presetNum <= Int(kTwitchPresetCOUNT), "Not a legal twitch preset")
-    twitch.pointee = gTwitchPresets[presetNum]
+    twitch.pointee = gEngine.twitches.presets[presetNum]
 
     // Save current alpha as "phase" for alpha fade effects
     if Int(twitch.pointee.fxClass) == Int(kTwitchClass_AlphaFadeIn)

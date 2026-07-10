@@ -1,13 +1,12 @@
 // SkeletonAnim.swift - Port of SkeletonAnim.c to Swift
 //
-// gAccelerationCurve/gDisableAnimSounds are native Swift storage now
+// gAccelerationCurve/gEngine.skeletons.disableAnimSounds are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore.
 // gAccelerationCurve was a fixed-size C array exposed via skeleton.h's
 // GetAccelerationCurvePtr shim; it's now a permanent, never-freed
 // UnsafeMutablePointer buffer, with the accessor reimplemented in plain
 // Swift under the same name/signature.
 
-var gDisableAnimSounds: UInt8 = 0
 
 private let curveSize = 2000
 
@@ -83,6 +82,18 @@ func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ a
     GetModelCurrentPosition(skeleton) // update matrices
 }
 
+// PlayerAnim boundary overloads - the player is the only skeleton whose anim
+// numbers are a Swift enum (enemy anims are still plain Int constants local
+// to each enemy file), so these let player call sites drop the
+// Int(...rawValue) cast noise.
+func SetSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ anim: PlayerAnim) {
+    SetSkeletonAnim(skeleton, Int(anim.rawValue))
+}
+
+func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!, _ anim: PlayerAnim, _ speed: Float) {
+    MorphToSkeletonAnim(skeleton, Int(anim.rawValue), speed)
+}
+
 private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>?, _ animNum: Int) {
     guard let skeleton else { return }
 
@@ -97,8 +108,8 @@ private func setSkeletonAnimGuts(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
     skeleton.pointee.CurrentAnimTime = 0
     skeleton.pointee.PauseTimer = 0
     skeleton.pointee.MaxAnimTime = calcMaxKeyFrameTime(skeleton)
-    skeleton.pointee.AnimHasStopped = 0
-    skeleton.pointee.IsMorphing = 0
+    skeleton.animHasStopped = false
+    skeleton.isMorphing = false
     skeleton.pointee.AnimSpeed = 1.0
 }
 
@@ -121,7 +132,7 @@ func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!,
 
     // NOW SET MORPHING STUFF
 
-    skeleton.pointee.IsMorphing = 1
+    skeleton.isMorphing = true
     skeleton.pointee.MorphPercent = 0
     skeleton.pointee.MorphSpeed = speed
 
@@ -142,14 +153,14 @@ func MorphToSkeletonAnim(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>!,
 func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     guard let skeleton = theNode.pointee.Skeleton else { return }
     let skeletonDef = skeleton.pointee.skeletonDefinition!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // IF JUST GOT A MORPH POSITION, THEN UPDATE MORPH
 
-    if skeleton.pointee.IsMorphing != 0 {
+    if skeleton.isMorphing {
         skeleton.pointee.MorphPercent += skeleton.pointee.MorphSpeed * fps
         if skeleton.pointee.MorphPercent >= 1.0 {
-            skeleton.pointee.IsMorphing = 0
+            skeleton.isMorphing = false
         }
         GetModelCurrentPosition(skeleton)
         return
@@ -166,7 +177,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     // INCREMENT TIME INDEX
 
     if skeleton.pointee.PauseTimer > 0.0 {
-        skeleton.pointee.PauseTimer -= gFramesPerSecondFrac
+        skeleton.pointee.PauseTimer -= gEngine.framesPerSecondFrac
     } else {
         if animDirection == UInt8(AnimDirection.forward.rawValue) {
             currentTime += (30.0 * fps) * skeleton.pointee.AnimSpeed
@@ -184,7 +195,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
                     }
 
                 default:
-                    skeleton.pointee.AnimHasStopped = 1
+                    skeleton.animHasStopped = true
                 }
             }
         }
@@ -204,7 +215,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
         switch Int(eventType) {
         case Int(AnimEventKind.stop.rawValue):
-            skeleton.pointee.AnimHasStopped = 1
+            skeleton.animHasStopped = true
             animEventIndex += 1
 
         case Int(AnimEventKind.setMarker.rawValue):
@@ -223,7 +234,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
                     currentTime -= eventTime
                     animEventIndex = 0
                 } else {
-                    skeleton.pointee.AnimHasStopped = 1
+                    skeleton.animHasStopped = true
                     animEventIndex += 1
                 }
             }
@@ -250,7 +261,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
             animEventIndex += 1
 
         case Int(AnimEventKind.playSound.rawValue):
-            if gDisableAnimSounds == 0 {
+            if gEngine.skeletons.disableAnimSounds == 0 {
                 switch eventValue {
                 case 0:
                     break
@@ -292,7 +303,7 @@ func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataTyp
     let currentAnimTimeInt = Int32(currentAnimTime)
     let skeletonDef = skeleton.pointee.skeletonDefinition!
 
-    if skeleton.pointee.JointsAreGlobal != 0 {
+    if skeleton.jointsAreGlobal {
         return
     }
 
@@ -304,7 +315,7 @@ func GetModelCurrentPosition(_ skeleton: UnsafeMutablePointer<SkeletonObjDataTyp
     for jointNum in 0..<Int(skeletonDef.pointee.NumBones) {
         // SEE IF MORPHING
 
-        if skeleton.pointee.IsMorphing != 0 {
+        if skeleton.isMorphing {
             getModelMorphPosition(skeleton, jointNum, jointCurrentPosition + jointNum)
         } else {
             // SCAN KEYFRAMES FOR CURRENT TIME
@@ -476,8 +487,9 @@ private func calcMaxKeyFrameTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDat
 
 private func getNextAnimEventAtTime(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>, _ time: Float) -> UInt8 {
     let animNum = Int(skeleton.pointee.AnimNum)
-    let numEvents = skeleton.pointee.skeletonDefinition!.pointee.NumAnimEvents![animNum]
-    let events = skeleton.pointee.skeletonDefinition!.pointee.AnimEventsList![animNum]!
+    let skeletonDef = skeleton.pointee.skeletonDefinition!
+    let numEvents = skeletonDef.pointee.NumAnimEvents![animNum]
+    let events = skeletonDef.pointee.AnimEventsList![animNum]!
 
     for i in 0..<numEvents {
         if Float(events[Int(i)].time) >= time {
@@ -517,7 +529,7 @@ private func accelerationPercent(_ percent: Float) -> Float {
 }
 
 func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var groupDef = NewParticleGroupDefType()
     var newParticleDef = NewParticleDefType()
     var d = OGLVector3D()
@@ -545,7 +557,7 @@ func BurnSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!, _ flameScale: Float
             theNode.pointee.ParticleMagicNum = magicNum
 
             groupDef.magicNum = magicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = -200
             groupDef.magnetism = 0

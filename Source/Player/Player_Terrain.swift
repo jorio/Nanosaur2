@@ -6,13 +6,11 @@
 // (formerly shims in PlayerInternal.h) are now plain Swift functions with
 // the same names/signatures.
 
-private var gTargetMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
-private var gCurrentMaxSpeedArr: [Float] = Array(repeating: Float(PLAYER_NORMAL_MAX_SPEED), count: Int(MAX_PLAYERS))
 
-func GetTargetMaxSpeed(_ i: Int32) -> Float { gTargetMaxSpeedArr[Int(i)] }
-func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gTargetMaxSpeedArr[Int(i)] = v }
-func GetCurrentMaxSpeed(_ i: Int32) -> Float { gCurrentMaxSpeedArr[Int(i)] }
-func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gCurrentMaxSpeedArr[Int(i)] = v }
+func GetTargetMaxSpeed(_ i: Int32) -> Float { gEngine.player.targetMaxSpeed[Int(i)] }
+func SetTargetMaxSpeed(_ i: Int32, _ v: Float) { gEngine.player.targetMaxSpeed[Int(i)] = v }
+func GetCurrentMaxSpeed(_ i: Int32) -> Float { gEngine.player.currentMaxSpeed[Int(i)] }
+func SetCurrentMaxSpeed(_ i: Int32, _ v: Float) { gEngine.player.currentMaxSpeed[Int(i)] = v }
 
 private let flightSlideFactor: Float = 15.0 // smaller == more slide, larger = less slide
 private let flightTurnSensitivity: Float = 1.9 // smaller == slower turns, larger == faster turns
@@ -23,7 +21,6 @@ private let defaultPlayerShadowScale: Float = 8.0
 
 private let playerMinSpeed: Float = 650.0
 
-private var gPlayerBottomOff: Float = 0
 
 private let gJetpackButtOff = OGLPoint3D(x: 0, y: 11.3, z: 33)
 
@@ -53,7 +50,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     def.coord.x = where_.pointee.x
     def.coord.z = where_.pointee.z
     def.coord.y = FindHighestCollisionAtXZ(where_.pointee.x, where_.pointee.z, UInt32(CTYPE_MISC | CTYPE_TERRAIN)) + 500
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_ROTXZY)
+    def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_NOTEXTUREWRAP | STATUS_BIT_ROTXZY)
     def.slot = Int16(PLAYER_SLOT)
     def.moveCall = cMovePlayer
     def.drawCall = cDrawPlayer
@@ -67,7 +64,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
 
     // SET COLLISION INFO
 
-    gPlayerBottomOff = newObj.pointee.LocalBBox.min.y // calc offset to bottom for collision function later
+    gEngine.player.playerBottomOff = newObj.pointee.LocalBBox.min.y // calc offset to bottom for collision function later
 
     newObj.pointee.CType = UInt32(CTYPE_PLAYER1) << UInt32(playerNum)
     newObj.pointee.CBits = UInt32(CBITS_ALLSOLID)
@@ -97,7 +94,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
 
     def.group = UInt8(MODEL_GROUP_PLAYER)
     def.type = UInt8(PLAYER_ObjType_JetPack)
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot += 1
     def.moveCall = MovePlayerJetpack
     def.drawCall = nil
@@ -109,7 +106,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     // BLUE THING
 
     def.type = UInt8(PLAYER_ObjType_JetPackBlue)
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING)
+    def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM | STATUS_BIT_GLOW | STATUS_BIT_NOLIGHTING)
     def.slot += 1
     def.moveCall = nil
     let blue = MakeNewDisplayGroupObject(&def)!
@@ -162,13 +159,13 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
     // In VS. modes the players can collide with each other, so
     // set triggers on the players.
 
-    if gVSMode != .none {
+    if gEngine.game.vsMode != .none {
         newObj.pointee.CType |= UInt32(CTYPE_TRIGGER)
         newObj.pointee.CBits |= UInt32(CBITS_ALWAYSTRIGGER)
         newObj.pointee.TriggerCallback = cDoTrig_Player
     }
 
-    if gTimeDemo != 0 {
+    if gEngine.game.timeDemo != 0 {
         HidePlayer(newObj)
     }
 }
@@ -178,7 +175,7 @@ func CreatePlayerObject(_ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPo
 private let cMovePlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
 
-    if gTimeDemo != 0 {
+    if gEngine.game.timeDemo != 0 {
         return
     }
 
@@ -258,7 +255,7 @@ private func MovePlayer_ReadyToGrab(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func MovePlayer_FlyingDisoriented(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // SEE IF STOP DISORIENTATION
 
-    if theNode.pointee.Skeleton!.pointee.AnimHasStopped != 0 {
+    if theNode.pointee.Skeleton!.animHasStopped {
         SetPlayerFlyingAnim(theNode)
     }
 
@@ -284,16 +281,16 @@ private func MovePlayer_FlyingDisoriented(_ theNode: UnsafeMutablePointer<ObjNod
 // MARK: - Move player: death dive
 
 private func MovePlayer_DeathDive(_ player: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
-    gDelta.y -= 800.0 * fps
-    gDelta.applyFrictionXZ(300) // air friction
+    gEngine.objects.delta.y -= 800.0 * fps
+    gEngine.objects.delta.applyFrictionXZ(300) // air friction
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // TILT TO NOSE DIVE
 
@@ -301,8 +298,8 @@ private func MovePlayer_DeathDive(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF HIT GROUND
 
-    if gCoord.y < GetTerrainY(gCoord.x, gCoord.z) {
-        ExplodePlayer(player, Int16(player.pointee.PlayerNum), &gCoord)
+    if gEngine.objects.coord.y < GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) {
+        ExplodePlayer(player, Int16(player.pointee.PlayerNum), &gEngine.objects.coord)
     }
 
     UpdatePlayer(player)
@@ -311,7 +308,7 @@ private func MovePlayer_DeathDive(_ player: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move player: appear wormhole
 
 private func MovePlayer_AppearWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let playerNum = Int32(player.pointee.PlayerNum)
 
     // SLOW DOWN
@@ -323,22 +320,22 @@ private func MovePlayer_AppearWormhole(_ player: UnsafeMutablePointer<ObjNode>) 
 
     // CALC NEW DELTA
 
-    gDelta = gDelta.normalized()
-    gDelta.x *= player.pointee.Speed
-    gDelta.y *= player.pointee.Speed
-    gDelta.z *= player.pointee.Speed
+    gEngine.objects.delta = gEngine.objects.delta.normalized()
+    gEngine.objects.delta.x *= player.pointee.Speed
+    gEngine.objects.delta.y *= player.pointee.Speed
+    gEngine.objects.delta.z *= player.pointee.Speed
 
     // MOVE
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // ARE WE OUT OF THE WORMHOLE?
 
-    if gCoord.y < (GetTerrainY(gCoord.x, gCoord.z) + MAX_ALTITUDE_DIFF) {
-        SetCurrentMaxSpeed(playerNum, -gDelta.y) // match speeds when exiting wormhole
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(PlayerAnim.flap.rawValue), 2)
+    if gEngine.objects.coord.y < (GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) + MAX_ALTITUDE_DIFF) {
+        SetCurrentMaxSpeed(playerNum, -gEngine.objects.delta.y) // match speeds when exiting wormhole
+        MorphToSkeletonAnim(player.pointee.Skeleton, .flap, 2)
         _ = FadePlayer(player, 1.0) // make sure totally faded in
     }
 
@@ -353,25 +350,25 @@ private func MovePlayer_AppearWormhole(_ player: UnsafeMutablePointer<ObjNode>) 
 
 // Make player fly into the wormhole
 private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GO STRAIGHT UP
 
-    let dist = gCoord.distance(to: gExitWormhole!.pointee.Coord) // get current dist to joint
+    let dist = gEngine.objects.coord.distance(to: gEngine.items.exitWormhole!.pointee.Coord) // get current dist to joint
     if dist < 50.0 {
         let up = OGLVector3D(x: 0, y: 1, z: 0)
-        player.pointee.MotionVector = up.transformed(by: gExitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
+        player.pointee.MotionVector = up.transformed(by: gEngine.items.exitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
     }
 
     // MOVE IT
 
-    gDelta.x = player.pointee.MotionVector.x * player.pointee.Speed // move toward the joint
-    gDelta.y = player.pointee.MotionVector.y * player.pointee.Speed
-    gDelta.z = player.pointee.MotionVector.z * player.pointee.Speed
+    gEngine.objects.delta.x = player.pointee.MotionVector.x * player.pointee.Speed // move toward the joint
+    gEngine.objects.delta.y = player.pointee.MotionVector.y * player.pointee.Speed
+    gEngine.objects.delta.z = player.pointee.MotionVector.z * player.pointee.Speed
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // ROTATE UP
 
@@ -409,7 +406,7 @@ private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Move player: dust devil
 
 private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let p = Int32(player.pointee.PlayerNum)
     let pi = GetPlayerInfoEntry(p)
     let radius = pi.pointee.radiusFromDustDevil
@@ -420,7 +417,7 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
     // SPIN PLAYER
 
     if player.pointee.Timer > 0.0 {
-        if PlayerLoseHealth(Int16(p), 0.04 * fps, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 0) != 0 { // lose some health while spinning
+        if PlayerLoseHealth(Int16(p), 0.04 * fps, .explode, &gEngine.objects.coord, 0) != 0 { // lose some health while spinning
             return
         }
 
@@ -436,8 +433,8 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
         pi.pointee.dustDevilRot += pi.pointee.dustDevilRotSpeed * fps
         let r = pi.pointee.dustDevilRot
 
-        gCoord.x = devil.pointee.Coord.x - sin(r) * radius
-        gCoord.z = devil.pointee.Coord.z - cos(r) * radius
+        gEngine.objects.coord.x = devil.pointee.Coord.x - sin(r) * radius
+        gEngine.objects.coord.z = devil.pointee.Coord.z - cos(r) * radius
 
         // ROTATE TO AIM
 
@@ -454,29 +451,29 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
             var v = OGLVector3D()
             let up = OGLVector3D(x: 0, y: 1, z: 0)
 
-            v.x = gCoord.x - devil.pointee.Coord.x // calc vector from devil to player
-            v.z = gCoord.z - devil.pointee.Coord.z
+            v.x = gEngine.objects.coord.x - devil.pointee.Coord.x // calc vector from devil to player
+            v.z = gEngine.objects.coord.z - devil.pointee.Coord.z
             FastNormalizeVector(v.x, 0, v.z, &v)
 
             v = up.cross(v) // calc cross product to get ejection vector
 
-            gDelta.x = v.x * speed // calc delta
-            gDelta.y = 0
-            gDelta.z = v.z * speed
+            gEngine.objects.delta.x = v.x * speed // calc delta
+            gEngine.objects.delta.y = 0
+            gEngine.objects.delta.z = v.z * speed
 
             player.pointee.Speed = speed // set player speeds
             SetCurrentMaxSpeed(p, speed)
 
             pi.pointee.ejectedFromDustDevil = 1
 
-            player.pointee.Rot.y = CalcYAngleFromPointToPoint(0, gCoord.x, gCoord.z, gCoord.x + v.x, gCoord.z + v.z)
+            player.pointee.Rot.y = CalcYAngleFromPointToPoint(0, gEngine.objects.coord.x, gEngine.objects.coord.z, gEngine.objects.coord.x + v.x, gEngine.objects.coord.z + v.z)
         }
 
         // MOVE
 
-        gCoord.x += gDelta.x * fps
-        gCoord.y += gDelta.y * fps
-        gCoord.z += gDelta.z * fps
+        gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+        gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+        gEngine.objects.coord.z += gEngine.objects.delta.z * fps
     }
 
     UpdatePlayer(player)
@@ -491,12 +488,12 @@ private func MovePlayer_DustDevil(_ player: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Update player
 
 private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let playerNum = Int32(theNode.pointee.PlayerNum)
 
     // UPDATE CURRENT MAX SPEED
 
-    if gVSMode == .race {
+    if gEngine.game.vsMode == .race {
         let pi0 = GetPlayerInfoEntry(0)
         let pi1 = GetPlayerInfoEntry(1)
         let dist = pi0.pointee.coord.distance(to: pi1.pointee.coord)
@@ -544,7 +541,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
     theNode.update()
 
     let pi = GetPlayerInfoEntry(playerNum)
-    pi.pointee.coord = gCoord // update player coord
+    pi.pointee.coord = gEngine.objects.coord // update player coord
 
     // CHECK INV TIMER
 
@@ -552,7 +549,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF CROSSED ANY LINE MARKERS
 
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.race1.rawValue), Int16(LevelNum.race2.rawValue): // call special line marker function for race modes
         theNode.updatePlayerRaceMarkers()
     default:
@@ -573,7 +570,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // MAKE SMOKE TRAIL IF HURT
 
-    if gGamePrefs.lowRenderQuality == 0 && pi.pointee.health < 0.33 {
+    if !gGamePrefs.isLowRenderQuality && pi.pointee.health < 0.33 {
         MakePlayerSmoke(theNode)
     }
 
@@ -594,7 +591,7 @@ private func UpdatePlayer(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Make player smoke
 
 private func MakePlayerSmoke(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.SpecialF.4 -= fps // SmokeTimer: see if add smoke
     if theNode.pointee.SpecialF.4 <= 0.0 {
@@ -609,7 +606,7 @@ private func MakePlayerSmoke(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -624,9 +621,9 @@ private func MakePlayerSmoke(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let y = gCoord.y
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let y = gEngine.objects.coord.y
+            let z = gEngine.objects.coord.z
 
             for _ in 0..<2 {
                 var p = OGLPoint3D()
@@ -668,7 +665,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     guard let theNode = theNodeOpt else { return }
     let playerNum = Int32(theNode.pointee.PlayerNum)
 
-    if (GetCameraMode(playerNum) != UInt8(CameraMode.firstPerson.rawValue)) || (gCurrentSplitScreenPane != theNode.pointee.PlayerNum) {
+    if (GetCameraMode(playerNum) != UInt8(CameraMode.firstPerson.rawValue)) || (gEngine.view.currentSplitScreenPane != theNode.pointee.PlayerNum) {
         theNode.drawSkeleton()
     }
 
@@ -677,9 +674,9 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     // This draws the orange ring around the other player so that
     // we can see him more easily.
 
-    if gVSMode != .none {
-        if gCurrentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
-            let otherPi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
+    if gEngine.game.vsMode != .none {
+        if gEngine.view.currentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
+            let otherPi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
             var size = theNode.pointee.Coord.distance(to: otherPi.pointee.coord) * 0.12
             if size > 600.0 {
                 size = 600.0
@@ -696,7 +693,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_PushState()
                 withUnsafePointer(to: m.value) {
                     $0.withMemoryRebound(to: Float.self, capacity: 16) {
-                        gRenderBackend.multMatrix($0)
+                        gEngine.renderer.multMatrix($0)
                     }
                 }
 
@@ -706,14 +703,14 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_DisableCullFace()
                 OGL_DisableLighting()
                 OGL_DisableFog()
-                gGlobalTransparency = 1.0
+                gEngine.metaObjects.globalTransparency = 1.0
 
-                gRenderBackend.beginImmediate(.quads)
-                gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex2f(-size, -size)
-                gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex2f(-size, size)
-                gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex2f(size, size)
-                gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex2f(size, -size)
-                gRenderBackend.endImmediate()
+                gEngine.renderer.beginImmediate(.quads)
+                gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)
+                gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex2f(-size, size)
+                gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex2f(size, size)
+                gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex2f(size, -size)
+                gEngine.renderer.endImmediate()
 
                 OGL_PopState()
             }
@@ -725,14 +722,14 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
 // Handles the flight controls for the player based on the analogControl values.
 private func DoPlayerFlightControls(_ player: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let playerNum = Int32(player.pointee.PlayerNum)
     let pi = GetPlayerInfoEntry(playerNum)
 
     // SEE IF CONTROL IS ALLOWED RIGHT NOW
 
-    if gVSMode == .race { // don't allow control while doing read-set-go for race start
-        if gRaceReadySetGoTimer > 0.0 {
+    if gEngine.game.vsMode == .race { // don't allow control while doing read-set-go for race start
+        if gEngine.game.raceReadySetGoTimer > 0.0 {
             return
         }
     }
@@ -782,7 +779,7 @@ private func DoPlayerFlightControls(_ player: UnsafeMutablePointer<ObjNode>) {
 
     var pitch = pi.pointee.analogControlZ
     if pitch > 0 {
-        if gCoord.y > (CalcPlayerMaxAltitude(gCoord.x, gCoord.z) - 150.0) { // see if we're near the max altitude
+        if gEngine.objects.coord.y > (CalcPlayerMaxAltitude(gEngine.objects.coord.x, gEngine.objects.coord.z) - 150.0) { // see if we're near the max altitude
             pitch = 0
         }
     }
@@ -839,8 +836,8 @@ private func CheckPlayerActionControls(_ player: UnsafeMutablePointer<ObjNode>) 
 
     // SEE IF CONTROL IS ALLOWED RIGHT NOW
 
-    if gVSMode == .race { // don't allow control while doing read-set-go for race start
-        if gRaceReadySetGoTimer > 0.0 {
+    if gEngine.game.vsMode == .race { // don't allow control while doing read-set-go for race start
+        if gEngine.game.raceReadySetGoTimer > 0.0 {
             return
         }
     }
@@ -882,7 +879,7 @@ private func CheckPlayerActionControls(_ player: UnsafeMutablePointer<ObjNode>) 
 // MARK: - Player jetpack button pressed
 
 private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     // DO WE HAVE FUEL?
@@ -894,7 +891,7 @@ private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>,
 
     // IF NEW THEN MAKE POOF
     if pi.pointee.jetpackActive == 0 {
-        PlayEffect_Parms3D(Int16(EFFECT_JETPACKIGNITE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.7)
+        PlayEffect_Parms3D(Int16(EFFECT_JETPACKIGNITE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.7)
 
         pi.pointee.jetpackRumbleCooldown = 0
     }
@@ -915,14 +912,14 @@ private func PlayerJetpackButtonPressed(_ player: UnsafeMutablePointer<ObjNode>,
     // UPDATE EFFECT
 
     if player.pointee.EffectChannel == -1 {
-        player.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_JETPACKHUM), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
+        player.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_JETPACKHUM), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
     } else {
-        Update3DSoundChannel(Int16(EFFECT_JETPACKHUM), &player.pointee.EffectChannel, &gCoord)
+        Update3DSoundChannel(Int16(EFFECT_JETPACKHUM), &player.pointee.EffectChannel, &gEngine.objects.coord)
     }
 
     // FORCE FEEDBACK
 
-    pi.pointee.jetpackRumbleCooldown -= gFramesPerSecondFrac
+    pi.pointee.jetpackRumbleCooldown -= gEngine.framesPerSecondFrac
     if pi.pointee.jetpackRumbleCooldown <= 0 {
         PlayRumbleEffect(Int16(EFFECT_JETPACKHUM), Int32(playerNum))
         pi.pointee.jetpackRumbleCooldown = 0.100 // should match duration of rumble effect in sound.c
@@ -952,7 +949,7 @@ func MovePlayerJetpack(_ jetpackOpt: UnsafeMutablePointer<ObjNode>?) {
     guard let jetpack = jetpackOpt else { return }
     let player = jetpack.pointee.ChainHead!
     let blue = jetpack.pointee.ChainNode!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let playerNum = Int32(player.pointee.PlayerNum)
 
     // SET MATRIX
@@ -1043,7 +1040,7 @@ private func MakeJetpackExhaust(_ jetpack: UnsafeMutablePointer<ObjNode>) {
 
     // LEAVE FLAME TRAIL
 
-    jetpack.pointee.ParticleTimer -= gFramesPerSecondFrac
+    jetpack.pointee.ParticleTimer -= gEngine.framesPerSecondFrac
     if jetpack.pointee.ParticleTimer <= 0.0 {
         jetpack.pointee.ParticleTimer += 0.02 // reset timer
 
@@ -1058,7 +1055,7 @@ private func MakeJetpackExhaust(_ jetpack: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1112,7 +1109,7 @@ private func MakeJetpackExhaust(_ jetpack: UnsafeMutablePointer<ObjNode>) {
 // OUTPUT: true if disabled or killed
 @discardableResult
 private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNode>, _ useBBoxForTerrain: UInt8) -> Bool {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let forward = OGLVector3D(x: 0, y: 0, z: -1)
     var aim = OGLVector3D()
     var deltaVec = OGLVector3D()
@@ -1124,7 +1121,7 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
     // GET AIM & MOTION VECTORS
 
     aim = forward.transformed(by: theNode.pointee.BaseTransformMatrix) // calc aim vector - the direction we want to be moving
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &deltaVec) // calc current motion vector
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &deltaVec) // calc current motion vector
 
     // CALC INTERPOLATION BETWEEN AIM & MOTION
 
@@ -1152,9 +1149,9 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
     // SET DELTA
 
     let speed = theNode.pointee.Speed
-    gDelta.x = deltaVec.x * speed // apply new motion vector to our deltas with speed
-    gDelta.y = deltaVec.y * speed
-    gDelta.z = deltaVec.z * speed
+    gEngine.objects.delta.x = deltaVec.x * speed // apply new motion vector to our deltas with speed
+    gEngine.objects.delta.y = deltaVec.y * speed
+    gEngine.objects.delta.z = deltaVec.z * speed
 
     // CHECK MAX ALTITUDE
     //
@@ -1162,28 +1159,28 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
     // based on the distance to the max y.  This should give us a nice smooth
     // ceiling instead of a sudden stop at max_y.
 
-    if gDelta.y > 0.0 {
-        let maxAlt = CalcPlayerMaxAltitude(gCoord.x, gCoord.z)
+    if gEngine.objects.delta.y > 0.0 {
+        let maxAlt = CalcPlayerMaxAltitude(gEngine.objects.coord.x, gEngine.objects.coord.z)
 
-        var diff = maxAlt - gCoord.y // calc dist to MAX Y
+        var diff = maxAlt - gEngine.objects.coord.y // calc dist to MAX Y
 
         if diff < 0.0 { // if over max, then just pin y value to max
-            gCoord.y = maxAlt
+            gEngine.objects.coord.y = maxAlt
         } else if diff < 300.0 { // are we within our decay calculation range?
             diff = 30.0 / diff // this does the decay calc
 
-            gDelta.y -= gDelta.y * diff // decay delta.y
-            if gDelta.y < 0.0 {
-                gDelta.y = 0
+            gEngine.objects.delta.y -= gEngine.objects.delta.y * diff // decay delta.y
+            if gEngine.objects.delta.y < 0.0 {
+                gEngine.objects.delta.y = 0
             }
         }
     }
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // DO OBJECT COLLISION DETECT
 
@@ -1195,7 +1192,7 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
 
     if DoFenceCollision(theNode) != 0 {
         killed = true
-        KillPlayer(Int16(playerNum), UInt8(PlayerDeathType.explode.rawValue), &gCoord)
+        KillPlayer(Int16(playerNum), .explode, &gEngine.objects.coord)
     }
 
     // CHECK LINE-SEGMENT COLLISION
@@ -1204,9 +1201,9 @@ private func DoPlayerMovementAndCollision(_ theNode: UnsafeMutablePointer<ObjNod
 
     // CHECK FLOOR
 
-    let terrainY = GetTerrainY(gCoord.x, gCoord.z)
+    let terrainY = GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z)
     let pi = GetPlayerInfoEntry(playerNum)
-    pi.pointee.distToFloor = gCoord.y + theNode.pointee.LocalBBox.min.y - terrainY // calc dist to floor
+    pi.pointee.distToFloor = gEngine.objects.coord.y + theNode.pointee.LocalBBox.min.y - terrainY // calc dist to floor
 
     return killed
 }
@@ -1229,9 +1226,9 @@ private func DoPlayerLineSegmentCollision(_ player: UnsafeMutablePointer<ObjNode
         FindCoordOfJoint(player, Int(joints[i][0]), &lineSeg.p1)
         FindCoordOfJoint(player, Int(joints[i][1]), &lineSeg.p2)
 
-        gPickAllTrianglesAsDoubleSided = 1
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 1
         let hitObj = OGL_DoLineSegmentCollision_ObjNodes(&lineSeg, UInt32(STATUS_BIT_HIDDEN), UInt32(CTYPE_PLAYERTEST), &hitPt, nil, nil, 1)
-        gPickAllTrianglesAsDoubleSided = 0
+        gEngine.objects.pickAllTrianglesAsDoubleSided = 0
 
         if let hitObj {
             if let trigger = hitObj.pointee.TriggerCallback { // call hit obj's trigger func if any
@@ -1239,7 +1236,7 @@ private func DoPlayerLineSegmentCollision(_ player: UnsafeMutablePointer<ObjNode
             } else {
                 let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
                 if pi.pointee.invincibilityTimer <= 0.0 { // otherwise, just kill player
-                    KillPlayer(Int16(player.pointee.PlayerNum), UInt8(PlayerDeathType.explode.rawValue), &gCoord)
+                    KillPlayer(Int16(player.pointee.PlayerNum), .explode, &gEngine.objects.coord)
                 }
             }
 
@@ -1255,7 +1252,7 @@ private func DoPlayerLineSegmentCollision(_ player: UnsafeMutablePointer<ObjNode
 // OUTPUT: true = disabled/killed
 @discardableResult
 private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _ useBBoxForTerrain: UInt8) -> Bool {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var killed = false
     let playerNum = Int32(theNode.pointee.PlayerNum)
 
@@ -1266,7 +1263,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
     if useBBoxForTerrain != 0 {
         theNode.pointee.BottomOff = theNode.pointee.LocalBBox.min.y
     } else {
-        theNode.pointee.BottomOff = gPlayerBottomOff
+        theNode.pointee.BottomOff = gEngine.player.playerBottomOff
     }
 
     var ctype = UInt32(CTYPE_TRIGGER | CTYPE_HURTME | CTYPE_PLAYERONLY) // get default ctypes (PLAYER_COLLISION_CTYPE)
@@ -1280,7 +1277,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
     // SCAN FOR INTERESTING STUFF
 
-    for i in 0..<Int(gNumCollisions) {
+    for i in 0..<Int(gEngine.collision.numCollisions) {
         let entry = GetCollisionListEntry(Int32(i))!
         if entry.pointee.type == UInt8(COLLISION_TYPE_OBJ) {
             guard let hitObj = entry.pointee.objectPtr else { continue } // get ObjNode of this collision
@@ -1293,8 +1290,8 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
             if hitObj.pointee.CBits & UInt32(CBITS_IMPENETRABLE2) != 0 {
                 if entry.pointee.sides & UInt16(SIDE_BITS_BOTTOM) == 0 { // dont do this if we landed on top of it
-                    gCoord.x = theNode.pointee.OldCoord.x // dont take any chances, just move back to original safe place
-                    gCoord.z = theNode.pointee.OldCoord.z
+                    gEngine.objects.coord.x = theNode.pointee.OldCoord.x // dont take any chances, just move back to original safe place
+                    gEngine.objects.coord.z = theNode.pointee.OldCoord.z
                 }
             }
         }
@@ -1309,35 +1306,35 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
         bottomOff = theNode.pointee.BottomOff // use collision box for bottom
     }
 
-    let terrainY = GetTerrainY(gCoord.x, gCoord.z) // get terrain Y
+    let terrainY = GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) // get terrain Y
 
-    let distToFloor = (gCoord.y + bottomOff) - terrainY // calc amount I'm above or under
+    let distToFloor = (gEngine.objects.coord.y + bottomOff) - terrainY // calc amount I'm above or under
 
     if distToFloor <= 0.0 { // see if on or under floor
-        gCoord.y = terrainY - bottomOff
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONGROUND)
+        gEngine.objects.coord.y = terrainY - bottomOff
+        theNode.setStatus(STATUS_BIT_ONGROUND)
 
         // SEE IF HIT GROUND HEAD-ON OR SQUEEZED TO MAX ALTITUDE
 
         var kaboom = false
-        if gCoord.y > MAX_ALTITUDE { // kaboom is squeezed
+        if gEngine.objects.coord.y > MAX_ALTITUDE { // kaboom is squeezed
             kaboom = true
         } else {
-            let dot = theNode.pointee.MotionVector.dot(gRecentTerrainNormal) // see if smacked into terrain
+            let dot = theNode.pointee.MotionVector.dot(gEngine.terrain.recentTerrainNormal) // see if smacked into terrain
 
-            if (dot < -0.6) && (gGamePrefs.kiddieMode == 0) { // if hit head-on & not in kiddie mode
+            if (dot < -0.6) && (!gGamePrefs.isKiddieMode) { // if hit head-on & not in kiddie mode
                 kaboom = true
             }
         }
 
         if kaboom {
-            killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+            killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, .explode, &gEngine.objects.coord, 1) != 0)
         }
 
         // NOT SO HARD
         else {
-            if gDelta.y < -200.0 {
-                killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 0.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+            if gEngine.objects.delta.y < -200.0 {
+                killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 0.1, .explode, &gEngine.objects.coord, 1) != 0)
             }
 
             DoPlayerGroundScrape(theNode, Int16(playerNum))
@@ -1354,35 +1351,35 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
             }
         }
 
-        gDelta.y *= -0.1
+        gEngine.objects.delta.y *= -0.1
     }
 
     // SEE IF HIT WATER SURFACE
 
-    if !killed && (gDelta.y <= 0.0) { // only check water if moving down and not killed yet
+    if !killed && (gEngine.objects.delta.y <= 0.0) { // only check water if moving down and not killed yet
         var patchNum: Int32 = 0
 
-        let wasInWater = theNode.pointee.StatusBits & UInt32(STATUS_BIT_UNDERWATER) != 0 // remember if was in water to begin with
+        let wasInWater = theNode.hasStatus(STATUS_BIT_UNDERWATER) // remember if was in water to begin with
 
         // CHECK IF IN WATER NOW
 
-        if DoWaterCollisionDetect(theNode, gCoord.x, gCoord.y + theNode.pointee.BottomOff, gCoord.z, &patchNum) != 0 {
+        if DoWaterCollisionDetect(theNode, gEngine.objects.coord.x, gEngine.objects.coord.y + theNode.pointee.BottomOff, gEngine.objects.coord.z, &patchNum) != 0 {
             let waterY = GetWaterBBoxEntry(patchNum)!.pointee.max.y
             var splashPt = OGLPoint3D()
 
-            gCoord.y = waterY - theNode.pointee.BottomOff // keep player on surface
+            gEngine.objects.coord.y = waterY - theNode.pointee.BottomOff // keep player on surface
 
-            let waterType = Int(gWaterList![Int(patchNum)].type)
+            let waterType = Int(gEngine.water.list![Int(patchNum)].type)
             let isLava = (waterType >= Int(WaterType.lava.rawValue)) && (waterType <= Int(WaterType.lavaDir7.rawValue)) // see if this is lava
 
             // SEE IF HIT WATER HARD
 
-            if gDelta.y < -400.0 {
-                killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+            if gEngine.objects.delta.y < -400.0 {
+                killed = killed || (PlayerLoseHealth(Int16(playerNum), 1.1, .explode, &gEngine.objects.coord, 1) != 0)
 
-                splashPt.x = gCoord.x
+                splashPt.x = gEngine.objects.coord.x
                 splashPt.y = waterY
-                splashPt.z = gCoord.z
+                splashPt.z = gEngine.objects.coord.z
                 MakeSplash(&splashPt, 1.2)
             }
 
@@ -1395,7 +1392,7 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
                 // SEE IF HIT LAVA
 
                 if isLava {
-                    killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 1.0, UInt8(PlayerDeathType.explode.rawValue), &gCoord, 1) != 0)
+                    killed = killed || (PlayerLoseHealth(Int16(playerNum), fps * 1.0, .explode, &gEngine.objects.coord, 1) != 0)
                 }
 
                 theNode.pointee.Rot.z = DecayToZero(theNode.pointee.Rot.z, SwPI2 * fps)
@@ -1410,9 +1407,9 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
             if !isLava { // no splashing for lava
                 let pi = GetPlayerInfoEntry(playerNum)
                 if !wasInWater {
-                    splashPt.x = gCoord.x
+                    splashPt.x = gEngine.objects.coord.x
                     splashPt.y = waterY
-                    splashPt.z = gCoord.z
+                    splashPt.z = gEngine.objects.coord.z
                     MakeSplash(&splashPt, 1.0)
                 }
 
@@ -1421,16 +1418,16 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
                     pi.pointee.waterRippleTimer -= fps
                     if pi.pointee.waterRippleTimer <= 0.0 {
                         pi.pointee.waterRippleTimer += 0.05
-                        splashPt.x = gCoord.x
+                        splashPt.x = gEngine.objects.coord.x
                         splashPt.y = waterY
-                        splashPt.z = gCoord.z
+                        splashPt.z = gEngine.objects.coord.z
                         CreateNewRipple(&splashPt, 12.0, 40.0, 1.0)
                     }
-                    SprayWater(theNode, gCoord.x, waterY, gCoord.z)
+                    SprayWater(theNode, gEngine.objects.coord.x, waterY, gEngine.objects.coord.z)
                 }
             }
 
-            gDelta.y = 0
+            gEngine.objects.delta.y = 0
         }
     }
 
@@ -1440,14 +1437,14 @@ private func DoPlayerCollisionDetect(_ theNode: UnsafeMutablePointer<ObjNode>, _
 // MARK: - Player smacked into object
 
 // Returns true if player was killed by impact
-func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: Int16) -> UInt8 {
+func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitObjOpt: UnsafeMutablePointer<ObjNode>?, _ deathType: PlayerDeathType) -> UInt8 {
     let player = playerOpt!
     let hitObj = hitObjOpt!
 
     // HANDLE SPECIAL STUFF BASED ON DEATH TYPE
 
     switch deathType {
-    case Int16(PlayerDeathType.deathDive.rawValue):
+    case .deathDive:
         // DETERMINE WHAT ANGLE TO BOUNCE
 
         let r = player.pointee.Rot.y
@@ -1456,8 +1453,8 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
         pv.y = cos(r)
 
         var ov = OGLVector2D()
-        ov.x = hitObj.pointee.Coord.x - gCoord.x
-        ov.y = hitObj.pointee.Coord.z - gCoord.z
+        ov.x = hitObj.pointee.Coord.x - gEngine.objects.coord.x
+        ov.y = hitObj.pointee.Coord.z - gEngine.objects.coord.z
         FastNormalizeVector2D(ov.x, ov.y, &ov, 1)
 
         if OGLVector2D_Cross(&ov, &pv) > 0.0 {
@@ -1468,12 +1465,9 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 
         player.pointee.Rot.x *= 1.0 + RandomFloat2() * 0.2
 
-        MakeSparkExplosion(&gCoord, 200, 1.0, Int16(PARTICLE_SObjType_RedSpark), 100, 1.0)
+        MakeSparkExplosion(&gEngine.objects.coord, 200, 1.0, Int16(PARTICLE_SObjType_RedSpark), 100, 1.0)
 
-    case Int16(PlayerDeathType.explode.rawValue):
-        break
-
-    default:
+    case .explode:
         break
     }
 
@@ -1481,7 +1475,7 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 
     let pi = GetPlayerInfoEntry(Int32(player.pointee.PlayerNum))
     if pi.pointee.invincibilityTimer <= 0.0 {
-        KillPlayer(Int16(player.pointee.PlayerNum), UInt8(deathType), &gCoord)
+        KillPlayer(Int16(player.pointee.PlayerNum), deathType, &gEngine.objects.coord)
     }
     return 1
 }
@@ -1489,121 +1483,115 @@ func PlayerSmackedIntoObject(_ playerOpt: UnsafeMutablePointer<ObjNode>?, _ hitO
 // MARK: - Set player flying anim
 
 func SetPlayerFlyingAnim(_ player: UnsafeMutablePointer<ObjNode>) {
-    let currentAnim = UInt32(player.pointee.Skeleton!.pointee.AnimNum)
-    var desiredAnim: Int32 = -1
+    let currentAnim = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+    var desiredAnim: PlayerAnim?
     var bestDist: Float = 100_000_000
 
     // SEE IF SHOULD GO INTO GRAB ANIM
 
-    guard gFirstNodePtr != nil else { // see if there are any objects
+    guard gEngine.objects.firstNodePtr != nil else { // see if there are any objects
         return
     }
 
     // SCAN THRU ALL OBJECTS LOOKING FOR SOMETHING TO PICKUP
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
+    for thisNode in allObjectNodes {
         if thisNode.pointee.CType & UInt32(CTYPE_POWERUP | CTYPE_EGG) != 0 {
             // IS IT IN RANGE?
 
-            let dist = gCoord.distance(to: thisNode.pointee.Coord)
+            let dist = gEngine.objects.coord.distance(to: thisNode.pointee.Coord)
             if (dist < bestDist) && (dist < 900.0) { // see if this is in range & is closest so far
                 var v = OGLVector3D()
 
                 // ARE WE AIMED AT IT?
 
-                v.x = thisNode.pointee.Coord.x - gCoord.x // calc vector to node
-                v.y = thisNode.pointee.Coord.y - gCoord.y
-                v.z = thisNode.pointee.Coord.z - gCoord.z
+                v.x = thisNode.pointee.Coord.x - gEngine.objects.coord.x // calc vector to node
+                v.y = thisNode.pointee.Coord.y - gEngine.objects.coord.y
+                v.z = thisNode.pointee.Coord.z - gEngine.objects.coord.z
                 FastNormalizeVector(v.x, v.y, v.z, &v)
 
                 let dot = v.dot(player.pointee.MotionVector)
                 if dot > -0.1 {
-                    desiredAnim = Int32(PlayerAnim.readyToGrab.rawValue)
+                    desiredAnim = .readyToGrab
                     bestDist = dist
                 }
             }
         }
-
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     // SEE WHICH GENERAL FLIGHT ANIM TO USE
 
-    if desiredAnim != Int32(PlayerAnim.readyToGrab.rawValue) { // do we want to be grabbing?
+    if desiredAnim != .readyToGrab { // do we want to be grabbing?
         // SEE IF BANKING RIGHT
 
         if player.pointee.Rot.z < (-Float.pi / 7) {
-            desiredAnim = Int32(PlayerAnim.bankRight.rawValue)
+            desiredAnim = .bankRight
         }
 
         // SEE IF BANKING LEFT
 
         else if player.pointee.Rot.z > (Float.pi / 7) {
-            desiredAnim = Int32(PlayerAnim.bankLeft.rawValue)
+            desiredAnim = .bankLeft
         }
 
         // FLAP / COAST
         else {
-            switch PlayerAnim(rawValue: currentAnim) {
+            switch currentAnim {
             case .flap: // if currently flapping, then see if time to coast
-                player.pointee.SpecialF.3 -= gFramesPerSecondFrac // FlapCoastTimer
+                player.pointee.SpecialF.3 -= gEngine.framesPerSecondFrac // FlapCoastTimer
                 if player.pointee.SpecialF.3 <= 0.0 {
-                    desiredAnim = Int32(PlayerAnim.coasting.rawValue)
+                    desiredAnim = .coasting
                     player.pointee.SpecialF.3 = 2.0 + RandomFloat() * 3.0
                 } else {
-                    desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                    desiredAnim = .flap
                 }
 
             case .coasting: // if currently coasting, then see if time to flap
-                player.pointee.SpecialF.3 -= gFramesPerSecondFrac // FlapCoastTimer
+                player.pointee.SpecialF.3 -= gEngine.framesPerSecondFrac // FlapCoastTimer
                 if player.pointee.SpecialF.3 <= 0.0 {
-                    desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                    desiredAnim = .flap
                     player.pointee.SpecialF.3 = 1.0 + RandomFloat() * 3.0
                 } else {
-                    desiredAnim = Int32(PlayerAnim.coasting.rawValue)
+                    desiredAnim = .coasting
                 }
 
             default: // coming out of another anim, so always flap
-                desiredAnim = Int32(PlayerAnim.flap.rawValue)
+                desiredAnim = .flap
                 player.pointee.SpecialF.3 = 1.0 + RandomFloat() * 3.0
             }
         }
     }
 
-    if desiredAnim != Int32(currentAnim) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(desiredAnim), 4.0)
+    if let desiredAnim, desiredAnim != currentAnim {
+        MorphToSkeletonAnim(player.pointee.Skeleton, desiredAnim, 4.0)
     }
 }
 
 // MARK: - Set player flying anim with egg
 
 private func SetPlayerFlyingAnim_WithEgg(_ player: UnsafeMutablePointer<ObjNode>) {
-    let currentAnim = UInt32(player.pointee.Skeleton!.pointee.AnimNum)
-    var desiredAnim: Int32
+    let currentAnim = PlayerAnim(rawValue: UInt32(player.pointee.Skeleton!.pointee.AnimNum))
+    var desiredAnim: PlayerAnim
 
     // SEE IF BANKING RIGHT
 
     if player.pointee.Rot.z < (-Float.pi / 7) {
-        desiredAnim = Int32(PlayerAnim.bankRightEgg.rawValue)
+        desiredAnim = .bankRightEgg
     }
 
     // SEE IF BANKING LEFT
 
     else if player.pointee.Rot.z > (Float.pi / 7) {
-        desiredAnim = Int32(PlayerAnim.bankLeftEgg.rawValue)
+        desiredAnim = .bankLeftEgg
     }
 
     // FLAP
     else {
-        desiredAnim = Int32(PlayerAnim.flapWithEgg.rawValue)
+        desiredAnim = .flapWithEgg
     }
 
-    if desiredAnim != Int32(currentAnim) {
-        MorphToSkeletonAnim(player.pointee.Skeleton, Int(desiredAnim), 3.0)
+    if desiredAnim != currentAnim {
+        MorphToSkeletonAnim(player.pointee.Skeleton, desiredAnim, 3.0)
     }
 }
 

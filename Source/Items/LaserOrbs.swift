@@ -19,7 +19,7 @@ private let orbRingDiameter: Float = laserOrbScale * 21.0
 extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     @discardableResult
     func addLaserOrb(x: Float, z: Float) -> UInt8 {
-        if gGamePrefs.kiddieMode != 0 { // dont add these in kiddie mode
+        if gGamePrefs.isKiddieMode { // dont add these in kiddie mode
             return 0
         }
 
@@ -44,7 +44,7 @@ private func makeLaserOrb(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNod
     def.coord.x = x
     def.coord.z = z
     def.coord.y = GetTerrainY(x, z)
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot = Int16(SLOT_OF_DUMB) - 2
     def.moveCall = nil
     def.rot = RandomFloat() * SwPI2
@@ -69,7 +69,7 @@ private func makeLaserOrb(_ x: Float, _ z: Float) -> UnsafeMutablePointer<ObjNod
     // MAKE GREEN THING
 
     def.type = UInt8(GLOBAL_ObjType_LaserOrbGreen)
-    def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM)
+    def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_UVTRANSFORM)
     def.slot += 1
     let green = MakeNewDisplayGroupObject(&def)!
 
@@ -111,12 +111,12 @@ private let cMoveLaserOrb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
 // This is also called by the spline move function, so be careful!
 private func moveLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     var doUpdate = true
 
     // SEE IF GONE
 
-    if (theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE)) == 0 {
+    if !theNode.hasStatus(STATUS_BIT_ONSPLINE) {
         if TrackTerrainItem(theNode) != 0 {
             DeleteObject(theNode)
             return
@@ -311,18 +311,18 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let y = theNode.pointee.Coord.y
     let z = theNode.pointee.Coord.z
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = -50
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20
-    gNewParticleGroupDef.decayRate = -5.0
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = -50
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20
+    gEngine.particles.newGroupDef.decayRate = -5.0
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<150 {
             var d = OGLVector3D()
@@ -354,18 +354,18 @@ private func explodeLaserOrb(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     // MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15
-    gNewParticleGroupDef.decayRate = 0.5
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15
+    gEngine.particles.newGroupDef.decayRate = 0.5
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark4)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<220 {
             let q = RandomFloat() * SwPI2
@@ -426,7 +426,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
         let dist = orb.pointee.SpecialF.0 // LaserDistance
 
-        orb.pointee.TextureTransformU -= gFramesPerSecondFrac * 8.0
+        orb.pointee.TextureTransformU -= gEngine.framesPerSecondFrac * 8.0
         let u = orb.pointee.TextureTransformU
 
         uv[0].u = u
@@ -466,7 +466,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         p[3].y = p[0].y + vy * dist
         p[3].z = p[2].z
 
-        gRenderBackend.beginImmediate(.quads)
+        gEngine.renderer.beginImmediate(.quads)
 
         glTexCoord2fv(&uv[0].u)
         glVertex3fv(&p[0].x)
@@ -477,7 +477,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         glTexCoord2fv(&uv[3].u)
         glVertex3fv(&p[3].x)
 
-        gRenderBackend.endImmediate()
+        gEngine.renderer.endImmediate()
 
         // DRAW HORIZONTAL QUAD
 
@@ -499,7 +499,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         p[3].y = p[2].y
         p[3].z = p[0].z + vz * dist
 
-        gRenderBackend.beginImmediate(.quads)
+        gEngine.renderer.beginImmediate(.quads)
 
         glTexCoord2fv(&uv[0].u)
         glVertex3fv(&p[0].x)
@@ -510,7 +510,7 @@ private let cDrawOrbLaserBeam: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
         glTexCoord2fv(&uv[3].u)
         glVertex3fv(&p[3].x)
 
-        gRenderBackend.endImmediate()
+        gEngine.renderer.endImmediate()
     }
 }
 
@@ -641,7 +641,7 @@ func PrimeLaserOrb(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemT
     let placement = itemPtr.pointee.placement
     var x: Float = 0
     var z: Float = 0
-    GetCoordOnSpline(gSplineList + splineNum, placement, &x, &z)
+    GetCoordOnSpline(gEngine.splines.splineList + splineNum, placement, &x, &z)
 
     // MAKE RAPTOR
 
@@ -649,7 +649,7 @@ func PrimeLaserOrb(_ splineNum: Int, _ itemPtr: UnsafeMutablePointer<SplineItemT
 
     // SET BETTER INFO
 
-    newObj.pointee.StatusBits |= UInt32(STATUS_BIT_ONSPLINE)
+    newObj.setStatus(STATUS_BIT_ONSPLINE)
     newObj.pointee.SplineItemPtr = itemPtr
     newObj.pointee.SplineNum = UInt8(splineNum)
     newObj.pointee.SplinePlacement = placement

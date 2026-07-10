@@ -39,7 +39,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 private let cMoveHole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     switch theNode.pointee.Mode {
     // SEE IF SHOULD MAKE NEW WORM
@@ -83,23 +83,18 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
 
     // BUILD LIST OF ELIGIBLE TARGET ELECTRODES
 
-    var thisNode = gFirstNodePtr
-    repeat {
-        if thisNode != hole { // dont target itself
-            if thisNode!.pointee.What == Int32(WhatType.hole.rawValue) { // only look for holes
-                if thisNode!.pointee.Kind == hole.pointee.Kind { // in same group?
-                    if thisNode!.pointee.Mode == holeModeInactive { // only allow inactive holes
-                        targets[numTargets] = thisNode
-                        numTargets += 1
-                        if numTargets >= maxHoleTargets {
-                            break
-                        }
-                    }
-                }
+    for node in allObjectNodes {
+        if node != hole, // dont target itself
+           node.pointee.What == Int32(WhatType.hole.rawValue), // only look for holes
+           node.pointee.Kind == hole.pointee.Kind, // in same group?
+           node.pointee.Mode == holeModeInactive { // only allow inactive holes
+            targets[numTargets] = node
+            numTargets += 1
+            if numTargets >= maxHoleTargets {
+                break
             }
         }
-        thisNode = thisNode!.pointee.NextNode
-    } while thisNode != nil
+    }
 
     // CHOOSE A RANDOM TARGET
 
@@ -166,14 +161,14 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
     def.animNum = 0
     def.scale = 6.0
     def.coord = hole.pointee.Coord
-    def.flags = gAutoFadeStatusBits
+    def.flags = gEngine.game.autoFadeStatusBits
     def.slot = 491
     def.moveCall = cMoveHoleWorm
     def.rot = 0
 
     let worm = MakeNewSkeletonObject(&def)!
 
-    worm.pointee.Skeleton!.pointee.JointsAreGlobal = 1
+    worm.pointee.Skeleton!.jointsAreGlobal = true
 
     worm.pointee.SplineNum = UInt8(splineNum)
     worm.pointee.SplinePlacement = 0.04
@@ -203,7 +198,7 @@ private func makeHoleWorm(_ hole: UnsafeMutablePointer<ObjNode>) {
 
 private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { wormOpt in
     guard let worm = wormOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let splineNum = Int16(worm.pointee.SplineNum)
 
     let from = worm.pointee.SpecialPtr.0!.assumingMemoryBound(to: ObjNode.self) // get from-to hole ObjNodes
@@ -231,7 +226,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     let i = Int(splineIndex * numPointsInSpline)
 
-    gCoord = GetCustomSplineSlot(Int32(splineNum)).pointee.splinePoints![i]
+    gEngine.objects.coord = GetCustomSplineSlot(Int32(splineNum)).pointee.splinePoints![i]
 
     // UPDATE JOINTS ON SPLINE
 
@@ -242,7 +237,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     // SEE IF START @ FROM
 
     if from.pointee.Flag.0 == 0 {
-        let dist = abs(from.pointee.Coord.y - gCoord.y)
+        let dist = abs(from.pointee.Coord.y - gEngine.objects.coord.y)
         if dist < 300.0 {
             from.pointee.Flag.0 = 1
             from.pointee.SpecialF.0 = 0
@@ -253,7 +248,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     // SEE IF START @ TO
 
     else if (to.pointee.Flag.0 == 0) && (from.pointee.SpecialF.0 > 0.5) {
-        let dist = abs(to.pointee.Coord.y - gCoord.y)
+        let dist = abs(to.pointee.Coord.y - gEngine.objects.coord.y)
         if dist < 250.0 {
             to.pointee.Flag.0 = 1
             to.pointee.SpecialF.0 = 0
@@ -315,7 +310,7 @@ private func updateWormJoints(_ theNode: UnsafeMutablePointer<ObjNode>, _ spline
 // MARK: - Spew Dirt From Hole
 
 private func spewDirtFromHole(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps
     if theNode.pointee.ParticleTimer <= 0.0 {
@@ -330,7 +325,7 @@ private func spewDirtFromHole(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = magicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
             groupDef.gravity = 2000
             groupDef.magnetism = 0

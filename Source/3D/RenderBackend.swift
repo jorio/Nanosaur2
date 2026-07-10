@@ -654,25 +654,25 @@ final class GLRenderBackend: RenderBackend {
     func checkError() -> UInt32 { UInt32(glGetError()) }
 
     func createContext() {
-        SwGameAssertMessage(gAGLContext == nil, "GL context already exists")
+        SwGameAssertMessage(gEngine.view.aglContext == nil, "GL context already exists")
 
         #if NANOSAUR_3DS
         // picaGL/citro3d have no per-window GL-style context object:
         // pglInit() sets up one global render pipeline for the whole app,
         // and screens are selected by pglSelectScreen, not a context
-        // handle you make current. gAGLContext is set to a nominal
+        // handle you make current. aglContext is set to a nominal
         // sentinel purely so other code's "is there a context" checks
         // still work (see PlatformBackend.swift's historical
         // CTRUGraphicsBackend for the same pattern).
         PGL_Init()
         PGL_SelectTopScreen()
-        gAGLContext = OpaquePointer(bitPattern: 1)
+        gEngine.view.aglContext = OpaquePointer(bitPattern: 1)
         #else
         // CREATE AGL CONTEXT & ATTACH TO WINDOW
 
-        gAGLContext = SDL_GL_CreateContext(gSDLWindow)
+        gEngine.view.aglContext = SDL_GL_CreateContext(gSDLWindow)
 
-        if gAGLContext == nil {
+        if gEngine.view.aglContext == nil {
             SwFatalAlert(String(cString: SDL_GetError()))
         }
 
@@ -680,7 +680,7 @@ final class GLRenderBackend: RenderBackend {
 
         // ACTIVATE CONTEXT
 
-        let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+        let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gEngine.view.aglContext)
         SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
         #endif
 
@@ -712,7 +712,7 @@ final class GLRenderBackend: RenderBackend {
     }
 
     func destroyContext() {
-        guard gAGLContext != nil else {
+        guard gEngine.view.aglContext != nil else {
             return
         }
 
@@ -723,13 +723,11 @@ final class GLRenderBackend: RenderBackend {
         // context).
         #else
         _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
-        SDL_GL_DestroyContext(gAGLContext) // nuke context
+        SDL_GL_DestroyContext(gEngine.view.aglContext) // nuke context
         #endif
-        gAGLContext = nil
+        gEngine.view.aglContext = nil
     }
 
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
     func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
 }
-
-var gRenderBackend: RenderBackend = GLRenderBackend()

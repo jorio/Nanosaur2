@@ -1,23 +1,46 @@
 // Particles.swift - Port of Particles.c to Swift
 //
-// gNewParticleGroupDef is native Swift storage now (converted 2026-07-07):
+// gEngine.particles.newGroupDef is native Swift storage now (converted 2026-07-07):
 // nothing in any .c file touches it anymore (LaserOrbs.c/Turrets.c/Mines.c,
-// its only real C users, are all deleted). gParticleGroups and
-// gNumActiveParticleGroups were plain (non-extern) globals only ever
+// its only real C users, are all deleted). gEngine.particles.groups and
+// gEngine.particles.numActiveGroups were plain (non-extern) globals only ever
 // touched from this file, so they stay private Swift storage.
-// gGravitoidDistBuffer (a big fixed 2D float array) is likewise file-local
+// gEngine.particles.gravitoidDistBuffer (a big fixed 2D float array) is likewise file-local
 // only, so it becomes a plain Swift 2D array.
 
-var gNewParticleGroupDef = NewParticleGroupDefType()
+/// Particle-group state. Owned by GameEngine as `gEngine.particles`.
+final class ParticleSystem {
+    var newGroupDef = NewParticleGroupDefType()
+    fileprivate var groups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
+    fileprivate var gravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
+    fileprivate var numActiveGroups: Int16 = 0
+}
 
-private let fireBlastRadius: Float = gTerrainPolygonSize * 1.5 // unused by any ported call site yet, kept for parity
+private let fireBlastRadius: Float = gEngine.terrain.polygonSize * 1.5 // unused by any ported call site yet, kept for parity
 
 private let fireTimer: Float = 0.05
 private let smokeTimer: Float = 0.07
 
-private var gParticleGroups = InlineArray<80, UnsafeMutablePointer<ParticleGroupType>?>(repeating: nil)
-private var gGravitoidDistBuffer = Array(repeating: Array(repeating: Float(0), count: Int(MAX_PARTICLES)), count: Int(MAX_PARTICLES))
-private var gNumActiveParticleGroups: Int16 = 0
+
+private extension UnsafeMutablePointer where Pointee == ParticleGroupType {
+    var isInPurgeQueue: Bool {
+        get { pointee.inPurgeQueue != 0 }
+        nonmutating set { pointee.inPurgeQueue = newValue ? 1 : 0 }
+    }
+
+    var particleType: ParticleType? {
+        ParticleType(rawValue: Int32(pointee.type))
+    }
+}
+
+// Not private: NewParticleGroup callers across Items/Player/Enemies/Effects
+// fill in gEngine.particles.newGroupDef (or a local groupDef) with this.
+extension NewParticleGroupDefType {
+    var particleType: ParticleType {
+        get { ParticleType(rawValue: Int32(type)) ?? .fallingSparks }
+        set { type = UInt8(newValue.rawValue) }
+    }
+}
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -68,10 +91,10 @@ func InitParticleSystem() {
     // INIT GROUP ARRAY
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        gParticleGroups[i] = nil
+        gEngine.particles.groups[i] = nil
     }
 
-    gNumActiveParticleGroups = 0
+    gEngine.particles.numActiveGroups = 0
 
     // LOAD SPRITES
 
@@ -117,8 +140,8 @@ func DeleteAllParticleGroups() {
 // Therefore, we actually put the particle group into a purge queue so that there's time for the
 // GPU to finish with it.
 private func deleteParticleGroup(_ groupNum: Int) {
-    if let group = gParticleGroups[groupNum] {
-        group.pointee.inPurgeQueue = 1
+    if let group = gEngine.particles.groups[groupNum] {
+        group.isInPurgeQueue = true
         group.pointee.purgeTimer = 2
     }
 }
@@ -128,17 +151,17 @@ private func deleteParticleGroup(_ groupNum: Int) {
 // Checks all deleted particle groups to see if they're ok to be purged now (see above).
 private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
     for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[g] else { // does this pg exist?
+        guard let group = gEngine.particles.groups[g] else { // does this pg exist?
             continue
         }
 
-        if group.pointee.inPurgeQueue != 0 { // is it in the purge queue?
+        if group.isInPurgeQueue { // is it in the purge queue?
             group.pointee.purgeTimer -= 1
 
             if forcePurgeNow || (group.pointee.purgeTimer <= 0) { // time to purge?
                 // NUKE GEOMETRY DATA
 
-                for i in 0..<Int(gNumPlayers) {
+                for i in 0..<Int(gEngine.player.numPlayers) {
                     MO_DisposeObjectReference(UnsafeMutableRawPointer(geometryObj(group, 0, i)))
                     MO_DisposeObjectReference(UnsafeMutableRawPointer(geometryObj(group, 1, i)))
                 }
@@ -146,9 +169,9 @@ private func purgePendingParticleGroups(_ forcePurgeNow: Bool) {
                 // NUKE GROUP ITSELF
 
                 SafeDisposePtr(group)
-                gParticleGroups[g] = nil
+                gEngine.particles.groups[g] = nil
 
-                gNumActiveParticleGroups -= 1
+                gEngine.particles.numActiveGroups -= 1
             }
         }
     }
@@ -163,13 +186,13 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
     // SCAN FOR A FREE GROUP
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        if gParticleGroups[i] == nil {
+        if gEngine.particles.groups[i] == nil {
             // ALLOCATE NEW GROUP
 
             guard let group = AllocPtrClear(MemoryLayout<ParticleGroupType>.size)?.assumingMemoryBound(to: ParticleGroupType.self) else {
                 return -1 // out of memory
             }
-            gParticleGroups[i] = group
+            gEngine.particles.groups[i] = group
 
             // INITIALIZE THE GROUP
 
@@ -179,7 +202,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
                 isUsed[p] = 0
             }
 
-            group.pointee.inPurgeQueue = 0
+            group.isInPurgeQueue = false
 
             group.pointee.flags = def.pointee.flags
             group.pointee.gravity = def.pointee.gravity
@@ -205,7 +228,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
             // this frame's particle geometry.
 
             for b in 0..<2 {
-                for playerNum in 0..<Int(gNumPlayers) {
+                for playerNum in 0..<Int(gEngine.player.numPlayers) {
                     // SET THE DATA
 
                     var vertexArrayData = MOVertexArrayData()
@@ -262,7 +285,7 @@ func NewParticleGroup(_ def: UnsafeMutablePointer<NewParticleGroupDefType>!) -> 
                 }
             }
 
-            gNumActiveParticleGroups += 1
+            gEngine.particles.numActiveGroups += 1
 
             return Int16(i)
         }
@@ -282,7 +305,7 @@ func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
 
     SwGameAssertMessage(group >= 0 && group < Int(MAX_PARTICLE_GROUPS), "Illegal group #")
 
-    guard let g = gParticleGroups[group] else {
+    guard let g = gEngine.particles.groups[group] else {
         return 1
     }
 
@@ -321,7 +344,7 @@ func AddParticleToGroup(_ def: UnsafePointer<NewParticleDefType>!) -> UInt8 {
 func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ visibleForPlayer2: Bool) {
     SwGameAssertMessage(group >= 0 && group < Int16(MAX_PARTICLE_GROUPS), "Illegal group #")
 
-    if let g = gParticleGroups[Int(group)] {
+    if let g = gEngine.particles.groups[Int(group)] {
         g.pointee.visibleForPlayer1 = visibleForPlayer1
         g.pointee.visibleForPlayer2 = visibleForPlayer2
     }
@@ -331,7 +354,7 @@ func SetParticleGroupVisiblePanes(_ group: Int16, _ visibleForPlayer1: Bool, _ v
 
 private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FIRST UPDATE THE PURGE QUEUE
 
@@ -339,15 +362,15 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     // GET VAR BUFFER & UPDATE PARTICLES
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     let varMode = UInt8(VertexArrayRangeType.particles1.rawValue) + UInt8(buffNum) // update the VAR range info
     theNode.pointee.VertexArrayMode = varMode
 
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[i] else { continue }
+        guard let group = gEngine.particles.groups[i] else { continue }
 
-        if group.pointee.inPurgeQueue != 0 { // is this particle group pending purging?
+        if group.isInPurgeQueue { // is this particle group pending purging?
             continue
         }
 
@@ -385,9 +408,9 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
             rotZ[p] += rotDZ[p] * fps
 
-            switch group.pointee.type {
+            switch group.particleType {
             // FALLING SPARKS
-            case UInt8(ParticleType.fallingSparks.rawValue):
+            case .fallingSparks:
                 coord[p].x += delta[p].x * fps // move it
                 coord[p].y += delta[p].y * fps
                 coord[p].z += delta[p].z * fps
@@ -395,7 +418,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
             // GRAVITOIDS
             //
             // Every particle has gravity pull on other particle
-            case UInt8(ParticleType.gravitoids.rawValue):
+            case .gravitoids:
                 for j in stride(from: Int(MAX_PARTICLES) - 1, through: 0, by: -1) {
                     if p == j { // dont check against self
                         continue
@@ -428,9 +451,9 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
                             dist = oneOverBaseScaleSquared
                         }
 
-                        gGravitoidDistBuffer[i][j] = dist // remember it
+                        gEngine.particles.gravitoidDistBuffer[i][j] = dist // remember it
                     } else {
-                        dist = gGravitoidDistBuffer[j][i] // use from buffer
+                        dist = gEngine.particles.gravitoidDistBuffer[j][i] // use from buffer
                     }
 
                     // calc vector to particle
@@ -479,8 +502,8 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
                             coord[p].y = y
                             delta[p].y *= -0.4
 
-                            delta[p].x += gRecentTerrainNormal.x * 300.0 // reflect off of surface
-                            delta[p].z += gRecentTerrainNormal.z * 300.0
+                            delta[p].x += gEngine.terrain.recentTerrainNormal.x * 300.0 // reflect off of surface
+                            delta[p].z += gEngine.terrain.recentTerrainNormal.z * 300.0
 
                             if flags & UInt32(PARTICLE_FLAGS_DISPERSEIFBOUNCE) != 0 { // see if disperse on impact
                                 delta[p].y *= 0.4
@@ -531,7 +554,7 @@ private let cMoveParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 private func updateParticleGroupsGeometry() {
     var v = [OGLPoint3D](repeating: OGLPoint3D(), count: 4)
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     v[0].z = 0 // init z's to 0
     v[1].z = 0
@@ -540,7 +563,7 @@ private func updateParticleGroupsGeometry() {
 
     // BUILD GEOMETRY FOR EACH PLAYER'S PANE
 
-    for paneNum in 0..<Int(gNumPlayers) {
+    for paneNum in 0..<Int(gEngine.player.numPlayers) {
         // GET CAMERA INFO FOR THIS PANE
 
         let camCoords = cameraPlacementsBase()[paneNum].cameraLocation
@@ -548,9 +571,9 @@ private func updateParticleGroupsGeometry() {
         // UPDATE EACH PARTICLE GROUP
 
         for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-            guard let group = gParticleGroups[g] else { continue }
+            guard let group = gEngine.particles.groups[g] else { continue }
 
-            if group.pointee.inPurgeQueue != 0 { // skip if it's in the purge queue
+            if group.isInPurgeQueue { // skip if it's in the purge queue
                 continue
             }
 
@@ -682,13 +705,13 @@ private func updateParticleGroupsGeometry() {
 }
 
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 // MARK: - Draw particle groups
 
 private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let paneNum = Int(gCurrentSplitScreenPane)
+    let paneNum = Int(gEngine.view.currentSplitScreenPane)
 
     // DRAW SOME OTHER GOODIES WHILE WE'RE HERE
 
@@ -700,14 +723,14 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
     OGL_EnableBlend()
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     for g in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let pg = gParticleGroups[g] else { // skip if not allocated
+        guard let pg = gEngine.particles.groups[g] else { // skip if not allocated
             continue
         }
 
-        if pg.pointee.inPurgeQueue != 0 // skip if it's in the purge queue
+        if pg.isInPurgeQueue // skip if it's in the purge queue
             || OGL_IsBBoxVisible(&pg.pointee.bbox, nil) == 0 // skip if culled
             || (paneNum == 0 && !pg.pointee.visibleForPlayer1) // skip if hidden for this pane
             || (paneNum == 1 && !pg.pointee.visibleForPlayer2) { // skip if hidden for this pane
@@ -734,7 +757,7 @@ private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 // MARK: - Verify particle group magic num
 
 func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
-    guard let g = gParticleGroups[Int(group)] else {
+    guard let g = gEngine.particles.groups[Int(group)] else {
         return 0
     }
 
@@ -750,7 +773,7 @@ func VerifyParticleGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
 // INPUT:	inFlags = flags to check particle types against
 func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UInt16) -> UInt8 {
     for i in 0..<Int(MAX_PARTICLE_GROUPS) {
-        guard let group = gParticleGroups[i] else { // see if group active
+        guard let group = gEngine.particles.groups[i] else { // see if group active
             continue
         }
 
@@ -792,19 +815,19 @@ func ParticleHitObject(_ theNode: UnsafeMutablePointer<ObjNode>!, _ inFlags: UIn
 func MakePuff(_ numPuffs: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float, _ texNum: Int16, _ src: Int32, _ dst: Int32, _ decayRate: Float) {
     // white sparks
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = -80
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = scale
-    gNewParticleGroupDef.decayRate = -1.6
-    gNewParticleGroupDef.fadeRate = decayRate
-    gNewParticleGroupDef.particleTextureNum = UInt8(texNum)
-    gNewParticleGroupDef.srcBlend = src
-    gNewParticleGroupDef.dstBlend = dst
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = -80
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = scale
+    gEngine.particles.newGroupDef.decayRate = -1.6
+    gEngine.particles.newGroupDef.fadeRate = decayRate
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(texNum)
+    gEngine.particles.newGroupDef.srcBlend = src
+    gEngine.particles.newGroupDef.dstBlend = dst
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = where_.pointee.x
         let y = where_.pointee.y
@@ -856,19 +879,19 @@ func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ s
 
     // white sparks
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 200
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0 * scale
-    gNewParticleGroupDef.decayRate = 0
-    gNewParticleGroupDef.fadeRate = fadeRate
-    gNewParticleGroupDef.particleTextureNum = UInt8(sparkTexture)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 200
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0 * scale
+    gEngine.particles.newGroupDef.decayRate = 0
+    gEngine.particles.newGroupDef.fadeRate = fadeRate
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(sparkTexture)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<n {
             var pt = OGLPoint3D()
@@ -911,7 +934,7 @@ func MakeSparkExplosion(_ coord: UnsafePointer<OGLPoint3D>!, _ force: Float, _ s
 // MARK: - Make steam
 
 func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let scale: Float = 1.8
 
     // MAKE SMOKE
@@ -929,7 +952,7 @@ func MakeSteam(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -990,18 +1013,18 @@ func MakeBombExplosion(_ x: Float, _ z: Float, _ delta: UnsafeMutablePointer<OGL
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 900
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 190
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark3)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 900
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 190
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_WhiteSpark3)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let px = where_.x
         let py = where_.y
@@ -1048,19 +1071,19 @@ func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
     var pt = OGLPoint3D()
     pt.y = where_.pointee.y
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = 400
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0 * scale
-    gNewParticleGroupDef.decayRate = -0.6
-    gNewParticleGroupDef.fadeRate = 0.8
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = 400
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0 * scale
+    gEngine.particles.newGroupDef.decayRate = -0.6
+    gEngine.particles.newGroupDef.fadeRate = 0.8
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<30 {
             pt.x = x + RandomFloat2() * (30.0 * scale)
@@ -1100,7 +1123,7 @@ func MakeSplash(_ where_: UnsafeMutablePointer<OGLPoint3D>!, _ scale: Float) {
 // MARK: - Spray water
 
 func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps // see if time to spew water
     if theNode.pointee.ParticleTimer <= 0.0 {
@@ -1113,18 +1136,18 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
             let newMagicNum = MyRandomLong()
             theNode.pointee.Special.4 = Int(newMagicNum) // SmokeParticleMagic
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-            gNewParticleGroupDef.flags = 0
-            gNewParticleGroupDef.gravity = 800
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 10
-            gNewParticleGroupDef.decayRate = -1.7
-            gNewParticleGroupDef.fadeRate = 1.5
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE
-            particleGroup = Int(NewParticleGroup(&gNewParticleGroupDef))
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = 0
+            gEngine.particles.newGroupDef.gravity = 800
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 10
+            gEngine.particles.newGroupDef.decayRate = -1.7
+            gEngine.particles.newGroupDef.fadeRate = 1.5
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Splash)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE
+            particleGroup = Int(NewParticleGroup(&gEngine.particles.newGroupDef))
             theNode.pointee.Special.5 = particleGroup // SmokeParticleGroup
         }
 
@@ -1173,11 +1196,11 @@ func SprayWater(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Floa
 // MARK: - Burn fire
 
 func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float, _ z: Float, _ doSmoke: UInt8, _ particleType: Int16, _ scale: Float, _ moreFlags: UInt32) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // MAKE SMOKE
 
-    if doSmoke != 0 && (gFramesPerSecond > 20.0) { // only do smoke if running at good frame rate
+    if doSmoke != 0 && (gEngine.framesPerSecond > 20.0) { // only do smoke if running at good frame rate
         theNode.pointee.SpecialF.4 -= fps // SmokeTimer: see if add smoke
         if theNode.pointee.SpecialF.4 <= 0.0 {
             theNode.pointee.SpecialF.4 += smokeTimer // reset timer
@@ -1191,7 +1214,7 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 
                 var groupDef = NewParticleGroupDefType()
                 groupDef.magicNum = newMagicNum
-                groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+                groupDef.particleType = .fallingSparks
                 groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND) | moreFlags
                 groupDef.gravity = 0
                 groupDef.magnetism = 0
@@ -1255,7 +1278,7 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND) | moreFlags
             groupDef.gravity = -200
             groupDef.magnetism = 0
@@ -1311,18 +1334,18 @@ func BurnFire(_ theNode: UnsafeMutablePointer<ObjNode>!, _ x: Float, _ y: Float,
 func MakeFireExplosion(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
     // FIRST MAKE FLAMES
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = -120
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 18
-    gNewParticleGroupDef.decayRate = -1.0
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = -120
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 18
+    gEngine.particles.newGroupDef.decayRate = -1.0
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = where_.pointee.x
         let y = where_.pointee.y
@@ -1402,7 +1425,7 @@ private let smokerGlow: [Bool] = [false, false, true, true]
 
 private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF OUT OF RANGE
 
@@ -1431,7 +1454,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = 100
             groupDef.magnetism = 0
@@ -1489,7 +1512,7 @@ private let cMoveSmoker: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 // MARK: - Do player ground scrape
 
 func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum: Int16) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let pi = GetPlayerInfoEntry(Int32(playerNum))
 
     pi.pointee.dirtParticleTimer -= fps // see if add bubbles
@@ -1505,7 +1528,7 @@ func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum:
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 1000
             groupDef.magnetism = 0
@@ -1520,8 +1543,8 @@ func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum:
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let z = gEngine.objects.coord.z
             let y = GetTerrainY(x, z) + 10.0
 
             for _ in 0..<3 {
@@ -1600,7 +1623,7 @@ private let cMoveFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // NEXT FRAME
 
-    theNode.pointee.Timer -= theNode.pointee.SpecialF.0 * gFramesPerSecondFrac // FlameSpeed
+    theNode.pointee.Timer -= theNode.pointee.SpecialF.0 * gEngine.framesPerSecondFrac // FlameSpeed
     if theNode.pointee.Timer <= 0.0 {
         theNode.pointee.Timer += 1.0
         theNode.pointee.Special.0 += 1 // FlameFrame
@@ -1616,7 +1639,7 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
     guard let theNode = theNodeOpt else { return }
     let up = OGLVector3D(x: 0, y: 1, z: 0)
     var frame = [OGLPoint3D](repeating: OGLPoint3D(), count: 4)
-    let paneNum = Int(gCurrentSplitScreenPane)
+    let paneNum = Int(gEngine.view.currentSplitScreenPane)
 
     let s = theNode.pointee.Scale.x
 
@@ -1651,9 +1674,9 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // SUBMIT TEXTURE
 
-    gGlobalColorFilter.r = 1.0
-    gGlobalColorFilter.g = 0.8
-    gGlobalColorFilter.b = 0.8
+    gEngine.metaObjects.globalColorFilter.r = 1.0
+    gEngine.metaObjects.globalColorFilter.g = 0.8
+    gEngine.metaObjects.globalColorFilter.b = 0.8
 
     let flameFrame = Int(theNode.pointee.Special.0)
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_Flame0) + flameFrame].materialObject!.assumingMemoryBound(to: MOMaterialObject.self)
@@ -1661,16 +1684,16 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // DRAW QUAD
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(frame[0].x, frame[0].y, frame[0].z)
-    gRenderBackend.texCoord2f(0.99, 0); gRenderBackend.vertex3f(frame[1].x, frame[1].y, frame[1].z)
-    gRenderBackend.texCoord2f(0.99, 0.99); gRenderBackend.vertex3f(frame[2].x, frame[2].y, frame[2].z)
-    gRenderBackend.texCoord2f(0, 0.99); gRenderBackend.vertex3f(frame[3].x, frame[3].y, frame[3].z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(frame[0].x, frame[0].y, frame[0].z)
+    gEngine.renderer.texCoord2f(0.99, 0); gEngine.renderer.vertex3f(frame[1].x, frame[1].y, frame[1].z)
+    gEngine.renderer.texCoord2f(0.99, 0.99); gEngine.renderer.vertex3f(frame[2].x, frame[2].y, frame[2].z)
+    gEngine.renderer.texCoord2f(0, 0.99); gEngine.renderer.vertex3f(frame[3].x, frame[3].y, frame[3].z)
+    gEngine.renderer.endImmediate()
 
-    gGlobalColorFilter.r = 1
-    gGlobalColorFilter.g = 1
-    gGlobalColorFilter.b = 1
+    gEngine.metaObjects.globalColorFilter.r = 1
+    gEngine.metaObjects.globalColorFilter.g = 1
+    gEngine.metaObjects.globalColorFilter.b = 1
 }
 
 // MARK: -
@@ -1698,7 +1721,7 @@ func MakeFireRing(_ x: Float, _ y: Float, _ z: Float) -> UnsafeMutablePointer<Ob
 
 private let cMoveFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ColorFilter.a -= fps * 2.0
     if theNode.pointee.ColorFilter.a <= 0.0 {
@@ -1743,19 +1766,19 @@ private let cDrawFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // SUBMIT TEXTURE
 
-    gGlobalTransparency = theNode.pointee.ColorFilter.a
+    gEngine.metaObjects.globalTransparency = theNode.pointee.ColorFilter.a
 
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_FireRing)].materialObject!.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
 
     // DRAW QUAD
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0.99); gRenderBackend.vertex3f(verts[0].x, verts[0].y, verts[0].z)
-    gRenderBackend.texCoord2f(0.99, 0.99); gRenderBackend.vertex3f(verts[1].x, verts[1].y, verts[1].z)
-    gRenderBackend.texCoord2f(0.99, 0); gRenderBackend.vertex3f(verts[2].x, verts[2].y, verts[2].z)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(verts[3].x, verts[3].y, verts[3].z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0.99); gEngine.renderer.vertex3f(verts[0].x, verts[0].y, verts[0].z)
+    gEngine.renderer.texCoord2f(0.99, 0.99); gEngine.renderer.vertex3f(verts[1].x, verts[1].y, verts[1].z)
+    gEngine.renderer.texCoord2f(0.99, 0); gEngine.renderer.vertex3f(verts[2].x, verts[2].y, verts[2].z)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(verts[3].x, verts[3].y, verts[3].z)
+    gEngine.renderer.endImmediate()
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }

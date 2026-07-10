@@ -1,15 +1,18 @@
 // Confetti.swift - Port of Confetti.c to Swift
 //
-// gNewConfettiGroupDef is native Swift storage now (converted 2026-07-07):
+// gEngine.confetti.newGroupDef is native Swift storage now (converted 2026-07-07):
 // nothing in any .c file touches it anymore (Trees.c/Player.c, its only
-// real C users, are both deleted). gConfettiGroups/gNumActiveConfettiGroups
+// real C users, are both deleted). gEngine.confetti.groups/gEngine.confetti.numActiveGroups
 // were plain (non-extern) globals only ever touched from this file, so
 // they stay a private Swift array.
 
-var gNewConfettiGroupDef = NewConfettiGroupDefType()
+/// Confetti-group state. Owned by GameEngine as `gEngine.confetti`.
+final class ConfettiSystem {
+    var newGroupDef = NewConfettiGroupDefType()
+    fileprivate var groups = InlineArray<50, UnsafeMutablePointer<ConfettiGroupType>?>(repeating: nil)
+    fileprivate var numActiveGroups: Int16 = 0
+}
 
-private var gConfettiGroups = InlineArray<50, UnsafeMutablePointer<ConfettiGroupType>?>(repeating: nil)
-private var gNumActiveConfettiGroups: Int16 = 0
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -50,10 +53,10 @@ private var gNumActiveConfettiGroups: Int16 = 0
 func InitConfettiManager() {
     // INIT GROUP ARRAY
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
-        gConfettiGroups[i] = nil
+        gEngine.confetti.groups[i] = nil
     }
 
-    gNumActiveConfettiGroups = 0
+    gEngine.confetti.numActiveGroups = 0
 
     // CREATE DUMMY CUSTOM OBJECT TO CAUSE CONFETTI DRAWING AT THE DESIRED TIME
     //
@@ -77,15 +80,15 @@ func DeleteAllConfettiGroups() {
 }
 
 private func deleteConfettiGroup(_ groupNum: Int) {
-    if let group = gConfettiGroups[groupNum] {
+    if let group = gEngine.confetti.groups[groupNum] {
         // NUKE GEOMETRY DATA
         MO_DisposeObjectReference(UnsafeMutableRawPointer(group.pointee.geometryObj))
 
         // NUKE GROUP ITSELF
         SafeDisposePtr(group)
-        gConfettiGroups[groupNum] = nil
+        gEngine.confetti.groups[groupNum] = nil
 
-        gNumActiveConfettiGroups -= 1
+        gEngine.confetti.numActiveGroups -= 1
     }
 }
 
@@ -96,12 +99,12 @@ private func deleteConfettiGroup(_ groupNum: Int) {
 func NewConfettiGroup(_ def: UnsafeMutablePointer<NewConfettiGroupDefType>) -> Int16 {
     // SCAN FOR A FREE GROUP
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
-        if gConfettiGroups[i] == nil {
+        if gEngine.confetti.groups[i] == nil {
             // ALLOCATE NEW GROUP
             guard let group = AllocPtrClear(MemoryLayout<ConfettiGroupType>.size)?.assumingMemoryBound(to: ConfettiGroupType.self) else {
                 return -1 // out of memory
             }
-            gConfettiGroups[i] = group
+            gEngine.confetti.groups[i] = group
 
             // INITIALIZE THE GROUP
             let isUsed = isUsedBase(group)
@@ -171,7 +174,7 @@ func NewConfettiGroup(_ def: UnsafeMutablePointer<NewConfettiGroupDefType>) -> I
             // CREATE NEW GEOMETRY OBJECT
             group.pointee.geometryObj = MO_CreateNewObjectOfType(.geometry, Int(MO_GEOMETRY_SUBTYPE_VERTEXARRAY), &vertexArrayData)?.assumingMemoryBound(to: MOVertexArrayObject.self)
 
-            gNumActiveConfettiGroups += 1
+            gEngine.confetti.numActiveGroups += 1
 
             return Int16(i)
         }
@@ -190,7 +193,7 @@ func AddConfettiToGroup(_ def: UnsafeMutablePointer<NewConfettiDefType>) -> UInt
         SwFatal("AddConfettiToGroup: illegal group #")
     }
 
-    guard let g = gConfettiGroups[group] else {
+    guard let g = gEngine.confetti.groups[group] else {
         return 1
     }
 
@@ -229,10 +232,10 @@ private let cMoveConfettiGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 }
 
 private func moveConfettiGroups() {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     for i in 0..<Int(MAX_CONFETTI_GROUPS) {
-        guard let g = gConfettiGroups[i] else {
+        guard let g = gEngine.confetti.groups[i] else {
             continue
         }
 
@@ -284,8 +287,8 @@ private func moveConfettiGroups() {
                             coord[p].y = y
                             delta[p].y *= -0.4
 
-                            delta[p].x += gRecentTerrainNormal.x * 300 // reflect off of surface
-                            delta[p].z += gRecentTerrainNormal.z * 300
+                            delta[p].x += gEngine.terrain.recentTerrainNormal.x * 300 // reflect off of surface
+                            delta[p].z += gEngine.terrain.recentTerrainNormal.z * 300
 
                             if flags & UInt32(PARTICLE_FLAGS_DISPERSEIFBOUNCE) != 0 { // see if disperse on impact
                                 delta[p].y *= 0.4
@@ -341,12 +344,12 @@ private func drawConfettiGroups() {
 
     // SETUP ENVIRONTMENT
     OGL_PushState()
-    gRenderBackend.setTwoSidedLighting(true)
+    gEngine.renderer.setTwoSidedLighting(true)
 
     OGL_SetColor4f(1, 1, 1, 1) // full white & alpha to start with
 
     for g in 0..<Int(MAX_CONFETTI_GROUPS) {
-        guard let group = gConfettiGroups[g] else {
+        guard let group = gEngine.confetti.groups[g] else {
             continue
         }
 
@@ -456,13 +459,13 @@ private func drawConfettiGroups() {
     // RESTORE MODES
     OGL_PopState()
     OGL_SetColor4f(1, 1, 1, 1) // reset this
-    gRenderBackend.setTwoSidedLighting(false)
+    gEngine.renderer.setTwoSidedLighting(false)
 }
 
 // MARK: - Verify
 
 func VerifyConfettiGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
-    guard let g = gConfettiGroups[Int(group)] else {
+    guard let g = gEngine.confetti.groups[Int(group)] else {
         return 0
     }
 
@@ -474,15 +477,15 @@ func VerifyConfettiGroupMagicNum(_ group: Int16, _ magicNum: UInt32) -> UInt8 {
 func MakeConfettiExplosion(_ x: Float, _ y: Float, _ z: Float, _ force: Float, _ scale: Float, _ texture: Int16, _ quantity: Int16) {
     let radius = 1.0 * scale
 
-    gNewConfettiGroupDef.magicNum = 0
-    gNewConfettiGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewConfettiGroupDef.gravity = 250
-    gNewConfettiGroupDef.baseScale = 4.5 * scale
-    gNewConfettiGroupDef.decayRate = 0
-    gNewConfettiGroupDef.fadeRate = 1.0
-    gNewConfettiGroupDef.confettiTextureNum = UInt8(texture)
+    gEngine.confetti.newGroupDef.magicNum = 0
+    gEngine.confetti.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.confetti.newGroupDef.gravity = 250
+    gEngine.confetti.newGroupDef.baseScale = 4.5 * scale
+    gEngine.confetti.newGroupDef.decayRate = 0
+    gEngine.confetti.newGroupDef.fadeRate = 1.0
+    gEngine.confetti.newGroupDef.confettiTextureNum = UInt8(texture)
 
-    let pg = NewConfettiGroup(&gNewConfettiGroupDef)
+    let pg = NewConfettiGroup(&gEngine.confetti.newGroupDef)
     if pg != -1 {
         for _ in 0..<quantity {
             var pt = OGLPoint3D()

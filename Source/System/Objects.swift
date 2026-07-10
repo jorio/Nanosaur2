@@ -1,46 +1,50 @@
 // Objects.swift - Port of Objects.c to Swift
 //
-// gFirstNodePtr/gCurrentNode/gCoord/gDelta/gAutoFadeStartDist/
-// gAutoFadeEndDist/gAutoFadeRange_Frac/gNumObjectNodes/gNumObjectNodesPeak
-// are native Swift storage now (converted 2026-07-07): nothing in any .c
-// file touches them anymore.
-
-var gFirstNodePtr: UnsafeMutablePointer<ObjNode>?
-var gCurrentNode: UnsafeMutablePointer<ObjNode>?
-var gCoord = OGLPoint3D()
-var gDelta = OGLVector3D()
-var gAutoFadeStartDist: Float = 0
-var gAutoFadeEndDist: Float = 0
-var gAutoFadeRange_Frac: Float = 0
-var gNumObjectNodes: Int32 = 0
-var gNumObjectNodesPeak: Int32 = 0
+// The object-system state lives in ObjectSystem (gEngine.objects) now:
+// nothing in any .c file touches any of it anymore.
 
 private let MAX_OBJECTS_COUNT = 5000
 private let OBJ_DEL_Q_SIZE_COUNT = 1500
 
-// gObjectList/gObjectDeleteQueue/gClearedObj were `static` (file-private) in
-// C, so unlike other ported globals they don't need to stay C-linked. A
-// plain C array this size (gObjectList is 5000 ObjNodes) would import as an
-// unworkable giant tuple anyway, so we manage the backing storage ourselves
-// with the same zero-initializing allocator the C code already used for
-// gClearedObj.
-//
-// Explicitly allocated in InitObjectManager() rather than at declaration
-// (which would rely on Swift's lazy-global-init machinery, first
-// triggered on whichever of these runs first at runtime) - that lazy
-// init is thread-safety-guarded (a swift_once-style token), and on 3DS's
-// Embedded Swift runtime that guard deadlocked outright the first time
-// either global was touched (observed as GameMain hanging forever right
-// at "InitObjectManager..." with near-zero CPU use, i.e. blocked, not
-// spinning). Deterministic, explicit initialization at a known call site
-// sidesteps that runtime path entirely.
-private var gObjectListStorage: UnsafeMutablePointer<ObjNode>!
-private var gObjectDeleteQueueStorage: UnsafeMutablePointer<UnsafeMutablePointer<ObjNode>?>!
-private var gClearedObj: UnsafeMutablePointer<ObjNode>!
+/// Object-system state (master linked list, per-move scratch, autofade,
+/// slot storage). Owned by GameEngine as `gEngine.objects`.
+final class ObjectSystem {
+    // Master object linked list
+    var firstNodePtr: UnsafeMutablePointer<ObjNode>?
+    var currentNode: UnsafeMutablePointer<ObjNode>?
+    var numObjectNodes: Int32 = 0
+    var numObjectNodesPeak: Int32 = 0
 
-private var gMostRecentlyAddedNode: UnsafeMutablePointer<ObjNode>?
-private var gNextNode: UnsafeMutablePointer<ObjNode>?
-private var gNumObjsInDeleteQueue: Int32 = 0
+    // Coord/delta scratch of the object currently being moved
+    // (GetObjectInfo copies in, UpdateObject copies back out)
+    var coord = OGLPoint3D()
+    var delta = OGLVector3D()
+
+    // Autofade
+    var autoFadeStartDist: Float = 0
+    var autoFadeEndDist: Float = 0
+    var autoFadeRangeFrac: Float = 0
+
+    // Backing storage - was `static` (file-private) in the original C, so
+    // it never needed to stay C-linked. A plain C array this size
+    // (objectListStorage is 5000 ObjNodes) would import as an unworkable
+    // giant tuple anyway, so we manage the storage ourselves with the same
+    // zero-initializing allocator the C code already used for clearedObj.
+    fileprivate let objectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
+    fileprivate let objectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
+    fileprivate var clearedObj: UnsafeMutablePointer<ObjNode>!
+
+    fileprivate var mostRecentlyAddedNode: UnsafeMutablePointer<ObjNode>?
+    fileprivate var nextNode: UnsafeMutablePointer<ObjNode>?
+    fileprivate var numObjsInDeleteQueue: Int32 = 0
+
+    // Objects2.swift scratch (fileprivate wouldn't reach across files)
+    var meshNum: Int32 = 0
+    var numWorldCalcsThisFrame: Int32 = 0
+
+    // Pick.swift config flag
+    var pickAllTrianglesAsDoubleSided: UInt8 = 0
+}
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -63,23 +67,19 @@ private var gNumObjsInDeleteQueue: Int32 = 0
 // MARK: - Object creation
 
 func InitObjectManager() {
+    // NOTE for 3DS: ObjectSystem's objectListStorage/objectDeleteQueueStorage
+    // are instance properties allocated when gEngine is constructed. An
+    // earlier file-scope-lazy-global version of this storage deadlocked
+    // Embedded Swift's lazy-init guard on first touch (see
+    // feedback_embedded_swift_lazy_globals) - if boot ever hangs at the
+    // checkpoint below, gEngine's own lazy init is the first suspect.
     #if NANOSAUR_3DS
     "InitObjectManager: sizeof(ObjNode)=\(MemoryLayout<ObjNode>.size) total=\(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)".withCString { Debug3DS_Log($0) }
     #endif
-    if gObjectListStorage == nil {
-        gObjectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
-        #if NANOSAUR_3DS
-        Debug3DS_Log("InitObjectManager: gObjectListStorage allocated")
-        #endif
-        gObjectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
-        #if NANOSAUR_3DS
-        Debug3DS_Log("InitObjectManager: gObjectDeleteQueueStorage allocated")
-        #endif
-    }
 
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
-        gObjectListStorage[i].isUsed = 0
+        (gEngine.objects.objectListStorage + i).isUsed = false
     }
     #if NANOSAUR_3DS
     Debug3DS_Log("InitObjectManager: cleared isUsed loop")
@@ -92,13 +92,13 @@ func InitObjectManager() {
 
     // INIT LINKED LIST
 
-    gCurrentNode = nil
+    gEngine.objects.currentNode = nil
 
     // CLEAR ENTIRE OBJECT LIST
 
-    gFirstNodePtr = nil // no node yet
+    gEngine.objects.firstNodePtr = nil // no node yet
 
-    gNumObjectNodes = 0
+    gEngine.objects.numObjectNodes = 0
     #if NANOSAUR_3DS
     Debug3DS_Log("InitObjectManager: done")
     #endif
@@ -108,35 +108,35 @@ func InitObjectManager() {
 // so that we can quickly initialize new ObjNode's simply by BlockMoving
 // this dummy node into them.
 private func CreateDummyInitObject() {
-    gClearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
+    gEngine.objects.clearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
     #if NANOSAUR_3DS
-    Debug3DS_Log("CreateDummyInitObject: gClearedObj allocated")
+    Debug3DS_Log("CreateDummyInitObject: clearedObj allocated")
     #endif
 
     for i in 0..<Int(MAX_NODE_SPARKLES) { // no sparkles
-        sparklesBase(gClearedObj)[i] = -1
+        sparklesBase(gEngine.objects.clearedObj)[i] = -1
     }
 
-    gClearedObj.pointee.LocalBBox.isEmpty = 1
-    gClearedObj.pointee.WorldBBox.isEmpty = 1
+    gEngine.objects.clearedObj.pointee.LocalBBox.isEmpty = 1
+    gEngine.objects.clearedObj.pointee.WorldBBox.isEmpty = 1
 
-    gClearedObj.pointee.BoundingSphereRadius = 100
+    gEngine.objects.clearedObj.pointee.BoundingSphereRadius = 100
 
-    gClearedObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.bg3dModels.rawValue) // assume this object's vertex data is in the cached/static mode
+    gEngine.objects.clearedObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.bg3dModels.rawValue) // assume this object's vertex data is in the cached/static mode
 
-    gClearedObj.pointee.EffectChannel = -1 // no streaming sound effect
-    gClearedObj.pointee.ParticleGroup = -1 // no particle group
+    gEngine.objects.clearedObj.pointee.EffectChannel = -1 // no streaming sound effect
+    gEngine.objects.clearedObj.pointee.ParticleGroup = -1 // no particle group
 
     for i in 0..<Int(MAX_CONTRAILS_PER_OBJNODE) { // no contrails
-        contrailSlotBase(gClearedObj)[i] = -1
+        contrailSlotBase(gEngine.objects.clearedObj)[i] = -1
     }
 
-    gClearedObj.pointee.SplineObjectIndex = -1 // no index yet
+    gEngine.objects.clearedObj.pointee.SplineObjectIndex = -1 // no index yet
 
-    gClearedObj.pointee.ColorFilter.r = 1.0
-    gClearedObj.pointee.ColorFilter.g = 1.0
-    gClearedObj.pointee.ColorFilter.b = 1.0
-    gClearedObj.pointee.ColorFilter.a = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.r = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.g = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.b = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.a = 1.0
 }
 
 // MAKE NEW OBJECT & RETURN PTR TO IT
@@ -154,8 +154,8 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
     var newNodePtr: UnsafeMutablePointer<ObjNode>!
     var i: Int32 = -1
     for idx in 0..<Int32(MAX_OBJECTS_COUNT) {
-        if gObjectListStorage[Int(idx)].isUsed == 0 {
-            newNodePtr = gObjectListStorage + Int(idx) // point to object from list
+        if !(gEngine.objects.objectListStorage + Int(idx)).isUsed {
+            newNodePtr = gEngine.objects.objectListStorage + Int(idx) // point to object from list
             i = idx
             break
         }
@@ -169,10 +169,10 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
 
     // CLEAR THE OBJNODE & SET DATA
 
-    newNodePtr.pointee = gClearedObj.pointee // copy the cleared/initied obj into here
+    newNodePtr.pointee = gEngine.objects.clearedObj.pointee // copy the cleared/initied obj into here
 
     newNodePtr.pointee.objectNum = Int16(i) // not from gObjectList array
-    newNodePtr.pointee.isUsed = 1
+    newNodePtr.isUsed = true
 
     newNodePtr.pointee.Cookie = MyRandomLong() // give each object a unique cookie
 
@@ -214,21 +214,21 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
 
     // INSERT NODE INTO LINKED LIST
 
-    newNodePtr.pointee.StatusBits |= UInt32(STATUS_BIT_DETACHED) // its not attached to linked list yet
+    newNodePtr.setStatus(STATUS_BIT_DETACHED) // its not attached to linked list yet
     AttachObject(newNodePtr, 0)
 
-    gNumObjectNodes += 1
+    gEngine.objects.numObjectNodes += 1
 
-    if gNumObjectNodes > gNumObjectNodesPeak {
-        gNumObjectNodesPeak = gNumObjectNodes
-        if gNumObjectNodesPeak > Int32(MAX_OBJECTS_COUNT) {
-            SwLog("WARNING: New object count peak: \(gNumObjectNodesPeak). Consider raising MAX_OBJECTS!")
+    if gEngine.objects.numObjectNodes > gEngine.objects.numObjectNodesPeak {
+        gEngine.objects.numObjectNodesPeak = gEngine.objects.numObjectNodes
+        if gEngine.objects.numObjectNodesPeak > Int32(MAX_OBJECTS_COUNT) {
+            SwLog("WARNING: New object count peak: \(gEngine.objects.numObjectNodesPeak). Consider raising MAX_OBJECTS!")
         }
     }
 
     // CLEANUP
 
-    gMostRecentlyAddedNode = newNodePtr // remember this
+    gEngine.objects.mostRecentlyAddedNode = newNodePtr // remember this
     return newNodePtr
 }
 
@@ -319,7 +319,7 @@ func ResetDisplayGroupObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
             planeEQs[i] = nil
         }
     }
-    theNode.pointee.HasWorldPoints = 0
+    theNode.hasWorldPoints = false
 }
 
 // Attaches a geometry object to the BaseGroup object. MakeNewDisplayGroupObject must have already been
@@ -381,11 +381,16 @@ func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Object processing
 
 func MoveObjects() {
-    if gFirstNodePtr == nil { // see if there are any objects
+    // Deliberately NOT a `for node in allObjectNodes` walk (ObjNodeList.swift):
+    // move callbacks can delete ARBITRARY nodes, which requires the
+    // gEngine.objects.nextNode-global fixup that DetachObject performs when the pending
+    // next node is the one being deleted. A snapshot iterator can't know
+    // about that.
+    if gEngine.objects.firstNodePtr == nil { // see if there are any objects
         return
     }
 
-    var thisNodePtr = gFirstNodePtr
+    var thisNodePtr = gEngine.objects.firstNodePtr
 
     while true {
         let node = thisNodePtr!
@@ -396,13 +401,13 @@ func MoveObjects() {
             SwFatal("MoveObjects: CType == INVALID_NODE_FLAG")
         }
 
-        gCurrentNode = node // set current object node
-        gNextNode = node.pointee.NextNode // get next node now (cuz current node might get deleted)
+        gEngine.objects.currentNode = node // set current object node
+        gEngine.objects.nextNode = node.pointee.NextNode // get next node now (cuz current node might get deleted)
 
         repeat { // goto-next simulator
             // SEE IF SHOULD SKIP WHEN PAUSED
 
-            if gGamePaused != 0 && (node.pointee.StatusBits & UInt32(STATUS_BIT_MOVEINPAUSE)) == 0 {
+            if gEngine.screens.gamePaused != 0 && !node.hasStatus(STATUS_BIT_MOVEINPAUSE) {
                 break
             }
 
@@ -414,8 +419,8 @@ func MoveObjects() {
 
             // NEXT TRY TO MOVE IT
 
-            if (node.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE)) == 0 { // make sure don't call a move call if on spline
-                if (node.pointee.StatusBits & UInt32(STATUS_BIT_NOMOVE)) == 0, let moveCall = node.pointee.MoveCall {
+            if !node.hasStatus(STATUS_BIT_ONSPLINE) { // make sure don't call a move call if on spline
+                if !node.hasStatus(STATUS_BIT_NOMOVE), let moveCall = node.pointee.MoveCall {
                     KeepOldCollisionBoxes(node) // keep old boxes & other stuff
                     moveCall(node) // call object's move routine
                 }
@@ -430,7 +435,7 @@ func MoveObjects() {
             }
         } while false
 
-        thisNodePtr = gNextNode // next node
+        thisNodePtr = gEngine.objects.nextNode // next node
         if thisNodePtr == nil { break }
     }
 
@@ -445,9 +450,9 @@ func DrawObjects() {
     var noZWrites = false
     var texWrap = false
     var clipAlpha = false
-    let playerNum = gCurrentSplitScreenPane // get the player # who's draw context is being drawn
+    let playerNum = gEngine.view.currentSplitScreenPane // get the player # who's draw context is being drawn
 
-    if gFirstNodePtr == nil { // see if there are any objects
+    if gEngine.objects.firstNodePtr == nil { // see if there are any objects
         return
     }
 
@@ -455,16 +460,21 @@ func DrawObjects() {
 
     CullTestAllObjects()
 
-    var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
+    // Deliberately NOT a `for node in allObjectNodes` walk (ObjNodeList.swift):
+    // this loop reads NextNode AFTER running each node's custom draw
+    // function, preserving the legacy stop-on-delete semantics if a draw
+    // callback ever deletes its own node (DetachObject nulls the deleted
+    // node's NextNode).
+    var theNode: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr
 
     // GET CAMERA COORDS
 
-    let cameraPlacementsBase = UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
-    let cam = cameraPlacementsBase + Int(gCurrentSplitScreenPane)
+    let cameraPlacementsBase = UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    let cam = cameraPlacementsBase + Int(gEngine.view.currentSplitScreenPane)
     let cameraX = cam.pointee.cameraLocation.x
     let cameraZ = cam.pointee.cameraLocation.z
 
-    let isOverlayPane = gCurrentSplitScreenPane == gNumPlayers
+    let isOverlayPane = gEngine.view.currentSplitScreenPane == gEngine.player.numPlayers
 
     // MAIN NODE TASK LOOP
 
@@ -474,7 +484,7 @@ func DrawObjects() {
         drawNode: repeat { // goto-next simulator
             let statusBits = node.pointee.StatusBits // get obj's status bits
 
-            if statusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN)) != 0 { // see if is culled or hidden
+            if statusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gEngine.view.currentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN)) != 0 { // see if is culled or hidden
                 break drawNode
             }
 
@@ -490,18 +500,18 @@ func DrawObjects() {
                 break drawNode
             }
 
-            gGlobalTransparency = node.pointee.ColorFilter.a // get global transparency
-            if gGlobalTransparency <= 0.0 { // see if invisible
+            gEngine.metaObjects.globalTransparency = node.pointee.ColorFilter.a // get global transparency
+            if gEngine.metaObjects.globalTransparency <= 0.0 { // see if invisible
                 break drawNode
             }
 
-            gGlobalColorFilter.r = node.pointee.ColorFilter.r // set color filter
-            gGlobalColorFilter.g = node.pointee.ColorFilter.g
-            gGlobalColorFilter.b = node.pointee.ColorFilter.b
+            gEngine.metaObjects.globalColorFilter.r = node.pointee.ColorFilter.r // set color filter
+            gEngine.metaObjects.globalColorFilter.g = node.pointee.ColorFilter.g
+            gEngine.metaObjects.globalColorFilter.b = node.pointee.ColorFilter.b
 
             // CHECK AUTOFADE
 
-            if gAutoFadeStartDist != 0.0 { // see if this level has autofade
+            if gEngine.objects.autoFadeStartDist != 0.0 { // see if this level has autofade
                 if statusBits & UInt32(STATUS_BIT_AUTOFADE) != 0 {
                     var dist = CalcQuickDistance(cameraX, cameraZ, node.pointee.Coord.x, node.pointee.Coord.z) // see if in fade zone
 
@@ -511,16 +521,16 @@ func DrawObjects() {
                         }
                     }
 
-                    if dist >= gAutoFadeStartDist {
-                        dist -= gAutoFadeStartDist // calc xparency %
-                        dist *= gAutoFadeRange_Frac
+                    if dist >= gEngine.objects.autoFadeStartDist {
+                        dist -= gEngine.objects.autoFadeStartDist // calc xparency %
+                        dist *= gEngine.objects.autoFadeRangeFrac
                         if dist < 0.0 {
                             break drawNode
                         }
 
-                        gGlobalTransparency -= dist
-                        if gGlobalTransparency <= 0.0 {
-                            node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) // set culled flag so that any related Sparkles wont be drawn either
+                        gEngine.metaObjects.globalTransparency -= dist
+                        if gEngine.metaObjects.globalTransparency <= 0.0 {
+                            node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << UInt32(gEngine.view.currentSplitScreenPane)) // set culled flag so that any related Sparkles wont be drawn either
                             break drawNode
                         }
                     }
@@ -549,7 +559,7 @@ func DrawObjects() {
 
             // CHECK NO FOG
 
-            if gGameViewInfoPtr!.pointee.useFog != 0 {
+            if gEngine.game.viewInfoPtr!.pointee.useFog != 0 {
                 if statusBits & UInt32(STATUS_BIT_NOFOG) != 0 {
                     OGL_DisableFog()
                 } else {
@@ -560,10 +570,10 @@ func DrawObjects() {
             // CHECK GLOW BLEND
 
             if statusBits & UInt32(STATUS_BIT_GLOW) != 0 {
-                gGlobalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND) // this will make sure blending is on for the glow
+                gEngine.metaObjects.globalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND) // this will make sure blending is on for the glow
                 OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE))
             } else {
-                gGlobalMaterialFlags &= ~UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
+                gEngine.metaObjects.globalMaterialFlags &= ~UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
                 OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE_MINUS_SRC_ALPHA))
             }
 
@@ -571,12 +581,12 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOTEXTUREWRAP) != 0 {
                 if !texWrap {
-                    gGlobalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V)
+                    gEngine.metaObjects.globalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V)
                     texWrap = true
                 }
             } else if texWrap {
                 texWrap = false
-                gGlobalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
+                gEngine.metaObjects.globalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
             }
 
             // CHECK ZWRITE
@@ -605,14 +615,14 @@ func DrawObjects() {
 
             // CHECK EDGE ALPHA CLIPPING
 
-            if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gGlobalTransparency == 1.0 {
+            if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gEngine.metaObjects.globalTransparency == 1.0 {
                 if !clipAlpha {
-                    gRenderBackend.setAlphaClipping(trimLowAlpha: true)
+                    gEngine.renderer.setAlphaClipping(trimLowAlpha: true)
                     clipAlpha = true
                 }
             } else if clipAlpha {
                 clipAlpha = false
-                gRenderBackend.setAlphaClipping(trimLowAlpha: false)
+                gEngine.renderer.setAlphaClipping(trimLowAlpha: false)
             }
 
             // AIM AT CAMERA
@@ -627,7 +637,7 @@ func DrawObjects() {
 
             // SHOW COLLISION BOXES
 
-            if gDebugMode == 2 {
+            if gEngine.game.debugMode == 2 {
                 DrawCollisionBoxes(node, 0)
                 // DrawBoundingSpheres(node)
                 // DrawBoundingBoxes(node)
@@ -639,18 +649,18 @@ func DrawObjects() {
             // Beta testers have reported that the following fixes it - it's basically a forced reset of the glColor mode.
             // We cannot call our OGL_SetColor4f() function since it thinks the color is alredy 1,1,1,1, so we just force it here.
 
-            gRenderBackend.setColor4f(1, 1, 1, 1)
-            gMyState_Color.r = 1
-            gMyState_Color.g = 1
-            gMyState_Color.b = 1
-            gMyState_Color.a = 1
+            gEngine.renderer.setColor4f(1, 1, 1, 1)
+            gEngine.view.stateColor.r = 1
+            gEngine.view.stateColor.g = 1
+            gEngine.view.stateColor.b = 1
+            gEngine.view.stateColor.a = 1
 
             // SEE IF DO U/V TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                gRenderBackend.matrixMode(.texture) // set texture matrix
-                gRenderBackend.translate(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
-                gRenderBackend.matrixMode(.modelview)
+                gEngine.renderer.matrixMode(.texture) // set texture matrix
+                gEngine.renderer.translate(node.pointee.TextureTransformU, node.pointee.TextureTransformV, 0)
+                gEngine.renderer.matrixMode(.modelview)
             }
 
             // SUBMIT THE GEOMETRY
@@ -698,7 +708,7 @@ func DrawObjects() {
 
                         UnsafeMutableRawPointer(baseGroup).draw()
 
-                        if gDebugMode >= 2 {
+                        if gEngine.game.debugMode >= 2 {
                             TextMesh_DrawExtents(node)
                         }
 
@@ -716,9 +726,9 @@ func DrawObjects() {
             // SEE IF END UV TRANSFORM
 
             if statusBits & UInt32(STATUS_BIT_UVTRANSFORM) != 0 {
-                gRenderBackend.matrixMode(.texture) // set texture matrix
-                gRenderBackend.loadIdentity()
-                gRenderBackend.matrixMode(.modelview)
+                gEngine.renderer.matrixMode(.texture) // set texture matrix
+                gEngine.renderer.loadIdentity()
+                gEngine.renderer.matrixMode(.modelview)
             }
         } while false
 
@@ -741,18 +751,18 @@ func DrawObjects() {
     OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE_MINUS_SRC_ALPHA))
 
     if texWrap {
-        gGlobalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
+        gEngine.metaObjects.globalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
     }
 
     if clipAlpha {
-        gRenderBackend.setAlphaClipping(trimLowAlpha: false)
+        gEngine.renderer.setAlphaClipping(trimLowAlpha: false)
     }
 
-    gGlobalTransparency = 1.0 // reset this in case it has changed
-    gGlobalColorFilter.r = 1.0
-    gGlobalColorFilter.g = 1.0
-    gGlobalColorFilter.b = 1.0
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalTransparency = 1.0 // reset this in case it has changed
+    gEngine.metaObjects.globalColorFilter.r = 1.0
+    gEngine.metaObjects.globalColorFilter.g = 1.0
+    gEngine.metaObjects.globalColorFilter.b = 1.0
+    gEngine.metaObjects.globalMaterialFlags = 0
 
     OGL_SetNormalizeNormals(true)
 }
@@ -789,50 +799,50 @@ private func DrawCollisionBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!, _ old
 
         // DRAW TOP
 
-        gRenderBackend.beginImmediate(.lineLoop)
+        gEngine.renderer.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(left, top, back)
+        gEngine.renderer.vertex3f(left, top, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        gRenderBackend.vertex3f(left, top, front)
-        gRenderBackend.vertex3f(right, top, front)
+        gEngine.renderer.vertex3f(left, top, front)
+        gEngine.renderer.vertex3f(right, top, front)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(right, top, back)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.vertex3f(right, top, back)
+        gEngine.renderer.endImmediate()
 
         // DRAW BOTTOM
 
-        gRenderBackend.beginImmediate(.lineLoop)
+        gEngine.renderer.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(left, bottom, back)
+        gEngine.renderer.vertex3f(left, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        gRenderBackend.vertex3f(left, bottom, front)
-        gRenderBackend.vertex3f(right, bottom, front)
+        gEngine.renderer.vertex3f(left, bottom, front)
+        gEngine.renderer.vertex3f(right, bottom, front)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(right, bottom, back)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.vertex3f(right, bottom, back)
+        gEngine.renderer.endImmediate()
 
         // DRAW LEFT
 
-        gRenderBackend.beginImmediate(.lineLoop)
+        gEngine.renderer.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(left, top, back)
+        gEngine.renderer.vertex3f(left, top, back)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(left, bottom, back)
+        gEngine.renderer.vertex3f(left, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        gRenderBackend.vertex3f(left, bottom, front)
-        gRenderBackend.vertex3f(left, top, front)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.vertex3f(left, bottom, front)
+        gEngine.renderer.vertex3f(left, top, front)
+        gEngine.renderer.endImmediate()
 
         // DRAW RIGHT
 
-        gRenderBackend.beginImmediate(.lineLoop)
+        gEngine.renderer.beginImmediate(.lineLoop)
         OGL_SetColor4f(1, 0, 0, 1)
-        gRenderBackend.vertex3f(right, top, back)
-        gRenderBackend.vertex3f(right, bottom, back)
+        gEngine.renderer.vertex3f(right, top, back)
+        gEngine.renderer.vertex3f(right, bottom, back)
         OGL_SetColor4f(1, 1, 0, 1)
-        gRenderBackend.vertex3f(right, bottom, front)
-        gRenderBackend.vertex3f(right, top, front)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.vertex3f(right, bottom, front)
+        gEngine.renderer.vertex3f(right, top, front)
+        gEngine.renderer.endImmediate()
     }
 
     OGL_SetColor4f(1, 1, 1, 1)
@@ -916,50 +926,50 @@ private func DrawBoundingBoxes(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     // DRAW TOP
 
-    gRenderBackend.beginImmediate(.lineLoop)
+    gEngine.renderer.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(left, top, back)
+    gEngine.renderer.vertex3f(left, top, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    gRenderBackend.vertex3f(left, top, front)
-    gRenderBackend.vertex3f(right, top, front)
+    gEngine.renderer.vertex3f(left, top, front)
+    gEngine.renderer.vertex3f(right, top, front)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(right, top, back)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.vertex3f(right, top, back)
+    gEngine.renderer.endImmediate()
 
     // DRAW BOTTOM
 
-    gRenderBackend.beginImmediate(.lineLoop)
+    gEngine.renderer.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(left, bottom, back)
+    gEngine.renderer.vertex3f(left, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    gRenderBackend.vertex3f(left, bottom, front)
-    gRenderBackend.vertex3f(right, bottom, front)
+    gEngine.renderer.vertex3f(left, bottom, front)
+    gEngine.renderer.vertex3f(right, bottom, front)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(right, bottom, back)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.vertex3f(right, bottom, back)
+    gEngine.renderer.endImmediate()
 
     // DRAW LEFT
 
-    gRenderBackend.beginImmediate(.lineLoop)
+    gEngine.renderer.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(left, top, back)
+    gEngine.renderer.vertex3f(left, top, back)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(left, bottom, back)
+    gEngine.renderer.vertex3f(left, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    gRenderBackend.vertex3f(left, bottom, front)
-    gRenderBackend.vertex3f(left, top, front)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.vertex3f(left, bottom, front)
+    gEngine.renderer.vertex3f(left, top, front)
+    gEngine.renderer.endImmediate()
 
     // DRAW RIGHT
 
-    gRenderBackend.beginImmediate(.lineLoop)
+    gEngine.renderer.beginImmediate(.lineLoop)
     OGL_SetColor4f(1, 0, 0, 1)
-    gRenderBackend.vertex3f(right, top, back)
-    gRenderBackend.vertex3f(right, bottom, back)
+    gEngine.renderer.vertex3f(right, top, back)
+    gEngine.renderer.vertex3f(right, bottom, back)
     OGL_SetColor4f(1, 1, 0, 1)
-    gRenderBackend.vertex3f(right, bottom, front)
-    gRenderBackend.vertex3f(right, top, front)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.vertex3f(right, bottom, front)
+    gEngine.renderer.vertex3f(right, top, front)
+    gEngine.renderer.endImmediate()
 }
 
 private func DrawBoundingSpheres(_ theNode: UnsafeMutablePointer<ObjNode>!) {
@@ -967,20 +977,20 @@ private func DrawBoundingSpheres(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
     OGL_DisableTexture2D()
 
-    gRenderBackend.beginImmediate(.lines)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.lines)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.y, theNode.pointee.Coord.z)
+    gEngine.renderer.endImmediate()
 
-    gRenderBackend.beginImmediate(.lines)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z - theNode.pointee.BoundingSphereRadius)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z + theNode.pointee.BoundingSphereRadius)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.lines)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z - theNode.pointee.BoundingSphereRadius)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y, theNode.pointee.Coord.z + theNode.pointee.BoundingSphereRadius)
+    gEngine.renderer.endImmediate()
 
-    gRenderBackend.beginImmediate(.lines)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
-    gRenderBackend.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.lines)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y + theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
+    gEngine.renderer.vertex3f(theNode.pointee.Coord.x, theNode.pointee.Coord.y - theNode.pointee.BoundingSphereRadius, theNode.pointee.Coord.z)
+    gEngine.renderer.endImmediate()
 }
 
 func MoveStaticObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
@@ -1031,8 +1041,8 @@ func MoveStaticObject3(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 // MARK: - Object deleting
 
 func DeleteAllObjects() {
-    while gFirstNodePtr != nil {
-        DeleteObject(gFirstNodePtr)
+    while gEngine.objects.firstNodePtr != nil {
+        DeleteObject(gEngine.objects.firstNodePtr)
     }
 
     FlushObjectDeleteQueue()
@@ -1111,7 +1121,7 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
             planeEQs[i] = nil
         }
     }
-    theNode.pointee.HasWorldPoints = 0
+    theNode.hasWorldPoints = false
 
     // REMOVE NODE FROM LINKED LIST
 
@@ -1125,7 +1135,7 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     // OR, IF ITS A SPLINE ITEM, THEN UPDATE SPLINE OBJECT LIST
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_ONSPLINE) != 0 {
+    if theNode.hasStatus(STATUS_BIT_ONSPLINE) {
         _ = RemoveFromSplineObjectList(theNode)
     }
 
@@ -1134,9 +1144,9 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     theNode.pointee.CType = INVALID_NODE_FLAG // INVALID_NODE_FLAG indicates its deleted
     theNode.pointee.Cookie = 0
 
-    gObjectDeleteQueueStorage[Int(gNumObjsInDeleteQueue)] = theNode
-    gNumObjsInDeleteQueue += 1
-    if gNumObjsInDeleteQueue >= Int32(OBJ_DEL_Q_SIZE_COUNT) {
+    gEngine.objects.objectDeleteQueueStorage[Int(gEngine.objects.numObjsInDeleteQueue)] = theNode
+    gEngine.objects.numObjsInDeleteQueue += 1
+    if gEngine.objects.numObjsInDeleteQueue >= Int32(OBJ_DEL_Q_SIZE_COUNT) {
         FlushObjectDeleteQueue()
     }
 }
@@ -1148,18 +1158,18 @@ func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) != 0 { // make sure not already detached
+    if theNode.hasStatus(STATUS_BIT_DETACHED) { // make sure not already detached
         return
     }
 
-    if theNode == gNextNode { // if its the next node to be moved, then fix things
-        gNextNode = theNode.pointee.NextNode
+    if theNode == gEngine.objects.nextNode { // if its the next node to be moved, then fix things
+        gEngine.objects.nextNode = theNode.pointee.NextNode
     }
 
     if theNode.pointee.PrevNode == nil { // special case 1st node
-        gFirstNodePtr = theNode.pointee.NextNode
-        if gFirstNodePtr != nil {
-            gFirstNodePtr!.pointee.PrevNode = nil
+        gEngine.objects.firstNodePtr = theNode.pointee.NextNode
+        if gEngine.objects.firstNodePtr != nil {
+            gEngine.objects.firstNodePtr!.pointee.PrevNode = nil
         }
     } else if theNode.pointee.NextNode == nil { // special case last node
         theNode.pointee.PrevNode!.pointee.NextNode = nil
@@ -1171,7 +1181,7 @@ func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8
     theNode.pointee.PrevNode = nil // seal links on original node
     theNode.pointee.NextNode = nil
 
-    theNode.pointee.StatusBits |= UInt32(STATUS_BIT_DETACHED)
+    theNode.setStatus(STATUS_BIT_DETACHED)
 
     // SUBRECURSE CHAINS & SHADOW
 
@@ -1191,24 +1201,24 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_DETACHED) == 0 { // see if already attached
+    if !theNode.hasStatus(STATUS_BIT_DETACHED) { // see if already attached
         return
     }
 
     let slot = theNode.pointee.Slot
 
-    if gFirstNodePtr == nil { // special case only entry
-        gFirstNodePtr = theNode
+    if gEngine.objects.firstNodePtr == nil { // special case only entry
+        gEngine.objects.firstNodePtr = theNode
         theNode.pointee.PrevNode = nil
         theNode.pointee.NextNode = nil
-    } else if slot < gFirstNodePtr!.pointee.Slot { // INSERT AS FIRST NODE
+    } else if slot < gEngine.objects.firstNodePtr!.pointee.Slot { // INSERT AS FIRST NODE
         theNode.pointee.PrevNode = nil // no prev
-        theNode.pointee.NextNode = gFirstNodePtr // next pts to old 1st
-        gFirstNodePtr!.pointee.PrevNode = theNode // old pts to new 1st
-        gFirstNodePtr = theNode
+        theNode.pointee.NextNode = gEngine.objects.firstNodePtr // next pts to old 1st
+        gEngine.objects.firstNodePtr!.pointee.PrevNode = theNode // old pts to new 1st
+        gEngine.objects.firstNodePtr = theNode
     } else { // SCAN FOR INSERTION PLACE
-        var reNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
-        var scanNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr!.pointee.NextNode // start scanning for insertion slot on 2nd node
+        var reNodePtr: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr
+        var scanNodePtr: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr!.pointee.NextNode // start scanning for insertion slot on 2nd node
 
         var inserted = false
         while let scan = scanNodePtr {
@@ -1231,7 +1241,7 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
         }
     }
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_DETACHED)
+    theNode.clearStatus(STATUS_BIT_DETACHED)
 
     // SUBRECURSE CHAINS & SHADOW
 
@@ -1247,20 +1257,20 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
 }
 
 private func FlushObjectDeleteQueue() {
-    let num = gNumObjsInDeleteQueue
+    let num = gEngine.objects.numObjsInDeleteQueue
 
-    gNumObjectNodes -= num
+    gEngine.objects.numObjectNodes -= num
 
     for i in 0..<Int(num) {
-        let node = gObjectDeleteQueueStorage[i]!
+        let node = gEngine.objects.objectDeleteQueueStorage[i]!
         if node.pointee.objectNum == -1 { // see if dispose by freeing memory...
             SafeDisposePtr(node)
         } else {
-            node.pointee.isUsed = 0 //.. or just return to gObjectList array
+            node.isUsed = false //.. or just return to gObjectList array
         }
     }
 
-    gNumObjsInDeleteQueue = 0
+    gEngine.objects.numObjsInDeleteQueue = 0
 }
 
 func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
@@ -1279,8 +1289,8 @@ func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Object information
 
 func GetObjectInfo(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    gCoord = theNode.pointee.Coord
-    gDelta = theNode.pointee.Delta
+    gEngine.objects.coord = theNode.pointee.Coord
+    gEngine.objects.delta = theNode.pointee.Delta
 }
 
 func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
@@ -1288,11 +1298,11 @@ func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
         return
     }
 
-    theNode.pointee.Coord = gCoord
-    theNode.pointee.Delta = gDelta
+    theNode.pointee.Coord = gEngine.objects.coord
+    theNode.pointee.Delta = gEngine.objects.delta
     UpdateObjectTransforms(theNode)
 
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &theNode.pointee.MotionVector)
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &theNode.pointee.MotionVector)
 
     CalcObjectBoxFromNode(theNode)
 
@@ -1382,16 +1392,16 @@ func SetObjectTransformMatrix(_ theNode: UnsafeMutablePointer<ObjNode>) {
         mo.pointee.matrix = theNode.pointee.BaseTransformMatrix
     }
 
-    theNode.pointee.HasWorldPoints = 0 // these need to be recalculated now that we've updated the matrix
+    theNode.hasWorldPoints = false // these need to be recalculated now that we've updated the matrix
 
     SetObjectGridLocation(theNode)
 }
 
 func SetObjectVisible(_ theNode: UnsafeMutablePointer<ObjNode>, _ visible: UInt8) -> UInt8 {
     if visible != 0 {
-        theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        theNode.clearStatus(STATUS_BIT_HIDDEN)
     } else {
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        theNode.setStatus(STATUS_BIT_HIDDEN)
     }
 
     return visible
@@ -1497,6 +1507,6 @@ func UnchainNode(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 // MARK: - Overlay pane
 
 func SendNodeToOverlayPane(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    theNode.pointee.StatusBits |= UInt32(STATUS_BIT_ONLYSHOWTHISPLAYER)
-    theNode.pointee.PlayerNum = gNumPlayers
+    theNode.setStatus(STATUS_BIT_ONLYSHOWTHISPLAYER)
+    theNode.pointee.PlayerNum = gEngine.player.numPlayers
 }

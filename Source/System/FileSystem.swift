@@ -4,7 +4,7 @@
 //
 // FSSpec keeps its C struct shape (game.h still declares `FSSpec gDataSpec`,
 // and Boot.cpp/the bridging header reference it), but the resolution model
-// changes: `parID` is now an index into gSwDirectoryRegistry (absolute
+// changes: `parID` is now an index into gEngine.fs.directoryRegistry (absolute
 // directory paths) rather than one of Pomme's HostVolume directory IDs,
 // `vRefNum` is unused (always 0), and `cName` is a plain C string holding
 // the leaf filename - not a Pascal string, despite the Str255 typedef (see
@@ -33,19 +33,24 @@ private let kSwEofErr: OSErr = -39 // End-of-file reached
 private let kSwFnfErr: OSErr = -43 // File not found
 private let kSwRfNumErr: OSErr = -51 // Invalid reference number
 
-private var gSwDirectoryRegistry: [String] = []
+/// FSSpec-emulation state. Owned by GameEngine as `gEngine.fs`.
+final class FSSystem {
+    fileprivate var directoryRegistry: [String] = []
+    fileprivate var openFiles: [Int16: Int32] = [:] // refNum -> POSIX fd
+    fileprivate var nextRefNum: Int16 = 1
+}
 
 private func swRegisterDirectory(_ path: String) -> Int {
-    if let existing = gSwDirectoryRegistry.firstIndex(of: path) {
+    if let existing = gEngine.fs.directoryRegistry.firstIndex(of: path) {
         return existing
     }
-    gSwDirectoryRegistry.append(path)
-    return gSwDirectoryRegistry.count - 1
+    gEngine.fs.directoryRegistry.append(path)
+    return gEngine.fs.directoryRegistry.count - 1
 }
 
 private func swDirectoryPath(_ parID: Int) -> String? {
-    guard parID >= 0, parID < gSwDirectoryRegistry.count else { return nil }
-    return gSwDirectoryRegistry[parID]
+    guard parID >= 0, parID < gEngine.fs.directoryRegistry.count else { return nil }
+    return gEngine.fs.directoryRegistry[parID]
 }
 
 // MARK: - Plain path-string helpers (no URL/Foundation)
@@ -155,8 +160,6 @@ public func SwFSMakeFSSpec(_ vRefNum: Int16, _ parID: Int, _ cstrFileName: Unsaf
 
 // MARK: - Open-file registry (refNum-based, mirroring Pomme's own model)
 
-private var gSwOpenFiles: [Int16: Int32] = [:] // refNum -> POSIX fd
-private var gSwNextRefNum: Int16 = 1
 
 @c @implementation
 public func SwFSpOpenDF(_ spec: UnsafePointer<FSSpec>?, _ permission: Int8, _ refNum: UnsafeMutablePointer<Int16>?) -> OSErr {
@@ -175,16 +178,16 @@ public func SwFSpOpenDF(_ spec: UnsafePointer<FSSpec>?, _ permission: Int8, _ re
         return kSwFnfErr
     }
 
-    let newRefNum = gSwNextRefNum
-    gSwNextRefNum += 1
-    gSwOpenFiles[newRefNum] = fd
+    let newRefNum = gEngine.fs.nextRefNum
+    gEngine.fs.nextRefNum += 1
+    gEngine.fs.openFiles[newRefNum] = fd
     refNum?.pointee = newRefNum
     return kSwNoErr
 }
 
 @c @implementation
 public func SwFSRead(_ refNum: Int16, _ count: UnsafeMutablePointer<Int>?, _ buffPtr: Ptr?) -> OSErr {
-    guard let fd = gSwOpenFiles[refNum], let count, let buffPtr else {
+    guard let fd = gEngine.fs.openFiles[refNum], let count, let buffPtr else {
         return kSwRfNumErr
     }
     let n = read(fd, buffPtr, UInt(count.pointee))
@@ -198,7 +201,7 @@ public func SwFSRead(_ refNum: Int16, _ count: UnsafeMutablePointer<Int>?, _ buf
 
 @c @implementation
 public func SwFSWrite(_ refNum: Int16, _ count: UnsafeMutablePointer<Int>?, _ buffPtr: Ptr?) -> OSErr {
-    guard let fd = gSwOpenFiles[refNum], let count, let buffPtr else {
+    guard let fd = gEngine.fs.openFiles[refNum], let count, let buffPtr else {
         return kSwRfNumErr
     }
     let n = write(fd, buffPtr, UInt(count.pointee))
@@ -211,7 +214,7 @@ public func SwFSWrite(_ refNum: Int16, _ count: UnsafeMutablePointer<Int>?, _ bu
 
 @c @implementation
 public func SwFSClose(_ refNum: Int16) -> OSErr {
-    guard let fd = gSwOpenFiles.removeValue(forKey: refNum) else {
+    guard let fd = gEngine.fs.openFiles.removeValue(forKey: refNum) else {
         return kSwRfNumErr
     }
     close(fd)
@@ -220,7 +223,7 @@ public func SwFSClose(_ refNum: Int16) -> OSErr {
 
 @c @implementation
 public func SwGetEOF(_ refNum: Int16, _ logEOF: UnsafeMutablePointer<Int>?) -> OSErr {
-    guard let fd = gSwOpenFiles[refNum], let logEOF else {
+    guard let fd = gEngine.fs.openFiles[refNum], let logEOF else {
         return kSwRfNumErr
     }
     let current = lseek(fd, 0, SwSEEK_CUR)

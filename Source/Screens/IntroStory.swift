@@ -38,9 +38,7 @@ struct SlideType {
     var subtitleKey: Int32 = 0
 }
 
-private var gEndSlideShow = false
 
-private var gSlideActive = [Bool](repeating: false, count: NUM_SLIDES)
 
 private let gSlides: [SlideType] = [
     // PANGEA LOGO
@@ -220,13 +218,13 @@ func DoIntroStoryScreen() {
     #if NANOSAUR_3DS
     Debug3DS_Log("DoIntroStoryScreen: entering slideshow loop...")
     #endif
-    gEndSlideShow = false
+    gEngine.screens.introStoryEndSlideShow = false
 
-    while !gEndSlideShow {
+    while !gEngine.screens.introStoryEndSlideShow {
         CalcFramesPerSecond()
         DoSDLMaintenance()
         if UserWantsOut() != 0 {
-            gGameViewInfoPtr!.pointee.fadeSound = 1
+            gEngine.game.viewInfoPtr!.fadeSound = true
             break
         }
 
@@ -339,14 +337,14 @@ private let cDrawBottomGradient: @convention(c) (UnsafeMutablePointer<ObjNode>?)
 
     let y: Float = 320
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.setColor4f(0, 0, 0, 0)
-    gRenderBackend.vertex2f(gLogicalRect.left, y)
-    gRenderBackend.vertex2f(gLogicalRect.right, y)
-    gRenderBackend.setColor4f(0, 0, 0, 1)
-    gRenderBackend.vertex2f(gLogicalRect.right, gLogicalRect.bottom)
-    gRenderBackend.vertex2f(gLogicalRect.left, gLogicalRect.bottom)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.setColor4f(0, 0, 0, 0)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, y)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, y)
+    gEngine.renderer.setColor4f(0, 0, 0, 1)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.right, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.vertex2f(gEngine.infobar.logicalRect.left, gEngine.infobar.logicalRect.bottom)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }
@@ -369,11 +367,11 @@ private func buildSlideShowObjects() {
 
         slideObj.pointee.Kind = Int32(i)
 
-        slideObj.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN) // hide all slides @ start
+        slideObj.setStatus(STATUS_BIT_HIDDEN) // hide all slides @ start
 
         slideObj.pointee.ColorFilter.a = gSlides[i].alpha
 
-        gSlideActive[i] = i == 0 // (this sets which frame we start on)
+        gEngine.screens.introStorySlideActive[i] = i == 0 // (this sets which frame we start on)
 
         slideObj.pointee.Timer = gSlides[i].delayToNext // set time to show before starting next slide
         slideObj.pointee.Health = gSlides[i].delayToVanish // time to show before start fadeout of this slide
@@ -402,15 +400,15 @@ private func buildSlideShowObjects() {
 
 private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let slideNum = Int(theNode.pointee.Kind)
     let isLastSlide = slideNum >= NUM_SLIDES - 1
 
-    if !gSlideActive[slideNum] { // is this slide still waiting?
+    if !gEngine.screens.introStorySlideActive[slideNum] { // is this slide still waiting?
         return
     }
 
-    theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+    theNode.clearStatus(STATUS_BIT_HIDDEN)
 
     // MOVE IT
 
@@ -425,7 +423,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     theNode.pointee.Timer -= fps
     if !isLastSlide && theNode.pointee.Timer <= 0.0 {
-        gSlideActive[slideNum + 1] = true
+        gEngine.screens.introStorySlideActive[slideNum + 1] = true
     }
 
     // SEE IF FADE OUT/IN
@@ -438,7 +436,7 @@ private let cMoveSlide: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
             if theNode.pointee.Timer <= 0.0 { // dont delete until the other timer is also done
                 DeleteObject(theNode)
                 if isLastSlide { // was that the last slide?
-                    gEndSlideShow = true
+                    gEngine.screens.introStoryEndSlideShow = true
                 }
                 return
             }
@@ -474,14 +472,14 @@ private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
 private let cMoveSubtitle: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if floorf(theNode.pointee.SpecialF.0 * 100) >= 0 {
-        theNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        theNode.setStatus(STATUS_BIT_HIDDEN)
         theNode.pointee.SpecialF.0 -= fps
         theNode.pointee.ColorFilter.a = 0
     } else {
-        theNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        theNode.clearStatus(STATUS_BIT_HIDDEN)
         theNode.pointee.Health -= fps
 
         if theNode.pointee.Health < 0.25 {
@@ -507,7 +505,7 @@ private func makeSubtitleObjects(_ slideNum: Int) {
         return
     }
 
-    let text = String(cString: Localize(LocStrID(rawValue: UInt32(gSlides[slideNum].subtitleKey))))
+    let text = localized(LocStrID(rawValue: UInt32(gSlides[slideNum].subtitleKey)))
 
     if text.isEmpty {
         return

@@ -101,7 +101,7 @@ extension OGLVector2D {
 
 extension OGLVector3D {
     mutating func applyFriction(_ fIn: Float) {
-        let f = fIn * gFramesPerSecondFrac
+        let f = fIn * gEngine.framesPerSecondFrac
 
         let speed = sqrt((y * y) + (x * x) + (z * z)) // calc length of vector
 
@@ -128,7 +128,7 @@ extension OGLVector3D {
     }
 
     mutating func applyFrictionXZ(_ fIn: Float) {
-        let f = fIn * gFramesPerSecondFrac
+        let f = fIn * gEngine.framesPerSecondFrac
 
         let speed = sqrt((z * z) + (x * x)) // calc length of vector
 
@@ -152,7 +152,7 @@ extension OGLVector3D {
     }
 
     mutating func applyFrictionToRotation(_ fIn: Float) {
-        let f = fIn * gFramesPerSecondFrac
+        let f = fIn * gEngine.framesPerSecondFrac
 
         var dx = x
         var dy = y

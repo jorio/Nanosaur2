@@ -11,18 +11,18 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 
     // MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 500
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15
-    gNewParticleGroupDef.decayRate = 0.5
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
-    gNewParticleGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
-    gNewParticleGroupDef.dstBlend = Int32(GL_ONE)
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 500
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15
+    gEngine.particles.newGroupDef.decayRate = 0.5
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
+    gEngine.particles.newGroupDef.srcBlend = Int32(GL_SRC_ALPHA)
+    gEngine.particles.newGroupDef.dstBlend = Int32(GL_ONE)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = base.pointee.Coord.x
         let y = base.pointee.Coord.y
@@ -89,7 +89,7 @@ private let cCrystalHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<Ob
 
 private let cMoveCrystalShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNode in
     guard let theNode else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE
 
@@ -124,7 +124,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(SLOT_OF_DUMB - 50)
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2

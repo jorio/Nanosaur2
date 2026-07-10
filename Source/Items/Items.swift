@@ -3,7 +3,26 @@
 private let leafDefaultWobbleMag: Float = 4.0
 private let leafDefaultWobbleSpeed: Float = 1.0
 
-private var gCloudScroll = OGLVector2D()
+/// Cross-file item/level-prop state. Owned by GameEngine as `gEngine.items`.
+final class ItemSystem {
+    // Wormhole.swift
+    var openPlayerWormhole: UInt8 = 0
+    var exitWormhole: UnsafeMutablePointer<ObjNode>!
+
+    // Eggs.swift
+    var numEggsToSave: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
+    var numEggsSaved: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
+
+    // Turrets.swift
+    var turretMuzzleTipOff = OGLPoint3D(x: -61, y: 0, z: -115)
+    var turretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
+
+    // ForestDoor.swift (maxDamDoors == 64 there; keep in sync)
+    var forestDoorOpen = [Bool](repeating: false, count: 64)
+
+    // Items.swift
+    var cloudScroll = OGLVector2D()
+}
 
 // MARK: - Init items manager
 
@@ -34,7 +53,7 @@ func CreateCyclorama() {
     def.moveCall = nil
     def.drawCall = DrawCyclorama
     def.rot = 0
-    def.scale = gGameViewInfoPtr!.pointee.yon * 0.01
+    def.scale = gEngine.game.viewInfoPtr!.pointee.yon * 0.01
 
     _ = MakeNewDisplayGroupObject(&def)
 }
@@ -43,9 +62,9 @@ func CreateCyclorama() {
 
 func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
     let theNode = theNodeOpt!
-    let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
+    let cameraCoord = cameraPlacementsBase()[Int(gEngine.view.currentSplitScreenPane)].cameraLocation
 
-    gRenderBackend.setAlphaTestEnabled(false) // --------
+    gEngine.renderer.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -58,18 +77,18 @@ func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
 
     MO_DrawObject(theNode.pointee.BaseGroup)
 
-    gRenderBackend.setAlphaTestEnabled(true) // --------
+    gEngine.renderer.setAlphaTestEnabled(true) // --------
 }
 
 // cameraPlacement is a fixed-size array (imports as a tuple); rebind to a pointer so it can be dynamically indexed.
 @inline(__always) private func cameraPlacementsBase() -> UnsafeMutablePointer<OGLCameraPlacement> {
-    UnsafeMutableRawPointer(gGameViewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
+    UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
 }
 
 // MARK: - Create cloud layer
 
 private func createCloudLayer() {
-    if gGamePrefs.lowRenderQuality != 0 { // don't do clouds in low-quality mode
+    if gGamePrefs.isLowRenderQuality { // don't do clouds in low-quality mode
         return
     }
 
@@ -80,7 +99,7 @@ private func createCloudLayer() {
     def.flags = UInt32(STATUS_BIT_DONTCULL | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG | STATUS_BIT_DOUBLESIDED | STATUS_BIT_NOZWRITES)
     def.slot = Int16(TERRAIN_SLOT) + 2 // draw after sky dome
     def.rot = 0
-    def.scale = gGameViewInfoPtr!.pointee.yon * 0.85
+    def.scale = gEngine.game.viewInfoPtr!.pointee.yon * 0.85
     def.moveCall = cMoveCloudLayer
     def.drawCall = cDrawCloudLayer
 
@@ -93,17 +112,17 @@ private func createCloudLayer() {
 // MARK: - Move cloud layer
 
 private let cMoveCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    gCloudScroll.x += gFramesPerSecondFrac * 0.02
-    gCloudScroll.y += gFramesPerSecondFrac * 0.03
+    gEngine.items.cloudScroll.x += gEngine.framesPerSecondFrac * 0.02
+    gEngine.items.cloudScroll.y += gEngine.framesPerSecondFrac * 0.03
 }
 
 // MARK: - Draw cloud layer
 
 private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
+    let cameraCoord = cameraPlacementsBase()[Int(gEngine.view.currentSplitScreenPane)].cameraLocation
 
-    gRenderBackend.setAlphaTestEnabled(false) // --------
+    gEngine.renderer.setAlphaTestEnabled(false) // --------
 
     // UPDATE CYCLORAMA COORD INFO
 
@@ -114,12 +133,12 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // UPDATE SCROLLING
 
-    theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gCloudScroll.x
-    theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gCloudScroll.y
+    theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gEngine.items.cloudScroll.x
+    theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gEngine.items.cloudScroll.y
 
-    gRenderBackend.matrixMode(.texture) // set texture matrix
-    gRenderBackend.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture) // set texture matrix
+    gEngine.renderer.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)
+    gEngine.renderer.matrixMode(.modelview)
 
     // DRAW THE OBJECT
 
@@ -127,11 +146,11 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // RESET UV MATRIX
 
-    gRenderBackend.matrixMode(.texture)
-    gRenderBackend.loadIdentity()
-    gRenderBackend.matrixMode(.modelview)
+    gEngine.renderer.matrixMode(.texture)
+    gEngine.renderer.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
 
-    gRenderBackend.setAlphaTestEnabled(true) // --------
+    gEngine.renderer.setAlphaTestEnabled(true) // --------
 }
 
 // MARK: -
@@ -144,7 +163,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         let base: Int32
         let rot = Int(pointee.parm.1)
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             base = Int32(LEVEL1_ObjType_Rock1)
 
@@ -162,7 +181,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 2.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
@@ -194,7 +213,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 2.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -228,7 +247,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 3.0 + RandomFloat2() * 0.3
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 197
         def.moveCall = cMoveGasMound
         def.rot = RandomFloat() * SwPI2
@@ -261,7 +280,7 @@ private let ventOff: [OGLPoint3D] = [
 
 private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
@@ -270,7 +289,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // SEE IF SMOKE HITS PLAYER
 
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         if GetPlayerIsDead(Int32(i)) == 0 { // ingore dead players
             let pi = GetPlayerInfoEntry(Int32(i))
             var dist = CalcQuickDistance(theNode.pointee.Coord.x, theNode.pointee.Coord.z, pi.pointee.coord.x, pi.pointee.coord.z)
@@ -278,12 +297,12 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
             if dist < 150.0 {
                 dist = pi.pointee.coord.y - theNode.pointee.Coord.y
                 if dist < 700.0 {
-                    if Int(pi.pointee.objNode!.pointee.Skeleton!.pointee.AnimNum) != Int(PlayerAnim.disoriented.rawValue) { // play effect on 1st hit
+                    if !pi.pointee.objNode!.pointee.Skeleton!.isAnim(.disoriented) { // play effect on 1st hit
                         PlayEffect3D(Int16(EFFECT_BODYHIT), &pi.pointee.coord)
                         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(i))
                     }
 
-                    _ = PlayerLoseHealth(Int16(i), fps * 0.1, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+                    _ = PlayerLoseHealth(Int16(i), fps * 0.1, .deathDive, nil, 1)
                 }
             }
         }
@@ -302,18 +321,18 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
             let newMagicNum = MyRandomLong() // generate a random magic num
             theNode.pointee.ParticleMagicNum = newMagicNum
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-            gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-            gNewParticleGroupDef.gravity = 100
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 15.0
-            gNewParticleGroupDef.decayRate = -2.5
-            gNewParticleGroupDef.fadeRate = 0.25
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
-            particleGroup = NewParticleGroup(&gNewParticleGroupDef)
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+            gEngine.particles.newGroupDef.gravity = 100
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 15.0
+            gEngine.particles.newGroupDef.decayRate = -2.5
+            gEngine.particles.newGroupDef.fadeRate = 0.25
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_GasCloud)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE_MINUS_SRC_ALPHA
+            particleGroup = NewParticleGroup(&gEngine.particles.newGroupDef)
             theNode.pointee.ParticleGroup = particleGroup
         }
 
@@ -364,7 +383,7 @@ private let cMoveGasMound: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
 // Returns TRUE if want to handle hit as a solid
 func DoTrig_MiscSmackableObject(_ trigger: UnsafeMutablePointer<ObjNode>!, _ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
-    if PlayerSmackedIntoObject(theNode, trigger, Int16(PlayerDeathType.explode.rawValue)) != 0 {
+    if PlayerSmackedIntoObject(theNode, trigger, .explode) != 0 {
         return 0
     }
 
@@ -384,7 +403,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 4.0 + RandomFloat2() * 1.0
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 197
         def.moveCall = nil
         def.rot = RandomFloat() * SwPI2

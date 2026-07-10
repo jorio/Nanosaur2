@@ -3,8 +3,8 @@ import BG3DFile
 #endif
 // Bg3d.swift - Port of bg3d.c to Swift
 //
-// gBG3DContainerList/gBG3DGroupList/gNumObjectsInBG3DGroupList/
-// gObjectGroupBBoxList/gObjectGroupBSphereList are native Swift storage
+// gEngine.bg3d.containerList/gEngine.bg3d.groupList/gEngine.bg3d.numObjectsInGroupList/
+// gEngine.bg3d.objectGroupBBoxList/gEngine.bg3d.objectGroupBSphereList are native Swift storage
 // (converted 2026-07-07): nothing in any .c file touches them anymore
 // (the header comment claiming Items.c/Terrain.c/Player.c still needed
 // them via extern was stale - those are stub files now, all real logic
@@ -17,36 +17,41 @@ import BG3DFile
 // Everything else here (gBG3D_* state, the group stack) was `static`
 // (file-private) in C, so it moves into private Swift state instead.
 
-private var gBG3DContainerList: [UnsafeMutablePointer<BG3DFileContainer>?] = Array(repeating: nil, count: Int(SwMAX_BG3D_GROUPS))
-private var gBG3DGroupList: [[MetaObjectPtr?]] = Array(repeating: Array(repeating: nil, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
-private var gNumObjectsInBG3DGroupList: [Int32] = Array(repeating: 0, count: Int(SwMAX_BG3D_GROUPS))
-private var gObjectGroupBBoxList: [[OGLBoundingBox]] = Array(repeating: Array(repeating: OGLBoundingBox(), count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
-private var gObjectGroupBSphereList: [[Float]] = Array(repeating: Array(repeating: 0, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+/// BG3D model-file state. Owned by GameEngine as `gEngine.bg3d`.
+final class BG3DSystem {
+    fileprivate var containerList: [UnsafeMutablePointer<BG3DFileContainer>?] = Array(repeating: nil, count: Int(SwMAX_BG3D_GROUPS))
+    fileprivate var groupList: [[MetaObjectPtr?]] = Array(repeating: Array(repeating: nil, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+    fileprivate var numObjectsInGroupList: [Int32] = Array(repeating: 0, count: Int(SwMAX_BG3D_GROUPS))
+    fileprivate var objectGroupBBoxList: [[OGLBoundingBox]] = Array(repeating: Array(repeating: OGLBoundingBox(), count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
+    fileprivate var objectGroupBSphereList: [[Float]] = Array(repeating: Array(repeating: 0, count: Int(MAX_OBJECTS_IN_GROUP)), count: Int(SwMAX_BG3D_GROUPS))
 
-func GetBG3DContainerRoot(_ group: Int32) -> MetaObjectPtr? { gBG3DContainerList[Int(group)]!.pointee.root }
-func GetBG3DContainer(_ group: Int32) -> UnsafeMutablePointer<BG3DFileContainer>? { gBG3DContainerList[Int(group)] }
-func SetBG3DContainer(_ group: Int32, _ value: UnsafeMutablePointer<BG3DFileContainer>?) { gBG3DContainerList[Int(group)] = value }
-func GetNumObjectsInBG3DGroup(_ group: Int32) -> Int32 { gNumObjectsInBG3DGroupList[Int(group)] }
-func SetNumObjectsInBG3DGroup(_ group: Int32, _ value: Int32) { gNumObjectsInBG3DGroupList[Int(group)] = value }
-func GetBG3DGroupObject(_ group: Int32, _ type: Int32) -> MetaObjectPtr? { gBG3DGroupList[Int(group)][Int(type)] }
-func SetBG3DGroupObject(_ group: Int32, _ type: Int32, _ value: MetaObjectPtr?) { gBG3DGroupList[Int(group)][Int(type)] = value }
-func GetObjectGroupBBox(_ group: Int32, _ type: Int32) -> OGLBoundingBox { gObjectGroupBBoxList[Int(group)][Int(type)] }
-func SetObjectGroupBBox(_ group: Int32, _ type: Int32, _ value: OGLBoundingBox) { gObjectGroupBBoxList[Int(group)][Int(type)] = value }
-func GetObjectGroupBSphere(_ group: Int32, _ type: Int32) -> Float { gObjectGroupBSphereList[Int(group)][Int(type)] }
-func SetObjectGroupBSphere(_ group: Int32, _ type: Int32, _ value: Float) { gObjectGroupBSphereList[Int(group)][Int(type)] = value }
+    // Parse-time state (valid only while importing a .bg3d file)
+    fileprivate var groupStackIndex: Int32 = 0
+    fileprivate var groupStack = [UnsafeMutablePointer<MOGroupObject>?](repeating: nil, count: BG3D_GROUP_STACK_SIZE)
+    fileprivate var currentGroup: UnsafeMutablePointer<MOGroupObject>?
+    fileprivate var currentMaterialObj: UnsafeMutablePointer<MOMaterialObject>? // note: this variable contains an illegal ref to the object. The real ref is in the file container material list.
+    fileprivate var currentGeometryObj: UnsafeMutablePointer<MOVertexArrayObject>?
+    fileprivate var currentContainer: UnsafeMutablePointer<BG3DFileContainer>?
+    fileprivate var importVARType: Int16 = 0
+}
+
+func GetBG3DContainerRoot(_ group: Int32) -> MetaObjectPtr? { gEngine.bg3d.containerList[Int(group)]!.pointee.root }
+func GetBG3DContainer(_ group: Int32) -> UnsafeMutablePointer<BG3DFileContainer>? { gEngine.bg3d.containerList[Int(group)] }
+func SetBG3DContainer(_ group: Int32, _ value: UnsafeMutablePointer<BG3DFileContainer>?) { gEngine.bg3d.containerList[Int(group)] = value }
+func GetNumObjectsInBG3DGroup(_ group: Int32) -> Int32 { gEngine.bg3d.numObjectsInGroupList[Int(group)] }
+func SetNumObjectsInBG3DGroup(_ group: Int32, _ value: Int32) { gEngine.bg3d.numObjectsInGroupList[Int(group)] = value }
+func GetBG3DGroupObject(_ group: Int32, _ type: Int32) -> MetaObjectPtr? { gEngine.bg3d.groupList[Int(group)][Int(type)] }
+func SetBG3DGroupObject(_ group: Int32, _ type: Int32, _ value: MetaObjectPtr?) { gEngine.bg3d.groupList[Int(group)][Int(type)] = value }
+func GetObjectGroupBBox(_ group: Int32, _ type: Int32) -> OGLBoundingBox { gEngine.bg3d.objectGroupBBoxList[Int(group)][Int(type)] }
+func SetObjectGroupBBox(_ group: Int32, _ type: Int32, _ value: OGLBoundingBox) { gEngine.bg3d.objectGroupBBoxList[Int(group)][Int(type)] = value }
+func GetObjectGroupBSphere(_ group: Int32, _ type: Int32) -> Float { gEngine.bg3d.objectGroupBSphereList[Int(group)][Int(type)] }
+func SetObjectGroupBSphere(_ group: Int32, _ type: Int32, _ value: Float) { gEngine.bg3d.objectGroupBSphereList[Int(group)][Int(type)] = value }
 
 private let BG3D_GROUP_STACK_SIZE = 50
 
-private var gBG3D_GroupStackIndex: Int32 = 0
-private var gBG3D_GroupStack = [UnsafeMutablePointer<MOGroupObject>?](repeating: nil, count: BG3D_GROUP_STACK_SIZE)
-private var gBG3D_CurrentGroup: UnsafeMutablePointer<MOGroupObject>?
 
-private var gBG3D_CurrentMaterialObj: UnsafeMutablePointer<MOMaterialObject>? // note: this variable contains an illegal ref to the object. The real ref is in the file container material list.
-private var gBG3D_CurrentGeometryObj: UnsafeMutablePointer<MOVertexArrayObject>?
 
-private var gBG3D_CurrentContainer: UnsafeMutablePointer<BG3DFileContainer>?
 
-private var gImportBG3DVARType: Int16 = 0
 
 private let kNoErr: OSErr = 0
 
@@ -81,12 +86,12 @@ func InitBG3DManager() {
 // did, one chunk at a time.
 
 func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varType: Int16) {
-    gImportBG3DVARType = varType
+    gEngine.bg3d.importVARType = varType
 
     // INIT SOME VARIABLES
-    gBG3D_CurrentMaterialObj = nil
-    gBG3D_CurrentGeometryObj = nil
-    gBG3D_GroupStackIndex = 0 // init the group stack
+    gEngine.bg3d.currentMaterialObj = nil
+    gEngine.bg3d.currentGeometryObj = nil
+    gEngine.bg3d.groupStackIndex = 0 // init the group stack
     initBG3DContainer()
 
     // OPEN THE FILE & READ IT ALL INTO MEMORY
@@ -140,7 +145,7 @@ func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varTy
 
         case .geometry(let geoHeader):
             let newObj = readNewGeometry(geoHeader)
-            if let currentGroup = gBG3D_CurrentGroup { // add new geometry to current group
+            if let currentGroup = gEngine.bg3d.currentGroup { // add new geometry to current group
                 UnsafeMutableRawPointer(currentGroup).append(newObj)
                 MO_DisposeObjectReference(newObj) // nuke the extra reference
             }
@@ -169,7 +174,7 @@ func ImportBG3D(_ spec: UnsafeMutablePointer<FSSpec>, _ groupNum: Int32, _ varTy
     //
     // A model "group" is a grouping of 3D models.
 
-    let container = gBG3D_CurrentContainer!
+    let container = gEngine.bg3d.currentContainer!
     SetBG3DContainer(groupNum, container) // save container into list
 
     guard let rootRaw = container.pointee.root else { // point to root object in container
@@ -221,21 +226,21 @@ private func readMaterialFlags(_ flags: UInt32) {
     data.numMipmaps = 0 // there are currently 0 textures assigned to this material
 
     // CREATE NEW MATERIAL OBJECT
-    gBG3D_CurrentMaterialObj = MO_CreateNewObjectOfType(.material, 0, &data)?.assumingMemoryBound(to: MOMaterialObject.self)
+    gEngine.bg3d.currentMaterialObj = MO_CreateNewObjectOfType(.material, 0, &data)?.assumingMemoryBound(to: MOMaterialObject.self)
 
     // ADD THIS MATERIAL TO THE FILE CONTAINER
-    let container = gBG3D_CurrentContainer!
+    let container = gEngine.bg3d.currentContainer!
     let i = Int(container.pointee.numMaterials) // get index into file container's material list
     container.pointee.numMaterials += 1
 
-    materialsBase(container)[i] = gBG3D_CurrentMaterialObj // stores the 1 reference here.
+    materialsBase(container)[i] = gEngine.bg3d.currentMaterialObj // stores the 1 reference here.
 }
 
 // MARK: - Read material diffuse color
 
 private func readMaterialDiffuseColor(_ color: BG3DColorRGBA) {
-    guard let matObj = gBG3D_CurrentMaterialObj else {
-        SwFatal("ReadMaterialDiffuseColor: gBG3D_CurrentMaterialObj == nil")
+    guard let matObj = gEngine.bg3d.currentMaterialObj else {
+        SwFatal("ReadMaterialDiffuseColor: gEngine.bg3d.currentMaterialObj == nil")
         return
     }
 
@@ -249,8 +254,8 @@ private func readMaterialDiffuseColor(_ color: BG3DColorRGBA) {
 
 private func readMaterialTextureMap(_ header: BG3DTextureHeader, _ pixels: [UInt8]) {
     // GET PTR TO CURRENT MATERIAL
-    guard let matObj = gBG3D_CurrentMaterialObj else {
-        SwFatal("ReadMaterialTextureMap: gBG3D_CurrentMaterialObj == nil")
+    guard let matObj = gEngine.bg3d.currentMaterialObj else {
+        SwFatal("ReadMaterialTextureMap: gEngine.bg3d.currentMaterialObj == nil")
         return
     }
 
@@ -296,8 +301,8 @@ private func readMaterialTextureMap(_ header: BG3DTextureHeader, _ pixels: [UInt
 
 private func readMaterialJPEGTextureMap(_ header: BG3DJPEGTextureHeader, _ jpegData: [UInt8], _ alphaChannel: [UInt8]?) {
     // GET PTR TO CURRENT MATERIAL
-    SwGameAssert(gBG3D_CurrentMaterialObj != nil)
-    let matObj = gBG3D_CurrentMaterialObj!
+    SwGameAssert(gEngine.bg3d.currentMaterialObj != nil)
+    let matObj = gEngine.bg3d.currentMaterialObj!
 
     let w = Int32(header.width) // get dimensions of the texture
     let h = Int32(header.height)
@@ -345,23 +350,23 @@ private func readGroup() {
     let newGroup = newGroupRaw.assumingMemoryBound(to: MOGroupObject.self)
 
     // PUSH ONTO GROUP STACK
-    if gBG3D_GroupStackIndex >= Int32(BG3D_GROUP_STACK_SIZE - 1) {
-        SwFatal("ReadGroup: gBG3D_GroupStackIndex overflow!")
+    if gEngine.bg3d.groupStackIndex >= Int32(BG3D_GROUP_STACK_SIZE - 1) {
+        SwFatal("ReadGroup: gEngine.bg3d.groupStackIndex overflow!")
     }
 
     // SEE IF THIS IS FIRST GROUP
-    if gBG3D_CurrentGroup == nil { // no parent
-        gBG3D_CurrentContainer!.pointee.root = newGroupRaw // set container's root to this group
+    if gEngine.bg3d.currentGroup == nil { // no parent
+        gEngine.bg3d.currentContainer!.pointee.root = newGroupRaw // set container's root to this group
     }
     // ADD TO PARENT GROUP
     else {
-        gBG3D_GroupStack[Int(gBG3D_GroupStackIndex)] = gBG3D_CurrentGroup // push the old group onto group stack
-        gBG3D_GroupStackIndex += 1
-        UnsafeMutableRawPointer(gBG3D_CurrentGroup!).append(newGroupRaw) // add new group to existing group (which creates new ref)
+        gEngine.bg3d.groupStack[Int(gEngine.bg3d.groupStackIndex)] = gEngine.bg3d.currentGroup // push the old group onto group stack
+        gEngine.bg3d.groupStackIndex += 1
+        UnsafeMutableRawPointer(gEngine.bg3d.currentGroup!).append(newGroupRaw) // add new group to existing group (which creates new ref)
         MO_DisposeObjectReference(newGroupRaw) // nuke the extra reference
     }
 
-    gBG3D_CurrentGroup = newGroup // current group == this group
+    gEngine.bg3d.currentGroup = newGroup // current group == this group
 }
 
 // MARK: - End group
@@ -369,14 +374,14 @@ private func readGroup() {
 // Signifies the end of a GROUPSTART tag group.
 
 private func endGroup() {
-    gBG3D_GroupStackIndex -= 1
+    gEngine.bg3d.groupStackIndex -= 1
 
-    if gBG3D_GroupStackIndex < 0 { // must be something on group stack
+    if gEngine.bg3d.groupStackIndex < 0 { // must be something on group stack
         SwFatal("EndGroup: stack is empty!")
         return
     }
 
-    gBG3D_CurrentGroup = gBG3D_GroupStack[Int(gBG3D_GroupStackIndex)] // get previous group off of stack
+    gEngine.bg3d.currentGroup = gEngine.bg3d.groupStack[Int(gEngine.bg3d.groupStackIndex)] // get previous group off of stack
 }
 
 // MARK: - Read new geometry
@@ -399,7 +404,7 @@ private func readVertexElementsGeometry(_ header: BG3DGeometryHeader) -> MetaObj
     // SETUP DATA
     var vertexArrayData = MOVertexArrayData()
 
-    vertexArrayData.VARtype = gImportBG3DVARType // which Vertex Array Range are we loading this into?
+    vertexArrayData.VARtype = gEngine.bg3d.importVARType // which Vertex Array Range are we loading this into?
 
     vertexArrayData.numMaterials = Int16(header.numMaterials)
     vertexArrayData.numPoints = Int32(header.numPoints)
@@ -424,7 +429,7 @@ private func readVertexElementsGeometry(_ header: BG3DGeometryHeader) -> MetaObj
     // SETUP MATERIAL LIST
     //
     // These start as illegal references. The ref count is incremented during the Object Creation function.
-    let container = gBG3D_CurrentContainer!
+    let container = gEngine.bg3d.currentContainer!
     let materials = materialsBase(container)
 
     if vertexArrayData.numMaterials >= 1 {
@@ -435,15 +440,15 @@ private func readVertexElementsGeometry(_ header: BG3DGeometryHeader) -> MetaObj
     }
 
     // CREATE THE NEW GEO OBJECT
-    gBG3D_CurrentGeometryObj = MO_CreateNewObjectOfType(.geometry, Int(MO_GEOMETRY_SUBTYPE_VERTEXARRAY), &vertexArrayData)?.assumingMemoryBound(to: MOVertexArrayObject.self)
+    gEngine.bg3d.currentGeometryObj = MO_CreateNewObjectOfType(.geometry, Int(MO_GEOMETRY_SUBTYPE_VERTEXARRAY), &vertexArrayData)?.assumingMemoryBound(to: MOVertexArrayObject.self)
 
-    return UnsafeMutableRawPointer(gBG3D_CurrentGeometryObj)
+    return UnsafeMutableRawPointer(gEngine.bg3d.currentGeometryObj)
 }
 
 // MARK: - Read vertex array
 
 private func readVertexArray(_ points: [BG3DPoint3D]) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     if data.pointee.points != nil { // see if points already assigned
         SwFatal("ReadVertexArray: points already assigned!")
     }
@@ -452,10 +457,10 @@ private func readVertexArray(_ points: [BG3DPoint3D]) {
     let byteCount = MemoryLayout<OGLPoint3D>.size * numPoints // calc size of data to allocate
 
     let pointList: UnsafeMutablePointer<OGLPoint3D>
-    if gImportBG3DVARType == -1 {
+    if gEngine.bg3d.importVARType == -1 {
         pointList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLPoint3D.self)
     } else {
-        pointList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLPoint3D.self) // alloc vertex array range buffer
+        pointList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gEngine.bg3d.importVARType))!.assumingMemoryBound(to: OGLPoint3D.self) // alloc vertex array range buffer
     }
 
     for i in 0..<numPoints {
@@ -468,15 +473,15 @@ private func readVertexArray(_ points: [BG3DPoint3D]) {
 // MARK: - Read normal array
 
 private func readNormalArray(_ normals: [BG3DPoint3D]) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     let numPoints = normals.count
     let byteCount = MemoryLayout<OGLVector3D>.size * numPoints // calc size of data to allocate
 
     let normalList: UnsafeMutablePointer<OGLVector3D>
-    if gImportBG3DVARType == -1 {
+    if gEngine.bg3d.importVARType == -1 {
         normalList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLVector3D.self)
     } else {
-        normalList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLVector3D.self) // alloc vertex array range buffer
+        normalList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gEngine.bg3d.importVARType))!.assumingMemoryBound(to: OGLVector3D.self) // alloc vertex array range buffer
     }
 
     for i in 0..<numPoints {
@@ -489,15 +494,15 @@ private func readNormalArray(_ normals: [BG3DPoint3D]) {
 // MARK: - Read UV array
 
 private func readUVArray(_ uvs: [BG3DTextureCoord]) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     let numPoints = uvs.count
     let byteCount = MemoryLayout<OGLTextureCoord>.size * numPoints // calc size of data to allocate
 
     let uvList: UnsafeMutablePointer<OGLTextureCoord>
-    if gImportBG3DVARType == -1 {
+    if gEngine.bg3d.importVARType == -1 {
         uvList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLTextureCoord.self)
     } else {
-        uvList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLTextureCoord.self) // alloc vertex array range buffer
+        uvList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gEngine.bg3d.importVARType))!.assumingMemoryBound(to: OGLTextureCoord.self) // alloc vertex array range buffer
     }
 
     for i in 0..<numPoints {
@@ -512,16 +517,16 @@ private func readUVArray(_ uvs: [BG3DTextureCoord]) {
 // NOTE: The color data in the BG3D file is always stored as Byte values since it's more compact.
 
 private func readVertexColorArray(_ colors: [BG3DColorRGBAByte]) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     let numPoints = colors.count
 
     // CREATE COLOR ARRAY IN FLOAT FORMAT
     let colorsF: UnsafeMutablePointer<OGLColorRGBA>
     let byteCount = MemoryLayout<OGLColorRGBA>.size * numPoints
-    if gImportBG3DVARType == -1 {
+    if gEngine.bg3d.importVARType == -1 {
         colorsF = AllocPtrClear(byteCount)!.assumingMemoryBound(to: OGLColorRGBA.self)
     } else {
-        colorsF = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: OGLColorRGBA.self) // alloc vertex array range buffer
+        colorsF = OGL_AllocVertexArrayMemory(byteCount, UInt8(gEngine.bg3d.importVARType))!.assumingMemoryBound(to: OGLColorRGBA.self) // alloc vertex array range buffer
     }
 
     data.pointee.colorsFloat = colorsF // assign color array to geometry header
@@ -537,15 +542,15 @@ private func readVertexColorArray(_ colors: [BG3DColorRGBAByte]) {
 // MARK: - Read triangle array
 
 private func readTriangleArray(_ triangles: [BG3DTriangle]) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
     let numTriangles = triangles.count
     let byteCount = MemoryLayout<MOTriangleIndecies>.size * numTriangles // calc size of data to allocate
 
     let triList: UnsafeMutablePointer<MOTriangleIndecies>
-    if gImportBG3DVARType == -1 {
+    if gEngine.bg3d.importVARType == -1 {
         triList = AllocPtrClear(byteCount)!.assumingMemoryBound(to: MOTriangleIndecies.self)
     } else {
-        triList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gImportBG3DVARType))!.assumingMemoryBound(to: MOTriangleIndecies.self) // alloc vertex array range buffer
+        triList = OGL_AllocVertexArrayMemory(byteCount, UInt8(gEngine.bg3d.importVARType))!.assumingMemoryBound(to: MOTriangleIndecies.self) // alloc vertex array range buffer
     }
 
     for i in 0..<numTriangles {
@@ -558,7 +563,7 @@ private func readTriangleArray(_ triangles: [BG3DTriangle]) {
 // MARK: - Read bounding box
 
 private func readBoundingBox(_ bbox: BG3DBoundingBox) {
-    let data = gBG3D_CurrentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
+    let data = gEngine.bg3d.currentGeometryObj!.pointer(to: \.objectData)! // point to geometry data
 
     data.pointee.bBox.min = OGLPoint3D(x: bbox.min.x, y: bbox.min.y, z: bbox.min.z)
     data.pointee.bBox.max = OGLPoint3D(x: bbox.max.x, y: bbox.max.y, z: bbox.max.z)
@@ -575,7 +580,7 @@ private func initBG3DContainer() {
         return
     }
 
-    gBG3D_CurrentContainer = container
+    gEngine.bg3d.currentContainer = container
     container.pointee.numMaterials = 0 // no materials yet
 
     // CREATE NEW GROUP OBJECT
@@ -585,7 +590,7 @@ private func initBG3DContainer() {
     }
 
     container.pointee.root = rootGroup // root is an empty group
-    gBG3D_CurrentGroup = rootGroup.assumingMemoryBound(to: MOGroupObject.self)
+    gEngine.bg3d.currentGroup = rootGroup.assumingMemoryBound(to: MOGroupObject.self)
 }
 
 // MARK: - Dispose all BG3D containers

@@ -13,13 +13,17 @@ private let kNotLoadedMsg = strdup("STRINGS NOT LOADED")
 private let kIllegalIdMsg = strdup("ILLEGAL STRING ID")
 private let kEmptyMsg = strdup("")
 
-private var gCurrentStringsLanguage: GameLanguageID = LANGUAGE_ILLEGAL
-private var gStringsBuffer: UnsafeMutablePointer<CChar>?
-private var gStringsTable: [UnsafeMutablePointer<CChar>?] = []
+/// Localized-string table (backs the C-ABI Localize). Owned by GameEngine
+/// as `gEngine.localization`.
+final class LocalizationSystem {
+    fileprivate var currentLanguage: GameLanguageID = LANGUAGE_ILLEGAL
+    fileprivate var stringsBuffer: UnsafeMutablePointer<CChar>?
+    fileprivate var stringsTable: [UnsafeMutablePointer<CChar>?] = []
+}
 
 func LoadLocalizedStrings(_ languageID: GameLanguageID) {
     // Don't bother reloading strings if we've already loaded this language
-    if languageID == gCurrentStringsLanguage {
+    if languageID == gEngine.localization.currentLanguage {
         return
     }
 
@@ -30,16 +34,16 @@ func LoadLocalizedStrings(_ languageID: GameLanguageID) {
     SwGameAssert(languageID.rawValue < NUM_LANGUAGES.rawValue)
 
     var count: Int = 0
-    gStringsBuffer = LoadTextFile(kCsvPath, &count)
+    gEngine.localization.stringsBuffer = LoadTextFile(kCsvPath, &count)
 
     let maxStrings = Int(NUM_LOCALIZED_STRINGS.rawValue) + 1
-    gStringsTable = [UnsafeMutablePointer<CChar>?](repeating: nil, count: maxStrings)
-    gStringsTable[Int(STR_NULL.rawValue)] = kNullPlaceholder
+    gEngine.localization.stringsTable = [UnsafeMutablePointer<CChar>?](repeating: nil, count: maxStrings)
+    gEngine.localization.stringsTable[Int(STR_NULL.rawValue)] = kNullPlaceholder
     SwGameAssert(STR_NULL.rawValue == 0) // STR_NULL must be 0!
 
     var row: Int32 = 1 // start row at 1, so that 0 is an illegal index (STR_NULL)
 
-    var csvReader: UnsafeMutablePointer<CChar>? = gStringsBuffer
+    var csvReader: UnsafeMutablePointer<CChar>? = gEngine.localization.stringsBuffer
     while csvReader != nil {
         var myPhrase: UnsafeMutablePointer<CChar>?
         var eol = false
@@ -56,7 +60,7 @@ func LoadLocalizedStrings(_ languageID: GameLanguageID) {
 
         if let myPhrase {
             SwGameAssert(row < NUM_LOCALIZED_STRINGS.rawValue)
-            gStringsTable[Int(row)] = myPhrase
+            gEngine.localization.stringsTable[Int(row)] = myPhrase
             row += 1
         }
     }
@@ -64,21 +68,28 @@ func LoadLocalizedStrings(_ languageID: GameLanguageID) {
     SwGameAssert(row == NUM_LOCALIZED_STRINGS.rawValue)
 }
 
+/// Swift-native accessor over the same string table the C-ABI Localize
+/// serves (LocalizeWithPlaceholder in Localization.c is the one remaining
+/// C caller that needs the raw pointer form).
+func localized(_ stringID: LocStrID) -> String {
+    String(cString: Localize(stringID))
+}
+
 @c @implementation
 public func Localize(_ stringID: LocStrID) -> UnsafePointer<CChar> {
-    guard gStringsBuffer != nil else { return UnsafePointer(kNotLoadedMsg!) }
+    guard gEngine.localization.stringsBuffer != nil else { return UnsafePointer(kNotLoadedMsg!) }
 
     let id = Int(stringID.rawValue)
-    guard id >= 0 && id < gStringsTable.count else { return UnsafePointer(kIllegalIdMsg!) }
+    guard id >= 0 && id < gEngine.localization.stringsTable.count else { return UnsafePointer(kIllegalIdMsg!) }
 
-    guard let entry = gStringsTable[id] else { return UnsafePointer(kEmptyMsg!) }
+    guard let entry = gEngine.localization.stringsTable[id] else { return UnsafePointer(kEmptyMsg!) }
 
     return UnsafePointer(entry)
 }
 
 func DisposeLocalizedStrings() {
-    if gStringsBuffer != nil {
-        SafeDisposePtr(gStringsBuffer)
-        gStringsBuffer = nil
+    if gEngine.localization.stringsBuffer != nil {
+        SafeDisposePtr(gEngine.localization.stringsBuffer)
+        gEngine.localization.stringsBuffer = nil
     }
 }

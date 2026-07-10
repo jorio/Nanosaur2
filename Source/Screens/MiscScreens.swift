@@ -1,9 +1,46 @@
 // MiscScreens.swift - Port of MiscScreens.c to Swift
 //
-// gLoadingThermoPercent is native Swift storage now (converted
+// gEngine.screens.loadingThermoPercent is native Swift storage now (converted
 // 2026-07-07): nothing in any .c file touches it anymore.
 
-var gLoadingThermoPercent: Float = 0
+/// Per-screen transient state, consolidated across the Screens/ files.
+/// Owned by GameEngine as `gEngine.screens`.
+final class ScreenSystem {
+    // MiscScreens.swift (loading thermometer)
+    var loadingThermoPercent: Float = 0
+    var loadingShownYet = false
+    var loadingStartTicks: UInt64 = 0
+    var loadingLastUpdateTicks: UInt64 = 0
+
+    // Paused.swift
+    var gamePaused: UInt8 = 0
+    var pausedMouseCursor: UnsafeMutablePointer<ObjNode>?
+
+    // MainMenu.swift
+    var playNow: UInt8 = 0
+    var mainMenuBackground: UnsafeMutablePointer<ObjNode>?
+    var mainMenuMouseCursor: UnsafeMutablePointer<ObjNode>?
+
+    // LevelIntro.swift
+    var wormholeDeformPoints = [OGLPoint3D](repeating: OGLPoint3D(), count: 30)
+    var introMode: UInt8 = 0
+
+    // LocalGather.swift
+    var gatherPrompt: UnsafeMutablePointer<ObjNode>!
+    var numControllersMissing: Int32 = 4
+
+    // IntroStory.swift / WinScreen.swift slide shows
+    var introStoryEndSlideShow = false
+    var introStorySlideActive = [Bool](repeating: false, count: 9) // must match IntroStory's NUM_SLIDES
+    var winEndSlideShow = false
+    var winSlideActive: InlineArray<1, Bool> = InlineArray(repeating: false) // must match WinScreen's NUM_SLIDES
+
+    // AnaglyphCalibration.swift
+    var anaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
+
+    // Settings.swift
+    var msaaWarningNode: UnsafeMutablePointer<ObjNode>?
+}
 
 private let THERMO_WIDTH: Float = 80.0
 private let THERMO_HEIGHT: Float = 4.0
@@ -13,12 +50,9 @@ private let THERMO_RIGHT: Float = 320 + (THERMO_WIDTH / 2)
 
 // Mirrors the C function-local statics in DrawLoading, which persist
 // across calls.
-private var gShownYet = false
-private var gStartTicks: UInt64 = 0
-private var gLastUpdateTicks: UInt64 = 0
 
 private let cDrawLoadingCallback: @convention(c) () -> Void = {
-    if gCurrentSplitScreenPane != 0 { // only show in player 1's pane
+    if gEngine.view.currentSplitScreenPane != 0 { // only show in player 1's pane
         return
     }
 
@@ -31,14 +65,14 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
     OGL_SetColor4f(0.5, 0.5, 0.5, 1)
     OGL_DisableTexture2D()
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y)
-    gRenderBackend.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y); gEngine.renderer.vertex2f(THERMO_RIGHT, THERMO_Y)
+    gEngine.renderer.vertex2f(THERMO_RIGHT, THERMO_Y + THERMO_HEIGHT); gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gEngine.renderer.endImmediate()
 
     // DRAW THERMO METER
 
-    let w = gLoadingThermoPercent * THERMO_WIDTH
+    let w = gEngine.screens.loadingThermoPercent * THERMO_WIDTH
     let x = THERMO_LEFT + w
 
     let stereoMode = gGamePrefs.stereoGlassesMode
@@ -48,30 +82,30 @@ private let cDrawLoadingCallback: @convention(c) () -> Void = {
         OGL_SetColor4f(0.8, 0, 0, 1)
     }
 
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y); gRenderBackend.vertex2f(x, THERMO_Y)
-    gRenderBackend.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gRenderBackend.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y); gEngine.renderer.vertex2f(x, THERMO_Y)
+    gEngine.renderer.vertex2f(x, THERMO_Y + THERMO_HEIGHT); gEngine.renderer.vertex2f(THERMO_LEFT, THERMO_Y + THERMO_HEIGHT)
+    gEngine.renderer.endImmediate()
 
     OGL_SetColor4f(1, 1, 1, 1)
 
     var fadeOpacity: Float = 0
-    if gLoadingThermoPercent < 0.1 {
-        fadeOpacity = 1.0 - (gLoadingThermoPercent / 0.1)
+    if gEngine.screens.loadingThermoPercent < 0.1 {
+        fadeOpacity = 1.0 - (gEngine.screens.loadingThermoPercent / 0.1)
     } else {
         let fadeoutStart: Float = 0.9
         let fadeoutEnd: Float = 1.0
-        if gLoadingThermoPercent > fadeoutStart {
-            fadeOpacity = (gLoadingThermoPercent - fadeoutStart) / (fadeoutEnd - fadeoutStart)
+        if gEngine.screens.loadingThermoPercent > fadeoutStart {
+            fadeOpacity = (gEngine.screens.loadingThermoPercent - fadeoutStart) / (fadeoutEnd - fadeoutStart)
         }
     }
 
     do {
         OGL_SetColor4f(0, 0, 0, fadeOpacity > 1 ? 1 : fadeOpacity)
-        gRenderBackend.beginImmediate(.quads)
-        gRenderBackend.vertex2f(0, 0); gRenderBackend.vertex2f(640, 0)
-        gRenderBackend.vertex2f(640, 480); gRenderBackend.vertex2f(0, 480)
-        gRenderBackend.endImmediate()
+        gEngine.renderer.beginImmediate(.quads)
+        gEngine.renderer.vertex2f(0, 0); gEngine.renderer.vertex2f(640, 0)
+        gEngine.renderer.vertex2f(640, 480); gEngine.renderer.vertex2f(0, 480)
+        gEngine.renderer.endImmediate()
     }
 }
 
@@ -101,7 +135,7 @@ func DoLegalScreen() {
     var viewDef = OGLSetupInputType()
     var timeout: Float = 10.0
 
-    gNumPlayers = 1 // make sure don't do split-screen
+    gEngine.player.numPlayers = 1 // make sure don't do split-screen
 
     // SETUP VIEW
 
@@ -165,7 +199,7 @@ func DoLegalScreen() {
             break
         }
 
-        timeout -= gFramesPerSecondFrac
+        timeout -= gEngine.framesPerSecondFrac
         if timeout < 0.0 {
             break
         }
@@ -188,14 +222,14 @@ func DrawLoading(_ percent: Float) {
     let nowTicks = SDL_GetTicks()
 
     if percent == 0 {
-        gStartTicks = nowTicks
-        gLastUpdateTicks = 0
-        gShownYet = false
+        gEngine.screens.loadingStartTicks = nowTicks
+        gEngine.screens.loadingLastUpdateTicks = 0
+        gEngine.screens.loadingShownYet = false
     }
 
     // Give illusion of instant loading (don't draw thermometer) if we can predict the level will be loaded in under a second
-    if !gShownYet {
-        let ticksSinceStart = nowTicks - gStartTicks
+    if !gEngine.screens.loadingShownYet {
+        let ticksSinceStart = nowTicks - gEngine.screens.loadingStartTicks
         if ticksSinceStart < 200 // let loading warm up for 200 ms before considering whether to draw or not
             || ticksSinceStart <= UInt64(percent * 1000) { // don't draw as long as we're keeping up with the ideal loading time (1000 ms)
             return
@@ -205,27 +239,27 @@ func DrawLoading(_ percent: Float) {
     // Don't redraw too often or if percentage is out of bounds
     if percent > 0
         && percent < 1
-        && nowTicks - gLastUpdateTicks < 16 {
+        && nowTicks - gEngine.screens.loadingLastUpdateTicks < 16 {
         return
     }
 
-    gShownYet = true
-    gLastUpdateTicks = nowTicks
+    gEngine.screens.loadingShownYet = true
+    gEngine.screens.loadingLastUpdateTicks = nowTicks
 
     // if percent > 0.75 {
     //     MakeFadeEvent(kFadeFlags_Out, 0.0001);
-    //     gGammaFadeFrac = 1.0 - (percent - 0.75) / 0.25;
+    //     gEngine.window.gammaFadeFrac = 1.0 - (percent - 0.75) / 0.25;
     // }
 
     // Kill vsync so we don't waste 16ms before loading the next asset
-    let vsyncBackup = gRenderBackend.getVSync()
-    gRenderBackend.setVSync(0)
+    let vsyncBackup = gEngine.renderer.getVSync()
+    gEngine.renderer.setVSync(0)
 
     // Draw thermometer
-    gRenderBackend.clearColorAndDepth()
+    gEngine.renderer.clearColorAndDepth()
     OGL_DrawScene(cDrawLoadingCallback)
-    gLoadingThermoPercent = percent
+    gEngine.screens.loadingThermoPercent = percent
 
     // Restore vsync setting
-    gRenderBackend.setVSync(vsyncBackup)
+    gEngine.renderer.setVSync(vsyncBackup)
 }

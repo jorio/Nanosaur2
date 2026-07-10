@@ -2,30 +2,28 @@
 
 private let eggScale: Float = 6.0
 
-var gNumEggsToSave: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
-var gNumEggsSaved: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
 
 // Called when terrain is loaded - it counts the total egg inventory for this level.
 func FindAllEggItems() {
     // INIT EGG COUNTS
 
     for i in 0..<EggColor.allCases.count {
-        gNumEggsToSave[i] = 0
-        gNumEggsSaved[i] = 0
+        gEngine.items.numEggsToSave[i] = 0
+        gEngine.items.numEggsSaved[i] = 0
     }
 
     // SCAN FOR EGG ITEM
 
-    let itemPtr = gMasterItemList! // get pointer to data inside the LOCKED handle
+    let itemPtr = gEngine.terrain.masterItemList! // get pointer to data inside the LOCKED handle
 
-    for i in 0..<Int(gNumTerrainItems) {
+    for i in 0..<Int(gEngine.terrain.numTerrainItems) {
         if itemPtr[i].type == UInt16(MAP_ITEM_EGG) { // see if it's an Egg item
             let eggColor = Int(itemPtr[i].parm.0) // egg color # is in parm 0
             if eggColor >= EggColor.allCases.count {
                 SwFatal("FindAllEggItems: bad egg color!")
             }
 
-            gNumEggsToSave[eggColor] += 1 // inc counter
+            gEngine.items.numEggsToSave[eggColor] += 1 // inc counter
         }
     }
 }
@@ -46,7 +44,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.slot = Int16(SLOT_OF_DUMB)
         def.moveCall = cMoveNest
         def.scale = eggScale
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.rot = RandomFloat() * SwPI2
 
         let nest = MakeNewDisplayGroupObject(&def)!
@@ -155,7 +153,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
         // DECAY BEAM IF EGG IS OUT OF NEST
 
         if nest.pointee.Flag.1 == 0 {
-            beam.pointee.ColorFilter.a -= gFramesPerSecondFrac * 0.3
+            beam.pointee.ColorFilter.a -= gEngine.framesPerSecondFrac * 0.3
             if beam.pointee.ColorFilter.a <= 0.0 {
                 beam.pointee.ColorFilter.a = 0.0
             }
@@ -164,7 +162,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
         // UNDULATE THE BEAM
 
         else {
-            beam.pointee.SpecialF.0 += gFramesPerSecondFrac * Float.pi
+            beam.pointee.SpecialF.0 += gEngine.framesPerSecondFrac * Float.pi
             beam.pointee.ColorFilter.a = 0.4 + sin(beam.pointee.SpecialF.0) * 0.1
         }
     }
@@ -174,7 +172,7 @@ private let cMoveNest: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
 
 private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { eggOpt in
     guard let egg = eggOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let onGround = egg.pointee.StatusBits & UInt32(STATUS_BIT_ONGROUND)
 
     let nest = egg.pointee.ChainHead!
@@ -183,10 +181,10 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gDelta.y += -3000.0 * fps // gravity
+    gEngine.objects.delta.y += -3000.0 * fps // gravity
 
     if onGround != 0 {
-        gDelta.applyFrictionXZ(300) // ground friction
+        gEngine.objects.delta.applyFrictionXZ(300) // ground friction
 
         if nest.pointee.Flag.1 != 0 {
             egg.pointee.Rot.x = 0 // keep up
@@ -194,15 +192,15 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
             egg.pointee.Rot.x = Float.pi / 2 // keep on side
         }
     } else {
-        gDelta.applyFrictionXZ(100) // air friction
+        gEngine.objects.delta.applyFrictionXZ(100) // air friction
         egg.pointee.Rot.x += fps * 1.5 // spin in air
     }
 
     // MOVE
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // COLLISION DETECT
 
@@ -215,7 +213,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         if egg.pointee.SpecialF.0 <= 0.0 { // is it ok to try resetting now?
             if egg.pointee.SpecialF.0 < -25.0 { // if we've tried for 25 seconds with no results, then just force it to get reset
                 resetEggToNest(egg)
-            } else if (CalcDistanceToClosestPlayer(&gCoord, nil) > 1500.0) && (IsObjectTotallyCulled(egg) != 0) { // only reset if players are far enough away & nobody can see it
+            } else if (CalcDistanceToClosestPlayer(&gEngine.objects.coord, nil) > 1500.0) && (IsObjectTotallyCulled(egg) != 0) { // only reset if players are far enough away & nobody can see it
                 // SEE IF THE HOME POSITION IS ALSO CULLED
 
                 var m = OGLMatrix4x4()
@@ -223,7 +221,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
                 egg.pointee.Coord = egg.pointee.InitCoord // move back to init coord (this gets zapped at update below if bboxvisible() fails)
                 UpdateObjectTransforms(egg)
-                m = egg.pointee.BaseTransformMatrix.multiplied(by: gWorldToFrustumMatrix)
+                m = egg.pointee.BaseTransformMatrix.multiplied(by: gEngine.view.worldToFrustumMatrix)
 
                 if OGL_IsBBoxVisible(bbox, nil) == 0 { // see if it would be culled there
                     resetEggToNest(egg)
@@ -236,7 +234,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     egg.pointee.Timer -= fps // DelayUntilCanPickup
     if egg.pointee.Timer <= 0.0 { // only allow pickup if timer is ready
-        for i in 0..<Int(gNumPlayers) {
+        for i in 0..<Int(gEngine.player.numPlayers) {
             if GetPlayerIsDead(Int32(i)) != 0 { // dead players can't pick up eggs
                 continue
             }
@@ -249,7 +247,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
                 var footCoord = OGLPoint3D()
                 FindCoordOfJoint(player, Int(PlayerJoint.eggHold.rawValue), &footCoord) // get coord of joint
-                if footCoord.distance(to: gCoord) < 150.0 { // is coord close enough to egg?
+                if footCoord.distance(to: gEngine.objects.coord) < 150.0 { // is coord close enough to egg?
                     playerPickedUpEgg(egg, Int16(i))
                     break
                 }
@@ -267,10 +265,10 @@ private func resetEggToNest(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // MOVE BACK TO NEST
 
-    gCoord = egg.pointee.InitCoord
-    gDelta.x = 0
-    gDelta.y = 0
-    gDelta.z = 0
+    gEngine.objects.coord = egg.pointee.InitCoord
+    gEngine.objects.delta.x = 0
+    gEngine.objects.delta.y = 0
+    gEngine.objects.delta.z = 0
 
     // LET NEST KNOW
 
@@ -291,7 +289,7 @@ private func playerPickedUpEgg(_ egg: UnsafeMutablePointer<ObjNode>, _ playerNum
     egg.pointee.Flag.0 = 1 // CanResetEgg: we can now reset it when needed
     egg.pointee.SpecialF.0 = 15.0 // ResetEggDelay
 
-    PlayEffect_Parms3D(Int16(EFFECT_GRABEGG), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.6)
+    PlayEffect_Parms3D(Int16(EFFECT_GRABEGG), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.6)
     PlayRumbleEffect(Int16(EFFECT_GRABEGG), Int32(playerNum))
 }
 
@@ -343,9 +341,10 @@ func DropEgg_NoWormhole(_ playerNum: Int16) {
     if let egg = playerInfo.pointee.carriedObj { // get egg
         egg.pointee.Timer = 1.0 // DelayUntilCanPickup: delay until can be picked back up
         egg.pointee.MoveCall = cMoveEggNotCarried
-        egg.pointee.Delta.x = playerInfo.pointee.objNode!.pointee.Delta.x * 0.8 // match player's delta minus some friction
-        egg.pointee.Delta.y = playerInfo.pointee.objNode!.pointee.Delta.y * 0.8
-        egg.pointee.Delta.z = playerInfo.pointee.objNode!.pointee.Delta.z * 0.8
+        let playerDelta = playerInfo.pointee.objNode!.pointee.Delta
+        egg.pointee.Delta.x = playerDelta.x * 0.8 // match player's delta minus some friction
+        egg.pointee.Delta.y = playerDelta.y * 0.8
+        egg.pointee.Delta.z = playerDelta.z * 0.8
         playerInfo.pointee.carriedObj = nil // player not holding anything
     }
 }
@@ -354,7 +353,7 @@ func DropEgg_NoWormhole(_ playerNum: Int16) {
 
 private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { eggOpt in
     guard let egg = eggOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
     let wormhole = egg.pointee.SpecialPtr.0!.assumingMemoryBound(to: ObjNode.self)
 
     GetObjectInfo(egg)
@@ -364,31 +363,31 @@ private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?
     var jointCoord = OGLPoint3D()
     FindCoordOfJoint(wormhole, Int(egg.pointee.Special.1), &jointCoord)
     var v2raw = OGLVector3D()
-    v2raw.x = jointCoord.x - gCoord.x
-    v2raw.y = jointCoord.y - gCoord.y
-    v2raw.z = jointCoord.z - gCoord.z
+    v2raw.x = jointCoord.x - gEngine.objects.coord.x
+    v2raw.y = jointCoord.y - gEngine.objects.coord.y
+    v2raw.z = jointCoord.z - gEngine.objects.coord.z
     let v2 = v2raw.normalized()
 
-    let dist = gCoord.distance(to: jointCoord) // get current dist to joint
+    let dist = gEngine.objects.coord.distance(to: jointCoord) // get current dist to joint
 
     // MOVE IT
 
-    gDelta.x = v2.x * egg.pointee.Speed // move toward the joint
-    gDelta.y = v2.y * egg.pointee.Speed
-    gDelta.z = v2.z * egg.pointee.Speed
+    gEngine.objects.delta.x = v2.x * egg.pointee.Speed // move toward the joint
+    gEngine.objects.delta.y = v2.y * egg.pointee.Speed
+    gEngine.objects.delta.z = v2.z * egg.pointee.Speed
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF TIME TO DO NEXT JOINT
 
-    let dist2 = gCoord.distance(to: jointCoord)
+    let dist2 = gEngine.objects.coord.distance(to: jointCoord)
     if (dist2 > dist) || (dist2 < 40.0) { // if dist suddenly got larger, then we must have overshot the coord, or see if in range of joint
         egg.pointee.Special.1 += 1 // TargetJoint++
 
         if egg.pointee.Special.1 == 1 {
-            PlayEffect3D(Int16(EFFECT_EGGINTOWORMHOLE), &gCoord)
+            PlayEffect3D(Int16(EFFECT_EGGINTOWORMHOLE), &gEngine.objects.coord)
             PlayRumbleEffect(Int16(EFFECT_EGGINTOWORMHOLE), Int32(egg.pointee.PlayerNum))
         }
 
@@ -430,7 +429,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // INC COUNTER
 
-    gNumEggsSaved[Int(egg.pointee.Kind)] += 1
+    gEngine.items.numEggsSaved[Int(egg.pointee.Kind)] += 1
 
     // START BLINKING EGG IN INFOBAR
 
@@ -438,13 +437,13 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF WE GOT ALL THE EGGS WE NEED
 
-    switch gVSMode {
+    switch gEngine.game.vsMode {
     // HANDLE REGULAR ADVENTURE MODE
 
     case .none:
         for i in 0..<EggColor.allCases.count {
-            if gNumEggsToSave[i] > 0 { // do we need to get this color?
-                if gNumEggsSaved[i] < gNumEggsToSave[i] { // did we get them all?
+            if gEngine.items.numEggsToSave[i] > 0 { // do we need to get this color?
+                if gEngine.items.numEggsSaved[i] < gEngine.items.numEggsToSave[i] { // did we get them all?
                     gotAllEggs = false
                     break
                 }
@@ -452,16 +451,16 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
         }
 
         if gotAllEggs {
-            gOpenPlayerWormhole = 1
+            gEngine.items.openPlayerWormhole = 1
         }
 
     // CAPTURE THE FLAG MODE
 
     case .captureTheFlag:
-        if gLevelCompleted == 0 { // ignore any more eggs if someone already won
+        if gEngine.game.levelCompleted == 0 { // ignore any more eggs if someone already won
             // SEE IF PLAYER 1 WON
 
-            if gNumEggsSaved[1] >= gNumEggsToSave[1] { // did we get all of P2's eggs?
+            if gEngine.items.numEggsSaved[1] >= gEngine.items.numEggsToSave[1] { // did we get all of P2's eggs?
                 _ = ShowWinLose(0, 0) // won!
                 _ = ShowWinLose(1, 1) // lost
                 StartLevelCompletion(5.0)
@@ -469,7 +468,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
             // SEE IF PLYAER 2 WON
 
-            else if gNumEggsSaved[0] >= gNumEggsToSave[0] { // did we get all of P1's eggs?
+            else if gEngine.items.numEggsSaved[0] >= gEngine.items.numEggsToSave[0] { // did we get all of P1's eggs?
                 _ = ShowWinLose(1, 0) // won!
                 _ = ShowWinLose(0, 1) // lost
                 StartLevelCompletion(5.0)

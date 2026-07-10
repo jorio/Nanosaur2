@@ -1,7 +1,7 @@
 // Atlas.swift - Port of Atlas.c to Swift
 //
-// gAtlases isn't `extern`'d anywhere (not `static` in the original C, but
-// nothing else declares `extern Atlas* gAtlases[]` either), so it moves
+// gEngine.atlases.pool isn't `extern`'d anywhere (not `static` in the original C, but
+// nothing else declares `extern Atlas* gEngine.atlases.pool[]` either), so it moves
 // into private Swift state. Atlas/AtlasGlyph themselves stay as plain C
 // structs (declared in atlas.h) since nothing else in this file needed to
 // change about them - they're never touched by any other C or Swift file.
@@ -37,10 +37,14 @@ private struct TextMetrics {
     var lineOffsetY: InlineArray<16, Float> = InlineArray(repeating: 0)
 }
 
-private let gImmediateModePoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
-private let gImmediateModeUVs = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
+/// Texture-atlas registry + immediate-mode text scratch. Owned by
+/// GameEngine as `gEngine.atlases`.
+final class AtlasSystem {
+    fileprivate let immediateModePoints = AllocPtrClear(MemoryLayout<OGLPoint3D>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLPoint3D.self)
+    fileprivate let immediateModeUVs = AllocPtrClear(MemoryLayout<OGLTextureCoord>.size * MAX_IMMEDIATEMODE_QUADS * 4)!.assumingMemoryBound(to: OGLTextureCoord.self)
 
-private var gAtlases = [UnsafeMutablePointer<Atlas>?](repeating: nil, count: Int(MAX_ATLASES))
+    fileprivate var pool = [UnsafeMutablePointer<Atlas>?](repeating: nil, count: Int(MAX_ATLASES))
+}
 
 // MARK: - UTF-8
 
@@ -222,10 +226,13 @@ private func parseKerningFile(_ atlas: UnsafeMutablePointer<Atlas>, _ dataPtr: U
 
 // MARK: - Init/shutdown
 
-func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: UnsafePointer<CChar>, _ flags: Int32) {
-    if let existing = gAtlases[Int(groupNum)] {
+func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: String, _ flags: Int32) {
+    if let existing = gEngine.atlases.pool[Int(groupNum)] {
         // Sprite group busy
-        if strncmp(atlasName, withUnsafePointer(to: existing.pointee.name) { UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self) }, MemoryLayout.size(ofValue: existing.pointee.name)) == 0 {
+        let existingName = withUnsafePointer(to: existing.pointee.name) {
+            String(cString: UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self))
+        }
+        if atlasName == existingName {
             // This atlas is already loaded
             return
         } else {
@@ -234,14 +241,14 @@ func LoadSpriteAtlas(_ groupNum: Int32, _ atlasName: UnsafePointer<CChar>, _ fla
         }
     }
 
-    SwGameAssertMessage(gAtlases[Int(groupNum)] == nil, "Sprite group already loaded!")
-    gAtlases[Int(groupNum)] = Atlas_Load(atlasName, flags)
+    SwGameAssertMessage(gEngine.atlases.pool[Int(groupNum)] == nil, "Sprite group already loaded!")
+    gEngine.atlases.pool[Int(groupNum)] = Atlas_Load(atlasName, flags)
 }
 
 func DisposeSpriteAtlas(_ groupNum: Int32) {
-    if let atlas = gAtlases[Int(groupNum)] {
+    if let atlas = gEngine.atlases.pool[Int(groupNum)] {
         Atlas_Dispose(atlas)
-        gAtlases[Int(groupNum)] = nil
+        gEngine.atlases.pool[Int(groupNum)] = nil
     }
 }
 
@@ -251,7 +258,7 @@ func DisposeAllSpriteAtlases() {
     }
 }
 
-func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> UnsafeMutablePointer<Atlas> {
+func Atlas_Load(_ fontName: String, _ flags: Int32) -> UnsafeMutablePointer<Atlas> {
     let atlas = AllocPtrClear(MemoryLayout<Atlas>.size)!.assumingMemoryBound(to: Atlas.self)
 
     if flags & Int32(kAtlasLoadFont) != 0 {
@@ -271,7 +278,7 @@ func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> UnsafeMutab
         atlas.pointee.kernTracking = nil
     }
 
-    let fontNameString = String(cString: fontName)
+    let fontNameString = fontName
 
     let nameCapacity = MemoryLayout.size(ofValue: atlas.pointee.name)
     let nameBytes = Array(fontNameString.utf8CString.prefix(nameCapacity - 1)) + [0] // truncate, keep room for nul terminator
@@ -284,7 +291,7 @@ func Atlas_Load(_ fontName: UnsafePointer<CChar>, _ flags: Int32) -> UnsafeMutab
     // Create font material
     var outWidth: Int32 = 0
     var outHeight: Int32 = 0
-    let textureName = pathString.withCString { OGL_TextureMap_LoadImageFile($0, &outWidth, &outHeight, nil) }
+    let textureName = OGL_TextureMap_LoadImageFile(pathString, &outWidth, &outHeight, nil)
     atlas.pointee.textureWidth = outWidth
     atlas.pointee.textureHeight = outHeight
 
@@ -368,13 +375,12 @@ func Atlas_Dispose(_ atlas: UnsafeMutablePointer<Atlas>) {
 
 // MARK: - Mesh allocation/layout
 
-private func kern(_ font: UnsafePointer<Atlas>, _ glyph: UnsafePointer<AtlasGlyph>?, _ utftext: UnsafePointer<CChar>, _ flags: Int32) -> Float {
+private func kern(_ font: UnsafePointer<Atlas>, _ glyph: UnsafePointer<AtlasGlyph>?, _ nextCodepoint: UInt32, _ flags: Int32) -> Float {
     guard let glyph, glyph.pointee.numKernPairs != 0 else {
         return 1
     }
 
-    var cursor: UnsafePointer<CChar>? = utftext
-    var buddy = SDL_StepUTF8(&cursor, nil)
+    var buddy = nextCodepoint
 
     if font.pointee.isASCIIFontUpperCaseOnly || (flags & Int32(kTextMeshSmallCaps | kTextMeshAllCaps)) != 0 {
         buddy = toUpperUnicode(buddy)
@@ -389,7 +395,7 @@ private func kern(_ font: UnsafePointer<Atlas>, _ glyph: UnsafePointer<AtlasGlyp
     return 1
 }
 
-private func computeMetrics(_ atlas: UnsafePointer<Atlas>, _ text: UnsafePointer<CChar>, _ flags: Int32, _ m: inout TextMetrics) {
+private func computeMetrics(_ atlas: UnsafePointer<Atlas>, _ codepoints: [UInt32], _ flags: Int32, _ m: inout TextMetrics) {
     var currentLine = 0
     var glyphScale: Float = 1
 
@@ -401,9 +407,8 @@ private func computeMetrics(_ atlas: UnsafePointer<Atlas>, _ text: UnsafePointer
     m.bbWidth = 0
     m.bbHeight = 0
 
-    var utftext: UnsafePointer<CChar>? = text
-    while let cur = utftext, cur.pointee != 0 {
-        var codepoint = SDL_StepUTF8(&utftext, nil)
+    for (i, rawCodepoint) in codepoints.enumerated() {
+        var codepoint = rawCodepoint
 
         if atlas.pointee.isASCIIFont { // Parse control characters if it's a font
             switch codepoint {
@@ -451,7 +456,8 @@ private func computeMetrics(_ atlas: UnsafePointer<Atlas>, _ text: UnsafePointer
         var glyphHeight: Float
 
         if atlas.pointee.isASCIIFont {
-            kernFactor = kern(atlas, glyph, utftext!, flags)
+            let next = i + 1 < codepoints.count ? codepoints[i + 1] : 0
+            kernFactor = kern(atlas, glyph, next, flags)
             glyphHeight = atlas.pointee.lineHeight
         } else {
             kernFactor = 1
@@ -510,7 +516,7 @@ private func computeMetrics(_ atlas: UnsafePointer<Atlas>, _ text: UnsafePointer
 
 private func prepVertices(
     _ atlas: UnsafePointer<Atlas>,
-    _ text: UnsafePointer<CChar>,
+    _ codepoints: [UInt32],
     _ flags: Int32,
     _ metrics: TextMetrics,
     _ points: UnsafeMutablePointer<OGLPoint3D>,
@@ -526,9 +532,8 @@ private func prepVertices(
     var currentLine = 0
     var glyphScale: Float = 1
 
-    var utftext: UnsafePointer<CChar>? = text
-    while let cur = utftext, cur.pointee != 0 {
-        var codepoint = SDL_StepUTF8(&utftext, nil)
+    for (i, rawCodepoint) in codepoints.enumerated() {
+        var codepoint = rawCodepoint
 
         if atlas.pointee.isASCIIFont { // Parse control characters if it's a font
             switch codepoint {
@@ -597,8 +602,9 @@ private func prepVertices(
         points[p + 3] = OGLPoint3D(x: left, y: top, z: z)
 
         var xadv = g.pointee.xadv
-        if atlas.pointee.isASCIIFont, let cur = utftext {
-            xadv *= kern(atlas, g, cur, flags)
+        if atlas.pointee.isASCIIFont {
+            let next = i + 1 < codepoints.count ? codepoints[i + 1] : 0
+            xadv *= kern(atlas, g, next, flags)
         }
 
         x += glyphScale * xadv
@@ -615,15 +621,16 @@ private func getExtentsFromMetrics(_ metrics: TextMetrics) -> OGLRect {
     return rect
 }
 
-func TextMesh_Update(_ text: UnsafePointer<CChar>, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
-    let font = gAtlases[Int(textNode.pointee.Group)]!
+func TextMesh_Update(_ text: String, _ flags: Int32, _ textNode: UnsafeMutablePointer<ObjNode>) {
+    let font = gEngine.atlases.pool[Int(textNode.pointee.Group)]!
+    let codepoints = text.unicodeScalars.map { $0.value } // closure, not \.value: key paths aren't supported in Embedded Swift (3DS)
 
     // Get mesh from ObjNode
     let mesh = GetQuadMeshWithin(textNode)
 
     // Compute number of quads and line width
     var metrics = TextMetrics()
-    computeMetrics(font, text, flags, &metrics)
+    computeMetrics(font, codepoints, flags, &metrics)
 
     // Save extents
     let extents = getExtentsFromMetrics(metrics)
@@ -656,7 +663,7 @@ func TextMesh_Update(_ text: UnsafePointer<CChar>, _ flags: Int32, _ textNode: U
     SwGameAssert(mesh.pointee.materials.0 != nil)
 
     // Lay out triangles
-    prepVertices(font, text, flags, metrics, mesh.pointee.points!, mesh.pointee.uvs.0!)
+    prepVertices(font, codepoints, flags, metrics, mesh.pointee.points!, mesh.pointee.uvs.0!)
 }
 
 // MARK: - API implementation
@@ -667,14 +674,14 @@ func TextMesh_NewEmpty(_ capacity: Int32, _ newObjDef: UnsafeMutablePointer<NewO
     newObjDef.pointee.flags |= UInt32(SwStatusBitsFor2D)
 
     let fontAtlasNum = Int(newObjDef.pointee.group)
-    SwGameAssert(gAtlases[fontAtlasNum] != nil)
-    let material = gAtlases[fontAtlasNum]!.pointee.material
+    SwGameAssert(gEngine.atlases.pool[fontAtlasNum] != nil)
+    let material = gEngine.atlases.pool[fontAtlasNum]!.pointee.material
 
     // Create mesh object
     return MakeQuadMeshObject(newObjDef, capacity, material)
 }
 
-func TextMesh_New(_ text: UnsafePointer<CChar>, _ align: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
+func TextMesh_New(_ text: String, _ align: Int32, _ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -> UnsafeMutablePointer<ObjNode> {
     let textNode = TextMesh_NewEmpty(0, newObjDef)
     TextMesh_Update(text, align, textNode)
     return textNode
@@ -695,14 +702,14 @@ private func drawExtents(_ extents: OGLRect, _ z: Float) {
     OGL_PushState() // keep state
     OGL_DisableTexture2D()
 
-    gRenderBackend.setColor4f(1, 1, 1, 1)
-    gRenderBackend.beginImmediate(.lineLoop)
-    gRenderBackend.vertex3f(extents.left, extents.top, z)
-    gRenderBackend.vertex3f(extents.right, extents.top, z)
-    gRenderBackend.setColor4f(0, 0.5, 1, 1)
-    gRenderBackend.vertex3f(extents.right, extents.bottom, z)
-    gRenderBackend.vertex3f(extents.left, extents.bottom, z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.setColor4f(1, 1, 1, 1)
+    gEngine.renderer.beginImmediate(.lineLoop)
+    gEngine.renderer.vertex3f(extents.left, extents.top, z)
+    gEngine.renderer.vertex3f(extents.right, extents.top, z)
+    gEngine.renderer.setColor4f(0, 0.5, 1, 1)
+    gEngine.renderer.vertex3f(extents.right, extents.bottom, z)
+    gEngine.renderer.vertex3f(extents.left, extents.bottom, z)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }
@@ -711,38 +718,39 @@ func TextMesh_DrawExtents(_ textNode: UnsafeMutablePointer<ObjNode>) {
     SwGameAssert(Int32(textNode.pointee.Genre) == Int32(TEXTMESH_GENRE))
 
     OGL_PushState() // keep state
-    gRenderBackend.disableTexture2D()
+    gEngine.renderer.disableTexture2D()
 
     let extents = TextMesh_GetExtents(textNode)
     let z = textNode.pointee.Coord.z
 
-    gRenderBackend.setColor4f(1, 1, 1, 1)
-    gRenderBackend.beginImmediate(.lineLoop)
-    gRenderBackend.vertex3f(extents.left, extents.top, z)
-    gRenderBackend.vertex3f(extents.right, extents.top, z)
-    gRenderBackend.setColor4f(0, 0.5, 1, 1)
-    gRenderBackend.vertex3f(extents.right, extents.bottom, z)
-    gRenderBackend.vertex3f(extents.left, extents.bottom, z)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.setColor4f(1, 1, 1, 1)
+    gEngine.renderer.beginImmediate(.lineLoop)
+    gEngine.renderer.vertex3f(extents.left, extents.top, z)
+    gEngine.renderer.vertex3f(extents.right, extents.top, z)
+    gEngine.renderer.setColor4f(0, 0.5, 1, 1)
+    gEngine.renderer.vertex3f(extents.right, extents.bottom, z)
+    gEngine.renderer.vertex3f(extents.left, extents.bottom, z)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
 }
 
-func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flags: UInt32) {
+func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
     SwGameAssert(Int(groupNum) < Int(MAX_ATLASES))
 
-    let font = gAtlases[Int(groupNum)]!
+    let font = gEngine.atlases.pool[Int(groupNum)]!
+    let codepoints = text.unicodeScalars.map { $0.value } // closure, not \.value: key paths aren't supported in Embedded Swift (3DS)
 
     // GET TEXT METRICS
     var metrics = TextMetrics()
-    computeMetrics(font, text, Int32(bitPattern: flags), &metrics)
+    computeMetrics(font, codepoints, Int32(bitPattern: flags), &metrics)
 
     SwGameAssertMessage(Int(metrics.numQuads) < MAX_IMMEDIATEMODE_QUADS, "Can't draw this many quads in immediate mode!")
 
-    prepVertices(font, text, Int32(bitPattern: flags), metrics, gImmediateModePoints, gImmediateModeUVs)
+    prepVertices(font, codepoints, Int32(bitPattern: flags), metrics, gEngine.atlases.immediateModePoints, gEngine.atlases.immediateModeUVs)
 
     // DRAW BOUNDING RECT
-    if gDebugMode >= 2 {
+    if gEngine.game.debugMode >= 2 {
         let extents = getExtentsFromMetrics(metrics)
         drawExtents(extents, 0)
     }
@@ -751,24 +759,24 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: UnsafePointer<CChar>, _ flag
     MO_DrawMaterial(font.pointee.material)
 
     // DRAW IT
-    gRenderBackend.beginImmediate(.quads)
-    let pt = gImmediateModePoints
-    let uv = gImmediateModeUVs
+    gEngine.renderer.beginImmediate(.quads)
+    let pt = gEngine.atlases.immediateModePoints
+    let uv = gEngine.atlases.immediateModeUVs
     var p = 0
     while p < 4 * Int(metrics.numQuads) {
-        gRenderBackend.texCoord2f(uv[p + 0].u, uv[p + 0].v); gRenderBackend.vertex3f(pt[p + 0].x, pt[p + 0].y, 0)
-        gRenderBackend.texCoord2f(uv[p + 1].u, uv[p + 1].v); gRenderBackend.vertex3f(pt[p + 1].x, pt[p + 1].y, 0)
-        gRenderBackend.texCoord2f(uv[p + 2].u, uv[p + 2].v); gRenderBackend.vertex3f(pt[p + 2].x, pt[p + 2].y, 0)
-        gRenderBackend.texCoord2f(uv[p + 3].u, uv[p + 3].v); gRenderBackend.vertex3f(pt[p + 3].x, pt[p + 3].y, 0)
+        gEngine.renderer.texCoord2f(uv[p + 0].u, uv[p + 0].v); gEngine.renderer.vertex3f(pt[p + 0].x, pt[p + 0].y, 0)
+        gEngine.renderer.texCoord2f(uv[p + 1].u, uv[p + 1].v); gEngine.renderer.vertex3f(pt[p + 1].x, pt[p + 1].y, 0)
+        gEngine.renderer.texCoord2f(uv[p + 2].u, uv[p + 2].v); gEngine.renderer.vertex3f(pt[p + 2].x, pt[p + 2].y, 0)
+        gEngine.renderer.texCoord2f(uv[p + 3].u, uv[p + 3].v); gEngine.renderer.vertex3f(pt[p + 3].x, pt[p + 3].y, 0)
         p += 4
     }
-    gRenderBackend.endImmediate()
-    gPolysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
+    gEngine.renderer.endImmediate()
+    gEngine.view.polysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
 }
 
 func Atlas_DrawString2(
     _ groupNum: Int32,
-    _ text: UnsafePointer<CChar>,
+    _ text: String,
     _ x: Float,
     _ y: Float,
     _ scaleX: Float,
@@ -787,11 +795,11 @@ func Atlas_DrawString2(
         OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
     }
 
-    gRenderBackend.translate(x, y, 0)
-    gRenderBackend.scale(scaleX, scaleY, 1) // Assume ortho projection
+    gEngine.renderer.translate(x, y, 0)
+    gEngine.renderer.scale(scaleX, scaleY, 1) // Assume ortho projection
 
     if rot != 0 {
-        gRenderBackend.rotate(rot * 180.0 / Float(PI), 0, 0, 1) // remember: rotation is in degrees, not radians!
+        gEngine.renderer.rotate(rot * 180.0 / Float(PI), 0, 0, 1) // remember: rotation is in degrees, not radians!
     }
 
     Atlas_ImmediateDraw(groupNum, text, flags)

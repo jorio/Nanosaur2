@@ -1,15 +1,14 @@
 // AnaglyphCalibration.swift - Port of AnaglyphCalibration.c to Swift
 
-private var gAnaglyphScreenHead: UnsafeMutablePointer<ObjNode>?
 
 // MARK: - Anaglyph menu trees
 
 private let cOnChangeAnaglyphMode: @convention(c) () -> Void = {
-    gAnaglyphPass = 0
+    gEngine.view.anaglyphPass = 0
     for _ in 0..<4 {
-        gRenderBackend.setColorMask(true, true, true, true)
-        gRenderBackend.clearColorAndDepth()
-        gRenderBackend.present()
+        gEngine.renderer.setColorMask(true, true, true, true)
+        gEngine.renderer.clearColorAndDepth()
+        gEngine.renderer.present()
     }
     SetUpAnaglyphCalibrationScreen()
     LayoutCurrentMenuAgain(true)
@@ -108,16 +107,16 @@ private func DisposeAnaglyphCalibrationScreen() {
     DisposeSpriteAtlas(Int32(ATLAS_GROUP_FONT3))
     DisposeSpriteGroup(Int32(SPRITE_GROUP_LEVELSPECIFIC))
 
-    if let head = gAnaglyphScreenHead {
+    if let head = gEngine.screens.anaglyphScreenHead {
         DeleteObject(head)
-        gAnaglyphScreenHead = nil
+        gEngine.screens.anaglyphScreenHead = nil
     }
 }
 
 func SetUpAnaglyphCalibrationScreen() {
     // REGISTER MENU
 
-    if gPlayNow != 0 {
+    if gEngine.screens.playNow != 0 {
         RegisterMenu(gInGameAnaglyphMenuPtr) // can't show actual menu in-game
         return
     } else {
@@ -145,7 +144,7 @@ func SetUpAnaglyphCalibrationScreen() {
     headSentinelDef.flags = UInt32(STATUS_BIT_HIDDEN | STATUS_BIT_MOVEINPAUSE)
     headSentinelDef.moveCall = cMoveAnaglyphScreenHeadObject
     let anaglyphScreenHead = MakeNewObject(&headSentinelDef)!
-    gAnaglyphScreenHead = anaglyphScreenHead
+    gEngine.screens.anaglyphScreenHead = anaglyphScreenHead
 
     // MAKE TEST PATTERN
 
@@ -180,14 +179,14 @@ func SetUpAnaglyphCalibrationScreen() {
     let blurb: String
 
     if isStereoAnaglyphColor() {
-        blurb = "\(String(cString: Localize(STR_ANAGLYPH_HELP_WHILEWEARING)))\n \n"
-            + "1. \(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTRB)))\n \n"
-            + "2. \(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTG)))\n \n"
-            + "3. \(String(cString: Localize(STR_ANAGLYPH_HELP_CHANNELBALANCING)))"
+        blurb = "\(localized(STR_ANAGLYPH_HELP_WHILEWEARING))\n \n"
+            + "1. \(localized(STR_ANAGLYPH_HELP_ADJUSTRB))\n \n"
+            + "2. \(localized(STR_ANAGLYPH_HELP_ADJUSTG))\n \n"
+            + "3. \(localized(STR_ANAGLYPH_HELP_CHANNELBALANCING))"
     } else if isStereoAnaglyphMono() {
-        blurb = "\(String(cString: Localize(STR_ANAGLYPH_HELP_WHILEWEARING)))\n \n\(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTRB)))"
+        blurb = "\(localized(STR_ANAGLYPH_HELP_WHILEWEARING))\n \n\(localized(STR_ANAGLYPH_HELP_ADJUSTRB))"
     } else {
-        blurb = String(cString: Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES))
+        blurb = localized(STR_ANAGLYPH_HELP_GRABYOURGLASSES)
         blurbDef.coord = OGLPoint3D(x: 320, y: 470, z: 0)
     }
 

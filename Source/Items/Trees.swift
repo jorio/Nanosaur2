@@ -14,7 +14,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY // GetTerrainY(x,z)
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -52,7 +52,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY // GetTerrainY(x,z)
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 588
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -89,7 +89,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = 1.7
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 511
         def.moveCall = MoveStaticObject
         def.rot = Float(pointee.parm.0) * (SwPI2 / 8)
@@ -122,7 +122,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 491
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -147,7 +147,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
 // Returns TRUE if want to handle hit as a solid
 private let cDoTrigTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { theNodeOpt, triggerOpt in
-    if PlayerSmackedIntoObject(theNodeOpt, triggerOpt, Int16(PlayerDeathType.explode.rawValue)) != 0 {
+    if PlayerSmackedIntoObject(theNodeOpt, triggerOpt, .explode) != 0 {
         return 0
     }
     return 1
@@ -161,7 +161,7 @@ private let cDoTrigTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeM
 private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?) -> UInt8 = { _, playerOpt in
     guard let player = playerOpt else { return 0 }
 
-    if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         let p = Int32(player.pointee.PlayerNum)
         let pi = GetPlayerInfoEntry(p)
 
@@ -170,7 +170,7 @@ private let cDoTrigCanopy: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
                 return 0
             }
 
-            PlayerLoseHealth(Int16(p), 0.2, UInt8(PlayerDeathType.deathDive.rawValue), &player.pointee.Coord, 1)
+            PlayerLoseHealth(Int16(p), 0.2, .deathDive, &player.pointee.Coord, 1)
             PlayEffect3D(Int16(EFFECT_BODYHIT), &player.pointee.Coord)
             PlayRumbleEffect(Int16(EFFECT_BODYHIT), p)
             pi.pointee.invincibilityTimer = 0.6
@@ -194,7 +194,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 620
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -236,12 +236,12 @@ private let cDoTrigSmallTree: @convention(c) (UnsafeMutablePointer<ObjNode>?, Un
 // MARK: - Tree hit by weapon callback
 
 // Returns true if object should stop bullet.
-private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<OGLPoint3D>?, UnsafeMutablePointer<OGLVector3D>?) -> UInt8 = { _, treeOpt, hitCoord, _ in
+private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<ObjNode>?, UnsafeMutablePointer<OGLPoint3D>?, UnsafeMutablePointer<OGLVector3D>?) -> UInt8 = { bulletOpt, treeOpt, hitCoord, _ in
     guard let tree = treeOpt else { return 1 }
 
-    switch tree.pointee.Kind {
+    switch bulletOpt?.weaponKind {
     // WEAPONS THAT WILL LIGHT TREE ON FIRE
-    case Int32(WeaponType.blaster.rawValue), Int32(WeaponType.clusterShot.rawValue), Int32(WeaponType.bomb.rawValue), Int32(WeaponType.heatSeeker.rawValue):
+    case .blaster, .clusterShot, .bomb, .heatSeeker:
         if (tree.pointee.Flag.0 == 0) && (hitCoord != nil) { // note:  make sure hitCoord is not nil
             if MyRandomLong() & 0x1 != 0 { // randomly decide if this ignites the tree
                 tree.pointee.MoveCall = cMoveTreeBurning
@@ -253,8 +253,8 @@ private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNo
         }
 
     // WEAPONS THAT FURR THE TREE
-    case Int32(WeaponType.sonicScream.rawValue):
-        makeLeafConfetti(tree.pointee.Coord.x, gCoord.y, tree.pointee.Coord.z, Int16(PARTICLE_SObjType_Confetti_Birch), 200)
+    case .sonicScream:
+        makeLeafConfetti(tree.pointee.Coord.x, gEngine.objects.coord.y, tree.pointee.Coord.z, Int16(PARTICLE_SObjType_Confetti_Birch), 200)
 
     default:
         break
@@ -267,7 +267,7 @@ private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNo
 
 private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     if TrackTerrainItem(theNode) != 0 { // just check to see if it's gone
         DeleteObject(theNode)
@@ -286,8 +286,8 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     // MOVE BURN LINE DOWN TO BOTTOM
 
     theNode.pointee.SpecialF.0 -= fps * 30.0 // TreeBurnY
-    if theNode.pointee.SpecialF.0 < (gCoord.y + 100.0) {
-        theNode.pointee.SpecialF.0 = gCoord.y + 100.0
+    if theNode.pointee.SpecialF.0 < (gEngine.objects.coord.y + 100.0) {
+        theNode.pointee.SpecialF.0 = gEngine.objects.coord.y + 100.0
     }
 
     // BURN TREE COLOR
@@ -325,7 +325,7 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
             groupDef.gravity = -200
             groupDef.magnetism = 0
@@ -342,9 +342,9 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         if particleGroup != -1 {
             for _ in 0..<3 {
                 var p = OGLPoint3D()
-                p.x = gCoord.x + RandomFloat2() * 25.0
+                p.x = gEngine.objects.coord.x + RandomFloat2() * 25.0
                 p.y = theNode.pointee.SpecialF.0 + RandomFloat2() * 15.0 // TreeBurnY
-                p.z = gCoord.z + RandomFloat2() * 25.0
+                p.z = gEngine.objects.coord.z + RandomFloat2() * 25.0
 
                 var d = OGLVector3D()
                 d.x = 0
@@ -377,15 +377,15 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 // MARK: - Make leaf confetti
 
 private func makeLeafConfetti(_ x: Float, _ y: Float, _ z: Float, _ texture: Int16, _ quantity: Int) {
-    gNewConfettiGroupDef.magicNum = 0
-    gNewConfettiGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewConfettiGroupDef.gravity = 250
-    gNewConfettiGroupDef.baseScale = 20.0
-    gNewConfettiGroupDef.decayRate = 0
-    gNewConfettiGroupDef.fadeRate = 1.0
-    gNewConfettiGroupDef.confettiTextureNum = UInt8(texture)
+    gEngine.confetti.newGroupDef.magicNum = 0
+    gEngine.confetti.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.confetti.newGroupDef.gravity = 250
+    gEngine.confetti.newGroupDef.baseScale = 20.0
+    gEngine.confetti.newGroupDef.decayRate = 0
+    gEngine.confetti.newGroupDef.fadeRate = 1.0
+    gEngine.confetti.newGroupDef.confettiTextureNum = UInt8(texture)
 
-    let pg = NewConfettiGroup(&gNewConfettiGroupDef)
+    let pg = NewConfettiGroup(&gEngine.confetti.newGroupDef)
     if pg != -1 {
         for _ in 0..<quantity {
             var pt = OGLPoint3D()
@@ -448,7 +448,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 444
         def.moveCall = MoveStaticObject
         def.rot = rot
@@ -466,7 +466,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         // MAKE LEAVES
 
         def.type = UInt8(Int32(LEVEL1_ObjType_BentPine1_Leaves) + Int32(pointee.parm.0))
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = Int16(SLOT_OF_DUMB)
         def.moveCall = nil
         let leaves = MakeNewDisplayGroupObject(&def)!
@@ -497,7 +497,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.z = z
         def.coord.y = pointee.terrainY
         def.rot = (rot == 0) ? (RandomFloat() * SwPI2) : (Float(rot - 1) * (SwPI2 / 8.0))
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
 
@@ -551,7 +551,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
 
@@ -601,7 +601,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -639,7 +639,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -673,7 +673,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6)
         def.slot = 501
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2
@@ -706,7 +706,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 444
         def.moveCall = MoveStaticObject
 
@@ -746,11 +746,11 @@ private let cDoTrigFallenSwampTree: @convention(c) (UnsafeMutablePointer<ObjNode
         return 0
     }
 
-    if gGamePrefs.kiddieMode == 0 { // don't hurt in kiddie mode
+    if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
         if MyRandomLong() & 1 != 0 {
-            PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.deathDive.rawValue), nil, 1)
+            PlayerLoseHealth(Int16(p), tree.pointee.Damage, .deathDive, nil, 1)
         } else {
-            PlayerLoseHealth(Int16(p), tree.pointee.Damage, UInt8(PlayerDeathType.explode.rawValue), nil, 1)
+            PlayerLoseHealth(Int16(p), tree.pointee.Damage, .explode, nil, 1)
         }
     }
 
@@ -774,7 +774,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.coord.x = x
         def.coord.z = z
         def.coord.y = pointee.terrainY
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = 380
         def.moveCall = MoveStaticObject
         def.rot = RandomFloat() * SwPI2

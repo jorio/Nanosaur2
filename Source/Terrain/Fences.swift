@@ -1,28 +1,19 @@
 // Fences.swift - Port of Fences.c to Swift
 //
-// gNumFences/gFenceList/gFenceTriMeshData/gNumFencesDrawn are native Swift
+// gEngine.fences.numFences/gEngine.fences.fenceList/gFenceTriMeshData/gEngine.fences.numFencesDrawn are native Swift
 // storage now (converted 2026-07-07): nothing in any .c file touches them
 // anymore. gFenceTriMeshData was a fixed-size 2D C array exposed via
 // PickInternal.h's GetFenceTriMeshDataEntry shim; it's now a permanent,
 // never-freed UnsafeMutablePointer buffer (row-major [MAX_FENCES][2]),
 // with the accessor reimplemented in plain Swift under the same name/
 // signature so its call sites in Pick.swift didn't need to change.
-// gFenceObj, gFenceMaterials, and the double-buffered vertex-array storage
+// gEngine.fences.fenceObj, gEngine.fences.materials, and the double-buffered vertex-array storage
 // (gFenceVertexArrays in the original C) have no `extern` declaration
 // anywhere and are only ever touched from this file, so they stay private
 // Swift storage.
 
-var gNumFences: Int = 0
-var gNumFencesDrawn: Int16 = 0
-var gFenceList: UnsafeMutablePointer<FenceDefType>!
-
-private let gFenceTriMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
-    let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 90 * 2)
-    buf.initialize(repeating: MOVertexArrayData(), count: 90 * 2)
-    return buf
-}()
 func GetFenceTriMeshDataEntry(_ fenceIndex: Int32, _ side: Int32) -> UnsafeMutablePointer<MOVertexArrayData>! {
-    gFenceTriMeshDataBuf + (Int(fenceIndex) * 2 + Int(side))
+    gEngine.fences.triMeshDataBuf + (Int(fenceIndex) * 2 + Int(side))
 }
 //
 // The double-buffered vertex arrays need a stable, never-moving address
@@ -65,42 +56,55 @@ private let gFenceIsLit: [Bool] = [
     false, // FENCE_TYPE_INVISIBLEBLOCKENEMY
 ]
 
-private var gFenceMaterials: [UnsafeMutablePointer<MOMaterialObject>?] = Array(repeating: nil, count: maxFences) // illegal refs to material for each fence in terrain
+/// Fence state. Owned by GameEngine as `gEngine.fences`.
+final class FenceSystem {
+    var numFences: Int = 0
+    var numFencesDrawn: Int16 = 0
+    var fenceList: UnsafeMutablePointer<FenceDefType>!
 
-// Flat, stable-address, double-buffered vertex array storage:
-// layout is [buffer(2)][fence(maxFences)][nub*2(maxNubsInFenceX2)].
-private let gFenceTrianglesStorage = UnsafeMutablePointer<MOTriangleIndecies>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
-private let gFencePointsStorage = UnsafeMutablePointer<OGLPoint3D>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
-private let gFenceUVsStorage = UnsafeMutablePointer<OGLTextureCoord>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
-private let gFenceColorsStorage = UnsafeMutablePointer<OGLColorRGBA>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
+    fileprivate let triMeshDataBuf: UnsafeMutablePointer<MOVertexArrayData> = {
+        let buf = UnsafeMutablePointer<MOVertexArrayData>.allocate(capacity: 90 * 2)
+        buf.initialize(repeating: MOVertexArrayData(), count: 90 * 2)
+        return buf
+    }()
+
+    fileprivate var materials: [UnsafeMutablePointer<MOMaterialObject>?] = Array(repeating: nil, count: maxFences) // illegal refs to material for each fence in terrain
+
+    // Flat, stable-address, double-buffered vertex array storage:
+    // layout is [buffer(2)][fence(maxFences)][nub*2(maxNubsInFenceX2)].
+    fileprivate let trianglesStorage = UnsafeMutablePointer<MOTriangleIndecies>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
+    fileprivate let pointsStorage = UnsafeMutablePointer<OGLPoint3D>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
+    fileprivate let uvsStorage = UnsafeMutablePointer<OGLTextureCoord>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
+    fileprivate let colorsStorage = UnsafeMutablePointer<OGLColorRGBA>.allocate(capacity: 2 * maxFences * maxNubsInFenceX2)
+
+    fileprivate var fenceObj: UnsafeMutablePointer<ObjNode>?
+}
 
 @inline(__always) private func fenceTrianglesBase(_ b: Int, _ f: Int) -> UnsafeMutablePointer<MOTriangleIndecies> {
-    gFenceTrianglesStorage + (b * maxFences + f) * maxNubsInFenceX2
+    gEngine.fences.trianglesStorage + (b * maxFences + f) * maxNubsInFenceX2
 }
 @inline(__always) private func fencePointsBase(_ b: Int, _ f: Int) -> UnsafeMutablePointer<OGLPoint3D> {
-    gFencePointsStorage + (b * maxFences + f) * maxNubsInFenceX2
+    gEngine.fences.pointsStorage + (b * maxFences + f) * maxNubsInFenceX2
 }
 @inline(__always) private func fenceUVsBase(_ b: Int, _ f: Int) -> UnsafeMutablePointer<OGLTextureCoord> {
-    gFenceUVsStorage + (b * maxFences + f) * maxNubsInFenceX2
+    gEngine.fences.uvsStorage + (b * maxFences + f) * maxNubsInFenceX2
 }
 @inline(__always) private func fenceColorsBase(_ b: Int, _ f: Int) -> UnsafeMutablePointer<OGLColorRGBA> {
-    gFenceColorsStorage + (b * maxFences + f) * maxNubsInFenceX2
+    gEngine.fences.colorsStorage + (b * maxFences + f) * maxNubsInFenceX2
 }
-
-private var gFenceObj: UnsafeMutablePointer<ObjNode>?
 
 // MARK: - Prime fences
 
 // Called during terrain prime function to initialize
 func PrimeFences() {
-    if gNumFences > Int32(maxFences) {
-        SwFatal("PrimeFences: gNumFences > MAX_FENCES")
+    if gEngine.fences.numFences > Int32(maxFences) {
+        SwFatal("PrimeFences: gEngine.fences.numFences > MAX_FENCES")
     }
 
     // ADJUST TO GAME COORDINATES
 
-    for f in 0..<Int(gNumFences) {
-        let fence = gFenceList + f // point to this fence
+    for f in 0..<Int(gEngine.fences.numFences) {
+        let fence = gEngine.fences.fenceList + f // point to this fence
         let nubs = fence.pointee.nubList! // point to nub list
         let numNubs = Int(fence.pointee.numNubs) // get # nubs in fence
         let type = Int(fence.pointee.type) // get fence type
@@ -122,8 +126,8 @@ func PrimeFences() {
         let sink = gFenceSink[type] // get fence sink factor
 
         for i in 0..<numNubs { // adjust nubs
-            nubs[i].x *= gMapToUnitValue
-            nubs[i].z *= gMapToUnitValue
+            nubs[i].x *= gEngine.terrain.mapToUnitValue
+            nubs[i].z *= gEngine.terrain.mapToUnitValue
             nubs[i].y = GetTerrainY(nubs[i].x, nubs[i].z) - sink // calc Y
         }
 
@@ -181,7 +185,7 @@ func PrimeFences() {
     def.scale = 1
 
     let fenceObj = MakeNewObject(&def)!
-    gFenceObj = fenceObj
+    gEngine.fences.fenceObj = fenceObj
     fenceObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue)
 
     // (VERTEXARRAYRANGES is hardcoded off, so the "assign memory to vertex
@@ -191,10 +195,10 @@ func PrimeFences() {
 // MARK: - Make fence geometry
 
 private func makeFenceGeometry() {
-    for f in 0..<Int(gNumFences) {
+    for f in 0..<Int(gEngine.fences.numFences) {
         // GET FENCE INFO
 
-        let fence = gFenceList + f // point to this fence
+        let fence = gEngine.fences.fenceList + f // point to this fence
         let nubs = fence.pointee.nubList! // point to nub list
         let numNubs = Int(fence.pointee.numNubs) // get # nubs in fence
         let type = Int(fence.pointee.type) // get fence type
@@ -205,10 +209,10 @@ private func makeFenceGeometry() {
         var aspectRatio: Float
         if group == SPRITE_GROUP_NULL {
             aspectRatio = 1
-            gFenceMaterials[f] = nil
+            gEngine.fences.materials[f] = nil
         } else {
             aspectRatio = GetSpriteGroupList(group)![Int(sprite)].aspectRatio // get aspect ratio
-            gFenceMaterials[f] = GetSpriteGroupList(group)![Int(sprite)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // keep illegal ref to the material
+            gEngine.fences.materials[f] = GetSpriteGroupList(group)![Int(sprite)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self) // keep illegal ref to the material
         }
 
         let textureUOff = 1.0 / height * aspectRatio // calc UV offset
@@ -323,33 +327,33 @@ private func makeFenceGeometry() {
 // MARK: - Dispose fences
 
 func DisposeFences() {
-    if gFenceList == nil {
+    if gEngine.fences.fenceList == nil {
         return
     }
 
     // (VERTEXARRAYRANGES is hardcoded off, so the VAR-release calls here
     // are dead code and dropped.)
 
-    for f in 0..<Int(gNumFences) {
-        if gFenceList[f].sectionVectors != nil {
-            SafeDisposePtr(gFenceList[f].sectionVectors) // nuke section vectors
+    for f in 0..<Int(gEngine.fences.numFences) {
+        if gEngine.fences.fenceList[f].sectionVectors != nil {
+            SafeDisposePtr(gEngine.fences.fenceList[f].sectionVectors) // nuke section vectors
         }
-        gFenceList[f].sectionVectors = nil
+        gEngine.fences.fenceList[f].sectionVectors = nil
 
-        if gFenceList[f].sectionNormals != nil {
-            SafeDisposePtr(gFenceList[f].sectionNormals) // nuke normal vectors
+        if gEngine.fences.fenceList[f].sectionNormals != nil {
+            SafeDisposePtr(gEngine.fences.fenceList[f].sectionNormals) // nuke normal vectors
         }
-        gFenceList[f].sectionNormals = nil
+        gEngine.fences.fenceList[f].sectionNormals = nil
 
-        if gFenceList[f].nubList != nil {
-            SafeDisposePtr(gFenceList[f].nubList)
+        if gEngine.fences.fenceList[f].nubList != nil {
+            SafeDisposePtr(gEngine.fences.fenceList[f].nubList)
         }
-        gFenceList[f].nubList = nil
+        gEngine.fences.fenceList[f].nubList = nil
     }
 
-    SafeDisposePtr(gFenceList)
-    gFenceList = nil
-    gNumFences = 0
+    SafeDisposePtr(gEngine.fences.fenceList)
+    gEngine.fences.fenceList = nil
+    gEngine.fences.numFences = 0
 }
 
 // MARK: -
@@ -357,14 +361,14 @@ func DisposeFences() {
 // MARK: - Update fences
 
 func UpdateFences() {
-    let autoFadeStart = gAutoFadeStartDist
-    let autoFadeEndDist = gAutoFadeEndDist
-    let autoFadeRangeFrac = gAutoFadeRange_Frac
+    let autoFadeStart = gEngine.objects.autoFadeStartDist
+    let autoFadeEndDist = gEngine.objects.autoFadeEndDist
+    let autoFadeRangeFrac = gEngine.objects.autoFadeRangeFrac
 
     // UPDATE VAR TYPE FOR THE CURRENT FRAME'S DOUBLE-BUFFER
 
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
-    gFenceObj!.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue) + UInt8(buffNum)
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    gEngine.fences.fenceObj!.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.userFences.rawValue) + UInt8(buffNum)
 
     // UPDATE THE AUTO-FADE FOR EACH FENCE
     //
@@ -372,17 +376,17 @@ func UpdateFences() {
     // 		the fades are different for each pane which means we'd have to wait
     //		for P1's drawing to complete before modifying P2's fence.
 
-    if (gAutoFadeStatusBits != 0) && (gNumPlayers == 1) {
-        let camX = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.x // get camera coords
-        let camZ = gGameViewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.z
+    if (gEngine.game.autoFadeStatusBits != 0) && (gEngine.player.numPlayers == 1) {
+        let camX = gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.x // get camera coords
+        let camZ = gEngine.game.viewInfoPtr!.pointee.cameraPlacement.0.cameraLocation.z
 
-        for f in 0..<Int(gNumFences) {
-            let fence = gFenceList + f // point to this fence
+        for f in 0..<Int(gEngine.fences.numFences) {
+            let fence = gEngine.fences.fenceList + f // point to this fence
             let nubs = fence.pointee.nubList! // point to nub list
             let numNubs = Int(fence.pointee.numNubs) // get # nubs in fence
 
             if fence.pointee.type == UInt16(FENCE_TYPE_INVISIBLEBLOCKENEMY) // don't bother with invisible fences
-                && gDebugMode != 2 { // unless we're in debug mode
+                && gEngine.game.debugMode != 2 { // unless we're in debug mode
                 continue
             }
 
@@ -414,7 +418,7 @@ func UpdateFences() {
                 j += 2
             }
 
-            OGL_SetVertexArrayRangeDirty(Int16(gFenceObj!.pointee.VertexArrayMode)) // we've updated the VAR
+            OGL_SetVertexArrayRangeDirty(Int16(gEngine.fences.fenceObj!.pointee.VertexArrayMode)) // we've updated the VAR
         }
     }
 }
@@ -422,27 +426,27 @@ func UpdateFences() {
 // MARK: - Draw fences
 
 private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let buffNum = Int(gGameViewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
+    let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1) // which VAR buffer to use?
 
     // SET GLOBAL MATERIAL FLAGS
 
-    gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
+    gEngine.metaObjects.globalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // DRAW EACH FENCE
 
     var numFencesDrawn: Int16 = 0
 
-    for f in 0..<Int(gNumFences) {
-        let type = Int(gFenceList[f].type) // get type
+    for f in 0..<Int(gEngine.fences.numFences) {
+        let type = Int(gEngine.fences.fenceList[f].type) // get type
 
         if type == Int(FENCE_TYPE_INVISIBLEBLOCKENEMY) // don't bother with invisible fences
-            && gDebugMode != 2 { // unless we're in debug mode
+            && gEngine.game.debugMode != 2 { // unless we're in debug mode
             continue
         }
 
         // DO BBOX CULLING
 
-        if OGL_IsBBoxVisible(&gFenceList[f].bBox, nil) != 0 {
+        if OGL_IsBBoxVisible(&gEngine.fences.fenceList[f].bBox, nil) != 0 {
             // CHECK LIGHTING
 
             if gFenceIsLit[type] {
@@ -453,17 +457,17 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
             // SUBMIT IT
 
-            MO_DrawMaterial(gFenceMaterials[f])
+            MO_DrawMaterial(gEngine.fences.materials[f])
             MO_DrawGeometry_VertexArray(GetFenceTriMeshDataEntry(Int32(f), Int32(buffNum)))
 
             numFencesDrawn += 1
 
-            // (the gDebugMode==2 DrawFenceNormals call was already commented
+            // (the gEngine.game.debugMode==2 DrawFenceNormals call was already commented
             // out in the original, and DrawFenceNormals itself was #if 0'd.)
         }
     }
 
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalMaterialFlags = 0
 }
 
 // MARK: -
@@ -480,15 +484,15 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
 
     let oldX = Double(theNode.pointee.OldCoord.x) // from old coord
     let oldZ = Double(theNode.pointee.OldCoord.z)
-    var newX = Double(gCoord.x) // to new coord
-    var newZ = Double(gCoord.z)
+    var newX = Double(gEngine.objects.coord.x) // to new coord
+    var newZ = Double(gEngine.objects.coord.z)
     let radius = Double(theNode.pointee.BoundingSphereRadius)
 
     var hit = false
 
     // SCAN THRU ALL FENCES FOR A COLLISION
 
-    fenceLoop: for f in 0..<Int(gNumFences) {
+    fenceLoop: for f in 0..<Int(gEngine.fences.numFences) {
         let r2 = Float(radius) + 20.0 // tweak a little to be safe
 
         if (oldX == newX) && (oldZ == newZ) { // if no movement, then don't check anything
@@ -497,7 +501,7 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
 
         // SEE IF CAN GO OVER POSSIBLY
 
-        let type = Int(gFenceList[f].type)
+        let type = Int(gEngine.fences.fenceList[f].type)
 
         if !isEnemy { // make sure non-enemies skip the invisible enemy fences
             if type == Int(FENCE_TYPE_INVISIBLEBLOCKENEMY) {
@@ -513,26 +517,26 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
 
         // QUICK CHECK TO SEE IF OLD & NEW COORDS (PLUS RADIUS) ARE OUTSIDE OF FENCE'S BBOX
 
-        var temp = gFenceList[f].bBox.min.x - r2
+        var temp = gEngine.fences.fenceList[f].bBox.min.x - r2
         if (Float(oldX) < temp) && (Float(newX) < temp) {
             continue
         }
-        temp = gFenceList[f].bBox.max.x + r2
+        temp = gEngine.fences.fenceList[f].bBox.max.x + r2
         if (Float(oldX) > temp) && (Float(newX) > temp) {
             continue
         }
 
-        temp = gFenceList[f].bBox.min.z - r2
+        temp = gEngine.fences.fenceList[f].bBox.min.z - r2
         if (Float(oldZ) < temp) && (Float(newZ) < temp) {
             continue
         }
-        temp = gFenceList[f].bBox.max.z + r2
+        temp = gEngine.fences.fenceList[f].bBox.max.z + r2
         if (Float(oldZ) > temp) && (Float(newZ) > temp) {
             continue
         }
 
-        let nubs = gFenceList[f].nubList! // point to nub list
-        let numFenceSegments = Int(gFenceList[f].numNubs) - 1 // get # line segments in fence
+        let nubs = gEngine.fences.fenceList[f].nubList! // point to nub list
+        let numFenceSegments = Int(gEngine.fences.fenceList[f].numNubs) - 1 // get # line segments in fence
 
         // SCAN EACH SECTION OF THE FENCE
 
@@ -558,13 +562,13 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
             var lineNormalNorm = OGLVector2D()
             OGLVector2D_Normalize(&lineNormal, &lineNormalNorm)
             lineNormal = lineNormalNorm
-            let cross = OGLVector2D_Cross(&gFenceList[f].sectionVectors[i], &lineNormal) // calc cross product to determine which side we're on
+            let cross = OGLVector2D_Cross(&gEngine.fences.fenceList[f].sectionVectors[i], &lineNormal) // calc cross product to determine which side we're on
 
             if cross < 0.0 {
-                lineNormal.x = -gFenceList[f].sectionNormals[i].x // on the other side, so flip vector
-                lineNormal.y = -gFenceList[f].sectionNormals[i].y
+                lineNormal.x = -gEngine.fences.fenceList[f].sectionNormals[i].x // on the other side, so flip vector
+                lineNormal.y = -gEngine.fences.fenceList[f].sectionNormals[i].y
             } else {
-                lineNormal = gFenceList[f].sectionNormals[i] // use pre-calculated vector
+                lineNormal = gEngine.fences.fenceList[f].sectionNormals[i] // use pre-calculated vector
             }
 
             // CALC FROM-TO POINTS OF MOTION
@@ -590,31 +594,31 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
                 // Move so edge of sphere would be tangent, but also a bit
                 // farther so it isnt tangent.
 
-                gCoord.x = intersectX + (lineNormal.x * Float(radius)) + (lineNormal.x * 8.0)
-                gCoord.z = intersectZ + (lineNormal.y * Float(radius)) + (lineNormal.y * 8.0)
+                gEngine.objects.coord.x = intersectX + (lineNormal.x * Float(radius)) + (lineNormal.x * 8.0)
+                gEngine.objects.coord.z = intersectZ + (lineNormal.y * Float(radius)) + (lineNormal.y * 8.0)
 
                 // BOUNCE OFF WALL
 
                 var deltaV = OGLVector2D()
-                deltaV.x = gDelta.x
-                deltaV.y = gDelta.z
+                deltaV.x = gEngine.objects.delta.x
+                deltaV.y = gEngine.objects.delta.z
                 var deltaVReflected = OGLVector2D()
                 ReflectVector2D(&deltaV, &lineNormal, &deltaVReflected)
                 deltaV = deltaVReflected
-                gDelta.x = deltaV.x * 0.6
-                gDelta.z = deltaV.y * 0.6
+                gEngine.objects.delta.x = deltaV.x * 0.6
+                gEngine.objects.delta.z = deltaV.y * 0.6
 
                 // UPDATE COORD & SCAN AGAIN
 
-                newX = Double(gCoord.x)
-                newZ = Double(gCoord.z)
+                newX = Double(gEngine.objects.coord.x)
+                newZ = Double(gEngine.objects.coord.z)
                 numReScans += 1
                 if numReScans < 4 {
                     i = -1 // reset segment index to scan all again (will ++ to 0 on next loop)
                 } else {
                     // we don't want to get stuck inside the fence (from having landed on it)
-                    gCoord.x = Float(oldX) // woah!  there were a lot of hits, so let's just reset the coords to be safe!
-                    gCoord.z = Float(oldZ)
+                    gEngine.objects.coord.x = Float(oldX) // woah!  there were a lot of hits, so let's just reset the coords to be safe!
+                    gEngine.objects.coord.z = Float(oldZ)
                     i += 1
                     continue fenceLoop
                 }
@@ -632,19 +636,19 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
                     (CalcQuickDistance(Float(segToX), Float(segToZ), Float(newX), Float(newZ)) <= Float(radius)) {
                     hit = true
 
-                    gCoord.x = Float(oldX)
-                    gCoord.z = Float(oldZ)
+                    gEngine.objects.coord.x = Float(oldX)
+                    gEngine.objects.coord.z = Float(oldZ)
 
                     // BOUNCE OFF WALL
 
                     var deltaV = OGLVector2D()
-                    deltaV.x = gDelta.x
-                    deltaV.y = gDelta.z
+                    deltaV.x = gEngine.objects.delta.x
+                    deltaV.y = gEngine.objects.delta.z
                     var deltaVReflected = OGLVector2D()
                 ReflectVector2D(&deltaV, &lineNormal, &deltaVReflected)
                 deltaV = deltaVReflected
-                    gDelta.x = deltaV.x * 0.5
-                    gDelta.z = deltaV.y * 0.5
+                    gEngine.objects.delta.x = deltaV.x * 0.5
+                    gEngine.objects.delta.z = deltaV.y * 0.5
                     return hit ? 1 : 0
                 } else {
                     i += 1

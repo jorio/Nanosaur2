@@ -20,7 +20,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
             }
         }
 
-        switch gLevelNum {
+        switch gEngine.game.levelNum {
         case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
             typeB = Int32(LEVEL1_ObjType_AirMine_Base)
             typeM = Int32(LEVEL1_ObjType_AirMine_Mine)
@@ -64,7 +64,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.scale = airMineScale
         def.coord.x = x
         def.coord.z = z
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         def.slot = Int16(SLOT_OF_DUMB) - 200
         def.moveCall = cMoveAirMine
         def.rot = 0
@@ -88,7 +88,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         def.slot += 1
         def.moveCall = nil
         def.rot = RandomFloat() * SwPI2
-        def.flags = gAutoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
+        def.flags = gEngine.game.autoFadeStatusBits | UInt32(STATUS_BIT_CLIPALPHA6 | STATUS_BIT_DOUBLESIDED)
         let chain = MakeNewDisplayGroupObject(&def)!
 
         chain.pointee.SpecialF.0 = RandomFloat() * SwPI2 // WobbleX
@@ -100,7 +100,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
         def.type = UInt8(typeM)
         def.slot += 1
-        def.flags = gAutoFadeStatusBits
+        def.flags = gEngine.game.autoFadeStatusBits
         let mine = MakeNewDisplayGroupObject(&def)!
 
         // SET COLLISION STUFF
@@ -149,7 +149,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
 
     // MAKE CHAIN WOBBLE
 
-    chain.pointee.SpecialF.0 += gFramesPerSecondFrac * 1.1 // WobbleX
+    chain.pointee.SpecialF.0 += gEngine.framesPerSecondFrac * 1.1 // WobbleX
     chain.pointee.Rot.x = sin(chain.pointee.SpecialF.0) * 0.15
 
     // CALC MATRIX TO ROTATE CHAIN AROUND THE HING POINT
@@ -174,7 +174,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     mine.pointee.Rot.x = chain.pointee.Rot.x // match x rot
 
     let mineOffVar: OGLPoint3D
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         mineOffVar = mineOff // calc coord of mine @ end of chain
 
@@ -191,7 +191,7 @@ private let cMoveAirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Voi
     // CALC COORD OF LIGHT
 
     let lightOffVar: OGLPoint3D
-    switch gLevelNum {
+    switch gEngine.game.levelNum {
     case Int16(LevelNum.adventure1.rawValue), Int16(LevelNum.flag2.rawValue), Int16(LevelNum.battle1.rawValue):
         lightOffVar = lightOff
 
@@ -254,8 +254,8 @@ private let cDoTrig_AirMine: @convention(c) (UnsafeMutablePointer<ObjNode>?, Uns
 
     // NO SHIELD, SO KABOOM
 
-    else if gGamePrefs.kiddieMode == 0 { // dont hurt in kiddie mode
-        _ = PlayerSmackedIntoObject(player, mine, Int16(PlayerDeathType.deathDive.rawValue))
+    else if !gGamePrefs.isKiddieMode { // dont hurt in kiddie mode
+        _ = PlayerSmackedIntoObject(player, mine, .deathDive)
     }
 
     explodeAirMine(mine)
@@ -280,18 +280,18 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 900
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10
-    gNewParticleGroupDef.decayRate = 0.4
-    gNewParticleGroupDef.fadeRate = 0.7
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 900
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10
+    gEngine.particles.newGroupDef.decayRate = 0.4
+    gEngine.particles.newGroupDef.fadeRate = 0.7
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_BlueSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         let x = mine.pointee.Coord.x
         let y = mine.pointee.Coord.y
@@ -382,7 +382,7 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
     ExplodeGeometry(mine, 600, .fromOrigin, 1, 1.0)
 
-    PlayEffect3D(Int16(EFFECT_MINEEXPLODE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_MINEEXPLODE), &gEngine.objects.coord)
 
     // DELETE MINE & CLEANUP LINKAGES
 
@@ -400,7 +400,7 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
 private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { flareOpt in
     let flare = flareOpt!
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     flare.pointee.Health -= fps
     if flare.pointee.Health <= 0.0 {
@@ -410,19 +410,19 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
 
     flare.getInfo()
 
-    gDelta.y -= 500.0 * fps
+    gEngine.objects.delta.y -= 500.0 * fps
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     let i = sparklesBase(flare)[0]
     if i != -1 {
-        GetSparkleSlot(Int32(i))!.pointee.where = gCoord
+        GetSparkleSlot(Int32(i))!.pointee.where = gEngine.objects.coord
     }
 
-    flare.pointee.Delta = gDelta
-    flare.pointee.Coord = gCoord
+    flare.pointee.Delta = gEngine.objects.delta
+    flare.pointee.Coord = gEngine.objects.coord
 
     // UpdateObject(flare)
 
@@ -439,18 +439,18 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
             let newMagicNum = MyRandomLong() // generate a random magic num
             flare.pointee.ParticleMagicNum = newMagicNum
 
-            gNewParticleGroupDef.magicNum = newMagicNum
-            gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-            gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-            gNewParticleGroupDef.gravity = -200
-            gNewParticleGroupDef.magnetism = 0
-            gNewParticleGroupDef.baseScale = 10.0
-            gNewParticleGroupDef.decayRate = 0
-            gNewParticleGroupDef.fadeRate = 0.6
-            gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-            gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-            gNewParticleGroupDef.dstBlend = GL_ONE
-            particleGroup = NewParticleGroup(&gNewParticleGroupDef)
+            gEngine.particles.newGroupDef.magicNum = newMagicNum
+            gEngine.particles.newGroupDef.particleType = .fallingSparks
+            gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+            gEngine.particles.newGroupDef.gravity = -200
+            gEngine.particles.newGroupDef.magnetism = 0
+            gEngine.particles.newGroupDef.baseScale = 10.0
+            gEngine.particles.newGroupDef.decayRate = 0
+            gEngine.particles.newGroupDef.fadeRate = 0.6
+            gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+            gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+            gEngine.particles.newGroupDef.dstBlend = GL_ONE
+            particleGroup = NewParticleGroup(&gEngine.particles.newGroupDef)
             flare.pointee.ParticleGroup = particleGroup
         }
 
@@ -461,7 +461,7 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
                 d.y = RandomFloat2() * 30.0
                 d.z = RandomFloat2() * 30.0
 
-                var p = gCoord
+                var p = gEngine.objects.coord
 
                 var newParticleDef = NewParticleDefType()
                 newParticleDef.groupNum = particleGroup

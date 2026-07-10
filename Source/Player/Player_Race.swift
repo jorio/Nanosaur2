@@ -1,6 +1,5 @@
 // Player_Race.swift - Port of Player_Race.c to Swift
 
-private var gNumLapsThisRace: Int16 = 3
 
 private func raceCheckpointTaggedBase(_ pi: UnsafeMutablePointer<PlayerInfoType>) -> UnsafeMutablePointer<UInt8> {
     UnsafeMutableRawPointer(pi.pointer(to: \.raceCheckpointTagged)!).assumingMemoryBound(to: UInt8.self)
@@ -9,8 +8,8 @@ private func raceCheckpointTaggedBase(_ pi: UnsafeMutablePointer<PlayerInfoType>
 private func PlayerCompletedRace(_ playerNum: Int16) {
     GetPlayerInfoPtr(Int32(playerNum)).pointee.raceComplete = 1
 
-    if gLevelCompleted == 0 { // only if this is the 1st guy to win
-        for i in 0..<Int16(gNumPlayers) { // see which player Won (was not eliminated)
+    if gEngine.game.levelCompleted == 0 { // only if this is the 1st guy to win
+        for i in 0..<Int16(gEngine.player.numPlayers) { // see which player Won (was not eliminated)
             if i != playerNum {
                 _ = ShowWinLose(i, 1) // lost
             } else {
@@ -47,10 +46,10 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
         if c == 0 {
             // SEE IF WENT FORWARD THRU FINISH LINE
 
-            if oldCheckpoint == Int16(gNumLineMarkers - 1) {
+            if oldCheckpoint == Int16(gEngine.terrain.numLineMarkers - 1) {
                 var count: Int16 = 0
 
-                for i in 0..<gNumLineMarkers { // count # of checkpoints tagged
+                for i in 0..<gEngine.terrain.numLineMarkers { // count # of checkpoints tagged
                     if raceCheckpointTaggedBase(pi)[Int(i)] != 0 {
                         count += 1
                     }
@@ -58,10 +57,10 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
                 // SEE IF WE DID A NEW LAP
 
-                if count > Int16(gNumLineMarkers / 2) { // if crossed at least 50% of the checkpoints then assume we did a full lap
+                if count > Int16(gEngine.terrain.numLineMarkers / 2) { // if crossed at least 50% of the checkpoints then assume we did a full lap
                     pi.pointee.lapNum += 1
 
-                    if pi.pointee.lapNum >= gNumLapsThisRace { // see if completed race
+                    if pi.pointee.lapNum >= gEngine.player.numLapsThisRace { // see if completed race
                         PlayerCompletedRace(Int16(p))
                     } else {
                         _ = ShowLapNum(Int16(p))
@@ -70,7 +69,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             }
             // RESET ALL CHECKPOINT TAGS WHENEVER WE CROSS THE FINISH LINE
 
-            for i in 0..<gNumLineMarkers {
+            for i in 0..<gEngine.terrain.numLineMarkers {
                 raceCheckpointTaggedBase(pi)[Int(i)] = 0
             }
 
@@ -89,8 +88,8 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
                 if pi.pointee.lapNum >= 0 {
                     pi.pointee.lapNum -= 1 // just lost a lap
                 }
-                newCheckpoint = gNumLineMarkers - 1
-                for i in 0..<gNumLineMarkers { // set all tags so can go back thru finish line for credit
+                newCheckpoint = gEngine.terrain.numLineMarkers - 1
+                for i in 0..<gEngine.terrain.numLineMarkers { // set all tags so can go back thru finish line for credit
                     raceCheckpointTaggedBase(pi)[Int(i)] = 1
                 }
             } else {
@@ -110,7 +109,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             newCheckpoint = Int32(c)
 
             var allTagged = true
-            for i in 0..<gNumLineMarkers { // verify that all checkpoints were tagged
+            for i in 0..<gEngine.terrain.numLineMarkers { // verify that all checkpoints were tagged
                 if raceCheckpointTaggedBase(pi)[Int(i)] == 0 { // if this checkpoint was not tagged then they didnt lap
                     allTagged = false
                     break
@@ -122,7 +121,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
                 // SEE IF COMPLETED THE RACE
 
-                if pi.pointee.lapNum >= gNumLapsThisRace {
+                if pi.pointee.lapNum >= gEngine.player.numLapsThisRace {
                     PlayerCompletedRace(Int16(p))
                 } else {
                     _ = ShowLapNum(Int16(p))
@@ -130,7 +129,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
             }
 
             // no_lap:
-            for i in 0..<gNumLineMarkers { // reset all tags
+            for i in 0..<gEngine.terrain.numLineMarkers { // reset all tags
                 raceCheckpointTaggedBase(pi)[Int(i)] = 0
             }
             raceCheckpointTaggedBase(pi)[c] = 1 // except the one we passed thru
@@ -146,7 +145,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // GET NEXT CKP #
 
-    let nextCheckpoint: Int32 = newCheckpoint == (gNumLineMarkers - 1) ? 0 : newCheckpoint + 1 // see if wrap around
+    let nextCheckpoint: Int32 = newCheckpoint == (gEngine.terrain.numLineMarkers - 1) ? 0 : newCheckpoint + 1 // see if wrap around
 
     // GET CENTERPOINT OF THE NEXT CHECKPOINT
 
@@ -156,7 +155,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // CALC DIST TO NEXT CHECKPOINT
 
-    pi.pointee.distToNextCheckpoint = CalcDistance(x1, z1, gCoord.x, gCoord.z)
+    pi.pointee.distToNextCheckpoint = CalcDistance(x1, z1, gEngine.objects.coord.x, gEngine.objects.coord.z)
 
     // SEE IF WE'RE AIMING BACKWARDS
 
@@ -176,7 +175,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
     // ALSO CALC DELTA VECTOR
 
     var deltaVec = OGLVector2D(x: 0, y: 0)
-    FastNormalizeVector2D(gDelta.x, gDelta.z, &deltaVec, 1)
+    FastNormalizeVector2D(gEngine.objects.delta.x, gEngine.objects.delta.z, &deltaVec, 1)
 
     // SEE IF AIM VECTOR IS CLOSE TO PARALLEL TO THAT VEC
 
@@ -194,7 +193,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
 // Determine placing by counting how many players are in front of each player.
 func CalcPlayerPlaces() {
-    for p in 0..<Int32(gNumPlayers) {
+    for p in 0..<Int32(gEngine.player.numPlayers) {
         let pi = GetPlayerInfoPtr(p)
         if pi.pointee.raceComplete != 0 { // if player already done, then dont do anything
             continue
@@ -202,7 +201,7 @@ func CalcPlayerPlaces() {
 
         var place: Int16 = 0 // assume 1st place
 
-        for i in 0..<Int32(gNumPlayers) { // check place with other players
+        for i in 0..<Int32(gEngine.player.numPlayers) { // check place with other players
             if p == i { // dont compare against self
                 continue
             }

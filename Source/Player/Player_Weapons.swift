@@ -5,9 +5,8 @@
 // SetAutoFireDelay (formerly a shim in PlayerInternal.h) are now plain
 // Swift functions with the same names/signatures.
 
-private var gAutoFireDelayArr: [Float] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-func GetAutoFireDelay(_ i: Int32) -> Float { gAutoFireDelayArr[Int(i)] }
-func SetAutoFireDelay(_ i: Int32, _ v: Float) { gAutoFireDelayArr[Int(i)] = v }
+func GetAutoFireDelay(_ i: Int32) -> Float { gEngine.player.autoFireDelay[Int(i)] }
+func SetAutoFireDelay(_ i: Int32, _ v: Float) { gEngine.player.autoFireDelay[Int(i)] = v }
 
 private let blasterBulletSpeed: Float = 4000.0
 private let blasterAutoFireDelay: Float = 0.16
@@ -24,7 +23,6 @@ private let heatSeekerButtOff: Float = 50.0
 private let clusterShotSingle: Int32 = 0
 private let clusterShotFragment: Int32 = 1
 
-private var gPlayerMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1) // aim vector of root body matrix (not the gun joint!)
 
 private let FULL_CHANNEL_VOLUME: UInt32 = 0x0100
 
@@ -53,12 +51,12 @@ func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     // FIRST SEE IF RAY HITS ANY OBJNODES
 
     var ray = OGLRay()
-    ray.direction = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+    ray.direction = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
 
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things which auto target the weapon
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(p) // and also other players
 
-    ray.origin = gCoord
+    ray.origin = gEngine.objects.coord
     let hitNode = OGL_DoRayCollision_ObjNodes(&ray, UInt32(STATUS_BIT_HIDDEN) | (UInt32(STATUS_BIT_ISCULLED1) << UInt32(p)), ctype, nil, nil)
 
     let pi = GetPlayerInfoEntry(Int32(p))
@@ -98,19 +96,19 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
     let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
-    let weaponType = pi.pointee.currentWeapon
+    let weaponType = pi.currentWeapon
 
-    if weaponType == Int16(WeaponType.none.rawValue) { // bail if no weapon selected
+    if weaponType == .none { // bail if no weapon selected
         return
     }
 
     // SHOOT THE APPROPRIATE PROJECTILE
 
-    SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) - gFramesPerSecondFrac)
+    SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) - gEngine.framesPerSecondFrac)
 
     switch weaponType {
     // BLASTER
-    case Int16(WeaponType.blaster.rawValue):
+    case .blaster:
         if GetAutoFireDelay(playerNum) <= 0.0 {
             ShootBlaster(player)
             SetAutoFireDelay(playerNum, GetAutoFireDelay(playerNum) + blasterAutoFireDelay)
@@ -118,18 +116,18 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
         }
 
     // CLUSTER SHOT
-    case Int16(WeaponType.clusterShot.rawValue):
+    case .clusterShot:
         if newFireButton != 0 {
             ShootClusterShot(player)
             didShoot = true
         }
 
     // SONIC SCREAM
-    case Int16(WeaponType.sonicScream.rawValue):
+    case .sonicScream:
         if newFireButton != 0 {
             pi.pointee.weaponCharge = 0 // start it charging
         } else {
-            pi.pointee.weaponCharge += gFramesPerSecondFrac * 0.5 // continue charging
+            pi.pointee.weaponCharge += gEngine.framesPerSecondFrac * 0.5 // continue charging
             if pi.pointee.weaponCharge > 1.0 {
                 pi.pointee.weaponCharge = 1.0
             }
@@ -140,14 +138,14 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
         }
 
     // HEAT SEEKER
-    case Int16(WeaponType.heatSeeker.rawValue):
+    case .heatSeeker:
         if newFireButton != 0 {
             ShootHeatSeeker(player)
             didShoot = true
         }
 
     // BOMB
-    case Int16(WeaponType.bomb.rawValue):
+    case .bomb:
         if newFireButton != 0 {
             ShootBomb(player)
             didShoot = true
@@ -159,10 +157,10 @@ func PlayerFireButtonPressed(_ player: UnsafeMutablePointer<ObjNode>!, _ newFire
 
     // DEC THE QUANTITY
 
-    if didShoot && (weaponType != Int16(WeaponType.sonicScream.rawValue)) {
+    if didShoot && (weaponType != .sonicScream) {
         let quantity = weaponQuantityBase(pi)
-        quantity[Int(weaponType)] -= 1 // dec bullet count
-        if quantity[Int(weaponType)] <= 0 { // if we're out, try to select next weapon in inventory
+        quantity[Int(weaponType.rawValue)] -= 1 // dec bullet count
+        if quantity[Int(weaponType.rawValue)] <= 0 { // if we're out, try to select next weapon in inventory
             SelectNextWeapon(Int16(playerNum), 0, 1)
         }
     }
@@ -178,9 +176,9 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
     let pi = GetPlayerInfoEntry(playerNum)
     var didShoot = false
 
-    let weaponType = pi.pointee.currentWeapon
+    let weaponType = pi.currentWeapon
 
-    if weaponType == Int16(WeaponType.none.rawValue) { // bail if no weapon selected
+    if weaponType == .none { // bail if no weapon selected
         return
     }
 
@@ -188,7 +186,7 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     switch weaponType {
     // SONIC SCREAM
-    case Int16(WeaponType.sonicScream.rawValue):
+    case .sonicScream:
         StopAChannel(&pi.pointee.weaponChargeChannel)
 
         if pi.pointee.weaponCharge > 0.3 { // see if sufficient charge to fire the weapon
@@ -206,8 +204,8 @@ func PlayerFireButtonReleased(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     if didShoot {
         let quantity = weaponQuantityBase(pi)
-        quantity[Int(weaponType)] -= 1 // dec bullet count
-        if quantity[Int(weaponType)] <= 0 { // if we're out, try to select next weapon in inventory
+        quantity[Int(weaponType.rawValue)] -= 1 // dec bullet count
+        if quantity[Int(weaponType.rawValue)] <= 0 { // if we're out, try to select next weapon in inventory
             SelectNextWeapon(Int16(playerNum), 0, 1)
         }
     }
@@ -224,7 +222,7 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
     pi.pointee.weaponCharge = 0 // make sure not charging
 
     var startWeapon = Int32(pi.pointee.currentWeapon) // get currently selected weapon
-    if startWeapon == Int32(WeaponType.none.rawValue) { // if nothing was selected then just start as though we had the first weapon type
+    if startWeapon == WeaponType.none.rawValue { // if nothing was selected then just start as though we had the first weapon type
         startWeapon = 0
     }
 
@@ -237,11 +235,11 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
         i = PositiveModulo(i, UInt32(numWeaponTypes)) // loop back to front of list?
 
         if i == startWeapon { // did we loop to where we started?
-            if i == Int32(WeaponType.sonicScream.rawValue) { // if already SS, then bail
+            if i == WeaponType.sonicScream.rawValue { // if already SS, then bail
                 return
             }
 
-            i = Int32(WeaponType.sonicScream.rawValue) // must be out of everything, so default to sonic scream
+            i = WeaponType.sonicScream.rawValue // must be out of everything, so default to sonic scream
             StopAChannel(&pi.pointee.weaponChargeChannel) // make sure to stop this
             PlayEffect_Parms(Int16(EFFECT_CHANGEWEAPON), FULL_CHANNEL_VOLUME / 2, FULL_CHANNEL_VOLUME / 2, UInt(NORMAL_CHANNEL_RATE))
             pi.pointee.currentWeapon = Int16(i)
@@ -249,7 +247,7 @@ func SelectNextWeapon(_ playerNum: Int16, _ allowSonicScream: UInt8, _ delta: In
         }
 
         if allowSonicScream == 0 // see if skip sonic scream
-            && i == Int32(WeaponType.sonicScream.rawValue) {
+            && i == WeaponType.sonicScream.rawValue {
             continue
         }
 
@@ -284,7 +282,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.blaster.rawValue)
+    newObj.weaponKind = .blaster
     newObj.pointee.PlayerNum = player.pointee.PlayerNum // remember which player shot this
 
     newObj.pointee.ColorFilter.a = 0.99 // do this just to turn on transparency so it'll glow
@@ -295,7 +293,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     newObj.pointee.Health = 2.0
 
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         newObj.pointee.Damage = 0.2
     } else {
         newObj.pointee.Damage = 0.35 // more damage in 2P modes
@@ -345,7 +343,7 @@ private func ShootBlaster(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveBlasterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -359,9 +357,9 @@ private let cMoveBlasterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -388,9 +386,9 @@ private func DoBlasterCollisionDetection(_ theNode: UnsafeMutablePointer<ObjNode
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + theNode.pointee.MotionVector.x * 40.0 // to new coord (in front of center)
-    lineSegment.p2.y = gCoord.y + theNode.pointee.MotionVector.y * 40.0
-    lineSegment.p2.z = gCoord.z + theNode.pointee.MotionVector.z * 40.0
+    lineSegment.p2.x = gEngine.objects.coord.x + theNode.pointee.MotionVector.x * 40.0 // to new coord (in front of center)
+    lineSegment.p2.y = gEngine.objects.coord.y + theNode.pointee.MotionVector.y * 40.0
+    lineSegment.p2.z = gEngine.objects.coord.z + theNode.pointee.MotionVector.z * 40.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -434,19 +432,19 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
 
     // CREATE NEW PARTICLE GROUP
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
-    gNewParticleGroupDef.gravity = 1000
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15.0
-    gNewParticleGroupDef.decayRate = -1.7
-    gNewParticleGroupDef.fadeRate = 0.6
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE)
+    gEngine.particles.newGroupDef.gravity = 1000
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15.0
+    gEngine.particles.newGroupDef.decayRate = -1.7
+    gEngine.particles.newGroupDef.fadeRate = 0.6
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<130 {
             // CALC NEW VECTOR IN CONE OF AIM
@@ -483,7 +481,7 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
+    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
 }
 
 // MARK: - Do blaster impact object effect
@@ -493,19 +491,19 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
 
     // CREATE NEW PARTICLE GROUP
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
-    gNewParticleGroupDef.gravity = 100
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10.0
-    gNewParticleGroupDef.decayRate = -1.2
-    gNewParticleGroupDef.fadeRate = 0.9
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_BOUNCE | PARTICLE_FLAGS_ALLAIM)
+    gEngine.particles.newGroupDef.gravity = 100
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10.0
+    gEngine.particles.newGroupDef.decayRate = -1.2
+    gEngine.particles.newGroupDef.fadeRate = 0.9
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
 
-    let pg = NewParticleGroup(&gNewParticleGroupDef)
+    let pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<50 {
             // CALC NEW VECTOR IN CONE OF AIM
@@ -542,7 +540,7 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
+    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
 }
 
 // MARK: - Shoot cluster shot
@@ -567,7 +565,7 @@ private func ShootClusterShot(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.clusterShot.rawValue)
+    newObj.weaponKind = .clusterShot
     newObj.pointee.PlayerNum = player.pointee.PlayerNum // remember which player shot this
 
     newObj.pointee.Mode = clusterShotSingle
@@ -616,7 +614,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
 
         let newObj = MakeNewDisplayGroupObject(&def)!
 
-        newObj.pointee.Kind = Int32(WeaponType.clusterShot.rawValue)
+        newObj.weaponKind = .clusterShot
         newObj.pointee.PlayerNum = parentShot.pointee.PlayerNum // remember which player shot this
 
         newObj.pointee.Mode = clusterShotFragment
@@ -624,7 +622,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
         // CALC NEW VECTOR IN CONE OF AIM
 
         var aim = OGLVector3D()
-        FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &aim)
+        FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &aim)
 
         let zrot = RandomFloat2() * 0.4
         let yrot = RandomFloat2() * 0.4
@@ -660,7 +658,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -688,11 +686,11 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gDelta.y -= 500.0 * fps // gravity
+    gEngine.objects.delta.y -= 500.0 * fps // gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -717,7 +715,7 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 50
             groupDef.magnetism = 0
@@ -734,9 +732,9 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         if particleGroup != -1 {
             for _ in 0..<2 {
                 var d = OGLVector3D()
-                d.x = (gDelta.x * 0.1) + RandomFloat2() * 20.0
-                d.y = (gDelta.y * 0.1) + RandomFloat2() * 20.0
-                d.z = (gDelta.z * 0.1) + RandomFloat2() * 20.0
+                d.x = (gEngine.objects.delta.x * 0.1) + RandomFloat2() * 20.0
+                d.y = (gEngine.objects.delta.y * 0.1) + RandomFloat2() * 20.0
+                d.z = (gEngine.objects.delta.z * 0.1) + RandomFloat2() * 20.0
 
                 var newParticleDef = NewParticleDefType()
                 newParticleDef.groupNum = particleGroup
@@ -745,7 +743,7 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
                 newParticleDef.rotDZ = RandomFloat2() * 5.0
                 newParticleDef.alpha = 0.5 + RandomFloat() * 0.2
 
-                let stop: Bool = withUnsafeMutablePointer(to: &gCoord) { coordPtr in
+                let stop: Bool = withUnsafeMutablePointer(to: &gEngine.objects.coord) { coordPtr in
                     withUnsafeMutablePointer(to: &d) { dPtr in
                         newParticleDef.where = coordPtr
                         newParticleDef.delta = dPtr
@@ -784,7 +782,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.heatSeeker.rawValue)
+    newObj.weaponKind = .heatSeeker
     newObj.pointee.PlayerNum = playerNum // remember which player shot this
 
     let speed = player.pointee.Speed + 300.0
@@ -797,7 +795,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
     newObj.pointee.MotionVector = aim
 
     newObj.pointee.Health = 4.0
-    if gVSMode == .none {
+    if gEngine.game.vsMode == .none {
         newObj.pointee.Damage = 0.8
     } else {
         newObj.pointee.Damage = 0.4 // less damage in 2P mode
@@ -864,7 +862,7 @@ private func ShootHeatSeeker(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -895,7 +893,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
             var targetPt = target.pointee.HeatSeekHotSpotOff.transformed(by: target.pointee.BaseTransformMatrix) // calc coord of hotspot we're shooting for
 
             var v = OGLVector3D()
-            OGLPoint3D_Subtract(&targetPt, &gCoord, &v) // calc vector from bullet to target
+            OGLPoint3D_Subtract(&targetPt, &gEngine.objects.coord, &v) // calc vector from bullet to target
             FastNormalizeVector(v.x, v.y, v.z, &v)
 
             theNode.pointee.MotionVector = theNode.pointee.MotionVector.moved(toward: v, ratio: heatSeekerTurnSpeed * fps)
@@ -909,15 +907,15 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
         theNode.pointee.Speed = heatSeekerBulletMaxSpeed
     }
 
-    gDelta.x = theNode.pointee.MotionVector.x * theNode.pointee.Speed
-    gDelta.y = theNode.pointee.MotionVector.y * theNode.pointee.Speed
-    gDelta.z = theNode.pointee.MotionVector.z * theNode.pointee.Speed
+    gEngine.objects.delta.x = theNode.pointee.MotionVector.x * theNode.pointee.Speed
+    gEngine.objects.delta.y = theNode.pointee.MotionVector.y * theNode.pointee.Speed
+    gEngine.objects.delta.z = theNode.pointee.MotionVector.z * theNode.pointee.Speed
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -949,7 +947,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1000,9 +998,9 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
     // UPDATE EFFECT
 
     if theNode.pointee.EffectChannel == -1 {
-        theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_MISSILEENGINE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
+        theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_MISSILEENGINE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
     } else {
-        Update3DSoundChannel(Int16(EFFECT_MISSILEENGINE), &theNode.pointee.EffectChannel, &gCoord)
+        Update3DSoundChannel(Int16(EFFECT_MISSILEENGINE), &theNode.pointee.EffectChannel, &gEngine.objects.coord)
     }
 }
 
@@ -1016,24 +1014,16 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things that auto-target
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(playerNum) // also target the other player
 
-    var thisNodePtr = gFirstNodePtr
-
-    while true {
-        guard let thisNode = thisNodePtr else { break }
-
-        if thisNode.pointee.Slot >= UInt16(SLOT_OF_DUMB) { // see if reach end of usable list
-            break
-        }
-
+    for thisNode in usableObjectNodes {
         if thisNode.pointee.CType & ctype != 0 {
             // IS THIS BEST DIST
 
-            let d = gCoord.distance(to: thisNode.pointee.Coord)
+            let d = gEngine.objects.coord.distance(to: thisNode.pointee.Coord)
             if d < minDist {
                 // IS GOOD ANGLE
 
                 var v = OGLVector3D()
-                OGLPoint3D_Subtract(&thisNode.pointee.Coord, &gCoord, &v) // calc vector to target
+                OGLPoint3D_Subtract(&thisNode.pointee.Coord, &gEngine.objects.coord, &v) // calc vector to target
                 FastNormalizeVector(v.x, v.y, v.z, &v)
 
                 let angle = acos(v.dot(bullet.pointee.MotionVector)) // calc angle to target
@@ -1044,7 +1034,6 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
                 }
             }
         }
-        thisNodePtr = thisNode.pointee.NextNode // next node
     }
 
     if let best {
@@ -1068,16 +1057,16 @@ private func DoHeatSeekerCollisionDetection(_ theNode: UnsafeMutablePointer<ObjN
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
     var d = OGLVector3D()
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &d) // get normalized delta
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &d) // get normalized delta
 
     // CREATE LINE SEGMENT TO DO COLLISION WITH
 
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + d.x * 50.0 // to new coord (slightly in front)
-    lineSegment.p2.y = gCoord.y + d.y * 50.0
-    lineSegment.p2.z = gCoord.z + d.z * 50.0
+    lineSegment.p2.x = gEngine.objects.coord.x + d.x * 50.0 // to new coord (slightly in front)
+    lineSegment.p2.y = gEngine.objects.coord.y + d.y * 50.0
+    lineSegment.p2.z = gEngine.objects.coord.z + d.z * 50.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -1120,18 +1109,18 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 1000
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 15
-    gNewParticleGroupDef.decayRate = 0.8
-    gNewParticleGroupDef.fadeRate = 0.8
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 1000
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 15
+    gEngine.particles.newGroupDef.decayRate = 0.8
+    gEngine.particles.newGroupDef.fadeRate = 0.8
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_RedSpark)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<50 {
             var pt = OGLPoint3D()
@@ -1163,18 +1152,18 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
 
     // MAKE FLAMES
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20
-    gNewParticleGroupDef.decayRate = -7.0
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20
+    gEngine.particles.newGroupDef.decayRate = -7.0
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<60 {
             var pt = OGLPoint3D()
@@ -1210,7 +1199,7 @@ private func DoHeatSeekerImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>
     sw.pointee.ColorFilter.r = 0.3
     sw.pointee.ColorFilter.g = 0.3
     sw.pointee.ColorFilter.a = 0.6
-    sw.pointee.StatusBits |= UInt32(STATUS_BIT_GLOW)
+    sw.setStatus(STATUS_BIT_GLOW)
 
     PlayEffect_Parms3D(Int16(EFFECT_TURRETEXPLOSION), where_, UInt32(NORMAL_CHANNEL_RATE) * 3 / 2, 0.7)
 }
@@ -1241,7 +1230,7 @@ private func ShootSonicScream(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.sonicScream.rawValue)
+    newObj.weaponKind = .sonicScream
     newObj.pointee.PlayerNum = p // remember which player shot this
 
     newObj.pointee.BoundingSphereRadius = 100 // set the bounding sphere for fence collisions
@@ -1271,7 +1260,7 @@ private func ShootSonicScream(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // SEE IF GONE
 
@@ -1285,9 +1274,9 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -1314,7 +1303,7 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 50
             groupDef.magnetism = 0
@@ -1330,9 +1319,9 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
         if particleGroup != -1 {
             var d = OGLVector3D()
-            d.x = gDelta.x * 0.25
-            d.y = gDelta.y * 0.25
-            d.z = gDelta.z * 0.25
+            d.x = gEngine.objects.delta.x * 0.25
+            d.y = gEngine.objects.delta.y * 0.25
+            d.z = gEngine.objects.delta.z * 0.25
 
             var newParticleDef = NewParticleDefType()
             newParticleDef.groupNum = particleGroup
@@ -1341,7 +1330,7 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
             newParticleDef.rotDZ = 0.1 // theNode.pointee.SpecialF.0 * 6.0
             newParticleDef.alpha = 1
 
-            let stop: Bool = withUnsafeMutablePointer(to: &gCoord) { coordPtr in
+            let stop: Bool = withUnsafeMutablePointer(to: &gEngine.objects.coord) { coordPtr in
                 withUnsafeMutablePointer(to: &d) { dPtr in
                     newParticleDef.where = coordPtr
                     newParticleDef.delta = dPtr
@@ -1398,7 +1387,7 @@ private func DoSonicScreamCollisionDetection(_ bullet: UnsafeMutablePointer<ObjN
 
     // SEE IF HIT TERRAIN
 
-    if gCoord.y < GetTerrainY(gCoord.x, gCoord.z) {
+    if gEngine.objects.coord.y < GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) {
         return killBullet()
     }
 
@@ -1434,7 +1423,7 @@ private func ShootBomb(_ player: UnsafeMutablePointer<ObjNode>!) {
 
     let newObj = MakeNewDisplayGroupObject(&def)!
 
-    newObj.pointee.Kind = Int32(WeaponType.bomb.rawValue)
+    newObj.weaponKind = .bomb
     newObj.pointee.PlayerNum = playerNum // remember which player shot this
 
     newObj.pointee.Rot.x = player.pointee.Rot.x
@@ -1464,19 +1453,19 @@ private func ShootBomb(_ player: UnsafeMutablePointer<ObjNode>!) {
 
 private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.getInfo()
 
     // MOVE IT
 
-    gDelta.y -= 800.0 * fps // gravity
+    gEngine.objects.delta.y -= 800.0 * fps // gravity
 
-    gDelta.applyFrictionXZ(500) // air friction
+    gEngine.objects.delta.applyFrictionXZ(500) // air friction
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     theNode.pointee.Rot.x -= fps * 1.1 // tilt down
     if theNode.pointee.Rot.x < (-Float.pi / 2) {
@@ -1499,7 +1488,7 @@ private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 // MARK: - Leave bomb trail
 
 private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     theNode.pointee.ParticleTimer -= fps // see if add smoke
     if theNode.pointee.ParticleTimer <= 0.0 {
@@ -1514,7 +1503,7 @@ private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
 
             var groupDef = NewParticleGroupDefType()
             groupDef.magicNum = newMagicNum
-            groupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
+            groupDef.particleType = .fallingSparks
             groupDef.flags = UInt32(PARTICLE_FLAGS_DONTCHECKGROUND | PARTICLE_FLAGS_ALLAIM)
             groupDef.gravity = 0
             groupDef.magnetism = 0
@@ -1529,9 +1518,9 @@ private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let y = gCoord.y
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let y = gEngine.objects.coord.y
+            let z = gEngine.objects.coord.z
 
             for _ in 0..<2 {
                 var p = OGLPoint3D()
@@ -1579,16 +1568,16 @@ private func DoBombCollisionDetection(_ theNode: UnsafeMutablePointer<ObjNode>!)
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
     var d = OGLVector3D()
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &d) // get normalized delta
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &d) // get normalized delta
 
     // CREATE LINE SEGMENT TO DO COLLISION WITH
 
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + d.x * 40.0 // to new coord (slightly in front)
-    lineSegment.p2.y = gCoord.y + d.y * 40.0
-    lineSegment.p2.z = gCoord.z + d.z * 40.0
+    lineSegment.p2.x = gEngine.objects.coord.x + d.x * 40.0 // to new coord (slightly in front)
+    lineSegment.p2.y = gEngine.objects.coord.y + d.y * 40.0
+    lineSegment.p2.z = gEngine.objects.coord.z + d.z * 40.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -1631,18 +1620,18 @@ private func DoBombImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
 
     // FIRST MAKE SPARKS
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 1200
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 10
-    gNewParticleGroupDef.decayRate = 0.8
-    gNewParticleGroupDef.fadeRate = 1.2
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_YellowGlint)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    var pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 1200
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 10
+    gEngine.particles.newGroupDef.decayRate = 0.8
+    gEngine.particles.newGroupDef.fadeRate = 1.2
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_YellowGlint)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    var pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<30 {
             var pt = OGLPoint3D()
@@ -1674,18 +1663,18 @@ private func DoBombImpactEffect(_ where_: UnsafeMutablePointer<OGLPoint3D>!) {
 
     // MAKE FLAMES
 
-    gNewParticleGroupDef.magicNum = 0
-    gNewParticleGroupDef.type = UInt8(ParticleType.fallingSparks.rawValue)
-    gNewParticleGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
-    gNewParticleGroupDef.gravity = 0
-    gNewParticleGroupDef.magnetism = 0
-    gNewParticleGroupDef.baseScale = 20
-    gNewParticleGroupDef.decayRate = -7.0
-    gNewParticleGroupDef.fadeRate = 1.0
-    gNewParticleGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
-    gNewParticleGroupDef.srcBlend = GL_SRC_ALPHA
-    gNewParticleGroupDef.dstBlend = GL_ONE
-    pg = NewParticleGroup(&gNewParticleGroupDef)
+    gEngine.particles.newGroupDef.magicNum = 0
+    gEngine.particles.newGroupDef.particleType = .fallingSparks
+    gEngine.particles.newGroupDef.flags = UInt32(PARTICLE_FLAGS_ALLAIM | PARTICLE_FLAGS_DONTCHECKGROUND)
+    gEngine.particles.newGroupDef.gravity = 0
+    gEngine.particles.newGroupDef.magnetism = 0
+    gEngine.particles.newGroupDef.baseScale = 20
+    gEngine.particles.newGroupDef.decayRate = -7.0
+    gEngine.particles.newGroupDef.fadeRate = 1.0
+    gEngine.particles.newGroupDef.particleTextureNum = UInt8(PARTICLE_SObjType_Fire)
+    gEngine.particles.newGroupDef.srcBlend = GL_SRC_ALPHA
+    gEngine.particles.newGroupDef.dstBlend = GL_ONE
+    pg = NewParticleGroup(&gEngine.particles.newGroupDef)
     if pg != -1 {
         for _ in 0..<70 {
             var pt = OGLPoint3D()
@@ -1745,7 +1734,7 @@ private func MakeBombShockwave(_ where_: UnsafePointer<OGLPoint3D>!) -> UnsafeMu
 
 private let cMoveBombShockwave: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     guard let theNode = theNodeOpt else { return }
-    let fps = gFramesPerSecondFrac
+    let fps = gEngine.framesPerSecondFrac
 
     // FADE
 
@@ -1770,15 +1759,21 @@ func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: U
     let radius = wave.pointee.Scale.x * 10.0 // calc radius of sphere
 
     let oldDamage = wave.pointee.Damage // remember original damager factor
-    wave.pointee.Damage *= gFramesPerSecondFrac // set temporary damage
+    wave.pointee.Damage *= gEngine.framesPerSecondFrac // set temporary damage
 
     let x = wave.pointee.Coord.x
     let y = wave.pointee.Coord.y
     let z = wave.pointee.Coord.z
 
     // SCAN THRU NODES FOR TARGETS
+    //
+    // Deliberately NOT a `for node in usableObjectNodes` walk
+    // (ObjNodeList.swift): the HitByWeaponHandler callbacks below can
+    // delete the hit node, and this loop reads NextNode AFTER the handler
+    // runs - preserving the legacy stop-on-delete semantics (DetachObject
+    // nulls the deleted node's NextNode, ending the walk).
 
-    var thisNodePtr = gFirstNodePtr
+    var thisNodePtr = gEngine.objects.firstNodePtr
     while true {
         guard let thisNode = thisNodePtr else { break }
 
@@ -1816,14 +1811,14 @@ private func CalcPlayerGunMuzzleInfo(_ player: UnsafeMutablePointer<ObjNode>!, _
 
     if pi.pointee.turretSide != 0 {
         muzzleCoord.pointee = muzzleTipOff_Left.transformed(by: player.pointee.BaseTransformMatrix)
-        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+        muzzleVector.pointee = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // RIGHT
 
     else {
         muzzleCoord.pointee = muzzleTipOff_Right.transformed(by: player.pointee.BaseTransformMatrix)
-        muzzleVector.pointee = gPlayerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
+        muzzleVector.pointee = gEngine.player.playerMuzzleTipAim.transformed(by: player.pointee.BaseTransformMatrix)
     }
 
     // MAKE THIS MUZZLE'S SPARKLE GLOW BRIGHTER

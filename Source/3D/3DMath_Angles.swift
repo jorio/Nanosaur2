@@ -148,7 +148,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         // DO THE TURN
 
         if turnSpeed != 0.0 {
-            turnSpeed *= gFramesPerSecondFrac // calc amount to turn this frame
+            turnSpeed *= gEngine.framesPerSecondFrac // calc amount to turn this frame
 
             if turnSpeed > abs(angle) { // make sure we dont exceed how far we want to go
                 turnSpeed = abs(angle)
@@ -197,7 +197,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         // DO THE TURN
 
         if turnSpeed != 0.0 {
-            turnSpeed *= gFramesPerSecondFrac // calc amount to turn this frame
+            turnSpeed *= gEngine.framesPerSecondFrac // calc amount to turn this frame
 
             if turnSpeed > abs(angle) { // make sure we dont exceed how far we want to go
                 turnSpeed = abs(angle)
@@ -268,7 +268,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         // DO THE TURN
 
         if turnSpeed != 0.0 {
-            turnSpeed *= gFramesPerSecondFrac // calc amount to turn this frame
+            turnSpeed *= gEngine.framesPerSecondFrac // calc amount to turn this frame
 
             if turnSpeed > abs(angle) { // make sure we dont exceed how far we want to go
                 turnSpeed = abs(angle)
@@ -319,7 +319,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
         // DO THE TURN
 
         if turnSpeed != 0.0 {
-            turnSpeed *= gFramesPerSecondFrac // calc amount to turn this frame
+            turnSpeed *= gEngine.framesPerSecondFrac // calc amount to turn this frame
 
             if turnSpeed > angle { // make sure we dont exceed how far we want to go
                 turnSpeed = angle
@@ -337,7 +337,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
 
 // MARK: - Turn point toward point
 //
-// NOTE: turnSpeed is already multipled by gFramesPerSecondFrac
+// NOTE: turnSpeed is already multipled by gEngine.framesPerSecondFrac
 
 func TurnPointTowardPoint(_ rotY: UnsafeMutablePointer<Float>!, _ from: UnsafeMutablePointer<OGLPoint3D>!, _ toX: Float, _ toZ: Float, _ turnSpeedIn: Float) -> Float {
     var turnSpeed = turnSpeedIn
@@ -367,7 +367,7 @@ func TurnPointTowardPoint(_ rotY: UnsafeMutablePointer<Float>!, _ from: UnsafeMu
     // DO THE TURN
 
     if turnSpeed != 0.0 {
-        // turnSpeed *= gFramesPerSecondFrac // calc amount to turn this frame
+        // turnSpeed *= gEngine.framesPerSecondFrac // calc amount to turn this frame
 
         if turnSpeed > angle { // make sure we dont exceed how far we want to go
             turnSpeed = angle

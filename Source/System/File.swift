@@ -86,28 +86,28 @@ private struct FileFenceDefType {
     var bBox = Rect() // bounding box of fence area
 }
 
-// Resource FourCCs (Clang's macro-constant importer can't fold multi-char literals)
-private let kResHedr: ResType = 0x48656472
-private let kResBone: ResType = 0x426F6E65
-private let kResBonP: ResType = 0x426F6E50
-private let kResBonN: ResType = 0x426F6E4E
-private let kResRelP: ResType = 0x52656C50
-private let kResAnHd: ResType = 0x416E4864
-private let kResEvnt: ResType = 0x45766E74
-private let kResNumK: ResType = 0x4E756D4B
-private let kResKeyF: ResType = 0x4B657946
-private let kResSTgd: ResType = 0x53546764
-private let kResYCrd: ResType = 0x59437264
-private let kResItms: ResType = 0x49746D73
-private let kResSpln: ResType = 0x53706C6E
-private let kResSpPt: ResType = 0x53705074
-private let kResSpIt: ResType = 0x53704974
-private let kResFenc: ResType = 0x46656E63
-private let kResFnNb: ResType = 0x466E4E62
-private let kResLiqd: ResType = 0x4C697164
-private let kResCkPt: ResType = 0x436B5074
-private let kGameIDFourCC: OSType = 0x4E414E32 // 'NAN2'
-private let kPrefFourCC: OSType = 0x50726566 // 'Pref'
+// Resource FourCCs
+private let kResHedr: ResType = fourCC("Hedr")
+private let kResBone: ResType = fourCC("Bone")
+private let kResBonP: ResType = fourCC("BonP")
+private let kResBonN: ResType = fourCC("BonN")
+private let kResRelP: ResType = fourCC("RelP")
+private let kResAnHd: ResType = fourCC("AnHd")
+private let kResEvnt: ResType = fourCC("Evnt")
+private let kResNumK: ResType = fourCC("NumK")
+private let kResKeyF: ResType = fourCC("KeyF")
+private let kResSTgd: ResType = fourCC("STgd")
+private let kResYCrd: ResType = fourCC("YCrd")
+private let kResItms: ResType = fourCC("Itms")
+private let kResSpln: ResType = fourCC("Spln")
+private let kResSpPt: ResType = fourCC("SpPt")
+private let kResSpIt: ResType = fourCC("SpIt")
+private let kResFenc: ResType = fourCC("Fenc")
+private let kResFnNb: ResType = fourCC("FnNb")
+private let kResLiqd: ResType = fourCC("Liqd")
+private let kResCkPt: ResType = fourCC("CkPt")
+private let kGameIDFourCC: OSType = fourCC("NAN2")
+private let kPrefFourCC: OSType = fourCC("Pref")
 
 // `noErr`/`badFileFormat` come from the named C enum `EErrors`, which doesn't
 // import cleanly as a plain `OSErr` (Int16) constant in this context.
@@ -133,7 +133,7 @@ private func rsrcCompanionSpec(of spec: UnsafeMutablePointer<FSSpec>) -> FSSpec 
     let filename = String(cString: cNamePtr) + ".rsrc"
 
     var rsrcSpec = FSSpec()
-    _ = filename.withCString { SwFSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, $0, &rsrcSpec) }
+    _ = SwFSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, filename, &rsrcSpec)
     return rsrcSpec
 }
 
@@ -183,11 +183,14 @@ private func resourceByteCount(_ resourceFile: ResourceFile, _ type: ResType, _ 
     resourceFile.resource(type: type, id: id)?.count ?? 0
 }
 
-private var gDiskShadowPrefs = PrefsType()
+/// Level-file parse scratch. Owned by GameEngine as `gEngine.levelFile`.
+final class LevelFileScratch {
+    fileprivate var diskShadowPrefs = PrefsType()
+    fileprivate var tileSize: Float = 0
+    fileprivate var minY: Float = 0
+    fileprivate var maxY: Float = 0
+}
 
-private var g3DTileSize: Float = 0
-private var g3DMinY: Float = 0
-private var g3DMaxY: Float = 0
 
 // MARK: - Fixed-array-field helpers (all struct fields, never unions)
 
@@ -222,10 +225,10 @@ func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDef
     var fsSpecBG3D = FSSpec()
 
     var pathBuf = ":Skeletons:\(modelName).skeleton"
-    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecSkeleton) }
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecSkeleton)
 
     pathBuf = ":Skeletons:\(modelName).bg3d"
-    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecBG3D) }
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecBG3D)
 
     // OPEN THE FILE'S REZ FORK
 
@@ -466,14 +469,14 @@ public func LoadPrefs() -> OSErr {
         }
     }
 
-    gDiskShadowPrefs = gGamePrefs
+    gEngine.levelFile.diskShadowPrefs = gGamePrefs
 
     return iErr
 }
 
 func SavePrefs() -> OSErr {
     var matches = false
-    withUnsafeBytes(of: gDiskShadowPrefs) { a in
+    withUnsafeBytes(of: gEngine.levelFile.diskShadowPrefs) { a in
         withUnsafeBytes(of: gGamePrefs) { b in
             matches = memcmp(a.baseAddress, b.baseAddress, MemoryLayout<PrefsType>.size) == 0
         }
@@ -482,7 +485,7 @@ func SavePrefs() -> OSErr {
         return kNoErr
     }
 
-    gDiskShadowPrefs = gGamePrefs
+    gEngine.levelFile.diskShadowPrefs = gGamePrefs
 
     return withUnsafeMutablePointer(to: &gGamePrefs) {
         $0.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<PrefsType>.size) {
@@ -494,7 +497,7 @@ func SavePrefs() -> OSErr {
 // MARK: - Load Playfield
 
 func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
-    gDisableHiccupTimer = 1
+    gEngine.terrain.disableHiccupTimer = 1
 
     // READ PLAYFIELD RESOURCES
 
@@ -549,56 +552,56 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
         return
     }
 
-    gNumTerrainItems = SwizzleLong(&header.pointee.numItems)
-    gTerrainTileWidth = Int(SwizzleLong(&header.pointee.mapWidth))
-    gTerrainTileDepth = Int(SwizzleLong(&header.pointee.mapHeight))
-    g3DTileSize = SwizzleFloat(&header.pointee.tileSize)
-    g3DMinY = SwizzleFloat(&header.pointee.minY)
-    g3DMaxY = SwizzleFloat(&header.pointee.maxY)
-    gNumSplines = Int(SwizzleLong(&header.pointee.numSplines))
-    gNumFences = Int(SwizzleLong(&header.pointee.numFences))
-    gNumWaterPatches = Int(SwizzleLong(&header.pointee.numWaterPatches))
-    gNumUniqueSuperTiles = Int(SwizzleLong(&header.pointee.numUniqueSuperTiles))
-    gNumLineMarkers = SwizzleLong(&header.pointee.numCheckpoints)
+    gEngine.terrain.numTerrainItems = SwizzleLong(&header.pointee.numItems)
+    gEngine.terrain.tileWidth = Int(SwizzleLong(&header.pointee.mapWidth))
+    gEngine.terrain.tileDepth = Int(SwizzleLong(&header.pointee.mapHeight))
+    gEngine.levelFile.tileSize = SwizzleFloat(&header.pointee.tileSize)
+    gEngine.levelFile.minY = SwizzleFloat(&header.pointee.minY)
+    gEngine.levelFile.maxY = SwizzleFloat(&header.pointee.maxY)
+    gEngine.splines.numSplines = Int(SwizzleLong(&header.pointee.numSplines))
+    gEngine.fences.numFences = Int(SwizzleLong(&header.pointee.numFences))
+    gEngine.water.numPatches = Int(SwizzleLong(&header.pointee.numWaterPatches))
+    gEngine.terrain.numUniqueSuperTiles = Int(SwizzleLong(&header.pointee.numUniqueSuperTiles))
+    gEngine.terrain.numLineMarkers = SwizzleLong(&header.pointee.numCheckpoints)
 
     SafeDisposePtr(header)
     #if NANOSAUR_3DS
-    "readDataFromPlayfieldFile: header parsed. gNumUniqueSuperTiles=\(gNumUniqueSuperTiles)".withCString { Debug3DS_Log($0) }
+    "readDataFromPlayfieldFile: header parsed. numUniqueSuperTiles=\(gEngine.terrain.numUniqueSuperTiles)".withCString { Debug3DS_Log($0) }
     #endif
 
-    if gTerrainTileWidth % Int(SUPERTILE_SIZE) != 0 { // terrain must be non-fractional number of supertiles in w/h
+    if gEngine.terrain.tileWidth % Int(SUPERTILE_SIZE) != 0 { // terrain must be non-fractional number of supertiles in w/h
         SwFatal("ReadDataFromPlayfieldFile: terrain width not a supertile multiple")
     }
-    if gTerrainTileDepth % Int(SUPERTILE_SIZE) != 0 {
+    if gEngine.terrain.tileDepth % Int(SUPERTILE_SIZE) != 0 {
         SwFatal("ReadDataFromPlayfieldFile: terrain depth not a supertile multiple")
     }
 
     // CALC SOME GLOBALS HERE
 
-    gTerrainTileWidth = (gTerrainTileWidth / Int(SUPERTILE_SIZE)) * Int(SUPERTILE_SIZE) // round size down to nearest supertile multiple
-    gTerrainTileDepth = (gTerrainTileDepth / Int(SUPERTILE_SIZE)) * Int(SUPERTILE_SIZE)
-    gTerrainUnitWidth = Int(Float(gTerrainTileWidth) * gTerrainPolygonSize) // calc world unit dimensions of terrain
-    gTerrainUnitDepth = Int(Float(gTerrainTileDepth) * gTerrainPolygonSize)
-    gNumSuperTilesDeep = gTerrainTileDepth / Int(SUPERTILE_SIZE) // calc size in supertiles
-    gNumSuperTilesWide = gTerrainTileWidth / Int(SUPERTILE_SIZE)
+    gEngine.terrain.tileWidth = (gEngine.terrain.tileWidth / Int(SUPERTILE_SIZE)) * Int(SUPERTILE_SIZE) // round size down to nearest supertile multiple
+    gEngine.terrain.tileDepth = (gEngine.terrain.tileDepth / Int(SUPERTILE_SIZE)) * Int(SUPERTILE_SIZE)
+    gEngine.terrain.unitWidth = Int(Float(gEngine.terrain.tileWidth) * gEngine.terrain.polygonSize) // calc world unit dimensions of terrain
+    gEngine.terrain.unitDepth = Int(Float(gEngine.terrain.tileDepth) * gEngine.terrain.polygonSize)
+    gEngine.terrain.numSuperTilesDeep = gEngine.terrain.tileDepth / Int(SUPERTILE_SIZE) // calc size in supertiles
+    gEngine.terrain.numSuperTilesWide = gEngine.terrain.tileWidth / Int(SUPERTILE_SIZE)
 
     // SUPERTILE RELATED RESOURCES
 
     // READ SUPERTILE GRID MATRIX
 
-    if gSuperTileTextureGrid != nil { // free old array
-        free2DArray(gSuperTileTextureGrid)
+    if gEngine.terrain.superTileTextureGrid != nil { // free old array
+        free2DArray(gEngine.terrain.superTileTextureGrid)
     }
-    gSuperTileTextureGrid = alloc2DArray(Int16.self, rows: Int(gNumSuperTilesDeep), cols: Int(gNumSuperTilesWide))
+    gEngine.terrain.superTileTextureGrid = alloc2DArray(Int16.self, rows: Int(gEngine.terrain.numSuperTilesDeep), cols: Int(gEngine.terrain.numSuperTilesWide))
 
     if let handSTgd = loadResource(resourceFile, kResSTgd, 1000, as: Int16.self) { // load grid from rez
         var src = handSTgd
 
-        for row in 0..<Int(gNumSuperTilesDeep) {
-            for col in 0..<Int(gNumSuperTilesWide) {
+        for row in 0..<Int(gEngine.terrain.numSuperTilesDeep) {
+            for col in 0..<Int(gEngine.terrain.numSuperTilesWide) {
                 let stId = SwizzleShort(src)
                 src += 1
-                gSuperTileTextureGrid[row]![col] = stId
+                gEngine.terrain.superTileTextureGrid[row]![col] = stId
             }
         }
 
@@ -612,19 +615,19 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // READ HEIGHT DATA MATRIX
 
-    let yScale = gTerrainPolygonSize / g3DTileSize // need to scale original geometry units to game units
+    let yScale = gEngine.terrain.polygonSize / gEngine.levelFile.tileSize // need to scale original geometry units to game units
 
-    gMapYCoords = alloc2DArray(Float.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1) // alloc 2D array for map
-    gMapYCoordsOriginal = alloc2DArray(Float.self, rows: Int(gTerrainTileDepth) + 1, cols: Int(gTerrainTileWidth) + 1) // and the copy of it
+    gEngine.terrain.mapYCoords = alloc2DArray(Float.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1) // alloc 2D array for map
+    gEngine.terrain.mapYCoordsOriginal = alloc2DArray(Float.self, rows: Int(gEngine.terrain.tileDepth) + 1, cols: Int(gEngine.terrain.tileWidth) + 1) // and the copy of it
 
     if let handYCrd = loadResource(resourceFile, kResYCrd, 1000, as: Float.self) {
         var src = handYCrd
-        for row in 0...Int(gTerrainTileDepth) {
-            for col in 0...Int(gTerrainTileWidth) {
+        for row in 0...Int(gEngine.terrain.tileDepth) {
+            for col in 0...Int(gEngine.terrain.tileWidth) {
                 let v = SwizzleFloat(src) * yScale
                 src += 1
-                gMapYCoordsOriginal[row]![col] = v
-                gMapYCoords[row]![col] = v
+                gEngine.terrain.mapYCoordsOriginal[row]![col] = v
+                gEngine.terrain.mapYCoords[row]![col] = v
             }
         }
         SafeDisposePtr(handYCrd)
@@ -646,18 +649,18 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     do {
         // COPY INTO OUR STRUCT
 
-        gMasterItemList = AllocPtrClear(MemoryLayout<TerrainItemEntryType>.size * Int(gNumTerrainItems))?.assumingMemoryBound(to: TerrainItemEntryType.self) // alloc array of items
+        gEngine.terrain.masterItemList = AllocPtrClear(MemoryLayout<TerrainItemEntryType>.size * Int(gEngine.terrain.numTerrainItems))?.assumingMemoryBound(to: TerrainItemEntryType.self) // alloc array of items
 
-        for i in 0..<Int(gNumTerrainItems) {
-            gMasterItemList[i].x = UInt32(Float(SwizzleULong(&rezItems[i].x)) * gMapToUnitValue) // convert coordinates
-            gMasterItemList[i].y = UInt32(Float(SwizzleULong(&rezItems[i].y)) * gMapToUnitValue)
+        for i in 0..<Int(gEngine.terrain.numTerrainItems) {
+            gEngine.terrain.masterItemList[i].x = UInt32(Float(SwizzleULong(&rezItems[i].x)) * gEngine.terrain.mapToUnitValue) // convert coordinates
+            gEngine.terrain.masterItemList[i].y = UInt32(Float(SwizzleULong(&rezItems[i].y)) * gEngine.terrain.mapToUnitValue)
 
-            gMasterItemList[i].type = SwizzleUShort(&rezItems[i].type)
-            gMasterItemList[i].parm.0 = rezItems[i].parm.0
-            gMasterItemList[i].parm.1 = rezItems[i].parm.1
-            gMasterItemList[i].parm.2 = rezItems[i].parm.2
-            gMasterItemList[i].parm.3 = rezItems[i].parm.3
-            gMasterItemList[i].flags = SwizzleUShort(&rezItems[i].flags)
+            gEngine.terrain.masterItemList[i].type = SwizzleUShort(&rezItems[i].type)
+            gEngine.terrain.masterItemList[i].parm.0 = rezItems[i].parm.0
+            gEngine.terrain.masterItemList[i].parm.1 = rezItems[i].parm.1
+            gEngine.terrain.masterItemList[i].parm.2 = rezItems[i].parm.2
+            gEngine.terrain.masterItemList[i].parm.3 = rezItems[i].parm.3
+            gEngine.terrain.masterItemList[i].flags = SwizzleUShort(&rezItems[i].flags)
         }
 
         SafeDisposePtr(rezItems) // nuke the rez
@@ -671,23 +674,23 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     // READ SPLINE LIST
 
     if let splinePtr = loadResource(resourceFile, kResSpln, 1000, as: File_SplineDefType.self) {
-        gSplineList = AllocPtrClear(MemoryLayout<SplineDefType>.size * gNumSplines)?.assumingMemoryBound(to: SplineDefType.self) // allocate memory for spline data
+        gEngine.splines.splineList = AllocPtrClear(MemoryLayout<SplineDefType>.size * gEngine.splines.numSplines)?.assumingMemoryBound(to: SplineDefType.self) // allocate memory for spline data
 
-        for i in 0..<gNumSplines {
-            gSplineList[i].numNubs = SwizzleShort(&splinePtr[i].numNubs)
-            gSplineList[i].numPoints = SwizzleLong(&splinePtr[i].numPoints)
-            gSplineList[i].numItems = SwizzleShort(&splinePtr[i].numItems)
+        for i in 0..<gEngine.splines.numSplines {
+            gEngine.splines.splineList[i].numNubs = SwizzleShort(&splinePtr[i].numNubs)
+            gEngine.splines.splineList[i].numPoints = SwizzleLong(&splinePtr[i].numPoints)
+            gEngine.splines.splineList[i].numItems = SwizzleShort(&splinePtr[i].numItems)
 
-            gSplineList[i].bBox.top = SwizzleShort(&splinePtr[i].bBox.top)
-            gSplineList[i].bBox.bottom = SwizzleShort(&splinePtr[i].bBox.bottom)
-            gSplineList[i].bBox.left = SwizzleShort(&splinePtr[i].bBox.left)
-            gSplineList[i].bBox.right = SwizzleShort(&splinePtr[i].bBox.right)
+            gEngine.splines.splineList[i].bBox.top = SwizzleShort(&splinePtr[i].bBox.top)
+            gEngine.splines.splineList[i].bBox.bottom = SwizzleShort(&splinePtr[i].bBox.bottom)
+            gEngine.splines.splineList[i].bBox.left = SwizzleShort(&splinePtr[i].bBox.left)
+            gEngine.splines.splineList[i].bBox.right = SwizzleShort(&splinePtr[i].bBox.right)
         }
 
         SafeDisposePtr(splinePtr) // nuke the rez
     } else {
-        gNumSplines = 0
-        gSplineList = nil
+        gEngine.splines.numSplines = 0
+        gEngine.splines.splineList = nil
     }
 
     // READ SPLINE POINT LIST
@@ -695,8 +698,8 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     Debug3DS_Log("readDataFromPlayfieldFile: spline list done. reading spline points...")
     #endif
 
-    for i in 0..<gNumSplines {
-        let spline = gSplineList + i // point to Nth spline
+    for i in 0..<gEngine.splines.numSplines {
+        let spline = gEngine.splines.splineList + i // point to Nth spline
 
         if let ptList = loadResource(resourceFile, kResSpPt, 1000 + Int16(i), as: SplinePointType.self) { // read this point list
             spline.pointee.pointList = AllocPtrClear(MemoryLayout<SplinePointType>.size * Int(spline.pointee.numPoints))?.assumingMemoryBound(to: SplinePointType.self) // alloc memory for point list
@@ -716,8 +719,8 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     Debug3DS_Log("readDataFromPlayfieldFile: spline points done. reading spline items...")
     #endif
 
-    for i in 0..<gNumSplines {
-        let spline = gSplineList + i // point to Nth spline
+    for i in 0..<gEngine.splines.numSplines {
+        let spline = gEngine.splines.splineList + i // point to Nth spline
 
         if let itemList = loadResource(resourceFile, kResSpIt, 1000 + Int16(i), as: SplineItemType.self) {
             SwGameAssert(resourceByteCount(resourceFile, kResSpIt, 1000 + Int16(i)) == Int(MemoryLayout<SplineItemType>.size) * Int(spline.pointee.numItems))
@@ -745,39 +748,39 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     // READ FENCE LIST
 
     if let inData = loadResource(resourceFile, kResFenc, 1000, as: FileFenceDefType.self) {
-        gFenceList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gNumFences))?.assumingMemoryBound(to: FenceDefType.self) // alloc new ptr for fence data
-        if gFenceList == nil {
+        gEngine.fences.fenceList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gEngine.fences.numFences))?.assumingMemoryBound(to: FenceDefType.self) // alloc new ptr for fence data
+        if gEngine.fences.fenceList == nil {
             SwFatal("ReadDataFromPlayfieldFile: AllocPtr failed")
         }
 
-        for i in 0..<Int(gNumFences) { // copy data from rez to new list
-            gFenceList[i].type = SwizzleUShort(&inData[i].type)
-            gFenceList[i].numNubs = SwizzleShort(&inData[i].numNubs)
-            gFenceList[i].nubList = nil
-            gFenceList[i].sectionVectors = nil
+        for i in 0..<Int(gEngine.fences.numFences) { // copy data from rez to new list
+            gEngine.fences.fenceList[i].type = SwizzleUShort(&inData[i].type)
+            gEngine.fences.fenceList[i].numNubs = SwizzleShort(&inData[i].numNubs)
+            gEngine.fences.fenceList[i].nubList = nil
+            gEngine.fences.fenceList[i].sectionVectors = nil
         }
         SafeDisposePtr(inData)
     } else {
-        gNumFences = 0
+        gEngine.fences.numFences = 0
     }
 
     // READ FENCE NUB LIST
 
-    for i in 0..<Int(gNumFences) {
+    for i in 0..<Int(gEngine.fences.numFences) {
         guard let fileFencePoints = loadResource(resourceFile, kResFnNb, 1000 + Int16(i), as: FencePointType.self) else { // get rez
             SwFatal("ReadDataFromPlayfieldFile: cant get fence nub rez")
             return
         }
 
-        gFenceList[i].nubList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gFenceList[i].numNubs))?.assumingMemoryBound(to: OGLPoint3D.self) // alloc new ptr for nub array
-        if gFenceList[i].nubList == nil {
+        gEngine.fences.fenceList[i].nubList = AllocPtrClear(MemoryLayout<FenceDefType>.size * Int(gEngine.fences.fenceList[i].numNubs))?.assumingMemoryBound(to: OGLPoint3D.self) // alloc new ptr for nub array
+        if gEngine.fences.fenceList[i].nubList == nil {
             SwFatal("ReadDataFromPlayfieldFile: AllocPtr failed")
         }
 
-        for j in 0..<Int(gFenceList[i].numNubs) { // convert x,z to x,y,z
-            gFenceList[i].nubList[j].x = Float(SwizzleLong(&fileFencePoints[j].x))
-            gFenceList[i].nubList[j].z = Float(SwizzleLong(&fileFencePoints[j].z))
-            gFenceList[i].nubList[j].y = 0
+        for j in 0..<Int(gEngine.fences.fenceList[i].numNubs) { // convert x,z to x,y,z
+            gEngine.fences.fenceList[i].nubList[j].x = Float(SwizzleLong(&fileFencePoints[j].x))
+            gEngine.fences.fenceList[i].nubList[j].z = Float(SwizzleLong(&fileFencePoints[j].z))
+            gEngine.fences.fenceList[i].nubList[j].y = 0
         }
         SafeDisposePtr(fileFencePoints)
     }
@@ -789,42 +792,42 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // READ WATER LIST
     //
-    // gWaterListHandle keeps this resource's data alive for the whole
+    // gEngine.water.listHandle keeps this resource's data alive for the whole
     // level's lifetime (not just this function), so instead of the
     // temporary loadResource()/SafeDisposePtr() pair used elsewhere in this
     // function, it gets its own permanent AllocPtrClear'd handle-shaped
-    // allocation (double indirection, matching gWaterListHandle's type) -
+    // allocation (double indirection, matching gEngine.water.listHandle's type) -
     // disposed later via DisposeWaterListHandle (WaterInternal.h), which
     // now calls SafeDisposePtr twice instead of Pomme's DisposeHandle.
 
     if let waterData = loadResource(resourceFile, kResLiqd, 1000, as: WaterDefType.self) {
         let handlePtr = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<WaterDefType>?>.size)!.assumingMemoryBound(to: UnsafeMutablePointer<WaterDefType>?.self)
         handlePtr.pointee = waterData
-        gWaterListHandle = handlePtr
-        gWaterList = waterData
+        gEngine.water.listHandle = handlePtr
+        gEngine.water.list = waterData
 
-        for i in 0..<Int(gNumWaterPatches) { // swizzle
-            gWaterList[i].type = SwizzleUShort(&gWaterList[i].type)
-            gWaterList[i].flags = SwizzleULong(&gWaterList[i].flags)
-            gWaterList[i].height = SwizzleLong(&gWaterList[i].height)
-            gWaterList[i].numNubs = SwizzleShort(&gWaterList[i].numNubs)
+        for i in 0..<Int(gEngine.water.numPatches) { // swizzle
+            gEngine.water.list[i].type = SwizzleUShort(&gEngine.water.list[i].type)
+            gEngine.water.list[i].flags = SwizzleULong(&gEngine.water.list[i].flags)
+            gEngine.water.list[i].height = SwizzleLong(&gEngine.water.list[i].height)
+            gEngine.water.list[i].numNubs = SwizzleShort(&gEngine.water.list[i].numNubs)
 
-            gWaterList[i].hotSpotX = SwizzleFloat(&gWaterList[i].hotSpotX)
-            gWaterList[i].hotSpotZ = SwizzleFloat(&gWaterList[i].hotSpotZ)
+            gEngine.water.list[i].hotSpotX = SwizzleFloat(&gEngine.water.list[i].hotSpotX)
+            gEngine.water.list[i].hotSpotZ = SwizzleFloat(&gEngine.water.list[i].hotSpotZ)
 
-            gWaterList[i].bBox.top = SwizzleShort(&gWaterList[i].bBox.top)
-            gWaterList[i].bBox.bottom = SwizzleShort(&gWaterList[i].bBox.bottom)
-            gWaterList[i].bBox.left = SwizzleShort(&gWaterList[i].bBox.left)
-            gWaterList[i].bBox.right = SwizzleShort(&gWaterList[i].bBox.right)
+            gEngine.water.list[i].bBox.top = SwizzleShort(&gEngine.water.list[i].bBox.top)
+            gEngine.water.list[i].bBox.bottom = SwizzleShort(&gEngine.water.list[i].bBox.bottom)
+            gEngine.water.list[i].bBox.left = SwizzleShort(&gEngine.water.list[i].bBox.left)
+            gEngine.water.list[i].bBox.right = SwizzleShort(&gEngine.water.list[i].bBox.right)
 
-            let nubs = waterNubListBase(gWaterList + i)
-            for j in 0..<Int(gWaterList[i].numNubs) {
+            let nubs = waterNubListBase(gEngine.water.list + i)
+            for j in 0..<Int(gEngine.water.list[i].numNubs) {
                 nubs[j].x = SwizzleFloat(&nubs[j].x)
                 nubs[j].y = SwizzleFloat(&nubs[j].y)
             }
         }
     } else {
-        gNumWaterPatches = 0
+        gEngine.water.numPatches = 0
     }
 
     // LINE MARKER RESOURCES
@@ -832,9 +835,9 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     Debug3DS_Log("readDataFromPlayfieldFile: water done.")
     #endif
 
-    if gNumLineMarkers > 0 {
-        if gNumLineMarkers > Int32(MAX_LINEMARKERS) {
-            SwFatal("ReadDataFromPlayfieldFile: gNumLineMarkers > MAX_LINEMARKERS")
+    if gEngine.terrain.numLineMarkers > 0 {
+        if gEngine.terrain.numLineMarkers > Int32(MAX_LINEMARKERS) {
+            SwFatal("ReadDataFromPlayfieldFile: gEngine.terrain.numLineMarkers > MAX_LINEMARKERS")
         }
 
         // READ CHECKPOINT LIST
@@ -845,7 +848,7 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
             // CONVERT COORDINATES
 
-            for i in 0..<Int(gNumLineMarkers) {
+            for i in 0..<Int(gEngine.terrain.numLineMarkers) {
                 let lm = GetLineMarkerPtr(Int32(i))
 
                 lm.pointee.infoBits = SwizzleShort(&lm.pointee.infoBits) // swizzle data
@@ -856,13 +859,13 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
                 lmZ[0] = SwizzleFloat(lmZ)
                 lmZ[1] = SwizzleFloat(lmZ + 1)
 
-                lmX[0] *= gMapToUnitValue
-                lmZ[0] *= gMapToUnitValue
-                lmX[1] *= gMapToUnitValue
-                lmZ[1] *= gMapToUnitValue
+                lmX[0] *= gEngine.terrain.mapToUnitValue
+                lmZ[0] *= gEngine.terrain.mapToUnitValue
+                lmX[1] *= gEngine.terrain.mapToUnitValue
+                lmZ[1] *= gEngine.terrain.mapToUnitValue
             }
         } else {
-            gNumLineMarkers = 0
+            gEngine.terrain.numLineMarkers = 0
         }
     }
     #if NANOSAUR_3DS
@@ -880,15 +883,15 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
 
     // HQ_TERRAIN is enabled for this build (see game.h) - assemble seamless textures.
 
-    SwGameAssertMessage(gSuperTilePixelBuffers == nil, "gSuperTilePixelBuffers already allocated!")
-    gSuperTilePixelBuffers = AllocPtrClear(MemoryLayout<Ptr?>.size * Int(gNumUniqueSuperTiles))?.assumingMemoryBound(to: Ptr?.self)
+    SwGameAssertMessage(gEngine.terrain.superTilePixelBuffers == nil, "gEngine.terrain.superTilePixelBuffers already allocated!")
+    gEngine.terrain.superTilePixelBuffers = AllocPtrClear(MemoryLayout<Ptr?>.size * Int(gEngine.terrain.numUniqueSuperTiles))?.assumingMemoryBound(to: Ptr?.self)
 
     let seamlessTextureCanvas = AllocPtrClear(4 * kSuperTileCanvasSize * kSuperTileCanvasSize)!.assumingMemoryBound(to: Int8.self)
     #if NANOSAUR_3DS
     Debug3DS_Log("readDataFromPlayfieldFile: starting supertile texture assembly loop...")
     #endif
 
-    for row in 0..<(Int(gNumSuperTilesDeep) + 4) { // go 4 rows beyond terrain height so all 3 passes can run to completion
+    for row in 0..<(Int(gEngine.terrain.numSuperTilesDeep) + 4) { // go 4 rows beyond terrain height so all 3 passes can run to completion
         // We could do the three passes below separately, but weaving them in a single for loop
         // lets us keep memory pressure low while assembling the seamless textures.
 
@@ -896,24 +899,24 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
         let rowPass2 = row - 2 // 2nd pass: assemble seamless textures (2 rows behind, b/c need data from 1 row below + 1 column across)
         let rowPass3 = row - 4 // 3rd pass: free up memory (4 rows behind)
 
-        for col in 0..<Int(gNumSuperTilesWide) {
+        for col in 0..<Int(gEngine.terrain.numSuperTilesWide) {
             // 1st pass: load JPEG textures
-            if 0 <= rowPass1 && rowPass1 < Int(gNumSuperTilesDeep) {
-                let stId = gSuperTileTextureGrid[rowPass1]![col]
+            if 0 <= rowPass1 && rowPass1 < Int(gEngine.terrain.numSuperTilesDeep) {
+                let stId = gEngine.terrain.superTileTextureGrid[rowPass1]![col]
                 if stId >= 0 {
                     #if NANOSAUR_3DS
                     "texloop: pass1 row=\(rowPass1) col=\(col) stId=\(stId)".withCString { Debug3DS_Log($0) }
                     #endif
-                    gSuperTilePixelBuffers[Int(stId)] = LoadSuperTilePixelBuffer(dataForkRefNum)
+                    gEngine.terrain.superTilePixelBuffers[Int(stId)] = LoadSuperTilePixelBuffer(dataForkRefNum)
 
                     // Update loading screen here
-                    DrawLoading(Float(stId) / Float(gNumUniqueSuperTiles))
+                    DrawLoading(Float(stId) / Float(gEngine.terrain.numUniqueSuperTiles))
                 }
             }
 
             // 2nd pass: assemble seamless textures
-            if 0 <= rowPass2 && rowPass2 < Int(gNumSuperTilesDeep) {
-                let stId = gSuperTileTextureGrid[rowPass2]![col]
+            if 0 <= rowPass2 && rowPass2 < Int(gEngine.terrain.numSuperTilesDeep) {
+                let stId = gEngine.terrain.superTileTextureGrid[rowPass2]![col]
                 if stId >= 0 {
                     #if NANOSAUR_3DS
                     "texloop: pass2 row=\(rowPass2) col=\(col) stId=\(stId)".withCString { Debug3DS_Log($0) }
@@ -924,11 +927,11 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
             }
 
             // 3rd pass: free up pixel buffers from rows that we won't need to look at again
-            if 0 <= rowPass3 && rowPass3 < Int(gNumSuperTilesDeep) {
-                let stId = gSuperTileTextureGrid[rowPass3]![col]
+            if 0 <= rowPass3 && rowPass3 < Int(gEngine.terrain.numSuperTilesDeep) {
+                let stId = gEngine.terrain.superTileTextureGrid[rowPass3]![col]
                 if stId >= 0 {
-                    SafeDisposePtr(gSuperTilePixelBuffers[Int(stId)])
-                    gSuperTilePixelBuffers[Int(stId)] = nil
+                    SafeDisposePtr(gEngine.terrain.superTilePixelBuffers[Int(stId)])
+                    gEngine.terrain.superTilePixelBuffers[Int(stId)] = nil
                 }
             }
         }
@@ -937,13 +940,13 @@ private func readDataFromPlayfieldFile(_ specPtr: UnsafeMutablePointer<FSSpec>) 
     SafeDisposePtr(seamlessTextureCanvas)
 
     // Check that we have all the textures we need and that we freed all temporary images
-    for i in 0..<Int(gNumUniqueSuperTiles) {
+    for i in 0..<Int(gEngine.terrain.numUniqueSuperTiles) {
         SwGameAssertMessage(GetSuperTileTextureObjectSlot(Int32(i))!.pointee != nil, "2nd pass incomplete: not all textures were loaded")
-        SwGameAssertMessage(gSuperTilePixelBuffers[i] == nil, "3rd pass incomplete: not all buffers were freed")
+        SwGameAssertMessage(gEngine.terrain.superTilePixelBuffers[i] == nil, "3rd pass incomplete: not all buffers were freed")
     }
 
-    SafeDisposePtr(gSuperTilePixelBuffers)
-    gSuperTilePixelBuffers = nil
+    SafeDisposePtr(gEngine.terrain.superTilePixelBuffers)
+    gEngine.terrain.superTilePixelBuffers = nil
 
     DrawLoading(1.0)
 
@@ -1064,18 +1067,18 @@ private func blit32(_ src: UnsafePointer<Int8>?, _ srcWidth: Int, _ srcHeight: I
 }
 
 private func getSuperTileImage(_ row: Int, _ col: Int) -> UnsafePointer<Int8>? {
-    if row < 0 || row > Int(gNumSuperTilesDeep) - 1 // row out of bounds
-        || col < 0 || col > Int(gNumSuperTilesWide) - 1 { // column out of bounds
+    if row < 0 || row > Int(gEngine.terrain.numSuperTilesDeep) - 1 // row out of bounds
+        || col < 0 || col > Int(gEngine.terrain.numSuperTilesWide) - 1 { // column out of bounds
         return nil
     }
 
-    let superTileId = gSuperTileTextureGrid[row]![col]
+    let superTileId = gEngine.terrain.superTileTextureGrid[row]![col]
 
     if superTileId < 0 { // blank texture
         return nil
     }
 
-    let image = gSuperTilePixelBuffers[Int(superTileId)]
+    let image = gEngine.terrain.superTilePixelBuffers[Int(superTileId)]
     SwGameAssert(image != nil)
 
     return image.map { UnsafePointer($0) }
@@ -1202,7 +1205,7 @@ func SaveGame(_ fileSlot: Int32) -> UInt8 {
 
     var saveData = SaveGameType()
     saveData.timestamp = UInt64(Double(timestampNanoseconds) / 1e9)
-    saveData.level = UInt8(gLevelNum) // save @ beginning of next level
+    saveData.level = UInt8(gEngine.game.levelNum) // save @ beginning of next level
     saveData.numLives = UInt8(GetPlayerInfoEntry(0).pointee.numFreeLives)
     saveData.health = GetPlayerInfoEntry(0).pointee.health
     saveData.jetpackFuel = GetPlayerInfoEntry(0).pointee.jetpackFuel
@@ -1214,11 +1217,9 @@ func SaveGame(_ fileSlot: Int32) -> UInt8 {
 
     // SAVE IT TO DISK
 
-    return path.withCString { pathC in
-        withUnsafeMutablePointer(to: &saveData) { dataPtr in
-            dataPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
-                kNoErr == SaveUserDataFile(pathC, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr) ? 1 : 0
-            }
+    return withUnsafeMutablePointer(to: &saveData) { dataPtr in
+        dataPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
+            kNoErr == SaveUserDataFile(path, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr) ? 1 : 0
         }
     }
 }
@@ -1236,11 +1237,9 @@ func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameTy
 
     var scratch = SaveGameType()
 
-    let ok: Bool = path.withCString { pathC in
-        withUnsafeMutablePointer(to: &scratch) { scratchPtr in
-            scratchPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
-                kNoErr == LoadUserDataFile(pathC, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr)
-            }
+    let ok: Bool = withUnsafeMutablePointer(to: &scratch) { scratchPtr in
+        scratchPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
+            kNoErr == LoadUserDataFile(path, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr)
         }
     }
 
@@ -1255,13 +1254,13 @@ func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameTy
 func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
     let path = "File\(Character(UnicodeScalar(UInt8(65 + fileSlot))))"
 
-    let iErr = path.withCString { DeleteUserDataFile($0) }
+    let iErr = DeleteUserDataFile(path)
 
     return iErr == kNoErr ? 1 : 0
 }
 
 func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
-    gLevelNum = Int16(saveData.pointee.level)
+    gEngine.game.levelNum = Int16(saveData.pointee.level)
     GetPlayerInfoEntry(0).pointee.numFreeLives = Int16(saveData.pointee.numLives)
     GetPlayerInfoEntry(0).pointee.health = saveData.pointee.health
     GetPlayerInfoEntry(0).pointee.jetpackFuel = saveData.pointee.jetpackFuel
@@ -1279,13 +1278,13 @@ func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
 func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
     var createdDirID: Int = 0
 
-    let iErr = SwFindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gPrefsFolderVRefNum, &gPrefsFolderDirID) // locate the folder
+    let iErr = SwFindFolder(Int16(kOnSystemDisk), OSType(kPreferencesFolderType), 0, &gEngine.game.prefsFolderVRefNum, &gEngine.game.prefsFolderDirID) // locate the folder
     if iErr != kNoErr {
         SwAlert("Warning: Cannot locate the Preferences folder.")
     }
 
     if createIt != 0 {
-        return SwDirCreate(gPrefsFolderVRefNum, gPrefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
+        return SwDirCreate(gEngine.game.prefsFolderVRefNum, gEngine.game.prefsFolderDirID, PREFS_FOLDER_NAME, &createdDirID) // make folder in there
     }
 
     return iErr
@@ -1293,15 +1292,16 @@ func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
 
 private func makeFSSpecForUserDataFile(_ filename: String, _ spec: UnsafeMutablePointer<FSSpec>) -> OSErr {
     let path = ":\(PREFS_FOLDER_NAME_SWIFT):\(filename)"
-    return path.withCString { SwFSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, $0, spec) }
+    return SwFSMakeFSSpec(gEngine.game.prefsFolderVRefNum, gEngine.game.prefsFolderDirID, path, spec)
 }
 
 private let PREFS_FOLDER_NAME_SWIFT = "Nanosaur2"
 
 // Load struct from user file in prefs folder
-func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func LoadUserDataFile(_ filename: String, _ magic: String, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
-    let magicLength = Int(strlen(magic)) + 1 // including null-terminator
+    let magicBytes = Array(magic.utf8CString)
+    let magicLength = magicBytes.count // including null-terminator
     var fileMagic = [Int8](repeating: 0, count: 64)
 
     SwGameAssert(magicLength < 64)
@@ -1312,7 +1312,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     // READ FILE
 
-    _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    _ = makeFSSpecForUserDataFile(filename, &file)
     var refNum: Int16 = 0
     var iErr = SwFSpOpenDF(&file, Int8(fsRdPerm.rawValue), &refNum)
     if iErr != kNoErr {
@@ -1325,7 +1325,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     SwGetEOF(refNum, &eof)
 
     if eof != magicLength + payloadLength {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+        SwLog("File '\(filename)' appears to be corrupt!")
         SwFSClose(refNum)
         return kBadFileFormat
     }
@@ -1334,8 +1334,8 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     var count = magicLength
     iErr = fileMagic.withUnsafeMutableBufferPointer { SwFSRead(refNum, &count, $0.baseAddress) }
-    if iErr != kNoErr || count != magicLength || strncmp(magic, fileMagic, magicLength - 1) != 0 {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+    if iErr != kNoErr || count != magicLength || !fileMagic.prefix(magicLength - 1).elementsEqual(magicBytes.prefix(magicLength - 1)) {
+        SwLog("File '\(filename)' appears to be corrupt!")
         SwFSClose(refNum)
         return kBadFileFormat
     }
@@ -1347,7 +1347,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     count = payloadLength
     iErr = SwFSRead(refNum, &count, payloadCopy)
     if iErr != kNoErr || count != payloadLength {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+        SwLog("File '\(filename)' appears to be corrupt!")
         SafeDisposePtr(payloadCopy)
         SwFSClose(refNum)
         return kBadFileFormat
@@ -1363,14 +1363,14 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 }
 
 // Save struct to user file in prefs folder
-func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func SaveUserDataFile(_ filename: String, _ magic: String, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
 
     // CREATE BLANK FILE
 
-    _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    _ = makeFSSpecForUserDataFile(filename, &file)
     SwFSpDelete(&file) // delete any existing file
     var iErr = SwFSpCreate(&file, kGameIDFourCC, kPrefFourCC, -1) // smSystemScript
     if iErr != kNoErr {
@@ -1388,8 +1388,9 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     // WRITE MAGIC
 
-    var count = Int(strlen(magic)) + 1
-    iErr = SwFSWrite(refNum, &count, UnsafeMutablePointer(mutating: magic))
+    var magicBytes = Array(magic.utf8CString) // including null-terminator
+    var count = magicBytes.count
+    iErr = magicBytes.withUnsafeMutableBufferPointer { SwFSWrite(refNum, &count, $0.baseAddress) }
     if iErr != kNoErr {
         SwFSClose(refNum)
         return iErr
@@ -1401,16 +1402,16 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     iErr = SwFSWrite(refNum, &count, payloadPtr)
     SwFSClose(refNum)
 
-    SwLog("Wrote \(String(cString: filename))")
+    SwLog("Wrote \(filename)")
 
     return iErr
 }
 
-func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
+func DeleteUserDataFile(_ filename: String) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
-    var iErr = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    var iErr = makeFSSpecForUserDataFile(filename, &file)
     if iErr == kNoErr {
         iErr = SwFSpDelete(&file)
     }
@@ -1443,7 +1444,7 @@ func ResolveDataFileSpec(_ path: String, _ outSpec: UnsafeMutablePointer<FSSpec>
 }
 
 // Use SafeDisposePtr when done.
-func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
+func LoadDataFile(_ path: String, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
     var spec = FSSpec()
 
     let err = ResolveDataFileSpec(path, &spec)
@@ -1479,7 +1480,7 @@ func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePoint
 }
 
 // Use SafeDisposePtr when done.
-func LoadTextFile(_ spec: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
+func LoadTextFile(_ spec: String, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
     LoadDataFile(spec, outLength)
 }
 

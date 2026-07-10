@@ -1,14 +1,12 @@
 // Objects2.swift - Port of Objects2.c to Swift
 //
-// gMeshNum was `static` (file-private) in C, so it moves into private Swift
-// state; gNumWorldCalcsThisFrame stays declared in game.h/extern-visible but
+// gEngine.objects.meshNum was `static` (file-private) in C, so it moves into private Swift
+// state; gEngine.objects.numWorldCalcsThisFrame stays declared in game.h/extern-visible but
 // nothing else in the codebase actually references it, so it's fine as a
 // plain Swift global too (no C-linkage needed since nothing `extern`s it).
 
 private let SHADOW_Y_OFF: Float = 2.1
 
-private var gMeshNum: Int32 = 0
-private var gNumWorldCalcsThisFrame: Int32 = 0
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -195,7 +193,7 @@ func CalcObjectBoxFromNode(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 // This does a simple 1 box calculation for basic objects.
-// Box is calculated based on gCoord
+// Box is calculated based on gEngine.objects.coord
 func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else {
         return
@@ -203,12 +201,12 @@ func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     let boxPtr = collisionBoxesBase(theNode) // get ptr to 1st box (presumed only box)
 
-    boxPtr[0].left = gCoord.x + theNode.pointee.LeftOff
-    boxPtr[0].right = gCoord.x + theNode.pointee.RightOff
-    boxPtr[0].back = gCoord.z + theNode.pointee.BackOff
-    boxPtr[0].front = gCoord.z + theNode.pointee.FrontOff
-    boxPtr[0].top = gCoord.y + theNode.pointee.TopOff
-    boxPtr[0].bottom = gCoord.y + theNode.pointee.BottomOff
+    boxPtr[0].left = gEngine.objects.coord.x + theNode.pointee.LeftOff
+    boxPtr[0].right = gEngine.objects.coord.x + theNode.pointee.RightOff
+    boxPtr[0].back = gEngine.objects.coord.z + theNode.pointee.BackOff
+    boxPtr[0].front = gEngine.objects.coord.z + theNode.pointee.FrontOff
+    boxPtr[0].top = gEngine.objects.coord.y + theNode.pointee.TopOff
+    boxPtr[0].bottom = gEngine.objects.coord.y + theNode.pointee.BottomOff
 }
 
 // Sets an object's collision offset/bounds. Adjust accordingly for input rotation 0..3 (clockwise)
@@ -242,7 +240,7 @@ func AttachShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shadowType
     def.coord = OGLPoint3D(x: x, y: y, z: z)
     def.scale = scaleX
     def.rot = theNode.pointee.Rot.y
-    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING) | gAutoFadeStatusBits
+    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING) | gEngine.game.autoFadeStatusBits
     def.slot = theNode.pointee.Slot >= UInt16(SLOT_OF_DUMB + 1) ? Int16(theNode.pointee.Slot + 1) : Int16(SLOT_OF_DUMB + 1) // shadow *must* be after parent!
     def.moveCall = nil
     def.drawCall = cDrawShadow
@@ -270,7 +268,7 @@ func AttachStaticShadowToObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ shad
     var def = NewObjectDefinitionType()
     def.genre = UInt8(CUSTOM_GENRE)
     def.coord = OGLPoint3D(x: x, y: y, z: z)
-    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG) | gAutoFadeStatusBits
+    def.flags = UInt32(STATUS_BIT_NOZWRITES | STATUS_BIT_NOLIGHTING | STATUS_BIT_NOFOG) | gEngine.game.autoFadeStatusBits
     def.slot = theNode.pointee.Slot >= UInt16(SLOT_OF_DUMB + 1) ? Int16(theNode.pointee.Slot + 1) : Int16(SLOT_OF_DUMB + 1) // shadow *must* be after parent!
     def.moveCall = nil
     def.drawCall = cDrawShadow
@@ -298,10 +296,10 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         return
     }
 
-    if theNode.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 { // hide shadow if parent hidden
-        shadowNode.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+    if theNode.hasStatus(STATUS_BIT_HIDDEN) { // hide shadow if parent hidden
+        shadowNode.setStatus(STATUS_BIT_HIDDEN)
     } else {
-        shadowNode.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        shadowNode.clearStatus(STATUS_BIT_HIDDEN)
     }
 
     shadowNode.pointee.ColorFilter.a = theNode.pointee.ColorFilter.a * 0.9 // match fade and decay a little to adjust it how we want it
@@ -331,16 +329,7 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
         }
 
         // SEE IF ON OBJNODE
-        var thisNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
-        repeat {
-            guard let node = thisNodePtr else {
-                break
-            }
-
-            if node.pointee.Slot >= UInt16(SLOT_OF_DUMB) {
-                break
-            }
-
+        for node in usableObjectNodes {
             if node.pointee.CType & UInt32(CTYPE_BLOCKSHADOW) != 0 { // look for things which can block the shadow
                 let boxes = collisionBoxesBase(node)
                 for i in 0..<Int(node.pointee.NumCollisionBoxes) { // check all collision boxes
@@ -362,8 +351,7 @@ func UpdateShadow(_ theNode: UnsafeMutablePointer<ObjNode>?) {
                     onBlocker = true
                 }
             }
-            thisNodePtr = node.pointee.NextNode // next node
-        } while thisNodePtr != nil
+        }
 
         // SET SHADOW'S Y
         if onBlocker {
@@ -413,43 +401,38 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // SUBMIT THE MATRIX
     withUnsafePointer(to: &theNode.pointee.BaseTransformMatrix) {
         UnsafeRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.multMatrix($0)
+            gEngine.renderer.multMatrix($0)
         }
     }
 
     // SUBMIT SHADOW TEXTURE
-    gGlobalTransparency = theNode.pointee.ColorFilter.a
+    gEngine.metaObjects.globalTransparency = theNode.pointee.ColorFilter.a
 
     MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_GLOBAL))![Int(GLOBAL_SObjType_Shadow_Circular) + shadowType].materialObject?.assumingMemoryBound(to: MOMaterialObject.self))
 
     // DRAW THE SHADOW
-    gRenderBackend.beginImmediate(.quads)
-    gRenderBackend.texCoord2f(0, 0); gRenderBackend.vertex3f(-20, 0, 20)
-    gRenderBackend.texCoord2f(1, 0); gRenderBackend.vertex3f(20, 0, 20)
-    gRenderBackend.texCoord2f(1, 1); gRenderBackend.vertex3f(20, 0, -20)
-    gRenderBackend.texCoord2f(0, 1); gRenderBackend.vertex3f(-20, 0, -20)
-    gRenderBackend.endImmediate()
+    gEngine.renderer.beginImmediate(.quads)
+    gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(-20, 0, 20)
+    gEngine.renderer.texCoord2f(1, 0); gEngine.renderer.vertex3f(20, 0, 20)
+    gEngine.renderer.texCoord2f(1, 1); gEngine.renderer.vertex3f(20, 0, -20)
+    gEngine.renderer.texCoord2f(0, 1); gEngine.renderer.vertex3f(-20, 0, -20)
+    gEngine.renderer.endImmediate()
 
     OGL_PopState()
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }
 
 // MARK: - Object culling
 
 func CullTestAllObjects() {
-    guard var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr else { // get & verify 1st node
-        return
-    }
-
     // PROCESS EACH OBJECT
-    repeat {
-        let node = theNode!
+    for node in allObjectNodes {
         var skipToNext = false
         var drawOn = false
 
-        if node.pointee.StatusBits & UInt32(STATUS_BIT_HIDDEN) != 0 { // if hidden then skip
+        if node.hasStatus(STATUS_BIT_HIDDEN) { // if hidden then skip
             skipToNext = true
-        } else if node.pointee.StatusBits & UInt32(STATUS_BIT_DONTCULL) != 0 { // see if dont want to use our culling
+        } else if node.hasStatus(STATUS_BIT_DONTCULL) { // see if dont want to use our culling
             drawOn = true
         } else if node.pointee.LocalBBox.isEmpty != 0 { // skip culling if no bbox
             drawOn = true
@@ -462,9 +445,9 @@ func CullTestAllObjects() {
             if Int32(node.pointee.Genre) == Int32(SKELETON_GENRE) { // skeletons are already oriented, just need translation
                 var m2 = OGLMatrix4x4()
                 m2.setTranslate(node.pointee.Coord.x, node.pointee.Coord.y, node.pointee.Coord.z)
-                m = m2.multiplied(by: gWorldToFrustumMatrix)
+                m = m2.multiplied(by: gEngine.view.worldToFrustumMatrix)
             } else { // non-skeletons need full transform
-                m = node.pointee.BaseTransformMatrix.multiplied(by: gWorldToFrustumMatrix)
+                m = node.pointee.BaseTransformMatrix.multiplied(by: gEngine.view.worldToFrustumMatrix)
             }
 
             let m00 = matValue(&m, M00), m01 = matValue(&m, M01), m02 = matValue(&m, M02), m03 = matValue(&m, M03)
@@ -536,20 +519,17 @@ func CullTestAllObjects() {
 
         if !skipToNext {
             if drawOn {
-                node.pointee.StatusBits &= ~(UInt32(STATUS_BIT_ISCULLED1) << gCurrentSplitScreenPane) // clear cull bit
+                node.pointee.StatusBits &= ~(UInt32(STATUS_BIT_ISCULLED1) << gEngine.view.currentSplitScreenPane) // clear cull bit
             } else {
-                node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << gCurrentSplitScreenPane) // set cull bit for this pane/player
+                node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << gEngine.view.currentSplitScreenPane) // set cull bit for this pane/player
             }
         }
-
-        // NEXT NODE
-        theNode = node.pointee.NextNode
-    } while theNode != nil
+    }
 }
 
 // Returns true if object is culled in all panes
 func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
-    for i in 0..<Int(gNumPlayers) {
+    for i in 0..<Int(gEngine.player.numPlayers) {
         let culledThisPane = theNode.pointee.StatusBits & (UInt32(STATUS_BIT_ISCULLED1) << i)
         if culledThisPane == 0 {
             return 0
@@ -562,18 +542,18 @@ func IsObjectTotallyCulled(_ theNode: UnsafeMutablePointer<ObjNode>) -> UInt8 {
 // MARK: - World points
 
 func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.pushMatrix()
-    gRenderBackend.loadIdentity()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.pushMatrix()
+    gEngine.renderer.loadIdentity()
 
-    gMeshNum = 0
+    gEngine.objects.meshNum = 0
 
     moCalcWorldPointsObject(theNode, UnsafeMutableRawPointer(theNode.pointee.BaseGroup))
 
-    gRenderBackend.popMatrix()
+    gEngine.renderer.popMatrix()
 
-    theNode.pointee.HasWorldPoints = 1
-    gNumWorldCalcsThisFrame += 1
+    theNode.hasWorldPoints = true
+    gEngine.objects.numWorldCalcsThisFrame += 1
 }
 
 private func moCalcWorldPointsObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ object: MetaObjectPtr?) {
@@ -607,8 +587,8 @@ private func moCalcWorldPointsObject(_ theNode: UnsafeMutablePointer<ObjNode>, _
 
 private func moCalcWorldPointsGroup(_ theNode: UnsafeMutablePointer<ObjNode>, _ object: UnsafeMutablePointer<MOGroupObject>) {
     // PUSH MATRIES WITH OPENGL
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.pushMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.pushMatrix()
 
     // PARSE GROUP
     let numChildren = Int(object.numObjectsInGroup) // get # objects in group
@@ -618,22 +598,22 @@ private func moCalcWorldPointsGroup(_ theNode: UnsafeMutablePointer<ObjNode>, _ 
     }
 
     // RETREIVE OPENGL MATRICES
-    gRenderBackend.matrixMode(.modelview)
-    gRenderBackend.popMatrix()
+    gEngine.renderer.matrixMode(.modelview)
+    gEngine.renderer.popMatrix()
 }
 
 private func moCalcWorldPointsMatrix(_ matObj: UnsafeMutablePointer<MOMatrixObject>) {
     // MULTIPLY CURRENT MATRIX BY THIS
     withUnsafePointer(to: &matObj.pointee.matrix) {
         UnsafeRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.multMatrix($0)
+            gEngine.renderer.multMatrix($0)
         }
     }
 }
 
 private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNode>, _ data: UnsafeMutablePointer<MOVertexArrayData>) {
     let numPoints = Int(data.pointee.numPoints) // get # points in this mesh
-    let meshNum = Int(gMeshNum)
+    let meshNum = Int(gEngine.objects.meshNum)
 
     if meshNum >= MAX_MESHES_IN_MODEL {
         SwFatal("MO_CalcWorldPoints_VertexArray: meshNum >= MAX_MESHES_IN_MODEL")
@@ -655,7 +635,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
     var localToWorld = OGLMatrix4x4()
     withUnsafeMutablePointer(to: &localToWorld) {
         UnsafeMutableRawPointer($0).withMemoryRebound(to: Float.self, capacity: 16) {
-            gRenderBackend.getModelViewMatrix($0)
+            gEngine.renderer.getModelViewMatrix($0)
         }
     }
 
@@ -685,7 +665,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
         }
     }
 
-    gMeshNum += 1
+    gEngine.objects.meshNum += 1
 }
 
 // MARK: - Object chains
@@ -694,7 +674,7 @@ func HideObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
-        n.pointee.StatusBits |= UInt32(STATUS_BIT_HIDDEN)
+        n.setStatus(STATUS_BIT_HIDDEN)
         node = n.pointee.ChainNode
     }
 }
@@ -703,15 +683,20 @@ func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     var node = theNode
 
     while let n = node {
-        n.pointee.StatusBits &= ~UInt32(STATUS_BIT_HIDDEN)
+        n.clearStatus(STATUS_BIT_HIDDEN)
         node = n.pointee.ChainNode
     }
 }
 
 // MARK: - Background picture object node
 
-func MakeBackgroundPictureObject(_ imagePath: UnsafePointer<CChar>) -> UnsafeMutablePointer<ObjNode> {
-    let backgroundPicture = MO_CreateNewObjectOfType(.picture, 0, UnsafeMutableRawPointer(mutating: imagePath))
+func MakeBackgroundPictureObject(_ imagePath: String) -> UnsafeMutablePointer<ObjNode> {
+    // The MetaObject creation protocol passes type-specific init data as a
+    // raw void* - for pictures that's a C path string, consumed synchronously
+    // during creation, so a withCString scope covers its whole lifetime.
+    let backgroundPicture = imagePath.withCString {
+        MO_CreateNewObjectOfType(.picture, 0, UnsafeMutableRawPointer(mutating: $0))
+    }
 
     var def = NewObjectDefinitionType()
     def.genre = UInt8(DISPLAY_GROUP_GENRE)

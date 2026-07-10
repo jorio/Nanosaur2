@@ -1,17 +1,35 @@
 // Input.swift - Port of Input.c to Swift
 //
-// gUserPrefersGamepad/gCursorCoord are native Swift storage now (converted
+// gEngine.input.userPrefersGamepad/gEngine.input.cursorCoord are native Swift storage now (converted
 // 2026-07-07): nothing in any .c file touches them anymore. Every other
-// global in the original file (gGamepads, gKeyboardStates,
-// gMouseButtonStates, gNeedStates, gLastGamepadForNeedAnyP,
-// gGamepadPlayerMappingLocked, gMouseMotionNow, gTextInput) has no
+// global in the original file (gEngine.input.gamepads, gEngine.input.keyboardStates,
+// gEngine.input.mouseButtonStates, gEngine.input.needStates, gEngine.input.lastGamepadForNeedAnyP,
+// gEngine.input.gamepadPlayerMappingLocked, gEngine.input.mouseMotionNow, gEngine.input.textInput) has no
 // `extern` declaration anywhere and is only ever touched from this file,
 // so they all stay private Swift storage. The `Gamepad` struct
 // itself was only ever defined in Input.c, so it becomes a plain Swift
 // struct here rather than a C type.
 
-var gUserPrefersGamepad: UInt8 = 0
-var gCursorCoord = OGLPoint2D()
+/// Input state. Owned by GameEngine as `gEngine.input`.
+final class InputSystem {
+    var userPrefersGamepad: UInt8 = 0
+    var cursorCoord = OGLPoint2D()
+
+    fileprivate var gamepadPlayerMappingLocked = false
+    fileprivate var gamepads = [Gamepad](repeating: Gamepad(), count: maxLocalPlayers)
+
+    fileprivate var keyboardStates = [UInt8](repeating: 0, count: Int(SDL_SCANCODE_COUNT.rawValue))
+    fileprivate var mouseButtonStates = [UInt8](repeating: 0, count: Int(NUM_SUPPORTED_MOUSE_BUTTONS))
+    fileprivate var needStates = [UInt8](repeating: 0, count: Int(NUM_CONTROL_NEEDS))
+    fileprivate var lastGamepadForNeedAnyP = [Int32](repeating: -1, count: Int(NUM_CONTROL_NEEDS))
+
+    fileprivate var mouseMotionNow = false
+    fileprivate var textInput = ""
+
+    fileprivate var mouseDeltaTimeSinceLastCall: Float = 0
+    fileprivate var mouseDeltaLast = OGLVector2D()
+    fileprivate var cursorCoordBackup = OGLPoint2D(x: -1, y: -1)
+}
 //
 // MOUSE_SMOOTHING and REQUIRE_LOCK_MAPPING are both hardcoded off in the
 // original file, so their guarded code (MouseSmoothing_*,
@@ -37,27 +55,20 @@ private struct Gamepad {
     var analogSteering = OGLVector2D()
 }
 
-private var gGamepadPlayerMappingLocked = false
-private var gGamepads = [Gamepad](repeating: Gamepad(), count: maxLocalPlayers)
-
-private var gKeyboardStates = [UInt8](repeating: 0, count: Int(SDL_SCANCODE_COUNT.rawValue))
-private var gMouseButtonStates = [UInt8](repeating: 0, count: Int(NUM_SUPPORTED_MOUSE_BUTTONS))
 
 // See PlatformBackend.swift - raw digital-input polling is the one seam in
-// this file that's genuinely swappable per-platform.
+// this file that's genuinely swappable per-platform (3DS hid vs SDL
+// keyboard). The polled states land in gEngine.input.keyboardStates like
+// everything else; only the raw poll itself is backend-specific.
 private var gInputBackend = PlatformInput()
 private var gRawDigitalInputStates = [Bool](repeating: false, count: Int(SDL_SCANCODE_COUNT.rawValue))
-private var gNeedStates = [UInt8](repeating: 0, count: Int(NUM_CONTROL_NEEDS))
-private var gLastGamepadForNeedAnyP = [Int32](repeating: -1, count: Int(NUM_CONTROL_NEEDS))
 
-private var gMouseMotionNow = false
-private var gTextInput = ""
 
 // MARK: - Init input
 
 func InitInput() {
     for i in 0..<Int(NUM_CONTROL_NEEDS) {
-        gLastGamepadForNeedAnyP[i] = -1
+        gEngine.input.lastGamepadForNeedAnyP[i] = -1
     }
 
     tryFillUpVacantGamepadSlots()
@@ -77,17 +88,17 @@ private func updateKeyState(_ state: inout UInt8, _ downNow: Bool) {
 }
 
 func InvalidateNeedState(_ need: Int32) {
-    gNeedStates[Int(need)] = UInt8(KEYSTATE_IGNOREHELD)
+    gEngine.input.needStates[Int(need)] = UInt8(KEYSTATE_IGNOREHELD)
 }
 
 func InvalidateAllInputs() {
-    for i in 0..<gNeedStates.count { gNeedStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
-    for i in 0..<gKeyboardStates.count { gKeyboardStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
-    for i in 0..<gMouseButtonStates.count { gMouseButtonStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
+    for i in 0..<gEngine.input.needStates.count { gEngine.input.needStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
+    for i in 0..<gEngine.input.keyboardStates.count { gEngine.input.keyboardStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
+    for i in 0..<gEngine.input.mouseButtonStates.count { gEngine.input.mouseButtonStates[i] = UInt8(KEYSTATE_IGNOREHELD) }
 
     for i in 0..<maxLocalPlayers {
-        for j in 0..<gGamepads[i].needStates.count {
-            gGamepads[i].needStates[j] = UInt8(KEYSTATE_IGNOREHELD)
+        for j in 0..<gEngine.input.gamepads[i].needStates.count {
+            gEngine.input.gamepads[i].needStates[j] = UInt8(KEYSTATE_IGNOREHELD)
         }
     }
 }
@@ -96,12 +107,12 @@ private func updateRawKeyboardStates() {
     gInputBackend.pollDigitalInputs(into: &gRawDigitalInputStates)
 
     for i in 0..<gRawDigitalInputStates.count {
-        updateKeyState(&gKeyboardStates[i], gRawDigitalInputStates[i])
+        updateKeyState(&gEngine.input.keyboardStates[i], gRawDigitalInputStates[i])
     }
 }
 
 private func processSystemKeyChords() {
-    if (gGamePaused != 0 || gPlayNow == 0) && IsCmdQDown() != 0 {
+    if (gEngine.screens.gamePaused != 0 || gEngine.screens.playNow == 0) && IsCmdQDown() != 0 {
         CleanQuit()
     }
 
@@ -119,14 +130,14 @@ private func updateMouseButtonStates(_ mouseWheelDeltaX: Int32, _ mouseWheelDelt
 
     for i in 1..<Int(NUM_SUPPORTED_MOUSE_BUTTONS_PURESDL) { // SDL buttons start at 1!
         let buttonBit = (mouseButtons & (UInt32(1) << (UInt32(i) - 1))) != 0 // SDL_BUTTON_MASK(i)
-        updateKeyState(&gMouseButtonStates[i], buttonBit)
+        updateKeyState(&gEngine.input.mouseButtonStates[i], buttonBit)
     }
 
     // Fake buttons for mouse wheel up/down
-    updateKeyState(&gMouseButtonStates[Int(SDL_BUTTON_WHEELUP)], mouseWheelDeltaX > 0)
-    updateKeyState(&gMouseButtonStates[Int(SDL_BUTTON_WHEELDOWN)], mouseWheelDeltaX < 0)
-    updateKeyState(&gMouseButtonStates[Int(SDL_BUTTON_WHEELLEFT)], mouseWheelDeltaY < 0)
-    updateKeyState(&gMouseButtonStates[Int(SDL_BUTTON_WHEELRIGHT)], mouseWheelDeltaY > 0)
+    updateKeyState(&gEngine.input.mouseButtonStates[Int(SDL_BUTTON_WHEELUP)], mouseWheelDeltaX > 0)
+    updateKeyState(&gEngine.input.mouseButtonStates[Int(SDL_BUTTON_WHEELDOWN)], mouseWheelDeltaX < 0)
+    updateKeyState(&gEngine.input.mouseButtonStates[Int(SDL_BUTTON_WHEELLEFT)], mouseWheelDeltaY < 0)
+    updateKeyState(&gEngine.input.mouseButtonStates[Int(SDL_BUTTON_WHEELRIGHT)], mouseWheelDeltaY > 0)
 }
 
 private func updateInputNeeds() {
@@ -139,23 +150,23 @@ private func updateInputNeeds() {
             for j in 0..<Int(MAX_BINDINGS_PER_NEED) {
                 let scancode = InputBinding_GetKey(kb, Int32(j))
                 if scancode != 0 && scancode < Int16(SDL_SCANCODE_COUNT.rawValue) {
-                    pressed = pressed || (gKeyboardStates[Int(scancode)] & UInt8(KEYSTATE_ACTIVE_BIT)) != 0
+                    pressed = pressed || (gEngine.input.keyboardStates[Int(scancode)] & UInt8(KEYSTATE_ACTIVE_BIT)) != 0
                 }
             }
 
-            pressed = pressed || (gMouseButtonStates[Int(kb.pointee.mouseButton)] & UInt8(KEYSTATE_ACTIVE_BIT)) != 0
+            pressed = pressed || (gEngine.input.mouseButtonStates[Int(kb.pointee.mouseButton)] & UInt8(KEYSTATE_ACTIVE_BIT)) != 0
         }
 
-        updateKeyState(&gNeedStates[need], pressed)
+        updateKeyState(&gEngine.input.needStates[need], pressed)
     }
 }
 
 private func updateControllerSpecificInputNeeds(_ controllerNum: Int) {
-    guard gGamepads[controllerNum].open else {
+    guard gEngine.input.gamepads[controllerNum].open else {
         return
     }
 
-    let controllerInstance = gGamepads[controllerNum].sdlGamepad
+    let controllerInstance = gEngine.input.gamepads[controllerNum].sdlGamepad
 
     for needNum in 0..<Int(NUM_CONTROL_NEEDS) {
         let deadZone = needNum >= Int(NUM_REMAPPABLE_NEEDS) ? kJoystickDeadZoneUI : kJoystickDeadZone
@@ -199,8 +210,8 @@ private func updateControllerSpecificInputNeeds(_ controllerNum: Int) {
             }
         }
 
-        gGamepads[controllerNum].needAnalog[needNum] = analogPressed
-        updateKeyState(&gGamepads[controllerNum].needStates[needNum], pressed)
+        gEngine.input.gamepads[controllerNum].needAnalog[needNum] = analogPressed
+        updateKeyState(&gEngine.input.gamepads[controllerNum].needStates[needNum], pressed)
     }
 }
 
@@ -209,8 +220,8 @@ private func updateControllerSpecificInputNeeds(_ controllerNum: Int) {
 // MARK: - Public functions
 
 func DoSDLMaintenance() {
-    gTextInput = ""
-    gMouseMotionNow = false
+    gEngine.input.textInput = ""
+    gEngine.input.mouseMotionNow = false
     var mouseWheelDeltaX: Int32 = 0
     var mouseWheelDeltaY: Int32 = 0
 
@@ -236,19 +247,19 @@ func DoSDLMaintenance() {
             CleanQuit() // exits the process (noreturn) - see SwExitToShell in Misc.swift
 
         case SDL_EVENT_KEY_DOWN:
-            gUserPrefersGamepad = 0
+            gEngine.input.userPrefersGamepad = 0
 
         case SDL_EVENT_TEXT_INPUT:
             if let text = event.text.text {
-                gTextInput = String(cString: text)
+                gEngine.input.textInput = String(cString: text)
             }
 
         case SDL_EVENT_MOUSE_MOTION:
-            gMouseMotionNow = true
-            gUserPrefersGamepad = 0
+            gEngine.input.mouseMotionNow = true
+            gEngine.input.userPrefersGamepad = 0
 
         case SDL_EVENT_MOUSE_WHEEL:
-            gUserPrefersGamepad = 0
+            gEngine.input.userPrefersGamepad = 0
             mouseWheelDeltaX += Int32(event.wheel.y)
             mouseWheelDeltaY += Int32(event.wheel.x)
 
@@ -259,7 +270,7 @@ func DoSDLMaintenance() {
             onJoystickRemoved(event.gdevice.which)
 
         case SDL_EVENT_GAMEPAD_BUTTON_DOWN, SDL_EVENT_GAMEPAD_BUTTON_UP:
-            gUserPrefersGamepad = 1
+            gEngine.input.userPrefersGamepad = 1
 
         default:
             break
@@ -293,7 +304,7 @@ public func GetKeyState(_ sdlScancode: UInt16) -> Int32 {
     if sdlScancode >= SDL_SCANCODE_COUNT.rawValue {
         return Int32(KEYSTATE_OFF)
     }
-    return Int32(gKeyboardStates[Int(sdlScancode)])
+    return Int32(gEngine.input.keyboardStates[Int(sdlScancode)])
 }
 
 // MARK: - Click states
@@ -303,23 +314,23 @@ public func GetClickState(_ mouseButton: Int32) -> Int32 {
     if mouseButton >= Int32(NUM_SUPPORTED_MOUSE_BUTTONS) {
         return Int32(KEYSTATE_OFF)
     }
-    return Int32(gMouseButtonStates[Int(mouseButton)])
+    return Int32(gEngine.input.mouseButtonStates[Int(mouseButton)])
 }
 
 // MARK: - Need states
 
 private func getNeedStateAnyP(_ needID: Int) -> Int32 {
-    gLastGamepadForNeedAnyP[needID] = -1
+    gEngine.input.lastGamepadForNeedAnyP[needID] = -1
 
     for i in 0..<maxLocalPlayers {
-        if gGamepads[i].open && gGamepads[i].needStates[needID] != 0 {
-            gLastGamepadForNeedAnyP[needID] = Int32(i)
-            return Int32(gGamepads[i].needStates[needID])
+        if gEngine.input.gamepads[i].open && gEngine.input.gamepads[i].needStates[needID] != 0 {
+            gEngine.input.lastGamepadForNeedAnyP[needID] = Int32(i)
+            return Int32(gEngine.input.gamepads[i].needStates[needID])
         }
     }
 
     // Fallback to KB/M
-    return Int32(gNeedStates[needID])
+    return Int32(gEngine.input.needStates[needID])
 }
 
 @c @implementation
@@ -333,15 +344,15 @@ public func GetNeedState(_ needID: Int32, _ playerID: Int32) -> Int32 {
     SwGameAssert(needID >= 0)
     SwGameAssert(needID < Int32(NUM_CONTROL_NEEDS))
 
-    let controller = gGamepads[Int(playerID)]
+    let controller = gEngine.input.gamepads[Int(playerID)]
 
     if controller.open && controller.needStates[Int(needID)] != 0 {
         return Int32(controller.needStates[Int(needID)])
     }
 
     // Fallback to KB/M
-    if playerID == Int32(gNumPlayers) - 1 { // KBMFallbackPlayer()
-        return Int32(gNeedStates[Int(needID)])
+    if playerID == Int32(gEngine.player.numPlayers) - 1 { // KBMFallbackPlayer()
+        return Int32(gEngine.input.needStates[Int(needID)])
     }
 
     return Int32(KEYSTATE_OFF)
@@ -351,18 +362,18 @@ func GetLastControllerForNeedAnyP(_ needID: Int32) -> Int32 {
     SwGameAssert(needID >= 0)
     SwGameAssert(needID < Int32(NUM_CONTROL_NEEDS))
 
-    return gLastGamepadForNeedAnyP[Int(needID)]
+    return gEngine.input.lastGamepadForNeedAnyP[Int(needID)]
 }
 
 private func getNeedAnalogValueAnyP(_ needID: Int32) -> Float {
     for i in 0..<maxLocalPlayers {
-        if gGamepads[i].open && gGamepads[i].needStates[Int(needID)] != 0 {
+        if gEngine.input.gamepads[i].open && gEngine.input.gamepads[i].needStates[Int(needID)] != 0 {
             return GetNeedAnalogValue(needID, Int32(i))
         }
     }
 
     // Fallback to KB/M
-    return GetNeedAnalogValue(needID, Int32(gNumPlayers) - 1) // KBMFallbackPlayer()
+    return GetNeedAnalogValue(needID, Int32(gEngine.player.numPlayers) - 1) // KBMFallbackPlayer()
 }
 
 func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
@@ -375,15 +386,15 @@ func GetNeedAnalogValue(_ needID: Int32, _ playerID: Int32) -> Float {
     SwGameAssert(needID >= 0)
     SwGameAssert(needID < Int32(NUM_CONTROL_NEEDS))
 
-    let controller = gGamepads[Int(playerID)]
+    let controller = gEngine.input.gamepads[Int(playerID)]
 
     if controller.open && controller.needAnalog[Int(needID)] != 0.0 {
         return controller.needAnalog[Int(needID)]
     }
 
     // Fallback to KB/M
-    if playerID == Int32(gNumPlayers) - 1 { // KBMFallbackPlayer()
-        if gNeedStates[Int(needID)] & UInt8(KEYSTATE_ACTIVE_BIT) != 0 {
+    if playerID == Int32(gEngine.player.numPlayers) - 1 { // KBMFallbackPlayer()
+        if gEngine.input.needStates[Int(needID)] & UInt8(KEYSTATE_ACTIVE_BIT) != 0 {
             return 1.0
         }
     }
@@ -403,7 +414,7 @@ func GetNeedAnalogSteering(_ negativeNeedID: Int32, _ positiveNeedID: Int32, _ p
 }
 
 func UserWantsOut() -> UInt8 {
-    if gGammaFadeFrac < 1 { // disallow skipping during fade-in
+    if gEngine.window.gammaFadeFrac < 1 { // disallow skipping during fade-in
         return 0
     }
 
@@ -439,7 +450,7 @@ func GetNumGamepad() -> Int32 {
     var count: Int32 = 0
 
     for i in 0..<maxLocalPlayers {
-        if gGamepads[i].open {
+        if gEngine.input.gamepads[i].open {
             count += 1
         }
     }
@@ -448,8 +459,8 @@ func GetNumGamepad() -> Int32 {
 }
 
 func GetGamepad(_ n: Int32) -> OpaquePointer? {
-    if gGamepads[Int(n)].open {
-        return gGamepads[Int(n)].sdlGamepad
+    if gEngine.input.gamepads[Int(n)].open {
+        return gEngine.input.gamepads[Int(n)].sdlGamepad
     } else {
         return nil
     }
@@ -457,7 +468,7 @@ func GetGamepad(_ n: Int32) -> OpaquePointer? {
 
 private func findFreeGamepadSlot() -> Int {
     for i in 0..<maxLocalPlayers {
-        if !gGamepads[i].open {
+        if !gEngine.input.gamepads[i].open {
             return i
         }
     }
@@ -467,7 +478,7 @@ private func findFreeGamepadSlot() -> Int {
 
 private func getGamepadSlotFromJoystick(_ joystickID: SDL_JoystickID) -> Int {
     for gamepadSlot in 0..<maxLocalPlayers {
-        let gamepad = gGamepads[gamepadSlot]
+        let gamepad = gEngine.input.gamepads[gamepadSlot]
         if gamepad.open && SDL_GetGamepadID(gamepad.sdlGamepad) == joystickID {
             return gamepadSlot
         }
@@ -481,7 +492,7 @@ private func tryOpenGamepadFromJoystick(_ joystickID: SDL_JoystickID) -> OpaqueP
     // First, check that it's not in use already
     var gamepadSlot = getGamepadSlotFromJoystick(joystickID)
     if gamepadSlot >= 0 { // in use
-        return gGamepads[gamepadSlot].sdlGamepad
+        return gEngine.input.gamepads[gamepadSlot].sdlGamepad
     }
 
     // If we can't get an SDL_Gamepad from that joystick, don't bother
@@ -506,16 +517,16 @@ private func tryOpenGamepadFromJoystick(_ joystickID: SDL_JoystickID) -> OpaqueP
     // Get properties
     let props = SDL_GetGamepadProperties(sdlGamepad)
 
-    gGamepads[gamepadSlot] = Gamepad()
-    gGamepads[gamepadSlot].open = true
-    gGamepads[gamepadSlot].sdlGamepad = sdlGamepad
-    gGamepads[gamepadSlot].hasRumble = SDL_GetBooleanProperty(props, SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false)
+    gEngine.input.gamepads[gamepadSlot] = Gamepad()
+    gEngine.input.gamepads[gamepadSlot].open = true
+    gEngine.input.gamepads[gamepadSlot].sdlGamepad = sdlGamepad
+    gEngine.input.gamepads[gamepadSlot].hasRumble = SDL_GetBooleanProperty(props, SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false)
 
     // SDL_Log unavailable (variadic); diagnostic only.
 
-    gUserPrefersGamepad = 1
+    gEngine.input.userPrefersGamepad = 1
 
-    return gGamepads[gamepadSlot].sdlGamepad
+    return gEngine.input.gamepads[gamepadSlot].sdlGamepad
 }
 
 @discardableResult
@@ -558,11 +569,11 @@ private func tryOpenAnyUnusedGamepad(_ showMessage: Bool) -> OpaquePointer? {
         if showMessage {
             let name = SDL_GetJoystickNameForID(joysticks[0])
             let message = "The game does not support your controller yet (\"\(name.map { String(cString: $0) } ?? "")\").\n\nYou can play with the keyboard and mouse instead. Sorry!"
-            message.withCString { msgPtr in
+            do {
                 _ = SDL_ShowSimpleMessageBox(
                     UInt32(SDL_MESSAGEBOX_WARNING),
                     "Controller not supported",
-                    msgPtr,
+                    message,
                     gSDLWindow)
             }
         }
@@ -594,7 +605,7 @@ func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms:
     SwGameAssert(playerID >= 0)
     SwGameAssert(playerID < Int32(maxLocalPlayers))
 
-    let gamepad = gGamepads[Int(playerID)]
+    let gamepad = gEngine.input.gamepads[Int(playerID)]
 
     // Gotta have a valid SDL_Gamepad instance
     guard gamepad.hasRumble, gamepad.sdlGamepad != nil else {
@@ -617,13 +628,13 @@ func Rumble(_ lowFrequencyStrength: Float, _ highFrequencyStrength: Float, _ ms:
 }
 
 private func closeGamepad(_ controllerSlot: Int) {
-    SwGameAssert(gGamepads[controllerSlot].open)
-    SwGameAssert(gGamepads[controllerSlot].sdlGamepad != nil)
+    SwGameAssert(gEngine.input.gamepads[controllerSlot].open)
+    SwGameAssert(gEngine.input.gamepads[controllerSlot].sdlGamepad != nil)
 
-    SDL_CloseGamepad(gGamepads[controllerSlot].sdlGamepad)
-    gGamepads[controllerSlot].open = false
-    gGamepads[controllerSlot].sdlGamepad = nil
-    gGamepads[controllerSlot].hasRumble = false
+    SDL_CloseGamepad(gEngine.input.gamepads[controllerSlot].sdlGamepad)
+    gEngine.input.gamepads[controllerSlot].open = false
+    gEngine.input.gamepads[controllerSlot].sdlGamepad = nil
+    gEngine.input.gamepads[controllerSlot].hasRumble = false
 }
 
 private func moveController(_ oldSlot: Int, _ newSlot: Int) {
@@ -633,17 +644,17 @@ private func moveController(_ oldSlot: Int, _ newSlot: Int) {
 
     // SDL_Log unavailable (variadic); diagnostic only.
 
-    gGamepads[newSlot] = gGamepads[oldSlot]
+    gEngine.input.gamepads[newSlot] = gEngine.input.gamepads[oldSlot]
 
     // TODO: Does this actually work??
-    if gGamepads[newSlot].open {
-        SDL_SetGamepadPlayerIndex(gGamepads[newSlot].sdlGamepad, Int32(newSlot))
+    if gEngine.input.gamepads[newSlot].open {
+        SDL_SetGamepadPlayerIndex(gEngine.input.gamepads[newSlot].sdlGamepad, Int32(newSlot))
     }
 
     // Clear duplicate slot so we don't read it by mistake in the future
-    gGamepads[oldSlot].open = false
-    gGamepads[oldSlot].sdlGamepad = nil
-    gGamepads[oldSlot].hasRumble = false
+    gEngine.input.gamepads[oldSlot].open = false
+    gEngine.input.gamepads[oldSlot].sdlGamepad = nil
+    gEngine.input.gamepads[oldSlot].hasRumble = false
 }
 
 private func compactGamepadSlots() {
@@ -652,7 +663,7 @@ private func compactGamepadSlots() {
     for i in 0..<maxLocalPlayers {
         SwGameAssert(writeIndex <= i)
 
-        if gGamepads[i].open {
+        if gEngine.input.gamepads[i].open {
             moveController(i, writeIndex)
             writeIndex += 1
         }
@@ -664,16 +675,16 @@ private func swapControllers(_ slotA: Int, _ slotB: Int) {
         return
     }
 
-    let copy = gGamepads[slotB]
-    gGamepads[slotB] = gGamepads[slotA]
-    gGamepads[slotA] = copy
+    let copy = gEngine.input.gamepads[slotB]
+    gEngine.input.gamepads[slotB] = gEngine.input.gamepads[slotA]
+    gEngine.input.gamepads[slotA] = copy
 
-    if gGamepads[slotA].open {
-        SDL_SetGamepadPlayerIndex(gGamepads[slotA].sdlGamepad, Int32(slotA))
+    if gEngine.input.gamepads[slotA].open {
+        SDL_SetGamepadPlayerIndex(gEngine.input.gamepads[slotA].sdlGamepad, Int32(slotA))
     }
 
-    if gGamepads[slotB].open {
-        SDL_SetGamepadPlayerIndex(gGamepads[slotB].sdlGamepad, Int32(slotB))
+    if gEngine.input.gamepads[slotB].open {
+        SDL_SetGamepadPlayerIndex(gEngine.input.gamepads[slotB].sdlGamepad, Int32(slotB))
     }
 }
 
@@ -697,16 +708,16 @@ private func onJoystickRemoved(_ joystickID: SDL_JoystickID) {
         closeGamepad(gamepadSlot)
     }
 
-    if !gGamepadPlayerMappingLocked {
+    if !gEngine.input.gamepadPlayerMappingLocked {
         compactGamepadSlots()
     }
 
     // Fill up any gamepad slots that are vacant
     tryFillUpVacantGamepadSlots()
 
-    // Disable gUserPrefersGamepad if there are no gamepads connected
+    // Disable gEngine.input.userPrefersGamepad if there are no gamepads connected
     if GetNumGamepad() == 0 {
-        gUserPrefersGamepad = 0
+        gEngine.input.userPrefersGamepad = 0
     }
 }
 
@@ -768,21 +779,19 @@ func ResetDefaultMouseBindings() {
 // mechanism is dead code and dropped; GetMouseDelta always uses the
 // simple 60Hz-clamped SDL_GetRelativeMouseState path.)
 
-private var gMouseDeltaTimeSinceLastCall: Float = 0
-private var gMouseDeltaLast = OGLVector2D()
 
 func GetMouseDelta() -> OGLVector2D {
-    gMouseDeltaTimeSinceLastCall += gFramesPerSecondFrac
+    gEngine.input.mouseDeltaTimeSinceLastCall += gEngine.framesPerSecondFrac
 
     // Mouse sensitivity settings are calibrated to feel good at 60 FPS,
     // so we mustn't poll GetRelativeMouseState any faster than 60 Hz.
-    if gMouseDeltaTimeSinceLastCall >= (1.0 / 60.0) {
+    if gEngine.input.mouseDeltaTimeSinceLastCall >= (1.0 / 60.0) {
         let (_, x, y) = SDL.relativeMouseState
-        gMouseDeltaLast = OGLVector2D(x: x, y: y)
-        gMouseDeltaTimeSinceLastCall = 0
+        gEngine.input.mouseDeltaLast = OGLVector2D(x: x, y: y)
+        gEngine.input.mouseDeltaTimeSinceLastCall = 0
     }
 
-    return gMouseDeltaLast
+    return gEngine.input.mouseDeltaLast
 }
 
 func GetMouseCoords640x480() -> OGLPoint2D {
@@ -791,7 +800,7 @@ func GetMouseCoords640x480() -> OGLPoint2D {
     let (_, mx, my) = SDL.mouseState
     SDL_GetWindowSize(gSDLWindow, &ww, &wh)
 
-    let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)
+    let r = Get2DLogicalRect(UInt8(gEngine.player.numPlayers), 1)
 
     let screenToPaneX = (r.right - r.left) / Float(ww)
     let screenToPaneY = (r.bottom - r.top) / Float(wh)
@@ -799,14 +808,13 @@ func GetMouseCoords640x480() -> OGLPoint2D {
     return OGLPoint2D(x: mx * screenToPaneX + r.left, y: my * screenToPaneY + r.top)
 }
 
-private var gCursorCoordBackup = OGLPoint2D(x: -1, y: -1)
 
 func BackupRestoreCursorCoord(_ backup: UInt8) {
     if backup != 0 {
-        gCursorCoordBackup = gCursorCoord
-    } else if gCursorCoordBackup.x >= 0 {
-        gCursorCoord = gCursorCoordBackup
-        let r = Get2DLogicalRect(UInt8(gNumPlayers), 1)
+        gEngine.input.cursorCoordBackup = gEngine.input.cursorCoord
+    } else if gEngine.input.cursorCoordBackup.x >= 0 {
+        gEngine.input.cursorCoord = gEngine.input.cursorCoordBackup
+        let r = Get2DLogicalRect(UInt8(gEngine.player.numPlayers), 1)
 
         var ww: Int32 = 0
         var wh: Int32 = 0
@@ -815,8 +823,8 @@ func BackupRestoreCursorCoord(_ backup: UInt8) {
         let screenToPaneX = (r.right - r.left) / Float(ww)
         let screenToPaneY = (r.bottom - r.top) / Float(wh)
 
-        let mx = (gCursorCoord.x - r.left) / screenToPaneX
-        let my = (gCursorCoord.y - r.top) / screenToPaneY
+        let mx = (gEngine.input.cursorCoord.x - r.left) / screenToPaneX
+        let my = (gEngine.input.cursorCoord.y - r.top) / screenToPaneY
         SDL_WarpMouseInWindow(gSDLWindow, mx, my)
     }
 }

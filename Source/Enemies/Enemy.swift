@@ -1,27 +1,30 @@
 // Enemy.swift - Port of Enemy.c to Swift
 
-var gNumEnemyOfKind: [Int8] = Array(repeating: 0, count: EnemyKind.allCases.count)
-var gNumEnemies: Int32 = 0
-var gMaxEnemies: Int32 = 0
+/// Enemy population counters. Owned by GameEngine as `gEngine.enemies`.
+final class EnemySystem {
+    var numEnemyOfKind: [Int8] = Array(repeating: 0, count: EnemyKind.allCases.count)
+    var numEnemies: Int32 = 0
+    var maxEnemies: Int32 = 0
+}
 
 func InitEnemyManager() {
-    gNumEnemies = 0
-    gMaxEnemies = 16
+    gEngine.enemies.numEnemies = 0
+    gEngine.enemies.maxEnemies = 16
 
-    for i in 0..<gNumEnemyOfKind.count {
-        gNumEnemyOfKind[i] = 0
+    for i in 0..<gEngine.enemies.numEnemyOfKind.count {
+        gEngine.enemies.numEnemyOfKind[i] = 0
     }
 }
 
 func DeleteEnemy(_ theEnemy: UnsafeMutablePointer<ObjNode>!) {
     if !theEnemy.hasStatus(STATUS_BIT_ONSPLINE) { // spline enemies dont factor into the enemy counts!
-        gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
-        if gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
+        gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] -= 1 // dec kind count
+        if gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] < 0 {
             SwAlert("DeleteEnemy: < 0")
-            gNumEnemyOfKind[Int(theEnemy.pointee.Kind)] = 0
+            gEngine.enemies.numEnemyOfKind[Int(theEnemy.pointee.Kind)] = 0
         }
 
-        gNumEnemies -= 1 // dec global count
+        gEngine.enemies.numEnemies -= 1 // dec global count
     }
 
     DeleteObject(theEnemy) // nuke the obj
@@ -77,8 +80,8 @@ func DetachEnemyFromSpline(_ theNode: UnsafeMutablePointer<ObjNode>!, _ moveCall
 
     DetachObjectFromSpline(theNode, moveCall)
 
-    gNumEnemies += 1 // count as a normal enemy now
-    gNumEnemyOfKind[Int(theNode.pointee.Kind)] += 1
+    gEngine.enemies.numEnemies += 1 // count as a normal enemy now
+    gEngine.enemies.numEnemyOfKind[Int(theNode.pointee.Kind)] += 1
 }
 
 // OUTPUT: nil if no enemies

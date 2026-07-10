@@ -2,16 +2,14 @@
 
 private let eggScale: Float = 6.0
 
-var gNumEggsToSave: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
-var gNumEggsSaved: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
 
 // Called when terrain is loaded - it counts the total egg inventory for this level.
 func FindAllEggItems() {
     // INIT EGG COUNTS
 
     for i in 0..<EggColor.allCases.count {
-        gNumEggsToSave[i] = 0
-        gNumEggsSaved[i] = 0
+        gEngine.items.numEggsToSave[i] = 0
+        gEngine.items.numEggsSaved[i] = 0
     }
 
     // SCAN FOR EGG ITEM
@@ -25,7 +23,7 @@ func FindAllEggItems() {
                 SwFatal("FindAllEggItems: bad egg color!")
             }
 
-            gNumEggsToSave[eggColor] += 1 // inc counter
+            gEngine.items.numEggsToSave[eggColor] += 1 // inc counter
         }
     }
 }
@@ -431,7 +429,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // INC COUNTER
 
-    gNumEggsSaved[Int(egg.pointee.Kind)] += 1
+    gEngine.items.numEggsSaved[Int(egg.pointee.Kind)] += 1
 
     // START BLINKING EGG IN INFOBAR
 
@@ -444,8 +442,8 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     case .none:
         for i in 0..<EggColor.allCases.count {
-            if gNumEggsToSave[i] > 0 { // do we need to get this color?
-                if gNumEggsSaved[i] < gNumEggsToSave[i] { // did we get them all?
+            if gEngine.items.numEggsToSave[i] > 0 { // do we need to get this color?
+                if gEngine.items.numEggsSaved[i] < gEngine.items.numEggsToSave[i] { // did we get them all?
                     gotAllEggs = false
                     break
                 }
@@ -453,7 +451,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
         }
 
         if gotAllEggs {
-            gOpenPlayerWormhole = 1
+            gEngine.items.openPlayerWormhole = 1
         }
 
     // CAPTURE THE FLAG MODE
@@ -462,7 +460,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
         if gEngine.game.levelCompleted == 0 { // ignore any more eggs if someone already won
             // SEE IF PLAYER 1 WON
 
-            if gNumEggsSaved[1] >= gNumEggsToSave[1] { // did we get all of P2's eggs?
+            if gEngine.items.numEggsSaved[1] >= gEngine.items.numEggsToSave[1] { // did we get all of P2's eggs?
                 _ = ShowWinLose(0, 0) // won!
                 _ = ShowWinLose(1, 1) // lost
                 StartLevelCompletion(5.0)
@@ -470,7 +468,7 @@ private func eggWasRetrieved(_ egg: UnsafeMutablePointer<ObjNode>) {
 
             // SEE IF PLYAER 2 WON
 
-            else if gNumEggsSaved[0] >= gNumEggsToSave[0] { // did we get all of P1's eggs?
+            else if gEngine.items.numEggsSaved[0] >= gEngine.items.numEggsToSave[0] { // did we get all of P1's eggs?
                 _ = ShowWinLose(1, 0) // won!
                 _ = ShowWinLose(0, 1) // lost
                 StartLevelCompletion(5.0)

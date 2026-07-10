@@ -17,8 +17,12 @@
 
 import MetalRenderer
 
-private var gMetalBackendView: SDL_MetalView?
-private var gMetalBackendRenderer: MetalRenderer?
+/// Retains the Metal layer view + renderer for the lifetime of the
+/// backend. Owned by GameEngine as `gEngine.metalBackend`.
+final class MetalBackendHolder {
+    var view: SDL_MetalView?
+    var metalRenderer: MetalRenderer?
+}
 
 // Activates the real Metal render backend. Returns false (leaving
 // gEngine.renderer on GLRenderBackend, i.e. falls back to normal GL rendering)
@@ -31,7 +35,7 @@ public func SwMetalBackend_Activate() -> Bool {
         SwLog("MetalBackend: SDL_Metal_CreateView failed: \(String(cString: SDL_GetError()))")
         return false
     }
-    gMetalBackendView = view
+    gEngine.metalBackend.view = view
 
     guard let layer = SDL_Metal_GetLayer(view) else {
         SwLog("MetalBackend: SDL_Metal_GetLayer returned nil")
@@ -42,7 +46,7 @@ public func SwMetalBackend_Activate() -> Bool {
         SwLog("MetalBackend: MetalRenderer init failed (no Metal device?)")
         return false
     }
-    gMetalBackendRenderer = renderer
+    gEngine.metalBackend.metalRenderer = renderer
 
     var w: Int32 = 0
     var h: Int32 = 0

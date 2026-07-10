@@ -1,13 +1,12 @@
 // SkeletonAnim.swift - Port of SkeletonAnim.c to Swift
 //
-// gAccelerationCurve/gDisableAnimSounds are native Swift storage now
+// gAccelerationCurve/gEngine.skeletons.disableAnimSounds are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore.
 // gAccelerationCurve was a fixed-size C array exposed via skeleton.h's
 // GetAccelerationCurvePtr shim; it's now a permanent, never-freed
 // UnsafeMutablePointer buffer, with the accessor reimplemented in plain
 // Swift under the same name/signature.
 
-var gDisableAnimSounds: UInt8 = 0
 
 private let curveSize = 2000
 
@@ -262,7 +261,7 @@ func UpdateSkeletonAnimation(_ theNode: UnsafeMutablePointer<ObjNode>!) {
             animEventIndex += 1
 
         case Int(AnimEventKind.playSound.rawValue):
-            if gDisableAnimSounds == 0 {
+            if gEngine.skeletons.disableAnimSounds == 0 {
                 switch eventValue {
                 case 0:
                     break

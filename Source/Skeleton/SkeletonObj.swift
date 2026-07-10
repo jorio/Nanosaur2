@@ -4,14 +4,30 @@
 // blocks in the original C are dead code in every build this port targets
 // (same reasoning as #if SKIPFLUFF elsewhere) — dropped here.
 
-private var gLoadedSkeletonsList: InlineArray<7, UnsafeMutablePointer<SkeletonDefType>?> = InlineArray(repeating: nil)
-private var gNumDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArray(repeating: 0)
+/// Skeleton definitions + anim toggles. Owned by GameEngine as
+/// `gEngine.skeletons`.
+final class SkeletonSystem {
+    var loadedSkeletonsList: InlineArray<7, UnsafeMutablePointer<SkeletonDefType>?> = InlineArray(repeating: nil)
+    var numDecomposedTriMeshesInSkeleton: InlineArray<7, Int16> = InlineArray(repeating: 0)
+
+    // SkeletonAnim.swift
+    var disableAnimSounds: UInt8 = 0
+
+    // SkeletonJoints.swift scratch: only M00/M11/M22/M03/M13/M23 are ever
+    // written, so the other entries permanently keep their initial values
+    // (0, except M33=1).
+    var scaleTranslateMatrix: OGLMatrix4x4 = {
+        var m = OGLMatrix4x4()
+        setMatValue(&m, 15, 1) // M33
+        return m
+    }()
+}
 
 func InitSkeletonManager() {
     CalcAccelerationSplineCurve() // calc accel curve
 
     for (i, _) in SkeletonType.allCases.enumerated() {
-        gLoadedSkeletonsList[i] = nil
+        gEngine.skeletons.loadedSkeletonsList[i] = nil
     }
 }
 
@@ -20,26 +36,26 @@ func LoadASkeleton(_ num: UInt8) {
         SwFatal("LoadASkeleton: MAX_SKELETON_TYPES exceeded!")
     }
 
-    if gLoadedSkeletonsList[Int(num)] != nil { // check if already loaded
+    if gEngine.skeletons.loadedSkeletonsList[Int(num)] != nil { // check if already loaded
         SwFatal("LoadASkeleton:  skeleton already loaded!")
     }
 
     // LOAD THE SKELETON FILE
 
     let loaded = LoadSkeletonFile(Int16(num))!
-    gLoadedSkeletonsList[Int(num)] = loaded
+    gEngine.skeletons.loadedSkeletonsList[Int(num)] = loaded
 
-    gNumDecomposedTriMeshesInSkeleton[Int(num)] = Int16(loaded.pointee.numDecomposedTriMeshes) // keep easy access version of this value
+    gEngine.skeletons.numDecomposedTriMeshesInSkeleton[Int(num)] = Int16(loaded.pointee.numDecomposedTriMeshes) // keep easy access version of this value
 }
 
 // Disposes of all memory used by a skeleton file (from File.c)
 func FreeSkeletonFile(_ skeletonType: UInt8) {
-    if let skeleton = gLoadedSkeletonsList[Int(skeletonType)] { // make sure this really exists
+    if let skeleton = gEngine.skeletons.loadedSkeletonsList[Int(skeletonType)] { // make sure this really exists
         // (the local-copy-of-decomposed-trimeshes disposal loop was already
         // commented out in the original C)
 
         disposeSkeletonDefinitionMemory(skeleton) // free skeleton data
-        gLoadedSkeletonsList[Int(skeletonType)] = nil
+        gEngine.skeletons.loadedSkeletonsList[Int(skeletonType)] = nil
     }
 }
 
@@ -166,7 +182,7 @@ private func disposeSkeletonDefinitionMemory(_ skeleton: UnsafeMutablePointer<Sk
 
 // Allocates & inits the Skeleton data for an ObjNode.
 private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePointer<SkeletonObjDataType>! {
-    guard let skeletonDefPtr = gLoadedSkeletonsList[Int(skeletonNum)] else { // get ptr to source skeleton definition info
+    guard let skeletonDefPtr = gEngine.skeletons.loadedSkeletonsList[Int(skeletonNum)] else { // get ptr to source skeleton definition info
         SwFatal("MakeNewSkeletonBaseData: Skeleton data isn't loaded!")
         return nil
     }
@@ -193,7 +209,7 @@ private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePoint
     // double-buffer it for VAR.  These local copies are what
     // we can modify to perform deformation animation on.
 
-    let numDecomp = Int(gNumDecomposedTriMeshesInSkeleton[Int(skeletonNum)]) // how many trimeshes in this skeleton's geometry?
+    let numDecomp = Int(gEngine.skeletons.numDecomposedTriMeshesInSkeleton[Int(skeletonNum)]) // how many trimeshes in this skeleton's geometry?
 
     let srcTriMeshesBase = UnsafeMutableRawPointer(skeletonDefPtr.pointer(to: \.decomposedTriMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
     let deformedMeshesBase = UnsafeMutableRawPointer(skeletonData.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
@@ -210,7 +226,7 @@ private func makeNewSkeletonBaseData(_ skeletonNum: Int16) -> UnsafeMutablePoint
 func FreeSkeletonBaseData(_ skeletonData: UnsafeMutablePointer<SkeletonObjDataType>!, _ skeletonType: Int16) {
     // FREE OUR LOCAL COPY OF THE SKELETON'S TRIMESH
 
-    let numDecomp = Int(gNumDecomposedTriMeshesInSkeleton[Int(skeletonType)]) // how many trimeshes in this skeleton's geometry?
+    let numDecomp = Int(gEngine.skeletons.numDecomposedTriMeshesInSkeleton[Int(skeletonType)]) // how many trimeshes in this skeleton's geometry?
 
     let deformedMeshesBase = UnsafeMutableRawPointer(skeletonData.pointer(to: \.deformedMeshes)!).assumingMemoryBound(to: MOVertexArrayData.self)
     let deformedMeshesStride = Int(MAX_DECOMPOSED_TRIMESHES)
@@ -229,7 +245,7 @@ func DrawSkeleton(_ theNode: UnsafeMutablePointer<ObjNode>!) {
     let buffNum = Int(gEngine.game.viewInfoPtr!.pointee.frameCount & 1)
 
     let skelType = Int(theNode.pointee.Type)
-    let numTriMeshes = Int(gNumDecomposedTriMeshesInSkeleton[skelType]) // get # trimeshes to draw
+    let numTriMeshes = Int(gEngine.skeletons.numDecomposedTriMeshesInSkeleton[skelType]) // get # trimeshes to draw
 
     let skeleton = theNode.pointee.Skeleton!
     let overrideTextureBase = UnsafeMutableRawPointer(skeleton.pointer(to: \.overrideTexture)!).assumingMemoryBound(to: UnsafeMutablePointer<MOMaterialObject>?.self)

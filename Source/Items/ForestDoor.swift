@@ -3,7 +3,6 @@
 private let damDoorScale: Float = 1.85
 private let maxDamDoors = 64
 
-private var gForestDoorOpen = [Bool](repeating: false, count: maxDamDoors)
 
 @inline(__always) private func sparklesBase(_ n: UnsafeMutablePointer<ObjNode>) -> UnsafeMutablePointer<Int16> {
     UnsafeMutableRawPointer(n.pointer(to: \.Sparkles)!).assumingMemoryBound(to: Int16.self)
@@ -11,7 +10,7 @@ private var gForestDoorOpen = [Bool](repeating: false, count: maxDamDoors)
 
 func InitForestDoors() {
     for i in 0..<maxDamDoors {
-        gForestDoorOpen[i] = false
+        gEngine.items.forestDoorOpen[i] = false
     }
 }
 
@@ -76,7 +75,7 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
 
         door.pointee.CType = UInt32(CTYPE_WEAPONTEST | CTYPE_PLAYERTEST)
 
-        if gForestDoorOpen[Int(keyID)] { // see if door is open
+        if gEngine.items.forestDoorOpen[Int(keyID)] { // see if door is open
             door.pointee.Rot.z = -Float.pi
             UpdateObjectTransforms(door)
         }
@@ -117,7 +116,7 @@ private let cMoveForestDoor: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // SEE IF OPEN DOOR
 
-    if gForestDoorOpen[Int(wall.pointee.Kind)] {
+    if gEngine.items.forestDoorOpen[Int(wall.pointee.Kind)] {
         door.pointee.Rot.z -= fps
 
         if gEngine.game.levelNum != Int16(LevelNum.adventure3.rawValue) { // on level 3 we'll keep the door spinning
@@ -282,7 +281,7 @@ private func destroyForestDoorKey(_ keyHolder: UnsafeMutablePointer<ObjNode>) {
         return
     }
 
-    gForestDoorOpen[Int(keyHolder.pointee.Kind)] = true
+    gEngine.items.forestDoorOpen[Int(keyHolder.pointee.Kind)] = true
 
     PlayEffect3D(Int16(EFFECT_TURRETEXPLOSION), &keyHolder.pointee.Coord)
 

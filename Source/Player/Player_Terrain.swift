@@ -354,10 +354,10 @@ private func MovePlayer_EnterWormhole(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // SEE IF GO STRAIGHT UP
 
-    let dist = gEngine.objects.coord.distance(to: gExitWormhole!.pointee.Coord) // get current dist to joint
+    let dist = gEngine.objects.coord.distance(to: gEngine.items.exitWormhole!.pointee.Coord) // get current dist to joint
     if dist < 50.0 {
         let up = OGLVector3D(x: 0, y: 1, z: 0)
-        player.pointee.MotionVector = up.transformed(by: gExitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
+        player.pointee.MotionVector = up.transformed(by: gEngine.items.exitWormhole!.pointee.BaseTransformMatrix) // make aim up wormhole
     }
 
     // MOVE IT

@@ -63,6 +63,12 @@ final class GameEngine {
     /// the game (nearly every move callback starts with it).
     var framesPerSecond: Float = 13
     var framesPerSecondFrac: Float = 1.0 / 13
+
+    /// Gameplay domains.
+    let enemies = EnemySystem()
+    let items = ItemSystem()
+    let skeletons = SkeletonSystem()
+    let metalBackend = MetalBackendHolder()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

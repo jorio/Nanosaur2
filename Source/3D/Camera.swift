@@ -401,8 +401,8 @@ func UpdateCameras() {
             var fromAcc = gEngine.camera.fromAccel
 
             if gEngine.camera.inExitMode != 0 {
-                target.x = gExitWormhole!.pointee.Coord.x
-                target.z = gExitWormhole!.pointee.Coord.z
+                target.x = gEngine.items.exitWormhole!.pointee.Coord.x
+                target.z = gEngine.items.exitWormhole!.pointee.Coord.z
 
                 target.y = GetTerrainY(target.x, target.z) + 600.0
 

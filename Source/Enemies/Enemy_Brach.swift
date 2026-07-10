@@ -25,12 +25,12 @@ private let brachAnimEat = 4
 extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     @discardableResult
     func addEnemyBrach(x: Float, z: Float) -> UInt8 {
-        if gNumEnemies >= gMaxEnemies { // keep from getting absurd
+        if gEngine.enemies.numEnemies >= gEngine.enemies.maxEnemies { // keep from getting absurd
             return 0
         }
 
         if pointee.parm.3 & 1 == 0 { // see if always add
-            if gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] >= maxBrachs {
+            if gEngine.enemies.numEnemyOfKind[Int(EnemyKind.brach.rawValue)] >= maxBrachs {
                 return 0
             }
         }
@@ -46,8 +46,8 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
         newObj.pointee.Rot.y = Float(pointee.parm.0) * (Float.pi * 2 / 8.0)
         UpdateObjectTransforms(newObj)
 
-        gNumEnemies += 1
-        gNumEnemyOfKind[Int(EnemyKind.brach.rawValue)] += 1
+        gEngine.enemies.numEnemies += 1
+        gEngine.enemies.numEnemyOfKind[Int(EnemyKind.brach.rawValue)] += 1
 
         return 1
     }

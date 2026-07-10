@@ -2,13 +2,6 @@
 // M00/M11/M22/M03/M13/M23 (OGLMatrix4x4 column-major indices) live in SwiftSupport.swift
 
 // Mirrors the C function-local `static OGLMatrix4x4 matrix2` in
-// UpdateJointTransforms: only M00/M11/M22/M03/M13/M23 are ever written, so
-// the other entries permanently keep their initial values (0, except M33=1).
-private var gScaleTranslateMatrix: OGLMatrix4x4 = {
-    var m = OGLMatrix4x4()
-    setMatValue(&m, 15, 1) // M33
-    return m
-}()
 
 // Updates ALL of the transforms in a joint's transform group based on the theNode->Skeleton->JointCurrentPosition
 //
@@ -26,14 +19,14 @@ func UpdateJointTransforms(_ skeleton: UnsafeMutablePointer<SkeletonObjDataType>
         matrix1.setRotateXYZ(kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot
 
         // SCALE & TRANSLATE
-        setMatValue(&gScaleTranslateMatrix, M00, kfPtr.pointee.scale.x)
-        setMatValue(&gScaleTranslateMatrix, M11, kfPtr.pointee.scale.y)
-        setMatValue(&gScaleTranslateMatrix, M22, kfPtr.pointee.scale.z)
-        setMatValue(&gScaleTranslateMatrix, M03, kfPtr.pointee.coord.x)
-        setMatValue(&gScaleTranslateMatrix, M13, kfPtr.pointee.coord.y)
-        setMatValue(&gScaleTranslateMatrix, M23, kfPtr.pointee.coord.z)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M00, kfPtr.pointee.scale.x)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M11, kfPtr.pointee.scale.y)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M22, kfPtr.pointee.scale.z)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M03, kfPtr.pointee.coord.x)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M13, kfPtr.pointee.coord.y)
+        setMatValue(&gEngine.skeletons.scaleTranslateMatrix, M23, kfPtr.pointee.coord.z)
 
-        destMatPtr.pointee = matrix1.multiplied(by: gScaleTranslateMatrix)
+        destMatPtr.pointee = matrix1.multiplied(by: gEngine.skeletons.scaleTranslateMatrix)
     } else {
         // ROTATE IT
         destMatPtr.pointee.setRotateXYZ(kfPtr.pointee.rotation.x, kfPtr.pointee.rotation.y, kfPtr.pointee.rotation.z) // set matrix for x/y/z rot

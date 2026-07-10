@@ -4,8 +4,6 @@ private let turretShootDist: Float = 3000.0
 
 private let towerTurretScale: Float = 2.5
 
-private var gTurretMuzzleTipOff = OGLPoint3D(x: -61, y: 0, z: -115)
-private var gTurretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
 
 // MARK: - Add tower turret
 
@@ -160,7 +158,7 @@ private let cMoveTowerTurret: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         if dist < (shootDist * 1.2) { // see if player is close enough for turret to aim
             let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
             var aimPt = aimOff.transformed(by: player.pointee.BaseTransformMatrix) // calc pt in front of player to aim ag
-            var muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
+            var muzzleCoord = gEngine.items.turretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix) // calc coord of muzzle for more accurate rotation next
             let angle = turret.turnTowardTarget(from: &muzzleCoord, toX: aimPt.x, toZ: aimPt.z, turnSpeed: Float.pi / 2, useOffsets: 0, crossOut: nil) // turn turret on y-axis
 
             turret.updateTransforms()
@@ -384,7 +382,7 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
     if i != -1 {
         let sparkle = GetSparkleSlot(Int32(i))!
         sparkle.pointee.flags = UInt32(SPARKLE_FLAG_TRANSFORMWITHOWNER | SPARKLE_FLAG_OMNIDIRECTIONAL)
-        sparkle.pointee.where = gTurretMuzzleTipOff
+        sparkle.pointee.where = gEngine.items.turretMuzzleTipOff
 
         sparkle.pointee.color.r = 1
         sparkle.pointee.color.g = 1
@@ -401,8 +399,8 @@ private func shootTurretGun(_ gun: UnsafeMutablePointer<ObjNode>) {
 
     // CALC COORD & VECTOR OF MUZZLE
 
-    let muzzleCoord = gTurretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix)
-    var muzzleVector = gTurretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
+    let muzzleCoord = gEngine.items.turretMuzzleTipOff.transformed(by: gun.pointee.BaseTransformMatrix)
+    var muzzleVector = gEngine.items.turretMuzzleTipAim.transformed(by: gun.pointee.BaseTransformMatrix)
 
     // MAKE OBJECT
 

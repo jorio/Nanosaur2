@@ -1028,14 +1028,14 @@ private func infobarDrawEggs() {
 
     var x = eggsX()
     for (eggType, _) in EggColor.allCases.enumerated() {
-        if gNumEggsToSave[eggType] <= 0 { // are there any eggs of this color?
+        if gEngine.items.numEggsToSave[eggType] <= 0 { // are there any eggs of this color?
             continue
         }
 
         var y = eggsY()
 
-        for i in 0..<Int(gNumEggsToSave[eggType]) {
-            if Int(gNumEggsSaved[eggType]) > i {
+        for i in 0..<Int(gEngine.items.numEggsToSave[eggType]) {
+            if Int(gEngine.items.numEggsSaved[eggType]) > i {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
             } else {
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallBlankEgg))
@@ -1044,7 +1044,7 @@ private func infobarDrawEggs() {
             // BLINKING HALO IF JUST SAVED THIS EGG
             if gBlinkingEggTimer < 4.66
                 && eggType == Int(gBlinkingEggType)
-                && i == Int(gNumEggsSaved[eggType]) - 1 {
+                && i == Int(gEngine.items.numEggsSaved[eggType]) - 1 {
                 let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
                 gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
@@ -1067,8 +1067,8 @@ private func infobarCaptureFlagEggs() {
 
     let y = capEggsY()
     var x = capEggsX()
-    for i in 0..<Int(gNumEggsToSave[eggType]) {
-        if Int(gNumEggsSaved[eggType]) > i {
+    for i in 0..<Int(gEngine.items.numEggsToSave[eggType]) {
+        if Int(gEngine.items.numEggsSaved[eggType]) > i {
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(Int(INFOBAR_SObjType_SmallRedEgg) + eggType))
         } else {
             if eggType == 0 {
@@ -1081,7 +1081,7 @@ private func infobarCaptureFlagEggs() {
         // BLINKING HALO IF JUST CAPTURED THIS EGG
         if gBlinkingEggTimer < 4.66
             && eggType == Int(gBlinkingEggType)
-            && i == Int(gNumEggsSaved[eggType]) - 1 {
+            && i == Int(gEngine.items.numEggsSaved[eggType]) - 1 {
             let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
             gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
@@ -1118,7 +1118,7 @@ private func infobarDrawMissionStatus() {
         gEngine.metaObjects.globalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
     }
     // ENTER WORMHOLE
-    else if gOpenPlayerWormhole != 0 && gEngine.camera.inExitMode == 0 {
+    else if gEngine.items.openPlayerWormhole != 0 && gEngine.camera.inExitMode == 0 {
         gMissionStatusFlux += gEngine.framesPerSecondFrac
 
         var scale: Float = 0.5 * (1.0 + sinf(min(Float(PI), gMissionStatusFlux * 6.0) - (Float(PI) * 0.5)))

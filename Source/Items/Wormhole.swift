@@ -1,10 +1,8 @@
 // Wormhole.swift - Port of Wormhole.c to Swift
 //
-// gOpenPlayerWormhole/gExitWormhole are native Swift storage now
+// gEngine.items.openPlayerWormhole/gEngine.items.exitWormhole are native Swift storage now
 // (converted 2026-07-07): nothing in any .c file touches them anymore.
 
-var gOpenPlayerWormhole: UInt8 = 0
-var gExitWormhole: UnsafeMutablePointer<ObjNode>!
 
 private let playerWormholeSize: Float = 4.0
 private let eggWormholeSize: Float = 4.0
@@ -23,8 +21,8 @@ private let minDistToGetEgg: Float = 1600.0
 }
 
 func InitWormholes() {
-    gOpenPlayerWormhole = 0
-    gExitWormhole = nil
+    gEngine.items.openPlayerWormhole = 0
+    gEngine.items.exitWormhole = nil
 
     modifyWormholeTextures()
 }
@@ -73,8 +71,8 @@ extension UnsafeMutablePointer where Pointee == TerrainItemEntryType {
     func addEggWormhole(x: Float, z: Float) -> UInt8 {
         // SEE IF NEED TO CREATE AN EXIT WORMHOLE INSTEAD
 
-        if gOpenPlayerWormhole != 0 {
-            if gExitWormhole == nil {
+        if gEngine.items.openPlayerWormhole != 0 {
+            if gEngine.items.exitWormhole == nil {
                 makeExitWormhole(x, z)
             }
             return 0
@@ -129,7 +127,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // SEE IF NEED TO MAKE VANISH
 
-    if gOpenPlayerWormhole != 0 {
+    if gEngine.items.openPlayerWormhole != 0 {
         if theNode.pointee.Skeleton!.pointee.AnimNum != 1 { // see if need to change to vanish anim
             MorphToSkeletonAnim(theNode.pointee.Skeleton, 1, 2.0)
             PlayEffect3D(Int16(EFFECT_WORMHOLEVANISH), &theNode.pointee.Coord)
@@ -144,7 +142,7 @@ private let cMoveEggWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         if theNode.pointee.Scale.x <= 0.0 {
             // SEE IF MAKE PLAYER'S EXIT WORMHOLE HERE
 
-            if gExitWormhole == nil {
+            if gEngine.items.exitWormhole == nil {
                 makeExitWormhole(theNode.pointee.Coord.x, theNode.pointee.Coord.z)
             }
 
@@ -370,12 +368,12 @@ private func makeExitWormhole(_ x: Float, _ z: Float) {
     def.rot = 0
     def.scale = 0.001 // start shrunken
 
-    gExitWormhole = MakeNewDisplayGroupObject(&def)
+    gEngine.items.exitWormhole = MakeNewDisplayGroupObject(&def)
 
-    gExitWormhole!.pointee.Rot.x = Float.pi / 8
-    UpdateObjectTransforms(gExitWormhole)
+    gEngine.items.exitWormhole!.pointee.Rot.x = Float.pi / 8
+    UpdateObjectTransforms(gEngine.items.exitWormhole)
 
-    PlayEffect_Parms3D(Int16(EFFECT_WORMHOLEAPPEAR), &gExitWormhole!.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE), 2.0)
+    PlayEffect_Parms3D(Int16(EFFECT_WORMHOLEAPPEAR), &gEngine.items.exitWormhole!.pointee.Coord, UInt32(NORMAL_CHANNEL_RATE), 2.0)
 }
 
 private let cMoveExitWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in

@@ -3,7 +3,26 @@
 private let leafDefaultWobbleMag: Float = 4.0
 private let leafDefaultWobbleSpeed: Float = 1.0
 
-private var gCloudScroll = OGLVector2D()
+/// Cross-file item/level-prop state. Owned by GameEngine as `gEngine.items`.
+final class ItemSystem {
+    // Wormhole.swift
+    var openPlayerWormhole: UInt8 = 0
+    var exitWormhole: UnsafeMutablePointer<ObjNode>!
+
+    // Eggs.swift
+    var numEggsToSave: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
+    var numEggsSaved: [UInt8] = Array(repeating: 0, count: EggColor.allCases.count)
+
+    // Turrets.swift
+    var turretMuzzleTipOff = OGLPoint3D(x: -61, y: 0, z: -115)
+    var turretMuzzleTipAim = OGLVector3D(x: 0, y: 0, z: -1)
+
+    // ForestDoor.swift (maxDamDoors == 10 there; keep in sync)
+    var forestDoorOpen = [Bool](repeating: false, count: 10)
+
+    // Items.swift
+    var cloudScroll = OGLVector2D()
+}
 
 // MARK: - Init items manager
 
@@ -93,8 +112,8 @@ private func createCloudLayer() {
 // MARK: - Move cloud layer
 
 private let cMoveCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    gCloudScroll.x += gEngine.framesPerSecondFrac * 0.02
-    gCloudScroll.y += gEngine.framesPerSecondFrac * 0.03
+    gEngine.items.cloudScroll.x += gEngine.framesPerSecondFrac * 0.02
+    gEngine.items.cloudScroll.y += gEngine.framesPerSecondFrac * 0.03
 }
 
 // MARK: - Draw cloud layer
@@ -114,8 +133,8 @@ private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // UPDATE SCROLLING
 
-    theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gCloudScroll.x
-    theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gCloudScroll.y
+    theNode.pointee.TextureTransformU = cameraCoord.x * 0.0001 + gEngine.items.cloudScroll.x
+    theNode.pointee.TextureTransformV = cameraCoord.z * -0.0001 + gEngine.items.cloudScroll.y
 
     gEngine.renderer.matrixMode(.texture) // set texture matrix
     gEngine.renderer.translate(theNode.pointee.TextureTransformU, theNode.pointee.TextureTransformV, 0)

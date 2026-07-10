@@ -382,7 +382,7 @@ private func explodeAirMine(_ mine: UnsafeMutablePointer<ObjNode>) {
 
     ExplodeGeometry(mine, 600, .fromOrigin, 1, 1.0)
 
-    PlayEffect3D(Int16(EFFECT_MINEEXPLODE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_MINEEXPLODE), &gEngine.objects.coord)
 
     // DELETE MINE & CLEANUP LINKAGES
 
@@ -410,19 +410,19 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
 
     flare.getInfo()
 
-    gDelta.y -= 500.0 * fps
+    gEngine.objects.delta.y -= 500.0 * fps
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     let i = sparklesBase(flare)[0]
     if i != -1 {
-        GetSparkleSlot(Int32(i))!.pointee.where = gCoord
+        GetSparkleSlot(Int32(i))!.pointee.where = gEngine.objects.coord
     }
 
-    flare.pointee.Delta = gDelta
-    flare.pointee.Coord = gCoord
+    flare.pointee.Delta = gEngine.objects.delta
+    flare.pointee.Coord = gEngine.objects.coord
 
     // UpdateObject(flare)
 
@@ -461,7 +461,7 @@ private let cMoveAirMineFlareBall: @convention(c) (UnsafeMutablePointer<ObjNode>
                 d.y = RandomFloat2() * 30.0
                 d.z = RandomFloat2() * 30.0
 
-                var p = gCoord
+                var p = gEngine.objects.coord
 
                 var newParticleDef = NewParticleDefType()
                 newParticleDef.groupNum = particleGroup

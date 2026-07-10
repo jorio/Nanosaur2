@@ -855,7 +855,7 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         y += 15
 
         OGL_DrawString("OBJ:", 10, y)
-        OGL_DrawInt(Int32(gNumObjectNodes), x2, y)
+        OGL_DrawInt(Int32(gEngine.objects.numObjectNodes), x2, y)
         y += 15
     }
 

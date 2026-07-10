@@ -192,13 +192,13 @@ func CollisionDetect(_ baseNode: UnsafeMutablePointer<ObjNode>!, _ CType: UInt32
 
                         if sideBits == 0 { // if 0 then no new sides passed thru this time
                             if cBits & UInt32(CBITS_IMPENETRABLE) != 0 { // if its impenetrable, add to list regardless of sides
-                                if gCoord.x < thisNode.pointee.Coord.x { // try to assume some side info based on which side we're on relative to the target
+                                if gEngine.objects.coord.x < thisNode.pointee.Coord.x { // try to assume some side info based on which side we're on relative to the target
                                     sideBits |= UInt16(SIDE_BITS_RIGHT)
                                 } else {
                                     sideBits |= UInt16(SIDE_BITS_LEFT)
                                 }
 
-                                if gCoord.z < thisNode.pointee.Coord.z {
+                                if gEngine.objects.coord.z < thisNode.pointee.Coord.z {
                                     sideBits |= UInt16(SIDE_BITS_FRONT)
                                 } else {
                                     sideBits |= UInt16(SIDE_BITS_BACK)
@@ -264,9 +264,9 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
     totalSides = 0
 
     passLoop: while true {
-        let originalX = gCoord.x // remember starting coords
-        let originalY = gCoord.y
-        let originalZ = gCoord.z
+        let originalX = gEngine.objects.coord.x // remember starting coords
+        let originalY = gEngine.objects.coord.y
+        let originalZ = gEngine.objects.coord.z
 
         var numSolidHits = 0
 
@@ -332,7 +332,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
                     numSolidHits += 1
 
-                    maxOffsetX = gCoord.x - originalX // see if trigger caused a move
+                    maxOffsetX = gEngine.objects.coord.x - originalX // see if trigger caused a move
                     if maxOffsetX < 0.0 {
                         maxOffsetX = -maxOffsetX
                         offXSign = -1
@@ -340,7 +340,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                         offXSign = 1
                     }
 
-                    maxOffsetZ = gCoord.z - originalZ
+                    maxOffsetZ = gEngine.objects.coord.z - originalZ
                     if maxOffsetZ < 0.0 {
                         maxOffsetZ = -maxOffsetZ
                         offZSign = -1
@@ -376,14 +376,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetZ = offset
                             offZSign = 1
                         }
-                        gDelta.z *= deltaBounce
+                        gEngine.objects.delta.z *= deltaBounce
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_FRONT) != 0 { // SEE IF FRONT HIT
                         let offset = (baseBoxPtr.pointee.front - targetBoxPtr!.pointee.back) + 0.01 // see how far over it went
                         if offset > maxOffsetZ {
                             maxOffsetZ = offset
                             offZSign = -1
                         }
-                        gDelta.z *= deltaBounce
+                        gEngine.objects.delta.z *= deltaBounce
                     }
 
                     if entry.pointee.sides & UInt16(SIDE_BITS_LEFT) != 0 { // SEE IF HIT LEFT
@@ -392,14 +392,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetX = offset
                             offXSign = 1
                         }
-                        gDelta.x *= deltaBounce
+                        gEngine.objects.delta.x *= deltaBounce
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_RIGHT) != 0 { // SEE IF HIT RIGHT
                         let offset = (baseBoxPtr.pointee.right - targetBoxPtr!.pointee.left) + 0.01 // see how far over it went
                         if offset > maxOffsetX {
                             maxOffsetX = offset
                             offXSign = -1
                         }
-                        gDelta.x *= deltaBounce
+                        gEngine.objects.delta.x *= deltaBounce
                     }
 
                     if entry.pointee.sides & UInt16(SIDE_BITS_BOTTOM) != 0 { // SEE IF HIT BOTTOM
@@ -408,14 +408,14 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
                             maxOffsetY = offset
                             offYSign = 1
                         }
-                        gDelta.y = -150 // keep some downward momentum!!
+                        gEngine.objects.delta.y = -150 // keep some downward momentum!!
                     } else if entry.pointee.sides & UInt16(SIDE_BITS_TOP) != 0 { // SEE IF HIT TOP
                         let offset = (baseBoxPtr.pointee.top - targetBoxPtr!.pointee.bottom) + 1.0 // see how far over it went
                         if offset > maxOffsetY {
                             maxOffsetY = offset
                             offYSign = -1
                         }
-                        gDelta.y = 0
+                        gEngine.objects.delta.y = 0
                     }
                 }
             }
@@ -432,9 +432,9 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
         if numSolidHits > 0 {
             // ADJUST MAX AMOUNTS
 
-            gCoord.x = originalX + (maxOffsetX * offXSign)
-            gCoord.z = originalZ + (maxOffsetZ * offZSign)
-            gCoord.y = originalY + (maxOffsetY * offYSign) // y is special - we do some additional rouding to avoid the jitter problem
+            gEngine.objects.coord.x = originalX + (maxOffsetX * offXSign)
+            gEngine.objects.coord.z = originalZ + (maxOffsetZ * offZSign)
+            gEngine.objects.coord.y = originalY + (maxOffsetY * offYSign) // y is special - we do some additional rouding to avoid the jitter problem
 
             // SEE IF NEED TO SET GROUND FLAG
 
@@ -478,15 +478,15 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
     // SEE IF DO AUTOMATIC TERRAIN GROUND HIT
 
     if cType & UInt32(CTYPE_TERRAIN) != 0 {
-        let y = GetTerrainY(gCoord.x, gCoord.z) // get terrain Y
+        let y = GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) // get terrain Y
 
         if bottomSide <= y { // see if bottom is under ground
-            gCoord.y += y - bottomSide
+            gEngine.objects.coord.y += y - bottomSide
 
-            if gDelta.y < 0.0 { // if was going down then bounce y
-                gDelta.y *= deltaBounce
-                if abs(gDelta.y) < 30.0 { // if small enough just make zero
-                    gDelta.y = 0
+            if gEngine.objects.delta.y < 0.0 { // if was going down then bounce y
+                gEngine.objects.delta.y *= deltaBounce
+                if abs(gEngine.objects.delta.y) < 30.0 { // if small enough just make zero
+                    gEngine.objects.delta.y = 0
                 }
             }
 
@@ -500,7 +500,7 @@ func HandleCollisions(_ theNode: UnsafeMutablePointer<ObjNode>!, _ cType: UInt32
 
     if cType & UInt32(CTYPE_WATER) != 0 {
         var patchNum: Int32 = 0
-        DoWaterCollisionDetect(theNode, gCoord.x, gCoord.y, gCoord.z, &patchNum)
+        DoWaterCollisionDetect(theNode, gEngine.objects.coord.x, gEngine.objects.coord.y, gEngine.objects.coord.z, &patchNum)
     }
 
     gTotalSides = totalSides

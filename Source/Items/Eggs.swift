@@ -183,10 +183,10 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gDelta.y += -3000.0 * fps // gravity
+    gEngine.objects.delta.y += -3000.0 * fps // gravity
 
     if onGround != 0 {
-        gDelta.applyFrictionXZ(300) // ground friction
+        gEngine.objects.delta.applyFrictionXZ(300) // ground friction
 
         if nest.pointee.Flag.1 != 0 {
             egg.pointee.Rot.x = 0 // keep up
@@ -194,15 +194,15 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
             egg.pointee.Rot.x = Float.pi / 2 // keep on side
         }
     } else {
-        gDelta.applyFrictionXZ(100) // air friction
+        gEngine.objects.delta.applyFrictionXZ(100) // air friction
         egg.pointee.Rot.x += fps * 1.5 // spin in air
     }
 
     // MOVE
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // COLLISION DETECT
 
@@ -215,7 +215,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         if egg.pointee.SpecialF.0 <= 0.0 { // is it ok to try resetting now?
             if egg.pointee.SpecialF.0 < -25.0 { // if we've tried for 25 seconds with no results, then just force it to get reset
                 resetEggToNest(egg)
-            } else if (CalcDistanceToClosestPlayer(&gCoord, nil) > 1500.0) && (IsObjectTotallyCulled(egg) != 0) { // only reset if players are far enough away & nobody can see it
+            } else if (CalcDistanceToClosestPlayer(&gEngine.objects.coord, nil) > 1500.0) && (IsObjectTotallyCulled(egg) != 0) { // only reset if players are far enough away & nobody can see it
                 // SEE IF THE HOME POSITION IS ALSO CULLED
 
                 var m = OGLMatrix4x4()
@@ -249,7 +249,7 @@ private let cMoveEggNotCarried: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
                 var footCoord = OGLPoint3D()
                 FindCoordOfJoint(player, Int(PlayerJoint.eggHold.rawValue), &footCoord) // get coord of joint
-                if footCoord.distance(to: gCoord) < 150.0 { // is coord close enough to egg?
+                if footCoord.distance(to: gEngine.objects.coord) < 150.0 { // is coord close enough to egg?
                     playerPickedUpEgg(egg, Int16(i))
                     break
                 }
@@ -267,10 +267,10 @@ private func resetEggToNest(_ egg: UnsafeMutablePointer<ObjNode>) {
 
     // MOVE BACK TO NEST
 
-    gCoord = egg.pointee.InitCoord
-    gDelta.x = 0
-    gDelta.y = 0
-    gDelta.z = 0
+    gEngine.objects.coord = egg.pointee.InitCoord
+    gEngine.objects.delta.x = 0
+    gEngine.objects.delta.y = 0
+    gEngine.objects.delta.z = 0
 
     // LET NEST KNOW
 
@@ -291,7 +291,7 @@ private func playerPickedUpEgg(_ egg: UnsafeMutablePointer<ObjNode>, _ playerNum
     egg.pointee.Flag.0 = 1 // CanResetEgg: we can now reset it when needed
     egg.pointee.SpecialF.0 = 15.0 // ResetEggDelay
 
-    PlayEffect_Parms3D(Int16(EFFECT_GRABEGG), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.6)
+    PlayEffect_Parms3D(Int16(EFFECT_GRABEGG), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.6)
     PlayRumbleEffect(Int16(EFFECT_GRABEGG), Int32(playerNum))
 }
 
@@ -365,31 +365,31 @@ private let cMoveEggIntoWormhole: @convention(c) (UnsafeMutablePointer<ObjNode>?
     var jointCoord = OGLPoint3D()
     FindCoordOfJoint(wormhole, Int(egg.pointee.Special.1), &jointCoord)
     var v2raw = OGLVector3D()
-    v2raw.x = jointCoord.x - gCoord.x
-    v2raw.y = jointCoord.y - gCoord.y
-    v2raw.z = jointCoord.z - gCoord.z
+    v2raw.x = jointCoord.x - gEngine.objects.coord.x
+    v2raw.y = jointCoord.y - gEngine.objects.coord.y
+    v2raw.z = jointCoord.z - gEngine.objects.coord.z
     let v2 = v2raw.normalized()
 
-    let dist = gCoord.distance(to: jointCoord) // get current dist to joint
+    let dist = gEngine.objects.coord.distance(to: jointCoord) // get current dist to joint
 
     // MOVE IT
 
-    gDelta.x = v2.x * egg.pointee.Speed // move toward the joint
-    gDelta.y = v2.y * egg.pointee.Speed
-    gDelta.z = v2.z * egg.pointee.Speed
+    gEngine.objects.delta.x = v2.x * egg.pointee.Speed // move toward the joint
+    gEngine.objects.delta.y = v2.y * egg.pointee.Speed
+    gEngine.objects.delta.z = v2.z * egg.pointee.Speed
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF TIME TO DO NEXT JOINT
 
-    let dist2 = gCoord.distance(to: jointCoord)
+    let dist2 = gEngine.objects.coord.distance(to: jointCoord)
     if (dist2 > dist) || (dist2 < 40.0) { // if dist suddenly got larger, then we must have overshot the coord, or see if in range of joint
         egg.pointee.Special.1 += 1 // TargetJoint++
 
         if egg.pointee.Special.1 == 1 {
-            PlayEffect3D(Int16(EFFECT_EGGINTOWORMHOLE), &gCoord)
+            PlayEffect3D(Int16(EFFECT_EGGINTOWORMHOLE), &gEngine.objects.coord)
             PlayRumbleEffect(Int16(EFFECT_EGGINTOWORMHOLE), Int32(egg.pointee.PlayerNum))
         }
 

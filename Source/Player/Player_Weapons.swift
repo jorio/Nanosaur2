@@ -58,7 +58,7 @@ func UpdatePlayerCrosshairs(_ player: UnsafeMutablePointer<ObjNode>!) {
     var ctype = UInt32(CTYPE_AUTOTARGETWEAPON) // look for things which auto target the weapon
     ctype |= UInt32(CTYPE_PLAYER2) >> UInt32(p) // and also other players
 
-    ray.origin = gCoord
+    ray.origin = gEngine.objects.coord
     let hitNode = OGL_DoRayCollision_ObjNodes(&ray, UInt32(STATUS_BIT_HIDDEN) | (UInt32(STATUS_BIT_ISCULLED1) << UInt32(p)), ctype, nil, nil)
 
     let pi = GetPlayerInfoEntry(Int32(p))
@@ -359,9 +359,9 @@ private let cMoveBlasterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -388,9 +388,9 @@ private func DoBlasterCollisionDetection(_ theNode: UnsafeMutablePointer<ObjNode
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + theNode.pointee.MotionVector.x * 40.0 // to new coord (in front of center)
-    lineSegment.p2.y = gCoord.y + theNode.pointee.MotionVector.y * 40.0
-    lineSegment.p2.z = gCoord.z + theNode.pointee.MotionVector.z * 40.0
+    lineSegment.p2.x = gEngine.objects.coord.x + theNode.pointee.MotionVector.x * 40.0 // to new coord (in front of center)
+    lineSegment.p2.y = gEngine.objects.coord.y + theNode.pointee.MotionVector.y * 40.0
+    lineSegment.p2.z = gEngine.objects.coord.z + theNode.pointee.MotionVector.z * 40.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -483,7 +483,7 @@ private func DoBlasterImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint3D>!
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
+    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
 }
 
 // MARK: - Do blaster impact object effect
@@ -542,7 +542,7 @@ private func DoBlasterImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3D>!,
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
+    PlayEffect_Parms3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.8)
 }
 
 // MARK: - Shoot cluster shot
@@ -624,7 +624,7 @@ private func FragmentClusterShot(_ parentShot: UnsafeMutablePointer<ObjNode>!) {
         // CALC NEW VECTOR IN CONE OF AIM
 
         var aim = OGLVector3D()
-        FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &aim)
+        FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &aim)
 
         let zrot = RandomFloat2() * 0.4
         let yrot = RandomFloat2() * 0.4
@@ -688,11 +688,11 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
 
     // MOVE IT
 
-    gDelta.y -= 500.0 * fps // gravity
+    gEngine.objects.delta.y -= 500.0 * fps // gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -734,9 +734,9 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
         if particleGroup != -1 {
             for _ in 0..<2 {
                 var d = OGLVector3D()
-                d.x = (gDelta.x * 0.1) + RandomFloat2() * 20.0
-                d.y = (gDelta.y * 0.1) + RandomFloat2() * 20.0
-                d.z = (gDelta.z * 0.1) + RandomFloat2() * 20.0
+                d.x = (gEngine.objects.delta.x * 0.1) + RandomFloat2() * 20.0
+                d.y = (gEngine.objects.delta.y * 0.1) + RandomFloat2() * 20.0
+                d.z = (gEngine.objects.delta.z * 0.1) + RandomFloat2() * 20.0
 
                 var newParticleDef = NewParticleDefType()
                 newParticleDef.groupNum = particleGroup
@@ -745,7 +745,7 @@ private let cMoveClusterBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) 
                 newParticleDef.rotDZ = RandomFloat2() * 5.0
                 newParticleDef.alpha = 0.5 + RandomFloat() * 0.2
 
-                let stop: Bool = withUnsafeMutablePointer(to: &gCoord) { coordPtr in
+                let stop: Bool = withUnsafeMutablePointer(to: &gEngine.objects.coord) { coordPtr in
                     withUnsafeMutablePointer(to: &d) { dPtr in
                         newParticleDef.where = coordPtr
                         newParticleDef.delta = dPtr
@@ -895,7 +895,7 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
             var targetPt = target.pointee.HeatSeekHotSpotOff.transformed(by: target.pointee.BaseTransformMatrix) // calc coord of hotspot we're shooting for
 
             var v = OGLVector3D()
-            OGLPoint3D_Subtract(&targetPt, &gCoord, &v) // calc vector from bullet to target
+            OGLPoint3D_Subtract(&targetPt, &gEngine.objects.coord, &v) // calc vector from bullet to target
             FastNormalizeVector(v.x, v.y, v.z, &v)
 
             theNode.pointee.MotionVector = theNode.pointee.MotionVector.moved(toward: v, ratio: heatSeekerTurnSpeed * fps)
@@ -909,15 +909,15 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
         theNode.pointee.Speed = heatSeekerBulletMaxSpeed
     }
 
-    gDelta.x = theNode.pointee.MotionVector.x * theNode.pointee.Speed
-    gDelta.y = theNode.pointee.MotionVector.y * theNode.pointee.Speed
-    gDelta.z = theNode.pointee.MotionVector.z * theNode.pointee.Speed
+    gEngine.objects.delta.x = theNode.pointee.MotionVector.x * theNode.pointee.Speed
+    gEngine.objects.delta.y = theNode.pointee.MotionVector.y * theNode.pointee.Speed
+    gEngine.objects.delta.z = theNode.pointee.MotionVector.z * theNode.pointee.Speed
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -1000,9 +1000,9 @@ private let cMoveHeatSeekerBullet: @convention(c) (UnsafeMutablePointer<ObjNode>
     // UPDATE EFFECT
 
     if theNode.pointee.EffectChannel == -1 {
-        theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_MISSILEENGINE), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
+        theNode.pointee.EffectChannel = PlayEffect_Parms3D(Int16(EFFECT_MISSILEENGINE), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.0)
     } else {
-        Update3DSoundChannel(Int16(EFFECT_MISSILEENGINE), &theNode.pointee.EffectChannel, &gCoord)
+        Update3DSoundChannel(Int16(EFFECT_MISSILEENGINE), &theNode.pointee.EffectChannel, &gEngine.objects.coord)
     }
 }
 
@@ -1020,12 +1020,12 @@ private func FindBulletTarget(_ bullet: UnsafeMutablePointer<ObjNode>!) {
         if thisNode.pointee.CType & ctype != 0 {
             // IS THIS BEST DIST
 
-            let d = gCoord.distance(to: thisNode.pointee.Coord)
+            let d = gEngine.objects.coord.distance(to: thisNode.pointee.Coord)
             if d < minDist {
                 // IS GOOD ANGLE
 
                 var v = OGLVector3D()
-                OGLPoint3D_Subtract(&thisNode.pointee.Coord, &gCoord, &v) // calc vector to target
+                OGLPoint3D_Subtract(&thisNode.pointee.Coord, &gEngine.objects.coord, &v) // calc vector to target
                 FastNormalizeVector(v.x, v.y, v.z, &v)
 
                 let angle = acos(v.dot(bullet.pointee.MotionVector)) // calc angle to target
@@ -1059,16 +1059,16 @@ private func DoHeatSeekerCollisionDetection(_ theNode: UnsafeMutablePointer<ObjN
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
     var d = OGLVector3D()
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &d) // get normalized delta
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &d) // get normalized delta
 
     // CREATE LINE SEGMENT TO DO COLLISION WITH
 
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + d.x * 50.0 // to new coord (slightly in front)
-    lineSegment.p2.y = gCoord.y + d.y * 50.0
-    lineSegment.p2.z = gCoord.z + d.z * 50.0
+    lineSegment.p2.x = gEngine.objects.coord.x + d.x * 50.0 // to new coord (slightly in front)
+    lineSegment.p2.y = gEngine.objects.coord.y + d.y * 50.0
+    lineSegment.p2.z = gEngine.objects.coord.z + d.z * 50.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -1276,9 +1276,9 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -1321,9 +1321,9 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 
         if particleGroup != -1 {
             var d = OGLVector3D()
-            d.x = gDelta.x * 0.25
-            d.y = gDelta.y * 0.25
-            d.z = gDelta.z * 0.25
+            d.x = gEngine.objects.delta.x * 0.25
+            d.y = gEngine.objects.delta.y * 0.25
+            d.z = gEngine.objects.delta.z * 0.25
 
             var newParticleDef = NewParticleDefType()
             newParticleDef.groupNum = particleGroup
@@ -1332,7 +1332,7 @@ private let cMoveSonicScream: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
             newParticleDef.rotDZ = 0.1 // theNode.pointee.SpecialF.0 * 6.0
             newParticleDef.alpha = 1
 
-            let stop: Bool = withUnsafeMutablePointer(to: &gCoord) { coordPtr in
+            let stop: Bool = withUnsafeMutablePointer(to: &gEngine.objects.coord) { coordPtr in
                 withUnsafeMutablePointer(to: &d) { dPtr in
                     newParticleDef.where = coordPtr
                     newParticleDef.delta = dPtr
@@ -1389,7 +1389,7 @@ private func DoSonicScreamCollisionDetection(_ bullet: UnsafeMutablePointer<ObjN
 
     // SEE IF HIT TERRAIN
 
-    if gCoord.y < GetTerrainY(gCoord.x, gCoord.z) {
+    if gEngine.objects.coord.y < GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) {
         return killBullet()
     }
 
@@ -1461,13 +1461,13 @@ private let cMovePlayerBomb: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // MOVE IT
 
-    gDelta.y -= 800.0 * fps // gravity
+    gEngine.objects.delta.y -= 800.0 * fps // gravity
 
-    gDelta.applyFrictionXZ(500) // air friction
+    gEngine.objects.delta.applyFrictionXZ(500) // air friction
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     theNode.pointee.Rot.x -= fps * 1.1 // tilt down
     if theNode.pointee.Rot.x < (-Float.pi / 2) {
@@ -1520,9 +1520,9 @@ private func LeaveBombTrail(_ theNode: UnsafeMutablePointer<ObjNode>!) {
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let y = gCoord.y
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let y = gEngine.objects.coord.y
+            let z = gEngine.objects.coord.z
 
             for _ in 0..<2 {
                 var p = OGLPoint3D()
@@ -1570,16 +1570,16 @@ private func DoBombCollisionDetection(_ theNode: UnsafeMutablePointer<ObjNode>!)
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
     var d = OGLVector3D()
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &d) // get normalized delta
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &d) // get normalized delta
 
     // CREATE LINE SEGMENT TO DO COLLISION WITH
 
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + d.x * 40.0 // to new coord (slightly in front)
-    lineSegment.p2.y = gCoord.y + d.y * 40.0
-    lineSegment.p2.z = gCoord.z + d.z * 40.0
+    lineSegment.p2.x = gEngine.objects.coord.x + d.x * 40.0 // to new coord (slightly in front)
+    lineSegment.p2.y = gEngine.objects.coord.y + d.y * 40.0
+    lineSegment.p2.z = gEngine.objects.coord.z + d.z * 40.0
 
     var cType = UInt32(CTYPE_WEAPONTEST | CTYPE_FENCE | CTYPE_TERRAIN | CTYPE_WATER) // set CTYPE mask to find what we're looking for
     cType |= UInt32(CTYPE_PLAYER2) >> UInt32(theNode.pointee.PlayerNum) // also set to check hits on other player
@@ -1775,7 +1775,7 @@ func CauseBombShockwaveDamage(_ wave: UnsafeMutablePointer<ObjNode>!, _ ctype: U
     // runs - preserving the legacy stop-on-delete semantics (DetachObject
     // nulls the deleted node's NextNode, ending the walk).
 
-    var thisNodePtr = gFirstNodePtr
+    var thisNodePtr = gEngine.objects.firstNodePtr
     while true {
         guard let thisNode = thisNodePtr else { break }
 

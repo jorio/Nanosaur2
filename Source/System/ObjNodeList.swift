@@ -1,6 +1,6 @@
 // ObjNodeList.swift - Swift Sequence over the master object linked list
-// (gFirstNodePtr -> NextNode), replacing the hand-rolled C-style
-// `var thisNodePtr = gFirstNodePtr; while ... { ... thisNodePtr =
+// (gEngine.objects.firstNodePtr -> NextNode), replacing the hand-rolled C-style
+// `var thisNodePtr = gEngine.objects.firstNodePtr; while ... { ... thisNodePtr =
 // node.pointee.NextNode }` walks that appeared at ~20 call sites.
 //
 // FOR READ-ONLY WALKS ONLY. Loop bodies must not delete nodes (directly or
@@ -17,8 +17,8 @@
 //    CauseBombShockwaveDamage (whose HitByWeaponHandler callbacks can
 //    delete the hit node) keeps its raw loop.
 // 2. Deleting OTHER nodes (including the snapshotted next one) needs the
-//    gNextNode-global fixup machinery that only MoveObjects has
-//    (DetachObject patches gNextNode when the pending next node is the one
+//    gEngine.objects.nextNode-global fixup machinery that only MoveObjects has
+//    (DetachObject patches gEngine.objects.nextNode when the pending next node is the one
 //    being deleted). MoveObjects and DrawObjects therefore keep their
 //    bespoke loops.
 //
@@ -48,7 +48,7 @@ struct ObjNodeList: Sequence, IteratorProtocol {
 
 /// Every active object in the master list, in slot order.
 var allObjectNodes: ObjNodeList {
-    ObjNodeList(from: gFirstNodePtr, stopAtDumbSlot: false)
+    ObjNodeList(from: gEngine.objects.firstNodePtr, stopAtDumbSlot: false)
 }
 
 /// The "usable" prefix of the master list: stops before the first node with
@@ -56,5 +56,5 @@ var allObjectNodes: ObjNodeList {
 /// from HUD/overlay/system nodes) - the standard bound for gameplay scans
 /// (collision, targeting, ray picking).
 var usableObjectNodes: ObjNodeList {
-    ObjNodeList(from: gFirstNodePtr, stopAtDumbSlot: true)
+    ObjNodeList(from: gEngine.objects.firstNodePtr, stopAtDumbSlot: true)
 }

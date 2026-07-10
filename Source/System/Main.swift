@@ -339,12 +339,12 @@ private func initLevel() {
 
     // SET AUTO-FADE INFO
 
-    gAutoFadeStartDist = gGameViewInfoPtr!.pointee.yon * 0.80
-    gAutoFadeEndDist = gGameViewInfoPtr!.pointee.yon * 0.9
+    gEngine.objects.autoFadeStartDist = gGameViewInfoPtr!.pointee.yon * 0.80
+    gEngine.objects.autoFadeEndDist = gGameViewInfoPtr!.pointee.yon * 0.9
 
-    gAutoFadeRange_Frac = 1.0 / (gAutoFadeEndDist - gAutoFadeStartDist)
+    gEngine.objects.autoFadeRangeFrac = 1.0 / (gEngine.objects.autoFadeEndDist - gEngine.objects.autoFadeStartDist)
 
-    if gAutoFadeStartDist != 0.0 {
+    if gEngine.objects.autoFadeStartDist != 0.0 {
         gAutoFadeStatusBits = UInt32(STATUS_BIT_AUTOFADE)
     } else {
         gAutoFadeStatusBits = 0
@@ -521,7 +521,7 @@ private func playLevel() {
 // MARK: - Show time demo results
 
 private func showTimeDemoResults(_ numFrames: Int32, _ numSeconds: Float, _ averageFPS: Float) {
-    SwAlert("showTimeDemoResults:\nFrames: \(numFrames)\nTime: \(numSeconds)\nAverage FPS: \(averageFPS)\nPeak #Objs: \(gNumObjectNodesPeak)")
+    SwAlert("showTimeDemoResults:\nFrames: \(numFrames)\nTime: \(numSeconds)\nAverage FPS: \(averageFPS)\nPeak #Objs: \(gEngine.objects.numObjectNodesPeak)")
 }
 
 // MARK: - Draw level callback

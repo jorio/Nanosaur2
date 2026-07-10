@@ -408,9 +408,9 @@ private func makeDustDevilDust(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let y = gCoord.y
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let y = gEngine.objects.coord.y
+            let z = gEngine.objects.coord.z
 
             for _ in 0..<2 {
                 var p = OGLPoint3D()

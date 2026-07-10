@@ -156,7 +156,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
 
     // CALC DIST TO NEXT CHECKPOINT
 
-    pi.pointee.distToNextCheckpoint = CalcDistance(x1, z1, gCoord.x, gCoord.z)
+    pi.pointee.distToNextCheckpoint = CalcDistance(x1, z1, gEngine.objects.coord.x, gEngine.objects.coord.z)
 
     // SEE IF WE'RE AIMING BACKWARDS
 
@@ -176,7 +176,7 @@ func UpdatePlayerRaceMarkers(_ player: UnsafeMutablePointer<ObjNode>) {
     // ALSO CALC DELTA VECTOR
 
     var deltaVec = OGLVector2D(x: 0, y: 0)
-    FastNormalizeVector2D(gDelta.x, gDelta.z, &deltaVec, 1)
+    FastNormalizeVector2D(gEngine.objects.delta.x, gEngine.objects.delta.z, &deltaVec, 1)
 
     // SEE IF AIM VECTOR IS CLOSE TO PARALLEL TO THAT VEC
 

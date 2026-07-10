@@ -477,9 +477,9 @@ private let cMoveTurretBullet: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
     // MOVE IT
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF HIT ANYTHING
 
@@ -504,9 +504,9 @@ private func doTurretBlastCollisionDetection(_ theNode: UnsafeMutablePointer<Obj
     var lineSegment = OGLLineSegment()
     lineSegment.p1 = theNode.pointee.OldCoord // from old coord
 
-    lineSegment.p2.x = gCoord.x + theNode.pointee.MotionVector.x * 50.0 // to new coord (in front of center)
-    lineSegment.p2.y = gCoord.y + theNode.pointee.MotionVector.y * 50.0
-    lineSegment.p2.z = gCoord.z + theNode.pointee.MotionVector.z * 50.0
+    lineSegment.p2.x = gEngine.objects.coord.x + theNode.pointee.MotionVector.x * 50.0 // to new coord (in front of center)
+    lineSegment.p2.y = gEngine.objects.coord.y + theNode.pointee.MotionVector.y * 50.0
+    lineSegment.p2.z = gEngine.objects.coord.z + theNode.pointee.MotionVector.z * 50.0
 
     // SEE IF LINE SEGMENT HITS ANY GEOMETRY
 
@@ -596,7 +596,7 @@ private func doTurretBlastImpactTerrainEffect(_ impactPt: UnsafePointer<OGLPoint
         }
     }
 
-    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord)
 }
 
 // MARK: - Do turret blast impact object effect
@@ -655,5 +655,5 @@ private func doTurretBlastImpactObjectEffect(_ impactPt: UnsafePointer<OGLPoint3
         }
     }
 
-    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gCoord)
+    PlayEffect3D(Int16(EFFECT_IMPACTSIZZLE), &gEngine.objects.coord)
 }

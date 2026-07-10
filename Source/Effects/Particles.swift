@@ -1540,8 +1540,8 @@ func DoPlayerGroundScrape(_ player: UnsafeMutablePointer<ObjNode>!, _ playerNum:
         }
 
         if particleGroup != -1 {
-            let x = gCoord.x
-            let z = gCoord.z
+            let x = gEngine.objects.coord.x
+            let z = gEngine.objects.coord.z
             let y = GetTerrainY(x, z) + 10.0
 
             for _ in 0..<3 {

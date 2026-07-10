@@ -217,7 +217,7 @@ func DisorientPlayer(_ player: UnsafeMutablePointer<ObjNode>) {
 //
 // return true if player killed
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
 func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?, _ disorient: UInt8) -> UInt8 {
     var killed: UInt8 = 0
@@ -256,7 +256,7 @@ func PlayerLoseHealth(_ playerNum: Int16, _ damage: Float, _ deathType: PlayerDe
 
 // MARK: - Kill player
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
 func KillPlayer(_ playerNum: Int16, _ deathType: PlayerDeathType, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let pi = GetPlayerInfoEntry(Int32(playerNum))
@@ -528,7 +528,7 @@ func CalcDistanceToClosestPlayer(_ pt: UnsafeMutablePointer<OGLPoint3D>, _ playe
 
 // MARK: - Explode player
 //
-// where is usually gCoord, but if nil then use coord from player's objNode
+// where is usually gEngine.objects.coord, but if nil then use coord from player's objNode
 
 func ExplodePlayer(_ player: UnsafeMutablePointer<ObjNode>, _ playerNum: Int16, _ where_: UnsafeMutablePointer<OGLPoint3D>?) {
     let x: Float, y: Float, z: Float
@@ -738,7 +738,7 @@ func DoTrig_Player(_ trigger: UnsafeMutablePointer<ObjNode>, _ theNode: UnsafeMu
     let p1Dead = PlayerLoseHealth(Int16(p1), damage, .deathDive, nil, 1) != 0
     GetPlayerInfoEntry(Int32(p1)).pointee.invincibilityTimer = 0.5
 
-    let p2Dead = PlayerLoseHealth(Int16(p2), damage, .deathDive, &gCoord, 1) != 0
+    let p2Dead = PlayerLoseHealth(Int16(p2), damage, .deathDive, &gEngine.objects.coord, 1) != 0
     GetPlayerInfoEntry(Int32(p2)).pointee.invincibilityTimer = 0.5
 
     PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(p1))

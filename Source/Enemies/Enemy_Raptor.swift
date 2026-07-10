@@ -152,10 +152,10 @@ private func moveRaptorStand(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // TURN TOWARDS ME
 
     var playerNum: Int16 = 0
-    let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
+    let dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
     let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
 
-    _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x,
+    _ = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: playerInfo.pointee.coord.x,
                                 toZ: playerInfo.pointee.coord.z, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: nil)
 
     if dist < raptorChaseDistMax {
@@ -193,8 +193,8 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
         px = theNode.pointee.InitCoord.x
         pz = theNode.pointee.InitCoord.z
         var playerNum: Int16 = 0
-        dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
-        aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: &cross)
+        dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
+        aim = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 0, crossOut: &cross)
 
         if dist < 500.0 { // are we basically home?
             theNode.pointee.Mode = raptorModeWalkInFront
@@ -208,7 +208,7 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
         // MOVE TOWARD PLAYER
 
         var playerNum: Int16 = 0
-        dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
+        dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
         let player = GetPlayerInfoEntry(Int32(playerNum)).pointee.objNode!
 
         // SEE IF MOVING TOWARD POINT IN FRONT
@@ -218,8 +218,8 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
             px = player.pointee.Coord.x - sin(r) * 2600.0 // calc pt in front of player
             pz = player.pointee.Coord.z - cos(r) * 2600.0
 
-            dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to the target pt
-            aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
+            dist = CalcQuickDistance(px, pz, gEngine.objects.coord.x, gEngine.objects.coord.z) // calc dist to the target pt
+            aim = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
 
             if dist < 400.0 { // once we've reached this point then switch to enemy target mode
                 theNode.pointee.Mode = raptorModeWalkToPlayer
@@ -227,8 +227,8 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
                 px = player.pointee.Coord.x
                 pz = player.pointee.Coord.z
 
-                dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to player
-                aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
+                dist = CalcQuickDistance(px, pz, gEngine.objects.coord.x, gEngine.objects.coord.z) // calc dist to player
+                aim = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
             }
         }
 
@@ -238,8 +238,8 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
             px = player.pointee.Coord.x
             pz = player.pointee.Coord.z
 
-            dist = CalcQuickDistance(px, pz, gCoord.x, gCoord.z) // calc dist to player
-            aim = theNode.turnTowardTarget(from: &gCoord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
+            dist = CalcQuickDistance(px, pz, gEngine.objects.coord.x, gEngine.objects.coord.z) // calc dist to player
+            aim = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: px, toZ: pz, turnSpeed: raptorTurnSpeed, useOffsets: 1, crossOut: &cross)
         } else {
             // shouldn't happen
             return
@@ -268,13 +268,13 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // MOVE
 
     let r = theNode.pointee.Rot.y
-    gDelta.x = -sin(r) * walkSpeed
-    gDelta.z = -cos(r) * walkSpeed
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.delta.x = -sin(r) * walkSpeed
+    gEngine.objects.delta.z = -cos(r) * walkSpeed
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SET APPROPRIATE WALK ANIM
 
@@ -322,11 +322,11 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     if !gGamePrefs.isKiddieMode {
         if theNode.pointee.Mode == raptorModeWalkToPlayer { // only when walking directly to player
             if (dist < raptorAttackDist) && (aim < (Float.pi / 8)) {
-                gDelta.y = raptorJumpDeltaY
-                gDelta.x *= 0.7
-                gDelta.z *= 0.7
+                gEngine.objects.delta.y = raptorJumpDeltaY
+                gEngine.objects.delta.x *= 0.7
+                gEngine.objects.delta.z *= 0.7
                 MorphToSkeletonAnim(theNode.pointee.Skeleton, raptorAnimJump, 5)
-                PlayEffect3D(Int16(EFFECT_RAPTORATTACK), &gCoord)
+                PlayEffect3D(Int16(EFFECT_RAPTORATTACK), &gEngine.objects.coord)
             }
         }
     }
@@ -339,13 +339,13 @@ private func moveRaptorWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
-    gDelta.applyFriction(400.0)
+    gEngine.objects.delta.applyFriction(400.0)
 
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // DO ENEMY COLLISION
 
@@ -375,13 +375,13 @@ private func moveRaptorJump(_ theNode: UnsafeMutablePointer<ObjNode>) {
 private func moveRaptorKnockedDown(_ theNode: UnsafeMutablePointer<ObjNode>) {
     let fps = gFramesPerSecondFrac
 
-    gDelta.applyFriction(700.0)
+    gEngine.objects.delta.applyFriction(700.0)
 
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // SEE IF DONE
 
@@ -410,7 +410,7 @@ private func moveRaptorDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     if IsObjectTotallyCulled(theNode) != 0 {
         var playerNum: Int16 = 0
-        let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
+        let dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
 
         if dist > 1000.0 {
             DeleteEnemy(theNode)
@@ -419,12 +419,12 @@ private func moveRaptorDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
 
     if theNode.hasStatus(STATUS_BIT_ONGROUND) { // if on ground, add friction
-        gDelta.applyFriction(2000.0)
+        gEngine.objects.delta.applyFriction(2000.0)
     }
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // DO ENEMY COLLISION
 
@@ -582,7 +582,7 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
         // NO SHIELD, SO HURT PLAYER
 
         else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
-            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gCoord, 1)
+            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gEngine.objects.coord, 1)
         }
 
         playerInfo.pointee.invincibilityTimer = 1.0
@@ -593,7 +593,7 @@ private let cDoTrigRaptor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsaf
 
         // PLAY BODYHIT EFFECT
 
-        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
+        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(playerNum))
     }
 

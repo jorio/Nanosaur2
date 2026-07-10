@@ -172,22 +172,22 @@ private func moveBrachWalk(_ theNode: UnsafeMutablePointer<ObjNode>) {
     // MOVE TOWARD PLAYER
 
     var playerNum: Int16 = 0
-    _ = CalcDistanceToClosestPlayer(&gCoord, &playerNum) // find out who's the closest player
+    _ = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum) // find out who's the closest player
 
     if GetPlayerIsDead(Int32(playerNum)) == 0 { // don't aim at dead players
         let playerInfo = GetPlayerInfoEntry(Int32(playerNum))
-        _ = theNode.turnTowardTarget(from: &gCoord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
+        _ = theNode.turnTowardTarget(from: &gEngine.objects.coord, toX: playerInfo.pointee.coord.x, toZ: playerInfo.pointee.coord.z,
                                     turnSpeed: brachTurnSpeed, useOffsets: 0, crossOut: nil)
     }
 
     let r = theNode.pointee.Rot.y
-    gDelta.x = -sin(r) * brachWalkSpeed
-    gDelta.z = -cos(r) * brachWalkSpeed
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.delta.x = -sin(r) * brachWalkSpeed
+    gEngine.objects.delta.z = -cos(r) * brachWalkSpeed
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
 
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     if IsWaterInFrontOfEnemy(r) != 0 { // if about to enter water then stop
         MorphToSkeletonAnim(theNode.pointee.Skeleton, brachAnimStand, 8)
@@ -213,7 +213,7 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
 
     if IsObjectTotallyCulled(theNode) != 0 {
         var playerNum: Int16 = 0
-        let dist = CalcDistanceToClosestPlayer(&gCoord, &playerNum)
+        let dist = CalcDistanceToClosestPlayer(&gEngine.objects.coord, &playerNum)
 
         if dist > 3000.0 {
             DeleteEnemy(theNode)
@@ -222,12 +222,12 @@ private func moveBrachDeath(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
 
     if theNode.hasStatus(STATUS_BIT_ONGROUND) { // if on ground, add friction
-        gDelta.applyFriction(2000.0)
+        gEngine.objects.delta.applyFriction(2000.0)
     }
-    gDelta.y -= ENEMY_GRAVITY * fps // add gravity
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.delta.y -= ENEMY_GRAVITY * fps // add gravity
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     // DO ENEMY COLLISION
 

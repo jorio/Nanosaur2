@@ -1,14 +1,12 @@
 // Objects2.swift - Port of Objects2.c to Swift
 //
-// gMeshNum was `static` (file-private) in C, so it moves into private Swift
-// state; gNumWorldCalcsThisFrame stays declared in game.h/extern-visible but
+// gEngine.objects.meshNum was `static` (file-private) in C, so it moves into private Swift
+// state; gEngine.objects.numWorldCalcsThisFrame stays declared in game.h/extern-visible but
 // nothing else in the codebase actually references it, so it's fine as a
 // plain Swift global too (no C-linkage needed since nothing `extern`s it).
 
 private let SHADOW_Y_OFF: Float = 2.1
 
-private var gMeshNum: Int32 = 0
-private var gNumWorldCalcsThisFrame: Int32 = 0
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -195,7 +193,7 @@ func CalcObjectBoxFromNode(_ theNode: UnsafeMutablePointer<ObjNode>) {
 }
 
 // This does a simple 1 box calculation for basic objects.
-// Box is calculated based on gCoord
+// Box is calculated based on gEngine.objects.coord
 func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     guard let theNode else {
         return
@@ -203,12 +201,12 @@ func CalcObjectBoxFromGlobal(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     let boxPtr = collisionBoxesBase(theNode) // get ptr to 1st box (presumed only box)
 
-    boxPtr[0].left = gCoord.x + theNode.pointee.LeftOff
-    boxPtr[0].right = gCoord.x + theNode.pointee.RightOff
-    boxPtr[0].back = gCoord.z + theNode.pointee.BackOff
-    boxPtr[0].front = gCoord.z + theNode.pointee.FrontOff
-    boxPtr[0].top = gCoord.y + theNode.pointee.TopOff
-    boxPtr[0].bottom = gCoord.y + theNode.pointee.BottomOff
+    boxPtr[0].left = gEngine.objects.coord.x + theNode.pointee.LeftOff
+    boxPtr[0].right = gEngine.objects.coord.x + theNode.pointee.RightOff
+    boxPtr[0].back = gEngine.objects.coord.z + theNode.pointee.BackOff
+    boxPtr[0].front = gEngine.objects.coord.z + theNode.pointee.FrontOff
+    boxPtr[0].top = gEngine.objects.coord.y + theNode.pointee.TopOff
+    boxPtr[0].bottom = gEngine.objects.coord.y + theNode.pointee.BottomOff
 }
 
 // Sets an object's collision offset/bounds. Adjust accordingly for input rotation 0..3 (clockwise)
@@ -548,14 +546,14 @@ func CalcDisplayGroupWorldPoints(_ theNode: UnsafeMutablePointer<ObjNode>) {
     gEngine.renderer.pushMatrix()
     gEngine.renderer.loadIdentity()
 
-    gMeshNum = 0
+    gEngine.objects.meshNum = 0
 
     moCalcWorldPointsObject(theNode, UnsafeMutableRawPointer(theNode.pointee.BaseGroup))
 
     gEngine.renderer.popMatrix()
 
     theNode.hasWorldPoints = true
-    gNumWorldCalcsThisFrame += 1
+    gEngine.objects.numWorldCalcsThisFrame += 1
 }
 
 private func moCalcWorldPointsObject(_ theNode: UnsafeMutablePointer<ObjNode>, _ object: MetaObjectPtr?) {
@@ -615,7 +613,7 @@ private func moCalcWorldPointsMatrix(_ matObj: UnsafeMutablePointer<MOMatrixObje
 
 private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNode>, _ data: UnsafeMutablePointer<MOVertexArrayData>) {
     let numPoints = Int(data.pointee.numPoints) // get # points in this mesh
-    let meshNum = Int(gMeshNum)
+    let meshNum = Int(gEngine.objects.meshNum)
 
     if meshNum >= MAX_MESHES_IN_MODEL {
         SwFatal("MO_CalcWorldPoints_VertexArray: meshNum >= MAX_MESHES_IN_MODEL")
@@ -667,7 +665,7 @@ private func moCalcWorldPointsVertexArray(_ theNode: UnsafeMutablePointer<ObjNod
         }
     }
 
-    gMeshNum += 1
+    gEngine.objects.meshNum += 1
 }
 
 // MARK: - Object chains

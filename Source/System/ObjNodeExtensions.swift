@@ -31,7 +31,7 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func show() { clearStatus(STATUS_BIT_HIDDEN) }
 
     /// Sugar over the `Boolean` (UInt8) `isUsed` slot-allocation flag in
-    /// gObjectListStorage, replacing `pointee.isUsed = 1` / `== 0` boilerplate.
+    /// gEngine.objects.objectListStorage, replacing `pointee.isUsed = 1` / `== 0` boilerplate.
     var isUsed: Bool {
         get { pointee.isUsed != 0 }
         nonmutating set { pointee.isUsed = newValue ? 1 : 0 }

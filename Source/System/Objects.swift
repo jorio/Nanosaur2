@@ -1,36 +1,47 @@
 // Objects.swift - Port of Objects.c to Swift
 //
-// gFirstNodePtr/gCurrentNode/gCoord/gDelta/gAutoFadeStartDist/
-// gAutoFadeEndDist/gAutoFadeRange_Frac/gNumObjectNodes/gNumObjectNodesPeak
-// are native Swift storage now (converted 2026-07-07): nothing in any .c
-// file touches them anymore.
-
-var gFirstNodePtr: UnsafeMutablePointer<ObjNode>?
-var gCurrentNode: UnsafeMutablePointer<ObjNode>?
-var gCoord = OGLPoint3D()
-var gDelta = OGLVector3D()
-var gAutoFadeStartDist: Float = 0
-var gAutoFadeEndDist: Float = 0
-var gAutoFadeRange_Frac: Float = 0
-var gNumObjectNodes: Int32 = 0
-var gNumObjectNodesPeak: Int32 = 0
+// The object-system state lives in ObjectSystem (gEngine.objects) now:
+// nothing in any .c file touches any of it anymore.
 
 private let MAX_OBJECTS_COUNT = 5000
 private let OBJ_DEL_Q_SIZE_COUNT = 1500
 
-// gObjectList/gObjectDeleteQueue/gClearedObj were `static` (file-private) in
-// C, so unlike other ported globals they don't need to stay C-linked. A
-// plain C array this size (gObjectList is 5000 ObjNodes) would import as an
-// unworkable giant tuple anyway, so we manage the backing storage ourselves
-// with the same zero-initializing allocator the C code already used for
-// gClearedObj.
-private let gObjectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
-private let gObjectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
-private var gClearedObj: UnsafeMutablePointer<ObjNode>!
+/// Object-system state (master linked list, per-move scratch, autofade,
+/// slot storage). Owned by GameEngine as `gEngine.objects`.
+final class ObjectSystem {
+    // Master object linked list
+    var firstNodePtr: UnsafeMutablePointer<ObjNode>?
+    var currentNode: UnsafeMutablePointer<ObjNode>?
+    var numObjectNodes: Int32 = 0
+    var numObjectNodesPeak: Int32 = 0
 
-private var gMostRecentlyAddedNode: UnsafeMutablePointer<ObjNode>?
-private var gNextNode: UnsafeMutablePointer<ObjNode>?
-private var gNumObjsInDeleteQueue: Int32 = 0
+    // Coord/delta scratch of the object currently being moved
+    // (GetObjectInfo copies in, UpdateObject copies back out)
+    var coord = OGLPoint3D()
+    var delta = OGLVector3D()
+
+    // Autofade
+    var autoFadeStartDist: Float = 0
+    var autoFadeEndDist: Float = 0
+    var autoFadeRangeFrac: Float = 0
+
+    // Backing storage - was `static` (file-private) in the original C, so
+    // it never needed to stay C-linked. A plain C array this size
+    // (objectListStorage is 5000 ObjNodes) would import as an unworkable
+    // giant tuple anyway, so we manage the storage ourselves with the same
+    // zero-initializing allocator the C code already used for clearedObj.
+    fileprivate let objectListStorage = AllocPtrClear(MemoryLayout<ObjNode>.size * MAX_OBJECTS_COUNT)!.assumingMemoryBound(to: ObjNode.self)
+    fileprivate let objectDeleteQueueStorage = AllocPtrClear(MemoryLayout<UnsafeMutablePointer<ObjNode>?>.size * OBJ_DEL_Q_SIZE_COUNT)!.assumingMemoryBound(to: UnsafeMutablePointer<ObjNode>?.self)
+    fileprivate var clearedObj: UnsafeMutablePointer<ObjNode>!
+
+    fileprivate var mostRecentlyAddedNode: UnsafeMutablePointer<ObjNode>?
+    fileprivate var nextNode: UnsafeMutablePointer<ObjNode>?
+    fileprivate var numObjsInDeleteQueue: Int32 = 0
+
+    // Objects2.swift scratch (fileprivate wouldn't reach across files)
+    var meshNum: Int32 = 0
+    var numWorldCalcsThisFrame: Int32 = 0
+}
 
 // MARK: - fixed-array-field helpers (all struct fields, never unions)
 
@@ -55,52 +66,52 @@ private var gNumObjsInDeleteQueue: Int32 = 0
 func InitObjectManager() {
     // MARK ALL OBJECTS AS NOT USED
     for i in 0..<MAX_OBJECTS_COUNT {
-        (gObjectListStorage + i).isUsed = false
+        (gEngine.objects.objectListStorage + i).isUsed = false
     }
 
     CreateDummyInitObject()
 
     // INIT LINKED LIST
 
-    gCurrentNode = nil
+    gEngine.objects.currentNode = nil
 
     // CLEAR ENTIRE OBJECT LIST
 
-    gFirstNodePtr = nil // no node yet
+    gEngine.objects.firstNodePtr = nil // no node yet
 
-    gNumObjectNodes = 0
+    gEngine.objects.numObjectNodes = 0
 }
 
 // We make a dummy ObjNode which is initialized to the default settings
 // so that we can quickly initialize new ObjNode's simply by BlockMoving
 // this dummy node into them.
 private func CreateDummyInitObject() {
-    gClearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
+    gEngine.objects.clearedObj = AllocPtrClear(MemoryLayout<ObjNode>.size)!.assumingMemoryBound(to: ObjNode.self) // make a dummy objNode which is cleared to 0's
 
     for i in 0..<Int(MAX_NODE_SPARKLES) { // no sparkles
-        sparklesBase(gClearedObj)[i] = -1
+        sparklesBase(gEngine.objects.clearedObj)[i] = -1
     }
 
-    gClearedObj.pointee.LocalBBox.isEmpty = 1
-    gClearedObj.pointee.WorldBBox.isEmpty = 1
+    gEngine.objects.clearedObj.pointee.LocalBBox.isEmpty = 1
+    gEngine.objects.clearedObj.pointee.WorldBBox.isEmpty = 1
 
-    gClearedObj.pointee.BoundingSphereRadius = 100
+    gEngine.objects.clearedObj.pointee.BoundingSphereRadius = 100
 
-    gClearedObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.bg3dModels.rawValue) // assume this object's vertex data is in the cached/static mode
+    gEngine.objects.clearedObj.pointee.VertexArrayMode = UInt8(VertexArrayRangeType.bg3dModels.rawValue) // assume this object's vertex data is in the cached/static mode
 
-    gClearedObj.pointee.EffectChannel = -1 // no streaming sound effect
-    gClearedObj.pointee.ParticleGroup = -1 // no particle group
+    gEngine.objects.clearedObj.pointee.EffectChannel = -1 // no streaming sound effect
+    gEngine.objects.clearedObj.pointee.ParticleGroup = -1 // no particle group
 
     for i in 0..<Int(MAX_CONTRAILS_PER_OBJNODE) { // no contrails
-        contrailSlotBase(gClearedObj)[i] = -1
+        contrailSlotBase(gEngine.objects.clearedObj)[i] = -1
     }
 
-    gClearedObj.pointee.SplineObjectIndex = -1 // no index yet
+    gEngine.objects.clearedObj.pointee.SplineObjectIndex = -1 // no index yet
 
-    gClearedObj.pointee.ColorFilter.r = 1.0
-    gClearedObj.pointee.ColorFilter.g = 1.0
-    gClearedObj.pointee.ColorFilter.b = 1.0
-    gClearedObj.pointee.ColorFilter.a = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.r = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.g = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.b = 1.0
+    gEngine.objects.clearedObj.pointee.ColorFilter.a = 1.0
 }
 
 // MAKE NEW OBJECT & RETURN PTR TO IT
@@ -118,8 +129,8 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
     var newNodePtr: UnsafeMutablePointer<ObjNode>!
     var i: Int32 = -1
     for idx in 0..<Int32(MAX_OBJECTS_COUNT) {
-        if !(gObjectListStorage + Int(idx)).isUsed {
-            newNodePtr = gObjectListStorage + Int(idx) // point to object from list
+        if !(gEngine.objects.objectListStorage + Int(idx)).isUsed {
+            newNodePtr = gEngine.objects.objectListStorage + Int(idx) // point to object from list
             i = idx
             break
         }
@@ -133,7 +144,7 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
 
     // CLEAR THE OBJNODE & SET DATA
 
-    newNodePtr.pointee = gClearedObj.pointee // copy the cleared/initied obj into here
+    newNodePtr.pointee = gEngine.objects.clearedObj.pointee // copy the cleared/initied obj into here
 
     newNodePtr.pointee.objectNum = Int16(i) // not from gObjectList array
     newNodePtr.isUsed = true
@@ -181,18 +192,18 @@ func MakeNewObject(_ newObjDef: UnsafeMutablePointer<NewObjectDefinitionType>) -
     newNodePtr.setStatus(STATUS_BIT_DETACHED) // its not attached to linked list yet
     AttachObject(newNodePtr, 0)
 
-    gNumObjectNodes += 1
+    gEngine.objects.numObjectNodes += 1
 
-    if gNumObjectNodes > gNumObjectNodesPeak {
-        gNumObjectNodesPeak = gNumObjectNodes
-        if gNumObjectNodesPeak > Int32(MAX_OBJECTS_COUNT) {
-            SwLog("WARNING: New object count peak: \(gNumObjectNodesPeak). Consider raising MAX_OBJECTS!")
+    if gEngine.objects.numObjectNodes > gEngine.objects.numObjectNodesPeak {
+        gEngine.objects.numObjectNodesPeak = gEngine.objects.numObjectNodes
+        if gEngine.objects.numObjectNodesPeak > Int32(MAX_OBJECTS_COUNT) {
+            SwLog("WARNING: New object count peak: \(gEngine.objects.numObjectNodesPeak). Consider raising MAX_OBJECTS!")
         }
     }
 
     // CLEANUP
 
-    gMostRecentlyAddedNode = newNodePtr // remember this
+    gEngine.objects.mostRecentlyAddedNode = newNodePtr // remember this
     return newNodePtr
 }
 
@@ -347,14 +358,14 @@ func CreateBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
 func MoveObjects() {
     // Deliberately NOT a `for node in allObjectNodes` walk (ObjNodeList.swift):
     // move callbacks can delete ARBITRARY nodes, which requires the
-    // gNextNode-global fixup that DetachObject performs when the pending
+    // gEngine.objects.nextNode-global fixup that DetachObject performs when the pending
     // next node is the one being deleted. A snapshot iterator can't know
     // about that.
-    if gFirstNodePtr == nil { // see if there are any objects
+    if gEngine.objects.firstNodePtr == nil { // see if there are any objects
         return
     }
 
-    var thisNodePtr = gFirstNodePtr
+    var thisNodePtr = gEngine.objects.firstNodePtr
 
     while true {
         let node = thisNodePtr!
@@ -365,8 +376,8 @@ func MoveObjects() {
             SwFatal("MoveObjects: CType == INVALID_NODE_FLAG")
         }
 
-        gCurrentNode = node // set current object node
-        gNextNode = node.pointee.NextNode // get next node now (cuz current node might get deleted)
+        gEngine.objects.currentNode = node // set current object node
+        gEngine.objects.nextNode = node.pointee.NextNode // get next node now (cuz current node might get deleted)
 
         repeat { // goto-next simulator
             // SEE IF SHOULD SKIP WHEN PAUSED
@@ -399,7 +410,7 @@ func MoveObjects() {
             }
         } while false
 
-        thisNodePtr = gNextNode // next node
+        thisNodePtr = gEngine.objects.nextNode // next node
         if thisNodePtr == nil { break }
     }
 
@@ -416,7 +427,7 @@ func DrawObjects() {
     var clipAlpha = false
     let playerNum = gCurrentSplitScreenPane // get the player # who's draw context is being drawn
 
-    if gFirstNodePtr == nil { // see if there are any objects
+    if gEngine.objects.firstNodePtr == nil { // see if there are any objects
         return
     }
 
@@ -429,7 +440,7 @@ func DrawObjects() {
     // function, preserving the legacy stop-on-delete semantics if a draw
     // callback ever deletes its own node (DetachObject nulls the deleted
     // node's NextNode).
-    var theNode: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
+    var theNode: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr
 
     // GET CAMERA COORDS
 
@@ -475,7 +486,7 @@ func DrawObjects() {
 
             // CHECK AUTOFADE
 
-            if gAutoFadeStartDist != 0.0 { // see if this level has autofade
+            if gEngine.objects.autoFadeStartDist != 0.0 { // see if this level has autofade
                 if statusBits & UInt32(STATUS_BIT_AUTOFADE) != 0 {
                     var dist = CalcQuickDistance(cameraX, cameraZ, node.pointee.Coord.x, node.pointee.Coord.z) // see if in fade zone
 
@@ -485,9 +496,9 @@ func DrawObjects() {
                         }
                     }
 
-                    if dist >= gAutoFadeStartDist {
-                        dist -= gAutoFadeStartDist // calc xparency %
-                        dist *= gAutoFadeRange_Frac
+                    if dist >= gEngine.objects.autoFadeStartDist {
+                        dist -= gEngine.objects.autoFadeStartDist // calc xparency %
+                        dist *= gEngine.objects.autoFadeRangeFrac
                         if dist < 0.0 {
                             break drawNode
                         }
@@ -1005,8 +1016,8 @@ func MoveStaticObject3(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 // MARK: - Object deleting
 
 func DeleteAllObjects() {
-    while gFirstNodePtr != nil {
-        DeleteObject(gFirstNodePtr)
+    while gEngine.objects.firstNodePtr != nil {
+        DeleteObject(gEngine.objects.firstNodePtr)
     }
 
     FlushObjectDeleteQueue()
@@ -1108,9 +1119,9 @@ func DeleteObject(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     theNode.pointee.CType = INVALID_NODE_FLAG // INVALID_NODE_FLAG indicates its deleted
     theNode.pointee.Cookie = 0
 
-    gObjectDeleteQueueStorage[Int(gNumObjsInDeleteQueue)] = theNode
-    gNumObjsInDeleteQueue += 1
-    if gNumObjsInDeleteQueue >= Int32(OBJ_DEL_Q_SIZE_COUNT) {
+    gEngine.objects.objectDeleteQueueStorage[Int(gEngine.objects.numObjsInDeleteQueue)] = theNode
+    gEngine.objects.numObjsInDeleteQueue += 1
+    if gEngine.objects.numObjsInDeleteQueue >= Int32(OBJ_DEL_Q_SIZE_COUNT) {
         FlushObjectDeleteQueue()
     }
 }
@@ -1126,14 +1137,14 @@ func DetachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ subrecurse: UInt8
         return
     }
 
-    if theNode == gNextNode { // if its the next node to be moved, then fix things
-        gNextNode = theNode.pointee.NextNode
+    if theNode == gEngine.objects.nextNode { // if its the next node to be moved, then fix things
+        gEngine.objects.nextNode = theNode.pointee.NextNode
     }
 
     if theNode.pointee.PrevNode == nil { // special case 1st node
-        gFirstNodePtr = theNode.pointee.NextNode
-        if gFirstNodePtr != nil {
-            gFirstNodePtr!.pointee.PrevNode = nil
+        gEngine.objects.firstNodePtr = theNode.pointee.NextNode
+        if gEngine.objects.firstNodePtr != nil {
+            gEngine.objects.firstNodePtr!.pointee.PrevNode = nil
         }
     } else if theNode.pointee.NextNode == nil { // special case last node
         theNode.pointee.PrevNode!.pointee.NextNode = nil
@@ -1171,18 +1182,18 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
 
     let slot = theNode.pointee.Slot
 
-    if gFirstNodePtr == nil { // special case only entry
-        gFirstNodePtr = theNode
+    if gEngine.objects.firstNodePtr == nil { // special case only entry
+        gEngine.objects.firstNodePtr = theNode
         theNode.pointee.PrevNode = nil
         theNode.pointee.NextNode = nil
-    } else if slot < gFirstNodePtr!.pointee.Slot { // INSERT AS FIRST NODE
+    } else if slot < gEngine.objects.firstNodePtr!.pointee.Slot { // INSERT AS FIRST NODE
         theNode.pointee.PrevNode = nil // no prev
-        theNode.pointee.NextNode = gFirstNodePtr // next pts to old 1st
-        gFirstNodePtr!.pointee.PrevNode = theNode // old pts to new 1st
-        gFirstNodePtr = theNode
+        theNode.pointee.NextNode = gEngine.objects.firstNodePtr // next pts to old 1st
+        gEngine.objects.firstNodePtr!.pointee.PrevNode = theNode // old pts to new 1st
+        gEngine.objects.firstNodePtr = theNode
     } else { // SCAN FOR INSERTION PLACE
-        var reNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr
-        var scanNodePtr: UnsafeMutablePointer<ObjNode>? = gFirstNodePtr!.pointee.NextNode // start scanning for insertion slot on 2nd node
+        var reNodePtr: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr
+        var scanNodePtr: UnsafeMutablePointer<ObjNode>? = gEngine.objects.firstNodePtr!.pointee.NextNode // start scanning for insertion slot on 2nd node
 
         var inserted = false
         while let scan = scanNodePtr {
@@ -1221,12 +1232,12 @@ func AttachObject(_ theNode: UnsafeMutablePointer<ObjNode>?, _ recurse: UInt8) {
 }
 
 private func FlushObjectDeleteQueue() {
-    let num = gNumObjsInDeleteQueue
+    let num = gEngine.objects.numObjsInDeleteQueue
 
-    gNumObjectNodes -= num
+    gEngine.objects.numObjectNodes -= num
 
     for i in 0..<Int(num) {
-        let node = gObjectDeleteQueueStorage[i]!
+        let node = gEngine.objects.objectDeleteQueueStorage[i]!
         if node.pointee.objectNum == -1 { // see if dispose by freeing memory...
             SafeDisposePtr(node)
         } else {
@@ -1234,7 +1245,7 @@ private func FlushObjectDeleteQueue() {
         }
     }
 
-    gNumObjsInDeleteQueue = 0
+    gEngine.objects.numObjsInDeleteQueue = 0
 }
 
 func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
@@ -1253,8 +1264,8 @@ func DisposeObjectBaseGroup(_ theNode: UnsafeMutablePointer<ObjNode>) {
 // MARK: - Object information
 
 func GetObjectInfo(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    gCoord = theNode.pointee.Coord
-    gDelta = theNode.pointee.Delta
+    gEngine.objects.coord = theNode.pointee.Coord
+    gEngine.objects.delta = theNode.pointee.Delta
 }
 
 func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
@@ -1262,11 +1273,11 @@ func UpdateObject(_ theNode: UnsafeMutablePointer<ObjNode>) {
         return
     }
 
-    theNode.pointee.Coord = gCoord
-    theNode.pointee.Delta = gDelta
+    theNode.pointee.Coord = gEngine.objects.coord
+    theNode.pointee.Delta = gEngine.objects.delta
     UpdateObjectTransforms(theNode)
 
-    FastNormalizeVector(gDelta.x, gDelta.y, gDelta.z, &theNode.pointee.MotionVector)
+    FastNormalizeVector(gEngine.objects.delta.x, gEngine.objects.delta.y, gEngine.objects.delta.z, &theNode.pointee.MotionVector)
 
     CalcObjectBoxFromNode(theNode)
 

@@ -254,7 +254,7 @@ private let cTreeHitByWeaponCallback: @convention(c) (UnsafeMutablePointer<ObjNo
 
     // WEAPONS THAT FURR THE TREE
     case .sonicScream:
-        makeLeafConfetti(tree.pointee.Coord.x, gCoord.y, tree.pointee.Coord.z, Int16(PARTICLE_SObjType_Confetti_Birch), 200)
+        makeLeafConfetti(tree.pointee.Coord.x, gEngine.objects.coord.y, tree.pointee.Coord.z, Int16(PARTICLE_SObjType_Confetti_Birch), 200)
 
     default:
         break
@@ -286,8 +286,8 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
     // MOVE BURN LINE DOWN TO BOTTOM
 
     theNode.pointee.SpecialF.0 -= fps * 30.0 // TreeBurnY
-    if theNode.pointee.SpecialF.0 < (gCoord.y + 100.0) {
-        theNode.pointee.SpecialF.0 = gCoord.y + 100.0
+    if theNode.pointee.SpecialF.0 < (gEngine.objects.coord.y + 100.0) {
+        theNode.pointee.SpecialF.0 = gEngine.objects.coord.y + 100.0
     }
 
     // BURN TREE COLOR
@@ -342,9 +342,9 @@ private let cMoveTreeBurning: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
         if particleGroup != -1 {
             for _ in 0..<3 {
                 var p = OGLPoint3D()
-                p.x = gCoord.x + RandomFloat2() * 25.0
+                p.x = gEngine.objects.coord.x + RandomFloat2() * 25.0
                 p.y = theNode.pointee.SpecialF.0 + RandomFloat2() * 15.0 // TreeBurnY
-                p.z = gCoord.z + RandomFloat2() * 25.0
+                p.z = gEngine.objects.coord.z + RandomFloat2() * 25.0
 
                 var d = OGLVector3D()
                 d.x = 0

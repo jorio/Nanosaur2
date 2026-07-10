@@ -187,16 +187,16 @@ private let cMoveRamphorDeath: @convention(c) (UnsafeMutablePointer<ObjNode>?) -
 
     // MOVE
 
-    gDelta.y -= 4000.0 * fps // add gravity
-    gCoord.x += gDelta.x * fps
-    gCoord.y += gDelta.y * fps
-    gCoord.z += gDelta.z * fps
+    gEngine.objects.delta.y -= 4000.0 * fps // add gravity
+    gEngine.objects.coord.x += gEngine.objects.delta.x * fps
+    gEngine.objects.coord.y += gEngine.objects.delta.y * fps
+    gEngine.objects.coord.z += gEngine.objects.delta.z * fps
 
     theNode.pointee.Rot.z -= fps * SwPI2
 
     // SEE IF HIT GROUND
 
-    if gCoord.y <= GetTerrainY(gCoord.x, gCoord.z) {
+    if gEngine.objects.coord.y <= GetTerrainY(gEngine.objects.coord.x, gEngine.objects.coord.z) {
         explodeRamphor(theNode)
         return
     }
@@ -265,7 +265,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
         // NO SHIELD, SO HURT PLAYER
 
         else if !gGamePrefs.isKiddieMode { // don't hurt in kiddie mode
-            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gCoord, 1)
+            _ = PlayerLoseHealth(Int16(playerNum), enemy.pointee.Damage, .deathDive, &gEngine.objects.coord, 1)
         }
 
         playerInfo.pointee.invincibilityTimer = 1.0
@@ -276,7 +276,7 @@ private let cDoTrigRamphor: @convention(c) (UnsafeMutablePointer<ObjNode>?, Unsa
 
         // PLAY BODYHIT EFFECT
 
-        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
+        PlayEffect_Parms3D(Int16(EFFECT_BODYHIT), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 1.1)
         PlayRumbleEffect(Int16(EFFECT_BODYHIT), Int32(playerNum))
     }
 
@@ -351,7 +351,7 @@ private func explodeRamphor(_ theNode: UnsafeMutablePointer<ObjNode>) {
         }
     }
 
-    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &gCoord, UInt32(NORMAL_CHANNEL_RATE), 0.5)
+    PlayEffect_Parms3D(Int16(EFFECT_PLANECRASH), &gEngine.objects.coord, UInt32(NORMAL_CHANNEL_RATE), 0.5)
 
     DeleteEnemy(theNode)
 }

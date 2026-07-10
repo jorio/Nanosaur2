@@ -357,9 +357,9 @@ func DisposeFences() {
 // MARK: - Update fences
 
 func UpdateFences() {
-    let autoFadeStart = gAutoFadeStartDist
-    let autoFadeEndDist = gAutoFadeEndDist
-    let autoFadeRangeFrac = gAutoFadeRange_Frac
+    let autoFadeStart = gEngine.objects.autoFadeStartDist
+    let autoFadeEndDist = gEngine.objects.autoFadeEndDist
+    let autoFadeRangeFrac = gEngine.objects.autoFadeRangeFrac
 
     // UPDATE VAR TYPE FOR THE CURRENT FRAME'S DOUBLE-BUFFER
 
@@ -480,8 +480,8 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
 
     let oldX = Double(theNode.pointee.OldCoord.x) // from old coord
     let oldZ = Double(theNode.pointee.OldCoord.z)
-    var newX = Double(gCoord.x) // to new coord
-    var newZ = Double(gCoord.z)
+    var newX = Double(gEngine.objects.coord.x) // to new coord
+    var newZ = Double(gEngine.objects.coord.z)
     let radius = Double(theNode.pointee.BoundingSphereRadius)
 
     var hit = false
@@ -590,31 +590,31 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
                 // Move so edge of sphere would be tangent, but also a bit
                 // farther so it isnt tangent.
 
-                gCoord.x = intersectX + (lineNormal.x * Float(radius)) + (lineNormal.x * 8.0)
-                gCoord.z = intersectZ + (lineNormal.y * Float(radius)) + (lineNormal.y * 8.0)
+                gEngine.objects.coord.x = intersectX + (lineNormal.x * Float(radius)) + (lineNormal.x * 8.0)
+                gEngine.objects.coord.z = intersectZ + (lineNormal.y * Float(radius)) + (lineNormal.y * 8.0)
 
                 // BOUNCE OFF WALL
 
                 var deltaV = OGLVector2D()
-                deltaV.x = gDelta.x
-                deltaV.y = gDelta.z
+                deltaV.x = gEngine.objects.delta.x
+                deltaV.y = gEngine.objects.delta.z
                 var deltaVReflected = OGLVector2D()
                 ReflectVector2D(&deltaV, &lineNormal, &deltaVReflected)
                 deltaV = deltaVReflected
-                gDelta.x = deltaV.x * 0.6
-                gDelta.z = deltaV.y * 0.6
+                gEngine.objects.delta.x = deltaV.x * 0.6
+                gEngine.objects.delta.z = deltaV.y * 0.6
 
                 // UPDATE COORD & SCAN AGAIN
 
-                newX = Double(gCoord.x)
-                newZ = Double(gCoord.z)
+                newX = Double(gEngine.objects.coord.x)
+                newZ = Double(gEngine.objects.coord.z)
                 numReScans += 1
                 if numReScans < 4 {
                     i = -1 // reset segment index to scan all again (will ++ to 0 on next loop)
                 } else {
                     // we don't want to get stuck inside the fence (from having landed on it)
-                    gCoord.x = Float(oldX) // woah!  there were a lot of hits, so let's just reset the coords to be safe!
-                    gCoord.z = Float(oldZ)
+                    gEngine.objects.coord.x = Float(oldX) // woah!  there were a lot of hits, so let's just reset the coords to be safe!
+                    gEngine.objects.coord.z = Float(oldZ)
                     i += 1
                     continue fenceLoop
                 }
@@ -632,19 +632,19 @@ func DoFenceCollision(_ theNode: UnsafeMutablePointer<ObjNode>!) -> UInt8 {
                     (CalcQuickDistance(Float(segToX), Float(segToZ), Float(newX), Float(newZ)) <= Float(radius)) {
                     hit = true
 
-                    gCoord.x = Float(oldX)
-                    gCoord.z = Float(oldZ)
+                    gEngine.objects.coord.x = Float(oldX)
+                    gEngine.objects.coord.z = Float(oldZ)
 
                     // BOUNCE OFF WALL
 
                     var deltaV = OGLVector2D()
-                    deltaV.x = gDelta.x
-                    deltaV.y = gDelta.z
+                    deltaV.x = gEngine.objects.delta.x
+                    deltaV.y = gEngine.objects.delta.z
                     var deltaVReflected = OGLVector2D()
                 ReflectVector2D(&deltaV, &lineNormal, &deltaVReflected)
                 deltaV = deltaVReflected
-                    gDelta.x = deltaV.x * 0.5
-                    gDelta.z = deltaV.y * 0.5
+                    gEngine.objects.delta.x = deltaV.x * 0.5
+                    gEngine.objects.delta.z = deltaV.y * 0.5
                     return hit ? 1 : 0
                 } else {
                     i += 1

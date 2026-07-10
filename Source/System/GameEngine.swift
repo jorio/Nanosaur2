@@ -11,6 +11,10 @@ final class GameEngine {
     /// swaps in the Metal backend under --metal during draw-context
     /// creation, before any drawing happens.
     var renderer: RenderBackend = GLRenderBackend()
+
+    /// Object system: master ObjNode list, per-move coord/delta scratch,
+    /// autofade settings, slot storage (see Objects.swift).
+    let objects = ObjectSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

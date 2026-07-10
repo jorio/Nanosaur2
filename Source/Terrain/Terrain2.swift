@@ -702,8 +702,8 @@ func SeeIfCrossedLineMarker(_ theNode: UnsafeMutablePointer<ObjNode>!, _ whichLi
 
     let fromX = theNode.pointee.OldCoord.x
     let fromZ = theNode.pointee.OldCoord.z
-    let toX = gCoord.x
-    let toZ = gCoord.z
+    let toX = gEngine.objects.coord.x
+    let toZ = gEngine.objects.coord.z
 
     // SEE IF CROSSED ANY LINE MARKERS
 

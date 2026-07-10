@@ -226,7 +226,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     let i = Int(splineIndex * numPointsInSpline)
 
-    gCoord = GetCustomSplineSlot(Int32(splineNum)).pointee.splinePoints![i]
+    gEngine.objects.coord = GetCustomSplineSlot(Int32(splineNum)).pointee.splinePoints![i]
 
     // UPDATE JOINTS ON SPLINE
 
@@ -237,7 +237,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     // SEE IF START @ FROM
 
     if from.pointee.Flag.0 == 0 {
-        let dist = abs(from.pointee.Coord.y - gCoord.y)
+        let dist = abs(from.pointee.Coord.y - gEngine.objects.coord.y)
         if dist < 300.0 {
             from.pointee.Flag.0 = 1
             from.pointee.SpecialF.0 = 0
@@ -248,7 +248,7 @@ private let cMoveHoleWorm: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     // SEE IF START @ TO
 
     else if (to.pointee.Flag.0 == 0) && (from.pointee.SpecialF.0 > 0.5) {
-        let dist = abs(to.pointee.Coord.y - gCoord.y)
+        let dist = abs(to.pointee.Coord.y - gEngine.objects.coord.y)
         if dist < 250.0 {
             to.pointee.Flag.0 = 1
             to.pointee.SpecialF.0 = 0

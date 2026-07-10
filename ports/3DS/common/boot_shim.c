@@ -49,4 +49,11 @@
 // large texture upload. 24 MiB covers that with margin while leaving the
 // regular heap the bulk of the pool (which LoadPlayfield's JPEG-decode
 // temporaries still need - see above).
-uint32_t __ctru_linear_heap_size = 28 * 1024 * 1024; // 24 wasn't enough for a full level's textures even at RGBA4 (C3D_TexInit failures mid-LoadPlayfield); textures also go VRAM-first now, but the level set still needs this much linear behind it
+uint32_t __ctru_linear_heap_size = 30 * 1024 * 1024;
+// 30 MiB is a measured balance point for the citro3d renderer
+// (c3d_renderer.c - ALL textures live in linear memory now, plus two 2 MiB
+// staging rings):
+//   28 MiB: linear ran out ~600KB short of a full level's ~280 supertile
+//           textures (19 x 32KB C3D_TexInit failures at the tail).
+//   32 MiB: the REGULAR heap then OOM'd instead (AllocPtr's malloc
+//           returned nil during level-intro asset loading).

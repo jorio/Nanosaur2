@@ -29,7 +29,8 @@ extern "C" {
     int Romfs3DS_Mount(void);
     void Fs3DS_InitFileSystem(void); // fs_init_shim.cpp
     void GameMain(void); // Source/System/Main.swift, @c @implementation
-    extern SDL_Window* gSDLWindow; // common/boot_shim.c
+    extern SDL_Window* gSDLWindow; // Source/System/BootGlobals.c
+    extern SDL_Window* gSDLWindow2; // Source/System/BootGlobals.c - 3DS bottom screen (SDL software, images only)
     extern unsigned char gDualScreenMode; // Boolean (SwMacTypes uint8_t) - Source/System/BootGlobals.c
 
     // libctru's crt0 startup code (weak symbols - see common/boot_shim.c's
@@ -98,12 +99,31 @@ int main()
     }
 #else
     // The debug console isn't occupying the bottom screen, so give it to
-    // the game: dual-screen mode draws the menu background there, plus the
-    // live overhead minimap during gameplay (see OGL_DrawDualScreenMinimap's
-    // 3DS branch in OGL_Support.swift - picaGL renders both screens from
-    // one context, no second window/GL context involved). Mutually
-    // exclusive with DEBUGLOG by construction: both want the bottom screen.
-    gDualScreenMode = 1;
+    // the game: an SDL software-rendered window on SDL's second display
+    // (the n3ds video driver exposes GFX_TOP and GFX_BOTTOM as two
+    // displays, and binds a window to the screen of the display it's
+    // created on). picaGL keeps the TOP screen exclusively; the bottom
+    // shows plain images only (menu background now, minimap later - see
+    // OGL_Support.swift's 3DS dual-screen branches). Mutually exclusive
+    // with DEBUGLOG by construction: both want the bottom screen.
+    {
+        int numDisplays = 0;
+        SDL_DisplayID *displays = SDL_GetDisplays(&numDisplays);
+        if (displays && numDisplays >= 2)
+        {
+            SDL_PropertiesID props = SDL_CreateProperties();
+            SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Nanosaur 2 bottom");
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, (Sint64)SDL_WINDOWPOS_CENTERED_DISPLAY(displays[1]));
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, (Sint64)SDL_WINDOWPOS_CENTERED_DISPLAY(displays[1]));
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 320);
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 240);
+            gSDLWindow2 = SDL_CreateWindowWithProperties(props);
+            SDL_DestroyProperties(props);
+        }
+        SDL_free(displays);
+
+        gDualScreenMode = (gSDLWindow2 != NULL) ? 1 : 0;
+    }
 #endif
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()

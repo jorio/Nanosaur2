@@ -734,52 +734,15 @@ func Infobar_DrawNumber(_ number0: Int32, _ x0: Float, _ y0: Float, _ scale: Flo
     }
 }
 
-// MARK: - Draw map
-
-// mapXValue/y are the center of the map in logical HUD coordinates; scale
-// multiplies the base MAP_SCALE/MAP_SCALE2 constants. Defaults match the
-// original corner-anchored HUD call site; DrawMinimapOnSecondaryScreen
-// (dual-screen mode) passes an explicit center position and a larger scale.
-private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0) {
-    guard gEngine.infobar.overheadMapMaterial != nil else {
-        return
-    }
-
-    let rot = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
-
-    // SET COORDS OF THE QUAD
-    let xoff = MAP_SCALE2 * scale
-    let yoff = MAP_SCALE2 * scale
-
-    var p2D = (OGLPoint2D(), OGLPoint2D(), OGLPoint2D(), OGLPoint2D())
-    p2D.0.x = -xoff; p2D.0.y = yoff
-    p2D.1.x = xoff; p2D.1.y = yoff
-    p2D.2.x = xoff; p2D.2.y = -yoff
-    p2D.3.x = -xoff; p2D.3.y = -yoff
-
-    var m = OGLMatrix3x3()
-    OGLMatrix3x3_SetRotate(&m, Double(rot))
-    withUnsafeMutablePointer(to: &p2D) {
-        $0.withMemoryRebound(to: OGLPoint2D.self, capacity: 4) { pPtr in
-            OGLPoint2D_TransformArray(pPtr, &m, pPtr, 4)
-        }
-    }
-
-    gOHMPoints[0].x = p2D.0.x + mapXValue; gOHMPoints[0].y = p2D.0.y + y // translate and convert to 3D point variable
-    gOHMPoints[1].x = p2D.1.x + mapXValue; gOHMPoints[1].y = p2D.1.y + y
-    gOHMPoints[2].x = p2D.2.x + mapXValue; gOHMPoints[2].y = p2D.2.y + y
-    gOHMPoints[3].x = p2D.3.x + mapXValue; gOHMPoints[3].y = p2D.3.y + y
-
-    // CALC UV COORDS
-    //
-    // First we need to adjust the world left/top to the texture's
-    // left/top (since we've cropped the black out of it)
-    //
-    // Then we need to scale the scroll value to uv coords.
-
-    let pi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
-    var leftEdge = Double(pi.pointee.coord.x * gEngine.terrain.mapToUnitValueFrac) // convert world-coord to texture-pixel-coord
-    var topEdge = Double(pi.pointee.coord.z * gEngine.terrain.mapToUnitValueFrac)
+// Level-specific overhead-map UV window: converts a player position (in
+// map-texture pixel coordinates of the ORIGINAL uncropped map) to a UV
+// center + half-size on the cropped map image, using each level's
+// hand-measured crop offsets and pixel scales. Shared by the desktop GL
+// minimap (infobarDrawMap) and the 3DS bottom-screen SDL minimap
+// (OGL_Support.swift). Returns nil for levels without a map.
+func OverheadMapUVWindow(_ leftEdge0: Double, _ topEdge0: Double) -> (visibleRange: Float, u: Float, v: Float)? {
+    var leftEdge = leftEdge0
+    var topEdge = topEdge0
 
     var visibleRange: Float
     var u: Float
@@ -850,8 +813,66 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
         v = Float(topEdge) * 0.00054585
 
     default:
+        return nil
+    }
+
+    return (visibleRange, u, v)
+}
+
+
+// MARK: - Draw map
+
+// mapXValue/y are the center of the map in logical HUD coordinates; scale
+// multiplies the base MAP_SCALE/MAP_SCALE2 constants. Defaults match the
+// original corner-anchored HUD call site; DrawMinimapOnSecondaryScreen
+// (dual-screen mode) passes an explicit center position and a larger scale.
+private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0) {
+    guard gEngine.infobar.overheadMapMaterial != nil else {
         return
     }
+
+    let rot = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
+
+    // SET COORDS OF THE QUAD
+    let xoff = MAP_SCALE2 * scale
+    let yoff = MAP_SCALE2 * scale
+
+    var p2D = (OGLPoint2D(), OGLPoint2D(), OGLPoint2D(), OGLPoint2D())
+    p2D.0.x = -xoff; p2D.0.y = yoff
+    p2D.1.x = xoff; p2D.1.y = yoff
+    p2D.2.x = xoff; p2D.2.y = -yoff
+    p2D.3.x = -xoff; p2D.3.y = -yoff
+
+    var m = OGLMatrix3x3()
+    OGLMatrix3x3_SetRotate(&m, Double(rot))
+    withUnsafeMutablePointer(to: &p2D) {
+        $0.withMemoryRebound(to: OGLPoint2D.self, capacity: 4) { pPtr in
+            OGLPoint2D_TransformArray(pPtr, &m, pPtr, 4)
+        }
+    }
+
+    gOHMPoints[0].x = p2D.0.x + mapXValue; gOHMPoints[0].y = p2D.0.y + y // translate and convert to 3D point variable
+    gOHMPoints[1].x = p2D.1.x + mapXValue; gOHMPoints[1].y = p2D.1.y + y
+    gOHMPoints[2].x = p2D.2.x + mapXValue; gOHMPoints[2].y = p2D.2.y + y
+    gOHMPoints[3].x = p2D.3.x + mapXValue; gOHMPoints[3].y = p2D.3.y + y
+
+    // CALC UV COORDS
+    //
+    // First we need to adjust the world left/top to the texture's
+    // left/top (since we've cropped the black out of it)
+    //
+    // Then we need to scale the scroll value to uv coords.
+
+    let pi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
+    let leftEdge = Double(pi.pointee.coord.x * gEngine.terrain.mapToUnitValueFrac) // convert world-coord to texture-pixel-coord
+    let topEdge = Double(pi.pointee.coord.z * gEngine.terrain.mapToUnitValueFrac)
+
+    guard let window = OverheadMapUVWindow(leftEdge, topEdge) else {
+        return
+    }
+    let visibleRange = window.visibleRange
+    let u = window.u
+    let v = window.v
 
     gOHMuv1[0].u = u - visibleRange
     gOHMuv1[0].v = v + visibleRange

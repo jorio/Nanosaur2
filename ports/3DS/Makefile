@@ -103,10 +103,11 @@ PIC_FLAGS	:=	-fno-pic -fno-pie
 CTRUDEFS	:=	-D__3DS__ -I$(COMMON) -I$(CTRULIB)/include
 
 # DebugLog (console_shim.c + the DebugLog checkpoints throughout the Swift
-# engine) - on by default while the port is being brought up; build with
-# `make DEBUGLOG=0` to compile all logging out of the binary entirely
-# (every call site, C and Swift, is behind the same flag).
-DEBUGLOG	?=	1
+# engine) - off by default; build with `make DEBUGLOG=1` to compile the
+# boot-checkpoint/diagnostic logging in (bottom-screen console + SD-card
+# log at sdmc:/nanosaur2_log.txt). Every call site, C and Swift, is behind
+# the same flag, so the default build contains no logging code at all.
+DEBUGLOG	?=	0
 ifeq ($(DEBUGLOG),1)
 CTRUDEFS	+=	-DDEBUGLOG
 DEBUGLOG_SWIFTFLAGS := -DDEBUGLOG -Xcc -DDEBUGLOG

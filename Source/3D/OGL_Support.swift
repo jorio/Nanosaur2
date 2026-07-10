@@ -456,11 +456,35 @@ private func OGL_CreateDrawContext() {
     // producing a visible flicker; redrawing the full frame every time
     // keeps both buffers identical.
 
-    // Dual-screen (second GL context on a second window) is an inherently
-    // desktop-GL concept with no citro3d equivalent - it's not part of the
-    // RenderBackend facade (see the doc comment above) and 3DS never sets
-    // gDualScreenMode, so this whole path compiles out there.
-    #if !NANOSAUR_3DS
+    #if NANOSAUR_3DS
+    // 3DS dual-screen: picaGL renders both physical screens from the ONE
+    // global context - pglSelectScreen picks which display the next
+    // pglSwapBuffers presents to, and glViewport is display-aware (picaGL
+    // sizes it against the currently selected screen: 400x240 top,
+    // 320x240 bottom). So there's no second window/GL context here at
+    // all; just load the background texture and pre-fill both of the
+    // bottom screen's framebuffers so it shows the menu background (not
+    // garbage) until the first minimap frame. main.cpp only sets
+    // gDualScreenMode when DEBUGLOG is off - otherwise the debug console
+    // owns the bottom screen.
+    if gDualScreenMode != 0 {
+        var bgWidth: Int32 = 0
+        var bgHeight: Int32 = 0
+        gEngine.view.dualScreenBackgroundTexture = OGL_TextureMap_LoadImageFile(":Sprites:menu:menuback", &bgWidth, &bgHeight, nil)
+
+        PGL_SelectBottomScreen()
+        for _ in 0..<2 { // fill both backbuffer slots so neither shows garbage
+            glViewport(0, 0, 320, 240)
+            OGL_DrawDualScreenBackground(320, 240)
+            PGL_SwapBuffers()
+        }
+        PGL_SelectTopScreen()
+    }
+    #else
+    // Dual-screen on desktop: a second GL context on a second window,
+    // sharing texture/VBO namespace with gEngine.view.aglContext (set via
+    // SDL_GL_SHARE_WITH_CURRENT_CONTEXT while it's current, right before
+    // creating the second context).
     if gDualScreenMode != 0, let window2 = gSDLWindow2 {
         try? SDL.glSetAttribute(.shareWithCurrentContext, 1)
 
@@ -936,27 +960,72 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
         RestoreCamerasFromAnaglyph()
     }
 
-    #if !NANOSAUR_3DS
     if gDualScreenMode != 0 {
         OGL_DrawDualScreenMinimap()
     }
-    #endif
 }
 
 // MARK: - OGL draw scene (dual-screen minimap)
 
-// The bottom window is otherwise static (see OGL_CreateDrawContext), but
+// The bottom screen is otherwise static (see OGL_CreateDrawContext), but
 // while a level's overhead map is active, redraw it there every frame,
-// centered and enlarged. Runs as a self-contained excursion onto
-// gEngine.view.aglContext2: OGL_PushState/PopState save and restore the cached GL
-// state flags (gMyState_*) around it, so nothing here can desync context1's
+// centered and enlarged. Runs as a self-contained excursion onto the
+// bottom-screen target: OGL_PushState/PopState save and restore the cached
+// GL state flags around it, so nothing here can desync the main scene's
 // real GL state from what this file's cache believes it to be. Skips
-// entirely (no context switch, no swap) when there's no map to draw, so
-// the bottom window doesn't do needless work outside gameplay.
-//
-// Second-context/GL-only, same as OGL_CreateDrawContext's dual-screen
-// setup - 3DS never sets gDualScreenMode, so this compiles out there.
-#if !NANOSAUR_3DS
+// entirely (no target switch, no swap) when there's no map to draw, so
+// the bottom screen doesn't do needless work outside gameplay.
+#if NANOSAUR_3DS
+// 3DS: same single picaGL context renders both screens - select the
+// bottom display, draw into its (display-aware) 320x240 viewport over the
+// already-presented top frame's color buffer, present to the bottom
+// display, and reselect the top. Runs AFTER the top screen's present
+// (call site at the end of OGL_DrawScene), so scribbling on the shared
+// color buffer here can't affect what the top screen shows - the next
+// frame redraws/clears it anyway.
+private func OGL_DrawDualScreenMinimap() {
+    guard IsMinimapActive() else {
+        return
+    }
+
+    let savedWindowWidth = gEngine.window.width
+    let savedWindowHeight = gEngine.window.height
+
+    OGL_PushState()
+
+    PGL_SelectBottomScreen()
+
+    // Force every cached state flag the sprite-drawing helpers below
+    // consult to a mismatching value so they reissue the real GL calls
+    // (same reasoning as the desktop branch below - the cache reflects the
+    // main scene's state, not what this excursion needs).
+    gEngine.view.stateLighting = 1
+    gEngine.view.stateCullFace = true
+    gEngine.view.stateTexture2D = false
+    gEngine.view.stateTextureUnit = UInt32(GL_TEXTURE0)
+    gEngine.view.stateBlend = false
+    gEngine.view.stateBlendFuncS = 0
+    gEngine.view.stateBlendFuncD = 0
+    gEngine.view.stateColor = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
+    gEngine.metaObjects.mostRecentMaterial = nil
+
+    gEngine.window.width = 320
+    gEngine.window.height = 240
+    glViewport(0, 0, 320, 240) // display-aware: sized against the bottom screen once selected
+
+    OGL_DrawDualScreenBackground(320, 240)
+    DrawMinimapOnSecondaryScreen()
+
+    PGL_SwapBuffers() // presents to the currently selected (bottom) display only
+
+    PGL_SelectTopScreen()
+
+    gEngine.window.width = savedWindowWidth
+    gEngine.window.height = savedWindowHeight
+
+    OGL_PopState()
+}
+#else
 private func OGL_DrawDualScreenMinimap() {
     guard let window2 = gSDLWindow2, gEngine.view.aglContext2 != nil, IsMinimapActive() else {
         return

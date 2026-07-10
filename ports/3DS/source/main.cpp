@@ -30,6 +30,7 @@ extern "C" {
     void Fs3DS_InitFileSystem(void); // fs_init_shim.cpp
     void GameMain(void); // Source/System/Main.swift, @c @implementation
     extern SDL_Window* gSDLWindow; // common/boot_shim.c
+    extern unsigned char gDualScreenMode; // Boolean (SwMacTypes uint8_t) - Source/System/BootGlobals.c
 
     // libctru's crt0 startup code (weak symbols - see common/boot_shim.c's
     // comment on __ctru_heap_size/__ctru_linear_heap_size for the full
@@ -79,10 +80,12 @@ int main()
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
-    // Bottom-screen console mirroring every SDL_Log call, so the game's own
-    // extensive existing SDL_Log usage (not just fatal errors) is visible
-    // live during boot instead of guessing blind - the console log file
-    // Azahar itself writes never picks up guest output.
+    // Under DEBUGLOG: bottom-screen console mirroring every SDL_Log call, so
+    // the game's own extensive existing SDL_Log usage (not just fatal
+    // errors) is visible live during boot instead of guessing blind - the
+    // console log file Azahar itself writes never picks up guest output.
+    // Without DEBUGLOG: the SDL_Log mirror only writes to the SD-card log
+    // file (no console), leaving the bottom screen free for the game.
     Console3DS_Init();
 
 #ifdef DEBUGLOG
@@ -93,6 +96,14 @@ int main()
             __ctru_linear_heap_size, __ctru_linear_heap_size / (1024 * 1024));
         DebugLog(msg);
     }
+#else
+    // The debug console isn't occupying the bottom screen, so give it to
+    // the game: dual-screen mode draws the menu background there, plus the
+    // live overhead minimap during gameplay (see OGL_DrawDualScreenMinimap's
+    // 3DS branch in OGL_Support.swift - picaGL renders both screens from
+    // one context, no second window/GL context involved). Mutually
+    // exclusive with DEBUGLOG by construction: both want the bottom screen.
+    gDualScreenMode = 1;
 #endif
 
     // NOT calling PGL_Init() here: GameMain() -> ToolBoxInit() -> OGL_Boot()

@@ -29,6 +29,7 @@ static void Console3DS_WriteToSDCard(const char *message)
     }
 }
 
+#ifdef DEBUGLOG
 static void Console3DS_LogOutput(void *userdata, int category, SDL_LogPriority priority, const char *message)
 {
     (void)userdata;
@@ -41,14 +42,32 @@ static void Console3DS_LogOutput(void *userdata, int category, SDL_LogPriority p
     gfxSwapBuffers();
     Console3DS_WriteToSDCard(message);
 }
+#else
+// Without DEBUGLOG the bottom screen belongs to the game (dual-screen
+// mode - see main.cpp), so the SDL_Log mirror must not consoleInit or
+// touch the framebuffers; alerts/errors still land in the SD-card log.
+static void Console3DS_FileOnlyLogOutput(void *userdata, int category, SDL_LogPriority priority, const char *message)
+{
+    (void)userdata;
+    (void)category;
+    (void)priority;
+    Console3DS_WriteToSDCard(message);
+}
+#endif
 
+#ifdef DEBUGLOG
 static int s_consoleReady = 0;
+#endif
 
 void Console3DS_Init(void)
 {
+#ifdef DEBUGLOG
     consoleInit(GFX_BOTTOM, NULL);
     SDL_SetLogOutputFunction(Console3DS_LogOutput, NULL);
     s_consoleReady = 1;
+#else
+    SDL_SetLogOutputFunction(Console3DS_FileOnlyLogOutput, NULL);
+#endif
 }
 
 #ifdef DEBUGLOG

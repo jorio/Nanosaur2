@@ -704,9 +704,9 @@ func OGL_DrawScene(_ drawRoutine: (@convention(c) () -> Void)!) {
     }
 
     gPolysThisFrame = 0 // init poly counter
-    gMostRecentMaterial = nil
-    gGlobalMaterialFlags = 0
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.mostRecentMaterial = nil
+    gEngine.metaObjects.globalMaterialFlags = 0
+    gEngine.metaObjects.globalTransparency = 1.0
     OGL_SetColor4f(1, 1, 1, 1)
 
     // The original C used `goto do_shutter`/`goto do_anaglyph` to re-run this
@@ -905,7 +905,7 @@ private func OGL_DrawDualScreenMinimap() {
 
     _ = SDL_GL_MakeCurrent(window2, gAGLContext2)
 
-    // gMyState_* (and gMostRecentMaterial) reflect whatever context1 last
+    // gMyState_* (and gEngine.metaObjects.mostRecentMaterial) reflect whatever context1 last
     // set - but that's Swift-side bookkeeping, not real GL state, and
     // context2's real GL state is its own (fresh/default until we've drawn
     // on it). Force every flag the sprite-drawing helpers below consult to
@@ -920,7 +920,7 @@ private func OGL_DrawDualScreenMinimap() {
     gMyState_BlendFuncS = 0
     gMyState_BlendFuncD = 0
     gMyState_Color = OGLColorRGBA(r: -1, g: -1, b: -1, a: -1)
-    gMostRecentMaterial = nil
+    gEngine.metaObjects.mostRecentMaterial = nil
 
     SDL_GetWindowSizeInPixels(window2, &gGameWindowWidth, &gGameWindowHeight)
     glViewport(0, 0, gGameWindowWidth, gGameWindowHeight)

@@ -455,5 +455,5 @@ private func seeIfExitWormholeGrabPlayer(_ wormhole: UnsafeMutablePointer<ObjNod
 
     player.pointee.MotionVector = v2
 
-    gCameraInExitMode = 1
+    gEngine.camera.inExitMode = 1
 }

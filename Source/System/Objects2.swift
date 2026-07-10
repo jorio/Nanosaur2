@@ -406,7 +406,7 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
     }
 
     // SUBMIT SHADOW TEXTURE
-    gGlobalTransparency = theNode.pointee.ColorFilter.a
+    gEngine.metaObjects.globalTransparency = theNode.pointee.ColorFilter.a
 
     MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_GLOBAL))![Int(GLOBAL_SObjType_Shadow_Circular) + shadowType].materialObject?.assumingMemoryBound(to: MOMaterialObject.self))
 
@@ -419,7 +419,7 @@ private func drawShadow(_ theNode: UnsafeMutablePointer<ObjNode>) {
     gEngine.renderer.endImmediate()
 
     OGL_PopState()
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }
 
 // MARK: - Object culling

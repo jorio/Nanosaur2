@@ -187,9 +187,9 @@ func DrawSparkles() {
                 a = 1.0
             }
 
-            gGlobalTransparency = a
+            gEngine.metaObjects.globalTransparency = a
         } else {
-            gGlobalTransparency = sparkle.pointee.color.a
+            gEngine.metaObjects.globalTransparency = sparkle.pointee.color.a
         }
 
         // SUBMIT MATERIAL
@@ -209,5 +209,5 @@ func DrawSparkles() {
 
     // RESTORE STATE
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }

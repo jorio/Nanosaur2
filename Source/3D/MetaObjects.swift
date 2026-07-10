@@ -1,13 +1,21 @@
 // MetaObjects.swift - Port of MetaObjects.c to Swift
 //
-// gGlobalTransparency/gGlobalColorFilter/gGlobalMaterialFlags/
-// gMostRecentMaterial are native Swift storage now (converted
+// gEngine.metaObjects.globalTransparency/gEngine.metaObjects.globalColorFilter/gEngine.metaObjects.globalMaterialFlags/
+// gEngine.metaObjects.mostRecentMaterial are native Swift storage now (converted
 // 2026-07-07): nothing in any .c file touches them anymore.
 
-var gGlobalTransparency: Float = 1
-var gGlobalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
-var gGlobalMaterialFlags: UInt32 = 0
-var gMostRecentMaterial: UnsafeMutablePointer<MOMaterialObject>?
+/// MetaObject registry + global material modifiers. Owned by GameEngine
+/// as `gEngine.metaObjects`.
+final class MetaObjectSystem {
+    var globalTransparency: Float = 1
+    var globalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
+    var globalMaterialFlags: UInt32 = 0
+    var mostRecentMaterial: UnsafeMutablePointer<MOMaterialObject>?
+
+    fileprivate var firstMetaObject: UnsafeMutablePointer<MetaObjectHeader>?
+    fileprivate var lastMetaObject: UnsafeMutablePointer<MetaObjectHeader>?
+    fileprivate var numMetaObjects = 0
+}
 
 @inline(__always) private func GAME_CLAMP(_ x: Float, _ lo: Float, _ hi: Float) -> Float {
     x < lo ? lo : (x > hi ? hi : x)
@@ -19,9 +27,6 @@ var gMostRecentMaterial: UnsafeMutablePointer<MOMaterialObject>?
     OGL_CheckError_Impl(#file, Int32(#line))
 }
 
-private var gFirstMetaObject: UnsafeMutablePointer<MetaObjectHeader>?
-private var gLastMetaObject: UnsafeMutablePointer<MetaObjectHeader>?
-private var gNumMetaObjects = 0
 
 // MARK: - Fixed-array-field helpers (all struct fields, never unions)
 
@@ -42,9 +47,9 @@ private var gNumMetaObjects = 0
 }
 
 func MO_InitHandler() {
-    gFirstMetaObject = nil // no meta object nodes yet
-    gLastMetaObject = nil
-    gNumMetaObjects = 0
+    gEngine.metaObjects.firstMetaObject = nil // no meta object nodes yet
+    gEngine.metaObjects.lastMetaObject = nil
+    gEngine.metaObjects.numMetaObjects = 0
 }
 
 // MARK: - Create
@@ -145,24 +150,24 @@ private func allocateEmptyMetaObject(_ type: MetaObjectType, _ subType: Int) -> 
 
     // SEE IF IS ONLY NODE
 
-    if gFirstMetaObject == nil {
-        if gLastMetaObject != nil {
-            SwFatal("AllocateEmptyMetaObject: gFirstMetaObject & gLastMetaObject should be nil")
+    if gEngine.metaObjects.firstMetaObject == nil {
+        if gEngine.metaObjects.lastMetaObject != nil {
+            SwFatal("AllocateEmptyMetaObject: gEngine.metaObjects.firstMetaObject & gEngine.metaObjects.lastMetaObject should be nil")
         }
 
         mo.pointee.prevNode = nil
-        gFirstMetaObject = mo
-        gLastMetaObject = mo
-        gNumMetaObjects = 1
+        gEngine.metaObjects.firstMetaObject = mo
+        gEngine.metaObjects.lastMetaObject = mo
+        gEngine.metaObjects.numMetaObjects = 1
     }
 
     // ADD TO END OF LINKED LIST
 
     else {
-        mo.pointee.prevNode = gLastMetaObject // point new prev to last
-        gLastMetaObject!.pointee.nextNode = mo // point old last to new
-        gLastMetaObject = mo // set new last
-        gNumMetaObjects += 1
+        mo.pointee.prevNode = gEngine.metaObjects.lastMetaObject // point new prev to last
+        gEngine.metaObjects.lastMetaObject!.pointee.nextNode = mo // point old last to new
+        gEngine.metaObjects.lastMetaObject = mo // set new last
+        gEngine.metaObjects.numMetaObjects += 1
     }
 
     return raw
@@ -468,7 +473,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
                 MO_DrawMaterial(materials[i]) // submit material #n
 
                 if i == 0 {
-                    gMostRecentMaterial = nil // need duplicate submits to be okay
+                    gEngine.metaObjects.mostRecentMaterial = nil // need duplicate submits to be okay
                 }
             }
 
@@ -541,7 +546,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
 
 // IF TEXTURED, THEN ALSO ACTIVATE UV ARRAY (shared tail of both single- and use_current-material paths)
 private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: UnsafeMutablePointer<UnsafeMutablePointer<OGLTextureCoord>?>, _ useTexture: inout Bool, _ multiTexture: inout Bool, _ texGen: inout Bool, _ uv0: inout UnsafeMutablePointer<OGLTextureCoord>?) {
-    let materialFlags = gMostRecentMaterial!.pointee.objectData.flags // get material flags
+    let materialFlags = gEngine.metaObjects.mostRecentMaterial!.pointee.objectData.flags // get material flags
     if materialFlags & UInt32(BG3D_MATERIALFLAG_TEXTURED) != 0 {
         if uvs[0] != nil {
             // SEE IF DO ENVMAP MULTI-TEXTURE
@@ -550,9 +555,9 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
             // and this uses multi-texturing.
 
             if materialFlags & UInt32(BG3D_MATERIALFLAG_MULTITEXTURE) != 0 {
-                let multiTextureMode = gMostRecentMaterial!.pointee.objectData.multiTextureMode
-                let multiTextureCombine = gMostRecentMaterial!.pointee.objectData.multiTextureCombine
-                let envMapNum = gMostRecentMaterial!.pointee.objectData.envMapNum
+                let multiTextureMode = gEngine.metaObjects.mostRecentMaterial!.pointee.objectData.multiTextureMode
+                let multiTextureCombine = gEngine.metaObjects.mostRecentMaterial!.pointee.objectData.multiTextureCombine
+                let envMapNum = gEngine.metaObjects.mostRecentMaterial!.pointee.objectData.envMapNum
 
                 if envMapNum >= GetNumSpritesInGroup(Int32(SPRITE_GROUP_SPHEREMAPS)) {
                     SwFatal("MO_DrawGeometry_VertexArray: illegal envMapNum")
@@ -574,7 +579,7 @@ private func useCurrent(_ data: UnsafeMutablePointer<MOVertexArrayData>, _ uvs: 
                         } else {
                             MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_SPHEREMAPS))![Int(envMapNum)].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate reflection map texture
 
-                            gEngine.renderer.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gGlobalTransparency will have no effect
+                            gEngine.renderer.setTextureEnv(rbTextureEnv(forCombineMode: Int(multiTextureCombine))) // note: .combineAddAlpha means gEngine.metaObjects.globalTransparency will have no effect
                             gEngine.renderer.setSphereMapTexGen(true) // activate reflection mapping (unit 1 gets generated coords, no uv array)
                             texGen = true
                         }
@@ -604,12 +609,12 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
     // SEE IF TEXTURED MATERIAL
 
-    let matFlags = matData.pointee.flags | gGlobalMaterialFlags // check flags of material & global
+    let matFlags = matData.pointee.flags | gEngine.metaObjects.globalMaterialFlags // check flags of material & global
 
     if matFlags & UInt32(BG3D_MATERIALFLAG_TEXTURED) != 0 {
         // ACTIVATE MATERIAL
 
-        let alreadySet = matObj == gMostRecentMaterial
+        let alreadySet = matObj == gEngine.metaObjects.mostRecentMaterial
         if alreadySet { // see if even need to bother resetting this
             OGL_EnableTexture2D() // just make sure textures are on
         } else {
@@ -654,21 +659,21 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
     let diffuseColor = matData.pointee.diffuseColor // point to diffuse color
     var diffColor2: OGLColorRGBA
 
-    if gGlobalTransparency != 1.0 { // see if need to factor in global transparency
+    if gEngine.metaObjects.globalTransparency != 1.0 { // see if need to factor in global transparency
         diffColor2 = OGLColorRGBA()
         diffColor2.r = diffuseColor.r
         diffColor2.g = diffuseColor.g
         diffColor2.b = diffuseColor.b
-        diffColor2.a = diffuseColor.a * gGlobalTransparency
+        diffColor2.a = diffuseColor.a * gEngine.metaObjects.globalTransparency
     } else {
         diffColor2 = diffuseColor // copy to local so we can apply filter to it without munging original
     }
 
     // APPLY COLOR FILTER
 
-    diffColor2.r *= gGlobalColorFilter.r
-    diffColor2.g *= gGlobalColorFilter.g
-    diffColor2.b *= gGlobalColorFilter.b
+    diffColor2.r *= gEngine.metaObjects.globalColorFilter.r
+    diffColor2.g *= gEngine.metaObjects.globalColorFilter.g
+    diffColor2.b *= gEngine.metaObjects.globalColorFilter.b
 
     OGL_SetColor4fv(&diffColor2) // set current diffuse color
 
@@ -682,7 +687,7 @@ func MO_DrawMaterial(_ matObj: UnsafeMutablePointer<MOMaterialObject>!) {
 
     // SAVE THIS STUFF
 
-    gMostRecentMaterial = matObj
+    gEngine.metaObjects.mostRecentMaterial = matObj
 }
 
 func MO_DrawMatrix(_ matObj: UnsafePointer<MOMatrixObject>!) {
@@ -898,18 +903,18 @@ private func detachFromLinkedList(_ obj: MetaObjectPtr) {
     // SEE IF WAS 1ST NODE IN LIST
 
     if prev == nil {
-        gFirstMetaObject = next
-        if gFirstMetaObject != nil {
-            gFirstMetaObject!.pointee.prevNode = nil
+        gEngine.metaObjects.firstMetaObject = next
+        if gEngine.metaObjects.firstMetaObject != nil {
+            gEngine.metaObjects.firstMetaObject!.pointee.prevNode = nil
         }
     }
 
     // SEE IF WAS LAST NODE IN LIST
 
     if next == nil {
-        gLastMetaObject = prev
-        if gLastMetaObject != nil {
-            gLastMetaObject!.pointee.nextNode = nil
+        gEngine.metaObjects.lastMetaObject = prev
+        if gEngine.metaObjects.lastMetaObject != nil {
+            gEngine.metaObjects.lastMetaObject!.pointee.nextNode = nil
         }
     }
 
@@ -920,23 +925,23 @@ private func detachFromLinkedList(_ obj: MetaObjectPtr) {
         next!.pointee.prevNode = prev
     }
 
-    gNumMetaObjects -= 1
+    gEngine.metaObjects.numMetaObjects -= 1
 
-    if gNumMetaObjects < 0 {
+    if gEngine.metaObjects.numMetaObjects < 0 {
         SwFatal("MO_DetachFromLinkedList: counter mismatch")
     }
 
-    if gNumMetaObjects == 0 {
+    if gEngine.metaObjects.numMetaObjects == 0 {
         if (prev != nil) || (next != nil) { // if all gone, then prev & next should be nil
             SwFatal("MO_DetachFromLinkedList: prev/next should be nil!")
         }
 
-        if gFirstMetaObject != nil {
-            SwFatal("MO_DetachFromLinkedList: gFirstMetaObject should be nil!")
+        if gEngine.metaObjects.firstMetaObject != nil {
+            SwFatal("MO_DetachFromLinkedList: gEngine.metaObjects.firstMetaObject should be nil!")
         }
 
-        if gLastMetaObject != nil {
-            SwFatal("MO_DetachFromLinkedList: gLastMetaObject should be nil!")
+        if gEngine.metaObjects.lastMetaObject != nil {
+            SwFatal("MO_DetachFromLinkedList: gEngine.metaObjects.lastMetaObject should be nil!")
         }
     }
 }

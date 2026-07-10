@@ -703,7 +703,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
                 OGL_DisableCullFace()
                 OGL_DisableLighting()
                 OGL_DisableFog()
-                gGlobalTransparency = 1.0
+                gEngine.metaObjects.globalTransparency = 1.0
 
                 gEngine.renderer.beginImmediate(.quads)
                 gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex2f(-size, -size)

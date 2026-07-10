@@ -36,6 +36,12 @@ final class GameEngine {
     let sparkles = SparkleSystem()
     let zaps = ZapSystem()
     let dustDevils = DustDevilSystem()
+
+    /// 3D support systems.
+    let camera = CameraSystem()
+    let bones = BoneSystem()
+    let bg3d = BG3DSystem()
+    let metaObjects = MetaObjectSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

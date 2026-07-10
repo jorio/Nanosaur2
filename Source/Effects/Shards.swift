@@ -419,10 +419,10 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
         if gEngine.shards.pool[i].isUsed {
             // SUBMIT MATERIAL
 
-            gGlobalColorFilter.r = gEngine.shards.pool[i].colorFilter.r
-            gGlobalColorFilter.g = gEngine.shards.pool[i].colorFilter.g
-            gGlobalColorFilter.b = gEngine.shards.pool[i].colorFilter.b
-            gGlobalTransparency = gEngine.shards.pool[i].colorFilter.a
+            gEngine.metaObjects.globalColorFilter.r = gEngine.shards.pool[i].colorFilter.r
+            gEngine.metaObjects.globalColorFilter.g = gEngine.shards.pool[i].colorFilter.g
+            gEngine.metaObjects.globalColorFilter.b = gEngine.shards.pool[i].colorFilter.b
+            gEngine.metaObjects.globalTransparency = gEngine.shards.pool[i].colorFilter.a
 
             if gEngine.shards.pool[i].glow != 0 {
                 OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
@@ -453,10 +453,10 @@ private let cDrawShards: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
     // CLEANUP
 
-    gGlobalColorFilter.r = 1
-    gGlobalColorFilter.g = 1
-    gGlobalColorFilter.b = 1
-    gGlobalTransparency = 1
+    gEngine.metaObjects.globalColorFilter.r = 1
+    gEngine.metaObjects.globalColorFilter.g = 1
+    gEngine.metaObjects.globalColorFilter.b = 1
+    gEngine.metaObjects.globalTransparency = 1
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
     gEngine.renderer.setTwoSidedLighting(false)
 }

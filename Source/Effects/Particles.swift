@@ -1674,9 +1674,9 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
 
     // SUBMIT TEXTURE
 
-    gGlobalColorFilter.r = 1.0
-    gGlobalColorFilter.g = 0.8
-    gGlobalColorFilter.b = 0.8
+    gEngine.metaObjects.globalColorFilter.r = 1.0
+    gEngine.metaObjects.globalColorFilter.g = 0.8
+    gEngine.metaObjects.globalColorFilter.b = 0.8
 
     let flameFrame = Int(theNode.pointee.Special.0)
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_Flame0) + flameFrame].materialObject!.assumingMemoryBound(to: MOMaterialObject.self)
@@ -1691,9 +1691,9 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
     gEngine.renderer.texCoord2f(0, 0.99); gEngine.renderer.vertex3f(frame[3].x, frame[3].y, frame[3].z)
     gEngine.renderer.endImmediate()
 
-    gGlobalColorFilter.r = 1
-    gGlobalColorFilter.g = 1
-    gGlobalColorFilter.b = 1
+    gEngine.metaObjects.globalColorFilter.r = 1
+    gEngine.metaObjects.globalColorFilter.g = 1
+    gEngine.metaObjects.globalColorFilter.b = 1
 }
 
 // MARK: -
@@ -1766,7 +1766,7 @@ private let cDrawFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
 
     // SUBMIT TEXTURE
 
-    gGlobalTransparency = theNode.pointee.ColorFilter.a
+    gEngine.metaObjects.globalTransparency = theNode.pointee.ColorFilter.a
 
     let mo = GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(PARTICLE_SObjType_FireRing)].materialObject!.assumingMemoryBound(to: MOMaterialObject.self)
     MO_DrawMaterial(mo)
@@ -1780,5 +1780,5 @@ private let cDrawFireRing: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(verts[3].x, verts[3].y, verts[3].z)
     gEngine.renderer.endImmediate()
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }

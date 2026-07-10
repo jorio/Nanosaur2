@@ -550,12 +550,12 @@ private let cDrawZaps: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void =
             continue
         }
 
-        gGlobalTransparency = gEngine.zaps.pool[i].alpha
+        gEngine.metaObjects.globalTransparency = gEngine.zaps.pool[i].alpha
 
         MO_DrawGeometry_VertexArray(&gEngine.zaps.pool[i].triMesh[Int(gEngine.zaps.buffer)])
     }
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }
 
 private func getFreeZapSlot() -> Int {

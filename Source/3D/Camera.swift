@@ -1,7 +1,7 @@
 // Camera.swift - Port of Camera.c to Swift
 //
-// gCameraInExitMode, gDrawLensFlare, gCameraInDeathDiveMode, and
-// gCameraMode are native Swift storage now (converted 2026-07-07): nothing
+// gEngine.camera.inExitMode, gEngine.camera.drawLensFlare, gEngine.camera.inDeathDiveMode, and
+// gEngine.camera.mode are native Swift storage now (converted 2026-07-07): nothing
 // in any .c file touches them anymore. GetCameraMode/SetCameraMode
 // (formerly a shim in InfobarInternal.h) and GetCameraInDeathDiveMode/
 // SetCameraInDeathDiveMode (formerly a shim in PlayerInternal.h) are now
@@ -11,15 +11,23 @@
 // itself to become a native Swift enum (GameEnums.swift) - its only real
 // C pin was Camera.c's compound-literal array init.
 
-var gCameraInExitMode: UInt8 = 0
-var gDrawLensFlare: UInt8 = 1
-var gCameraInDeathDiveMode: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
-var gCameraMode: [UInt8] = Array(repeating: UInt8(CameraMode.normal.rawValue), count: Int(MAX_PLAYERS))
+/// Camera state. Owned by GameEngine as `gEngine.camera`.
+final class CameraSystem {
+    var inExitMode: UInt8 = 0
+    var drawLensFlare: UInt8 = 1
+    var inDeathDiveMode: [UInt8] = Array(repeating: 0, count: Int(MAX_PLAYERS))
+    var mode: [UInt8] = Array(repeating: UInt8(CameraMode.normal.rawValue), count: Int(MAX_PLAYERS))
 
-func GetCameraMode(_ i: Int32) -> UInt8 { gCameraMode[Int(i)] }
-func SetCameraMode(_ i: Int32, _ v: UInt8) { gCameraMode[Int(i)] = v }
-func GetCameraInDeathDiveMode(_ i: Int32) -> UInt8 { gCameraInDeathDiveMode[Int(i)] }
-func SetCameraInDeathDiveMode(_ i: Int32, _ v: UInt8) { gCameraInDeathDiveMode[Int(i)] = v }
+    fileprivate var anaglyphCameraBackup = [OGLCameraPlacement](repeating: OGLCameraPlacement(), count: Int(MAX_PLAYERS)) // backup of original camera info before offsets applied
+    fileprivate var lookAtAccel: Float = 0
+    fileprivate var fromAccel: Float = 0
+    fileprivate var sunCoord = OGLPoint3D()
+}
+
+func GetCameraMode(_ i: Int32) -> UInt8 { gEngine.camera.mode[Int(i)] }
+func SetCameraMode(_ i: Int32, _ v: UInt8) { gEngine.camera.mode[Int(i)] = v }
+func GetCameraInDeathDiveMode(_ i: Int32) -> UInt8 { gEngine.camera.inDeathDiveMode[Int(i)] }
+func SetCameraInDeathDiveMode(_ i: Int32, _ v: UInt8) { gEngine.camera.inDeathDiveMode[Int(i)] = v }
 
 private let numFlares = 6
 
@@ -32,12 +40,8 @@ private let maxCameraAccel: Float = 2.0
 
 private let cameraTerrainMinDist: Float = 80.0
 
-private var gAnaglyphCameraBackup = [OGLCameraPlacement](repeating: OGLCameraPlacement(), count: Int(MAX_PLAYERS)) // backup of original camera info before offsets applied
 
-private var gCameraLookAtAccel: Float = 0
-private var gCameraFromAccel: Float = 0
 
-private var gSunCoord = OGLPoint3D()
 
 private let gFlareOffsetTable: [Float] = [
     1.0,
@@ -93,7 +97,7 @@ func GetSplitscreenPaneFOV() -> Float {
 func DrawLensFlare() {
     var transColor = OGLColorRGBA(r: 1, g: 1, b: 1, a: 1)
 
-    if gDrawLensFlare == 0 {
+    if gEngine.camera.drawLensFlare == 0 {
         return
     }
 
@@ -110,16 +114,16 @@ func DrawLensFlare() {
     // CALC SUN COORD
 
     let from = (cameraPlacementsBase() + Int(Int32(gCurrentSplitScreenPane))).pointee.cameraLocation
-    gSunCoord.x = from.x - (gWorldSunDirection.x * gGameViewInfoPtr!.pointee.yon)
-    gSunCoord.y = from.y - (gWorldSunDirection.y * gGameViewInfoPtr!.pointee.yon)
-    gSunCoord.z = from.z - (gWorldSunDirection.z * gGameViewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.x = from.x - (gWorldSunDirection.x * gGameViewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.y = from.y - (gWorldSunDirection.y * gGameViewInfoPtr!.pointee.yon)
+    gEngine.camera.sunCoord.z = from.z - (gWorldSunDirection.z * gGameViewInfoPtr!.pointee.yon)
 
     // CALC DOT PRODUCT BETWEEN VIEW AND LIGHT VECTORS TO SEE IF OUT OF RANGE
 
     var sunVector = OGLVector3D()
-    FastNormalizeVector(from.x - gSunCoord.x,
-                         from.y - gSunCoord.y,
-                         from.z - gSunCoord.z,
+    FastNormalizeVector(from.x - gEngine.camera.sunCoord.x,
+                         from.y - gEngine.camera.sunCoord.y,
+                         from.z - gEngine.camera.sunCoord.z,
                          &sunVector)
 
     let placement = (cameraPlacementsBase() + Int(Int32(gCurrentSplitScreenPane)))
@@ -131,7 +135,7 @@ func DrawLensFlare() {
 
     var dot = lookAtVector.dot(sunVector)
     if dot >= 0.0 {
-        gGlobalTransparency = 1.0
+        gEngine.metaObjects.globalTransparency = 1.0
         OGL_PopState()
         return
     }
@@ -141,7 +145,7 @@ func DrawLensFlare() {
 
     // CALC SCREEN COORDINATE OF LIGHT
 
-    let sunScreenCoord = gSunCoord.transformed(by: GetWorldToWindowMatrixEntry(Int32(gCurrentSplitScreenPane)).pointee)
+    let sunScreenCoord = gEngine.camera.sunCoord.transformed(by: GetWorldToWindowMatrixEntry(Int32(gCurrentSplitScreenPane)).pointee)
 
     // CALC CENTER OF VIEWPORT
 
@@ -173,9 +177,9 @@ func DrawLensFlare() {
 
     for i in 0..<numFlares {
         if i == 0 {
-            gGlobalTransparency = 0.99 // sun is always full brightness (leave @ < 1 to ensure GL_BLEND)
+            gEngine.metaObjects.globalTransparency = 0.99 // sun is always full brightness (leave @ < 1 to ensure GL_BLEND)
         } else {
-            gGlobalTransparency = transColor.a
+            gEngine.metaObjects.globalTransparency = transColor.a
         }
 
         MO_DrawMaterial(GetSpriteGroupPtr(Int32(SPRITE_GROUP_PARTICLES))![Int(gFlareImageTable[i])].materialObject?.assumingMemoryBound(to: MOMaterialObject.self)) // activate material
@@ -208,7 +212,7 @@ func DrawLensFlare() {
 
     // RESTORE MODES
 
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
     OGL_PopState()
 }
 
@@ -249,7 +253,7 @@ func InitCamera_Terrain(_ playerNum: Int16) {
             placement.pointee.cameraLocation.z = z
             placement.pointee.cameraLocation.y = GetTerrainY(x, z) + 600.0
 
-            gCameraFromAccel = 0
+            gEngine.camera.fromAccel = 0
         }
 
         // START IN REGULAR TRACKING POSITION
@@ -264,7 +268,7 @@ func InitCamera_Terrain(_ playerNum: Int16) {
             placement.pointee.cameraLocation.z = z
             placement.pointee.cameraLocation.y = GetTerrainY(x, z) + 200.0
 
-            gCameraFromAccel = maxCameraAccel
+            gEngine.camera.fromAccel = maxCameraAccel
         }
 
         // SET LOOK-AT PT
@@ -278,9 +282,9 @@ func InitCamera_Terrain(_ playerNum: Int16) {
 // MARK: - Reset camera settings
 
 private func resetCameraSettings() {
-    gCameraFromAccel = maxCameraAccel
-    gCameraInExitMode = 0
-    gCameraLookAtAccel = 8.0
+    gEngine.camera.fromAccel = maxCameraAccel
+    gEngine.camera.inExitMode = 0
+    gEngine.camera.lookAtAccel = 8.0
 }
 
 // MARK: - Update cameras
@@ -302,14 +306,14 @@ func UpdateCameras() {
 
     // ACCELERATE CAMERA TO MAX
     //
-    // When starting @ a wormhole, gCameraFromAccel is 0.0 to prevent
+    // When starting @ a wormhole, gEngine.camera.fromAccel is 0.0 to prevent
     // the camera from moving.  Once we're out of the wormhole, we
-    // accelerate gCameraFromAccel to it's regular value.
+    // accelerate gEngine.camera.fromAccel to it's regular value.
 
     if !GetPlayerInfoEntry(0).pointee.objNode!.pointee.Skeleton!.isAnim(.appearWormhole) {
-        gCameraFromAccel += fps * 0.6
-        if gCameraFromAccel > maxCameraAccel {
-            gCameraFromAccel = maxCameraAccel
+        gEngine.camera.fromAccel += fps * 0.6
+        if gEngine.camera.fromAccel > maxCameraAccel {
+            gEngine.camera.fromAccel = maxCameraAccel
         }
     }
 
@@ -373,19 +377,19 @@ func UpdateCameras() {
 
         // MOVE "TO"
 
-        var delta = distX * (fps * gCameraLookAtAccel) // calc delta to move
+        var delta = distX * (fps * gEngine.camera.lookAtAccel) // calc delta to move
         if abs(delta) > abs(distX) { // see if will overshoot
             delta = distX
         }
         to.x = oldPointOfInterestX + delta // move x
 
-        delta = distY * (fps * gCameraLookAtAccel) // calc delta to move
+        delta = distY * (fps * gEngine.camera.lookAtAccel) // calc delta to move
         if abs(delta) > abs(distY) { // see if will overshoot
             delta = distY
         }
         to.y = oldPointOfInterestY + delta // move y
 
-        delta = distZ * (fps * gCameraLookAtAccel) // calc delta to move
+        delta = distZ * (fps * gEngine.camera.lookAtAccel) // calc delta to move
         if abs(delta) > abs(distZ) { // see if will overshoot
             delta = distZ
         }
@@ -394,9 +398,9 @@ func UpdateCameras() {
         // CALC FROM POINT
 
         if GetCameraInDeathDiveMode(Int32(playerNum)) == 0 {
-            var fromAcc = gCameraFromAccel
+            var fromAcc = gEngine.camera.fromAccel
 
-            if gCameraInExitMode != 0 {
+            if gEngine.camera.inExitMode != 0 {
                 target.x = gExitWormhole!.pointee.Coord.x
                 target.z = gExitWormhole!.pointee.Coord.z
 
@@ -552,7 +556,7 @@ private func updateCamera_FirstPerson(_ i: Int16) {
 
 func PrepAnaglyphCameras() {
     for i in 0..<Int(gEngine.player.numPlayers) {
-        gAnaglyphCameraBackup[i] = (cameraPlacementsBase() + Int(Int32(i))).pointee
+        gEngine.camera.anaglyphCameraBackup[i] = (cameraPlacementsBase() + Int(Int32(i))).pointee
     }
 }
 
@@ -560,7 +564,7 @@ func PrepAnaglyphCameras() {
 
 func RestoreCamerasFromAnaglyph() {
     for i in 0..<Int(gEngine.player.numPlayers) {
-        (cameraPlacementsBase() + Int(Int32(i))).pointee = gAnaglyphCameraBackup[i]
+        (cameraPlacementsBase() + Int(Int32(i))).pointee = gEngine.camera.anaglyphCameraBackup[i]
     }
 }
 
@@ -576,23 +580,23 @@ func CalcAnaglyphCameraOffset(_ pane: UInt8, _ pass: UInt8) {
     // CALC CAMERA'S X-AXIS
 
     var aim = OGLVector3D()
-    aim.x = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.x - gAnaglyphCameraBackup[Int(pane)].cameraLocation.x
-    aim.y = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.y - gAnaglyphCameraBackup[Int(pane)].cameraLocation.y
-    aim.z = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.z - gAnaglyphCameraBackup[Int(pane)].cameraLocation.z
+    aim.x = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.x - gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.x
+    aim.y = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.y - gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.y
+    aim.z = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.z - gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.z
     aim = aim.normalized()
 
-    let xaxis = gAnaglyphCameraBackup[Int(pane)].upVector.cross(aim)
+    let xaxis = gEngine.camera.anaglyphCameraBackup[Int(pane)].upVector.cross(aim)
 
     // OFFSET CAMERA FROM
 
     let placement = (cameraPlacementsBase() + Int(Int32(pane)))
-    placement.pointee.cameraLocation.x = gAnaglyphCameraBackup[Int(pane)].cameraLocation.x + (xaxis.x * sep)
-    placement.pointee.cameraLocation.z = gAnaglyphCameraBackup[Int(pane)].cameraLocation.z + (xaxis.z * sep)
-    placement.pointee.cameraLocation.y = gAnaglyphCameraBackup[Int(pane)].cameraLocation.y + (xaxis.y * sep)
+    placement.pointee.cameraLocation.x = gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.x + (xaxis.x * sep)
+    placement.pointee.cameraLocation.z = gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.z + (xaxis.z * sep)
+    placement.pointee.cameraLocation.y = gEngine.camera.anaglyphCameraBackup[Int(pane)].cameraLocation.y + (xaxis.y * sep)
 
     // OFFSET CAMERA TO
 
-    placement.pointee.pointOfInterest.x = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.x + (xaxis.x * sep)
-    placement.pointee.pointOfInterest.z = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.z + (xaxis.z * sep)
-    placement.pointee.pointOfInterest.y = gAnaglyphCameraBackup[Int(pane)].pointOfInterest.y + (xaxis.y * sep)
+    placement.pointee.pointOfInterest.x = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.x + (xaxis.x * sep)
+    placement.pointee.pointOfInterest.z = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.z + (xaxis.z * sep)
+    placement.pointee.pointOfInterest.y = gEngine.camera.anaglyphCameraBackup[Int(pane)].pointOfInterest.y + (xaxis.y * sep)
 }

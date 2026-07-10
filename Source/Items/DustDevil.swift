@@ -302,7 +302,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
     // DRAW EACH ACTIVE DUST DEVIL
 
-    gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V)
+    gEngine.metaObjects.globalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V)
 
     for d in 0..<maxDevils {
         if !gEngine.dustDevils.isUsed[d] { // is this one used?
@@ -346,7 +346,7 @@ private let cDrawDustDevils: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
         gEngine.renderer.popMatrix()
     }
 
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalMaterialFlags = 0
 }
 
 // MARK: -

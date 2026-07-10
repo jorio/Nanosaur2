@@ -274,7 +274,7 @@ private func initLevel() {
         gFillColor1.r = 0.6
         gFillColor1.g = 0.6
         gFillColor1.b = 0.6
-        gDrawLensFlare = 1
+        gEngine.camera.drawLensFlare = 1
 
     case Int16(LevelNum.adventure3.rawValue), Int16(LevelNum.race1.rawValue), Int16(LevelNum.flag1.rawValue):
         viewDef.view.clearColor.r = 0.568
@@ -292,7 +292,7 @@ private func initLevel() {
         gFillColor1.r = 0.6
         gFillColor1.g = 0.6
         gFillColor1.b = 0.6
-        gDrawLensFlare = 1
+        gEngine.camera.drawLensFlare = 1
 
     default:
         viewDef.view.clearColor.r = 0.43
@@ -310,7 +310,7 @@ private func initLevel() {
         gFillColor1.r = 0.7
         gFillColor1.g = 0.7
         gFillColor1.b = 0.7
-        gDrawLensFlare = 1
+        gEngine.camera.drawLensFlare = 1
     }
 
     // SET LIGHTS

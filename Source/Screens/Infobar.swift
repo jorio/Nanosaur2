@@ -438,7 +438,7 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     //
     // Assume that all sprites have clamped edges.
     // Assume that most sprites have alpha, so enable blending (this won't hurt if it doesn't have an alpha)
-    gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
+    gEngine.metaObjects.globalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // INIT MATRICES
     gEngine.renderer.matrixMode(.projection)
@@ -531,7 +531,7 @@ func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
     // CLEANUP
     OGL_PopState()
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalMaterialFlags = 0
 }
 
 // MARK: - Draw infobar sprite
@@ -1046,9 +1046,9 @@ private func infobarDrawEggs() {
                 && eggType == Int(gBlinkingEggType)
                 && i == Int(gNumEggsSaved[eggType]) - 1 {
                 let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
-                gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
+                gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
                 DrawInfobarSprite(x, y, EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
-                gGlobalTransparency = 1.0
+                gEngine.metaObjects.globalTransparency = 1.0
             }
 
             y += EGGS_SCALE
@@ -1083,9 +1083,9 @@ private func infobarCaptureFlagEggs() {
             && eggType == Int(gBlinkingEggType)
             && i == Int(gNumEggsSaved[eggType]) - 1 {
             let flux = cosf(gBlinkingEggTimer * Float(PI) * 3 - Float(PI))
-            gGlobalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
+            gEngine.metaObjects.globalTransparency = RangeTranspose(flux, -1, 1, 0, 0.8)
             DrawInfobarSprite(x, y, CAP_EGGS_SCALE, Int16(INFOBAR_SObjType_SmallEggHalo))
-            gGlobalTransparency = 1.0
+            gEngine.metaObjects.globalTransparency = 1.0
         }
 
         x += CAP_EGGS_SCALE * 0.95
@@ -1113,12 +1113,12 @@ private func infobarDrawMissionStatus() {
         let x = anchorCenterX(0)
         let y = anchorCenterY(0)
         let text = localized(STR_MISSION_FAILED)
-        gGlobalColorFilter = OGLColorRGB(r: 1, g: 0, b: 0)
+        gEngine.metaObjects.globalColorFilter = OGLColorRGB(r: 1, g: 0, b: 0)
         Atlas_DrawString2(Int32(ATLAS_GROUP_FONT2), text, x, y, 0.66, 0.66, 0, UInt32(kTextMeshSmallCaps))
-        gGlobalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
+        gEngine.metaObjects.globalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
     }
     // ENTER WORMHOLE
-    else if gOpenPlayerWormhole != 0 && gCameraInExitMode == 0 {
+    else if gOpenPlayerWormhole != 0 && gEngine.camera.inExitMode == 0 {
         gMissionStatusFlux += gFramesPerSecondFrac
 
         var scale: Float = 0.5 * (1.0 + sinf(min(Float(PI), gMissionStatusFlux * 6.0) - (Float(PI) * 0.5)))
@@ -1135,10 +1135,10 @@ private func infobarDrawMissionStatus() {
         let x = anchorCenterX(0)
         let y = anchorCenterY(120)
         let text = localized(STR_ENTER_WORMHOLE)
-        gGlobalTransparency = 0.75 + 0.25 * sinf(gMissionStatusFlux * (2.0 * Float(PI)))
+        gEngine.metaObjects.globalTransparency = 0.75 + 0.25 * sinf(gMissionStatusFlux * (2.0 * Float(PI)))
 
         Atlas_DrawString2(Int32(ATLAS_GROUP_FONT1), text, x, y, scale, scale, 0, UInt32(bitPattern: flags))
-        gGlobalTransparency = 1.0
+        gEngine.metaObjects.globalTransparency = 1.0
     } else {
         gMissionStatusFlux = 0
     }
@@ -1234,9 +1234,9 @@ private func infobarDrawRaceInfo() {
 
     // DRAW WRONG WAY
     if pi.pointee.wrongWay != 0 {
-        gGlobalTransparency = 0.6
+        gEngine.metaObjects.globalTransparency = 0.6
         DrawInfobarSprite_Centered(anchorCenterX(0), anchorCenterY(0), 80, Int16(INFOBAR_SObjType_WrongWay))
-        gGlobalTransparency = 1.0
+        gEngine.metaObjects.globalTransparency = 1.0
     }
 }
 
@@ -1362,14 +1362,14 @@ private func infobarDrawPlayerArrows() {
     var dot = OGLVector2D_Dot(&v, &v2) // calc angle between
     dot = acosf(dot)
     if dot > 0.8 {
-        gGlobalTransparency = 0.8
+        gEngine.metaObjects.globalTransparency = 0.8
         let cross = OGLVector2D_Cross(&v, &v2) // sign of cross tells us which side
         if cross > 0.0 {
             DrawInfobarSprite(anchorLeft(0), anchorCenterY(0), ARROW_SCALE, Int16(INFOBAR_SObjType_LeftArrow))
         } else {
             DrawInfobarSprite(anchorRight(ARROW_SCALE), anchorCenterY(0), ARROW_SCALE, Int16(INFOBAR_SObjType_RightArrow))
         }
-        gGlobalTransparency = 1.0
+        gEngine.metaObjects.globalTransparency = 1.0
     }
 }
 
@@ -1501,7 +1501,7 @@ private func infobarDrawCrosshairs() {
         return
     }
 
-    if gCameraInExitMode != 0 {
+    if gEngine.camera.inExitMode != 0 {
         return
     }
 
@@ -1552,7 +1552,7 @@ private func infobarDrawCrosshairs() {
     let scale: Float = GUNSIGHT_SCALE
 
     // DRAW AUTO-TARGET CROSSHAIRS
-    gGlobalTransparency = 0.8
+    gEngine.metaObjects.globalTransparency = 0.8
 
     let lockedOn = pi.pointee.crosshairTargetObj != nil // see if an object is targeted
 
@@ -1583,7 +1583,7 @@ private func infobarDrawCrosshairs() {
     }
 
     // DRAW FAR TARGET
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 
     screenCoord = (crosshairCoordBase(pi) + 1).pointee.transformed(by: GetWorldToWindowMatrixEntry(Int32(playerNum)).pointee)
     screenCoord.x = screenCoord.x * screenToPaneX

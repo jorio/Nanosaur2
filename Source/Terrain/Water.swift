@@ -402,7 +402,7 @@ private func drawWater() {
 
         // DO BBOX CULLING
         if OGL_IsBBoxVisible(GetWaterBBoxEntry(Int32(f)), nil) != 0 {
-            gGlobalTransparency = gWaterTransparency[waterType]
+            gEngine.metaObjects.globalTransparency = gWaterTransparency[waterType]
 
             if gWaterGlow[waterType] { // set glow
                 OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE))
@@ -432,7 +432,7 @@ private func drawWater() {
     }
 
     // CLEANUP
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
     OGL_BlendFunc(GLenum(GL_SRC_ALPHA), GLenum(GL_ONE_MINUS_SRC_ALPHA))
 
     // RESTORE ALL TEXTURE MATRICES
@@ -659,5 +659,5 @@ private func drawRipples() {
     }
 
     OGL_SetColor4f(1, 1, 1, 1)
-    gGlobalTransparency = 1.0
+    gEngine.metaObjects.globalTransparency = 1.0
 }

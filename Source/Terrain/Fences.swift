@@ -430,7 +430,7 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
 
     // SET GLOBAL MATERIAL FLAGS
 
-    gGlobalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
+    gEngine.metaObjects.globalMaterialFlags = UInt32(BG3D_MATERIALFLAG_CLAMP_V) | UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
 
     // DRAW EACH FENCE
 
@@ -467,7 +467,7 @@ private let cDrawFences: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
         }
     }
 
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalMaterialFlags = 0
 }
 
 // MARK: -

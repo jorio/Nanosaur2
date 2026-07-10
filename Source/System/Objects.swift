@@ -475,14 +475,14 @@ func DrawObjects() {
                 break drawNode
             }
 
-            gGlobalTransparency = node.pointee.ColorFilter.a // get global transparency
-            if gGlobalTransparency <= 0.0 { // see if invisible
+            gEngine.metaObjects.globalTransparency = node.pointee.ColorFilter.a // get global transparency
+            if gEngine.metaObjects.globalTransparency <= 0.0 { // see if invisible
                 break drawNode
             }
 
-            gGlobalColorFilter.r = node.pointee.ColorFilter.r // set color filter
-            gGlobalColorFilter.g = node.pointee.ColorFilter.g
-            gGlobalColorFilter.b = node.pointee.ColorFilter.b
+            gEngine.metaObjects.globalColorFilter.r = node.pointee.ColorFilter.r // set color filter
+            gEngine.metaObjects.globalColorFilter.g = node.pointee.ColorFilter.g
+            gEngine.metaObjects.globalColorFilter.b = node.pointee.ColorFilter.b
 
             // CHECK AUTOFADE
 
@@ -503,8 +503,8 @@ func DrawObjects() {
                             break drawNode
                         }
 
-                        gGlobalTransparency -= dist
-                        if gGlobalTransparency <= 0.0 {
+                        gEngine.metaObjects.globalTransparency -= dist
+                        if gEngine.metaObjects.globalTransparency <= 0.0 {
                             node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) // set culled flag so that any related Sparkles wont be drawn either
                             break drawNode
                         }
@@ -545,10 +545,10 @@ func DrawObjects() {
             // CHECK GLOW BLEND
 
             if statusBits & UInt32(STATUS_BIT_GLOW) != 0 {
-                gGlobalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND) // this will make sure blending is on for the glow
+                gEngine.metaObjects.globalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND) // this will make sure blending is on for the glow
                 OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE))
             } else {
-                gGlobalMaterialFlags &= ~UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
+                gEngine.metaObjects.globalMaterialFlags &= ~UInt32(BG3D_MATERIALFLAG_ALWAYSBLEND)
                 OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE_MINUS_SRC_ALPHA))
             }
 
@@ -556,12 +556,12 @@ func DrawObjects() {
 
             if statusBits & UInt32(STATUS_BIT_NOTEXTUREWRAP) != 0 {
                 if !texWrap {
-                    gGlobalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V)
+                    gEngine.metaObjects.globalMaterialFlags |= UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V)
                     texWrap = true
                 }
             } else if texWrap {
                 texWrap = false
-                gGlobalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
+                gEngine.metaObjects.globalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
             }
 
             // CHECK ZWRITE
@@ -590,7 +590,7 @@ func DrawObjects() {
 
             // CHECK EDGE ALPHA CLIPPING
 
-            if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gGlobalTransparency == 1.0 {
+            if (statusBits & UInt32(STATUS_BIT_CLIPALPHA6)) != 0 && gEngine.metaObjects.globalTransparency == 1.0 {
                 if !clipAlpha {
                     gEngine.renderer.setAlphaClipping(trimLowAlpha: true)
                     clipAlpha = true
@@ -726,18 +726,18 @@ func DrawObjects() {
     OGL_BlendFunc(UInt32(GL_SRC_ALPHA), UInt32(GL_ONE_MINUS_SRC_ALPHA))
 
     if texWrap {
-        gGlobalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
+        gEngine.metaObjects.globalMaterialFlags &= ~(UInt32(BG3D_MATERIALFLAG_CLAMP_U) | UInt32(BG3D_MATERIALFLAG_CLAMP_V))
     }
 
     if clipAlpha {
         gEngine.renderer.setAlphaClipping(trimLowAlpha: false)
     }
 
-    gGlobalTransparency = 1.0 // reset this in case it has changed
-    gGlobalColorFilter.r = 1.0
-    gGlobalColorFilter.g = 1.0
-    gGlobalColorFilter.b = 1.0
-    gGlobalMaterialFlags = 0
+    gEngine.metaObjects.globalTransparency = 1.0 // reset this in case it has changed
+    gEngine.metaObjects.globalColorFilter.r = 1.0
+    gEngine.metaObjects.globalColorFilter.g = 1.0
+    gEngine.metaObjects.globalColorFilter.b = 1.0
+    gEngine.metaObjects.globalMaterialFlags = 0
 
     OGL_SetNormalizeNormals(true)
 }

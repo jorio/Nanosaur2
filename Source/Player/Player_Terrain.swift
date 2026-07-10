@@ -665,7 +665,7 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     guard let theNode = theNodeOpt else { return }
     let playerNum = Int32(theNode.pointee.PlayerNum)
 
-    if (GetCameraMode(playerNum) != UInt8(CameraMode.firstPerson.rawValue)) || (gCurrentSplitScreenPane != theNode.pointee.PlayerNum) {
+    if (GetCameraMode(playerNum) != UInt8(CameraMode.firstPerson.rawValue)) || (gEngine.view.currentSplitScreenPane != theNode.pointee.PlayerNum) {
         theNode.drawSkeleton()
     }
 
@@ -675,8 +675,8 @@ private let cDrawPlayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void
     // we can see him more easily.
 
     if gEngine.game.vsMode != .none {
-        if gCurrentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
-            let otherPi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
+        if gEngine.view.currentSplitScreenPane != theNode.pointee.PlayerNum { // if we're drawing the "other" player...
+            let otherPi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
             var size = theNode.pointee.Coord.distance(to: otherPi.pointee.coord) * 0.12
             if size > 600.0 {
                 size = 600.0

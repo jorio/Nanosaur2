@@ -711,7 +711,7 @@ private func updateParticleGroupsGeometry() {
 // MARK: - Draw particle groups
 
 private let cDrawParticleGroups: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { _ in
-    let paneNum = Int(gCurrentSplitScreenPane)
+    let paneNum = Int(gEngine.view.currentSplitScreenPane)
 
     // DRAW SOME OTHER GOODIES WHILE WE'RE HERE
 
@@ -1639,7 +1639,7 @@ private let cDrawFlame: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void 
     guard let theNode = theNodeOpt else { return }
     let up = OGLVector3D(x: 0, y: 1, z: 0)
     var frame = [OGLPoint3D](repeating: OGLPoint3D(), count: 4)
-    let paneNum = Int(gCurrentSplitScreenPane)
+    let paneNum = Int(gEngine.view.currentSplitScreenPane)
 
     let s = theNode.pointee.Scale.x
 

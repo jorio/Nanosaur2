@@ -168,8 +168,8 @@ private func setupLevelIntroScreen() {
     // INIT ANAGLYPH INFO
 
     if isStereo() {
-        gAnaglyphFocallength = 300.0
-        gAnaglyphEyeSeparation = 20.0
+        gEngine.view.anaglyphFocallength = 300.0
+        gEngine.view.anaglyphEyeSeparation = 20.0
 
         if isStereoAnaglyph() {
             viewDef.lights.ambientColor = OGLColorRGBA(r: 0.8, g: 0.8, b: 0.8, a: 1.0)

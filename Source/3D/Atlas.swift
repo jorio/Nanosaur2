@@ -771,7 +771,7 @@ func Atlas_ImmediateDraw(_ groupNum: Int32, _ text: String, _ flags: UInt32) {
         p += 4
     }
     gEngine.renderer.endImmediate()
-    gPolysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
+    gEngine.view.polysThisFrame += 2 * metrics.numQuads // 2 tris drawn per quad
 }
 
 func Atlas_DrawString2(

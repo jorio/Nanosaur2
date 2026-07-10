@@ -73,6 +73,9 @@ final class GameEngine {
     /// HUD + screen-flow state.
     let infobar = InfobarSystem()
     let screens = ScreenSystem()
+
+    /// View/GL-state tracking (see OGL_Support.swift).
+    let view = ViewSystem()
 }
 
 /// The single engine instance. A plain global (not dependency injection)

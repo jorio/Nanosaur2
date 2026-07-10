@@ -167,7 +167,7 @@ private let cDrawPaneDivider: @convention(c) (UnsafeMutablePointer<ObjNode>?) ->
 }
 
 private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
-    if gActiveSplitScreenMode == UInt8(SplitscreenMode.none.rawValue) {
+    if gEngine.view.activeSplitScreenMode == UInt8(SplitscreenMode.none.rawValue) {
         return
     }
 
@@ -190,7 +190,7 @@ private func drawPaneDivider(_ theNode: UnsafeMutablePointer<ObjNode>) {
     gEngine.renderer.translate(640 / 2, 480 / 2, 0)
     gEngine.renderer.beginImmediate(.quads)
 
-    switch gActiveSplitScreenMode {
+    switch gEngine.view.activeSplitScreenMode {
     case UInt8(SplitscreenMode.horizontal.rawValue):
         gEngine.renderer.vertex2f(-halfLW, -halfThickness)
         gEngine.renderer.vertex2f(-halfLW, +halfThickness)
@@ -450,14 +450,14 @@ func SetInfobarSpriteState(_ anaglyphZ: Float, _ zoom: Float) {
     gEngine.renderer.matrixMode(.projection)
     gEngine.renderer.loadIdentity()
 
-    gEngine.infobar.logicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom)
+    gEngine.infobar.logicalRect = Get2DLogicalRect(gEngine.view.currentSplitScreenPane, zoom)
     let left = gEngine.infobar.logicalRect.left
     let top = gEngine.infobar.logicalRect.top
     let right = gEngine.infobar.logicalRect.right
     let bottom = gEngine.infobar.logicalRect.bottom
 
     if isStereo() {
-        if gAnaglyphPass == 0 {
+        if gEngine.view.anaglyphPass == 0 {
             gEngine.renderer.ortho(GLdouble(left - anaglyphZ), GLdouble(right - anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
         } else {
             gEngine.renderer.ortho(GLdouble(left + anaglyphZ), GLdouble(right + anaglyphZ), GLdouble(bottom), GLdouble(top), 0, 1)
@@ -480,8 +480,8 @@ func DrawInfobar(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // DRAW SOME OTHER GOODIES WHILE WE'RE HERE
     DrawLensFlare() // draw lens flare
 
-    if gCurrentSplitScreenPane == 0
-        && gAnaglyphPass == 0
+    if gEngine.view.currentSplitScreenPane == 0
+        && gEngine.view.anaglyphPass == 0
         && SwIsKeyDown(Int(SDL_SCANCODE_F9.rawValue)) { // see if toggle statbar
         gEngine.infobar.hideInfobar = gEngine.infobar.hideInfobar == 0 ? 1 : 0
     }
@@ -747,7 +747,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
         return
     }
 
-    let rot = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
+    let rot = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.objNode!.pointee.Rot.y
 
     // SET COORDS OF THE QUAD
     let xoff = MAP_SCALE2 * scale
@@ -779,7 +779,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
     //
     // Then we need to scale the scroll value to uv coords.
 
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
+    let pi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
     var leftEdge = Double(pi.pointee.coord.x * gEngine.terrain.mapToUnitValueFrac) // convert world-coord to texture-pixel-coord
     var topEdge = Double(pi.pointee.coord.z * gEngine.terrain.mapToUnitValueFrac)
 
@@ -891,7 +891,7 @@ private func infobarDrawMap(_ mapXValue: Float, _ y: Float, _ scale: Float = 1.0
 // MARK: - Draw minimap on secondary screen (dual-screen mode)
 
 // Called once per frame from OGL_Support.swift's dual-screen draw path,
-// with gAGLContext2/gSDLWindow2 already current and gEngine.window.width/Height
+// with gEngine.view.aglContext2/gSDLWindow2 already current and gEngine.window.width/Height
 // temporarily overridden to the bottom window's own pixel size (so
 // SetInfobarSpriteState/Get2DLogicalRect - both keyed off those globals -
 // compute the right aspect/letterboxing for that window). Draws the map
@@ -914,9 +914,9 @@ func DrawMinimapOnSecondaryScreen() {
         return
     }
 
-    let savedPane = gCurrentSplitScreenPane
-    gCurrentSplitScreenPane = 0
-    defer { gCurrentSplitScreenPane = savedPane }
+    let savedPane = gEngine.view.currentSplitScreenPane
+    gEngine.view.currentSplitScreenPane = 0
+    defer { gEngine.view.currentSplitScreenPane = savedPane }
 
     SetInfobarSpriteState(0, 1.0)
 
@@ -929,7 +929,7 @@ func DrawMinimapOnSecondaryScreen() {
 
 private func infobarDrawHealth() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.health * 0.5
+    let v = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.health * 0.5
 
     // SET V'S FOR SCROLLING OF HEALTH BAR
     gHealthuv1[0].v = v; gHealthuv1[1].v = v
@@ -959,7 +959,7 @@ private func infobarDrawHealth() {
 // MARK: - Draw shield
 
 private func infobarDrawShield() {
-    let q = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
+    let q = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.shieldPower / MAX_SHIELD_POWER // convert shield power to 0..1 value
 
     // CALC UV COORDS
     let v = q * 0.5
@@ -993,7 +993,7 @@ private func infobarDrawShield() {
 
 private func infobarDrawFuel() {
     // CALC UV COORDS
-    let v = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.jetpackFuel * 0.5
+    let v = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.jetpackFuel * 0.5
 
     // SET V'S FOR SCROLLING OF FUEL BAR
     gFueluv1[0].v = v; gFueluv1[1].v = v
@@ -1067,7 +1067,7 @@ private func infobarDrawEggs() {
 // MARK: - Draw capture flag eggs
 
 private func infobarCaptureFlagEggs() {
-    let eggType = Int(gCurrentSplitScreenPane) ^ 1 // egg type is OTHER player's, so ^ 1
+    let eggType = Int(gEngine.view.currentSplitScreenPane) ^ 1 // egg type is OTHER player's, so ^ 1
 
     gEngine.infobar.blinkingEggTimer += gEngine.framesPerSecondFrac / Float(gEngine.player.numPlayers)
 
@@ -1154,7 +1154,7 @@ private func infobarDrawMissionStatus() {
 private func infobarDrawLives() {
     var x = livesX()
 
-    for _ in 0..<GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane)).pointee.numFreeLives {
+    for _ in 0..<GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee.numFreeLives {
         DrawInfobarSprite(x, livesY(), LIVES_SCALE, Int16(INFOBAR_SObjType_Life))
         x += LIVES_SCALE * 1.0
     }
@@ -1169,7 +1169,7 @@ private func infobarDrawWeaponInventory() {
     DrawInfobarSprite(weaponX(), weaponY(), WEAPON_SCALE, Int16(INFOBAR_SObjType_WeaponFrame))
 
     // DRAW ICON
-    let pi = GetPlayerInfoEntry(Int32(gCurrentSplitScreenPane))
+    let pi = GetPlayerInfoEntry(Int32(gEngine.view.currentSplitScreenPane))
     let weaponType = pi.currentWeapon
     if weaponType == .none {
         return
@@ -1206,7 +1206,7 @@ private func infobarDrawWeaponInventory() {
 // MARK: - Infobar: draw race info
 
 private func infobarDrawRaceInfo() {
-    let playerNum = gCurrentSplitScreenPane
+    let playerNum = gEngine.view.currentSplitScreenPane
 
     // DRAW READY-SET-GO
     let readySetGoIcon: Int32
@@ -1337,7 +1337,7 @@ private func infobarDrawPlayerArrows() {
     var v2 = OGLVector2D()
 
     // GET ANGLE TO P2
-    if gCurrentSplitScreenPane == 0 {
+    if gEngine.view.currentSplitScreenPane == 0 {
         let pi0 = GetPlayerInfoEntry(0)
         let pi1 = GetPlayerInfoEntry(1)
 
@@ -1385,7 +1385,7 @@ private let cDrawAnaglyphCrosshairs: @convention(c) (UnsafeMutablePointer<ObjNod
 }
 
 private func drawAnaglyphCrosshairs() {
-    let playerNum = gCurrentSplitScreenPane
+    let playerNum = gEngine.view.currentSplitScreenPane
 
     if gGamePrefs.showTargetingCrosshairs == 0 {
         return
@@ -1495,7 +1495,7 @@ private func drawAnaglyphCrosshairs() {
 
 
 private func infobarDrawCrosshairs() {
-    let playerNum = gCurrentSplitScreenPane
+    let playerNum = gEngine.view.currentSplitScreenPane
 
     if gGamePrefs.showTargetingCrosshairs == 0 {
         return

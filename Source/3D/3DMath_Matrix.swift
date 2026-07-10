@@ -722,10 +722,10 @@ func OGL_IsBBoxVisible(_ bBox: UnsafePointer<OGLBoundingBox>!, _ localToWorld: U
 
     var m: UnsafeMutablePointer<OGLMatrix4x4>
     if let localToWorld {
-        m2 = localToWorld.pointee.multiplied(by: gWorldToFrustumMatrix)
+        m2 = localToWorld.pointee.multiplied(by: gEngine.view.worldToFrustumMatrix)
         m = withUnsafeMutablePointer(to: &m2) { $0 }
     } else {
-        m = withUnsafeMutablePointer(to: &gWorldToFrustumMatrix) { $0 }
+        m = withUnsafeMutablePointer(to: &gEngine.view.worldToFrustumMatrix) { $0 }
     }
 
     // GET LOCAL->FRUSTUM MATRIX

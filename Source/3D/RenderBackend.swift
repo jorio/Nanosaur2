@@ -633,13 +633,13 @@ final class GLRenderBackend: RenderBackend {
     func checkError() -> UInt32 { UInt32(glGetError()) }
 
     func createContext() {
-        SwGameAssertMessage(gAGLContext == nil, "GL context already exists")
+        SwGameAssertMessage(gEngine.view.aglContext == nil, "GL context already exists")
 
         // CREATE AGL CONTEXT & ATTACH TO WINDOW
 
-        gAGLContext = SDL_GL_CreateContext(gSDLWindow)
+        gEngine.view.aglContext = SDL_GL_CreateContext(gSDLWindow)
 
-        if gAGLContext == nil {
+        if gEngine.view.aglContext == nil {
             SwFatalAlert(String(cString: SDL_GetError()))
         }
 
@@ -647,7 +647,7 @@ final class GLRenderBackend: RenderBackend {
 
         // ACTIVATE CONTEXT
 
-        let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gAGLContext)
+        let didMakeCurrent = SDL_GL_MakeCurrent(gSDLWindow, gEngine.view.aglContext)
         SwGameAssertMessage(didMakeCurrent, String(cString: SDL_GetError()))
 
         // ENABLE VSYNC
@@ -668,13 +668,13 @@ final class GLRenderBackend: RenderBackend {
     }
 
     func destroyContext() {
-        guard gAGLContext != nil else {
+        guard gEngine.view.aglContext != nil else {
             return
         }
 
         _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
-        SDL_GL_DestroyContext(gAGLContext) // nuke context
-        gAGLContext = nil
+        SDL_GL_DestroyContext(gEngine.view.aglContext) // nuke context
+        gEngine.view.aglContext = nil
     }
 
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }

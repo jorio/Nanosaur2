@@ -84,9 +84,9 @@ func DrawSparkles() {
     // DRAW EACH SPARKLE
 
     // cameraPlacement is a fixed-size array (imports as a tuple); rebind to
-    // index it dynamically by gCurrentSplitScreenPane.
+    // index it dynamically by gEngine.view.currentSplitScreenPane.
     let cameraPlacementsBase = UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
-    let cam = cameraPlacementsBase + Int(gCurrentSplitScreenPane) // point to camera coord
+    let cam = cameraPlacementsBase + Int(gEngine.view.currentSplitScreenPane) // point to camera coord
 
     var i: Int32 = 0
     while i < Int32(MAX_SPARKLES) {
@@ -107,7 +107,7 @@ func DrawSparkles() {
 
         if let owner { // if owner is culled on this pane then dont draw
             if (flags & UInt32(SPARKLE_FLAG_ALWAYSDRAW)) == 0 {
-                if (owner.pointee.StatusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN))) != 0 {
+                if (owner.pointee.StatusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gEngine.view.currentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN))) != 0 {
                     continue
                 }
             }

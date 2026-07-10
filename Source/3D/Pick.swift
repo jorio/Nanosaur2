@@ -418,8 +418,8 @@ func OGL_GetWorldRayAtScreenPoint(_ screenCoordOpt: UnsafeMutablePointer<OGLPoin
             withUnsafePointer(to: vpSize) { vpSizePtr in
                 OGL_GluUnProject(
                     winPtPtr,
-                    &gWorldToViewMatrix, // modelview
-                    &gViewToFrustumMatrix, // projection
+                    &gEngine.view.worldToViewMatrix, // modelview
+                    &gEngine.view.viewToFrustumMatrix, // projection
                     vpOffsetPtr,
                     vpSizePtr,
                     &result

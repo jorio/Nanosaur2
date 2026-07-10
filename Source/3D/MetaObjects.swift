@@ -507,7 +507,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
     if data.pointee.normals == nil { // see if we even have normals to pass
         needNormals = false
     } else {
-        if gMyState_Lighting == 0 { // if no lighting, then probably don't need to pass normals
+        if gEngine.view.stateLighting == 0 { // if no lighting, then probably don't need to pass normals
             needNormals = texGen // pass normals if doing texGen for sphere maps, etc.
         } else { // there's lighting, so pass the normals
             needNormals = true
@@ -529,7 +529,7 @@ func MO_DrawGeometry_VertexArray(_ dataC: UnsafePointer<MOVertexArrayData>!) {
         numTriangles: data.pointee.numTriangles)
     _ = OGL_CheckError()
 
-    gPolysThisFrame += data.pointee.numTriangles // inc poly counter
+    gEngine.view.polysThisFrame += data.pointee.numTriangles // inc poly counter
 
     // CLEANUP
 
@@ -719,7 +719,7 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
     let y = -height / 2
     let z: Float = 0
 
-    let currentAR = 1.0 / gCurrentPaneAspectRatio
+    let currentAR = 1.0 / gEngine.view.currentPaneAspectRatio
     let targetAR: Float = 640.0 / 480.0
 
     var scale = currentAR / targetAR
@@ -743,7 +743,7 @@ func MO_DrawPicture(_ picObjC: UnsafePointer<MOPictureObject>!) {
     gEngine.renderer.texCoord2f(0, 0); gEngine.renderer.vertex3f(x, y, z)
     gEngine.renderer.endImmediate()
 
-    gPolysThisFrame += 2 // 2 more triangles
+    gEngine.view.polysThisFrame += 2 // 2 more triangles
 
     // RESTORE STATE
 
@@ -816,7 +816,7 @@ func MO_DrawSprite(_ spriteObjC: UnsafePointer<MOSpriteObject>!) {
 
     gEngine.renderer.endImmediate()
 
-    gPolysThisFrame += 2 // 2 more tris
+    gEngine.view.polysThisFrame += 2 // 2 more tris
 }
 
 // MARK: - Reference Counting

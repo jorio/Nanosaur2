@@ -858,8 +858,8 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
     // PREPARE SUPERTILE GRID FOR THE NEXT FRAME
 
     var doPrepGrid = true
-    if gActiveSplitScreenMode != UInt8(SplitscreenMode.none.rawValue) { // if splitscreen, then dont do this until done with player #2
-        if gCurrentSplitScreenPane < 1 {
+    if gEngine.view.activeSplitScreenMode != UInt8(SplitscreenMode.none.rawValue) { // if splitscreen, then dont do this until done with player #2
+        if gEngine.view.currentSplitScreenPane < 1 {
             doPrepGrid = false
         }
     }
@@ -878,7 +878,7 @@ func DrawTerrain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
                 // ASSUME SUPERTILES WILL BE UNUSED ON NEXT FRAME
 
-                if !isStereo() || (gAnaglyphPass > 0) {
+                if !isStereo() || (gEngine.view.anaglyphPass > 0) {
                     gEngine.terrain.superTileStatusGrid[r]![c].statusFlags &= ~UInt8(SUPERTILE_IS_USED_THIS_FRAME) // clear the isUsed bit
                 }
             }

@@ -62,7 +62,7 @@ func CreateCyclorama() {
 
 func DrawCyclorama(_ theNodeOpt: UnsafeMutablePointer<ObjNode>?) {
     let theNode = theNodeOpt!
-    let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
+    let cameraCoord = cameraPlacementsBase()[Int(gEngine.view.currentSplitScreenPane)].cameraLocation
 
     gEngine.renderer.setAlphaTestEnabled(false) // --------
 
@@ -120,7 +120,7 @@ private let cMoveCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> 
 
 private let cDrawCloudLayer: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Void = { theNodeOpt in
     let theNode = theNodeOpt!
-    let cameraCoord = cameraPlacementsBase()[Int(gCurrentSplitScreenPane)].cameraLocation
+    let cameraCoord = cameraPlacementsBase()[Int(gEngine.view.currentSplitScreenPane)].cameraLocation
 
     gEngine.renderer.setAlphaTestEnabled(false) // --------
 

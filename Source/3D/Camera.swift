@@ -113,7 +113,7 @@ func DrawLensFlare() {
 
     // CALC SUN COORD
 
-    let from = (cameraPlacementsBase() + Int(Int32(gCurrentSplitScreenPane))).pointee.cameraLocation
+    let from = (cameraPlacementsBase() + Int(Int32(gEngine.view.currentSplitScreenPane))).pointee.cameraLocation
     gEngine.camera.sunCoord.x = from.x - (gEngine.game.worldSunDirection.x * gEngine.game.viewInfoPtr!.pointee.yon)
     gEngine.camera.sunCoord.y = from.y - (gEngine.game.worldSunDirection.y * gEngine.game.viewInfoPtr!.pointee.yon)
     gEngine.camera.sunCoord.z = from.z - (gEngine.game.worldSunDirection.z * gEngine.game.viewInfoPtr!.pointee.yon)
@@ -126,7 +126,7 @@ func DrawLensFlare() {
                          from.z - gEngine.camera.sunCoord.z,
                          &sunVector)
 
-    let placement = (cameraPlacementsBase() + Int(Int32(gCurrentSplitScreenPane)))
+    let placement = (cameraPlacementsBase() + Int(Int32(gEngine.view.currentSplitScreenPane)))
     var lookAtVector = OGLVector3D()
     FastNormalizeVector(placement.pointee.pointOfInterest.x - from.x,
                          placement.pointee.pointOfInterest.y - from.y,
@@ -145,7 +145,7 @@ func DrawLensFlare() {
 
     // CALC SCREEN COORDINATE OF LIGHT
 
-    let sunScreenCoord = gEngine.camera.sunCoord.transformed(by: GetWorldToWindowMatrixEntry(Int32(gCurrentSplitScreenPane)).pointee)
+    let sunScreenCoord = gEngine.camera.sunCoord.transformed(by: GetWorldToWindowMatrixEntry(Int32(gEngine.view.currentSplitScreenPane)).pointee)
 
     // CALC CENTER OF VIEWPORT
 
@@ -153,7 +153,7 @@ func DrawLensFlare() {
     var py: Int32 = 0
     var pw: Int32 = 0
     var ph: Int32 = 0
-    OGL_GetCurrentViewport(&px, &py, &pw, &ph, gCurrentSplitScreenPane)
+    OGL_GetCurrentViewport(&px, &py, &pw, &ph, gEngine.view.currentSplitScreenPane)
     let cx = Float(pw) / 2 + Float(px)
     let cy = Float(ph) / 2 + Float(py)
 
@@ -194,7 +194,7 @@ func DrawLensFlare() {
         let o = gFlareOffsetTable[i]
 
         let sy = gFlareScaleTable[i]
-        let sx = sy * gCurrentPaneAspectRatio
+        let sx = sy * gEngine.view.currentPaneAspectRatio
 
         let x = cx + axis.x * length * o
         let y = cy + axis.y * length * o
@@ -571,7 +571,7 @@ func RestoreCamerasFromAnaglyph() {
 // MARK: - Calc anaglyph camera offset
 
 func CalcAnaglyphCameraOffset(_ pane: UInt8, _ pass: UInt8) {
-    var sep = gAnaglyphEyeSeparation
+    var sep = gEngine.view.anaglyphEyeSeparation
 
     if pass > 0 {
         sep = -sep

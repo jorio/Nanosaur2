@@ -329,8 +329,8 @@ private func initLevel() {
     // SET ANAGLYPH INFO
 
     if isStereo() {
-        gAnaglyphFocallength = 200.0
-        gAnaglyphEyeSeparation = 35.0
+        gEngine.view.anaglyphFocallength = 200.0
+        gEngine.view.anaglyphEyeSeparation = 35.0
 
         if isStereoAnaglyphMono() {
             viewDef.lights.ambientColor.r += 0.1 // make a little brighter
@@ -534,27 +534,27 @@ private func showTimeDemoResults(_ numFrames: Int32, _ numSeconds: Float, _ aver
 
 private let cDrawLevelCallback: @convention(c) () -> Void = {
     if isStereo() {
-        let p = Int(gCurrentSplitScreenPane) // get the player # who's draw context is being drawn
+        let p = Int(gEngine.view.currentSplitScreenPane) // get the player # who's draw context is being drawn
 
         // MAKE SURE ANAGLYPH SETTINGS ARE GOOD FOR THIS CAMERA MODE
 
         switch GetCameraMode(Int32(p)) {
         case UInt8(CameraMode.normal.rawValue):
             if isStereoShutter() {
-                gAnaglyphFocallength = 280.0
-                gAnaglyphEyeSeparation = 45.0
+                gEngine.view.anaglyphFocallength = 280.0
+                gEngine.view.anaglyphEyeSeparation = 45.0
             } else {
-                gAnaglyphFocallength = 260.0
-                gAnaglyphEyeSeparation = 35.0
+                gEngine.view.anaglyphFocallength = 260.0
+                gEngine.view.anaglyphEyeSeparation = 35.0
             }
 
         case UInt8(CameraMode.firstPerson.rawValue):
-            gAnaglyphFocallength = 300.0
-            gAnaglyphEyeSeparation = 80.0
+            gEngine.view.anaglyphFocallength = 300.0
+            gEngine.view.anaglyphEyeSeparation = 80.0
 
         case UInt8(CameraMode.anaglyphClose.rawValue):
-            gAnaglyphFocallength = 700.0
-            gAnaglyphEyeSeparation = 50.0
+            gEngine.view.anaglyphFocallength = 700.0
+            gEngine.view.anaglyphEyeSeparation = 50.0
 
         default:
             break

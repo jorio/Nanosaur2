@@ -428,7 +428,7 @@ func DrawObjects() {
     var noZWrites = false
     var texWrap = false
     var clipAlpha = false
-    let playerNum = gCurrentSplitScreenPane // get the player # who's draw context is being drawn
+    let playerNum = gEngine.view.currentSplitScreenPane // get the player # who's draw context is being drawn
 
     if gEngine.objects.firstNodePtr == nil { // see if there are any objects
         return
@@ -448,11 +448,11 @@ func DrawObjects() {
     // GET CAMERA COORDS
 
     let cameraPlacementsBase = UnsafeMutableRawPointer(gEngine.game.viewInfoPtr!.pointer(to: \.cameraPlacement)!).assumingMemoryBound(to: OGLCameraPlacement.self)
-    let cam = cameraPlacementsBase + Int(gCurrentSplitScreenPane)
+    let cam = cameraPlacementsBase + Int(gEngine.view.currentSplitScreenPane)
     let cameraX = cam.pointee.cameraLocation.x
     let cameraZ = cam.pointee.cameraLocation.z
 
-    let isOverlayPane = gCurrentSplitScreenPane == gEngine.player.numPlayers
+    let isOverlayPane = gEngine.view.currentSplitScreenPane == gEngine.player.numPlayers
 
     // MAIN NODE TASK LOOP
 
@@ -462,7 +462,7 @@ func DrawObjects() {
         drawNode: repeat { // goto-next simulator
             let statusBits = node.pointee.StatusBits // get obj's status bits
 
-            if statusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN)) != 0 { // see if is culled or hidden
+            if statusBits & ((UInt32(STATUS_BIT_ISCULLED1) << UInt32(gEngine.view.currentSplitScreenPane)) | UInt32(STATUS_BIT_HIDDEN)) != 0 { // see if is culled or hidden
                 break drawNode
             }
 
@@ -508,7 +508,7 @@ func DrawObjects() {
 
                         gEngine.metaObjects.globalTransparency -= dist
                         if gEngine.metaObjects.globalTransparency <= 0.0 {
-                            node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << UInt32(gCurrentSplitScreenPane)) // set culled flag so that any related Sparkles wont be drawn either
+                            node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << UInt32(gEngine.view.currentSplitScreenPane)) // set culled flag so that any related Sparkles wont be drawn either
                             break drawNode
                         }
                     }
@@ -628,10 +628,10 @@ func DrawObjects() {
             // We cannot call our OGL_SetColor4f() function since it thinks the color is alredy 1,1,1,1, so we just force it here.
 
             gEngine.renderer.setColor4f(1, 1, 1, 1)
-            gMyState_Color.r = 1
-            gMyState_Color.g = 1
-            gMyState_Color.b = 1
-            gMyState_Color.a = 1
+            gEngine.view.stateColor.r = 1
+            gEngine.view.stateColor.g = 1
+            gEngine.view.stateColor.b = 1
+            gEngine.view.stateColor.a = 1
 
             // SEE IF DO U/V TRANSFORM
 

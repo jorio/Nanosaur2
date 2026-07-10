@@ -12,7 +12,7 @@ private let cShouldDisplaySplitscreenModeCycler: @convention(c) (UnsafePointer<M
 }
 
 private let cOnToggleSplitscreenMode: @convention(c) () -> Void = {
-    gActiveSplitScreenMode = gGamePrefs.splitScreenMode
+    gEngine.view.activeSplitScreenMode = gGamePrefs.splitScreenMode
     PausedInternal_UpdateSplitscreenFOV(gEngine.game.viewInfoPtr, GetSplitscreenPaneFOV(), Int32(gEngine.player.numPlayers))
 }
 

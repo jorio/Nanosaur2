@@ -445,9 +445,9 @@ func CullTestAllObjects() {
             if Int32(node.pointee.Genre) == Int32(SKELETON_GENRE) { // skeletons are already oriented, just need translation
                 var m2 = OGLMatrix4x4()
                 m2.setTranslate(node.pointee.Coord.x, node.pointee.Coord.y, node.pointee.Coord.z)
-                m = m2.multiplied(by: gWorldToFrustumMatrix)
+                m = m2.multiplied(by: gEngine.view.worldToFrustumMatrix)
             } else { // non-skeletons need full transform
-                m = node.pointee.BaseTransformMatrix.multiplied(by: gWorldToFrustumMatrix)
+                m = node.pointee.BaseTransformMatrix.multiplied(by: gEngine.view.worldToFrustumMatrix)
             }
 
             let m00 = matValue(&m, M00), m01 = matValue(&m, M01), m02 = matValue(&m, M02), m03 = matValue(&m, M03)
@@ -519,9 +519,9 @@ func CullTestAllObjects() {
 
         if !skipToNext {
             if drawOn {
-                node.pointee.StatusBits &= ~(UInt32(STATUS_BIT_ISCULLED1) << gCurrentSplitScreenPane) // clear cull bit
+                node.pointee.StatusBits &= ~(UInt32(STATUS_BIT_ISCULLED1) << gEngine.view.currentSplitScreenPane) // clear cull bit
             } else {
-                node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << gCurrentSplitScreenPane) // set cull bit for this pane/player
+                node.pointee.StatusBits |= (UInt32(STATUS_BIT_ISCULLED1) << gEngine.view.currentSplitScreenPane) // set cull bit for this pane/player
             }
         }
     }

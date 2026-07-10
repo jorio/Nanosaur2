@@ -52,7 +52,7 @@ private let THERMO_RIGHT: Float = 320 + (THERMO_WIDTH / 2)
 // across calls.
 
 private let cDrawLoadingCallback: @convention(c) () -> Void = {
-    if gCurrentSplitScreenPane != 0 { // only show in player 1's pane
+    if gEngine.view.currentSplitScreenPane != 0 { // only show in player 1's pane
         return
     }
 

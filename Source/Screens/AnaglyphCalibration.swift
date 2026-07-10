@@ -4,7 +4,7 @@
 // MARK: - Anaglyph menu trees
 
 private let cOnChangeAnaglyphMode: @convention(c) () -> Void = {
-    gAnaglyphPass = 0
+    gEngine.view.anaglyphPass = 0
     for _ in 0..<4 {
         gEngine.renderer.setColorMask(true, true, true, true)
         gEngine.renderer.clearColorAndDepth()

@@ -194,6 +194,9 @@ func InitSoundTools() {
         gChannels.append(chan)
         gMaxChannels += 1
     }
+    #if NANOSAUR_3DS
+    "InitSoundTools: gMaxChannels=\(gMaxChannels) (of \(maxChannels) requested)".withCString { Debug3DS_Log($0) }
+    #endif
 
     // SONG CHANNEL
 
@@ -740,6 +743,14 @@ func ChangeChannelRate(_ channel: Int16, _ rateMult: Int) {
 // MARK: - Find silent channel
 
 private func findSilentChannel() -> Int16 {
+    if gMaxChannels <= 0 { // no channels were successfully allocated at all
+        // (seen on 3DS 2026-07-09: the first effect-channel SDL audio
+        // stream failed to open while the later music stream succeeded,
+        // leaving gChannels empty - without this guard, the repeat loop
+        // below subscripts gChannels[0] before its bound check and traps)
+        return -1
+    }
+
     var theChan = gMostRecentChannel + 1 // start on channel after the most recently acquired one - assuming it has the best chance of being silent
     if theChan >= gMaxChannels {
         theChan = 0

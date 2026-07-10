@@ -11,9 +11,21 @@ final class WindowSystem {
     var height: Int32 = 480
 }
 
-private let kFaderMode_FadeOut: Int32 = 0
-private let kFaderMode_FadeIn: Int32 = 1
-private let kFaderMode_Done: Int32 = 2
+private enum FaderMode: Int32 {
+    case fadeOut = 0
+    case fadeIn = 1
+    case done = 2
+}
+
+// Typed boundary over the fader pane's ObjNode.Mode field (a C int that
+// different genres reuse for different meanings - this accessor is only
+// meaningful on nodes whose MoveCall is cMoveFadePane).
+extension UnsafeMutablePointer where Pointee == ObjNode {
+    fileprivate var faderMode: FaderMode {
+        get { FaderMode(rawValue: pointee.Mode)! }
+        nonmutating set { pointee.Mode = newValue.rawValue }
+    }
+}
 
 func InitWindowStuff() {
     gEngine.window.width = 640
@@ -31,21 +43,21 @@ private let cMoveFadePane: @convention(c) (UnsafeMutablePointer<ObjNode>?) -> Vo
     let speed = theNode.pointee.Speed * fps
 
     // SEE IF FADE IN
-    if theNode.pointee.Mode == kFaderMode_FadeIn {
+    if theNode.faderMode == .fadeIn {
         gEngine.window.gammaFadeFrac += speed
         if gEngine.window.gammaFadeFrac >= 1.0 { // see if @ 100%
             gEngine.window.gammaFadeFrac = 1
-            theNode.pointee.Mode = kFaderMode_Done
+            theNode.faderMode = .done
             DeleteObject(theNode) // nuke it if fading in
         }
     }
 
     // FADE OUT
-    else if theNode.pointee.Mode == kFaderMode_FadeOut {
+    else if theNode.faderMode == .fadeOut {
         gEngine.window.gammaFadeFrac -= speed
         if gEngine.window.gammaFadeFrac <= 0.0 { // see if @ 0%
             gEngine.window.gammaFadeFrac = 0
-            theNode.pointee.Mode = kFaderMode_Done
+            theNode.faderMode = .done
             theNode.setStatus(STATUS_BIT_NOMOVE) // DON'T nuke the fader pane if fading out -- but don't run this again
         }
     }
@@ -79,7 +91,7 @@ func OGL_FadeOutScene(_ drawCall: (@convention(c) () -> Void)!, _ moveCall: (@co
 
     var pFaderFrameCount = fader.pointee.Special.0
 
-    while fader.pointee.Mode != kFaderMode_Done {
+    while fader.faderMode != .done {
         CalcFramesPerSecond()
         DoSDLMaintenance()
 
@@ -137,7 +149,7 @@ func MakeFadeEvent(_ fadeFlags: UInt8, _ fadeSpeed: Float) -> UnsafeMutablePoint
 
     gEngine.window.gammaFadeFrac = fadeIn ? 0 : 1
 
-    obj.pointee.Mode = fadeIn ? kFaderMode_FadeIn : kFaderMode_FadeOut
+    obj.faderMode = fadeIn ? .fadeIn : .fadeOut
     obj.pointee.Special.0 = 0 // FaderFrameCounter == Special[0]
     obj.pointee.Speed = fadeSpeed
 

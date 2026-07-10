@@ -69,7 +69,14 @@ int main()
     // 3DS build has no keyboard, so without this subsystem initialized,
     // SDL_GetGamepads() never finds a controller and NO button input
     // (A/B/X/Y/Start/D-pad) ever reaches the game at all.
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
+    //
+    // SDL_INIT_AUDIO (matches desktop's Boot.cpp) is required too:
+    // SoundEngine.swift's SwSoundChannel opens an SDL_AudioStream against
+    // the default playback device on construction - without this, that
+    // open fails, isValid is false, and InitSoundTools's
+    // SwGameAssert(gMusicSwChannel?.isValid == true) trips a fatal alert
+    // on every boot.
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO);
     gSDLWindow = SDL_CreateWindow("Nanosaur 2", 400, 240, 0);
 
     // Bottom-screen console mirroring every SDL_Log call, so the game's own

@@ -180,14 +180,14 @@ func SetUpAnaglyphCalibrationScreen() {
     let blurb: String
 
     if isStereoAnaglyphColor() {
-        blurb = "\(String(cString: Localize(STR_ANAGLYPH_HELP_WHILEWEARING)))\n \n"
-            + "1. \(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTRB)))\n \n"
-            + "2. \(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTG)))\n \n"
-            + "3. \(String(cString: Localize(STR_ANAGLYPH_HELP_CHANNELBALANCING)))"
+        blurb = "\(localized(STR_ANAGLYPH_HELP_WHILEWEARING))\n \n"
+            + "1. \(localized(STR_ANAGLYPH_HELP_ADJUSTRB))\n \n"
+            + "2. \(localized(STR_ANAGLYPH_HELP_ADJUSTG))\n \n"
+            + "3. \(localized(STR_ANAGLYPH_HELP_CHANNELBALANCING))"
     } else if isStereoAnaglyphMono() {
-        blurb = "\(String(cString: Localize(STR_ANAGLYPH_HELP_WHILEWEARING)))\n \n\(String(cString: Localize(STR_ANAGLYPH_HELP_ADJUSTRB)))"
+        blurb = "\(localized(STR_ANAGLYPH_HELP_WHILEWEARING))\n \n\(localized(STR_ANAGLYPH_HELP_ADJUSTRB))"
     } else {
-        blurb = String(cString: Localize(STR_ANAGLYPH_HELP_GRABYOURGLASSES))
+        blurb = localized(STR_ANAGLYPH_HELP_GRABYOURGLASSES)
         blurbDef.coord = OGLPoint3D(x: 320, y: 470, z: 0)
     }
 

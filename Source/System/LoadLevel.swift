@@ -97,13 +97,7 @@ func LoadLevelArt() {
         break
     }
 
-    var levelSpecificSpritePathsCStrings = levelSpecificSpritePaths.map { strdup($0)! }
-    levelSpecificSpritePathsCStrings.withUnsafeMutableBufferPointer { buf -> Void in
-        buf.withMemoryRebound(to: UnsafePointer<CChar>.self) { cbuf in
-            LoadSpriteGroupFromFiles(Int32(SPRITE_GROUP_LEVELSPECIFIC), Int32(cbuf.count), cbuf.baseAddress!)
-        }
-    }
-    for p in levelSpecificSpritePathsCStrings { free(p) }
+    LoadSpriteGroupFromFiles(Int32(SPRITE_GROUP_LEVELSPECIFIC), levelSpecificSpritePaths)
 
     // LOAD OVERHEAD MAP
     do {

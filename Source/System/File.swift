@@ -97,7 +97,7 @@ private func rsrcCompanionSpec(of spec: UnsafeMutablePointer<FSSpec>) -> FSSpec 
     let filename = String(cString: cNamePtr) + ".rsrc"
 
     var rsrcSpec = FSSpec()
-    _ = filename.withCString { SwFSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, $0, &rsrcSpec) }
+    _ = SwFSMakeFSSpec(spec.pointee.vRefNum, spec.pointee.parID, filename, &rsrcSpec)
     return rsrcSpec
 }
 
@@ -186,10 +186,10 @@ func LoadSkeletonFile(_ skeletonType: Int16) -> UnsafeMutablePointer<SkeletonDef
     var fsSpecBG3D = FSSpec()
 
     var pathBuf = ":Skeletons:\(modelName).skeleton"
-    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecSkeleton) }
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecSkeleton)
 
     pathBuf = ":Skeletons:\(modelName).bg3d"
-    _ = pathBuf.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &fsSpecBG3D) }
+    _ = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, pathBuf, &fsSpecBG3D)
 
     // OPEN THE FILE'S REZ FORK
 
@@ -1033,11 +1033,9 @@ func SaveGame(_ fileSlot: Int32) -> UInt8 {
 
     // SAVE IT TO DISK
 
-    return path.withCString { pathC in
-        withUnsafeMutablePointer(to: &saveData) { dataPtr in
-            dataPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
-                kNoErr == SaveUserDataFile(pathC, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr) ? 1 : 0
-            }
+    return withUnsafeMutablePointer(to: &saveData) { dataPtr in
+        dataPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
+            kNoErr == SaveUserDataFile(path, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr) ? 1 : 0
         }
     }
 }
@@ -1055,11 +1053,9 @@ func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameTy
 
     var scratch = SaveGameType()
 
-    let ok: Bool = path.withCString { pathC in
-        withUnsafeMutablePointer(to: &scratch) { scratchPtr in
-            scratchPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
-                kNoErr == LoadUserDataFile(pathC, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr)
-            }
+    let ok: Bool = withUnsafeMutablePointer(to: &scratch) { scratchPtr in
+        scratchPtr.withMemoryRebound(to: Int8.self, capacity: MemoryLayout<SaveGameType>.size) { rawPtr in
+            kNoErr == LoadUserDataFile(path, SAVEGAME_MAGIC, MemoryLayout<SaveGameType>.size, rawPtr)
         }
     }
 
@@ -1074,7 +1070,7 @@ func LoadSavedGame(_ fileSlot: Int32, _ outData: UnsafeMutablePointer<SaveGameTy
 func DeleteSavedGame(_ fileSlot: Int32) -> UInt8 {
     let path = "File\(Character(UnicodeScalar(UInt8(65 + fileSlot))))"
 
-    let iErr = path.withCString { DeleteUserDataFile($0) }
+    let iErr = DeleteUserDataFile(path)
 
     return iErr == kNoErr ? 1 : 0
 }
@@ -1112,15 +1108,16 @@ func InitPrefsFolder(_ createIt: UInt8) -> OSErr {
 
 private func makeFSSpecForUserDataFile(_ filename: String, _ spec: UnsafeMutablePointer<FSSpec>) -> OSErr {
     let path = ":\(PREFS_FOLDER_NAME_SWIFT):\(filename)"
-    return path.withCString { SwFSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, $0, spec) }
+    return SwFSMakeFSSpec(gPrefsFolderVRefNum, gPrefsFolderDirID, path, spec)
 }
 
 private let PREFS_FOLDER_NAME_SWIFT = "Nanosaur2"
 
 // Load struct from user file in prefs folder
-func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func LoadUserDataFile(_ filename: String, _ magic: String, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
-    let magicLength = Int(strlen(magic)) + 1 // including null-terminator
+    let magicBytes = Array(magic.utf8CString)
+    let magicLength = magicBytes.count // including null-terminator
     var fileMagic = [Int8](repeating: 0, count: 64)
 
     SwGameAssert(magicLength < 64)
@@ -1131,7 +1128,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     // READ FILE
 
-    _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    _ = makeFSSpecForUserDataFile(filename, &file)
     var refNum: Int16 = 0
     var iErr = SwFSpOpenDF(&file, Int8(fsRdPerm.rawValue), &refNum)
     if iErr != kNoErr {
@@ -1144,7 +1141,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     SwGetEOF(refNum, &eof)
 
     if eof != magicLength + payloadLength {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+        SwLog("File '\(filename)' appears to be corrupt!")
         SwFSClose(refNum)
         return kBadFileFormat
     }
@@ -1153,8 +1150,8 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     var count = magicLength
     iErr = fileMagic.withUnsafeMutableBufferPointer { SwFSRead(refNum, &count, $0.baseAddress) }
-    if iErr != kNoErr || count != magicLength || strncmp(magic, fileMagic, magicLength - 1) != 0 {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+    if iErr != kNoErr || count != magicLength || !fileMagic.prefix(magicLength - 1).elementsEqual(magicBytes.prefix(magicLength - 1)) {
+        SwLog("File '\(filename)' appears to be corrupt!")
         SwFSClose(refNum)
         return kBadFileFormat
     }
@@ -1166,7 +1163,7 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     count = payloadLength
     iErr = SwFSRead(refNum, &count, payloadCopy)
     if iErr != kNoErr || count != payloadLength {
-        SwLog("File '\(String(cString: filename))' appears to be corrupt!")
+        SwLog("File '\(filename)' appears to be corrupt!")
         SafeDisposePtr(payloadCopy)
         SwFSClose(refNum)
         return kBadFileFormat
@@ -1182,14 +1179,14 @@ func LoadUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 }
 
 // Save struct to user file in prefs folder
-func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<CChar>!, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
+func SaveUserDataFile(_ filename: String, _ magic: String, _ payloadLength: Int, _ payloadPtr: Ptr!) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
 
     // CREATE BLANK FILE
 
-    _ = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    _ = makeFSSpecForUserDataFile(filename, &file)
     SwFSpDelete(&file) // delete any existing file
     var iErr = SwFSpCreate(&file, kGameIDFourCC, kPrefFourCC, -1) // smSystemScript
     if iErr != kNoErr {
@@ -1207,8 +1204,9 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
 
     // WRITE MAGIC
 
-    var count = Int(strlen(magic)) + 1
-    iErr = SwFSWrite(refNum, &count, UnsafeMutablePointer(mutating: magic))
+    var magicBytes = Array(magic.utf8CString) // including null-terminator
+    var count = magicBytes.count
+    iErr = magicBytes.withUnsafeMutableBufferPointer { SwFSWrite(refNum, &count, $0.baseAddress) }
     if iErr != kNoErr {
         SwFSClose(refNum)
         return iErr
@@ -1220,16 +1218,16 @@ func SaveUserDataFile(_ filename: UnsafePointer<CChar>!, _ magic: UnsafePointer<
     iErr = SwFSWrite(refNum, &count, payloadPtr)
     SwFSClose(refNum)
 
-    SwLog("Wrote \(String(cString: filename))")
+    SwLog("Wrote \(filename)")
 
     return iErr
 }
 
-func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
+func DeleteUserDataFile(_ filename: String) -> OSErr {
     var file = FSSpec()
 
     _ = InitPrefsFolder(1)
-    var iErr = makeFSSpecForUserDataFile(String(cString: filename), &file)
+    var iErr = makeFSSpecForUserDataFile(filename, &file)
     if iErr == kNoErr {
         iErr = SwFSpDelete(&file)
     }
@@ -1237,7 +1235,7 @@ func DeleteUserDataFile(_ filename: UnsafePointer<CChar>!) -> OSErr {
 }
 
 // Use SafeDisposePtr when done.
-func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
+func LoadDataFile(_ path: String, _ outLength: UnsafeMutablePointer<Int>!) -> Ptr! {
     var spec = FSSpec()
 
     let err = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
@@ -1273,7 +1271,7 @@ func LoadDataFile(_ path: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePoint
 }
 
 // Use SafeDisposePtr when done.
-func LoadTextFile(_ spec: UnsafePointer<CChar>!, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
+func LoadTextFile(_ spec: String, _ outLength: UnsafeMutablePointer<Int>!) -> UnsafeMutablePointer<CChar>! {
     LoadDataFile(spec, outLength)
 }
 

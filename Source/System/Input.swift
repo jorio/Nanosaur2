@@ -548,11 +548,11 @@ private func tryOpenAnyUnusedGamepad(_ showMessage: Bool) -> OpaquePointer? {
         if showMessage {
             let name = SDL_GetJoystickNameForID(joysticks[0])
             let message = "The game does not support your controller yet (\"\(name.map { String(cString: $0) } ?? "")\").\n\nYou can play with the keyboard and mouse instead. Sorry!"
-            message.withCString { msgPtr in
+            do {
                 _ = SDL_ShowSimpleMessageBox(
                     UInt32(SDL_MESSAGEBOX_WARNING),
                     "Controller not supported",
-                    msgPtr,
+                    message,
                     gSDLWindow)
             }
         }

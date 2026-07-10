@@ -272,7 +272,7 @@ func LoadSoundBank(_ bank: UInt8) {
 
         for ext in kSoundExts {
             let path = ":Audio:\(gSoundBankNames[Int(effectDef.bank)] ?? ""):\(effectDef.name ?? "").\(ext)"
-            iErr = path.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+            iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, path, &spec)
             if iErr == kNoErr { // if the file exists, stop; otherwise try next extension
                 matchedExt = ext
                 break
@@ -373,7 +373,7 @@ func PlaySong(_ songNum: Int16, _ loopFlag: UInt8) {
 
     let song = gSongs[Int(songNum)]
 
-    let iErr = song.path.withCString { SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, $0, &spec) }
+    let iErr = SwFSMakeFSSpec(gDataSpec.vRefNum, gDataSpec.parID, song.path, &spec)
     SwGameAssert(iErr == kNoErr)
 
     guard let pcm = loadDecodedPCM(&spec, isMP3: true) else {

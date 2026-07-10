@@ -94,16 +94,16 @@ private func AllocSpriteGroup(_ groupNum: Int32, _ capacity: Int32) {
     SwGameAssert(GetSpriteGroupList(groupNum) != nil)
 }
 
-func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: UnsafePointer<CChar>, _ flags: Int32) {
+func LoadSpriteGroupFromFile(_ groupNum: Int32, _ path: String, _ flags: Int32) {
     AllocSpriteGroup(groupNum, 1)
-    GetSpriteGroupList(groupNum)![0] = LoadSpriteFromDualImage(String(cString: path))
+    GetSpriteGroupList(groupNum)![0] = LoadSpriteFromDualImage(path)
     SwGameAssert(GetSpriteGroupList(groupNum)![0].materialObject != nil)
 }
 
-func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: UnsafePointer<CChar>) {
+func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesName: String) {
     AllocSpriteGroup(groupNum, numSprites)
 
-    let seriesNameStr = String(cString: seriesName)
+    let seriesNameStr = seriesName
     let group = GetSpriteGroupList(groupNum)!
     for i in 0..<GetNumSpritesInGroup(groupNum) {
         var numStr = String(i)
@@ -114,12 +114,12 @@ func LoadSpriteGroupFromSeries(_ groupNum: Int32, _ numSprites: Int32, _ seriesN
     }
 }
 
-func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ numSprites: Int32, _ spritePaths: UnsafeMutablePointer<UnsafePointer<CChar>>) {
-    AllocSpriteGroup(groupNum, numSprites)
+func LoadSpriteGroupFromFiles(_ groupNum: Int32, _ spritePaths: [String]) {
+    AllocSpriteGroup(groupNum, Int32(spritePaths.count))
 
     let group = GetSpriteGroupList(groupNum)!
     for i in 0..<GetNumSpritesInGroup(groupNum) {
-        group[Int(i)] = LoadSpriteFromDualImage(String(cString: spritePaths[Int(i)]))
+        group[Int(i)] = LoadSpriteFromDualImage(spritePaths[Int(i)])
         SwGameAssert(group[Int(i)].materialObject != nil)
     }
 }

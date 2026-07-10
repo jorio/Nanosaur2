@@ -231,7 +231,7 @@ private func setMetaObjectToPicture(_ pictObj: UnsafeMutablePointer<MOPictureObj
 
     // LOAD PICTURE FILE
 
-    let textureName = OGL_TextureMap_LoadImageFile(path, &width, &height, nil)
+    let textureName = OGL_TextureMap_LoadImageFile(String(cString: path), &width, &height, nil)
     _ = OGL_CheckError()
 
     // CREATE A TEXTURE OBJECT

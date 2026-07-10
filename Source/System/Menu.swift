@@ -228,7 +228,7 @@ private func getMenuItemHeight(_ row: Int32) -> Float {
 }
 private func getMenuItemText(_ entry: UnsafePointer<MenuItem>!) -> String {
     if let raw = entry.pointee.rawText { return String(cString: raw) }
-    return String(cString: Localize(entry.pointee.text))
+    return localized(entry.pointee.text)
 }
 private func pulsateColor(_ time: UnsafeMutablePointer<Float>!) -> OGLColorRGBA {
     time.pointee += gFramesPerSecondFrac
@@ -505,7 +505,7 @@ private func getCyclerValueText(_ row: Int32) -> String {
         return ""
     }
     let i = getValueIndexInCycler(e, MenuItem_GetCyclerValuePtr(e)!.pointee)
-    if i >= 0 { return String(cString: Localize(MenuItem_GetCyclerChoiceText(e, i))) }
+    if i >= 0 { return localized(MenuItem_GetCyclerChoiceText(e, i)) }
     return "VALUE NOT FOUND???"
 }
 private func layOutCycler2ColumnsValueText(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
@@ -601,7 +601,7 @@ private func layOutSlider(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 private func setNewSliderValue(_ e: UnsafePointer<MenuItem>!, _ p: inout SliderComponents, _ mv: Float) -> Float {
     let kx = sliderValueToKnobX(p, mv)
     p.knob!.pointee.Coord.x = kx; p.meter!.pointee.Coord.x = kx
-    "\(Int(mv)) ".withCString { TextMesh_Update($0, kTextMeshAlignCenterFlag, p.meter!) }
+    TextMesh_Update("\(Int(mv)) ", kTextMeshAlignCenterFlag, p.meter!)
     UpdateObjectTransforms(p.knob!); UpdateObjectTransforms(p.meter!)
     let bv = UInt8(mv)
     if MenuItem_GetSliderValuePtr(e)!.pointee != bv {
@@ -677,10 +677,10 @@ private func layOutFileSlot(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
     var sd = SaveGameType(); let valid = LoadSavedGame(MenuItem_GetFileSlot(e), &sd)
     if valid != 0 { gNav!.pointee.validSaveSlotMask |= (1 << UInt64(MenuItem_GetFileSlot(e))) }
     let buf2: String
-    if valid == 0 { buf2 = "---------------- \(String(cString: Localize(STR_EMPTY_SLOT))) ----------------" }
+    if valid == 0 { buf2 = "---------------- \(localized(STR_EMPTY_SLOT)) ----------------" }
     else {
         var dt = SDL_DateTime(); SDL_TimeToDateTime(Int64(sd.timestamp) * 1_000_000_000, &dt, true)
-        let month = String(cString: Localize(LocStrID(rawValue: UInt32(dt.month - 1) + STR_JANUARY.rawValue))); let day = Int(dt.day); let year = Int(dt.year)
+        let month = localized(LocStrID(rawValue: UInt32(dt.month - 1) + STR_JANUARY.rawValue)); let day = Int(dt.day); let year = Int(dt.year)
         let db: String
         switch gGamePrefs.language {
         case UInt8(LANGUAGE_ENGLISH.rawValue): db = "\(month) \(day), \(year)"
@@ -688,7 +688,7 @@ private func layOutFileSlot(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
         case UInt8(LANGUAGE_RUSSIAN.rawValue): db = "\(day) \(month) \(year) \u{0433}."
         default: db = "\(day) \(month) \(year)"
         }
-        buf2 = "\(String(cString: Localize(STR_LEVEL))) \(sd.level + 1)   \(db)"
+        buf2 = "\(localized(STR_LEVEL)) \(sd.level + 1)   \(db)"
     }
     let n2 = makeText(buf2, row, 1, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag)
     n2.pointee.Coord.x = k2ColumnLeftX + 120; n2.pointee.MoveCall = cMoveAction; UpdateObjectTransforms(n2)
@@ -699,7 +699,7 @@ private func layOutFileSlot(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 
 private func layOutKeyBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
     let e = gNav!.pointee.menu!.advanced(by: Int(row))
-    let l = makeText("\(String(cString: Localize(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e)))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
+    let l = makeText("\(localized(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
     l.pointee.Coord.x = 100; l.pointee.ColorFilter = gNav!.pointee.style.labelColor; l.pointee.MoveCall = cMoveAction
     setMaxTextWidth(l, 110); UpdateObjectTransforms(l)
     for j in 0..<MAX_USER_BINDINGS_PER_NEED { let k = makeKbText(row, Int32(j)); k.pointee.Coord.x = 300 + Float(j) * 170; k.pointee.MoveCall = cMoveControlBinding; UpdateObjectTransforms(k) }
@@ -707,7 +707,7 @@ private func layOutKeyBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 }
 private func layOutPadBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
     let e = gNav!.pointee.menu!.advanced(by: Int(row))
-    let l = makeText("\(String(cString: Localize(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e)))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
+    let l = makeText("\(localized(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
     l.pointee.Coord.x = 100; l.pointee.ColorFilter = gNav!.pointee.style.labelColor; l.pointee.MoveCall = cMoveAction
     setMaxTextWidth(l, 110); UpdateObjectTransforms(l)
     for j in 0..<MAX_USER_BINDINGS_PER_NEED { let k = makePbText(row, Int32(j)); k.pointee.Coord.x = 300 + Float(j) * 170; k.pointee.MoveCall = cMoveControlBinding; UpdateObjectTransforms(k) }
@@ -715,7 +715,7 @@ private func layOutPadBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 }
 private func layOutMouseBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
     let e = gNav!.pointee.menu!.advanced(by: Int(row))
-    let l = makeText("\(String(cString: Localize(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e)))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
+    let l = makeText("\(localized(LocStrID(rawValue: STR_KEYBINDING_DESCRIPTION_0.rawValue + UInt32(MenuItem_GetInputNeed(e))))):", row, 0, kTextMeshAlignLeftFlag | kTextMeshSmallCapsFlag | kTextMeshUserFlag_AltFont)
     l.pointee.Coord.x = k2ColumnLeftX; l.pointee.ColorFilter = gNav!.pointee.style.labelColor; l.pointee.MoveCall = cMoveAction
     setMaxTextWidth(l, 150); UpdateObjectTransforms(l)
     let k = makeMbText(row); k.pointee.Coord.x = k2ColumnRightX; k.pointee.MoveCall = cMoveControlBinding; setMinClickableWidth(k, 70); UpdateObjectTransforms(k)
@@ -725,17 +725,17 @@ private func layOutMouseBinding(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 // MARK: - Binding text helpers
 
 private func makeKbText(_ row: Int32, _ keyNo: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == .awaitingKeyPress ? String(cString: Localize(STR_PRESS)) : getKeyBindingName(row, keyNo)
+    let name: String = gNav!.pointee.menuState == .awaitingKeyPress ? localized(STR_PRESS) : getKeyBindingName(row, keyNo)
     let n = makeText(name, row, 1 + keyNo, kTextMeshSmallCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
 private func makePbText(_ row: Int32, _ btnNo: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == .awaitingPadPress ? String(cString: Localize(STR_PRESS)) : getPadBindingName(row, btnNo)
+    let name: String = gNav!.pointee.menuState == .awaitingPadPress ? localized(STR_PRESS) : getPadBindingName(row, btnNo)
     let n = makeText(name, row, 1 + btnNo, kTextMeshSmallCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
 private func makeMbText(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
-    let name: String = gNav!.pointee.menuState == .awaitingMouseClick ? String(cString: Localize(STR_CLICK)) : getMouseBindingName(row)
+    let name: String = gNav!.pointee.menuState == .awaitingMouseClick ? localized(STR_CLICK) : getMouseBindingName(row)
     let n = makeText(name, row, 1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag)
     setMinClickableWidth(n, kMinClickableWidth); setMaxTextWidth(n, 110); return n
 }
@@ -745,7 +745,7 @@ private func makeMbText(_ row: Int32) -> UnsafeMutablePointer<ObjNode> {
 private func getKeyBindingName(_ row: Int32, _ col: Int32) -> String {
     let sc = InputBinding_GetKey(getBindingAtRow(row), col)
     switch Int32(sc) {
-    case 0: return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
+    case 0: return localized(STR_UNBOUND_PLACEHOLDER)
     case Int32(SDL_SCANCODE_APOSTROPHE.rawValue): return "Apostrophe"; case Int32(SDL_SCANCODE_BACKSLASH.rawValue): return "Backslash"
     case Int32(SDL_SCANCODE_GRAVE.rawValue): return "Backtick"; case Int32(SDL_SCANCODE_SEMICOLON.rawValue): return "Semicolon"
     case Int32(SDL_SCANCODE_SLASH.rawValue): return "Slash"; case Int32(SDL_SCANCODE_LEFTBRACKET.rawValue): return "Left Bracket"
@@ -762,44 +762,44 @@ private func getPadBindingName(_ row: Int32, _ col: Int32) -> String {
     let pbType = InputBinding_GetPadType(binding, col)
     let pbID = InputBinding_GetPadID(binding, col)
     switch Int32(pbType) {
-    case Int32(kInputTypeUnbound): return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
+    case Int32(kInputTypeUnbound): return localized(STR_UNBOUND_PLACEHOLDER)
     case Int32(kInputTypeButton):
         switch Int32(pbID) {
-        case Int32(SDL_GAMEPAD_BUTTON_INVALID.rawValue): return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
-        case Int32(SDL_GAMEPAD_BUTTON_SOUTH.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_A))
-        case Int32(SDL_GAMEPAD_BUTTON_EAST.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_B))
-        case Int32(SDL_GAMEPAD_BUTTON_WEST.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_X))
-        case Int32(SDL_GAMEPAD_BUTTON_NORTH.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_Y))
-        case Int32(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_LEFT_SHOULDER))
-        case Int32(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_RIGHT_SHOULDER))
-        case Int32(SDL_GAMEPAD_BUTTON_LEFT_STICK.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_LEFT_STICK))
-        case Int32(SDL_GAMEPAD_BUTTON_RIGHT_STICK.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_RIGHT_STICK))
-        case Int32(SDL_GAMEPAD_BUTTON_DPAD_UP.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_DPAD_UP))
-        case Int32(SDL_GAMEPAD_BUTTON_DPAD_DOWN.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_DPAD_DOWN))
-        case Int32(SDL_GAMEPAD_BUTTON_DPAD_LEFT.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_DPAD_LEFT))
-        case Int32(SDL_GAMEPAD_BUTTON_DPAD_RIGHT.rawValue): return String(cString: Localize(STR_GAMEPAD_BUTTON_DPAD_RIGHT))
+        case Int32(SDL_GAMEPAD_BUTTON_INVALID.rawValue): return localized(STR_UNBOUND_PLACEHOLDER)
+        case Int32(SDL_GAMEPAD_BUTTON_SOUTH.rawValue): return localized(STR_GAMEPAD_BUTTON_A)
+        case Int32(SDL_GAMEPAD_BUTTON_EAST.rawValue): return localized(STR_GAMEPAD_BUTTON_B)
+        case Int32(SDL_GAMEPAD_BUTTON_WEST.rawValue): return localized(STR_GAMEPAD_BUTTON_X)
+        case Int32(SDL_GAMEPAD_BUTTON_NORTH.rawValue): return localized(STR_GAMEPAD_BUTTON_Y)
+        case Int32(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER.rawValue): return localized(STR_GAMEPAD_BUTTON_LEFT_SHOULDER)
+        case Int32(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER.rawValue): return localized(STR_GAMEPAD_BUTTON_RIGHT_SHOULDER)
+        case Int32(SDL_GAMEPAD_BUTTON_LEFT_STICK.rawValue): return localized(STR_GAMEPAD_BUTTON_LEFT_STICK)
+        case Int32(SDL_GAMEPAD_BUTTON_RIGHT_STICK.rawValue): return localized(STR_GAMEPAD_BUTTON_RIGHT_STICK)
+        case Int32(SDL_GAMEPAD_BUTTON_DPAD_UP.rawValue): return localized(STR_GAMEPAD_BUTTON_DPAD_UP)
+        case Int32(SDL_GAMEPAD_BUTTON_DPAD_DOWN.rawValue): return localized(STR_GAMEPAD_BUTTON_DPAD_DOWN)
+        case Int32(SDL_GAMEPAD_BUTTON_DPAD_LEFT.rawValue): return localized(STR_GAMEPAD_BUTTON_DPAD_LEFT)
+        case Int32(SDL_GAMEPAD_BUTTON_DPAD_RIGHT.rawValue): return localized(STR_GAMEPAD_BUTTON_DPAD_RIGHT)
         default: return String(cString: SDL_GetGamepadStringForButton(SDL_GamepadButton(rawValue: Int32(pbID))))
         }
     case Int32(kInputTypeAxisPlus):
         switch Int32(pbID) {
-        case Int32(SDL_GAMEPAD_AXIS_INVALID.rawValue): return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
-        case Int32(SDL_GAMEPAD_AXIS_LEFTX.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_STICK_RIGHT))
-        case Int32(SDL_GAMEPAD_AXIS_LEFTY.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_STICK_DOWN))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHTX.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_RIGHT))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHTY.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_DOWN))
-        case Int32(SDL_GAMEPAD_AXIS_LEFT_TRIGGER.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_TRIGGER))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_TRIGGER))
+        case Int32(SDL_GAMEPAD_AXIS_INVALID.rawValue): return localized(STR_UNBOUND_PLACEHOLDER)
+        case Int32(SDL_GAMEPAD_AXIS_LEFTX.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_STICK_RIGHT)
+        case Int32(SDL_GAMEPAD_AXIS_LEFTY.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_STICK_DOWN)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHTX.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_STICK_RIGHT)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHTY.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_STICK_DOWN)
+        case Int32(SDL_GAMEPAD_AXIS_LEFT_TRIGGER.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_TRIGGER)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_TRIGGER)
         default: return String(cString: SDL_GetGamepadStringForAxis(SDL_GamepadAxis(rawValue: Int32(pbID))))
         }
     case Int32(kInputTypeAxisMinus):
         switch Int32(pbID) {
-        case Int32(SDL_GAMEPAD_AXIS_INVALID.rawValue): return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
-        case Int32(SDL_GAMEPAD_AXIS_LEFTX.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_STICK_LEFT))
-        case Int32(SDL_GAMEPAD_AXIS_LEFTY.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_STICK_UP))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHTX.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_LEFT))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHTY.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_STICK_UP))
-        case Int32(SDL_GAMEPAD_AXIS_LEFT_TRIGGER.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_LEFT_TRIGGER))
-        case Int32(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.rawValue): return String(cString: Localize(STR_GAMEPAD_AXIS_RIGHT_TRIGGER))
+        case Int32(SDL_GAMEPAD_AXIS_INVALID.rawValue): return localized(STR_UNBOUND_PLACEHOLDER)
+        case Int32(SDL_GAMEPAD_AXIS_LEFTX.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_STICK_LEFT)
+        case Int32(SDL_GAMEPAD_AXIS_LEFTY.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_STICK_UP)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHTX.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_STICK_LEFT)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHTY.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_STICK_UP)
+        case Int32(SDL_GAMEPAD_AXIS_LEFT_TRIGGER.rawValue): return localized(STR_GAMEPAD_AXIS_LEFT_TRIGGER)
+        case Int32(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.rawValue): return localized(STR_GAMEPAD_AXIS_RIGHT_TRIGGER)
         default: return String(cString: SDL_GetGamepadStringForAxis(SDL_GamepadAxis(rawValue: Int32(pbID))))
         }
     default: return "???"
@@ -808,15 +808,15 @@ private func getPadBindingName(_ row: Int32, _ col: Int32) -> String {
 private func getMouseBindingName(_ row: Int32) -> String {
     let b = getBindingAtRow(row)
     switch Int32(b.pointee.mouseButton) {
-    case 0: return String(cString: Localize(STR_UNBOUND_PLACEHOLDER))
-    case SDL_BUTTON_LEFT: return String(cString: Localize(STR_MOUSE_BUTTON_LEFT))
-    case SDL_BUTTON_MIDDLE: return String(cString: Localize(STR_MOUSE_BUTTON_MIDDLE))
-    case SDL_BUTTON_RIGHT: return String(cString: Localize(STR_MOUSE_BUTTON_RIGHT))
-    case SDL_BUTTON_WHEELUP: return String(cString: Localize(STR_MOUSE_WHEEL_UP))
-    case SDL_BUTTON_WHEELDOWN: return String(cString: Localize(STR_MOUSE_WHEEL_DOWN))
-    case SDL_BUTTON_WHEELLEFT: return String(cString: Localize(STR_MOUSE_WHEEL_LEFT))
-    case SDL_BUTTON_WHEELRIGHT: return String(cString: Localize(STR_MOUSE_WHEEL_RIGHT))
-    default: return "\(String(cString: Localize(STR_BUTTON))) \(b.pointee.mouseButton)"
+    case 0: return localized(STR_UNBOUND_PLACEHOLDER)
+    case SDL_BUTTON_LEFT: return localized(STR_MOUSE_BUTTON_LEFT)
+    case SDL_BUTTON_MIDDLE: return localized(STR_MOUSE_BUTTON_MIDDLE)
+    case SDL_BUTTON_RIGHT: return localized(STR_MOUSE_BUTTON_RIGHT)
+    case SDL_BUTTON_WHEELUP: return localized(STR_MOUSE_WHEEL_UP)
+    case SDL_BUTTON_WHEELDOWN: return localized(STR_MOUSE_WHEEL_DOWN)
+    case SDL_BUTTON_WHEELLEFT: return localized(STR_MOUSE_WHEEL_LEFT)
+    case SDL_BUTTON_WHEELRIGHT: return localized(STR_MOUSE_WHEEL_RIGHT)
+    default: return "\(localized(STR_BUTTON)) \(b.pointee.mouseButton)"
     }
 }
 
@@ -869,21 +869,21 @@ private func unbindScancodeFromAllRemappableInputNeeds(_ sc: Int16) {
     for row in 0..<gNav!.pointee.numRows {
         if gNav!.pointee.menu![Int(row)].type != MenuItemType.keyBinding { continue }
         let b = getBindingAtRow(row)
-        for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetKey(b, j) == sc { InputBinding_SetKey(b, j, 0); _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
+        for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetKey(b, j) == sc { InputBinding_SetKey(b, j, 0); _ = makeText(localized(STR_UNBOUND_PLACEHOLDER), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
     }
 }
 private func unbindPadButtonFromAllRemappableInputNeeds(_ type: Int8, _ id: Int8) {
     for row in 0..<gNav!.pointee.numRows {
         if gNav!.pointee.menu![Int(row)].type != MenuItemType.padBinding { continue }
         let b = getBindingAtRow(row)
-        for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetPadType(b, j) == type && InputBinding_GetPadID(b, j) == id { InputBinding_SetPad(b, j, Int8(kInputTypeUnbound), 0); _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
+        for j in 0..<MAX_USER_BINDINGS_PER_NEED { if InputBinding_GetPadType(b, j) == type && InputBinding_GetPadID(b, j) == id { InputBinding_SetPad(b, j, Int8(kInputTypeUnbound), 0); _ = makeText(localized(STR_UNBOUND_PLACEHOLDER), row, j+1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) } }
     }
 }
 private func unbindMouseButtonFromAllRemappableInputNeeds(_ id: Int8) {
     for row in 0..<gNav!.pointee.numRows {
         if gNav!.pointee.menu![Int(row)].type != MenuItemType.mouseBinding { continue }
         let b = getBindingAtRow(row)
-        if b.pointee.mouseButton == id { b.pointee.mouseButton = 0; _ = makeText(String(cString: Localize(STR_UNBOUND_PLACEHOLDER)), row, 1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) }
+        if b.pointee.mouseButton == id { b.pointee.mouseButton = 0; _ = makeText(localized(STR_UNBOUND_PLACEHOLDER), row, 1, kTextMeshAllCapsFlag | kTextMeshAlignCenterFlag) }
     }
 }
 
@@ -970,14 +970,14 @@ private func makeText(_ text: String, _ row: Int32, _ chainItem: Int32, _ textMe
     var fontAtlas = gNav!.pointee.style.fontAtlas
     if (textMeshFlags & kTextMeshUserFlag_AltFont) != 0 { fontAtlas = gNav!.pointee.style.fontAtlas2 }
     if node != nil {
-        text.withCString { TextMesh_Update($0, textMeshFlags, node!) }
+        TextMesh_Update(text, textMeshFlags, node!)
         setMaxTextWidth(node, getMenuNodeData(node).pointee.maxWidth)
     } else {
         var def = NewObjectDefinitionType()
         def.coord = (OGLPoint3D(x: kDefaultX, y: mRowY(Int(row)), z: 0))
         def.scale = getMenuItemHeight(row) * gNav!.pointee.style.standardScale
         def.group = UInt8(fontAtlas); def.slot = gNav!.pointee.style.textSlot + Int16(chainItem); def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
-        node = text.withCString { TextMesh_New($0, textMeshFlags, &def) }
+        node = TextMesh_New(text, textMeshFlags, &def)
         SendNodeToOverlayPane(node!)
         if let chainHead { AppendNodeToChain(chainHead, node!) } else { setMObj(Int(row), node) }
     }
@@ -997,7 +997,7 @@ private func replaceMenuText(_ origID: LocStrID, _ newText: LocStrID) {
     for i in 0..<Int(MAX_MENU_ROWS) {
         let mi = gNav!.pointee.menu!.advanced(by: i)
         if mi.pointee.type == MenuItemType.sentinel { break }
-        if mi.pointee.text == origID { _ = makeText(String(cString: Localize(newText)), Int32(i), 0, kTextMeshSmallCapsFlag) }
+        if mi.pointee.text == origID { _ = makeText(localized(newText), Int32(i), 0, kTextMeshSmallCapsFlag) }
     }
 }
 private func layOutMenu(_ menuID: Int32) {

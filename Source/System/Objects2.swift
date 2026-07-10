@@ -692,8 +692,13 @@ func ShowObjectChain(_ theNode: UnsafeMutablePointer<ObjNode>?) {
 
 // MARK: - Background picture object node
 
-func MakeBackgroundPictureObject(_ imagePath: UnsafePointer<CChar>) -> UnsafeMutablePointer<ObjNode> {
-    let backgroundPicture = MO_CreateNewObjectOfType(.picture, 0, UnsafeMutableRawPointer(mutating: imagePath))
+func MakeBackgroundPictureObject(_ imagePath: String) -> UnsafeMutablePointer<ObjNode> {
+    // The MetaObject creation protocol passes type-specific init data as a
+    // raw void* - for pictures that's a C path string, consumed synchronously
+    // during creation, so a withCString scope covers its whole lifetime.
+    let backgroundPicture = imagePath.withCString {
+        MO_CreateNewObjectOfType(.picture, 0, UnsafeMutableRawPointer(mutating: $0))
+    }
 
     var def = NewObjectDefinitionType()
     def.genre = UInt8(DISPLAY_GROUP_GENRE)

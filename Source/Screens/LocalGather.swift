@@ -8,18 +8,15 @@ private var gNumControllersMissing: Int32 = 4
 
 private func UpdateGatherPrompt(_ numControllersMissing: Int32) {
     if numControllersMissing <= 0 {
-        "OK".withCString { TextMesh_Update($0, 0, gGatherPrompt) }
+        TextMesh_Update("OK", 0, gGatherPrompt)
         gGatherPrompt.pointee.Scale.x = 1
         gGatherPrompt.pointee.Scale.y = 1
         UpdateObjectTransforms(gGatherPrompt)
         // gGameViewInfoPtr->fadeOutDuration = .3f;
     } else {
-        let message: UnsafePointer<CChar>!
-        if numControllersMissing == 1 {
-            message = Localize(STR_CONNECT_1_CONTROLLER)
-        } else {
-            message = Localize(STR_CONNECT_2_CONTROLLERS)
-        }
+        let message = numControllersMissing == 1
+            ? localized(STR_CONNECT_1_CONTROLLER)
+            : localized(STR_CONNECT_2_CONTROLLERS)
 
         TextMesh_Update(message, 0, gGatherPrompt)
     }
@@ -133,7 +130,7 @@ private func SetupLocalGatherScreen() {
 
     def2.coord.y = 480 / 2 + 220
     def2.scale = 0.27
-    let pressEsc = TextMesh_New(Localize(STR_PRESS_ESC_TO_GO_BACK), 0, &def2)
+    let pressEsc = TextMesh_New(localized(STR_PRESS_ESC_TO_GO_BACK), 0, &def2)
     SendNodeToOverlayPane(pressEsc)
     pressEsc.pointee.ColorFilter = OGLColorRGBA(r: 0.5, g: 0.5, b: 0.5, a: 1)
     _ = MakeTwitch(pressEsc, Int32(kTwitchPreset_PressKeyPrompt))

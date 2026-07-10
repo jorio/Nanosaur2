@@ -64,6 +64,13 @@ func LoadLocalizedStrings(_ languageID: GameLanguageID) {
     SwGameAssert(row == NUM_LOCALIZED_STRINGS.rawValue)
 }
 
+/// Swift-native accessor over the same string table the C-ABI Localize
+/// serves (LocalizeWithPlaceholder in Localization.c is the one remaining
+/// C caller that needs the raw pointer form).
+func localized(_ stringID: LocStrID) -> String {
+    String(cString: Localize(stringID))
+}
+
 @c @implementation
 public func Localize(_ stringID: LocStrID) -> UnsafePointer<CChar> {
     guard gStringsBuffer != nil else { return UnsafePointer(kNotLoadedMsg!) }

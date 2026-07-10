@@ -1112,7 +1112,7 @@ private func infobarDrawMissionStatus() {
     if GetPlayerIsDead(0) != 0 && GetPlayerInfoEntry(0).pointee.numFreeLives <= 0 {
         let x = anchorCenterX(0)
         let y = anchorCenterY(0)
-        let text = Localize(STR_MISSION_FAILED)
+        let text = localized(STR_MISSION_FAILED)
         gGlobalColorFilter = OGLColorRGB(r: 1, g: 0, b: 0)
         Atlas_DrawString2(Int32(ATLAS_GROUP_FONT2), text, x, y, 0.66, 0.66, 0, UInt32(kTextMeshSmallCaps))
         gGlobalColorFilter = OGLColorRGB(r: 1, g: 1, b: 1)
@@ -1134,7 +1134,7 @@ private func infobarDrawMissionStatus() {
 
         let x = anchorCenterX(0)
         let y = anchorCenterY(120)
-        let text = Localize(STR_ENTER_WORMHOLE)
+        let text = localized(STR_ENTER_WORMHOLE)
         gGlobalTransparency = 0.75 + 0.25 * sinf(gMissionStatusFlux * (2.0 * Float(PI)))
 
         Atlas_DrawString2(Int32(ATLAS_GROUP_FONT1), text, x, y, scale, scale, 0, UInt32(bitPattern: flags))

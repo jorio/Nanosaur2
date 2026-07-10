@@ -1120,9 +1120,9 @@ func OGL_TextureMap_Load(_ imageMemory: UnsafeMutableRawPointer!, _ width: Int32
 
 // MARK: - OGL texturemap load from PNG/JPG
 
-func OGL_TextureMap_LoadImageFile(_ partialPath: UnsafePointer<CChar>!, _ outWidth: UnsafeMutablePointer<Int32>!, _ outHeight: UnsafeMutablePointer<Int32>!, _ outHasAlpha: UnsafeMutablePointer<Int32>!) -> GLuint {
+func OGL_TextureMap_LoadImageFile(_ partialPath: String, _ outWidth: UnsafeMutablePointer<Int32>!, _ outHeight: UnsafeMutablePointer<Int32>!, _ outHasAlpha: UnsafeMutablePointer<Int32>!) -> GLuint {
     var dummySpec = FSSpec()
-    let partialPathStr = String(cString: partialPath)
+    let partialPathStr = partialPath
     var jpgExists = false
     var pngExists = false
     var colorPixels: UnsafeMutablePointer<UInt8>?
@@ -1628,7 +1628,7 @@ func OGL_Camera_SetPlacementAndUpdateMatrices(_ camNum: Int32) {
 
 // MARK: - OGL: Check error
 
-func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum {
+func OGL_CheckError_Impl(_ file: String, _ line: Int32) -> GLenum {
     let error = gRenderBackend.checkError()
     if error != 0 {
         var text = ""
@@ -1641,7 +1641,7 @@ func OGL_CheckError_Impl(_ file: UnsafePointer<CChar>!, _ line: Int32) -> GLenum
         default: text = ""
         }
 
-        SwFatalAlert("OpenGL error 0x\(String(error, radix: 16)) (\(text))\nin \(String(cString: file)):\(line)")
+        SwFatalAlert("OpenGL error 0x\(String(error, radix: 16)) (\(text))\nin \(file):\(line)")
     }
     return error
 }
@@ -1952,7 +1952,7 @@ private func OGL_FreeFont() {
 
 // MARK: - OGL_Draw string
 
-func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
+func OGL_DrawString(_ s: String, _ x: GLint, _ y: GLint) {
     OGL_PushState()
 
     gRenderBackend.matrixMode(.modelview)
@@ -1974,15 +1974,13 @@ func OGL_DrawString(_ s: UnsafePointer<CChar>!, _ x: GLint, _ y: GLint) {
 // MARK: - OGL_Draw float
 
 func OGL_DrawFloat(_ f: Float, _ x: GLint, _ y: GLint) {
-    let s = "\(f)"
-    s.withCString { OGL_DrawString($0, x, y) }
+    OGL_DrawString("\(f)", x, y)
 }
 
 // MARK: - OGL_Draw int
 
 func OGL_DrawInt(_ f: Int32, _ x: GLint, _ y: GLint) {
-    let s = "\(f)"
-    s.withCString { OGL_DrawString($0, x, y) }
+    OGL_DrawString("\(f)", x, y)
 }
 
 // MARK: - OGL init vertex array memory

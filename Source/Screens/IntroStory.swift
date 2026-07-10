@@ -468,7 +468,7 @@ private func makeSubtitleObjects(_ slideNum: Int) {
         return
     }
 
-    let text = String(cString: Localize(LocStrID(rawValue: UInt32(gSlides[slideNum].subtitleKey))))
+    let text = localized(LocStrID(rawValue: UInt32(gSlides[slideNum].subtitleKey)))
 
     if text.isEmpty {
         return

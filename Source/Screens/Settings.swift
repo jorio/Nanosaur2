@@ -88,7 +88,7 @@ private let cOnChangeMSAA: @convention(c) () -> Void = {
     def.slot = Int16(SPRITE_SLOT)
     def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
     def.moveCall = cMoveTemporaryGraphicsMenuText
-    let node = TextMesh_New(Localize(STR_ANTIALIASING_CHANGE_WARNING), 0, &def)
+    let node = TextMesh_New(localized(STR_ANTIALIASING_CHANGE_WARNING), 0, &def)
     node.pointee.ColorFilter = OGLColorRGBA(r: 1, g: 0, b: 0, a: 1)
     gMSAAWarningNode = node
     SendNodeToOverlayPane(node)
@@ -105,17 +105,15 @@ private let cOnEnterGraphicsMenu: @convention(c) () -> Void = {
     def.flags = UInt32(STATUS_BIT_MOVEINPAUSE)
     let driverStr   = String(cString: SDL_GetCurrentVideoDriver()!)
     let info = "\(gRenderBackend.rendererInfo()), \(driverStr)"
-    info.withCString { cStr in
-        let text = TextMesh_New(cStr, Int32(kTextMeshSmallCaps | kTextMeshAlignBottom), &def)
-        text.pointee.ColorFilter.a = 0.75
-        SendNodeToOverlayPane(text)
-    }
+    let text = TextMesh_New(info, Int32(kTextMeshSmallCaps | kTextMeshAlignBottom), &def)
+    text.pointee.ColorFilter.a = 0.75
+    SendNodeToOverlayPane(text)
     cOnChangeMSAA()
 }
 
 private let cOnEnterGamepadMenu: @convention(c) () -> Void = {
     let sdlGamepad = GetGamepad(0)
-    let name: UnsafePointer<CChar> = sdlGamepad.flatMap { SDL_GetGamepadName($0) } ?? Localize(STR_NO_GAMEPAD_DETECTED)
+    let name = sdlGamepad.flatMap { SDL_GetGamepadName($0) }.map { String(cString: $0) } ?? localized(STR_NO_GAMEPAD_DETECTED)
     var def = NewObjectDefinitionType()
     def.coord = OGLPoint3D(x: 320, y: 480 - 8, z: 0)
     def.group = UInt8(ATLAS_GROUP_FONT2)

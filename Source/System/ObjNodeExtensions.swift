@@ -86,7 +86,9 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func getFreeSparkle() -> Int16 { GetFreeSparkle(self) }
 
     // From Player_Race.swift
+    #if !NANOSAUR_SCREENSAVER // gameplay-only wrappers; their targets aren't compiled in the saver
     func updatePlayerRaceMarkers() { UpdatePlayerRaceMarkers(self) }
+    #endif
 
     // From skeleton.h (SkeletonAnim.c/Bones.c — not yet ported)
     func drawSkeleton() { DrawSkeleton(self) }
@@ -95,8 +97,11 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func updateSkinnedGeometry() { UpdateSkinnedGeometry(self) }
 
     // From collision.h (Collision.c — not yet ported)
+    #if !NANOSAUR_SCREENSAVER
     @discardableResult func handleCollisions(cType: UInt32, deltaBounce: Float) -> UInt8 { HandleCollisions(self, cType, deltaBounce) }
+    #endif
 
+    #if !NANOSAUR_SCREENSAVER
     // From splineitems.h (SplineItems.c — not yet ported)
     func isSplineItemOnActiveTerrain() -> UInt8 { IsSplineItemOnActiveTerrain(self) }
     func addToSplineObjectList(setAim: UInt8) { AddToSplineObjectList(self, setAim) }
@@ -107,13 +112,16 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func setSplineAim() { SetSplineAim(self) }
     func getCoordOnSpline() { GetObjectCoordOnSpline(self) }
     func getCoordOnSpline(x: UnsafeMutablePointer<Float>!, z: UnsafeMutablePointer<Float>!) { GetObjectCoordOnSpline2(self, x, z) }
+    #endif // !NANOSAUR_SCREENSAVER
 
     // From terrain.h (Terrain.c/Terrain2.c — not yet ported)
     func trackTerrainItem() -> UInt8 { TrackTerrainItem(self) }
-    func drawTerrain() { DrawTerrain(self) }
     func rotateOnTerrain(yOffset: Float, surfaceNormal: UnsafeMutablePointer<OGLVector3D>!) { RotateOnTerrain(self, yOffset, surfaceNormal) }
+    #if !NANOSAUR_SCREENSAVER
+    func drawTerrain() { DrawTerrain(self) }
     func rotateOnTerrainWideArea(yOffset: Float, radius: Float) { RotateOnTerrain_WideArea(self, yOffset, radius) }
     func seeIfCrossedLineMarker(whichLine: UnsafeMutablePointer<Int>!) -> UInt8 { SeeIfCrossedLineMarker(self, whichLine) }
+    #endif
 
     // From objects.h (remaining functions not yet wrapped by the Objects.c port)
     func calcNewTargetOffsets(scale: Float) { CalcNewTargetOffsets(self, scale) }
@@ -143,7 +151,9 @@ extension UnsafeMutablePointer where Pointee == ObjNode {
     func showChain() { ShowObjectChain(self) }
 
     // From items.h (Items.c — not yet ported)
+    #if !NANOSAUR_SCREENSAVER
     func drawCyclorama() { DrawCyclorama(self) }
+    #endif
 
     // From effects.h (Particles.c — not yet ported)
     func particleHit(flags: UInt16) -> UInt8 { ParticleHitObject(self, flags) }

@@ -76,7 +76,9 @@ final class GameEngine {
     // MetalBackendHolder is defined in MetalActivation.swift, which the 3DS
     // build excludes entirely (it `import MetalRenderer`s, a separate
     // desktop-only module - see ports/3DS/Makefile's ENGINE_SWIFT comment).
-    #if !NANOSAUR_3DS
+    // The screen-saver build (ports/Darwin) excludes it too: the saver is
+    // GL-only and doesn't compile the MetalRenderer module.
+    #if !NANOSAUR_3DS && !NANOSAUR_SCREENSAVER
     let metalBackend = MetalBackendHolder()
     #endif
 

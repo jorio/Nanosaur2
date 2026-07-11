@@ -293,11 +293,22 @@ final class GLRenderBackend: RenderBackend {
     private var clientActiveTextureProc: ActiveTextureProc?
 
     func loadGLProcs() {
+        #if NANOSAUR_SCREENSAVER
+        // No SDL in the screen-saver bundle (ports/Darwin): the host view
+        // owns the NSOpenGLContext, and OpenGL.framework is linked directly,
+        // so plain dlsym resolves these (Saver_GLGetProcAddress, shim.c).
+        activeTextureProc = unsafeBitCast(Saver_GLGetProcAddress("glActiveTexture"), to: ActiveTextureProc?.self)
+        SwGameAssert(activeTextureProc != nil)
+
+        clientActiveTextureProc = unsafeBitCast(Saver_GLGetProcAddress("glClientActiveTexture"), to: ActiveTextureProc?.self)
+        SwGameAssert(clientActiveTextureProc != nil)
+        #else
         activeTextureProc = unsafeBitCast(SDL.glProcAddress("glActiveTexture"), to: ActiveTextureProc?.self)
         SwGameAssert(activeTextureProc != nil)
 
         clientActiveTextureProc = unsafeBitCast(SDL.glProcAddress("glClientActiveTexture"), to: ActiveTextureProc?.self)
         SwGameAssert(clientActiveTextureProc != nil)
+        #endif
     }
 
     func enableBlend() { glEnable(GLenum(GL_BLEND)) }
@@ -618,7 +629,13 @@ final class GLRenderBackend: RenderBackend {
         glPolygonMode(GLenum(GL_FRONT_AND_BACK), GLenum(enabled ? GL_LINE : GL_FILL))
     }
     func present() {
+        #if NANOSAUR_SCREENSAVER
+        // The screen-saver host (Nanosaur2SaverView) owns the
+        // NSOpenGLContext and flushes it after each frame callback returns;
+        // presenting mid-frame from engine code would tear.
+        #else
         SDL_GL_SwapWindow(gSDLWindow)
+        #endif
     }
 
     func rendererInfo() -> String {
@@ -642,6 +659,18 @@ final class GLRenderBackend: RenderBackend {
     func checkError() -> UInt32 { UInt32(glGetError()) }
 
     func createContext() {
+        #if NANOSAUR_SCREENSAVER
+        // The host view already created its NSOpenGLContext and made it
+        // current before booting the engine - just run the capability check
+        // and proc loading against it.
+        var maxTexSize: GLint = 0
+        glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxTexSize)
+        if maxTexSize < 2048 {
+            SwFatalAlert("Your video card cannot do 2048x2048 textures, so it is below the game's minimum system requirements.")
+        }
+
+        loadGLProcs()
+        #else
         SwGameAssertMessage(gEngine.view.aglContext == nil, "GL context already exists")
 
         // CREATE AGL CONTEXT & ATTACH TO WINDOW
@@ -674,9 +703,13 @@ final class GLRenderBackend: RenderBackend {
         // GET GL PROCEDURES (glActiveTexture etc. - necessary on Windows)
 
         loadGLProcs()
+        #endif // NANOSAUR_SCREENSAVER
     }
 
     func destroyContext() {
+        #if NANOSAUR_SCREENSAVER
+        // Host-owned context - nothing to tear down engine-side.
+        #else
         guard gEngine.view.aglContext != nil else {
             return
         }
@@ -684,10 +717,17 @@ final class GLRenderBackend: RenderBackend {
         _ = SDL_GL_MakeCurrent(gSDLWindow, nil) // make context not current
         SDL_GL_DestroyContext(gEngine.view.aglContext) // nuke context
         gEngine.view.aglContext = nil
+        #endif
     }
 
+    #if NANOSAUR_SCREENSAVER
+    // Swap pacing is the ScreenSaverView's business (animationTimeInterval).
+    func setVSync(_ interval: Int32) {}
+    func getVSync() -> Int32 { 0 }
+    #else
     func setVSync(_ interval: Int32) { try? SDL.glSetSwapInterval(interval) }
     func getVSync() -> Int32 { (try? SDL.glSwapInterval) ?? 0 }
+    #endif
 }
 
 #endif // !NANOSAUR_3DS

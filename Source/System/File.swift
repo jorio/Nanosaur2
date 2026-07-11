@@ -496,6 +496,12 @@ func SavePrefs() -> OSErr {
 
 // MARK: - Load Playfield
 
+// The screen-saver build (ports/Darwin) compiles this file for the asset
+// loaders above/below, but no terrain/spline/fence/water/player systems -
+// everything from here through the save-game section reads levels, which
+// the saver never does.
+#if !NANOSAUR_SCREENSAVER
+
 func LoadPlayfield(_ specPtr: UnsafeMutablePointer<FSSpec>!) {
     gEngine.terrain.disableHiccupTimer = 1
 
@@ -1272,6 +1278,8 @@ func UseSaveGame(_ saveData: UnsafePointer<SaveGameType>!) {
         playerWeapons[i] = Int16(bitPattern: saveWeapons[i])
     }
 }
+
+#endif // !NANOSAUR_SCREENSAVER (level loading + save games)
 
 // MARK: - User Data Files
 

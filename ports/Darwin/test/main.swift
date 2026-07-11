@@ -1,14 +1,16 @@
-// SmokeTest.swift - headless smoke test for the screen-saver engine build
-// (ports/Darwin). Creates an offscreen CGL context + FBO, drives the same
-// four C entry points the ScreenSaverView host uses (saver_api.h), and
-// dumps a frame to a PPM file for visual inspection. Lets the whole
-// engine path (boot -> asset load -> scene -> render loop) be exercised
-// from a plain terminal, with no screen saver installation.
+// main.swift (SaverSmoke) - headless smoke test for the screen-saver
+// engine build (ports/Darwin). Creates a headless CAMetalLayer (no window
+// needed), drives the same C entry points the ScreenSaverView host uses
+// (saver_api.h), and dumps a rendered frame to a PPM file via the
+// engine's capture hooks. Lets the whole engine path (boot -> asset load
+// -> scene -> Metal render loop) be exercised from a plain terminal, with
+// no screen saver installation.
+// (Named main.swift: Swift only allows top-level statements there.)
 //
 // Usage: SaverSmoke <path-to-Data-folder> <output.ppm> [numFrames]
 
 import Foundation
-import OpenGL.GL
+import QuartzCore
 
 func fail(_ msg: String) -> Never {
     FileHandle.standardError.write(("SaverSmoke: " + msg + "\n").data(using: .utf8)!)
@@ -23,75 +25,51 @@ let dataPath = args[1]
 let outPath = args[2]
 let numFrames = args.count >= 4 ? Int(args[3]) ?? 120 : 120
 
-let width: GLsizei = 640
-let height: GLsizei = 480
+let width: Int32 = 640
+let height: Int32 = 480
 
-// MARK: - Offscreen GL context (CGL)
+// MARK: - Headless CAMetalLayer
 
-var pixelFormat: CGLPixelFormatObj?
-var numPixelFormats: GLint = 0
-let attribs: [CGLPixelFormatAttribute] = [
-    kCGLPFAAccelerated,
-    kCGLPFAColorSize, CGLPixelFormatAttribute(24),
-    kCGLPFADepthSize, CGLPixelFormatAttribute(24),
-    CGLPixelFormatAttribute(0),
-]
-guard CGLChoosePixelFormat(attribs, &pixelFormat, &numPixelFormats) == kCGLNoError, let pixelFormat else {
-    fail("CGLChoosePixelFormat failed")
-}
-
-var context: CGLContextObj?
-guard CGLCreateContext(pixelFormat, nil, &context) == kCGLNoError, let context else {
-    fail("CGLCreateContext failed")
-}
-CGLSetCurrentContext(context)
-
-// MARK: - FBO as the "default framebuffer" (the engine never rebinds)
-
-var fbo: GLuint = 0
-var colorRB: GLuint = 0
-var depthRB: GLuint = 0
-glGenFramebuffersEXT(1, &fbo)
-glBindFramebufferEXT(GLenum(GL_FRAMEBUFFER_EXT), fbo)
-
-glGenRenderbuffersEXT(1, &colorRB)
-glBindRenderbufferEXT(GLenum(GL_RENDERBUFFER_EXT), colorRB)
-glRenderbufferStorageEXT(GLenum(GL_RENDERBUFFER_EXT), GLenum(GL_RGBA8), width, height)
-glFramebufferRenderbufferEXT(GLenum(GL_FRAMEBUFFER_EXT), GLenum(GL_COLOR_ATTACHMENT0_EXT), GLenum(GL_RENDERBUFFER_EXT), colorRB)
-
-glGenRenderbuffersEXT(1, &depthRB)
-glBindRenderbufferEXT(GLenum(GL_RENDERBUFFER_EXT), depthRB)
-glRenderbufferStorageEXT(GLenum(GL_RENDERBUFFER_EXT), GLenum(GL_DEPTH_COMPONENT24), width, height)
-glFramebufferRenderbufferEXT(GLenum(GL_FRAMEBUFFER_EXT), GLenum(GL_DEPTH_ATTACHMENT_EXT), GLenum(GL_RENDERBUFFER_EXT), depthRB)
-
-guard glCheckFramebufferStatusEXT(GLenum(GL_FRAMEBUFFER_EXT)) == GLenum(GL_FRAMEBUFFER_COMPLETE_EXT) else {
-    fail("FBO incomplete")
-}
+let metalLayer = CAMetalLayer()
+metalLayer.frame = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
+let layerPtr = Unmanaged.passUnretained(metalLayer).toOpaque()
 
 // MARK: - Drive the saver entry points
 
 print("SaverSmoke: booting engine (data: \(dataPath))")
-dataPath.withCString { Nanosaur2Saver_Boot($0) }
+let booted = dataPath.withCString { Nanosaur2Saver_Boot($0, layerPtr, width, height) }
+guard booted else {
+    fail("engine boot failed (no Metal device?)")
+}
 
 print("SaverSmoke: starting scene")
 Nanosaur2Saver_StartScene()
 
 print("SaverSmoke: running \(numFrames) frames")
-for _ in 0..<numFrames {
-    Nanosaur2Saver_Frame(Int32(width), Int32(height))
-    glFinish()
+for i in 0..<numFrames {
+    // Capture only the last frame - readback stalls the GPU every frame
+    // it's enabled for.
+    Nanosaur2Saver_SetCaptureEnabled(i == numFrames - 1)
+    Nanosaur2Saver_Frame(width, height)
 }
 
 // MARK: - Read back + write PPM
 
 var pixels = [UInt8](repeating: 0, count: Int(width) * Int(height) * 4)
-glReadPixels(0, 0, width, height, GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), &pixels)
+var capturedWidth: Int32 = 0
+var capturedHeight: Int32 = 0
+let captured = pixels.withUnsafeMutableBufferPointer { buf in
+    Nanosaur2Saver_CopyLastFrame(buf.baseAddress!, Int32(buf.count), &capturedWidth, &capturedHeight)
+}
+guard captured, capturedWidth == width, capturedHeight == height else {
+    fail("frame capture failed (got \(capturedWidth)x\(capturedHeight))")
+}
 
 var ppm = "P6\n\(width) \(height)\n255\n".data(using: .ascii)!
-for row in stride(from: Int(height) - 1, through: 0, by: -1) { // GL reads bottom-up
+for row in 0..<Int(height) { // Metal reads back top-down already
     for col in 0..<Int(width) {
         let i = (row * Int(width) + col) * 4
-        ppm.append(contentsOf: pixels[i..<i+3])
+        ppm.append(contentsOf: [pixels[i + 2], pixels[i + 1], pixels[i + 0]]) // BGRA -> RGB
     }
 }
 try! ppm.write(to: URL(fileURLWithPath: outPath))
@@ -100,13 +78,19 @@ print("SaverSmoke: wrote \(outPath)")
 Nanosaur2Saver_StopScene()
 print("SaverSmoke: scene stopped cleanly")
 
-// Second start/stop cycle - the system restarts animation without
-// rebooting the process (System Settings preview, display sleep/wake),
-// so scene teardown must leave the engine reusable.
-print("SaverSmoke: second scene cycle")
+// Second cycle THROUGH A LAYER HANDOFF - the system swaps views (System
+// Settings thumbnail <-> full-screen preview), which rebinds the renderer
+// and reloads every texture. Exercise exactly that path.
+print("SaverSmoke: second cycle via AttachLayer handoff")
+let metalLayer2 = CAMetalLayer()
+metalLayer2.frame = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
+let layer2Ptr = Unmanaged.passUnretained(metalLayer2).toOpaque()
+guard Nanosaur2Saver_AttachLayer(layer2Ptr, width, height) else {
+    fail("AttachLayer handoff failed")
+}
 Nanosaur2Saver_StartScene()
 for _ in 0..<10 {
-    Nanosaur2Saver_Frame(Int32(width), Int32(height))
+    Nanosaur2Saver_Frame(width, height)
 }
 Nanosaur2Saver_StopScene()
 print("SaverSmoke: second cycle OK")

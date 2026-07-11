@@ -56,6 +56,20 @@ set(GAME_COPYRIGHT "© 2004 Pangea Software, Inc., © 2025 Iliyas Jorio.")
 configure_file(${SRC}/Headers/version.h.in ${SRC}/Headers/version.h)
 
 #------------------------------------------------------------------------------
+# METALRENDERER (separate Swift module, no bridging header - same split as
+# the desktop CMakeLists: `import Metal` collides with SwMacTypes.h if
+# compiled with the game's bridging header)
+#------------------------------------------------------------------------------
+
+file(GLOB METALRENDERER_SWIFT ${SRC}/Metal/*.swift)
+add_library(MetalRenderer STATIC ${METALRENDERER_SWIFT})
+set_target_properties(MetalRenderer PROPERTIES
+	Swift_COMPILATION_MODE wholemodule
+	XCODE_ATTRIBUTE_SWIFT_OPTIMIZATION_LEVEL[variant=Debug] "-Onone"
+)
+target_link_libraries(MetalRenderer PUBLIC "-framework Metal" "-framework QuartzCore")
+
+#------------------------------------------------------------------------------
 # ENGINE SUBSET (static lib, one Swift module + the leftover C files)
 #------------------------------------------------------------------------------
 
@@ -75,6 +89,7 @@ set(ENGINE_SWIFT
 	${SRC}/3D/OGL_Support.swift
 	${SRC}/3D/QuadMesh.swift
 	${SRC}/3D/RenderBackend.swift
+	${SRC}/3D/MetalRenderBackend.swift
 	${SRC}/3D/Sprites.swift
 
 	# effects the scene uses (jetpack glints, particles infra)
@@ -177,6 +192,9 @@ target_compile_options(SaverEngine PRIVATE
 )
 
 target_link_libraries(SaverEngine PUBLIC
+	MetalRenderer
+	# OpenGL stays linked for GLRenderBackend (compiled as GameEngine's
+	# initial renderer; swapped to MetalRenderBackend during boot).
 	"-framework OpenGL"
 	"-framework Foundation"
 )

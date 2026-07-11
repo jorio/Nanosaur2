@@ -336,6 +336,21 @@ public final class MetalRenderer {
     /// renderer is live.
     public var deviceName: String { device.name }
 
+    // MARK: - Frame capture (headless testing)
+
+    /// When enabled, endFrame() copies the finished frame into
+    /// `lastCaptureBGRA` before presenting (and synchronously waits for the
+    /// GPU). Meant for headless smoke tests (ports/Darwin's SaverSmoke) -
+    /// never enable in normal gameplay, the stall would kill the frame
+    /// rate. Toggling it flips the layer's framebufferOnly optimization,
+    /// which only takes effect for subsequently acquired drawables.
+    public var captureFrames = false {
+        didSet { layer.framebufferOnly = !captureFrames }
+    }
+    public private(set) var lastCaptureBGRA: [UInt8]?
+    public private(set) var lastCaptureWidth = 0
+    public private(set) var lastCaptureHeight = 0
+
     public func setDrawableSize(width: Int, height: Int) {
         drawableWidth = max(width, 1)
         drawableHeight = max(height, 1)
@@ -412,8 +427,40 @@ public final class MetalRenderer {
     public func endFrame() {
         guard let encoder, let commandBuffer, let drawable = currentDrawable else { return }
         encoder.endEncoding()
+
+        // Frame capture (see captureFrames): blit the finished color
+        // attachment into a CPU-visible buffer, present as usual, then
+        // wait and copy out. framebufferOnly must have been false when
+        // this drawable was acquired, or the blit is illegal.
+        var captureBuffer: MTLBuffer?
+        let captureBytesPerRow = drawableWidth * 4
+        if captureFrames, !drawable.texture.isFramebufferOnly,
+           let buffer = device.makeBuffer(length: captureBytesPerRow * drawableHeight, options: .storageModeShared),
+           let blit = commandBuffer.makeBlitCommandEncoder()
+        {
+            blit.copy(
+                from: drawable.texture,
+                sourceSlice: 0, sourceLevel: 0,
+                sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                sourceSize: MTLSize(width: drawableWidth, height: drawableHeight, depth: 1),
+                to: buffer,
+                destinationOffset: 0,
+                destinationBytesPerRow: captureBytesPerRow,
+                destinationBytesPerImage: captureBytesPerRow * drawableHeight)
+            blit.endEncoding()
+            captureBuffer = buffer
+        }
+
         commandBuffer.present(drawable)
         commandBuffer.commit()
+
+        if let captureBuffer {
+            commandBuffer.waitUntilCompleted()
+            let byteCount = captureBytesPerRow * drawableHeight
+            lastCaptureBGRA = [UInt8](UnsafeRawBufferPointer(start: captureBuffer.contents(), count: byteCount))
+            lastCaptureWidth = drawableWidth
+            lastCaptureHeight = drawableHeight
+        }
 
         self.encoder = nil
         self.commandBuffer = nil

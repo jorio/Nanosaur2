@@ -959,6 +959,7 @@ do_anaglyph:
 
 static void DrawBlueLine(GLint window_width, GLint window_height)
 {
+#ifndef __EMSCRIPTEN__
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 
 	glDisable(GL_ALPHA_TEST);
@@ -1024,6 +1025,9 @@ static void DrawBlueLine(GLint window_width, GLint window_height)
 	if (OGL_CheckError())
 		DoFatalAlert("DrawBlueLine failed");
 
+#else
+	(void)window_width; (void)window_height; // WebGL cannot drive hardware shutter glasses.
+#endif
 }
 
 

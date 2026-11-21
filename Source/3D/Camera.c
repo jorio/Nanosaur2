@@ -345,7 +345,11 @@ SkeletonObjDataType	*skeleton;
 float				oldCamX,oldCamZ,oldCamY,oldPointOfInterestX,oldPointOfInterestZ,oldPointOfInterestY;
 const OGLVector3D 	up = {0,1,0};
 OGLMatrix4x4		m;
-const OGLPoint3D	tailOff = {0, 60, CAMERA_DEFAULT_DIST_FROM_ME};
+#ifdef __EMSCRIPTEN__
+const OGLPoint3D tailOff = {0, 60, gWebFlightCameraDistance};
+#else
+const OGLPoint3D tailOff = {0, 60, CAMERA_DEFAULT_DIST_FROM_ME};
+#endif
 const OGLPoint3D	noseOff = {0, 0, -600};
 
 	if (gTimeDemo)			// don't do anything in time demo mode

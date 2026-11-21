@@ -1236,6 +1236,17 @@ void UpdatePlayerSteering(int playerNum)
 			pitch = mousePitch;
 	}
 
+#ifdef __EMSCRIPTEN__
+    if (playerNum == 0)
+    {
+        float webYaw, webPitch, webZoom;
+        WebConsumeCamera(&webYaw, &webPitch, &webZoom);
+        yaw = SDL_clamp(yaw + webYaw * 8, -1, 1);
+        pitch = SDL_clamp(pitch + webPitch * 8, -1, 1);
+        gWebFlightCameraDistance = SDL_clamp(gWebFlightCameraDistance + webZoom, 80, 1200);
+    }
+#endif
+
 	/* INVERT PITCH IF REQUESTED */
 
 	if (gGamePrefs.invertVerticalSteering)

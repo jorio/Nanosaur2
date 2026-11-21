@@ -1425,6 +1425,9 @@ long				count;
 	if (iErr)
 	{
 		FSClose(refNum);
+#ifdef __EMSCRIPTEN__
+	WebSyncFiles();
+#endif
 		return iErr;
 	}
 
@@ -1433,6 +1436,9 @@ long				count;
 	count = payloadLength;
 	iErr = FSWrite(refNum, &count, payloadPtr);
 	FSClose(refNum);
+#ifdef __EMSCRIPTEN__
+	WebSyncFiles();
+#endif
 
 	SDL_Log("Wrote %s\n", file.cName);
 
@@ -1450,6 +1456,9 @@ OSErr DeleteUserDataFile(const char* filename)
 	iErr = MakeFSSpecForUserDataFile(filename, &file);
 	if (iErr == noErr)
 		iErr = FSpDelete(&file);
+#ifdef __EMSCRIPTEN__
+	WebSyncFiles();
+#endif
 	return iErr;
 }
 

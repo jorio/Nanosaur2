@@ -204,3 +204,7 @@ extern	uint32_t				gGameFrameNum;
 extern	uint32_t				gGlobalMaterialFlags;
 extern	uint32_t				gTerrainPolygonSizeInt;
 extern	uint32_t 				gAutoFadeStatusBits;
+
+#ifdef __EMSCRIPTEN__
+#include "web.h"
+#endif

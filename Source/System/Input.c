@@ -189,6 +189,9 @@ static void UpdateInputNeeds(void)
 		const InputBinding* kb = &gGamePrefs.bindings[need];
 
 		bool pressed = false;
+#ifdef __EMSCRIPTEN__
+		pressed = WebGetKey(need) || WebGetAnalog(need) > .15f;
+#endif
 
 		for (int j = 0; j < MAX_BINDINGS_PER_NEED; j++)
 		{
@@ -357,6 +360,9 @@ void DoSDLMaintenance(void)
 
 	// Refresh the state of each input need
 	UpdateInputNeeds();
+#ifdef __EMSCRIPTEN__
+	WebClearPresses();
+#endif
 
 	//-------------------------------------------------------------------------
 	// Multiplayer gamepad input
@@ -461,6 +467,10 @@ static float GetNeedAnalogValueAnyP(int needID)
 
 float GetNeedAnalogValue(int needID, int playerID)
 {
+#ifdef __EMSCRIPTEN__
+	float webAnalog = WebGetAnalog(needID);
+	if ((playerID == 0 || playerID == ANY_PLAYER) && webAnalog > 0) return webAnalog;
+#endif
 	if (playerID == ANY_PLAYER)
 	{
 		return GetNeedAnalogValueAnyP(needID);

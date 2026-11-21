@@ -10,3 +10,8 @@ dist/
 .idea/
 .DS_Store
 *.user
+
+__pycache__/
+
+# SDL3 source builds
+extern/SDL*

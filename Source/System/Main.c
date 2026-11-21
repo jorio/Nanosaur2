@@ -528,6 +528,9 @@ OGLSetupInputType	viewDef;
 
 static void PlayLevel(void)
 {
+#ifdef __EMSCRIPTEN__
+	WebSetGameplayActive(true);
+#endif
 float	fps;
 
 
@@ -626,7 +629,11 @@ float	fps;
 			/* SEE IF PAUSED */
 			/*****************/
 
-		if (IsNeedDown(kNeed_UIPause, ANY_PLAYER))					// do regular pause mode
+		if (IsNeedDown(kNeed_UIPause, ANY_PLAYER)
+#ifdef __EMSCRIPTEN__
+			|| WebConsumePauseRequest()
+#endif
+		)					// do regular pause mode
 		{
 			DoPaused();
 		}
@@ -767,6 +774,9 @@ static void DrawLevelCallback(void)
 
 static void CleanupLevel(void)
 {
+#ifdef __EMSCRIPTEN__
+	WebSetGameplayActive(false);
+#endif
 	FreeAllCustomSplines();
 	StopAllEffectChannels();
  	EmptySplineObjectList();

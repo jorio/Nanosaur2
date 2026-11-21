@@ -99,6 +99,9 @@ static inline float AnchorBottom(float y);
 /*********************/
 
 OGLRect			gLogicalRect;
+#ifdef __EMSCRIPTEN__
+static OGLRect gWebHUDRect;
+#endif
 float			g640x480Scaling = 1;
 
 Boolean			gHideInfobar = false;
@@ -167,22 +170,38 @@ static OGLPoint3D			gFuelPoints[4] =
 
 static inline float AnchorLeft(float x)
 {
+#ifdef __EMSCRIPTEN__
+	return gWebHUDRect.left + x;
+#else
 	return gGamePrefs.force4x3HUD ? x : (gLogicalRect.left + x);
+#endif
 }
 
 static inline float AnchorRight(float x)
 {
+#ifdef __EMSCRIPTEN__
+	return gWebHUDRect.right - x;
+#else
 	return gGamePrefs.force4x3HUD ? (640 * g640x480Scaling - x) : (gLogicalRect.right - x);
+#endif
 }
 
 static inline float AnchorTop(float y)
 {
+#ifdef __EMSCRIPTEN__
+	return gWebHUDRect.top + y;
+#else
 	return gGamePrefs.force4x3HUD ? y : (gLogicalRect.top + y);
+#endif
 }
 
 static inline float AnchorBottom(float y)
 {
+#ifdef __EMSCRIPTEN__
+	return gWebHUDRect.bottom - y;
+#else
 	return gGamePrefs.force4x3HUD ? (480 * g640x480Scaling - y) : (gLogicalRect.bottom - y);
+#endif
 }
 
 static inline float AnchorCenterX(float x)
@@ -517,6 +536,13 @@ void SetInfobarSpriteState(float anaglyphZ, float zoom)
 	glLoadIdentity();
 
 	gLogicalRect = Get2DLogicalRect(gCurrentSplitScreenPane, zoom);
+#ifdef __EMSCRIPTEN__
+    float wt, wr, wb, wl;
+    WebGetHUDInsets(gLogicalRect.right-gLogicalRect.left, gLogicalRect.bottom-gLogicalRect.top, &wt, &wr, &wb, &wl);
+    gWebHUDRect = gLogicalRect;
+    gWebHUDRect.left += wl; gWebHUDRect.right -= wr;
+    gWebHUDRect.top += wt; gWebHUDRect.bottom -= wb;
+#endif
 	float left		= gLogicalRect.left;
 	float top		= gLogicalRect.top;
 	float right		= gLogicalRect.right;
